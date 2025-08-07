@@ -1,0 +1,167 @@
+**Hier volgt een complete checklist van alle onderdelen die je moet programmeren om jouw geautomatiseerde crypto-analyse- en tradingsysteem – gericht op snelle groeiers vinden met AI – werkend, schaalbaar en future-proof op je workstation (i9, 32GB RAM, RTX 2000) te krijgen. Dit is geen minimumlijst, maar een *volledige* blauwdruk, inclusief data, ML, background-tasks, dashboard en robuustheid.**
+
+---
+
+# ✅ **Crypto AI Systeem: Programmerings-Checklist**
+
+## **A. Data-inwinning & Preprocessing**
+
+1. **Coin discovery module**
+
+   * Fetch *volledige* actuele coin-lijst van Kraken via API (geen hardcodes!)
+   * Dagelijkse logging en check op ontbrekende coins
+2. **Prijs & volume inwinning**
+
+   * Historische en live data ophalen (1H, 24H, 7D, 30D candles) voor álle coins
+3. **Whale/on-chain tracking**
+
+   * Whale-transacties, top wallet-moves, holder-distributie per coin (on-chain scraping)
+   * Address-labeling (exchanges, smart money)
+4. **Sentiment scraping**
+
+   * Tweets, Reddit, Discord, Telegram, CryptoPanic, etc.
+   * Detectie van FUD, FOMO, meme-pumps, influencer-pushes
+   * AI-powered sentiment scoring (bv. fine-tuned BERT)
+5. **Technische analyse pipeline**
+
+   * RSI, MACD, EMA’s, OBV, volatility, orderboek-analyse, etc. (liefst async/gpu)
+6. **Nieuws & event scraping**
+
+   * Crypto-nieuws, blogs, aankondigingen, unlocks, forks, hack alerts
+
+---
+
+## **B. Data-validatie & Feature Engineering**
+
+1. **Sanitatie en filtering**
+
+   * Verwijder coins met incomplete/missing of corrupte data (geen dummy-data!)
+2. **Batch feature-merging**
+
+   * Combineer prijs, on-chain, sentiment, TA-features per coin per tijdstip in 1 dataframe
+3. **Feature-scaling & encoding**
+
+   * Normalisatie, one-hot/target encoding van categoricals (evt. met GPU)
+4. **Label-generatie**
+
+   * Voor elke coin: bereken target returns voor 1H, 24H, 7D, 30D vooruit
+   * Save/track werkelijke uitkomsten voor feedbackloop
+
+---
+
+## **C. ML & AI Core**
+
+1. **Modeltraining (per horizon)**
+
+   * LGBM/XGBoost met GPU-support én 1 of meer deep learning time series modellen (bv. LSTM, Temporal Fusion Transformer)
+   * AutoML/Optuna-tuning & model selection
+   * Output: voorspelde returns én probability/confidence score per coin/horizon
+2. **Batch-inference**
+
+   * Minimaal 1x/dag: run batch predictie over alle coins voor 1H, 24H, 7D, 30D
+3. **Self-learning feedback loop**
+
+   * Vergelijk voorspellingen met werkelijke rendementen (per coin/horizon)
+   * Automatische retraining (periodiek of bij performance drop/concept drift)
+4. **SHAP/explainability module**
+
+   * Leg uit waarom een coin geselecteerd wordt (feature importances, SHAP-values per trade)
+
+---
+
+## **D. Filtering, Allocatie & Portfolio management**
+
+1. **Topcoins filtering**
+
+   * Filter coins met confidence/probability ≥80% voor 30d rendement
+   * Sorteer op hoogste verwachte rendement, verberg alle andere coins
+2. **Risico-checks & limits**
+
+   * Slippage-checks, max allocatie per coin, correlation/clustering control
+   * Liquiditeitswaarschuwingen voor microcaps
+
+---
+
+## **E. Dashboard & UI**
+
+1. **Dashboard (streamlit, FastAPI, Flask of React)**
+
+   * Tabel met (alleen!) coins die aan criteria voldoen, sortering op verwacht rendement (30d)
+   * Kolommen: coin, verwacht rendement 1H/24H/7D/30d, confidence, timestamp, uitleg (SHAP)
+   * Realtime status: scraping, data completeness, ML health, warnings/errors
+   * Foutmeldingen/alerts (API-fails, missende coins, etc)
+2. **User feedback/fouten doorgeven**
+
+   * Mogelijkheid om signalen te markeren als goed/fout
+
+---
+
+## **F. Background-tasks & Scheduler**
+
+1. **Async/background runners**
+
+   * Scrapers, whale tracking, sentiment, ML-inference, retraining draaien als background tasks
+   * Gebruik `asyncio`, `Celery`, of Linux `systemd` timers
+2. **Resource monitoring**
+
+   * CPU/GPU/memory usage bewaken, alerts bij overbelasting
+
+---
+
+## **G. Logging, Monitoring & Alerting**
+
+1. **Structured logging (JSON of ELK-compatible)**
+
+   * Volledige traceability van elke stap, errors, predictions, feedback
+2. **Health checks & self-tests**
+
+   * System health dashboard (met metrics als completeness, latency, model performance)
+3. **Alerts**
+
+   * Telegram/Discord/email bij anomalies, missende data, system failures
+
+---
+
+## **H. Security, Config & DevOps**
+
+1. **Secrets-management**
+
+   * API-sleutels/credentials via `.env`, Pydantic settings, of Hashicorp Vault
+2. **Input-validatie & sanitatie**
+
+   * Whitelisting/blacklisting, path traversal checks
+3. **Unittests, integratietests, CI/CD**
+
+   * Pytest-suite met coverage >80%, mocking van API’s
+   * Pre-commit linting (black, isort, flake8), requirements.txt of poetry
+   * Dockerfile voor portable deployment
+4. **Backup/restore**
+
+   * Model checkpoints, config, logs, predictions kunnen veilig worden teruggezet
+
+---
+
+## **I. GPU/Acceleratie-specifics (RTX 2000)**
+
+1. **CUDA drivers & PyTorch/Tensorflow/LightGBM GPU geïnstalleerd**
+2. **Modelcode zo veel mogelijk op device='cuda' of 'gpu' draaien**
+3. **Data pipelines geschikt voor batchverwerking op GPU (cuDF, Dask, RAPIDS optioneel)**
+4. **Monitoring GPU usage (nvidia-smi, logging)**
+
+---
+
+### **Korte samenvatting als checklist**
+
+* [ ] Kraken coin discovery & logging
+* [ ] Multi-source datacollectie (prijs, on-chain, sentiment, TA, news)
+* [ ] Volledige batch feature-merging en filtering (geen dummy)
+* [ ] Training/inference ML per horizon op GPU (klassiek + deep learning)
+* [ ] Probabilistisch filteren en sorteren van resultaten
+* [ ] Dashboard & realtime logging/monitoring
+* [ ] Async/background scheduling
+* [ ] Security, config, backup, unit/CI/CD pipeline
+* [ ] Volledige GPU-ondersteuning
+
+---
+
+**Wil je van een van deze punten een codevoorbeeld, structuurschets of complete implementatie? Laat weten welk onderdeel je als eerst wilt aanpakken!**
