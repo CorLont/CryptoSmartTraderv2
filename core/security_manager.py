@@ -1,619 +1,365 @@
+#!/usr/bin/env python3
 """
-Enterprise Security Manager
-Complete credential isolation and security management
+CryptoSmartTrader V2 - Enterprise Security Manager
+Complete credential isolation with Vault integration and audit logging
 """
 
 import os
 import logging
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-import hashlib
-import secrets
-import base64
-from pathlib import Path
 import json
+import hashlib
+from typing import Dict, Any, Optional, List
+from pathlib import Path
+from dataclasses import dataclass, field
+from datetime import datetime
 import threading
 
 try:
     import hvac
-    VAULT_AVAILABLE = True
+    HAS_VAULT = True
 except ImportError:
-    VAULT_AVAILABLE = False
-
-from pydantic_settings import BaseSettings
-from pydantic import SecretStr, Field
-
-class SecureSettings(BaseSettings):
-    """Secure settings with environment variable support"""
-    
-    # API Keys
-    openai_api_key: Optional[SecretStr] = Field(None, env='OPENAI_API_KEY')
-    binance_api_key: Optional[SecretStr] = Field(None, env='BINANCE_API_KEY')
-    binance_secret: Optional[SecretStr] = Field(None, env='BINANCE_SECRET')
-    kraken_api_key: Optional[SecretStr] = Field(None, env='KRAKEN_API_KEY')
-    kraken_secret: Optional[SecretStr] = Field(None, env='KRAKEN_SECRET')
-    
-    # Database
-    database_url: Optional[SecretStr] = Field(None, env='DATABASE_URL')
-    redis_url: Optional[SecretStr] = Field(None, env='REDIS_URL')
-    
-    # Monitoring
-    slack_webhook: Optional[SecretStr] = Field(None, env='SLACK_WEBHOOK_URL')
-    email_password: Optional[SecretStr] = Field(None, env='EMAIL_PASSWORD')
-    
-    # Security
-    secret_key: SecretStr = Field(default_factory=lambda: SecretStr(secrets.token_hex(32)))
-    encryption_key: Optional[SecretStr] = Field(None, env='ENCRYPTION_KEY')
-    
-    # Vault
-    vault_url: Optional[str] = Field(None, env='VAULT_URL')
-    vault_token: Optional[SecretStr] = Field(None, env='VAULT_TOKEN')
-    
-    class Config:
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
+    HAS_VAULT = False
 
 @dataclass
-class SecurityAuditLog:
-    """Security audit log entry"""
-    timestamp: datetime
-    event_type: str
-    user_id: str
-    action: str
-    resource: str
-    success: bool
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+class SecurityConfig:
+    """Security configuration with strict validation"""
+    vault_url: Optional[str] = None
+    vault_token: Optional[str] = None
+    vault_mount_path: str = "secret"
+    env_file_path: str = ".env"
+    audit_log_path: str = "logs/security_audit.log"
+    secret_rotation_interval: int = 86400  # 24 hours in seconds
+    max_failed_attempts: int = 3
+    lockout_duration: int = 300  # 5 minutes in seconds
+    enable_audit_logging: bool = True
+    require_encryption_at_rest: bool = True
 
 class SecurityManager:
-    """
-    Enterprise-grade security manager
-    Handles credentials, encryption, audit logging, and access control
-    """
+    """Enterprise-grade security manager for API keys and secrets"""
     
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-        self.settings = SecureSettings()
+    def __init__(self, config: Optional[SecurityConfig] = None):
+        self.config = config or SecurityConfig()
+        self.logger = logging.getLogger(f"{__name__}.SecurityManager")
+        self._secrets_cache: Dict[str, Any] = {}
+        self._access_log: List[Dict] = []
+        self._failed_attempts: Dict[str, int] = {}
+        self._lockouts: Dict[str, datetime] = {}
+        self._lock = threading.Lock()
         
-        # Security configuration
-        self.config = {
-            'credential_cache_ttl': 3600,  # 1 hour
-            'max_failed_attempts': 5,
-            'lockout_duration': 900,  # 15 minutes
-            'audit_log_retention': 30,  # 30 days
-            'encryption_algorithm': 'AES-256-GCM'
-        }
-        
-        # Vault client
+        # Initialize Vault client if available
         self.vault_client = None
+        if HAS_VAULT and self.config.vault_url:
+            self._initialize_vault()
         
-        # Credential cache with encryption
-        self.credential_cache = {}
-        self.cache_lock = threading.Lock()
+        # Setup audit logging
+        if self.config.enable_audit_logging:
+            self._setup_audit_logging()
         
-        # Audit logging
-        self.audit_logs = []
-        self.failed_attempts = {}
+        # Load environment secrets
+        self._load_environment_secrets()
         
-        # Security state
-        self.security_initialized = False
-        
-        self._initialize_security()
-    
-    def _initialize_security(self):
-        """Initialize security components"""
-        
-        try:
-            # Initialize Vault if available
-            if VAULT_AVAILABLE and self.settings.vault_url:
-                self._initialize_vault()
-            
-            # Setup encryption
-            self._initialize_encryption()
-            
-            # Load existing credentials safely
-            self._load_secure_credentials()
-            
-            # Setup audit logging
-            self._initialize_audit_logging()
-            
-            self.security_initialized = True
-            self.logger.critical("SECURITY MANAGER INITIALIZED - Enterprise security active")
-            
-        except Exception as e:
-            self.logger.error(f"Security initialization failed: {e}")
-            # Fail securely - no credentials available
-            self.security_initialized = False
+        self.logger.info("Security Manager initialized with enterprise-grade protection")
     
     def _initialize_vault(self):
         """Initialize HashiCorp Vault client"""
-        
         try:
-            if not VAULT_AVAILABLE:
-                self.logger.warning("Vault client not available (hvac not installed)")
-                return
-            
             self.vault_client = hvac.Client(
-                url=self.settings.vault_url,
-                token=self.settings.vault_token.get_secret_value() if self.settings.vault_token else None
+                url=self.config.vault_url,
+                token=self.config.vault_token
             )
             
             if self.vault_client.is_authenticated():
-                self.logger.info("Vault client authenticated successfully")
+                self.logger.info("Vault client initialized and authenticated")
+                self._audit_log("vault_initialized", {"status": "success"})
             else:
-                self.logger.warning("Vault client not authenticated")
+                self.logger.error("Vault authentication failed")
+                self._audit_log("vault_authentication_failed", {"status": "error"})
                 self.vault_client = None
-                
         except Exception as e:
             self.logger.error(f"Vault initialization failed: {e}")
+            self._audit_log("vault_initialization_failed", {"error": str(e)})
             self.vault_client = None
     
-    def _initialize_encryption(self):
-        """Initialize encryption for sensitive data"""
+    def _setup_audit_logging(self):
+        """Setup security audit logging"""
+        audit_path = Path(self.config.audit_log_path)
+        audit_path.parent.mkdir(parents=True, exist_ok=True)
         
-        try:
-            from cryptography.fernet import Fernet
-            
-            # Get or generate encryption key
-            if self.settings.encryption_key:
-                key = self.settings.encryption_key.get_secret_value()
-            else:
-                key = base64.urlsafe_b64encode(os.urandom(32))
-                self.logger.info("Generated new encryption key")
-            
-            self.cipher = Fernet(key)
-            self.logger.info("Encryption initialized")
-            
-        except ImportError:
-            self.logger.warning("Cryptography not available - using basic encoding")
-            self.cipher = None
-        except Exception as e:
-            self.logger.error(f"Encryption initialization failed: {e}")
-            self.cipher = None
+        # Create security audit logger
+        self.audit_logger = logging.getLogger("security_audit")
+        self.audit_logger.setLevel(logging.INFO)
+        
+        # Create file handler for audit log
+        audit_handler = logging.FileHandler(audit_path)
+        audit_formatter = logging.Formatter(
+            '%(asctime)s - SECURITY_AUDIT - %(levelname)s - %(message)s'
+        )
+        audit_handler.setFormatter(audit_formatter)
+        self.audit_logger.addHandler(audit_handler)
     
-    def _load_secure_credentials(self):
-        """Load credentials from secure sources"""
-        
-        # Priority order: Vault -> Environment -> Secure file
-        
-        # Try Vault first
-        if self.vault_client:
-            self._load_from_vault()
-        
-        # Environment variables are already loaded via pydantic settings
-        
-        # Load from secure file if exists
-        secure_file = Path('.env.secure')
-        if secure_file.exists():
-            self._load_from_secure_file(secure_file)
-    
-    def _load_from_vault(self):
-        """Load credentials from Vault"""
-        
+    def _load_environment_secrets(self):
+        """Load secrets from environment variables and .env file"""
         try:
-            # Read secrets from various Vault paths
-            paths = [
-                'secret/cryptotrader/api_keys',
-                'secret/cryptotrader/database',
-                'secret/cryptotrader/monitoring'
+            # Load from .env file if exists
+            env_path = Path(self.config.env_file_path)
+            if env_path.exists():
+                with open(env_path, 'r') as f:
+                    for line in f:
+                        if '=' in line and not line.strip().startswith('#'):
+                            key, value = line.strip().split('=', 1)
+                            os.environ[key] = value.strip('"\'')
+            
+            # Cache common secrets
+            common_secrets = [
+                'OPENAI_API_KEY', 'KRAKEN_API_KEY', 'KRAKEN_SECRET_KEY',
+                'BINANCE_API_KEY', 'BINANCE_SECRET_KEY', 'TELEGRAM_BOT_TOKEN',
+                'DISCORD_WEBHOOK_URL', 'SLACK_WEBHOOK_URL', 'EMAIL_PASSWORD'
             ]
             
-            for path in paths:
-                try:
-                    response = self.vault_client.secrets.kv.v2.read_secret_version(path=path)
-                    secrets_data = response['data']['data']
-                    
-                    # Cache encrypted credentials
-                    for key, value in secrets_data.items():
-                        encrypted_value = self._encrypt_credential(value)
-                        self.credential_cache[key] = {
-                            'value': encrypted_value,
-                            'timestamp': datetime.now(),
-                            'source': 'vault'
-                        }
-                    
-                    self.logger.info(f"Loaded {len(secrets_data)} credentials from Vault path: {path}")
-                    
-                except Exception as e:
-                    self.logger.debug(f"Could not load from Vault path {path}: {e}")
-        
+            for secret_name in common_secrets:
+                if secret_name in os.environ:
+                    self._secrets_cache[secret_name] = os.environ[secret_name]
+                    self._audit_log("secret_loaded", {
+                        "secret_name": secret_name,
+                        "source": "environment"
+                    })
+            
+            self.logger.info(f"Loaded {len(self._secrets_cache)} secrets from environment")
+            
         except Exception as e:
-            self.logger.error(f"Vault credential loading failed: {e}")
+            self.logger.error(f"Failed to load environment secrets: {e}")
+            self._audit_log("environment_secrets_load_failed", {"error": str(e)})
     
-    def _load_from_secure_file(self, file_path: Path):
-        """Load credentials from encrypted file"""
+    def get_secret(self, secret_name: str, source: str = "auto") -> Optional[str]:
+        """
+        Securely retrieve a secret with audit logging
+        
+        Args:
+            secret_name: Name of the secret to retrieve
+            source: Source to check ("vault", "env", "auto")
+        
+        Returns:
+            Secret value or None if not found
+        """
+        with self._lock:
+            # Check if caller is locked out
+            if self._is_locked_out(secret_name):
+                self._audit_log("access_denied_lockout", {
+                    "secret_name": secret_name,
+                    "reason": "too_many_failed_attempts"
+                })
+                return None
+            
+            try:
+                secret_value = None
+                
+                # Try Vault first if available and requested
+                if source in ("vault", "auto") and self.vault_client:
+                    secret_value = self._get_secret_from_vault(secret_name)
+                
+                # Fallback to environment if not found in Vault
+                if not secret_value and source in ("env", "auto"):
+                    secret_value = self._secrets_cache.get(secret_name) or os.environ.get(secret_name)
+                
+                if secret_value:
+                    self._audit_log("secret_accessed", {
+                        "secret_name": secret_name,
+                        "source": "vault" if source == "vault" else "environment",
+                        "hash": hashlib.sha256(secret_value.encode()).hexdigest()[:8]
+                    })
+                    # Reset failed attempts on successful access
+                    self._failed_attempts.pop(secret_name, None)
+                    return secret_value
+                else:
+                    self._record_failed_attempt(secret_name)
+                    self._audit_log("secret_not_found", {"secret_name": secret_name})
+                    return None
+                    
+            except Exception as e:
+                self._record_failed_attempt(secret_name)
+                self.logger.error(f"Error retrieving secret {secret_name}: {e}")
+                self._audit_log("secret_access_error", {
+                    "secret_name": secret_name,
+                    "error": str(e)
+                })
+                return None
+    
+    def _get_secret_from_vault(self, secret_name: str) -> Optional[str]:
+        """Retrieve secret from HashiCorp Vault"""
+        if not self.vault_client:
+            return None
         
         try:
-            with open(file_path, 'r') as f:
-                encrypted_data = f.read()
-            
-            if self.cipher:
-                decrypted_data = self.cipher.decrypt(encrypted_data.encode())
-                credentials = json.loads(decrypted_data.decode())
-            else:
-                # Fallback to base64 encoding
-                decoded_data = base64.b64decode(encrypted_data)
-                credentials = json.loads(decoded_data.decode())
-            
-            for key, value in credentials.items():
-                self.credential_cache[key] = {
-                    'value': value,
-                    'timestamp': datetime.now(),
-                    'source': 'secure_file'
-                }
-            
-            self.logger.info(f"Loaded {len(credentials)} credentials from secure file")
-            
+            response = self.vault_client.secrets.kv.v2.read_secret_version(
+                path=f"cryptotrader/{secret_name}",
+                mount_point=self.config.vault_mount_path
+            )
+            return response['data']['data'].get('value')
         except Exception as e:
-            self.logger.error(f"Secure file loading failed: {e}")
+            self.logger.debug(f"Vault secret retrieval failed for {secret_name}: {e}")
+            return None
     
-    def _initialize_audit_logging(self):
-        """Initialize security audit logging"""
+    def store_secret(self, secret_name: str, secret_value: str, source: str = "vault") -> bool:
+        """
+        Securely store a secret with audit logging
         
-        self.audit_log_file = Path('logs/security_audit.json')
-        self.audit_log_file.parent.mkdir(exist_ok=True)
+        Args:
+            secret_name: Name of the secret
+            secret_value: Secret value to store
+            source: Where to store ("vault", "env")
         
-        # Load existing audit logs
-        if self.audit_log_file.exists():
+        Returns:
+            True if successful, False otherwise
+        """
+        with self._lock:
             try:
-                with open(self.audit_log_file, 'r') as f:
-                    audit_data = json.load(f)
-                    
-                # Convert to audit log objects
-                for entry in audit_data.get('logs', []):
-                    audit_log = SecurityAuditLog(
-                        timestamp=datetime.fromisoformat(entry['timestamp']),
-                        event_type=entry['event_type'],
-                        user_id=entry['user_id'],
-                        action=entry['action'],
-                        resource=entry['resource'],
-                        success=entry['success'],
-                        ip_address=entry.get('ip_address'),
-                        user_agent=entry.get('user_agent'),
-                        details=entry.get('details')
-                    )
-                    self.audit_logs.append(audit_log)
+                if source == "vault" and self.vault_client:
+                    success = self._store_secret_in_vault(secret_name, secret_value)
+                elif source == "env":
+                    self._secrets_cache[secret_name] = secret_value
+                    os.environ[secret_name] = secret_value
+                    success = True
+                else:
+                    success = False
                 
-                self.logger.info(f"Loaded {len(self.audit_logs)} audit log entries")
+                if success:
+                    self._audit_log("secret_stored", {
+                        "secret_name": secret_name,
+                        "source": source,
+                        "hash": hashlib.sha256(secret_value.encode()).hexdigest()[:8]
+                    })
+                else:
+                    self._audit_log("secret_store_failed", {
+                        "secret_name": secret_name,
+                        "source": source
+                    })
+                
+                return success
                 
             except Exception as e:
-                self.logger.error(f"Audit log loading failed: {e}")
+                self.logger.error(f"Error storing secret {secret_name}: {e}")
+                self._audit_log("secret_store_error", {
+                    "secret_name": secret_name,
+                    "error": str(e)
+                })
+                return False
     
-    def get_credential(self, key: str, user_id: str = 'system') -> Optional[str]:
-        """Securely retrieve credential"""
-        
-        if not self.security_initialized:
-            self.logger.error("Security not initialized - credential access denied")
-            return None
-        
-        try:
-            with self.cache_lock:
-                # Check cache first
-                if key in self.credential_cache:
-                    cached_cred = self.credential_cache[key]
-                    
-                    # Check if cache is still valid
-                    age = (datetime.now() - cached_cred['timestamp']).total_seconds()
-                    if age < self.config['credential_cache_ttl']:
-                        # Decrypt and return
-                        decrypted_value = self._decrypt_credential(cached_cred['value'])
-                        
-                        self._log_security_event(
-                            event_type='credential_access',
-                            user_id=user_id,
-                            action='retrieve',
-                            resource=key,
-                            success=True,
-                            details={'source': cached_cred['source'], 'cached': True}
-                        )
-                        
-                        return decrypted_value
-                
-                # Try pydantic settings
-                credential_value = self._get_from_settings(key)
-                
-                if credential_value:
-                    # Cache encrypted credential
-                    encrypted_value = self._encrypt_credential(credential_value)
-                    self.credential_cache[key] = {
-                        'value': encrypted_value,
-                        'timestamp': datetime.now(),
-                        'source': 'environment'
-                    }
-                    
-                    self._log_security_event(
-                        event_type='credential_access',
-                        user_id=user_id,
-                        action='retrieve',
-                        resource=key,
-                        success=True,
-                        details={'source': 'environment', 'cached': False}
-                    )
-                    
-                    return credential_value
-                
-                # Credential not found
-                self._log_security_event(
-                    event_type='credential_access',
-                    user_id=user_id,
-                    action='retrieve',
-                    resource=key,
-                    success=False,
-                    details={'reason': 'credential_not_found'}
-                )
-                
-                return None
-        
-        except Exception as e:
-            self.logger.error(f"Credential retrieval failed for {key}: {e}")
-            
-            self._log_security_event(
-                event_type='credential_access',
-                user_id=user_id,
-                action='retrieve',
-                resource=key,
-                success=False,
-                details={'error': str(e)}
-            )
-            
-            return None
-    
-    def _get_from_settings(self, key: str) -> Optional[str]:
-        """Get credential from pydantic settings"""
-        
-        # Map key to settings attribute
-        key_mapping = {
-            'openai_api_key': 'openai_api_key',
-            'binance_api_key': 'binance_api_key',
-            'binance_secret': 'binance_secret',
-            'kraken_api_key': 'kraken_api_key',
-            'kraken_secret': 'kraken_secret',
-            'database_url': 'database_url',
-            'slack_webhook': 'slack_webhook',
-            'email_password': 'email_password'
-        }
-        
-        attr_name = key_mapping.get(key)
-        if not attr_name:
-            return None
-        
-        attr_value = getattr(self.settings, attr_name, None)
-        
-        if attr_value and hasattr(attr_value, 'get_secret_value'):
-            return attr_value.get_secret_value()
-        elif attr_value:
-            return str(attr_value)
-        
-        return None
-    
-    def _encrypt_credential(self, value: str) -> str:
-        """Encrypt credential value"""
-        
-        if self.cipher:
-            encrypted = self.cipher.encrypt(value.encode())
-            return base64.b64encode(encrypted).decode()
-        else:
-            # Fallback to base64 encoding (not secure but better than plain text)
-            return base64.b64encode(value.encode()).decode()
-    
-    def _decrypt_credential(self, encrypted_value: str) -> str:
-        """Decrypt credential value"""
-        
-        if self.cipher:
-            decoded = base64.b64decode(encrypted_value.encode())
-            decrypted = self.cipher.decrypt(decoded)
-            return decrypted.decode()
-        else:
-            # Fallback from base64 encoding
-            decoded = base64.b64decode(encrypted_value.encode())
-            return decoded.decode()
-    
-    def store_credential(self, key: str, value: str, user_id: str = 'system') -> bool:
-        """Securely store credential"""
-        
-        if not self.security_initialized:
-            self.logger.error("Security not initialized - credential storage denied")
+    def _store_secret_in_vault(self, secret_name: str, secret_value: str) -> bool:
+        """Store secret in HashiCorp Vault"""
+        if not self.vault_client:
             return False
         
         try:
-            # Store in Vault if available
-            if self.vault_client:
-                try:
-                    self.vault_client.secrets.kv.v2.create_or_update_secret(
-                        path=f'secret/cryptotrader/dynamic/{key}',
-                        secret={key: value}
-                    )
-                    
-                    self._log_security_event(
-                        event_type='credential_storage',
-                        user_id=user_id,
-                        action='store',
-                        resource=key,
-                        success=True,
-                        details={'destination': 'vault'}
-                    )
-                    
-                except Exception as e:
-                    self.logger.error(f"Vault storage failed for {key}: {e}")
-            
-            # Store in encrypted cache
-            with self.cache_lock:
-                encrypted_value = self._encrypt_credential(value)
-                self.credential_cache[key] = {
-                    'value': encrypted_value,
-                    'timestamp': datetime.now(),
-                    'source': 'dynamic'
-                }
-            
-            self._log_security_event(
-                event_type='credential_storage',
-                user_id=user_id,
-                action='store',
-                resource=key,
-                success=True,
-                details={'destination': 'cache'}
+            self.vault_client.secrets.kv.v2.create_or_update_secret(
+                path=f"cryptotrader/{secret_name}",
+                secret={'value': secret_value},
+                mount_point=self.config.vault_mount_path
             )
-            
             return True
-            
         except Exception as e:
-            self.logger.error(f"Credential storage failed for {key}: {e}")
-            
-            self._log_security_event(
-                event_type='credential_storage',
-                user_id=user_id,
-                action='store',
-                resource=key,
-                success=False,
-                details={'error': str(e)}
-            )
-            
+            self.logger.error(f"Vault secret storage failed for {secret_name}: {e}")
             return False
     
-    def _log_security_event(self, 
-                           event_type: str,
-                           user_id: str,
-                           action: str,
-                           resource: str,
-                           success: bool,
-                           ip_address: str = None,
-                           user_agent: str = None,
-                           details: Dict[str, Any] = None):
-        """Log security event for audit trail"""
-        
-        audit_log = SecurityAuditLog(
-            timestamp=datetime.now(),
-            event_type=event_type,
-            user_id=user_id,
-            action=action,
-            resource=resource,
-            success=success,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            details=details or {}
-        )
-        
-        self.audit_logs.append(audit_log)
-        
-        # Save audit logs periodically
-        if len(self.audit_logs) % 50 == 0:
-            self._save_audit_logs()
-        
-        # Log to standard logger as well
-        log_level = logging.INFO if success else logging.WARNING
-        self.logger.log(
-            log_level,
-            f"SECURITY AUDIT: {event_type.upper()} - {user_id} {action} {resource} "
-            f"{'SUCCESS' if success else 'FAILED'}"
-        )
-    
-    def _save_audit_logs(self):
-        """Save audit logs to file"""
-        
-        try:
-            audit_data = {
-                'logs': [
-                    {
-                        'timestamp': log.timestamp.isoformat(),
-                        'event_type': log.event_type,
-                        'user_id': log.user_id,
-                        'action': log.action,
-                        'resource': log.resource,
-                        'success': log.success,
-                        'ip_address': log.ip_address,
-                        'user_agent': log.user_agent,
-                        'details': log.details
-                    }
-                    for log in self.audit_logs
-                ],
-                'last_updated': datetime.now().isoformat()
-            }
-            
-            with open(self.audit_log_file, 'w') as f:
-                json.dump(audit_data, f, indent=2)
-            
-            self.logger.debug(f"Saved {len(self.audit_logs)} audit log entries")
-            
-        except Exception as e:
-            self.logger.error(f"Audit log saving failed: {e}")
-    
-    def validate_api_key(self, api_key: str, service: str) -> bool:
-        """Validate API key format and basic checks"""
-        
-        if not api_key or len(api_key) < 10:
+    def _is_locked_out(self, secret_name: str) -> bool:
+        """Check if secret access is locked out due to failed attempts"""
+        if secret_name not in self._lockouts:
             return False
         
-        # Service-specific validation
-        if service == 'openai':
-            return api_key.startswith('sk-') and len(api_key) > 40
-        elif service == 'binance':
-            return len(api_key) == 64 and api_key.isalnum()
-        elif service == 'kraken':
-            return len(api_key) > 50 and '+' in api_key
+        lockout_time = self._lockouts[secret_name]
+        if (datetime.now() - lockout_time).total_seconds() > self.config.lockout_duration:
+            # Lockout expired
+            self._lockouts.pop(secret_name, None)
+            self._failed_attempts.pop(secret_name, None)
+            return False
         
-        # Generic validation
-        return len(api_key) > 15 and not any(char in api_key for char in [' ', '\n', '\t'])
+        return True
     
-    def sanitize_logs(self, log_data: str) -> str:
-        """Sanitize logs to prevent credential leakage"""
+    def _record_failed_attempt(self, secret_name: str):
+        """Record a failed secret access attempt"""
+        self._failed_attempts[secret_name] = self._failed_attempts.get(secret_name, 0) + 1
         
-        # Patterns to redact
-        patterns = [
-            (r'sk-[a-zA-Z0-9]{40,}', 'sk-***REDACTED***'),  # OpenAI keys
-            (r'[A-Za-z0-9]{64}', '***REDACTED_API_KEY***'),  # 64-char keys
-            (r'password["\s]*[:=]["\s]*[^"]+', 'password":"***REDACTED***"'),  # Passwords
-            (r'token["\s]*[:=]["\s]*[^"]+', 'token":"***REDACTED***"'),  # Tokens
-            (r'secret["\s]*[:=]["\s]*[^"]+', 'secret":"***REDACTED***"'),  # Secrets
-        ]
-        
-        import re
-        
-        sanitized = log_data
-        for pattern, replacement in patterns:
-            sanitized = re.sub(pattern, replacement, sanitized, flags=re.IGNORECASE)
-        
-        return sanitized
+        if self._failed_attempts[secret_name] >= self.config.max_failed_attempts:
+            self._lockouts[secret_name] = datetime.now()
+            self._audit_log("secret_lockout_triggered", {
+                "secret_name": secret_name,
+                "failed_attempts": self._failed_attempts[secret_name]
+            })
     
-    def get_security_status(self) -> Dict[str, Any]:
-        """Get comprehensive security status"""
+    def _audit_log(self, event: str, details: Dict[str, Any]):
+        """Log security audit event"""
+        if not self.config.enable_audit_logging:
+            return
         
-        return {
-            'security_initialized': self.security_initialized,
-            'vault_available': VAULT_AVAILABLE,
-            'vault_connected': self.vault_client is not None and self.vault_client.is_authenticated() if self.vault_client else False,
-            'encryption_enabled': self.cipher is not None,
-            'credentials_cached': len(self.credential_cache),
-            'audit_logs_count': len(self.audit_logs),
-            'failed_attempts': sum(self.failed_attempts.values()),
-            'security_features': {
-                'credential_encryption': self.cipher is not None,
-                'audit_logging': True,
-                'access_control': True,
-                'secure_storage': VAULT_AVAILABLE and self.vault_client is not None,
-                'log_sanitization': True
-            },
-            'last_audit_save': self.audit_log_file.stat().st_mtime if self.audit_log_file.exists() else None
+        audit_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "event": event,
+            "details": details,
+            "process_id": os.getpid()
         }
+        
+        self._access_log.append(audit_entry)
+        
+        if hasattr(self, 'audit_logger'):
+            self.audit_logger.info(json.dumps(audit_entry))
     
-    def clear_credential_cache(self, user_id: str = 'system'):
-        """Clear credential cache"""
+    def get_audit_log(self) -> List[Dict]:
+        """Get security audit log entries"""
+        with self._lock:
+            return self._access_log.copy()
+    
+    def validate_secrets_health(self) -> Dict[str, Any]:
+        """Validate health of all secrets and access patterns"""
+        health_report = {
+            "vault_connected": bool(self.vault_client and self.vault_client.is_authenticated()),
+            "total_secrets_cached": len(self._secrets_cache),
+            "failed_attempts": dict(self._failed_attempts),
+            "active_lockouts": len(self._lockouts),
+            "audit_entries": len(self._access_log),
+            "timestamp": datetime.now().isoformat()
+        }
         
-        with self.cache_lock:
-            cache_size = len(self.credential_cache)
-            self.credential_cache.clear()
+        # Test critical secrets availability
+        critical_secrets = ['OPENAI_API_KEY', 'KRAKEN_API_KEY', 'BINANCE_API_KEY']
+        health_report["critical_secrets_available"] = {}
         
-        self._log_security_event(
-            event_type='cache_management',
-            user_id=user_id,
-            action='clear_cache',
-            resource='credential_cache',
-            success=True,
-            details={'cleared_credentials': cache_size}
-        )
+        for secret_name in critical_secrets:
+            is_available = bool(self.get_secret(secret_name))
+            health_report["critical_secrets_available"][secret_name] = is_available
         
-        self.logger.info(f"Credential cache cleared: {cache_size} credentials removed")
+        return health_report
+    
+    def cleanup_expired_lockouts(self):
+        """Clean up expired lockouts and audit logs"""
+        with self._lock:
+            current_time = datetime.now()
+            expired_lockouts = [
+                secret for secret, lockout_time in self._lockouts.items()
+                if (current_time - lockout_time).total_seconds() > self.config.lockout_duration
+            ]
+            
+            for secret in expired_lockouts:
+                self._lockouts.pop(secret, None)
+                self._failed_attempts.pop(secret, None)
+            
+            # Keep only last 1000 audit entries
+            if len(self._access_log) > 1000:
+                self._access_log = self._access_log[-1000:]
 
-# Global security manager instance
-security_manager = SecurityManager()
+
+# Singleton security manager
+_security_manager = None
+_security_lock = threading.Lock()
+
+def get_security_manager(config: Optional[SecurityConfig] = None) -> SecurityManager:
+    """Get the singleton security manager instance"""
+    global _security_manager
+    
+    with _security_lock:
+        if _security_manager is None:
+            _security_manager = SecurityManager(config)
+        return _security_manager
+
+def secure_get_secret(secret_name: str) -> Optional[str]:
+    """Convenient function to securely get a secret"""
+    security_manager = get_security_manager()
+    return security_manager.get_secret(secret_name)
