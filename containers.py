@@ -36,6 +36,9 @@ from core.system_validator import SystemValidator
 from core.advanced_analytics import AdvancedAnalyticsEngine
 from core.explainable_ai import PredictionExplainer
 from core.performance_optimizer import PerformanceOptimizer, PerformanceMonitor
+from core.deep_learning_engine import DeepLearningEngine
+from core.automl_engine import AutoMLEngine
+from core.gpu_accelerator import GPUAccelerator
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -172,6 +175,24 @@ class ApplicationContainer(containers.DeclarativeContainer):
     
     performance_optimizer = providers.Factory(
         PerformanceOptimizer,
+        container=providers.Self
+    )
+    
+    # Deep learning engine
+    deep_learning_engine = providers.Factory(
+        DeepLearningEngine,
+        container=providers.Self
+    )
+    
+    # AutoML engine
+    automl_engine = providers.Factory(
+        AutoMLEngine,
+        container=providers.Self
+    )
+    
+    # GPU accelerator
+    gpu_accelerator = providers.Factory(
+        GPUAccelerator,
         container=providers.Self
     )
     

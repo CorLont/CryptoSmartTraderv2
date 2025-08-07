@@ -19,6 +19,8 @@ CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intel
 
 **Strict Real-Time Pipeline (August 2025):** Implemented zero-tolerance real-time pipeline with complete data validation. NO dummy data allowed - all price, sentiment, and whale data must be validated and authentic. Only coins with 80%+ confidence AND 100%+ expected 30-day return are shown. Pipeline runs continuous background tasks for coin discovery, data collection, sentiment scraping, whale detection, and ML batch inference with strict quality controls.
 
+**State-of-the-Art ML/AI Engine (August 2025):** Implemented topklasse deep learning met LSTM, Transformer, en N-BEATS modellen voor time series forecasting. Features GPU-accelerated training met PyTorch CUDA, AutoML engine met Optuna hyperparameter optimization, ensemble forecasting met uncertainty quantification, en GPU-accelerated technical indicators met CuPy/RAPIDS. System includes automatic model selection, Bayesian confidence intervals, feature importance analysis, en real-time GPU/CPU performance monitoring.
+
 **Multi-Horizon ML System (August 2025):** Implemented sophisticated multi-horizon machine learning system with training and inference on 1H, 24H, 7D, and 30D time horizons. Features comprehensive feature engineering, ensemble modeling with LightGBM, confidence scoring, prediction accuracy tracking, and self-learning capabilities. System combines all data sources (price, sentiment, whale) in batched analysis with automatic model retraining based on performance degradation.
 
 ## User Preferences

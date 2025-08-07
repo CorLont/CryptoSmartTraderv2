@@ -1,408 +1,580 @@
 """
-CryptoSmartTrader V2 - GPU Acceleration Manager
-Automatic GPU detection and acceleration for computation-intensive operations
+CryptoSmartTrader V2 - GPU Accelerator
+GPU-accelerated computing voor maximum performance
 """
 
 import logging
 import numpy as np
 import pandas as pd
-from typing import Dict, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Tuple, Union
+from datetime import datetime, timedelta
 import sys
 from pathlib import Path
+import time
+import warnings
+warnings.filterwarnings('ignore')
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-class GPUAccelerator:
-    """GPU acceleration manager with automatic fallback to CPU"""
+# GPU libraries
+try:
+    import cupy as cp
+    import cudf
+    import cuml
+    from cuml.ensemble import RandomForestRegressor as CuRandomForestRegressor
+    from cuml.linear_model import LinearRegression as CuLinearRegression
+    from cuml.preprocessing import StandardScaler as CuStandardScaler
+    GPU_AVAILABLE = True
+    CUPY_AVAILABLE = True
+    RAPIDS_AVAILABLE = True
+except ImportError as e:
+    logging.info(f"GPU libraries not available: {e}")
+    GPU_AVAILABLE = False
+    CUPY_AVAILABLE = False
+    RAPIDS_AVAILABLE = False
+    # Fallback imports
+    import numpy as cp
+    cudf = pd
     
-    def __init__(self):
+try:
+    import numba
+    from numba import cuda, jit
+    NUMBA_AVAILABLE = True
+except ImportError:
+    NUMBA_AVAILABLE = False
+    logging.info("Numba not available - JIT compilation disabled")
+
+class GPUAccelerator:
+    """GPU-accelerated computing engine"""
+    
+    def __init__(self, container):
+        self.container = container
         self.logger = logging.getLogger(__name__)
-        self.gpu_available = False
-        self.cupy_available = False
-        self.numba_available = False
+        self.cache_manager = container.cache_manager()
         
-        # Initialize GPU libraries
-        self._initialize_gpu_libraries()
+        # GPU status
+        self.gpu_available = self._check_gpu_availability()
+        self.device_info = self._get_device_info()
         
         # Performance tracking
         self.performance_stats = {
             'gpu_operations': 0,
-            'cpu_operations': 0,
-            'gpu_speedup_ratio': 0.0,
-            'memory_usage_gb': 0.0
+            'cpu_fallbacks': 0,
+            'total_speedup': 0.0,
+            'average_speedup': 1.0
         }
         
-        self.logger.info(f"GPU Accelerator initialized - GPU: {self.gpu_available}, CuPy: {self.cupy_available}, Numba: {self.numba_available}")
+        self.logger.info(f"GPU Accelerator initialized. GPU available: {self.gpu_available}")
+        if self.gpu_available:
+            self.logger.info(f"Device info: {self.device_info}")
     
-    def _initialize_gpu_libraries(self):
-        """Initialize GPU acceleration libraries"""
-        # Try to import CuPy for GPU arrays
+    def _check_gpu_availability(self) -> bool:
+        """Check GPU availability"""
         try:
-            import cupy as cp
-            self.cp = cp
-            self.cupy_available = True
-            
-            # Test GPU availability
-            try:
+            if CUPY_AVAILABLE:
+                # Test CuPy
                 test_array = cp.array([1, 2, 3])
-                _ = cp.sum(test_array)
-                self.gpu_available = True
-                self.logger.info(f"CuPy GPU acceleration available - Device: {cp.cuda.get_device_name()}")
-            except Exception as e:
-                self.cupy_available = False
-                self.logger.warning(f"CuPy available but GPU not accessible: {e}")
-                
-        except ImportError:
-            self.logger.info("CuPy not available - using CPU numpy")
-            self.cp = np  # Fallback to numpy
+                result = cp.sum(test_array)
+                cp.cuda.Stream.null.synchronize()
+                return True
+            return False
+        except Exception as e:
+            self.logger.warning(f"GPU availability check failed: {e}")
+            return False
+    
+    def _get_device_info(self) -> Dict[str, Any]:
+        """Get GPU device information"""
+        try:
+            if not self.gpu_available:
+                return {'device': 'CPU', 'memory': 'N/A'}
+            
+            device = cp.cuda.Device()
+            meminfo = cp.cuda.MemoryInfo()
+            
+            return {
+                'device': f"GPU {device.id}",
+                'name': device.attributes.get('name', 'Unknown'),
+                'compute_capability': f"{device.compute_capability[0]}.{device.compute_capability[1]}",
+                'total_memory_gb': meminfo.total / (1024**3),
+                'free_memory_gb': meminfo.free / (1024**3)
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to get device info: {e}")
+            return {'device': 'GPU (info unavailable)'}
+    
+    def gpu_accelerated_operation(self, func, *args, fallback_func=None, **kwargs):
+        """Execute operation with GPU acceleration and CPU fallback"""
+        start_time = time.time()
         
-        # Try to import Numba for JIT compilation
         try:
-            import numba
-            from numba import jit, cuda
-            self.numba = numba
-            self.jit = jit
-            self.cuda = cuda
-            self.numba_available = True
+            if self.gpu_available:
+                # Try GPU operation
+                result = func(*args, **kwargs)
+                
+                # Synchronize GPU
+                if CUPY_AVAILABLE:
+                    cp.cuda.Stream.null.synchronize()
+                
+                execution_time = time.time() - start_time
+                self.performance_stats['gpu_operations'] += 1
+                
+                return result
+            else:
+                raise Exception("GPU not available")
+                
+        except Exception as e:
+            # Fallback to CPU
+            self.logger.debug(f"GPU operation failed, falling back to CPU: {e}")
+            self.performance_stats['cpu_fallbacks'] += 1
             
-            # Test CUDA availability for Numba
-            try:
-                if cuda.is_available():
-                    self.logger.info(f"Numba CUDA available - {len(cuda.gpus)} GPU(s) detected")
-                else:
-                    self.logger.info("Numba available but CUDA not detected")
-            except Exception as e:
-                self.logger.warning(f"Numba CUDA check failed: {e}")
+            if fallback_func:
+                return fallback_func(*args, **kwargs)
+            else:
+                # Convert CuPy arrays to NumPy if needed
+                cpu_args = []
+                for arg in args:
+                    if hasattr(arg, 'get'):  # CuPy array
+                        cpu_args.append(arg.get())
+                    else:
+                        cpu_args.append(arg)
                 
-        except ImportError:
-            self.logger.info("Numba not available - JIT compilation disabled")
-            self.numba_available = False
+                return func(*cpu_args, **kwargs)
     
-    def to_gpu(self, data: Union[np.ndarray, pd.DataFrame, list]) -> Union[np.ndarray, Any]:
-        """Convert data to GPU array if available"""
+    def accelerated_technical_indicators(self, price_data: pd.DataFrame) -> pd.DataFrame:
+        """GPU-accelerated technical indicators calculation"""
         try:
-            if not self.cupy_available:
-                return np.array(data) if not isinstance(data, np.ndarray) else data
+            if self.gpu_available and CUPY_AVAILABLE:
+                return self._gpu_technical_indicators(price_data)
+            else:
+                return self._cpu_technical_indicators(price_data)
+        except Exception as e:
+            self.logger.error(f"Technical indicators calculation failed: {e}")
+            return self._cpu_technical_indicators(price_data)
+    
+    def _gpu_technical_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+        """GPU-accelerated technical indicators"""
+        try:
+            # Convert to CuPy arrays
+            closes = cp.array(df['close'].values)
+            highs = cp.array(df['high'].values)
+            lows = cp.array(df['low'].values)
+            volumes = cp.array(df['volume'].values)
             
-            if isinstance(data, pd.DataFrame):
-                # Convert DataFrame to GPU arrays for numerical columns
-                return self.cp.array(data.select_dtypes(include=[np.number]).values)
-            elif isinstance(data, (list, tuple)):
-                return self.cp.array(data)
-            elif isinstance(data, np.ndarray):
-                return self.cp.array(data)
-            else:
-                return self.cp.array(data)
-                
+            result_df = df.copy()
+            
+            # Moving averages
+            result_df['sma_20'] = self._gpu_sma(closes, 20).get()
+            result_df['sma_50'] = self._gpu_sma(closes, 50).get()
+            result_df['ema_20'] = self._gpu_ema(closes, 20).get()
+            
+            # RSI
+            result_df['rsi'] = self._gpu_rsi(closes, 14).get()
+            
+            # MACD
+            macd, signal = self._gpu_macd(closes)
+            result_df['macd'] = macd.get()
+            result_df['macd_signal'] = signal.get()
+            
+            # Bollinger Bands
+            bb_upper, bb_lower = self._gpu_bollinger_bands(closes, 20, 2)
+            result_df['bb_upper'] = bb_upper.get()
+            result_df['bb_lower'] = bb_lower.get()
+            
+            # Volume indicators
+            result_df['volume_sma'] = self._gpu_sma(volumes, 20).get()
+            result_df['volume_ratio'] = (volumes / self._gpu_sma(volumes, 20)).get()
+            
+            # Price ratios
+            result_df['high_low_ratio'] = (highs / lows).get()
+            
+            return result_df
+            
         except Exception as e:
-            self.logger.warning(f"GPU conversion failed, using CPU: {e}")
-            return np.array(data) if not isinstance(data, np.ndarray) else data
+            self.logger.error(f"GPU technical indicators failed: {e}")
+            return self._cpu_technical_indicators(df)
     
-    def to_cpu(self, data: Any) -> np.ndarray:
-        """Convert GPU array back to CPU numpy array"""
-        try:
-            if self.cupy_available and hasattr(data, 'get'):
-                return data.get()  # CuPy to numpy
-            else:
-                return np.array(data) if not isinstance(data, np.ndarray) else data
-        except Exception as e:
-            self.logger.warning(f"CPU conversion failed: {e}")
-            return np.array(data)
-    
-    def accelerated_mean(self, data: Union[np.ndarray, list]) -> float:
-        """GPU-accelerated mean calculation"""
-        try:
-            if self.cupy_available:
-                gpu_data = self.to_gpu(data)
-                result = self.cp.mean(gpu_data)
-                self.performance_stats['gpu_operations'] += 1
-                return float(self.to_cpu(result))
-            else:
-                self.performance_stats['cpu_operations'] += 1
-                return float(np.mean(data))
-        except Exception as e:
-            self.logger.error(f"Accelerated mean failed: {e}")
-            return float(np.mean(data))
-    
-    def accelerated_std(self, data: Union[np.ndarray, list]) -> float:
-        """GPU-accelerated standard deviation calculation"""
-        try:
-            if self.cupy_available:
-                gpu_data = self.to_gpu(data)
-                result = self.cp.std(gpu_data)
-                self.performance_stats['gpu_operations'] += 1
-                return float(self.to_cpu(result))
-            else:
-                self.performance_stats['cpu_operations'] += 1
-                return float(np.std(data))
-        except Exception as e:
-            self.logger.error(f"Accelerated std failed: {e}")
-            return float(np.std(data))
-    
-    def accelerated_correlation(self, x: Union[np.ndarray, list], y: Union[np.ndarray, list]) -> float:
-        """GPU-accelerated correlation calculation"""
-        try:
-            if self.cupy_available:
-                gpu_x = self.to_gpu(x)
-                gpu_y = self.to_gpu(y)
-                
-                # Calculate correlation coefficient
-                corr_matrix = self.cp.corrcoef(gpu_x, gpu_y)
-                result = corr_matrix[0, 1]
-                
-                self.performance_stats['gpu_operations'] += 1
-                return float(self.to_cpu(result))
-            else:
-                self.performance_stats['cpu_operations'] += 1
-                return float(np.corrcoef(x, y)[0, 1])
-        except Exception as e:
-            self.logger.error(f"Accelerated correlation failed: {e}")
-            return float(np.corrcoef(x, y)[0, 1])
-    
-    def accelerated_rolling_mean(self, data: Union[np.ndarray, list], window: int) -> np.ndarray:
-        """GPU-accelerated rolling mean calculation"""
-        try:
-            if self.cupy_available and len(data) > 1000:  # Use GPU for larger datasets
-                gpu_data = self.to_gpu(data)
-                
-                # Manual rolling mean implementation for GPU
-                result = self.cp.zeros(len(gpu_data))
-                
-                for i in range(len(gpu_data)):
-                    start_idx = max(0, i - window + 1)
-                    result[i] = self.cp.mean(gpu_data[start_idx:i+1])
-                
-                self.performance_stats['gpu_operations'] += 1
-                return self.to_cpu(result)
-            else:
-                # Use pandas rolling for CPU (more efficient for small datasets)
-                self.performance_stats['cpu_operations'] += 1
-                return pd.Series(data).rolling(window, min_periods=1).mean().values
-                
-        except Exception as e:
-            self.logger.error(f"Accelerated rolling mean failed: {e}")
-            return pd.Series(data).rolling(window, min_periods=1).mean().values
-    
-    @property
-    def jit_compile(self):
-        """JIT compilation decorator for performance-critical functions"""
-        if self.numba_available:
-            return self.jit(nopython=True, cache=True)
+    @staticmethod
+    def _gpu_sma(data: cp.ndarray, window: int) -> cp.ndarray:
+        """GPU-accelerated Simple Moving Average"""
+        if NUMBA_AVAILABLE and CUPY_AVAILABLE:
+            return GPUAccelerator._gpu_sma_kernel(data, window)
         else:
-            # Return identity decorator if Numba not available
-            return lambda func: func
+            # Fallback using CuPy
+            return cp.convolve(data, cp.ones(window)/window, mode='same')
     
-    @property
-    def cuda_jit(self):
-        """CUDA JIT compilation for GPU kernels"""
-        if self.numba_available and hasattr(self.cuda, 'jit'):
-            return self.cuda.jit
+    @staticmethod
+    def _gpu_sma_kernel(data, window):
+        """CUDA kernel for SMA calculation (if NUMBA available)"""
+        if NUMBA_AVAILABLE:
+            @cuda.jit
+            def sma_kernel_impl(data, window):
+                idx = cuda.grid(1)
+                if idx < len(data):
+                    if idx < window - 1:
+                        data[idx] = cp.nan
+                    else:
+                        total = 0.0
+                        for i in range(window):
+                            total += data[idx - i]
+                        data[idx] = total / window
+            return sma_kernel_impl(data, window)
         else:
-            # Return identity decorator if CUDA not available
-            return lambda func: func
+            # Fallback to simple convolution
+            return cp.convolve(data, cp.ones(window)/window, mode='same')
     
-    def accelerated_technical_indicators(self, df: pd.DataFrame) -> Dict[str, np.ndarray]:
-        """GPU-accelerated technical indicator calculations"""
+    @staticmethod
+    def _gpu_ema(data: cp.ndarray, window: int) -> cp.ndarray:
+        """GPU-accelerated Exponential Moving Average"""
+        alpha = 2.0 / (window + 1)
+        ema = cp.zeros_like(data)
+        ema[0] = data[0]
+        
+        for i in range(1, len(data)):
+            ema[i] = alpha * data[i] + (1 - alpha) * ema[i-1]
+        
+        return ema
+    
+    @staticmethod 
+    def _gpu_rsi(closes: cp.ndarray, window: int = 14) -> cp.ndarray:
+        """GPU-accelerated RSI calculation"""
+        deltas = cp.diff(closes)
+        gains = cp.where(deltas > 0, deltas, 0)
+        losses = cp.where(deltas < 0, -deltas, 0)
+        
+        avg_gains = GPUAccelerator._gpu_sma(gains, window)
+        avg_losses = GPUAccelerator._gpu_sma(losses, window)
+        
+        rs = avg_gains / (avg_losses + 1e-8)
+        rsi = 100 - (100 / (1 + rs))
+        
+        return cp.concatenate([cp.array([cp.nan]), rsi])
+    
+    @staticmethod
+    def _gpu_macd(closes: cp.ndarray, fast: int = 12, slow: int = 26, signal_period: int = 9) -> Tuple[cp.ndarray, cp.ndarray]:
+        """GPU-accelerated MACD calculation"""
+        ema_fast = GPUAccelerator._gpu_ema(closes, fast)
+        ema_slow = GPUAccelerator._gpu_ema(closes, slow)
+        
+        macd = ema_fast - ema_slow
+        signal = GPUAccelerator._gpu_ema(macd, signal_period)
+        
+        return macd, signal
+    
+    @staticmethod
+    def _gpu_bollinger_bands(closes: cp.ndarray, window: int = 20, std_dev: float = 2) -> Tuple[cp.ndarray, cp.ndarray]:
+        """GPU-accelerated Bollinger Bands calculation"""
+        sma = GPUAccelerator._gpu_sma(closes, window)
+        
+        # Rolling standard deviation
+        rolling_std = cp.zeros_like(closes)
+        for i in range(window-1, len(closes)):
+            window_data = closes[i-window+1:i+1]
+            rolling_std[i] = cp.std(window_data)
+        
+        upper_band = sma + (rolling_std * std_dev)
+        lower_band = sma - (rolling_std * std_dev)
+        
+        return upper_band, lower_band
+    
+    def _cpu_technical_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+        """CPU fallback for technical indicators"""
         try:
-            results = {}
+            result_df = df.copy()
             
-            # Extract price data
-            close_prices = df['close'].values
-            high_prices = df['high'].values
-            low_prices = df['low'].values
-            volume = df['volume'].values
+            # Moving averages
+            result_df['sma_20'] = df['close'].rolling(window=20).mean()
+            result_df['sma_50'] = df['close'].rolling(window=50).mean()
+            result_df['ema_20'] = df['close'].ewm(span=20).mean()
             
-            if self.cupy_available and len(close_prices) > 500:
-                # GPU acceleration for larger datasets
-                gpu_close = self.to_gpu(close_prices)
-                gpu_high = self.to_gpu(high_prices)
-                gpu_low = self.to_gpu(low_prices)
-                gpu_volume = self.to_gpu(volume)
-                
-                # SMA calculations
-                results['sma_20'] = self.to_cpu(self._gpu_sma(gpu_close, 20))
-                results['sma_50'] = self.to_cpu(self._gpu_sma(gpu_close, 50))
-                
-                # EMA calculations
-                results['ema_12'] = self.to_cpu(self._gpu_ema(gpu_close, 12))
-                results['ema_26'] = self.to_cpu(self._gpu_ema(gpu_close, 26))
-                
-                # RSI calculation
-                results['rsi'] = self.to_cpu(self._gpu_rsi(gpu_close, 14))
-                
-                # Bollinger Bands
-                bb_results = self._gpu_bollinger_bands(gpu_close, 20, 2)
-                results['bb_upper'] = self.to_cpu(bb_results[0])
-                results['bb_middle'] = self.to_cpu(bb_results[1])
-                results['bb_lower'] = self.to_cpu(bb_results[2])
-                
-                # Volume indicators
-                results['volume_sma'] = self.to_cpu(self._gpu_sma(gpu_volume, 20))
-                
-                self.performance_stats['gpu_operations'] += 1
-                
+            # RSI
+            delta = df['close'].diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+            rs = gain / loss
+            result_df['rsi'] = 100 - (100 / (1 + rs))
+            
+            # MACD
+            ema_12 = df['close'].ewm(span=12).mean()
+            ema_26 = df['close'].ewm(span=26).mean()
+            result_df['macd'] = ema_12 - ema_26
+            result_df['macd_signal'] = result_df['macd'].ewm(span=9).mean()
+            
+            # Bollinger Bands
+            sma_20 = df['close'].rolling(window=20).mean()
+            std_20 = df['close'].rolling(window=20).std()
+            result_df['bb_upper'] = sma_20 + (std_20 * 2)
+            result_df['bb_lower'] = sma_20 - (std_20 * 2)
+            
+            # Volume indicators
+            result_df['volume_sma'] = df['volume'].rolling(window=20).mean()
+            result_df['volume_ratio'] = df['volume'] / result_df['volume_sma']
+            
+            # Price ratios
+            result_df['high_low_ratio'] = df['high'] / df['low']
+            
+            return result_df
+            
+        except Exception as e:
+            self.logger.error(f"CPU technical indicators failed: {e}")
+            return df
+    
+    def accelerated_ml_training(self, X: pd.DataFrame, y: pd.Series, model_type: str = 'random_forest') -> Any:
+        """GPU-accelerated ML training"""
+        try:
+            if self.gpu_available and RAPIDS_AVAILABLE:
+                return self._gpu_ml_training(X, y, model_type)
             else:
-                # CPU calculations for smaller datasets
-                results['sma_20'] = self._cpu_sma(close_prices, 20)
-                results['sma_50'] = self._cpu_sma(close_prices, 50)
-                results['ema_12'] = self._cpu_ema(close_prices, 12)
-                results['ema_26'] = self._cpu_ema(close_prices, 26)
-                results['rsi'] = self._cpu_rsi(close_prices, 14)
+                return self._cpu_ml_training(X, y, model_type)
+        except Exception as e:
+            self.logger.error(f"ML training failed: {e}")
+            return self._cpu_ml_training(X, y, model_type)
+    
+    def _gpu_ml_training(self, X: pd.DataFrame, y: pd.Series, model_type: str) -> Any:
+        """GPU-accelerated ML training using RAPIDS cuML"""
+        try:
+            # Convert to cuDF
+            X_gpu = cudf.DataFrame(X)
+            y_gpu = cudf.Series(y)
+            
+            # Scale features
+            scaler = CuStandardScaler()
+            X_scaled = scaler.fit_transform(X_gpu)
+            
+            # Train model
+            if model_type == 'random_forest':
+                model = CuRandomForestRegressor(n_estimators=100, max_depth=10, random_state=42)
+            elif model_type == 'linear_regression':
+                model = CuLinearRegression()
+            else:
+                # Fallback to CPU
+                return self._cpu_ml_training(X, y, model_type)
+            
+            model.fit(X_scaled, y_gpu)
+            
+            return {
+                'model': model,
+                'scaler': scaler,
+                'training_method': 'GPU',
+                'model_type': model_type
+            }
+            
+        except Exception as e:
+            self.logger.error(f"GPU ML training failed: {e}")
+            return self._cpu_ml_training(X, y, model_type)
+    
+    def _cpu_ml_training(self, X: pd.DataFrame, y: pd.Series, model_type: str) -> Any:
+        """CPU fallback for ML training"""
+        try:
+            from sklearn.ensemble import RandomForestRegressor
+            from sklearn.linear_model import LinearRegression
+            from sklearn.preprocessing import StandardScaler
+            
+            # Scale features
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+            
+            # Train model
+            if model_type == 'random_forest':
+                model = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42, n_jobs=-1)
+            elif model_type == 'linear_regression':
+                model = LinearRegression()
+            else:
+                model = RandomForestRegressor(n_estimators=50, random_state=42, n_jobs=-1)
+            
+            model.fit(X_scaled, y)
+            
+            return {
+                'model': model,
+                'scaler': scaler,
+                'training_method': 'CPU',
+                'model_type': model_type
+            }
+            
+        except Exception as e:
+            self.logger.error(f"CPU ML training failed: {e}")
+            return None
+    
+    def accelerated_data_processing(self, data: pd.DataFrame, operations: List[str]) -> pd.DataFrame:
+        """GPU-accelerated data processing operations"""
+        try:
+            if self.gpu_available and RAPIDS_AVAILABLE:
+                return self._gpu_data_processing(data, operations)
+            else:
+                return self._cpu_data_processing(data, operations)
+        except Exception as e:
+            self.logger.error(f"Data processing failed: {e}")
+            return self._cpu_data_processing(data, operations)
+    
+    def _gpu_data_processing(self, data: pd.DataFrame, operations: List[str]) -> pd.DataFrame:
+        """GPU-accelerated data processing using cuDF"""
+        try:
+            # Convert to cuDF
+            df_gpu = cudf.DataFrame(data)
+            
+            for operation in operations:
+                if operation == 'normalize':
+                    numeric_cols = df_gpu.select_dtypes(include=['float64', 'int64']).columns
+                    df_gpu[numeric_cols] = (df_gpu[numeric_cols] - df_gpu[numeric_cols].mean()) / df_gpu[numeric_cols].std()
                 
-                bb_results = self._cpu_bollinger_bands(close_prices, 20, 2)
-                results['bb_upper'] = bb_results[0]
-                results['bb_middle'] = bb_results[1]
-                results['bb_lower'] = bb_results[2]
+                elif operation == 'log_transform':
+                    numeric_cols = df_gpu.select_dtypes(include=['float64', 'int64']).columns
+                    df_gpu[numeric_cols] = cudf.log(df_gpu[numeric_cols] + 1)
                 
-                results['volume_sma'] = self._cpu_sma(volume, 20)
+                elif operation == 'rolling_stats':
+                    if 'close' in df_gpu.columns:
+                        df_gpu['rolling_mean_10'] = df_gpu['close'].rolling(window=10).mean()
+                        df_gpu['rolling_std_10'] = df_gpu['close'].rolling(window=10).std()
                 
-                self.performance_stats['cpu_operations'] += 1
+                elif operation == 'outlier_removal':
+                    numeric_cols = df_gpu.select_dtypes(include=['float64', 'int64']).columns
+                    for col in numeric_cols:
+                        Q1 = df_gpu[col].quantile(0.25)
+                        Q3 = df_gpu[col].quantile(0.75)
+                        IQR = Q3 - Q1
+                        lower_bound = Q1 - 1.5 * IQR
+                        upper_bound = Q3 + 1.5 * IQR
+                        df_gpu = df_gpu[(df_gpu[col] >= lower_bound) & (df_gpu[col] <= upper_bound)]
+            
+            # Convert back to pandas
+            return df_gpu.to_pandas()
+            
+        except Exception as e:
+            self.logger.error(f"GPU data processing failed: {e}")
+            return self._cpu_data_processing(data, operations)
+    
+    def _cpu_data_processing(self, data: pd.DataFrame, operations: List[str]) -> pd.DataFrame:
+        """CPU fallback for data processing"""
+        try:
+            df = data.copy()
+            
+            for operation in operations:
+                if operation == 'normalize':
+                    numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
+                    df[numeric_cols] = (df[numeric_cols] - df[numeric_cols].mean()) / df[numeric_cols].std()
+                
+                elif operation == 'log_transform':
+                    numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
+                    df[numeric_cols] = np.log(df[numeric_cols] + 1)
+                
+                elif operation == 'rolling_stats':
+                    if 'close' in df.columns:
+                        df['rolling_mean_10'] = df['close'].rolling(window=10).mean()
+                        df['rolling_std_10'] = df['close'].rolling(window=10).std()
+                
+                elif operation == 'outlier_removal':
+                    numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
+                    for col in numeric_cols:
+                        Q1 = df[col].quantile(0.25)
+                        Q3 = df[col].quantile(0.75)
+                        IQR = Q3 - Q1
+                        lower_bound = Q1 - 1.5 * IQR
+                        upper_bound = Q3 + 1.5 * IQR
+                        df = df[(df[col] >= lower_bound) & (df[col] <= upper_bound)]
+            
+            return df
+            
+        except Exception as e:
+            self.logger.error(f"CPU data processing failed: {e}")
+            return data
+    
+    def benchmark_performance(self, data_size: int = 10000) -> Dict[str, Any]:
+        """Benchmark GPU vs CPU performance"""
+        try:
+            # Generate test data
+            np.random.seed(42)
+            test_data = pd.DataFrame({
+                'close': np.random.randn(data_size).cumsum() + 100,
+                'high': np.random.randn(data_size).cumsum() + 105,
+                'low': np.random.randn(data_size).cumsum() + 95,
+                'volume': np.random.randint(1000, 10000, data_size)
+            })
+            
+            results = {
+                'data_size': data_size,
+                'gpu_available': self.gpu_available,
+                'tests': {}
+            }
+            
+            # Test technical indicators
+            start_time = time.time()
+            cpu_result = self._cpu_technical_indicators(test_data)
+            cpu_time = time.time() - start_time
+            
+            start_time = time.time()
+            gpu_result = self._gpu_technical_indicators(test_data) if self.gpu_available else cpu_result
+            gpu_time = time.time() - start_time
+            
+            speedup = cpu_time / gpu_time if gpu_time > 0 else 1.0
+            
+            results['tests']['technical_indicators'] = {
+                'cpu_time': cpu_time,
+                'gpu_time': gpu_time,
+                'speedup': speedup,
+                'gpu_faster': speedup > 1.0
+            }
+            
+            # Test data processing
+            start_time = time.time()
+            cpu_processed = self._cpu_data_processing(test_data, ['normalize', 'rolling_stats'])
+            cpu_time = time.time() - start_time
+            
+            start_time = time.time()
+            gpu_processed = self._gpu_data_processing(test_data, ['normalize', 'rolling_stats']) if self.gpu_available else cpu_processed
+            gpu_time = time.time() - start_time
+            
+            speedup = cpu_time / gpu_time if gpu_time > 0 else 1.0
+            
+            results['tests']['data_processing'] = {
+                'cpu_time': cpu_time,
+                'gpu_time': gpu_time,
+                'speedup': speedup,
+                'gpu_faster': speedup > 1.0
+            }
+            
+            # Overall stats
+            total_speedup = sum(test['speedup'] for test in results['tests'].values())
+            results['average_speedup'] = total_speedup / len(results['tests'])
+            results['overall_faster'] = results['average_speedup'] > 1.0
             
             return results
             
         except Exception as e:
-            self.logger.error(f"Technical indicators calculation failed: {e}")
-            return {}
+            self.logger.error(f"Performance benchmark failed: {e}")
+            return {'error': str(e)}
     
-    def _gpu_sma(self, data, window):
-        """GPU Simple Moving Average"""
-        if not self.cupy_available:
-            return self._cpu_sma(self.to_cpu(data), window)
-        
-        result = self.cp.zeros_like(data)
-        for i in range(len(data)):
-            start_idx = max(0, i - window + 1)
-            result[i] = self.cp.mean(data[start_idx:i+1])
-        return result
-    
-    def _gpu_ema(self, data, window):
-        """GPU Exponential Moving Average"""
-        if not self.cupy_available:
-            return self._cpu_ema(self.to_cpu(data), window)
-        
-        alpha = 2.0 / (window + 1)
-        result = self.cp.zeros_like(data)
-        result[0] = data[0]
-        
-        for i in range(1, len(data)):
-            result[i] = alpha * data[i] + (1 - alpha) * result[i-1]
-        return result
-    
-    def _gpu_rsi(self, data, window):
-        """GPU Relative Strength Index"""
-        if not self.cupy_available:
-            return self._cpu_rsi(self.to_cpu(data), window)
-        
-        delta = self.cp.diff(data)
-        gain = self.cp.where(delta > 0, delta, 0)
-        loss = self.cp.where(delta < 0, -delta, 0)
-        
-        avg_gain = self.cp.zeros_like(data)
-        avg_loss = self.cp.zeros_like(data)
-        
-        # Initial averages
-        avg_gain[window] = self.cp.mean(gain[1:window+1])
-        avg_loss[window] = self.cp.mean(loss[1:window+1])
-        
-        # Smoothed averages
-        for i in range(window+1, len(data)):
-            avg_gain[i] = (avg_gain[i-1] * (window-1) + gain[i]) / window
-            avg_loss[i] = (avg_loss[i-1] * (window-1) + loss[i]) / window
-        
-        rs = avg_gain / (avg_loss + 1e-10)  # Avoid division by zero
-        rsi = 100 - (100 / (1 + rs))
-        return rsi
-    
-    def _gpu_bollinger_bands(self, data, window, num_std):
-        """GPU Bollinger Bands"""
-        if not self.cupy_available:
-            return self._cpu_bollinger_bands(self.to_cpu(data), window, num_std)
-        
-        sma = self._gpu_sma(data, window)
-        
-        # Calculate rolling standard deviation
-        std = self.cp.zeros_like(data)
-        for i in range(len(data)):
-            start_idx = max(0, i - window + 1)
-            std[i] = self.cp.std(data[start_idx:i+1])
-        
-        upper = sma + (std * num_std)
-        lower = sma - (std * num_std)
-        
-        return upper, sma, lower
-    
-    def _cpu_sma(self, data, window):
-        """CPU Simple Moving Average"""
-        return pd.Series(data).rolling(window, min_periods=1).mean().values
-    
-    def _cpu_ema(self, data, window):
-        """CPU Exponential Moving Average"""
-        return pd.Series(data).ewm(span=window).mean().values
-    
-    def _cpu_rsi(self, data, window):
-        """CPU Relative Strength Index"""
-        delta = pd.Series(data).diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-        rs = gain / loss
-        rsi = 100 - (100 / (1 + rs))
-        return rsi.fillna(50).values
-    
-    def _cpu_bollinger_bands(self, data, window, num_std):
-        """CPU Bollinger Bands"""
-        series = pd.Series(data)
-        sma = series.rolling(window).mean()
-        std = series.rolling(window).std()
-        upper = sma + (std * num_std)
-        lower = sma - (std * num_std)
-        return upper.values, sma.values, lower.values
-    
-    def get_memory_usage(self) -> Dict[str, float]:
-        """Get GPU memory usage statistics"""
-        try:
-            if self.cupy_available:
-                pool = self.cp.get_default_memory_pool()
-                return {
-                    'used_bytes': pool.used_bytes(),
-                    'total_bytes': pool.total_bytes(),
-                    'used_gb': pool.used_bytes() / (1024**3),
-                    'total_gb': pool.total_bytes() / (1024**3)
-                }
-            else:
-                return {'used_gb': 0.0, 'total_gb': 0.0}
-        except Exception as e:
-            self.logger.error(f"Memory usage check failed: {e}")
-            return {'used_gb': 0.0, 'total_gb': 0.0}
-    
-    def get_performance_stats(self) -> Dict[str, Any]:
-        """Get performance statistics"""
-        total_ops = self.performance_stats['gpu_operations'] + self.performance_stats['cpu_operations']
-        
-        if total_ops > 0:
-            gpu_ratio = self.performance_stats['gpu_operations'] / total_ops
-        else:
-            gpu_ratio = 0.0
-        
-        memory_usage = self.get_memory_usage()
-        
+    def get_gpu_status(self) -> Dict[str, Any]:
+        """Get GPU accelerator status"""
         return {
-            **self.performance_stats,
-            'gpu_usage_ratio': gpu_ratio,
             'gpu_available': self.gpu_available,
-            'cupy_available': self.cupy_available,
-            'numba_available': self.numba_available,
-            'memory_usage': memory_usage
+            'cupy_available': CUPY_AVAILABLE,
+            'rapids_available': RAPIDS_AVAILABLE,
+            'numba_available': NUMBA_AVAILABLE,
+            'device_info': self.device_info,
+            'performance_stats': self.performance_stats,
+            'timestamp': datetime.now()
         }
     
-    def cleanup_gpu_memory(self):
-        """Clean up GPU memory"""
+    def optimize_memory_usage(self):
+        """Optimize GPU memory usage"""
         try:
-            if self.cupy_available:
-                self.cp.get_default_memory_pool().free_all_blocks()
-                self.logger.info("GPU memory cleaned up")
+            if self.gpu_available and CUPY_AVAILABLE:
+                # Clear GPU memory
+                cp.get_default_memory_pool().free_all_blocks()
+                cp.get_default_pinned_memory_pool().free_all_blocks()
+                
+                self.logger.info("GPU memory optimized")
+            
         except Exception as e:
-            self.logger.error(f"GPU memory cleanup failed: {e}")
+            self.logger.error(f"Memory optimization failed: {e}")
+
 
 # Global GPU accelerator instance
-gpu_accelerator = GPUAccelerator()
+gpu_accelerator = None
+
+def get_gpu_accelerator(container=None):
+    """Get global GPU accelerator instance"""
+    global gpu_accelerator
+    if gpu_accelerator is None and container is not None:
+        gpu_accelerator = GPUAccelerator(container)
+    return gpu_accelerator

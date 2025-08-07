@@ -8,10 +8,10 @@
 # TYPE cryptotrader_errors_total counter
 # HELP cryptotrader_memory_usage_bytes Memory usage in bytes
 # TYPE cryptotrader_memory_usage_bytes gauge
-cryptotrader_memory_usage_bytes 5.655283712e+010
+cryptotrader_memory_usage_bytes 5.4545256448e+010
 # HELP cryptotrader_cpu_usage_percent CPU usage percentage
 # TYPE cryptotrader_cpu_usage_percent gauge
-cryptotrader_cpu_usage_percent 65.6
+cryptotrader_cpu_usage_percent 40.1
 # HELP cryptotrader_active_agents Number of active agents
 # TYPE cryptotrader_active_agents gauge
 cryptotrader_active_agents 0.0

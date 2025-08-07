@@ -20,7 +20,7 @@ import time
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import GPU accelerator
-from core.gpu_accelerator import gpu_accelerator
+# GPU accelerator is now managed via dependency injection
 
 class ComprehensiveMarketScanner:
     """Comprehensive market scanner for complete cryptocurrency coverage"""

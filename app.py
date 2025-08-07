@@ -87,14 +87,15 @@ def main():
             "🎯 Main Dashboard",
             "🌍 Comprehensive Market",
             "🧠 Advanced Analytics",
+            "🤖 AI/ML Engine",
             "🏥 System Health",
             "🎛️ Analysis Control",
-            "🤖 Agent Dashboard", 
+            "🔧 Agent Dashboard", 
             "💼 Portfolio Dashboard",
             "🔍 Production Monitoring",
-            "🔧 Performance Dashboard",
+            "📊 Performance Dashboard",
             "⚙️ System Configuration",
-            "📊 Health Monitor"
+            "📈 Health Monitor"
         ]
     )
     
@@ -118,6 +119,11 @@ def main():
         advanced_dashboard = AdvancedAnalyticsDashboard(container)
         advanced_dashboard.render()
         
+    elif page == "🤖 AI/ML Engine":
+        from dashboards.ai_ml_dashboard import AIMLDashboard
+        ai_ml_dashboard = AIMLDashboard(container)
+        ai_ml_dashboard.render()
+        
     elif page == "🏥 System Health":
         from dashboards.system_health_dashboard import SystemHealthDashboard
         health_dashboard = SystemHealthDashboard(container)
@@ -127,7 +133,7 @@ def main():
         analysis_control = AnalysisControlDashboard(container)
         analysis_control.render()
         
-    elif page == "🤖 Agent Dashboard":
+    elif page == "🔧 Agent Dashboard":
         agent_dashboard = AgentDashboard(config_manager, health_monitor)
         agent_dashboard.render()
         
@@ -140,14 +146,14 @@ def main():
         monitoring_dashboard = ProductionMonitoringDashboard(container)
         monitoring_dashboard.render()
         
-    elif page == "🔧 Performance Dashboard":
+    elif page == "📊 Performance Dashboard":
         performance_dashboard = PerformanceDashboard(container)
         performance_dashboard.render()
         
     elif page == "⚙️ System Configuration":
         render_config_page(config_manager)
         
-    elif page == "📊 Health Monitor":
+    elif page == "📈 Health Monitor":
         render_health_page(health_monitor)
 
 def render_config_page(config_manager):
