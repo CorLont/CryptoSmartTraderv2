@@ -27,6 +27,7 @@ from core.monitoring_system import ProductionMonitoringSystem
 from core.openai_enhanced_analyzer import OpenAIEnhancedAnalyzer
 from scripts.backup_system import AutomatedBackupSystem
 from core.comprehensive_market_scanner import ComprehensiveMarketScanner
+from core.gpu_accelerator import gpu_accelerator
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -107,6 +108,9 @@ class ApplicationContainer(containers.DeclarativeContainer):
         cache_manager=cache_manager,
         error_handler=centralized_error_handler
     )
+    
+    # GPU accelerator (singleton for system-wide GPU management)
+    gpu_accelerator_provider = providers.Object(gpu_accelerator)
     
     # System orchestrator
     orchestrator = providers.Singleton(

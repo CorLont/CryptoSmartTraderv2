@@ -19,6 +19,9 @@ import time
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Import GPU accelerator
+from core.gpu_accelerator import gpu_accelerator
+
 class ComprehensiveMarketScanner:
     """Comprehensive market scanner for complete cryptocurrency coverage"""
     
@@ -392,61 +395,103 @@ class ComprehensiveMarketScanner:
             return None
     
     def _calculate_comprehensive_indicators(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Calculate comprehensive technical indicators"""
+        """Calculate comprehensive technical indicators with GPU acceleration"""
         try:
             analysis = {}
+            
+            # Use GPU-accelerated technical indicators
+            gpu_indicators = gpu_accelerator.accelerated_technical_indicators(df)
             
             # Price action analysis
             analysis['price_change_pct'] = ((df['close'].iloc[-1] - df['close'].iloc[-2]) / df['close'].iloc[-2]) * 100
             analysis['price_change_24h_pct'] = ((df['close'].iloc[-1] - df['close'].iloc[-24]) / df['close'].iloc[-24]) * 100 if len(df) >= 24 else 0
             
-            # Volatility
-            analysis['volatility'] = df['close'].pct_change().std() * 100
+            # Volatility using GPU acceleration
+            analysis['volatility'] = gpu_accelerator.accelerated_std(df['close'].pct_change().dropna().values) * 100
             
             # Volume analysis
-            analysis['volume_sma_10'] = df['volume'].rolling(10).mean().iloc[-1]
-            analysis['volume_ratio'] = df['volume'].iloc[-1] / analysis['volume_sma_10']
+            if 'volume_sma' in gpu_indicators and len(gpu_indicators['volume_sma']) > 0:
+                volume_sma = gpu_indicators['volume_sma'][-1]
+                analysis['volume_sma_10'] = volume_sma
+                analysis['volume_ratio'] = df['volume'].iloc[-1] / max(volume_sma, 1e-10)  # Avoid division by zero
+            else:
+                analysis['volume_sma_10'] = df['volume'].rolling(10).mean().iloc[-1]
+                analysis['volume_ratio'] = df['volume'].iloc[-1] / max(analysis['volume_sma_10'], 1e-10)
             
-            # Moving averages
-            analysis['sma_20'] = df['close'].rolling(20).mean().iloc[-1]
-            analysis['sma_50'] = df['close'].rolling(50).mean().iloc[-1] if len(df) >= 50 else None
-            analysis['ema_12'] = df['close'].ewm(span=12).mean().iloc[-1]
-            analysis['ema_26'] = df['close'].ewm(span=26).mean().iloc[-1]
+            # Moving averages from GPU calculations
+            if gpu_indicators:
+                analysis['sma_20'] = gpu_indicators['sma_20'][-1] if len(gpu_indicators.get('sma_20', [])) > 0 else df['close'].rolling(20).mean().iloc[-1]
+                analysis['sma_50'] = gpu_indicators['sma_50'][-1] if len(gpu_indicators.get('sma_50', [])) > 0 and len(df) >= 50 else None
+                analysis['ema_12'] = gpu_indicators['ema_12'][-1] if len(gpu_indicators.get('ema_12', [])) > 0 else df['close'].ewm(span=12).mean().iloc[-1]
+                analysis['ema_26'] = gpu_indicators['ema_26'][-1] if len(gpu_indicators.get('ema_26', [])) > 0 else df['close'].ewm(span=26).mean().iloc[-1]
+            else:
+                # Fallback to pandas calculations
+                analysis['sma_20'] = df['close'].rolling(20).mean().iloc[-1]
+                analysis['sma_50'] = df['close'].rolling(50).mean().iloc[-1] if len(df) >= 50 else None
+                analysis['ema_12'] = df['close'].ewm(span=12).mean().iloc[-1]
+                analysis['ema_26'] = df['close'].ewm(span=26).mean().iloc[-1]
             
-            # RSI
-            delta = df['close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-            rs = gain / loss
-            analysis['rsi'] = 100 - (100 / (1 + rs.iloc[-1]))
+            # RSI from GPU calculations
+            if 'rsi' in gpu_indicators and len(gpu_indicators['rsi']) > 0:
+                analysis['rsi'] = float(gpu_indicators['rsi'][-1])
+            else:
+                # Fallback RSI calculation
+                delta = df['close'].diff()
+                gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                rs = gain / (loss + 1e-10)  # Avoid division by zero
+                analysis['rsi'] = float(100 - (100 / (1 + rs.iloc[-1])))
             
             # MACD
             analysis['macd'] = analysis['ema_12'] - analysis['ema_26']
             analysis['macd_signal'] = pd.Series([analysis['macd']]).ewm(span=9).mean().iloc[0]
             analysis['macd_histogram'] = analysis['macd'] - analysis['macd_signal']
             
-            # Bollinger Bands
-            bb_sma = df['close'].rolling(20).mean()
-            bb_std = df['close'].rolling(20).std()
-            analysis['bb_upper'] = (bb_sma + (bb_std * 2)).iloc[-1]
-            analysis['bb_lower'] = (bb_sma - (bb_std * 2)).iloc[-1]
-            analysis['bb_position'] = (df['close'].iloc[-1] - analysis['bb_lower']) / (analysis['bb_upper'] - analysis['bb_lower'])
+            # Bollinger Bands from GPU calculations
+            if all(key in gpu_indicators for key in ['bb_upper', 'bb_middle', 'bb_lower']):
+                analysis['bb_upper'] = float(gpu_indicators['bb_upper'][-1])
+                analysis['bb_lower'] = float(gpu_indicators['bb_lower'][-1])
+                analysis['bb_middle'] = float(gpu_indicators['bb_middle'][-1])
+            else:
+                # Fallback Bollinger Bands
+                bb_sma = df['close'].rolling(20).mean()
+                bb_std = df['close'].rolling(20).std()
+                analysis['bb_upper'] = float((bb_sma + (bb_std * 2)).iloc[-1])
+                analysis['bb_lower'] = float((bb_sma - (bb_std * 2)).iloc[-1])
+                analysis['bb_middle'] = float(bb_sma.iloc[-1])
+            
+            # Bollinger Band position
+            bb_range = analysis['bb_upper'] - analysis['bb_lower']
+            if bb_range > 0:
+                analysis['bb_position'] = (df['close'].iloc[-1] - analysis['bb_lower']) / bb_range
+            else:
+                analysis['bb_position'] = 0.5
             
             # Support and Resistance
             highs = df['high'].rolling(10).max()
             lows = df['low'].rolling(10).min()
-            analysis['resistance'] = highs.iloc[-1]
-            analysis['support'] = lows.iloc[-1]
+            analysis['resistance'] = float(highs.iloc[-1])
+            analysis['support'] = float(lows.iloc[-1])
             
-            # Trend analysis
-            recent_closes = df['close'].tail(10)
-            analysis['trend_strength'] = np.corrcoef(range(len(recent_closes)), recent_closes)[0, 1]
-            analysis['trend_direction'] = 'bullish' if analysis['trend_strength'] > 0.1 else 'bearish' if analysis['trend_strength'] < -0.1 else 'sideways'
+            # Trend analysis using GPU-accelerated correlation
+            recent_closes = df['close'].tail(10).values
+            if len(recent_closes) > 1:
+                time_series = list(range(len(recent_closes)))
+                analysis['trend_strength'] = gpu_accelerator.accelerated_correlation(time_series, recent_closes)
+                
+                # Handle NaN values
+                if np.isnan(analysis['trend_strength']):
+                    analysis['trend_strength'] = 0.0
+                
+                analysis['trend_direction'] = 'bullish' if analysis['trend_strength'] > 0.1 else 'bearish' if analysis['trend_strength'] < -0.1 else 'sideways'
+            else:
+                analysis['trend_strength'] = 0.0
+                analysis['trend_direction'] = 'sideways'
             
             return analysis
             
         except Exception as e:
-            self.logger.error(f"Indicator calculation failed: {e}")
+            self.logger.error(f"GPU-accelerated indicator calculation failed: {e}")
             return {}
     
     def _evaluate_trading_opportunity(self, symbol: str, timeframe: str, analysis: Dict[str, Any]):

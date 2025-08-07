@@ -192,60 +192,120 @@ class ProductionMonitoringDashboard:
         with col1:
             st.subheader("📊 Analysis Metrics")
             
-            # Simulated analysis metrics (would come from Prometheus in production)
-            analysis_data = {
-                "Agent": ["Sentiment", "Technical", "ML Predictor", "Backtest", "Trade Executor"],
-                "Requests": [150, 120, 95, 45, 30],
-                "Success Rate": [98.5, 96.2, 94.8, 99.1, 97.3]
-            }
+            # Get real analysis metrics from cache
+            analysis_metrics = {}
+            if self.container.cache_manager:
+                cache_manager = self.container.cache_manager()
+                analysis_metrics = cache_manager.get('analysis_metrics') or {}
             
-            df_analysis = pd.DataFrame(analysis_data)
-            
-            fig_requests = px.bar(
-                df_analysis,
-                x="Agent",
-                y="Requests",
-                title="Analysis Requests (Last Hour)",
-                color="Success Rate",
-                color_continuous_scale="Viridis"
-            )
-            st.plotly_chart(fig_requests, use_container_width=True)
+            if analysis_metrics:
+                # Use real analysis data
+                agents = list(analysis_metrics.keys())
+                requests = [analysis_metrics[agent].get('total_requests', 0) for agent in agents]
+                success_rates = [analysis_metrics[agent].get('success_rate', 0) * 100 for agent in agents]
+                
+                df_analysis = pd.DataFrame({
+                    "Agent": agents,
+                    "Requests": requests,
+                    "Success Rate": success_rates
+                })
+                
+                fig_requests = px.bar(
+                    df_analysis,
+                    x="Agent",
+                    y="Requests",
+                    title="Real-time Analysis Requests",
+                    color="Success Rate",
+                    color_continuous_scale="Viridis"
+                )
+                st.plotly_chart(fig_requests, use_container_width=True)
+            else:
+                st.info("No analysis metrics available yet. Metrics will appear as agents become active.")
         
         with col2:
             st.subheader("🌐 API Metrics")
             
-            # API performance metrics
-            api_data = {
-                "Service": ["Kraken", "Binance", "CoinGecko", "OpenAI", "Reddit"],
-                "Response Time (ms)": [120, 85, 200, 450, 350],
-                "Success Rate": [99.2, 98.8, 95.5, 97.1, 92.3]
-            }
+            # Get real API performance data from cache
+            api_performance = {}
+            if self.container.cache_manager:
+                cache_manager = self.container.cache_manager()
+                api_performance = cache_manager.get('api_performance_metrics') or {}
             
-            df_api = pd.DataFrame(api_data)
-            
-            fig_api = px.scatter(
-                df_api,
-                x="Response Time (ms)",
-                y="Success Rate",
-                size="Success Rate",
-                color="Service",
-                title="API Performance Matrix"
-            )
-            st.plotly_chart(fig_api, use_container_width=True)
+            if api_performance:
+                # Use real API data
+                services = list(api_performance.keys())
+                response_times = [api_performance[svc].get('avg_response_time', 0) for svc in services]
+                success_rates = [api_performance[svc].get('success_rate', 0) * 100 for svc in services]
+                
+                df_api = pd.DataFrame({
+                    "Service": services,
+                    "Response Time (ms)": response_times,
+                    "Success Rate": success_rates
+                })
+                
+                fig_api = px.scatter(
+                    df_api,
+                    x="Response Time (ms)",
+                    y="Success Rate",
+                    size="Success Rate",
+                    color="Service",
+                    title="Real-time API Performance"
+                )
+                st.plotly_chart(fig_api, use_container_width=True)
+            else:
+                st.info("No real-time API metrics available yet. Metrics will appear as the system collects data.")
         
         # Cache performance
         st.subheader("💾 Cache Performance")
         
+        # Get real cache statistics
+        cache_stats = {}
+        if self.container.cache_manager:
+            cache_manager = self.container.cache_manager()
+            cache_stats = cache_manager.get_cache_stats()
+        
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.metric("Hit Rate", "87.3%", delta="2.1%")
+            hit_rate = cache_stats.get('hit_rate', 0) * 100
+            st.metric("Hit Rate", f"{hit_rate:.1f}%")
         
         with col2:
-            st.metric("Cache Size", "245 MB", delta="15 MB")
+            total_memory = cache_stats.get('total_memory_mb', 0)
+            st.metric("Cache Size", f"{total_memory:.1f} MB")
         
         with col3:
-            st.metric("Avg Response", "12ms", delta="-3ms")
+            total_hits = cache_stats.get('total_hits', 0)
+            total_misses = cache_stats.get('total_misses', 0)
+            total_requests = total_hits + total_misses
+            st.metric("Total Requests", f"{total_requests:,}")
+        
+        # GPU performance metrics
+        st.subheader("🚀 GPU Acceleration")
+        
+        from core.gpu_accelerator import gpu_accelerator
+        gpu_stats = gpu_accelerator.get_performance_stats()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            gpu_status = "🟢 Available" if gpu_stats['gpu_available'] else "🔴 CPU Only"
+            st.metric("GPU Status", gpu_status)
+        
+        with col2:
+            gpu_ratio = gpu_stats.get('gpu_usage_ratio', 0) * 100
+            st.metric("GPU Usage", f"{gpu_ratio:.1f}%")
+        
+        with col3:
+            gpu_ops = gpu_stats.get('gpu_operations', 0)
+            cpu_ops = gpu_stats.get('cpu_operations', 0)
+            st.metric("GPU Ops", f"{gpu_ops:,}")
+            st.caption(f"CPU: {cpu_ops:,}")
+        
+        with col4:
+            memory_usage = gpu_stats.get('memory_usage', {})
+            gpu_memory = memory_usage.get('used_gb', 0)
+            st.metric("GPU Memory", f"{gpu_memory:.2f} GB")
     
     def _render_error_monitoring(self):
         """Render error monitoring section"""
