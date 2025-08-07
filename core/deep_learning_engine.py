@@ -50,52 +50,52 @@ if TORCH_AVAILABLE:
         def __init__(self, config: ModelConfig):
             super(LSTMForecaster, self).__init__()
             self.config = config
+            
+            self.lstm = nn.LSTM(
+                input_size=config.input_size,
+                hidden_size=config.hidden_size,
+                num_layers=config.num_layers,
+                dropout=config.dropout,
+                batch_first=True
+            )
+            
+            self.attention = nn.MultiheadAttention(
+                embed_dim=config.hidden_size,
+                num_heads=8,
+                dropout=config.dropout,
+                batch_first=True
+            )
+            
+            self.prediction_head = nn.Sequential(
+                nn.Linear(config.hidden_size, config.hidden_size // 2),
+                nn.ReLU(),
+                nn.Dropout(config.dropout),
+                nn.Linear(config.hidden_size // 2, config.prediction_horizon)
+            )
+            
+            self.uncertainty_head = nn.Sequential(
+                nn.Linear(config.hidden_size, config.hidden_size // 2),
+                nn.ReLU(),
+                nn.Dropout(config.dropout),
+                nn.Linear(config.hidden_size // 2, config.prediction_horizon),
+                nn.Softplus()  # Ensure positive values for uncertainty
+            )
         
-        self.lstm = nn.LSTM(
-            input_size=config.input_size,
-            hidden_size=config.hidden_size,
-            num_layers=config.num_layers,
-            dropout=config.dropout,
-            batch_first=True
-        )
-        
-        self.attention = nn.MultiheadAttention(
-            embed_dim=config.hidden_size,
-            num_heads=8,
-            dropout=config.dropout,
-            batch_first=True
-        )
-        
-        self.prediction_head = nn.Sequential(
-            nn.Linear(config.hidden_size, config.hidden_size // 2),
-            nn.ReLU(),
-            nn.Dropout(config.dropout),
-            nn.Linear(config.hidden_size // 2, config.prediction_horizon)
-        )
-        
-        self.uncertainty_head = nn.Sequential(
-            nn.Linear(config.hidden_size, config.hidden_size // 2),
-            nn.ReLU(),
-            nn.Dropout(config.dropout),
-            nn.Linear(config.hidden_size // 2, config.prediction_horizon),
-            nn.Softplus()  # Ensure positive values for uncertainty
-        )
-    
-    def forward(self, x):
-        # LSTM layer
-        lstm_out, (hidden, cell) = self.lstm(x)
-        
-        # Self-attention
-        attn_out, _ = self.attention(lstm_out, lstm_out, lstm_out)
-        
-        # Use last time step for prediction
-        last_output = attn_out[:, -1, :]
-        
-        # Predictions and uncertainty
-        predictions = self.prediction_head(last_output)
-        uncertainties = self.uncertainty_head(last_output)
-        
-        return predictions, uncertainties
+        def forward(self, x):
+            # LSTM layer
+            lstm_out, (hidden, cell) = self.lstm(x)
+            
+            # Self-attention
+            attn_out, _ = self.attention(lstm_out, lstm_out, lstm_out)
+            
+            # Use last time step for prediction
+            last_output = attn_out[:, -1, :]
+            
+            # Predictions and uncertainty
+            predictions = self.prediction_head(last_output)
+            uncertainties = self.uncertainty_head(last_output)
+            
+            return predictions, uncertainties
 
     class TransformerForecaster(nn.Module):
         """Transformer-based cryptocurrency forecaster"""
@@ -103,39 +103,39 @@ if TORCH_AVAILABLE:
         def __init__(self, config: ModelConfig):
             super(TransformerForecaster, self).__init__()
             self.config = config
-        
-        # Positional encoding
-        self.pos_encoder = PositionalEncoding(config.input_size, config.dropout)
-        
-        # Transformer encoder
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=config.input_size,
-            nhead=8,
-            dim_feedforward=config.hidden_size,
-            dropout=config.dropout,
-            batch_first=True
-        )
-        
-        self.transformer = nn.TransformerEncoder(
-            encoder_layer,
-            num_layers=config.num_layers
-        )
-        
-        # Prediction heads
-        self.prediction_head = nn.Sequential(
-            nn.Linear(config.input_size, config.hidden_size),
-            nn.ReLU(),
-            nn.Dropout(config.dropout),
-            nn.Linear(config.hidden_size, config.prediction_horizon)
-        )
-        
-        self.uncertainty_head = nn.Sequential(
-            nn.Linear(config.input_size, config.hidden_size),
-            nn.ReLU(),
-            nn.Dropout(config.dropout),
-            nn.Linear(config.hidden_size, config.prediction_horizon),
-            nn.Softplus()
-        )
+            
+            # Positional encoding
+            self.pos_encoder = PositionalEncoding(config.input_size, config.dropout, max_len=config.sequence_length)
+            
+            # Transformer encoder
+            encoder_layer = nn.TransformerEncoderLayer(
+                d_model=config.input_size,
+                nhead=8,
+                dim_feedforward=config.hidden_size,
+                dropout=config.dropout,
+                batch_first=True
+            )
+            
+            self.transformer = nn.TransformerEncoder(
+                encoder_layer,
+                num_layers=config.num_layers
+            )
+            
+            # Prediction heads
+            self.prediction_head = nn.Sequential(
+                nn.Linear(config.input_size, config.hidden_size),
+                nn.ReLU(),
+                nn.Dropout(config.dropout),
+                nn.Linear(config.hidden_size, config.prediction_horizon)
+            )
+            
+            self.uncertainty_head = nn.Sequential(
+                nn.Linear(config.input_size, config.hidden_size),
+                nn.ReLU(),
+                nn.Dropout(config.dropout),
+                nn.Linear(config.hidden_size, config.prediction_horizon),
+                nn.Softplus()
+            )
     
     def forward(self, x):
         # Add positional encoding
@@ -159,127 +159,105 @@ if TORCH_AVAILABLE:
         def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
             super().__init__()
             self.dropout = nn.Dropout(p=dropout)
+            
+            position = torch.arange(max_len).unsqueeze(1)
+            div_term = torch.exp(torch.arange(0, d_model, 2) * (-np.log(10000.0) / d_model))
+            
+            pe = torch.zeros(max_len, 1, d_model)
+            pe[:, 0, 0::2] = torch.sin(position * div_term)
+            pe[:, 0, 1::2] = torch.cos(position * div_term)
+            
+            self.register_buffer('pe', pe)
         
-        position = torch.arange(max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2) * (-np.log(10000.0) / d_model))
-        
-        pe = torch.zeros(max_len, 1, d_model)
-        pe[:, 0, 0::2] = torch.sin(position * div_term)
-        pe[:, 0, 1::2] = torch.cos(position * div_term)
-        
-        self.register_buffer('pe', pe)
-    
-    def forward(self, x):
-        seq_len = x.size(1)
-        x = x + self.pe[:seq_len].transpose(0, 1)
-        return self.dropout(x)
+        def forward(self, x):
+            seq_len = x.size(1)
+            x = x + self.pe[:seq_len].transpose(0, 1)
+            return self.dropout(x)
 
+    class NBEATSStack(nn.Module):
+        """N-BEATS Stack Module"""
+        
+        def __init__(self, input_size, hidden_size, sequence_length, prediction_horizon, stack_type='generic'):
+            super(NBEATSStack, self).__init__()
+            self.stack_type = stack_type
+            self.sequence_length = sequence_length
+            self.prediction_horizon = prediction_horizon
+            
+            # Dense layers
+            self.dense1 = nn.Linear(input_size, hidden_size)
+            self.dense2 = nn.Linear(hidden_size, hidden_size)
+            self.dense3 = nn.Linear(hidden_size, hidden_size)
+            self.dense4 = nn.Linear(hidden_size, hidden_size)
+            
+            # Basis expansion layers
+            self.backcast_layer = nn.Linear(hidden_size, sequence_length)
+            self.forecast_layer = nn.Linear(hidden_size, prediction_horizon)
+            
+        def forward(self, x):
+            # Forward pass through dense layers
+            out = torch.relu(self.dense1(x.view(x.size(0), -1)))
+            out = torch.relu(self.dense2(out))
+            out = torch.relu(self.dense3(out))
+            out = torch.relu(self.dense4(out))
+            
+            # Generate backcast and forecast
+            backcast = self.backcast_layer(out)
+            forecast = self.forecast_layer(out)
+            
+            return backcast.view(x.size(0), self.sequence_length, -1), forecast
+    
     class NBEATSForecaster(nn.Module):
         """N-BEATS neural forecasting model"""
         
         def __init__(self, config: ModelConfig):
             super(NBEATSForecaster, self).__init__()
             self.config = config
-        
-        # Stack configuration
-        self.trend_stack = NBEATSStack(
-            config.input_size, 
-            config.hidden_size, 
-            config.sequence_length,
-            config.prediction_horizon,
-            'trend'
-        )
-        
-        self.seasonality_stack = NBEATSStack(
-            config.input_size,
-            config.hidden_size,
-            config.sequence_length, 
-            config.prediction_horizon,
-            'seasonality'
-        )
-        
-        self.generic_stack = NBEATSStack(
-            config.input_size,
-            config.hidden_size,
-            config.sequence_length,
-            config.prediction_horizon,
-            'generic'
-        )
-    
-    def forward(self, x):
-        # Process through stacks
-        residual = x
-        forecast = torch.zeros(x.size(0), self.config.prediction_horizon).to(x.device)
-        
-        # Trend stack
-        backcast_trend, forecast_trend = self.trend_stack(residual)
-        residual = residual - backcast_trend
-        forecast = forecast + forecast_trend
-        
-        # Seasonality stack
-        backcast_season, forecast_season = self.seasonality_stack(residual)
-        residual = residual - backcast_season
-        forecast = forecast + forecast_season
-        
-        # Generic stack
-        backcast_generic, forecast_generic = self.generic_stack(residual)
-        forecast = forecast + forecast_generic
-        
-        # Simple uncertainty estimation (could be improved)
-        uncertainties = torch.abs(forecast) * 0.1
-        
-        return forecast, uncertainties
-
-    class NBEATSStack(nn.Module):
-        """N-BEATS stack component"""
-        
-        def __init__(self, input_size, hidden_size, backcast_length, forecast_length, stack_type):
-            super().__init__()
-            self.backcast_length = backcast_length
-            self.forecast_length = forecast_length
-            self.stack_type = stack_type
-        
-        # Fully connected layers
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, hidden_size)
-        self.fc4 = nn.Linear(hidden_size, hidden_size)
-        
-        # Output layers
-        if stack_type == 'trend':
-            self.theta_b = nn.Linear(hidden_size, 2)  # Linear trend
-            self.theta_f = nn.Linear(hidden_size, 2)
-        elif stack_type == 'seasonality':
-            self.theta_b = nn.Linear(hidden_size, backcast_length)
-            self.theta_f = nn.Linear(hidden_size, forecast_length)
-        else:  # generic
-            self.theta_b = nn.Linear(hidden_size, backcast_length)
-            self.theta_f = nn.Linear(hidden_size, forecast_length)
-    
-    def forward(self, x):
-        # Forward pass through FC layers
-        h = torch.relu(self.fc1(x.mean(dim=1)))  # Pool sequence dimension
-        h = torch.relu(self.fc2(h))
-        h = torch.relu(self.fc3(h))
-        h = torch.relu(self.fc4(h))
-        
-        # Generate theta parameters
-        theta_b = self.theta_b(h)
-        theta_f = self.theta_f(h)
-        
-        if self.stack_type == 'trend':
-            # Linear trend basis
-            t_b = torch.linspace(0, 1, self.backcast_length).to(x.device)
-            t_f = torch.linspace(0, 1, self.forecast_length).to(x.device)
             
-            backcast = theta_b[:, 0:1] + theta_b[:, 1:2] * t_b
-            forecast = theta_f[:, 0:1] + theta_f[:, 1:2] * t_f
-        else:
-            # Direct output
-            backcast = theta_b
-            forecast = theta_f
+            # Stack configuration
+            self.trend_stack = NBEATSStack(
+                config.input_size, 
+                config.hidden_size, 
+                config.sequence_length,
+                config.prediction_horizon,
+                'trend'
+            )
+            
+            self.seasonality_stack = NBEATSStack(
+                config.input_size,
+                config.hidden_size,
+                config.sequence_length, 
+                config.prediction_horizon,
+                'seasonality'
+            )
+            
+            self.generic_stack = NBEATSStack(
+                config.input_size,
+                config.hidden_size,
+                config.sequence_length,
+                config.prediction_horizon,
+                'generic'
+            )
         
-        return backcast, forecast
+        def forward(self, x):
+            # Process through stacks
+            residual = x
+            forecast = torch.zeros(x.size(0), self.config.prediction_horizon).to(x.device)
+            
+            # Trend stack
+            backcast_trend, forecast_trend = self.trend_stack(residual)
+            residual = residual - backcast_trend
+            forecast = forecast + forecast_trend
+            
+            # Seasonality stack
+            backcast_season, forecast_season = self.seasonality_stack(residual)
+            residual = residual - backcast_season
+            forecast = forecast + forecast_season
+            
+            # Generic stack
+            backcast_generic, forecast_generic = self.generic_stack(residual)
+            forecast = forecast + forecast_generic
+            
+            return forecast
 else:
     # Placeholder classes when PyTorch is not available
     class LSTMForecaster:

@@ -7,6 +7,10 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.append(str(project_root))
 
+# Setup daily logging system first
+from utils.daily_logger import setup_system_logging
+daily_logger = setup_system_logging()
+
 from containers import ApplicationContainer
 from config.logging_config import setup_logging
 from config.settings import config
