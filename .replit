@@ -2,7 +2,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["glibcLocales", "libcxx", "libxcrypt", "ocl-icd", "opencl-headers", "pkg-config", "xsimd", "gcc", "zip"]
+packages = ["gcc", "glibcLocales", "libcxx", "libxcrypt", "ocl-icd", "opencl-headers", "pkg-config", "xsimd", "zip"]
 
 [deployment]
 deploymentTarget = "autoscale"

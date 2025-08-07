@@ -1772,6 +1772,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pytest" },
     { name = "python-json-logger" },
+    { name = "schedule" },
     { name = "scikit-learn" },
     { name = "streamlit" },
     { name = "ta" },
@@ -1802,6 +1803,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.10.1" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "python-json-logger", specifier = ">=3.3.0" },
+    { name = "schedule", specifier = ">=1.2.2" },
     { name = "scikit-learn", specifier = ">=1.7.1" },
     { name = "streamlit", specifier = ">=1.48.0" },
     { name = "ta", specifier = ">=0.11.0" },
@@ -1932,6 +1934,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e9/9a/b4ec3629b7b447e896eec574469159b5b60b7781d3711c914748bf32de05/rpds_py-0.27.0-pp311-pypy311_pp73-musllinux_1_2_aarch64.whl", hash = "sha256:59714ab0a5af25d723d8e9816638faf7f4254234decb7d212715c1aa71eee7be", size = 559460 },
     { url = "https://files.pythonhosted.org/packages/61/63/d1e127b40c3e4733b3a6f26ae7a063cdf2bc1caa5272c89075425c7d397a/rpds_py-0.27.0-pp311-pypy311_pp73-musllinux_1_2_i686.whl", hash = "sha256:88051c3b7d5325409f433c5a40328fcb0685fc04e5db49ff936e910901d10114", size = 588072 },
     { url = "https://files.pythonhosted.org/packages/04/7e/8ffc71a8f6833d9c9fb999f5b0ee736b8b159fd66968e05c7afc2dbcd57e/rpds_py-0.27.0-pp311-pypy311_pp73-musllinux_1_2_x86_64.whl", hash = "sha256:181bc29e59e5e5e6e9d63b143ff4d5191224d355e246b5a48c88ce6b35c4e466", size = 555083 },
+]
+
+[[package]]
+name = "schedule"
+version = "1.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0c/91/b525790063015759f34447d4cf9d2ccb52cdee0f1dd6ff8764e863bcb74c/schedule-1.2.2.tar.gz", hash = "sha256:15fe9c75fe5fd9b9627f3f19cc0ef1420508f9f9a46f45cd0769ef75ede5f0b7", size = 26452 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/a7/84c96b61fd13205f2cafbe263cdb2745965974bdf3e0078f121dfeca5f02/schedule-1.2.2-py3-none-any.whl", hash = "sha256:5bef4a2a0183abf44046ae0d164cadcac21b1db011bdd8102e4a0c1e91e06a7d", size = 12220 },
 ]
 
 [[package]]

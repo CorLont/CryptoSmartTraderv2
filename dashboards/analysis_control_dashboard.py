@@ -20,6 +20,7 @@ import logging
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from containers import ApplicationContainer
+from core.daily_analysis_scheduler import DailyAnalysisScheduler
 
 
 class AnalysisControlDashboard:
@@ -33,6 +34,14 @@ class AnalysisControlDashboard:
         self.orchestrator = container.orchestrator()
         self.config_manager = container.config()
         self.health_monitor = container.health_monitor()
+        self.cache_manager = container.cache_manager()
+        
+        # Initialize daily scheduler
+        self.daily_scheduler = DailyAnalysisScheduler(
+            self.config_manager,
+            self.cache_manager,
+            self.health_monitor
+        )
         
         # Service status tracking
         if 'analysis_services' not in st.session_state:
@@ -48,11 +57,178 @@ class AnalysisControlDashboard:
         st.title("🎛️ Analysis Control Center")
         st.markdown("---")
         
+        # Daily Analysis Overview
+        self._render_daily_analysis_overview()
+        
         # Service status overview
         self._render_service_status()
         
         # Analysis controls
         col1, col2 = st.columns(2)
+        
+    def _render_daily_analysis_overview(self):
+        """Render daily analysis overview"""
+        st.subheader("📈 Daily Analysis Overview")
+        
+        # Get daily analysis status
+        daily_status = self.daily_scheduler.get_daily_analysis_status()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            scheduler_status = "🟢 Active" if daily_status["scheduler_running"] else "🔴 Stopped"
+            st.metric("Daily Scheduler", scheduler_status)
+            
+            if st.button("Start Daily Analysis" if not daily_status["scheduler_running"] else "Stop Daily Analysis"):
+                if daily_status["scheduler_running"]:
+                    self.daily_scheduler.stop_daily_analysis()
+                    st.success("Daily analysis stopped")
+                else:
+                    self.daily_scheduler.start_daily_analysis()
+                    st.success("Daily analysis started")
+                st.rerun()
+        
+        with col2:
+            ml_status = daily_status["services"]["ml_analysis"]
+            ml_indicator = "🟢 Running" if ml_status == "running" else "🔴 Stopped"
+            st.metric("ML Service", ml_indicator)
+        
+        with col3:
+            social_status = daily_status["services"]["social_scraper"]
+            social_indicator = "🟢 Running" if social_status == "running" else "🔴 Stopped"
+            st.metric("Social Scraper", social_indicator)
+        
+        with col4:
+            # Show latest report status
+            latest_report = self.daily_scheduler.get_latest_daily_report()
+            if latest_report and latest_report.get("daily_summary", {}).get("generated_at"):
+                st.metric("Latest Report", "📊 Available")
+            else:
+                st.metric("Latest Report", "⏳ Pending")
+        
+        # Daily progress
+        if daily_status["analysis_data"]:
+            self._render_daily_progress(daily_status["analysis_data"])
+        
+        st.markdown("---")
+    
+    def _render_daily_progress(self, daily_data: Dict):
+        """Render daily analysis progress"""
+        st.subheader("📊 Today's Progress")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.write("**ML Analysis**")
+            ml_data = daily_data.get("ml_analysis", {})
+            ml_status = ml_data.get("status", "pending")
+            
+            if ml_status == "active":
+                predictions_count = len(ml_data.get("predictions", []))
+                st.success(f"✅ {predictions_count} predictions generated")
+                if ml_data.get("last_update"):
+                    st.caption(f"Last update: {ml_data['last_update'][:16]}")
+            elif ml_status == "running":
+                st.info("🔄 Analysis in progress...")
+            else:
+                st.warning("⏳ Waiting to start...")
+        
+        with col2:
+            st.write("**Social Sentiment**")
+            social_data = daily_data.get("social_sentiment", {})
+            social_status = social_data.get("status", "pending")
+            
+            if social_status == "active":
+                reddit_count = len(social_data.get("reddit_data", []))
+                twitter_count = len(social_data.get("twitter_data", []))
+                st.success(f"✅ {reddit_count + twitter_count} posts analyzed")
+                if social_data.get("last_update"):
+                    st.caption(f"Last update: {social_data['last_update'][:16]}")
+            elif social_status == "running":
+                st.info("🔄 Scraping in progress...")
+            else:
+                st.warning("⏳ Waiting to start...")
+        
+        with col3:
+            st.write("**Technical Analysis**")
+            tech_data = daily_data.get("technical_analysis", {})
+            tech_status = tech_data.get("status", "pending")
+            
+            if tech_status == "active":
+                indicators_count = len(tech_data.get("indicators", {}))
+                signals_count = len(tech_data.get("signals", []))
+                st.success(f"✅ {indicators_count} indicators, {signals_count} signals")
+                if tech_data.get("last_update"):
+                    st.caption(f"Last update: {tech_data['last_update'][:16]}")
+            elif tech_status == "running":
+                st.info("🔄 Analysis in progress...")
+            else:
+                st.warning("⏳ Waiting to start...")
+        
+        # Show daily summary if available
+        daily_summary = daily_data.get("daily_summary", {})
+        if daily_summary.get("generated_at"):
+            st.subheader("📋 Daily Summary")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                trend = daily_summary.get("market_trend", "neutral")
+                trend_emoji = {"bullish": "📈", "bearish": "📉", "neutral": "➡️"}.get(trend, "➡️")
+                st.metric("Market Trend", f"{trend_emoji} {trend.title()}")
+            
+            with col2:
+                sentiment = daily_summary.get("sentiment_overview", "neutral")
+                sentiment_emoji = {"positive": "😊", "negative": "😔", "neutral": "😐"}.get(sentiment, "😐")
+                st.metric("Sentiment", f"{sentiment_emoji} {sentiment.title()}")
+            
+            with col3:
+                confidence = daily_summary.get("confidence_score", 0.5)
+                st.metric("Confidence", f"{confidence:.1%}")
+            
+            # Show recommendations
+            recommendations = daily_summary.get("recommendations", [])
+            if recommendations:
+                st.write("**Recommendations:**")
+                for rec in recommendations:
+                    st.write(f"• {rec}")
+        
+        # Quick actions
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("📊 View Detailed Report"):
+                self._show_detailed_daily_report(daily_data)
+        
+        with col2:
+            if st.button("💾 Export Report"):
+                self._export_daily_report(daily_data)
+        
+        with col3:
+            if st.button("🔄 Force Update"):
+                self.daily_scheduler._collect_analysis_results()
+                st.success("Analysis results updated")
+                st.rerun()
+    
+    def _show_detailed_daily_report(self, daily_data: Dict):
+        """Show detailed daily report in expandable section"""
+        with st.expander("📊 Detailed Daily Report", expanded=True):
+            st.json(daily_data)
+    
+    def _export_daily_report(self, daily_data: Dict):
+        """Export daily report as JSON"""
+        import json
+        
+        today = datetime.now().strftime("%Y-%m-%d")
+        filename = f"daily_report_{today}.json"
+        
+        json_data = json.dumps(daily_data, indent=2, default=str)
+        
+        st.download_button(
+            label="💾 Download Report",
+            data=json_data,
+            file_name=filename,
+            mime="application/json"
+        )
         
         with col1:
             self._render_ml_analysis_controls()
