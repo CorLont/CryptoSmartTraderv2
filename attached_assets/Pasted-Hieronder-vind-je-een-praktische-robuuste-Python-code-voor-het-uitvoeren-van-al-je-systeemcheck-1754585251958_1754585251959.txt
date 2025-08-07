@@ -1,0 +1,171 @@
+Hieronder vind je een **praktische, robuuste Python-code** voor het uitvoeren van al je systeemchecks, waarbij **elke check én alle fouten** netjes én overzichtelijk naar een **logbestand** worden geschreven. Deze aanpak is geschikt voor productie:
+
+* Volledige logging naar file én console (met tijdstip, level, duidelijke messages)
+* Elke foutmelding (ook uitzonderingen) wordt met stacktrace gelogd
+* Aan het eind krijg je een korte samenvatting in de logfile én op het scherm
+
+---
+
+## **preinstall\_check.py – met uitgebreide logging**
+
+```python
+import sys
+import os
+import platform
+import psutil
+import shutil
+import socket
+import logging
+import urllib.request
+import datetime
+import traceback
+
+LOGFILE = f"preinstall_check_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+def setup_logging():
+    logger = logging.getLogger("PreinstallCheck")
+    logger.setLevel(logging.INFO)
+    fh = logging.FileHandler(LOGFILE)
+    fh.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    return logger
+
+logger = setup_logging()
+
+def log_and_print(msg, level="info"):
+    getattr(logger, level)(msg)
+
+def check_python_version():
+    log_and_print(f"Python versie: {sys.version}")
+    if sys.version_info < (3, 9):
+        raise RuntimeError("Python 3.9 of hoger vereist")
+
+def check_os():
+    os_type = platform.system()
+    log_and_print(f"Besturingssysteem: {os_type}")
+    if os_type != "Windows":
+        raise RuntimeError("Systeem vereist Windows (of WSL2)")
+
+def check_ram():
+    ram_gb = psutil.virtual_memory().total / 1e9
+    log_and_print(f"RAM: {ram_gb:.1f} GB")
+    if ram_gb < 16:
+        raise RuntimeError("Minimaal 16GB RAM vereist")
+
+def check_cpu():
+    cpus = os.cpu_count()
+    log_and_print(f"CPU cores: {cpus}")
+    if cpus < 8:
+        raise RuntimeError("Minimaal 8 CPU-threads aanbevolen")
+
+def check_gpu():
+    try:
+        import torch
+        cuda = torch.cuda.is_available()
+        log_and_print(f"PyTorch geïnstalleerd, CUDA beschikbaar: {cuda}")
+        if not cuda:
+            raise RuntimeError("CUDA/GPU niet gevonden. Installeer drivers & CUDA Toolkit.")
+    except Exception as e:
+        log_and_print(f"PyTorch of CUDA niet goed geïnstalleerd: {e}", "error")
+        raise
+
+    # Optioneel: gedetailleerde GPU info
+    try:
+        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetName
+        nvmlInit()
+        name = nvmlDeviceGetName(nvmlDeviceGetHandleByIndex(0))
+        log_and_print(f"NVIDIA GPU gevonden: {name.decode()}")
+    except Exception as e:
+        log_and_print(f"NVIDIA GPU niet gevonden of pynvml niet geïnstalleerd: {e}", "warning")
+
+def check_talib():
+    try:
+        import talib
+        log_and_print("TA-Lib geïnstalleerd en import succesvol.")
+    except Exception as e:
+        log_and_print(f"TA-Lib ontbreekt of werkt niet: {e}", "error")
+        raise
+
+def check_redis():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        res = s.connect_ex(('localhost', 6379))
+        if res == 0:
+            log_and_print("Redis draait op poort 6379 (oké voor Celery/queues).")
+        else:
+            raise RuntimeError("Redis draait NIET op poort 6379. Start Redis/Memurai of controleer install.")
+        s.close()
+    except Exception as e:
+        log_and_print(f"Redis check faalt: {e}", "error")
+        raise
+
+def check_cuda_toolkit():
+    import subprocess
+    try:
+        output = subprocess.check_output("nvcc --version", shell=True)
+        log_and_print("CUDA toolkit aanwezig:\n" + output.decode())
+    except Exception as e:
+        log_and_print("CUDA toolkit niet gevonden (nvcc niet in PATH): " + str(e), "warning")
+
+def check_diskspace():
+    total, used, free = shutil.disk_usage(".")
+    gb = free / 1e9
+    log_and_print(f"Vrije schijfruimte: {gb:.1f} GB")
+    if gb < 20:
+        raise RuntimeError("Minder dan 20GB vrije ruimte – kans op problemen")
+
+def check_internet():
+    try:
+        urllib.request.urlopen('https://api.kraken.com', timeout=5)
+        log_and_print("Kraken API bereikbaar (internet oké).")
+    except Exception as e:
+        log_and_print(f"Geen verbinding met Kraken API: {e}", "error")
+        raise
+
+def main():
+    checks = [
+        ("Python versie", check_python_version),
+        ("Besturingssysteem", check_os),
+        ("RAM", check_ram),
+        ("CPU", check_cpu),
+        ("GPU/PyTorch", check_gpu),
+        ("TA-Lib", check_talib),
+        ("Redis", check_redis),
+        ("CUDA Toolkit", check_cuda_toolkit),
+        ("Schijfruimte", check_diskspace),
+        ("Internet", check_internet),
+    ]
+    errors = 0
+    for name, func in checks:
+        try:
+            func()
+            log_and_print(f"Check '{name}' geslaagd.")
+        except Exception as e:
+            errors += 1
+            log_and_print(f"Check '{name}' GEFIETD: {e}\n{traceback.format_exc()}", "error")
+    if errors:
+        log_and_print(f"{errors} fout(en) gevonden! Zie logfile '{LOGFILE}' voor details.", "error")
+    else:
+        log_and_print("Alle systeemchecks succesvol afgerond!", "info")
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+**Resultaat:**
+
+* Elk detail, inclusief errors met stacktrace, wordt in het logbestand opgeslagen (in je map, bv. `preinstall_check_20240807_220203.log`).
+* Je ziet direct op je scherm én later in het log wat er fout ging en wat oké was.
+* Je kunt eenvoudig extra checks toevoegen of logs aanpassen.
+
+---
+
+**Wil je een bijbehorend .bat-script dat dit automatisch start en bij failure direct het log opent? Geef het aan, dan lever ik dat ook!**

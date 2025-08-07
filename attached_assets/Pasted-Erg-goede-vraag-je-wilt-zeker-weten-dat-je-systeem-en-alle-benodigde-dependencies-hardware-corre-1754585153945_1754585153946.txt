@@ -1,0 +1,183 @@
+Erg goede vraag—je wilt zeker weten dat **je systeem en alle benodigde dependencies/hardware** correct zijn ingericht vóór je daadwerkelijk de (grote, zware) codebase downloadt en draait. Hier is een lijst van checks die je script (of een apart pre-installatie-checkscript) automatisch kan uitvoeren, inclusief **Python-voorbeeldcode** per check. Dit voorkomt frustratie en installatiefouten.
+
+---
+
+## **Checklist vóór installatie en runnen CryptoSmartTrader**
+
+### **A. Hardware & Systeemchecks**
+
+1. **Python-versie**
+
+   ```python
+   import sys
+   assert sys.version_info >= (3, 9), "Python 3.9 of hoger vereist"
+   ```
+2. **Besturingssysteem (Windows)**
+
+   ```python
+   import platform
+   assert platform.system() == "Windows", "Systeem vereist Windows (of WSL voor advanced features)"
+   ```
+3. **RAM-check (minimaal 16GB, liefst 32GB)**
+
+   ```python
+   import psutil
+   assert psutil.virtual_memory().total / 1e9 > 16, "Minimaal 16GB RAM vereist"
+   ```
+4. **CPU-check**
+
+   ```python
+   import os
+   assert os.cpu_count() >= 8, "Minimaal 8 CPU-threads aanbevolen"
+   ```
+5. **GPU-detectie en CUDA-support**
+
+   ```python
+   try:
+       import torch
+       assert torch.cuda.is_available(), "CUDA/GPU niet gevonden. Installeer juiste drivers & CUDA Toolkit"
+   except ImportError:
+       print("PyTorch niet gevonden; deep learning en snelle ML werken niet optimaal")
+   ```
+
+   Of, voor meer detail:
+
+   ```python
+   try:
+       from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetName
+       nvmlInit()
+       handle = nvmlDeviceGetHandleByIndex(0)
+       print("GPU gevonden:", nvmlDeviceGetName(handle))
+   except Exception as e:
+       print("Geen NVIDIA GPU gevonden of pynvml niet geïnstalleerd:", e)
+   ```
+
+---
+
+### **B. System tools & Dependencies**
+
+6. **Pip & build tools check**
+
+   ```python
+   import subprocess
+   subprocess.check_call(['pip', '--version'])
+   try:
+       subprocess.check_call(['cl'], shell=True)
+   except:
+       print("Waarschuwing: Visual C++ Build Tools ontbreken of niet in PATH")
+   ```
+7. **TA-Lib binary check**
+
+   ```python
+   try:
+       import talib
+   except ImportError:
+       print("TA-Lib niet gevonden. Installeer TA-Lib binary (.whl) vóór requirements.txt!")
+   ```
+8. **Redis aanwezig (voor Celery/queues)**
+
+   ```python
+   import socket
+   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   result = sock.connect_ex(('localhost',6379))
+   if result != 0:
+       print("Redis draait niet op poort 6379. Start Redis of Memurai voor queues.")
+   sock.close()
+   ```
+
+---
+
+### **C. Overige checks**
+
+9. **CUDA Toolkit versie (voor Torch/TensorFlow)**
+
+   ```python
+   import subprocess
+   try:
+       out = subprocess.check_output("nvcc --version", shell=True)
+       print(out.decode())
+   except:
+       print("CUDA Toolkit niet gevonden; GPU-training werkt niet")
+   ```
+10. **Beschikbare schijfruimte**
+
+```python
+import shutil
+total, used, free = shutil.disk_usage(".")
+assert free / 1e9 > 20, "Minder dan 20GB vrije ruimte – kans op problemen"
+```
+
+11. **Internetverbinding**
+
+```python
+import urllib.request
+try:
+    urllib.request.urlopen('https://api.kraken.com', timeout=5)
+except Exception:
+    print("Kan geen verbinding maken met Kraken API – check internet/firewall")
+```
+
+---
+
+## **Samengevat: wat kan je pre-check script automatisch doen?**
+
+* **Python-versie en OS check**
+* **RAM/CPU/GPU-detectie en CUDA**
+* **Aanwezigheid en werkbaarheid van essentiële binaries (TA-Lib, Redis)**
+* **Build tools**
+* **Internet, schijfruimte, pip**
+* **Toegankelijkheid van essentiële API’s (Kraken, Discord, Twitter, etc)**
+
+---
+
+## **Voorbeeld: alles-in-één preinstall.py**
+
+Hier een minimalistisch scriptje (kan je aanpassen naar eigen situatie):
+
+```python
+def preinstall_checks():
+    import sys, os, platform, psutil, shutil, urllib.request
+    print("Python versie:", sys.version)
+    assert sys.version_info >= (3, 9), "Python 3.9 of hoger vereist"
+    assert platform.system() == "Windows", "Windows vereist"
+    print("RAM:", psutil.virtual_memory().total / 1e9, "GB")
+    assert psutil.virtual_memory().total / 1e9 > 16, "Minimaal 16GB RAM vereist"
+    print("CPU cores:", os.cpu_count())
+    assert os.cpu_count() >= 8, "Minimaal 8 CPU-threads aanbevolen"
+    try:
+        import torch
+        assert torch.cuda.is_available(), "CUDA/GPU niet gevonden!"
+    except:
+        print("Geen GPU gevonden of PyTorch niet geïnstalleerd")
+    try:
+        import talib
+    except:
+        print("TA-Lib niet gevonden. Installeer eerst TA-Lib binary")
+    try:
+        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetName
+        nvmlInit()
+        print("GPU:", nvmlDeviceGetName(nvmlDeviceGetHandleByIndex(0)))
+    except:
+        pass
+    import socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if sock.connect_ex(('localhost',6379)) != 0:
+        print("Redis niet actief op poort 6379")
+    sock.close()
+    total, used, free = shutil.disk_usage(".")
+    print("Vrije schijfruimte:", free / 1e9, "GB")
+    assert free / 1e9 > 20, "Minder dan 20GB vrij"
+    try:
+        urllib.request.urlopen('https://api.kraken.com', timeout=5)
+        print("Kraken API bereikbaar")
+    except:
+        print("Geen verbinding met Kraken API")
+    print("Alle basischecks gedaan.")
+
+if __name__ == "__main__":
+    preinstall_checks()
+```
+
+---
+
+**Wil je een kant-en-klaar script voor je eigen omgeving, of een .bat die Python preinstall.py automatisch uitvoert vóór de setup? Laat maar weten, ik lever hem direct aan.**
