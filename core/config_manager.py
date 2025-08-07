@@ -3,8 +3,10 @@ import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 import threading
+import logging
 from datetime import datetime
 from config.settings import config
+from config.validation import SystemConfiguration, validate_configuration, get_default_configuration
 
 
 class ConfigManager:
@@ -22,72 +24,32 @@ class ConfigManager:
         self._load_config()
     
     def _get_default_config(self) -> Dict[str, Any]:
-        """Get default configuration values"""
-        return {
-            "version": "2.0.0",
-            "created": datetime.now().isoformat(),
-            
-            # Exchange settings
-            "exchanges": ["kraken"],
-            "api_rate_limit": 100,
-            "timeout_seconds": 30,
-            
-            # Agent settings
-            "agents": {
-                "sentiment": {"enabled": True, "update_interval": 300},
-                "technical": {"enabled": True, "update_interval": 60},
-                "ml_predictor": {"enabled": True, "update_interval": 900},
-                "backtest": {"enabled": True, "update_interval": 3600},
-                "trade_executor": {"enabled": True, "update_interval": 120},
-                "whale_detector": {"enabled": True, "update_interval": 180}
-            },
-            
-            # ML settings
-            "prediction_horizons": ["1d", "7d"],
-            "ml_models": ["xgboost", "lightgbm", "sklearn"],
-            "ensemble_weights": {"xgboost": 0.4, "lightgbm": 0.4, "sklearn": 0.2},
-            
-            # Data settings
-            "max_coins": 453,
-            "data_retention_days": 365,
-            "cache_ttl_minutes": 60,
-            
-            # Performance settings
-            "enable_gpu": False,
-            "parallel_workers": 4,
-            "memory_limit_gb": 8,
-            
-            # Monitoring settings
-            "health_check_interval": 5,
-            "alert_threshold": 80,
-            "log_level": "INFO",
-            
-            # API Keys (loaded from environment)
-            "api_keys": {
-                "openai": os.getenv("OPENAI_API_KEY", ""),
-                "anthropic": os.getenv("ANTHROPIC_API_KEY", ""),
-                "kraken": os.getenv("KRAKEN_API_KEY", ""),
-                "binance": os.getenv("BINANCE_API_KEY", ""),
-            }
-        }
+        """Get default configuration values with validation"""
+        return get_default_configuration()
     
     def _load_config(self):
-        """Load configuration from file with fallback to defaults"""
-        try:
-            if self.config_path.exists():
-                with open(self.config_path, 'r') as f:
-                    loaded_config = json.load(f)
-                
-                # Merge with defaults to ensure all keys exist
-                self._config = {**self._default_config, **loaded_config}
-                self._validate_config()
-            else:
+        """Load configuration from file with validation"""
+        with self._lock:
+            try:
+                if self.config_path.exists():
+                    with open(self.config_path, 'r') as f:
+                        loaded_config = json.load(f)
+                    
+                    # Validate configuration
+                    try:
+                        validated_config = validate_configuration(loaded_config)
+                        self._config = validated_config.model_dump()
+                    except Exception as e:
+                        logging.warning(f"Configuration validation failed: {e}, using defaults")
+                        self._config = self._default_config.copy()
+                        self._save_config()
+                else:
+                    self._config = self._default_config.copy()
+                    self._save_config()
+                    
+            except Exception as e:
+                logging.error(f"Error loading configuration: {e}")
                 self._config = self._default_config.copy()
-                self._save_config()
-                
-        except Exception as e:
-            print(f"Error loading config: {e}")
-            self._config = self._default_config.copy()
     
     def _validate_config(self):
         """Validate configuration values"""

@@ -10,6 +10,8 @@ from utils.performance_optimizer import PerformanceOptimizer
 from utils.error_handler import error_handler
 from utils.rate_limiter import rate_limiter
 from utils.system_optimizer import SystemOptimizer
+from utils.orchestrator import SystemOrchestrator
+from config.security import SecurityManager
 from agents.sentiment_agent import SentimentAgent
 from agents.technical_agent import TechnicalAgent
 from agents.ml_predictor_agent import MLPredictorAgent
@@ -48,6 +50,9 @@ class ApplicationContainer(containers.DeclarativeContainer):
         config_manager=config
     )
     
+    # Security management
+    security_manager = providers.Singleton(SecurityManager)
+    
     # Core infrastructure
     cache_manager = providers.Singleton(
         CacheManager,
@@ -57,6 +62,13 @@ class ApplicationContainer(containers.DeclarativeContainer):
     health_monitor = providers.Singleton(
         HealthMonitor,
         config_manager=config
+    )
+    
+    # System orchestrator
+    orchestrator = providers.Singleton(
+        SystemOrchestrator,
+        config_manager=config,
+        health_monitor=health_monitor
     )
     
     # Exchange management
