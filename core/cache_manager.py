@@ -12,7 +12,8 @@ class CacheManager:
     
     def __init__(self, max_memory_mb: int = 1000):
         self.max_memory_mb = max_memory_mb
-        self.cache: Dict[str, Dict] = {}
+        self._cache: Dict[str, Dict] = {}  # Add _cache attribute for compatibility
+        self.cache: Dict[str, Dict] = self._cache  # Keep both for compatibility
         self._lock = threading.Lock()
         self.cleanup_active = True
         
@@ -50,12 +51,12 @@ class CacheManager:
         expired_keys = []
         
         with self._lock:
-            for key, cache_item in self.cache.items():
+            for key, cache_item in self._cache.items():
                 if current_time > cache_item['expires']:
                     expired_keys.append(key)
             
             for key in expired_keys:
-                del self.cache[key]
+                del self._cache[key]
     
     def _enforce_memory_limit(self):
         """Enforce memory limit by removing oldest entries"""
@@ -65,15 +66,15 @@ class CacheManager:
             # Sort by access time, remove oldest
             with self._lock:
                 sorted_items = sorted(
-                    self.cache.items(),
+                    self._cache.items(),
                     key=lambda x: x[1]['last_accessed']
                 )
                 
                 while total_memory > self.max_memory_mb * 0.8 and sorted_items:
                     key, _ = sorted_items.pop(0)
-                    if key in self.cache:
-                        total_memory -= self.cache[key]['memory_mb']
-                        del self.cache[key]
+                    if key in self._cache:
+                        total_memory -= self._cache[key]['memory_mb']
+                        del self._cache[key]
     
     def set(self, key: str, value: Any, ttl_minutes: int = 60):
         """Set cache value with TTL"""
@@ -90,17 +91,17 @@ class CacheManager:
         }
         
         with self._lock:
-            self.cache[key] = cache_item
+            self._cache[key] = cache_item
     
     def get(self, key: str) -> Optional[Any]:
         """Get cache value"""
         with self._lock:
-            if key in self.cache:
-                cache_item = self.cache[key]
+            if key in self._cache:
+                cache_item = self._cache[key]
                 
                 # Check if expired
                 if datetime.now() > cache_item['expires']:
-                    del self.cache[key]
+                    del self._cache[key]
                     return None
                 
                 # Update access info
@@ -114,30 +115,30 @@ class CacheManager:
     def delete(self, key: str) -> bool:
         """Delete cache entry"""
         with self._lock:
-            if key in self.cache:
-                del self.cache[key]
+            if key in self._cache:
+                del self._cache[key]
                 return True
             return False
     
     def clear(self):
         """Clear all cache entries"""
         with self._lock:
-            self.cache.clear()
+            self._cache.clear()
     
     def get_total_memory_usage(self) -> float:
         """Get total memory usage in MB"""
         with self._lock:
-            return sum(item['memory_mb'] for item in self.cache.values())
+            return sum(item['memory_mb'] for item in self._cache.values())
     
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get cache statistics"""
         with self._lock:
-            total_items = len(self.cache)
+            total_items = len(self._cache)
             total_memory = self.get_total_memory_usage()
             
             if total_items > 0:
                 avg_memory = total_memory / total_items
-                total_accesses = sum(item['access_count'] for item in self.cache.values())
+                total_accesses = sum(item['access_count'] for item in self._cache.values())
                 avg_accesses = total_accesses / total_items
             else:
                 avg_memory = 0

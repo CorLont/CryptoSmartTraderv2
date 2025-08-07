@@ -281,6 +281,15 @@ class ProductionMonitoringSystem:
             "normal_error_rate": 0.01
         }
         
+        # Alert thresholds
+        self.alert_thresholds = {
+            "system_health_critical": 0.3,
+            "cpu_usage_critical": 0.8,
+            "memory_usage_critical": 0.8,
+            "error_rate_critical": 0.1,
+            "api_response_time_critical": 10.0
+        }
+        
         # Start Prometheus metrics server
         self._start_metrics_server()
     
@@ -291,7 +300,13 @@ class ProductionMonitoringSystem:
             start_http_server(metrics_port, registry=self.metrics.registry)
             self.logger.info(f"Prometheus metrics server started on port {metrics_port}")
         except Exception as e:
-            self.logger.error(f"Failed to start metrics server: {e}")
+            # Port might be in use, try alternative port
+            try:
+                metrics_port = 8001
+                start_http_server(metrics_port, registry=self.metrics.registry)
+                self.logger.info(f"Prometheus metrics server started on port {metrics_port}")
+            except Exception as e2:
+                self.logger.error(f"Failed to start metrics server on both ports: {e}, {e2}")
     
     def start_monitoring(self):
         """Start production monitoring"""
@@ -408,7 +423,8 @@ class ProductionMonitoringSystem:
                     if datetime.fromisoformat(hour.replace(" ", "T") + ":00") > current_time - timedelta(minutes=5)
                 )
                 
-                if recent_errors > self.alert_thresholds["critical_error_rate"]:
+                critical_threshold = self.alert_thresholds.get("error_rate_critical", 10)
+                if recent_errors > critical_threshold:
                     alert = Alert(
                         name="High Error Rate",
                         severity="critical",

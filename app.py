@@ -86,6 +86,7 @@ def main():
             "🚀 Alpha Opportunities",
             "🎯 Main Dashboard",
             "🌍 Comprehensive Market",
+            "🏥 System Health",
             "🎛️ Analysis Control",
             "🤖 Agent Dashboard", 
             "💼 Portfolio Dashboard",
@@ -110,6 +111,11 @@ def main():
         from dashboards.comprehensive_market_dashboard import ComprehensiveMarketDashboard
         market_dashboard = ComprehensiveMarketDashboard(container)
         market_dashboard.render()
+        
+    elif page == "🏥 System Health":
+        from dashboards.system_health_dashboard import SystemHealthDashboard
+        health_dashboard = SystemHealthDashboard(container)
+        health_dashboard.render()
         
     elif page == "🎛️ Analysis Control":
         analysis_control = AnalysisControlDashboard(container)
