@@ -33,6 +33,9 @@ from core.comprehensive_analyzer import ComprehensiveAnalyzer
 from core.real_time_pipeline import RealTimePipeline
 from core.multi_horizon_ml import MultiHorizonMLSystem
 from core.system_validator import SystemValidator
+from core.advanced_analytics import AdvancedAnalyticsEngine
+from core.explainable_ai import PredictionExplainer
+from core.performance_optimizer import PerformanceOptimizer, PerformanceMonitor
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -146,6 +149,29 @@ class ApplicationContainer(containers.DeclarativeContainer):
     # System validator for health checks
     system_validator = providers.Factory(
         SystemValidator,
+        container=providers.Self
+    )
+    
+    # Advanced analytics engine
+    advanced_analytics = providers.Factory(
+        AdvancedAnalyticsEngine,
+        container=providers.Self
+    )
+    
+    # Explainable AI system
+    prediction_explainer = providers.Factory(
+        PredictionExplainer,
+        container=providers.Self
+    )
+    
+    # Performance monitoring and optimization
+    performance_monitor = providers.Factory(
+        PerformanceMonitor,
+        container=providers.Self
+    )
+    
+    performance_optimizer = providers.Factory(
+        PerformanceOptimizer,
         container=providers.Self
     )
     
