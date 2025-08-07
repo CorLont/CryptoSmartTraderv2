@@ -6,6 +6,10 @@ from core.health_monitor import HealthMonitor
 from utils.exchange_manager import ExchangeManager
 from core.cache_manager import CacheManager
 from config.logging_config import setup_logging
+from utils.performance_optimizer import PerformanceOptimizer
+from utils.error_handler import error_handler
+from utils.rate_limiter import rate_limiter
+from utils.system_optimizer import SystemOptimizer
 from agents.sentiment_agent import SentimentAgent
 from agents.technical_agent import TechnicalAgent
 from agents.ml_predictor_agent import MLPredictorAgent
@@ -29,6 +33,18 @@ class ApplicationContainer(containers.DeclarativeContainer):
     # Logging setup
     logger_setup = providers.Resource(
         setup_logging,
+        config_manager=config
+    )
+    
+    # Performance and error handling
+    performance_optimizer = providers.Singleton(PerformanceOptimizer)
+    
+    error_handler = providers.Object(error_handler)
+    
+    rate_limiter = providers.Object(rate_limiter)
+    
+    system_optimizer = providers.Singleton(
+        SystemOptimizer,
         config_manager=config
     )
     

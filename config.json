@@ -33,18 +33,19 @@
     }
   },
   "prediction_horizons": [
+    "1h",
+    "4h",
     "1d",
-    "7d"
+    "7d",
+    "30d"
   ],
   "ml_models": [
     "xgboost",
-    "lightgbm",
     "sklearn"
   ],
   "ensemble_weights": {
-    "xgboost": 0.4,
-    "lightgbm": 0.4,
-    "sklearn": 0.2
+    "xgboost": 0.6,
+    "sklearn": 0.4
   },
   "max_coins": 453,
   "data_retention_days": 365,

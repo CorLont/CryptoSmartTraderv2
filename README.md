@@ -28,10 +28,17 @@ The system automatically starts when you open this project. Access it at:
 ### Multi-Agent Intelligence System
 - **Sentiment Agent:** Analyzes cryptocurrency news and social media
 - **Technical Agent:** Calculates 50+ technical indicators
-- **ML Predictor:** Machine learning price predictions
+- **ML Predictor:** Machine learning price predictions (1h, 4h, 1d, 7d, 30d)
 - **Backtest Agent:** Historical strategy validation  
 - **Trade Executor:** Risk-managed signal generation
 - **Whale Detector:** Large transaction monitoring
+
+### Advanced Performance Features (Nieuwe Verbeteringen)
+- **Performance Optimizer:** Real-time system monitoring with automatic optimization
+- **Smart Error Handling:** Advanced error recovery with registered strategies  
+- **Rate Limiting:** Intelligent API rate limiting with priority handling
+- **Config Optimization:** Automatic configuration tuning based on performance
+- **System Monitoring:** Complete performance dashboard met Nederlandse interface
 
 ### Professional Architecture
 - **Dependency Injection:** Clean, testable architecture

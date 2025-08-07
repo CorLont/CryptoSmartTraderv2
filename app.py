@@ -13,6 +13,7 @@ from config.settings import config
 from dashboards.main_dashboard import MainDashboard
 from dashboards.agent_dashboard import AgentDashboard  
 from dashboards.portfolio_dashboard import PortfolioDashboard
+from dashboards.performance_dashboard import PerformanceDashboard
 import logging
 
 # Setup logging
@@ -75,6 +76,7 @@ def main():
             "🎯 Main Dashboard",
             "🤖 Agent Dashboard", 
             "💼 Portfolio Dashboard",
+            "🔧 Performance Dashboard",
             "⚙️ System Configuration",
             "📊 Health Monitor"
         ]
@@ -92,6 +94,10 @@ def main():
     elif page == "💼 Portfolio Dashboard":
         portfolio_dashboard = PortfolioDashboard(config_manager, health_monitor)
         portfolio_dashboard.render()
+        
+    elif page == "🔧 Performance Dashboard":
+        performance_dashboard = PerformanceDashboard(container)
+        performance_dashboard.render()
         
     elif page == "⚙️ System Configuration":
         render_config_page(config_manager)
