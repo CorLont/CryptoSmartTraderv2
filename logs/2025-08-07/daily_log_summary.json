@@ -14,8 +14,8 @@
     "security.log"
   ],
   "file_sizes": {
-    "system": 387,
-    "market_scanner": 459,
+    "system": 906,
+    "market_scanner": 207309,
     "ml_predictor": 436,
     "sentiment_agent": 201,
     "whale_detector": 177,
@@ -27,8 +27,8 @@
     "security": 187
   },
   "log_counts": {
-    "system": 3,
-    "market_scanner": 2,
+    "system": 6,
+    "market_scanner": 555,
     "ml_predictor": 2,
     "sentiment_agent": 1,
     "whale_detector": 1,
@@ -39,5 +39,5 @@
     "api_calls": 4,
     "security": 1
   },
-  "generated_at": "2025-08-07T17:35:56.484967"
+  "generated_at": "2025-08-07T17:51:35.695514"
 }
