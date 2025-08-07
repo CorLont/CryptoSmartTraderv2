@@ -39,6 +39,7 @@ Requires-Dist: dependency-injector>=4.41.0
 Requires-Dist: python-json-logger>=2.0.0
 Requires-Dist: hvac>=1.1.0
 Requires-Dist: trafilatura>=2.0.0
+Requires-Dist: setproctitle>=1.3.6
 Provides-Extra: dev
 Requires-Dist: pytest>=7.4.0; extra == "dev"
 Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
