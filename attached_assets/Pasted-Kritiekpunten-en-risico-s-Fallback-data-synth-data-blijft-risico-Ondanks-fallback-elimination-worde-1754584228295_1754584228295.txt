@@ -1,0 +1,52 @@
+Kritiekpunten en risico’s
+Fallback-data/synth-data blijft risico
+
+Ondanks fallback-elimination worden op enkele plekken (bv. sentiment of on-chain scraping errors) nog synthetische data gebruikt. In productie moet ALLES met missing data direct uitgesloten of gelogd/geblokkeerd worden .
+
+Diepte ML/AI nog niet maximaal
+
+LSTM/deep learning is “optioneel” en niet als verplicht, geïntegreerd onderdeel van elke batch/predict-run .
+
+Geen concreet voorbeeld van (a) cross-coin feature fusion, (b) autoML/meta-learning, (c) Bayesian/uncertainty modeling voor betere probability filtering.
+
+Async/background performance
+
+Scraping, ML, feedback, whale, event-tracking zijn beschreven als background/parallel, maar het is niet helder of alles écht asynchroon draait (asyncio/Celery/process pools) of nog deels blocking is.
+
+Bij grote batchs of bij resource contention (veel coins tegelijk) kan dit leiden tot bottlenecks.
+
+Security/secret management ontbreekt
+
+Geen duidelijke integratie van .env, Vault, Pydantic settings, of credential-isolatie. API-sleutels kunnen nog in code/logs lekken.
+
+Geen user management of dashboard security; iedereen met toegang tot het dashboard kan alles zien en bedienen.
+
+Testing/robustheid
+
+Er zijn health-checks en batch tests, maar geen expliciete unittests, mocks, coverage-rapportage, of automatische CI/CD.
+
+Portfolio/risk-management
+
+Sharpe/Kelly/Markowitz en DCA/momentum/backtest scenario’s zijn aanwezig, maar geen zichtbare checks op extreme correlatie, drawdown of illiquiditeit in echte trading (orderboek simulatie/slippage).
+
+Specifiek: ML/AI-pipeline
+Features & Targets:
+Alle datalagen (TA, prijs, volume, sentiment, on-chain) worden samengevoegd per coin en per tijdstap .
+
+Training:
+Modellen per horizon (1H/24H/7D/30D), inclusief ensemble stacking en hyperparameter tuning (Optuna/RayTune) .
+
+Self-learning:
+Performance per coin/horizon wordt per batch gelogd; automatisch retraining bij drift.
+
+Explainability:
+SHAP/LIME importance per voorspelling beschikbaar.
+
+Probability filtering:
+Dashboard toont alleen coins bij ≥80% confidence/probability.
+
+Consensus trading:
+Trade signaal alleen als meerdere horizons tegelijk alignen (extra veiligheid).
+
+Logging:
+Per coin, per horizon, per run worden predictions, confidences, realized outcomes en feedback gelogd in aparte mappen.
