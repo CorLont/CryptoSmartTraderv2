@@ -190,6 +190,12 @@ class ApplicationContainer(containers.DeclarativeContainer):
         container=providers.Self
     )
     
+    # Crypto AI System
+    crypto_ai_system = providers.Factory(
+        lambda container: __import__('core.crypto_ai_system', fromlist=['CryptoAISystem']).CryptoAISystem(container),
+        container=providers.Self(),
+    )
+    
     # GPU accelerator
     gpu_accelerator = providers.Factory(
         GPUAccelerator,

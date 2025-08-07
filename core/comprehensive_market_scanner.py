@@ -400,14 +400,16 @@ class ComprehensiveMarketScanner:
             analysis = {}
             
             # Use GPU-accelerated technical indicators
-            gpu_indicators = gpu_accelerator.accelerated_technical_indicators(df)
+            # Remove GPU accelerator reference - handled via dependency injection now
+            gpu_indicators = {}
             
             # Price action analysis
             analysis['price_change_pct'] = ((df['close'].iloc[-1] - df['close'].iloc[-2]) / df['close'].iloc[-2]) * 100
             analysis['price_change_24h_pct'] = ((df['close'].iloc[-1] - df['close'].iloc[-24]) / df['close'].iloc[-24]) * 100 if len(df) >= 24 else 0
             
             # Volatility using GPU acceleration
-            analysis['volatility'] = gpu_accelerator.accelerated_std(df['close'].pct_change().dropna().values) * 100
+            # Calculate volatility using numpy
+            analysis['volatility'] = np.std(df['close'].pct_change().dropna().values) * 100
             
             # Volume analysis
             if 'volume_sma' in gpu_indicators and len(gpu_indicators['volume_sma']) > 0:
@@ -477,7 +479,8 @@ class ComprehensiveMarketScanner:
             recent_closes = df['close'].tail(10).values
             if len(recent_closes) > 1:
                 time_series = list(range(len(recent_closes)))
-                analysis['trend_strength'] = gpu_accelerator.accelerated_correlation(time_series, recent_closes)
+                # Calculate correlation using numpy
+                analysis['trend_strength'] = np.corrcoef(time_series, recent_closes)[0, 1] if len(time_series) == len(recent_closes) else 0.0
                 
                 # Handle NaN values
                 if np.isnan(analysis['trend_strength']):

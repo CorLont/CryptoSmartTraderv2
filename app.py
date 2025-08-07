@@ -88,6 +88,7 @@ def main():
             "🌍 Comprehensive Market",
             "🧠 Advanced Analytics",
             "🤖 AI/ML Engine",
+            "🧠 Crypto AI System",
             "🏥 System Health",
             "🎛️ Analysis Control",
             "🔧 Agent Dashboard", 
@@ -123,6 +124,11 @@ def main():
         from dashboards.ai_ml_dashboard import AIMLDashboard
         ai_ml_dashboard = AIMLDashboard(container)
         ai_ml_dashboard.render()
+        
+    elif page == "🧠 Crypto AI System":
+        from dashboards.crypto_ai_system_dashboard import CryptoAISystemDashboard
+        crypto_ai_dashboard = CryptoAISystemDashboard(container)
+        crypto_ai_dashboard.render()
         
     elif page == "🏥 System Health":
         from dashboards.system_health_dashboard import SystemHealthDashboard
