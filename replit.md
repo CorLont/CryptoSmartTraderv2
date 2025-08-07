@@ -1,82 +1,23 @@
 # Replit.md
 
 ## Overview
-CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. The system analyzes over 1457+ cryptocurrencies using a coordinated ensemble of specialized AI agents that operate in parallel. The platform provides real-time market analysis, mandatory deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting capabilities, and automated trade execution with comprehensive risk management.
+CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies using a coordinated ensemble of specialized AI agents, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions with OpenAI intelligence, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies.
 
-The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions with OpenAI intelligence. It includes confidence scoring and continuous learning, providing comprehensive analysis for perfect detection of fast-growing cryptocurrencies. It targets 500%+ returns within 6 months.
-
-**CRITICAL PRODUCTION FEATURES (August 2025):**
-- **Zero Synthetic Data Tolerance:** Complete elimination of fallback/synthetic data with strict validation ✅ OPERATIONAL
-- **Mandatory Deep Learning:** LSTM/Transformer/N-BEATS models required for every prediction with ensemble uncertainty ✅ OPERATIONAL  
-- **Cross-Coin Feature Fusion:** Advanced correlation analysis and multi-coin alpha detection ✅ OPERATIONAL
-- **True Async Processing:** 100+ concurrent tasks with zero blocking operations ✅ OPERATIONAL
-- **Enterprise Security:** Complete credential isolation with Vault integration and audit logging ✅ OPERATIONAL
-- **Bayesian Uncertainty:** Gaussian Process uncertainty quantification with ≥80% confidence filtering ✅ OPERATIONAL
-- **Daily Logging System:** Organized logs by date with 8 specialized log types for comprehensive monitoring ✅ OPERATIONAL
-- **Fully Dynamic Coin Discovery:** 100% dynamic cryptocurrency discovery via exchange APIs - ZERO hardcoded coins or data ✅ OPERATIONAL
-
-**ENHANCED AGENT CAPABILITIES (August 2025):**
-- **Enhanced Sentiment Agent:** Anti-bot detection, rate limiting, confidence scoring, entity disambiguation ✅ IMPLEMENTED
-- **Enhanced Technical Agent:** Regime detection, parallel processing, dynamic indicator selection, compute optimization ✅ IMPLEMENTED
-- **Enhanced Whale Agent:** Async pipeline, address labeling, event detection, false positive filtering ✅ IMPLEMENTED
-- **Enhanced ML Agent:** Mandatory ensemble deep learning, uncertainty quantification, drift detection, explainability ✅ IMPLEMENTED
-- **Enhanced Backtest Agent:** Realistic slippage modeling, smart order routing, stress testing, API failure simulation ✅ IMPLEMENTED
-- **Enhanced Orchestrator:** Self-healing agents, resource monitoring, failover mechanisms, graceful shutdown ✅ IMPLEMENTED
-
-**NEXT-LEVEL AI/ML THEORETICAL ADVANCES (August 2025):**
-- **Advanced AI Engine:** Automated feature engineering, meta-learning, causal inference, adversarial robustness ✅ IMPLEMENTED
-- **Shadow Trading Engine:** Live validation, out-of-sample testing, paper trading, performance monitoring ✅ IMPLEMENTED
-- **Market Impact Engine:** Smart execution, transaction cost analysis, order slicing, liquidity optimization ✅ IMPLEMENTED
-
-**ADDITIONAL CRITICAL ENHANCEMENTS (August 2025):**
-- **Multi-Agent Cooperation Engine:** Advanced argumentation, voting systems, AI game theory ✅ IMPLEMENTED
-- **Model Monitoring Engine:** Automated drift detection, auto-healing, performance tracking ✅ IMPLEMENTED
-- **Black Swan Simulation Engine:** Stress testing, extreme scenario modeling, robustness validation ✅ IMPLEMENTED
-
-**ML/AI DIFFERENTIATORS - NEXT-LEVEL CAPABILITIES (August 2025):**
-- **Deep Learning Time Series:** LSTM/Transformer/N-BEATS models with uncertainty quantification ✅ IMPLEMENTED
-- **Multi-Modal Feature Fusion:** Advanced attention mechanisms across price/sentiment/whale/news data ✅ IMPLEMENTED
-- **Confidence Filtering:** Only high-conviction signals (≥80% confidence) with uncertainty modeling ✅ IMPLEMENTED
-- **Self-Learning Loop:** Continuous feedback, concept drift detection, automatic retraining ✅ IMPLEMENTED
-- **SHAP Explainability:** Per-trade explanations showing why AI chose specific coins ✅ IMPLEMENTED
-- **Anomaly Detection:** Market regime shifts, outlier detection, black swan early warning ✅ IMPLEMENTED
-- **AI News Mining:** LLM-powered event detection from news/social/GitHub with impact prediction ✅ IMPLEMENTED
-- **AI Portfolio Optimization:** ML-driven allocation with risk optimization and rebalancing automation ✅ IMPLEMENTED
-
-**ADDITIONAL CRITICAL ENHANCEMENTS (August 2025):**
-- **Order Book Data Integration:** Real-time liquidity analysis, spoofing detection, market depth calculation ✅ IMPLEMENTED
-- **CI/CD Pipeline:** Automated testing, performance benchmarks, security scans, deployment automation ✅ IMPLEMENTED
-- **Comprehensive Test Suite:** Unit tests, integration tests, resource mocks, performance validation ✅ IMPLEMENTED
-
-**PRODUCTION ROBUSTNESS IMPROVEMENTS (August 2025):**
-- **Enterprise Security Manager:** Complete credential isolation with Vault integration and audit logging ✅ IMPLEMENTED
-- **Async Coordination Manager:** True async processing with 100+ concurrent tasks and zero blocking operations ✅ IMPLEMENTED
-- **Exception Handler:** Consistent exception handling with escalation to alerts and health score impact ✅ IMPLEMENTED
-- **Fallback Data Eliminator:** Complete elimination of fallback/synthetic data with strict validation ✅ IMPLEMENTED
-- **Comprehensive Testing:** Unit tests, integration tests, performance validation, and CI/CD automation ✅ IMPLEMENTED
-- **Complete Audit Trail:** Full traceability with logging per run/module/coin/horizon ✅ IMPLEMENTED
-
-**ADVANCED ML/AI CAPABILITIES IMPLEMENTED (August 2025):**
-- **Feature Fusion Engine:** Real cross-feature interactions with attention mechanisms and multi-modal fusion ✅ IMPLEMENTED
-- **Market Regime Detector:** Advanced volatility classification with auto-model switching per market phase ✅ IMPLEMENTED  
-- **Order Book Analyzer:** Real-time liquidity analysis, spoofing detection, and market depth calculation ✅ IMPLEMENTED
-- **Production Monitoring Dashboard:** Deep performance monitoring per module/agent with real-time metrics ✅ IMPLEMENTED
-- **Shadow Testing Engine:** Live model validation with paper trading before live deployment ✅ IMPLEMENTED
-
-**DEEP LEARNING & SEQUENCE MODELING AS CORE (August 2025):**
-- **Deep Learning Engine:** LSTM, GRU, Transformer, N-BEATS as standard components for complex non-linear pattern detection ✅ IMPLEMENTED
-- **Multimodal Data Processor:** Text, time series, and graph feature processing for deep neural networks ✅ IMPLEMENTED
-- **Advanced Sequence Models:** Bidirectional LSTM with attention, Transformer encoders with positional encoding ✅ IMPLEMENTED
-- **Multimodal Fusion:** Cross-modal attention mechanisms combining sentiment, price, whale, and regime data ✅ IMPLEMENTED
-- **Neural Architecture:** Self-attention, residual connections, layer normalization for enterprise-grade deep learning ✅ IMPLEMENTED
-
-**DISTRIBUTED ORCHESTRATOR IMPLEMENTATION (August 2025):**
-- **Distributed Agent Architecture:** Eliminates single point of failure with process isolation ✅ IMPLEMENTED
-- **Hardware Optimization:** Optimized for 8+ CPU cores with intelligent thread allocation per agent ✅ IMPLEMENTED
-- **Resource Monitoring:** Per-agent CPU/memory monitoring with automatic throttling and restart ✅ IMPLEMENTED
-- **Centralized Monitoring:** Prometheus-style metrics, real-time dashboards, alert management ✅ IMPLEMENTED
-- **Message Bus System:** Async inter-agent communication with queue management ✅ IMPLEMENTED
-- **Circuit Breaker Pattern:** Fault tolerance with automatic failover and self-healing ✅ IMPLEMENTED
+The system emphasizes:
+- Zero synthetic data tolerance and mandatory deep learning (LSTM/Transformer/N-BEATS models).
+- Cross-coin feature fusion and true async processing for high concurrency.
+- Enterprise security, Bayesian uncertainty quantification, and dynamic coin discovery.
+- Enhanced capabilities across sentiment, technical, whale, ML, and backtest agents, as well as the orchestrator.
+- Advanced AI/ML features like automated feature engineering, meta-learning, causal inference, and shadow trading.
+- Multi-agent cooperation, model monitoring, and black swan simulation.
+- Deep learning time series, multi-modal feature fusion, confidence filtering, and self-learning loops.
+- SHAP explainability, anomaly detection, AI news mining, and AI portfolio optimization.
+- Real-time order book data integration, CI/CD pipeline, and comprehensive testing.
+- Robustness features including an Enterprise Security Manager, Async Coordination Manager, and comprehensive audit trails.
+- Advanced ML/AI features like Feature Fusion Engine, Market Regime Detector, and Shadow Testing Engine.
+- Core deep learning with LSTM, GRU, Transformer, and N-BEATS models, alongside multimodal data processing.
+- Uncertainty modeling with Bayesian neural networks and quantile regression for probabilistic outputs.
+- A distributed orchestrator for high availability and resource optimization.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -84,92 +25,73 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Core Architecture Pattern
-The system employs a multi-agent coordination architecture with six specialized AI agents operating in parallel:
-- **Sentiment Analysis Agent:** Processes social media and news sentiment.
-- **Technical Analysis Agent:** Calculates 50+ technical indicators.
-- **ML Predictor Agent:** Utilizes ensemble machine learning models for price forecasting across multiple horizons (1h to 30d).
-- **Backtest Agent:** Validates trading strategies against historical data.
-- **Trade Executor Agent:** Generates trading signals and manages risk.
-- **Whale Detector Agent:** Monitors large transactions and unusual trading activities.
+The system employs a multi-agent coordination architecture with six specialized AI agents operating in parallel: Sentiment Analysis, Technical Analysis, ML Predictor, Backtest, Trade Executor, and Whale Detector.
 
 ### Technology Stack
-- **Frontend:** Streamlit for web-based dashboards.
+- **Frontend:** Streamlit.
 - **Backend:** Python with multi-threaded agent coordination.
-- **Machine Learning:** Deep learning as core with LSTM, GRU, Transformer, N-BEATS models. PyTorch for neural networks, scikit-learn for preprocessing, XGBoost for ensemble methods. AutoML engine with Optuna.
-- **Data Processing:** pandas, numpy, CuPy for GPU acceleration, Numba for JIT compilation.
-- **Exchange Integration:** CCXT library for multi-exchange connectivity.
-- **Visualization:** Plotly for interactive charts.
-- **Storage:** Local file system with JSON/CSV exports and intelligent caching.
+- **Machine Learning:** PyTorch for deep learning (LSTM, GRU, Transformer, N-BEATS), scikit-learn, XGBoost, Optuna for AutoML.
+- **Data Processing:** pandas, numpy, CuPy, Numba.
+- **Exchange Integration:** CCXT.
+- **Visualization:** Plotly.
+- **Storage:** Local file system with JSON/CSV and caching.
 
 ### Key Architectural Decisions
-- **Universal Configuration Management:** Centralized system with automatic validation, backup/rollback, and default values.
-- **Intelligent Cache Manager:** Memory-aware caching with TTL, automatic cleanup, and type-specific optimization.
-- **Health Monitoring System:** Continuous health checks with A-F grading and real-time alerts.
-- **Multi-Exchange Architecture:** CCXT-based abstraction layer with rate limiting, health monitoring, and failover.
-- **Real-time Data Pipeline:** Parallel processing with global API rate limiting, timeout protection, and intelligent retry logic. Strict data validation: no dummy data allowed.
-- **GPU Optimization:** Automatic GPU/CPU detection with dynamic load monitoring and adaptive parameter tuning.
-- **Enterprise Logging:** Structured logging with file rotation, multiple channels, and configurable levels.
-- **Thread-Safe Design:** All components use threading locks for concurrent access.
-- **Daily Analysis Coordination:** Automated scheduler integrating continuous ML analysis and social scraping with scheduled daily reporting and export capabilities.
-- **Dependency Injection Architecture:** Centralized dependency management using `dependency-injector` library for explicit and testable design.
-- **Enhanced Configuration Management:** Pydantic settings for type-safe configuration with environment variable support and secret management.
-- **Async I/O & Resilience:** Asynchronous HTTP client with exponential backoff retry logic and comprehensive error handling.
-- **Input Validation & Security:** Pydantic models for strict input validation, sanitization, and structured error responses.
-- **Monitoring & Observability:** Prometheus metrics, structured JSON logging, comprehensive health checks, and OpenAPI documentation.
-- **Multi-Horizon ML System:** Training and inference on 1H, 24H, 7D, and 30D time horizons with comprehensive feature engineering, ensemble modeling, confidence scoring, and self-learning.
+- **Universal Configuration Management:** Centralized with validation and backup.
+- **Intelligent Cache Manager:** Memory-aware caching with TTL and cleanup.
+- **Health Monitoring System:** Continuous checks with alerts.
+- **Multi-Exchange Architecture:** CCXT-based abstraction with rate limiting and failover.
+- **Real-time Data Pipeline:** Parallel processing with rate limiting, timeouts, and strict validation.
+- **GPU Optimization:** Automatic GPU/CPU detection and adaptive tuning.
+- **Enterprise Logging:** Structured logging with file rotation.
+- **Thread-Safe Design:** All components use threading locks.
+- **Daily Analysis Coordination:** Automated scheduling for ML analysis and social scraping.
+- **Dependency Injection:** Using `dependency-injector` for explicit and testable design.
+- **Enhanced Configuration Management:** Pydantic settings with environment variable support.
+- **Async I/O & Resilience:** Asynchronous HTTP with exponential backoff and error handling.
+- **Input Validation & Security:** Pydantic models for strict validation.
+- **Monitoring & Observability:** Prometheus metrics, structured JSON logging, OpenAPI documentation.
+- **Multi-Horizon ML System:** Training and inference across 1H, 24H, 7D, and 30D horizons with feature engineering, ensemble modeling, and self-learning.
 
 ### Dashboard Architecture
-Five specialized Streamlit dashboards provide comprehensive views:
-- **Main Dashboard:** System overview, market analysis, and agent performance monitoring.
-- **Comprehensive Market Dashboard:** Full cryptocurrency coverage with dynamic discovery.
-- **Analysis Control Dashboard:** Daily analysis coordination and controls.
-- **Agent Dashboard:** Individual agent monitoring and performance analytics.
-- **Portfolio Dashboard:** Portfolio management, risk metrics, and trade history.
-- **Production Monitoring Dashboard:** Enterprise-grade monitoring with real-time metrics, alerts, and health tracking.
-- **Crypto AI System Dashboard:** Checklist implementation management for full AI system coordination.
+Five specialized Streamlit dashboards: Main, Comprehensive Market, Analysis Control, Agent, Portfolio, Production Monitoring, and Crypto AI System.
 
 ### Data Management
-- **Centralized Data Manager:** Coordinates data collection from multiple exchanges with automatic freshness monitoring.
-- **Coin Registry:** Dynamic cryptocurrency discovery and management system.
-- **ML Model Manager:** Handles model training, ensemble management, and performance tracking across multiple prediction horizons.
+- **Centralized Data Manager:** Coordinates data collection from exchanges.
+- **Coin Registry:** Dynamic cryptocurrency discovery.
+- **ML Model Manager:** Handles model training and ensemble management.
 
 ## External Dependencies
 
 ### Core Python Libraries
-- **streamlit:** Web application framework
-- **pandas:** Data manipulation and analysis
-- **numpy:** Numerical computing
-- **plotly:** Interactive visualization
-- **threading:** Multi-threaded agent coordination
-- **pathlib:** File system operations
-- **psutil:** System resource monitoring
+- **streamlit**
+- **pandas**, **numpy**
+- **plotly**
+- **threading**, **pathlib**, **psutil**
 
 ### Machine Learning Stack
-- **scikit-learn:** Machine learning algorithms and preprocessing
-- **xgboost:** Gradient boosting framework
-- **lightgbm:** Gradient boosting framework
-- **numba:** JIT compilation for performance optimization
+- **scikit-learn**
+- **xgboost**, **lightgbm**
+- **numba**
 
 ### Trading and Market Data
-- **ccxt:** Multi-exchange trading library for API connectivity
-- **textblob:** Natural language processing for sentiment analysis
+- **ccxt**
+- **textblob**
 
 ### Optional Performance Libraries
-- **cupy:** GPU-accelerated computing (optional)
-- **openai:** Advanced sentiment analysis (optional, requires API key)
+- **cupy**
+- **openai**
 
 ### System Utilities
-- **logging:** Comprehensive logging system
-- **json:** Configuration and data serialization
-- **pickle:** Model serialization and caching
-- **smtplib:** Email alerts and notifications
-- **Pydantic:** Type-safe configuration and data validation
-- **dependency-injector:** Dependency injection framework
-- **FastAPI:** High-performance async API server
+- **logging**, **json**, **pickle**
+- **smtplib**
+- **Pydantic**
+- **dependency-injector**
+- **FastAPI**
 
 ### External Services
-- **OpenAI API:** Advanced sentiment analysis (optional)
-- **Cryptocurrency Exchanges:** Live market data via CCXT (Kraken, Binance, KuCoin, Huobi)
-- **Email SMTP:** Alert notifications system
-- **HashiCorp Vault:** Secure secret management (optional)
-- **Prometheus:** Metrics collection and monitoring
+- **OpenAI API**
+- **Cryptocurrency Exchanges:** Kraken, Binance, KuCoin, Huobi (via CCXT)
+- **Email SMTP**
+- **HashiCorp Vault**
+- **Prometheus**
