@@ -15,6 +15,8 @@ CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intel
 
 **Alpha Seeking System (August 2025):** Implemented sophisticated alpha-seeking system targeting 500%+ returns within 6 months. Features comprehensive multi-factor analysis combining technical indicators, sentiment analysis, whale detection, and ML predictions with OpenAI intelligence. System includes confidence scoring (80%+ threshold), prediction accuracy tracking, and continuous learning from historical performance. All analysis runs automatically in background with real-time opportunity detection.
 
+**Strict Real-Time Pipeline (August 2025):** Implemented zero-tolerance real-time pipeline with complete data validation. NO dummy data allowed - all price, sentiment, and whale data must be validated and authentic. Only coins with 80%+ confidence AND 100%+ expected 30-day return are shown. Pipeline runs continuous background tasks for coin discovery, data collection, sentiment scraping, whale detection, and ML batch inference with strict quality controls.
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 

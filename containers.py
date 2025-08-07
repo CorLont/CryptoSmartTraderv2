@@ -30,6 +30,7 @@ from core.comprehensive_market_scanner import ComprehensiveMarketScanner
 from core.gpu_accelerator import gpu_accelerator
 from core.alpha_seeker import AlphaSeeker
 from core.comprehensive_analyzer import ComprehensiveAnalyzer
+from core.real_time_pipeline import RealTimePipeline
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -125,6 +126,12 @@ class ApplicationContainer(containers.DeclarativeContainer):
     # Comprehensive analyzer for coordinated analysis
     comprehensive_analyzer = providers.Factory(
         ComprehensiveAnalyzer,
+        container=providers.Self
+    )
+    
+    # Real-time pipeline for strict alpha seeking
+    real_time_pipeline = providers.Factory(
+        RealTimePipeline,
         container=providers.Self
     )
     

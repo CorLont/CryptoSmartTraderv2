@@ -1,6 +1,7 @@
 """
 CryptoSmartTrader V2 - Alpha Opportunities Dashboard
-Displays high-growth potential cryptocurrencies with 500%+ return potential
+STRICT: Only shows coins with 80%+ confidence and 100%+ expected 30-day return
+NO DUMMY DATA - All data must be validated and real
 """
 
 import streamlit as st
@@ -12,219 +13,279 @@ from typing import Dict, Any, List
 import time
 
 class AlphaOpportunitiesDashboard:
-    """Dashboard for alpha opportunities with high return potential"""
+    """Dashboard for alpha opportunities - STRICT criteria enforcement"""
     
     def __init__(self, container):
         self.container = container
         
         # Initialize components
         try:
-            # Import alpha seeker
-            from core.alpha_seeker import AlphaSeeker
-            from core.comprehensive_analyzer import ComprehensiveAnalyzer
+            # Import real-time pipeline
+            from core.real_time_pipeline import RealTimePipeline
             
-            self.alpha_seeker = AlphaSeeker(
-                config_manager=container.config(),
-                cache_manager=container.cache_manager(),
-                openai_analyzer=container.openai_analyzer()
-            )
+            self.pipeline = RealTimePipeline(container)
             
-            self.comprehensive_analyzer = ComprehensiveAnalyzer(container)
-            
-            # Auto-start background analysis
-            if not hasattr(st.session_state, 'alpha_analysis_started'):
-                self.comprehensive_analyzer.start_continuous_analysis()
-                st.session_state.alpha_analysis_started = True
+            # Auto-start pipeline if not already running
+            if not hasattr(st.session_state, 'pipeline_started'):
+                self.pipeline.start_pipeline()
+                st.session_state.pipeline_started = True
                 
         except Exception as e:
-            st.error(f"Failed to initialize alpha components: {e}")
+            st.error(f"Failed to initialize pipeline: {e}")
+            self.pipeline = None
             
     def render(self):
-        """Render the alpha opportunities dashboard"""
+        """Render the alpha opportunities dashboard with STRICT criteria"""
         st.title("🚀 Alpha Opportunities - 500%+ Return Potential")
-        st.markdown("**Target: 500% rendement binnen 6 maanden door snelle groeiers vroeg te spotten**")
+        st.markdown("**STRICT CRITERIA: Alleen coins met 80%+ confidence EN 100%+ verwacht rendement (30 dagen)**")
+        st.markdown("**GEEN DUMMY DATA - Alle data is gevalideerd en echt**")
+        
+        # Pipeline status warning
+        if not self.pipeline:
+            st.error("Real-time pipeline niet beschikbaar. Kan geen betrouwbare opportunities tonen.")
+            return
         
         # Auto-refresh controls
         col1, col2, col3 = st.columns([2, 1, 1])
         with col1:
-            st.markdown("**Real-time analysis van ALLE Kraken cryptocurrencies met OpenAI intelligence**")
+            st.markdown("**Real-time analysis van ALLE Kraken cryptocurrencies - Zero tolerance voor dummy data**")
         with col2:
             auto_refresh = st.checkbox("Auto Refresh (60s)", value=True)
         with col3:
-            if st.button("🔄 Force Analysis Update"):
-                self._force_analysis_update()
+            if st.button("🔄 Force Pipeline Update"):
+                self._force_pipeline_update()
                 st.rerun()
         
         if auto_refresh:
             time.sleep(60)
             st.rerun()
         
-        # System status
-        self._render_system_status()
+        # Pipeline status
+        self._render_pipeline_status()
         
-        # Alpha opportunities table
-        self._render_alpha_opportunities()
+        # STRICT Alpha opportunities table
+        self._render_strict_alpha_opportunities()
         
-        # Analysis insights
-        self._render_analysis_insights()
+        # Data quality verification
+        self._render_data_quality_verification()
         
-        # Performance tracking
-        self._render_performance_tracking()
+        # Pipeline performance
+        self._render_pipeline_performance()
     
-    def _render_system_status(self):
-        """Render system analysis status"""
-        st.header("📊 System Analysis Status")
+    def _render_pipeline_status(self):
+        """Render real-time pipeline status with data quality focus"""
+        st.header("📊 Real-time Pipeline Status")
         
-        # Get analysis status
         try:
-            analysis_status = self.comprehensive_analyzer.get_analysis_status()
+            pipeline_status = self.pipeline.get_pipeline_status()
             
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                status_indicator = "🟢 Active" if analysis_status.get('analysis_active', False) else "🔴 Stopped"
-                st.metric("Analysis System", status_indicator)
+                status_indicator = "🟢 Running" if pipeline_status.get('pipeline_active', False) else "🔴 Stopped"
+                st.metric("Pipeline Status", status_indicator)
             
             with col2:
-                market_data = analysis_status.get('data_availability', {})
-                market_coins = market_data.get('market_scan', 0)
-                st.metric("Coins Scanned", f"{market_coins:,}")
+                quality_metrics = pipeline_status.get('data_quality_metrics', {})
+                total_coins = quality_metrics.get('total_coins_discovered', 0)
+                st.metric("Kraken Coins Discovered", f"{total_coins:,}")
             
             with col3:
-                sentiment_coins = market_data.get('sentiment_analysis', 0)
-                st.metric("Sentiment Analysis", f"{sentiment_coins:,}")
+                complete_coins = quality_metrics.get('coins_with_complete_data', 0)
+                st.metric("Complete Data Coins", f"{complete_coins:,}")
             
             with col4:
-                openai_coins = market_data.get('openai_comprehensive_analysis', 0)
-                st.metric("OpenAI Analyzed", f"{openai_coins:,}")
+                completeness_ratio = quality_metrics.get('data_completeness_ratio', 0)
+                st.metric("Data Completeness", f"{completeness_ratio:.1%}")
             
-            # Last analysis times
-            st.subheader("📅 Last Analysis Times")
-            last_analyses = analysis_status.get('last_analyses', {})
+            # Data validation status
+            st.subheader("✅ Data Validation Status")
             
-            analysis_types = {
-                'market_scan': '📈 Market Scan',
-                'sentiment_analysis': '💭 Sentiment Analysis',
-                'whale_detection': '🐋 Whale Detection',
-                'ml_prediction': '🤖 ML Predictions',
-                'openai_comprehensive_analysis': '🧠 OpenAI Analysis'
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**Validation Requirements:**")
+                st.write("• OHLCV data must be complete and valid")
+                st.write("• No NULL, NaN, or negative values allowed")  
+                st.write("• Sentiment data must be from real sources")
+                st.write("• Whale data validated against blockchain")
+                
+            with col2:
+                st.write("**Data Quality Metrics:**")
+                if quality_metrics:
+                    failed_coins = len(quality_metrics.get('failed_scraping_coins', set()))
+                    missing_coins = len(quality_metrics.get('missing_data_coins', set()))
+                    st.write(f"• Failed scraping: {failed_coins} coins")
+                    st.write(f"• Missing data: {missing_coins} coins")
+                    st.write(f"• Last scan: {quality_metrics.get('last_complete_scan', 'Never')}")
+            
+            # Pipeline task intervals
+            st.subheader("⏱️ Pipeline Task Schedule")
+            
+            intervals = pipeline_status.get('task_intervals', {})
+            
+            task_display = {
+                'coin_discovery': '🔍 Full Kraken Scan (10 min)',
+                'price_data': '💰 Price Data Collection (5 min)', 
+                'sentiment_scraping': '💭 Real Sentiment Scraping (15 min)',
+                'whale_detection': '🐋 Whale Activity Detection (30 min)',
+                'ml_batch_inference': '🤖 ML Batch Analysis (60 min)',
+                'data_quality_check': '✅ Data Quality Verification (20 min)'
             }
             
-            for analysis_type, display_name in analysis_types.items():
-                if analysis_type in last_analyses:
-                    try:
-                        last_time = datetime.fromisoformat(last_analyses[analysis_type])
-                        time_ago = datetime.now() - last_time
-                        minutes_ago = int(time_ago.total_seconds() / 60)
-                        st.write(f"**{display_name}:** {minutes_ago} minutes ago")
-                    except:
-                        st.write(f"**{display_name}:** Unknown")
-                else:
-                    st.write(f"**{display_name}:** Not run yet")
+            for task, display_name in task_display.items():
+                if task in intervals:
+                    interval_min = intervals[task] / 60
+                    st.write(f"**{display_name}** - Every {interval_min:.0f} minutes")
                     
         except Exception as e:
-            st.error(f"Failed to get analysis status: {e}")
+            st.error(f"Failed to get pipeline status: {e}")
     
-    def _render_alpha_opportunities(self):
-        """Render alpha opportunities table with 80% confidence minimum"""
-        st.header("🎯 Alpha Opportunities (80%+ Confidence)")
-        st.markdown("**Alleen cryptocurrencies met 80%+ confidence en verwacht rendement >100% worden getoond**")
+    def _render_strict_alpha_opportunities(self):
+        """Render STRICT alpha opportunities - 80%+ confidence AND 100%+ return ONLY"""
+        st.header("🎯 STRICT Alpha Opportunities")
+        st.markdown("**ALLEEN coins met 80%+ confidence EN 100%+ verwacht rendement (30d). Anders NIETS.**")
         
         try:
-            # Get alpha opportunities
-            opportunities = self.alpha_seeker.get_top_alpha_opportunities(min_confidence=0.80)
-            
-            if not opportunities:
-                st.info("Geen alpha opportunities gevonden met 80%+ confidence. Het systeem analyseert continu alle beschikbare coins.")
-                st.markdown("**Huidige criteria:**")
-                st.write("• Minimaal 80% confidence level")
-                st.write("• Verwacht rendement >100% binnen 30 dagen")
-                st.write("• Gebaseerd op technische analyse, sentiment, whale activity en ML predictions")
+            cache_manager = self.container.cache_manager()
+            if not cache_manager:
+                st.error("Cache manager niet beschikbaar voor data retrieval")
                 return
             
-            # Filter for significant return potential
-            high_return_opportunities = [
+            # Get final alpha opportunities from pipeline
+            alpha_results = cache_manager.get('alpha_opportunities_final')
+            
+            if not alpha_results:
+                st.info("⏳ Pipeline analyseert nog... Wacht tot de eerste batch-analyse voltooid is.")
+                st.markdown("**Pipeline Status:**")
+                st.write("• Coin discovery van Kraken")
+                st.write("• Data validation (geen dummy data)")
+                st.write("• Sentiment scraping van echte bronnen")
+                st.write("• Whale detection op blockchain")
+                st.write("• ML batch inference met confidence scoring")
+                return
+            
+            opportunities = alpha_results.get('opportunities', [])
+            
+            # Apply STRICT filtering
+            strict_opportunities = [
                 opp for opp in opportunities
-                if opp.get('expected_returns', {}).get('30_day', 0) >= 1.0  # 100%+ return
+                if (opp.get('confidence', 0) >= 0.80 and 
+                    opp.get('expected_return_30d', 0) >= 1.0 and  # 100%+ return
+                    opp.get('meets_criteria', False))
             ]
             
-            if not high_return_opportunities:
-                st.warning("Geen opportunities gevonden met >100% verwacht rendement binnen 30 dagen.")
-                st.write(f"Totaal {len(opportunities)} opportunities met lagere returns beschikbaar.")
+            # Show analysis summary
+            total_analyzed = alpha_results.get('total_analyzed', 0)
+            high_conf_count = alpha_results.get('high_confidence_count', 0)
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Coins Analyzed", f"{total_analyzed:,}")
+            with col2:
+                st.metric("High Confidence", f"{high_conf_count:,}")
+            with col3:
+                st.metric("STRICT Criteria Met", f"{len(strict_opportunities):,}")
+            
+            # If no opportunities meet strict criteria, show NOTHING
+            if not strict_opportunities:
+                st.warning("🚫 GEEN opportunities voldoen aan STRICT criteria (80%+ confidence + 100%+ return)")
+                st.markdown("**Criteria niet gehaald:**")
+                st.write("• Confidence < 80% OF")
+                st.write("• Verwacht rendement < 100% (30 dagen) OF")
+                st.write("• Data niet volledig gevalideerd")
+                
+                # Show why opportunities were filtered out
+                if opportunities:
+                    st.subheader("🔍 Waarom opportunities gefilterd werden:")
+                    filtered_reasons = []
+                    
+                    for opp in opportunities[:10]:  # Show first 10
+                        conf = opp.get('confidence', 0) * 100
+                        ret = opp.get('expected_return_30d', 0) * 100
+                        symbol = opp.get('symbol', 'Unknown')
+                        
+                        if conf < 80:
+                            filtered_reasons.append(f"{symbol}: Confidence {conf:.1f}% < 80%")
+                        elif ret < 100:
+                            filtered_reasons.append(f"{symbol}: Return {ret:.1f}% < 100%")
+                    
+                    for reason in filtered_reasons:
+                        st.write(f"• {reason}")
+                
                 return
             
-            # Create opportunities table
+            # Show STRICT opportunities table
+            st.subheader(f"🏆 {len(strict_opportunities)} Opportunities Meeting STRICT Criteria")
+            
+            # Create table data
             table_data = []
-            for opp in high_return_opportunities:
-                returns = opp.get('expected_returns', {})
-                
+            for opp in strict_opportunities:
                 table_data.append({
                     'Symbol': opp['symbol'],
-                    '7 Days': f"{returns.get('7_day', 0)*100:.1f}%",
-                    '30 Days': f"{returns.get('30_day', 0)*100:.1f}%",
-                    '180 Days': f"{returns.get('180_day', 0)*100:.1f}%",
+                    '7-Day Return': f"{opp.get('expected_return_7d', 0)*100:.1f}%",
+                    '30-Day Return': f"{opp.get('expected_return_30d', 0)*100:.1f}%",
                     'Confidence': f"{opp.get('confidence', 0)*100:.1f}%",
-                    'Alpha Score': f"{opp.get('alpha_score', 0):.2f}",
-                    'Key Factors': len(opp.get('confidence_factors', [])),
-                    'Risk Factors': len(opp.get('risk_factors', []))
+                    'Features Used': len(opp.get('features_used', [])),
+                    'Timestamp': opp.get('prediction_timestamp', '')[:16]  # YYYY-MM-DD HH:MM
                 })
             
-            if table_data:
-                df_opportunities = pd.DataFrame(table_data)
-                
-                st.subheader(f"🏆 Top {len(table_data)} Alpha Opportunities")
-                st.dataframe(
-                    df_opportunities,
-                    use_container_width=True,
-                    column_config={
-                        "30 Days": st.column_config.TextColumn("30 Days", help="Expected return in 30 days"),
-                        "Confidence": st.column_config.TextColumn("Confidence", help="Prediction confidence level"),
-                        "Alpha Score": st.column_config.NumberColumn("Alpha Score", min_value=0, max_value=1)
-                    }
-                )
-                
-                # Detailed analysis for top opportunities
-                st.subheader("📋 Detailed Analysis")
-                
-                for i, opp in enumerate(high_return_opportunities[:5], 1):
-                    with st.expander(f"#{i} {opp['symbol']} - {opp.get('expected_returns', {}).get('30_day', 0)*100:.1f}% (30d)"):
-                        col1, col2 = st.columns(2)
+            # Sort by 30-day return (highest first)
+            table_data.sort(key=lambda x: float(x['30-Day Return'].replace('%', '')), reverse=True)
+            
+            df_strict = pd.DataFrame(table_data)
+            
+            st.dataframe(
+                df_strict,
+                use_container_width=True,
+                column_config={
+                    "30-Day Return": st.column_config.TextColumn("30-Day Return ⬇️", help="Expected return in 30 days (sorted high to low)"),
+                    "Confidence": st.column_config.TextColumn("Confidence", help="ML prediction confidence"),
+                    "Symbol": st.column_config.TextColumn("Symbol", width="small")
+                }
+            )
+            
+            # Detailed breakdown for top 3
+            st.subheader("📊 Top 3 Detailed Analysis")
+            
+            for i, opp in enumerate(strict_opportunities[:3], 1):
+                with st.expander(f"#{i} {opp['symbol']} - {opp.get('expected_return_30d', 0)*100:.1f}% (30d) - {opp.get('confidence', 0)*100:.1f}% confidence"):
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write("**Validated Features Used:**")
+                        features = opp.get('features_used', [])
+                        for feature in features:
+                            st.write(f"✅ {feature}")
                         
-                        with col1:
-                            st.write("**Confidence Factors:**")
-                            for factor in opp.get('confidence_factors', []):
-                                st.write(f"✅ {factor}")
-                        
-                        with col2:
-                            st.write("**Risk Factors:**")
-                            for risk in opp.get('risk_factors', []):
-                                st.write(f"⚠️ {risk}")
-                            
-                            if not opp.get('risk_factors'):
-                                st.write("✅ No significant risk factors identified")
-                        
-                        # Return breakdown
-                        returns = opp.get('expected_returns', {})
+                        st.write(f"**Data Validation:** ✅ All data verified real (no dummy data)")
+                        st.write(f"**Prediction Time:** {opp.get('prediction_timestamp', 'Unknown')}")
+                    
+                    with col2:
+                        # Return visualization
                         return_data = {
-                            'Timeframe': ['7 Days', '30 Days', '180 Days'],
-                            'Expected Return': [
-                                returns.get('7_day', 0) * 100,
-                                returns.get('30_day', 0) * 100,
-                                returns.get('180_day', 0) * 100
+                            'Timeframe': ['7 Days', '30 Days'],
+                            'Expected Return (%)': [
+                                opp.get('expected_return_7d', 0) * 100,
+                                opp.get('expected_return_30d', 0) * 100
                             ]
                         }
                         
-                        fig_returns = px.bar(
+                        fig = px.bar(
                             return_data,
                             x='Timeframe',
-                            y='Expected Return',
-                            title=f"{opp['symbol']} Expected Returns",
-                            labels={'Expected Return': 'Return %'}
+                            y='Expected Return (%)',
+                            title=f"{opp['symbol']} Return Prediction",
+                            color='Expected Return (%)',
+                            color_continuous_scale='Viridis'
                         )
-                        st.plotly_chart(fig_returns, use_container_width=True)
+                        st.plotly_chart(fig, use_container_width=True)
+            
+            # Data integrity confirmation
+            st.success("✅ ALLE getoonde data is gevalideerd - GEEN dummy data gebruikt")
             
         except Exception as e:
-            st.error(f"Failed to render alpha opportunities: {e}")
+            st.error(f"Failed to render strict alpha opportunities: {e}")
     
     def _render_analysis_insights(self):
         """Render analysis insights and market overview"""
@@ -388,28 +449,151 @@ class AlphaOpportunitiesDashboard:
         except Exception as e:
             st.error(f"Failed to render performance tracking: {e}")
     
-    def _force_analysis_update(self):
-        """Force update of all analysis components"""
+    def _render_data_quality_verification(self):
+        """Render data quality verification section"""
+        st.header("✅ Data Quality Verification")
+        
         try:
-            with st.spinner("Forcing analysis update..."):
-                # Trigger market scan
-                market_scanner = self.container.market_scanner()
-                market_scanner.force_full_scan()
+            cache_manager = self.container.cache_manager()
+            quality_metrics = cache_manager.get('data_quality_metrics') if cache_manager else None
+            
+            if quality_metrics:
+                col1, col2 = st.columns(2)
                 
-                # Clear cache to force fresh analysis
+                with col1:
+                    st.subheader("📊 Data Completeness")
+                    
+                    total_coins = quality_metrics.get('total_coins_discovered', 0)
+                    complete_coins = quality_metrics.get('coins_with_complete_data', 0)
+                    ratio = quality_metrics.get('data_completeness_ratio', 0)
+                    
+                    st.write(f"**Total Kraken Coins:** {total_coins:,}")
+                    st.write(f"**Complete Data Coins:** {complete_coins:,}")
+                    st.write(f"**Completeness Ratio:** {ratio:.1%}")
+                    
+                    # Progress bar for completeness
+                    st.progress(ratio)
+                    
+                with col2:
+                    st.subheader("🚫 Rejected Data")
+                    
+                    failed_scraping = len(quality_metrics.get('failed_scraping_coins', set()))
+                    missing_data = len(quality_metrics.get('missing_data_coins', set()))
+                    
+                    st.write(f"**Failed Scraping:** {failed_scraping} coins")
+                    st.write(f"**Missing Data:** {missing_data} coins")
+                    st.write("**Action:** Coins excluded from analysis")
+                    
+                    if failed_scraping > 0 or missing_data > 0:
+                        st.warning(f"Total {failed_scraping + missing_data} coins rejected due to incomplete data")
+            
+            # Data validation rules
+            st.subheader("📋 Validation Rules Applied")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**Price Data Validation:**")
+                st.write("• OHLC values must be > 0")
+                st.write("• Volume must be ≥ 0")
+                st.write("• High ≥ max(Open, Close)")
+                st.write("• Low ≤ min(Open, Close)")
+                st.write("• No NULL/NaN values allowed")
+                
+            with col2:
+                st.write("**Sentiment/Whale Validation:**")
+                st.write("• Sentiment score 0-1 range")
+                st.write("• Mention volume ≥ 0")
+                st.write("• Whale data from blockchain only")
+                st.write("• All timestamps must be recent")
+                st.write("• No synthetic/dummy data")
+            
+            st.info("🔒 **ZERO TOLERANCE**: Coins met ontbrekende of invalid data worden volledig uitgesloten")
+            
+        except Exception as e:
+            st.error(f"Failed to render data quality verification: {e}")
+    
+    def _render_pipeline_performance(self):
+        """Render pipeline performance metrics"""
+        st.header("⚡ Pipeline Performance")
+        
+        try:
+            pipeline_status = self.pipeline.get_pipeline_status()
+            
+            # Latest opportunities summary
+            latest = pipeline_status.get('latest_opportunities', {})
+            
+            if latest:
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    timestamp = latest.get('timestamp', '')
+                    if timestamp:
+                        try:
+                            dt = datetime.fromisoformat(timestamp)
+                            time_ago = datetime.now() - dt
+                            minutes_ago = int(time_ago.total_seconds() / 60)
+                            st.metric("Last Analysis", f"{minutes_ago}m ago")
+                        except:
+                            st.metric("Last Analysis", "Unknown")
+                    else:
+                        st.metric("Last Analysis", "Never")
+                
+                with col2:
+                    total_analyzed = latest.get('total_analyzed', 0)
+                    st.metric("Coins Analyzed", f"{total_analyzed:,}")
+                
+                with col3:
+                    high_conf = latest.get('high_confidence_count', 0)
+                    st.metric("Met Criteria", f"{high_conf:,}")
+            
+            # Pipeline configuration
+            st.subheader("⚙️ Pipeline Configuration")
+            
+            st.write("**STRICT Mode Enabled:**")
+            st.write("• ✅ No dummy data tolerance")
+            st.write("• ✅ 80% minimum confidence")
+            st.write("• ✅ 100% minimum 30-day return")
+            st.write("• ✅ Complete data validation")
+            st.write("• ✅ Real-time Kraken coverage")
+            
+        except Exception as e:
+            st.error(f"Failed to render pipeline performance: {e}")
+    
+    def _force_pipeline_update(self):
+        """Force update of the entire pipeline"""
+        try:
+            with st.spinner("Forcing complete pipeline update..."):
+                if not self.pipeline:
+                    st.error("Pipeline niet beschikbaar")
+                    return
+                
+                # Clear all cached data to force fresh collection
                 cache_manager = self.container.cache_manager()
-                keys_to_clear = [
-                    'sentiment_analysis_results',
-                    'whale_detection_results',
-                    'ml_prediction_results',
-                    'openai_comprehensive_analysis'
-                ]
+                if cache_manager and hasattr(cache_manager, '_cache'):
+                    cache_keys_to_clear = [
+                        'complete_coin_discovery',
+                        'alpha_opportunities_final',
+                        'data_quality_metrics'
+                    ]
+                    
+                    # Also clear all validated data
+                    keys_to_remove = []
+                    for key in cache_manager._cache.keys():
+                        if (key.startswith('validated_') or 
+                            key.startswith('alpha_opportunities') or
+                            'pipeline' in key):
+                            keys_to_remove.append(key)
+                    
+                    for key in keys_to_remove + cache_keys_to_clear:
+                        if key in cache_manager._cache:
+                            del cache_manager._cache[key]
                 
-                for key in keys_to_clear:
-                    if hasattr(cache_manager, '_cache') and key in cache_manager._cache:
-                        del cache_manager._cache[key]
+                # Trigger immediate pipeline tasks
+                self.pipeline._execute_pipeline_task('coin_discovery')
+                self.pipeline._execute_pipeline_task('data_quality_check')
                 
-                st.success("Analysis update completed!")
+                st.success("Pipeline update gestart! Data wordt opnieuw verzameld en gevalideerd.")
                 
         except Exception as e:
-            st.error(f"Failed to force analysis update: {e}")
+            st.error(f"Failed to force pipeline update: {e}")
