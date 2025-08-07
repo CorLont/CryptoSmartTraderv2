@@ -196,6 +196,12 @@ class ApplicationContainer(containers.DeclarativeContainer):
         container=providers.Self(),
     )
     
+    # ML/AI Differentiators
+    ml_ai_differentiators = providers.Factory(
+        lambda container: __import__('core.ml_ai_differentiators', fromlist=['MLAIDifferentiatorsOrchestrator']).MLAIDifferentiatorsOrchestrator(container),
+        container=providers.Self(),
+    )
+    
     # GPU accelerator
     gpu_accelerator = providers.Factory(
         GPUAccelerator,

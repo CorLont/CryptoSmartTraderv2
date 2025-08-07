@@ -127,12 +127,20 @@ class CryptoAISystemDashboard:
                     ('filtering', 'D1. Topcoins Filtering'),
                     ('portfolio_management', 'D2. Portfolio Management')
                 ],
-                "E. Infrastructure": [
-                    ('dashboard', 'E1. Dashboard & UI'),
-                    ('background_tasks', 'F1. Background Tasks'),
-                    ('logging_monitoring', 'G1. Logging & Monitoring'),
-                    ('security', 'H1. Security & Config'),
-                    ('gpu_acceleration', 'I1. GPU/Acceleratie')
+                "E. ML/AI Differentiators": [
+                    ('deep_learning_time_series', 'E1. Deep Learning Time Series (LSTM, Transformer)'),
+                    ('multimodal_feature_fusion', 'E2. Multi-modal Feature Fusion'),
+                    ('uncertainty_confidence', 'E3. Uncertainty/Confidence Modeling'),
+                    ('shap_explainability', 'E4. SHAP Explainability'),
+                    ('anomaly_detection', 'E5. Anomaly/Regime Detection'),
+                    ('ai_portfolio_optimization', 'E6. AI Portfolio Optimization')
+                ],
+                "F. Infrastructure": [
+                    ('dashboard', 'F1. Dashboard & UI'),
+                    ('background_tasks', 'F2. Background Tasks'),
+                    ('logging_monitoring', 'F3. Logging & Monitoring'),
+                    ('security', 'F4. Security & Config'),
+                    ('gpu_acceleration', 'F5. GPU/Acceleratie')
                 ]
             }
             
@@ -311,8 +319,8 @@ class CryptoAISystemDashboard:
                                     if 'coins' in key and isinstance(value, (int, float)):
                                         st.write(f"{key.replace('_', ' ').title()}: {value}")
                             
-                            # Show additional details
-                            details = {k: v for k, v in result.items() if k not in ['success', 'error'] and not isinstance(v, (dict, list))}
+                                        # Show additional details
+                            details = {k: v for k, v in result.items() if k not in ['success', 'error', 'coins', 'metadata', 'data'] and not isinstance(v, (dict, list))}
                             if details:
                                 st.json(details)
                         else:

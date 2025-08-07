@@ -89,6 +89,7 @@ def main():
             "🧠 Advanced Analytics",
             "🤖 AI/ML Engine",
             "🧠 Crypto AI System",
+            "🚀 ML/AI Differentiators",
             "🏥 System Health",
             "🎛️ Analysis Control",
             "🔧 Agent Dashboard", 
@@ -129,6 +130,11 @@ def main():
         from dashboards.crypto_ai_system_dashboard import CryptoAISystemDashboard
         crypto_ai_dashboard = CryptoAISystemDashboard(container)
         crypto_ai_dashboard.render()
+        
+    elif page == "🚀 ML/AI Differentiators":
+        from dashboards.ml_ai_differentiators_dashboard import MLAIDifferentiatorsDashboard
+        ml_ai_dashboard = MLAIDifferentiatorsDashboard(container)
+        ml_ai_dashboard.render()
         
     elif page == "🏥 System Health":
         from dashboards.system_health_dashboard import SystemHealthDashboard

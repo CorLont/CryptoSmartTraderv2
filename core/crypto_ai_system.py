@@ -39,6 +39,13 @@ class CryptoAISystem:
         self.automl_engine = container.automl_engine()
         self.gpu_accelerator = container.gpu_accelerator()
         
+        # ML/AI Differentiators
+        try:
+            self.ml_ai_differentiators = container.ml_ai_differentiators()
+        except Exception as e:
+            self.logger.warning(f"ML/AI differentiators not available: {e}")
+            self.ml_ai_differentiators = None
+        
         # System state
         self.system_active = False
         self.background_tasks = {}
@@ -64,7 +71,14 @@ class CryptoAISystem:
             'background_tasks': False,
             'logging_monitoring': False,
             'security': False,
-            'gpu_acceleration': False
+            'gpu_acceleration': False,
+            # ML/AI Differentiators
+            'deep_learning_time_series': False,
+            'multimodal_feature_fusion': False,
+            'uncertainty_confidence': False,
+            'shap_explainability': False,
+            'anomaly_detection': False,
+            'ai_portfolio_optimization': False
         }
         
         self.logger.info("Crypto AI System initialized")
@@ -875,6 +889,20 @@ class CryptoAISystem:
                 
                 # D. Filtering
                 results['filtering'] = await self.topcoins_filtering()
+                
+                # E. ML/AI Differentiators (Advanced Features)
+                if self.ml_ai_differentiators:
+                    self.logger.info("Running ML/AI differentiator pipeline")
+                    results['ml_ai_differentiators'] = await self.ml_ai_differentiators.run_complete_differentiator_pipeline(coins[:20])
+                    
+                    # Update checklist status from differentiators
+                    if results['ml_ai_differentiators'].get('success'):
+                        diff_status = results['ml_ai_differentiators'].get('differentiator_status', {})
+                        self.checklist_status['deep_learning_time_series'] = diff_status.get('deep_learning', False)
+                        self.checklist_status['multimodal_feature_fusion'] = diff_status.get('feature_fusion', False)
+                        self.checklist_status['uncertainty_confidence'] = diff_status.get('uncertainty_modeling', False)
+                        self.checklist_status['shap_explainability'] = diff_status.get('explainability', False)
+                        self.checklist_status['self_learning'] = diff_status.get('self_learning', False)
             
             pipeline_duration = time.time() - pipeline_start
             
