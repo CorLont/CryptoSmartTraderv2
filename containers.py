@@ -31,6 +31,7 @@ from core.gpu_accelerator import gpu_accelerator
 from core.alpha_seeker import AlphaSeeker
 from core.comprehensive_analyzer import ComprehensiveAnalyzer
 from core.real_time_pipeline import RealTimePipeline
+from core.multi_horizon_ml import MultiHorizonMLSystem
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -132,6 +133,12 @@ class ApplicationContainer(containers.DeclarativeContainer):
     # Real-time pipeline for strict alpha seeking
     real_time_pipeline = providers.Factory(
         RealTimePipeline,
+        container=providers.Self
+    )
+    
+    # Multi-horizon ML system
+    multi_horizon_ml = providers.Factory(
+        MultiHorizonMLSystem,
         container=providers.Self
     )
     

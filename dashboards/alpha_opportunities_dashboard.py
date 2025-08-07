@@ -71,6 +71,9 @@ class AlphaOpportunitiesDashboard:
         
         # Pipeline performance
         self._render_pipeline_performance()
+        
+        # Multi-horizon ML status
+        self._render_ml_system_status()
     
     def _render_pipeline_status(self):
         """Render real-time pipeline status with data quality focus"""
@@ -217,21 +220,28 @@ class AlphaOpportunitiesDashboard:
             
             # Show STRICT opportunities table
             st.subheader(f"🏆 {len(strict_opportunities)} Opportunities Meeting STRICT Criteria")
+            st.markdown("**Multi-Horizon ML Analysis (1H, 24H, 7D, 30D)**")
             
             # Create table data
             table_data = []
             for opp in strict_opportunities:
+                # Check for multi-horizon data
+                horizon_data = opp.get('horizon_predictions', {})
+                multi_horizon = len(horizon_data) > 1
+                
                 table_data.append({
                     'Symbol': opp['symbol'],
-                    '7-Day Return': f"{opp.get('expected_return_7d', 0)*100:.1f}%",
-                    '30-Day Return': f"{opp.get('expected_return_30d', 0)*100:.1f}%",
+                    '1H Return': f"{horizon_data.get('1H', {}).get('predicted_return', 0)*100:.1f}%" if '1H' in horizon_data else "N/A",
+                    '24H Return': f"{horizon_data.get('24H', {}).get('predicted_return', 0)*100:.1f}%" if '24H' in horizon_data else "N/A", 
+                    '7D Return': f"{opp.get('expected_return_7d', 0)*100:.1f}%",
+                    '30D Return': f"{opp.get('expected_return_30d', 0)*100:.1f}%",
                     'Confidence': f"{opp.get('confidence', 0)*100:.1f}%",
-                    'Features Used': len(opp.get('features_used', [])),
+                    'ML Type': "Multi-Horizon" if multi_horizon else "Single",
                     'Timestamp': opp.get('prediction_timestamp', '')[:16]  # YYYY-MM-DD HH:MM
                 })
             
             # Sort by 30-day return (highest first)
-            table_data.sort(key=lambda x: float(x['30-Day Return'].replace('%', '')), reverse=True)
+            table_data.sort(key=lambda x: float(x['30D Return'].replace('%', '')), reverse=True)
             
             df_strict = pd.DataFrame(table_data)
             
@@ -239,8 +249,12 @@ class AlphaOpportunitiesDashboard:
                 df_strict,
                 use_container_width=True,
                 column_config={
-                    "30-Day Return": st.column_config.TextColumn("30-Day Return ⬇️", help="Expected return in 30 days (sorted high to low)"),
+                    "30D Return": st.column_config.TextColumn("30D Return ⬇️", help="Expected return in 30 days (sorted high to low)"),
+                    "7D Return": st.column_config.TextColumn("7D Return", help="Expected return in 7 days"),
+                    "24H Return": st.column_config.TextColumn("24H Return", help="Expected return in 24 hours"),
+                    "1H Return": st.column_config.TextColumn("1H Return", help="Expected return in 1 hour"),
                     "Confidence": st.column_config.TextColumn("Confidence", help="ML prediction confidence"),
+                    "ML Type": st.column_config.TextColumn("ML Type", help="Type of ML analysis"),
                     "Symbol": st.column_config.TextColumn("Symbol", width="small")
                 }
             )
@@ -262,24 +276,53 @@ class AlphaOpportunitiesDashboard:
                         st.write(f"**Prediction Time:** {opp.get('prediction_timestamp', 'Unknown')}")
                     
                     with col2:
-                        # Return visualization
-                        return_data = {
-                            'Timeframe': ['7 Days', '30 Days'],
-                            'Expected Return (%)': [
-                                opp.get('expected_return_7d', 0) * 100,
-                                opp.get('expected_return_30d', 0) * 100
-                            ]
-                        }
+                        # Multi-horizon return visualization
+                        horizon_data = opp.get('horizon_predictions', {})
                         
-                        fig = px.bar(
-                            return_data,
-                            x='Timeframe',
-                            y='Expected Return (%)',
-                            title=f"{opp['symbol']} Return Prediction",
-                            color='Expected Return (%)',
-                            color_continuous_scale='Viridis'
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
+                        if horizon_data:
+                            timeframes = []
+                            returns = []
+                            
+                            # Include all available horizons
+                            for horizon in ['1H', '24H', '7D', '30D']:
+                                if horizon in horizon_data:
+                                    timeframes.append(horizon)
+                                    returns.append(horizon_data[horizon].get('predicted_return', 0) * 100)
+                            
+                            if timeframes:
+                                return_data = {
+                                    'Timeframe': timeframes,
+                                    'Expected Return (%)': returns
+                                }
+                                
+                                fig = px.bar(
+                                    return_data,
+                                    x='Timeframe',
+                                    y='Expected Return (%)',
+                                    title=f"{opp['symbol']} Multi-Horizon Predictions",
+                                    color='Expected Return (%)',
+                                    color_continuous_scale='Viridis'
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+                        else:
+                            # Fallback to simple 7D/30D view
+                            return_data = {
+                                'Timeframe': ['7 Days', '30 Days'],
+                                'Expected Return (%)': [
+                                    opp.get('expected_return_7d', 0) * 100,
+                                    opp.get('expected_return_30d', 0) * 100
+                                ]
+                            }
+                            
+                            fig = px.bar(
+                                return_data,
+                                x='Timeframe',
+                                y='Expected Return (%)',
+                                title=f"{opp['symbol']} Return Prediction",
+                                color='Expected Return (%)',
+                                color_continuous_scale='Viridis'
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
             
             # Data integrity confirmation
             st.success("✅ ALLE getoonde data is gevalideerd - GEEN dummy data gebruikt")
@@ -597,3 +640,129 @@ class AlphaOpportunitiesDashboard:
                 
         except Exception as e:
             st.error(f"Failed to force pipeline update: {e}")
+    
+    def _render_ml_system_status(self):
+        """Render multi-horizon ML system status"""
+        st.header("🤖 Multi-Horizon ML System")
+        
+        try:
+            cache_manager = self.container.cache_manager()
+            ml_status = cache_manager.get('multi_horizon_ml_status') if cache_manager else None
+            
+            if ml_status:
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    models_loaded = ml_status.get('models_loaded', 0)
+                    total_horizons = ml_status.get('total_horizons', 4)
+                    st.metric("Models Loaded", f"{models_loaded}/{total_horizons}")
+                
+                with col2:
+                    prediction_count = ml_status.get('prediction_log_count', 0)
+                    st.metric("Predictions Made", f"{prediction_count:,}")
+                
+                with col3:
+                    # Check if any models need retraining
+                    retrain_needed = ml_status.get('retrain_needed', {})
+                    needs_retrain = sum(retrain_needed.values()) if retrain_needed else 0
+                    st.metric("Models Needing Retrain", needs_retrain)
+                
+                with col4:
+                    # Show latest training time
+                    training_times = ml_status.get('last_training_times', {})
+                    if training_times:
+                        latest_training = max(training_times.values()) if training_times.values() else "Never"
+                        if latest_training != "Never":
+                            try:
+                                dt = datetime.fromisoformat(latest_training)
+                                hours_ago = int((datetime.now() - dt).total_seconds() / 3600)
+                                st.metric("Last Training", f"{hours_ago}h ago")
+                            except:
+                                st.metric("Last Training", "Unknown")
+                    else:
+                        st.metric("Last Training", "Never")
+                
+                # Model performance details
+                st.subheader("📊 Model Performance by Horizon")
+                
+                performance = ml_status.get('model_performance', {})
+                if performance:
+                    perf_data = []
+                    for horizon, metrics in performance.items():
+                        perf_data.append({
+                            'Horizon': horizon,
+                            'Test MAE': f"{metrics.get('test_mae', 0):.4f}",
+                            'Training Samples': f"{metrics.get('training_samples', 0):,}",
+                            'Features': metrics.get('feature_count', 0)
+                        })
+                    
+                    if perf_data:
+                        df_perf = pd.DataFrame(perf_data)
+                        st.dataframe(df_perf, use_container_width=True)
+                
+                # Feature importance
+                st.subheader("🎯 Feature Importance (Top Features)")
+                
+                feature_importance = ml_status.get('feature_importance', {})
+                if feature_importance:
+                    # Get average importance across all horizons
+                    all_features = {}
+                    for horizon, features in feature_importance.items():
+                        for feature, importance in features.items():
+                            if feature not in all_features:
+                                all_features[feature] = []
+                            all_features[feature].append(importance)
+                    
+                    # Calculate average importance
+                    avg_importance = {
+                        feature: np.mean(importances)
+                        for feature, importances in all_features.items()
+                    }
+                    
+                    # Sort and get top 10
+                    top_features = sorted(avg_importance.items(), key=lambda x: x[1], reverse=True)[:10]
+                    
+                    if top_features:
+                        feature_df = pd.DataFrame(top_features, columns=['Feature', 'Avg Importance'])
+                        
+                        fig_importance = px.bar(
+                            feature_df,
+                            x='Avg Importance',
+                            y='Feature',
+                            orientation='h',
+                            title="Top 10 Most Important Features",
+                            labels={'Avg Importance': 'Average Importance Across Horizons'}
+                        )
+                        fig_importance.update_layout(yaxis={'categoryorder': 'total ascending'})
+                        st.plotly_chart(fig_importance, use_container_width=True)
+                
+                # Training configuration
+                st.subheader("⚙️ ML Configuration")
+                
+                training_config = ml_status.get('training_config', {})
+                if training_config:
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write("**Training Parameters:**")
+                        st.write(f"• Min samples: {training_config.get('min_training_samples', 0):,}")
+                        st.write(f"• Test size: {training_config.get('test_size', 0):.1%}")
+                        st.write(f"• Max features: {training_config.get('max_features', 0)}")
+                    
+                    with col2:
+                        st.write("**Quality Thresholds:**")
+                        st.write(f"• Confidence: {training_config.get('confidence_threshold', 0):.1%}")
+                        st.write(f"• Retrain MAE: {training_config.get('retrain_threshold_mae', 0):.1%}")
+                        st.write(f"• Time horizons: 1H, 24H, 7D, 30D")
+            else:
+                st.info("Multi-horizon ML system status not available yet. System will initialize during first batch inference.")
+                
+                st.markdown("**System Features:**")
+                st.write("• Training on 4 time horizons (1H, 24H, 7D, 30D)")
+                st.write("• Multi-target regression with confidence scoring")
+                st.write("• Automatic feature importance tracking")
+                st.write("• Self-learning with prediction accuracy monitoring")
+                st.write("• GPU-accelerated feature engineering")
+                
+        except Exception as e:
+            st.error(f"Failed to render ML system status: {e}")

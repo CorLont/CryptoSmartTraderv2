@@ -473,30 +473,57 @@ class RealTimePipeline:
             return False
     
     def _run_ml_batch_inference(self) -> Dict[str, Any]:
-        """Run ML batch inference on coins with complete data ONLY"""
+        """Run multi-horizon ML batch inference on coins with complete data ONLY"""
         try:
-            # Get coins with ALL required data types
-            complete_data_coins = self._get_coins_with_complete_data()
+            # Import multi-horizon ML system
+            from core.multi_horizon_ml import MultiHorizonMLSystem
             
-            if not complete_data_coins:
-                return {'success': False, 'error': 'No coins with complete data for ML inference'}
+            # Initialize ML system
+            ml_system = MultiHorizonMLSystem(self.container)
             
-            # Run batch inference
-            ml_results = []
+            # Load or train models
+            if not ml_system.load_models():
+                self.logger.info("No existing models found, training new models...")
+                
+                # Prepare training data
+                training_data = ml_system.prepare_training_data(lookback_days=30)
+                
+                if training_data is not None:
+                    training_results = ml_system.train_models(training_data)
+                    if not training_results:
+                        return {'success': False, 'error': 'Model training failed'}
+                else:
+                    return {'success': False, 'error': 'Insufficient training data'}
             
-            for coin in complete_data_coins:
-                ml_result = self._run_single_coin_ml_inference(coin)
-                if ml_result:
-                    ml_results.append(ml_result)
+            # Get alpha opportunities using multi-horizon predictions
+            opportunities = ml_system.get_alpha_opportunities(
+                min_confidence=0.80,
+                min_return_30d=1.0  # 100%+ return minimum
+            )
             
-            # Filter results by confidence threshold (80%)
-            high_confidence_results = [
-                result for result in ml_results 
-                if result.get('confidence', 0) >= 0.80
-            ]
+            # Convert opportunities to compatible format
+            compatible_results = []
+            for opp in opportunities:
+                if opp.get('meets_strict_criteria', False):
+                    # Extract 30D prediction
+                    horizons = opp.get('horizons', {})
+                    day30_pred = horizons.get('30D', {})
+                    day7_pred = horizons.get('7D', {})
+                    
+                    compatible_result = {
+                        'symbol': opp['coin'],
+                        'expected_return_7d': day7_pred.get('predicted_return', 0),
+                        'expected_return_30d': day30_pred.get('predicted_return', 0),
+                        'confidence': opp['overall_confidence'],
+                        'meets_criteria': True,
+                        'prediction_timestamp': datetime.now().isoformat(),
+                        'features_used': ['multi_horizon_ml'],
+                        'horizon_predictions': horizons
+                    }
+                    compatible_results.append(compatible_result)
             
-            # Sort by expected 30-day return
-            high_confidence_results.sort(
+            # Sort by 30-day return
+            compatible_results.sort(
                 key=lambda x: x.get('expected_return_30d', 0),
                 reverse=True
             )
@@ -507,20 +534,30 @@ class RealTimePipeline:
                     'alpha_opportunities_final',
                     {
                         'timestamp': datetime.now().isoformat(),
-                        'total_analyzed': len(ml_results),
-                        'high_confidence_count': len(high_confidence_results),
-                        'opportunities': high_confidence_results,
-                        'data_quality_verified': True
+                        'total_analyzed': len(opportunities),
+                        'high_confidence_count': len(compatible_results),
+                        'opportunities': compatible_results,
+                        'data_quality_verified': True,
+                        'multi_horizon_analysis': True
                     },
                     ttl_minutes=120
+                )
+                
+                # Store ML system status
+                ml_status = ml_system.get_system_status()
+                self.cache_manager.set(
+                    'multi_horizon_ml_status',
+                    ml_status,
+                    ttl_minutes=60
                 )
             
             return {
                 'success': True,
-                'summary': f"ML inference: {len(high_confidence_results)} high-confidence opportunities from {len(complete_data_coins)} coins"
+                'summary': f"Multi-horizon ML inference: {len(compatible_results)} high-confidence opportunities from {len(opportunities)} analyzed coins"
             }
             
         except Exception as e:
+            self.logger.error(f"Multi-horizon ML inference failed: {e}")
             return {'success': False, 'error': str(e)}
     
     def _run_single_coin_ml_inference(self, symbol: str) -> Optional[Dict[str, Any]]:
