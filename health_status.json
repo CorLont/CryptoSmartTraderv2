@@ -1,61 +1,61 @@
 {
   "health": {
-    "timestamp": "2025-08-07T18:55:49.078149",
+    "timestamp": "2025-08-07T18:56:50.499050",
     "grade": "F",
-    "score": 43.52,
+    "score": 30.36,
     "resources": {
-      "cpu_percent": 32.7,
-      "memory_percent": 73.8,
-      "memory_available_gb": 16.466781616210938,
+      "cpu_percent": 64.3,
+      "memory_percent": 75.1,
+      "memory_available_gb": 15.657337188720703,
       "disk_percent": 69.4,
-      "disk_free_gb": 14.392017364501953
+      "disk_free_gb": 14.39139175415039
     },
     "agent_health": {
       "sentiment": {
         "status": "healthy",
-        "last_update": "2025-08-07T18:55:50.079845",
+        "last_update": "2025-08-07T18:56:51.522157",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       },
       "technical": {
         "status": "healthy",
-        "last_update": "2025-08-07T18:55:50.079857",
+        "last_update": "2025-08-07T18:56:51.522168",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       },
       "ml_predictor": {
         "status": "healthy",
-        "last_update": "2025-08-07T18:55:50.079861",
+        "last_update": "2025-08-07T18:56:51.522172",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       },
       "backtest": {
         "status": "healthy",
-        "last_update": "2025-08-07T18:55:50.079864",
+        "last_update": "2025-08-07T18:56:51.522175",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       },
       "trade_executor": {
         "status": "healthy",
-        "last_update": "2025-08-07T18:55:50.079867",
+        "last_update": "2025-08-07T18:56:51.522178",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       },
       "whale_detector": {
         "status": "healthy",
-        "last_update": "2025-08-07T18:55:50.079871",
+        "last_update": "2025-08-07T18:56:51.522182",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       }
     },
     "data_coverage": 99.33774834437085,
-    "uptime": 29.89835554361111
+    "uptime": 29.915422845555558
   },
   "alerts": []
 }
