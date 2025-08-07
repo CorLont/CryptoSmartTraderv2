@@ -38,6 +38,8 @@ def main():
         # Get dependencies from container
         config_manager = container.config()
         health_monitor = container.health_monitor()
+        market_scanner = container.market_scanner()
+        monitoring_system = container.monitoring_system()
         
         # Store in session state for access across pages
         if 'container' not in st.session_state:
@@ -46,6 +48,13 @@ def main():
             st.session_state.config_manager = config_manager
         if 'health_monitor' not in st.session_state:
             st.session_state.health_monitor = health_monitor
+        
+        # Auto-start comprehensive market scanning
+        if not st.session_state.get('market_scanner_started', False):
+            market_scanner.start_comprehensive_scanning()
+            monitoring_system.start_monitoring()
+            st.session_state.market_scanner_started = True
+            logger.info("Auto-started comprehensive market scanning and production monitoring")
             
     except Exception as e:
         st.error(f"Failed to initialize core systems: {str(e)}")
@@ -75,9 +84,11 @@ def main():
         "Navigate to:",
         [
             "🎯 Main Dashboard",
+            "🌍 Comprehensive Market",
             "🎛️ Analysis Control",
             "🤖 Agent Dashboard", 
             "💼 Portfolio Dashboard",
+            "🔍 Production Monitoring",
             "🔧 Performance Dashboard",
             "⚙️ System Configuration",
             "📊 Health Monitor"
@@ -88,6 +99,11 @@ def main():
     if page == "🎯 Main Dashboard":
         main_dashboard = MainDashboard(config_manager, health_monitor)
         main_dashboard.render()
+        
+    elif page == "🌍 Comprehensive Market":
+        from dashboards.comprehensive_market_dashboard import ComprehensiveMarketDashboard
+        market_dashboard = ComprehensiveMarketDashboard(container)
+        market_dashboard.render()
         
     elif page == "🎛️ Analysis Control":
         analysis_control = AnalysisControlDashboard(container)
@@ -100,6 +116,11 @@ def main():
     elif page == "💼 Portfolio Dashboard":
         portfolio_dashboard = PortfolioDashboard(config_manager, health_monitor)
         portfolio_dashboard.render()
+        
+    elif page == "🔍 Production Monitoring":
+        from dashboards.production_monitoring_dashboard import ProductionMonitoringDashboard
+        monitoring_dashboard = ProductionMonitoringDashboard(container)
+        monitoring_dashboard.render()
         
     elif page == "🔧 Performance Dashboard":
         performance_dashboard = PerformanceDashboard(container)

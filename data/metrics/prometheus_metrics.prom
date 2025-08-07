@@ -1,0 +1,28 @@
+# HELP cryptotrader_analysis_requests_total Total number of analysis requests
+# TYPE cryptotrader_analysis_requests_total counter
+# HELP cryptotrader_analysis_duration_seconds Time spent on analysis operations
+# TYPE cryptotrader_analysis_duration_seconds histogram
+# HELP cryptotrader_api_requests_total Total API requests to external services
+# TYPE cryptotrader_api_requests_total counter
+# HELP cryptotrader_errors_total Total number of errors
+# TYPE cryptotrader_errors_total counter
+# HELP cryptotrader_memory_usage_bytes Memory usage in bytes
+# TYPE cryptotrader_memory_usage_bytes gauge
+cryptotrader_memory_usage_bytes 5.543204864e+010
+# HELP cryptotrader_cpu_usage_percent CPU usage percentage
+# TYPE cryptotrader_cpu_usage_percent gauge
+cryptotrader_cpu_usage_percent 46.0
+# HELP cryptotrader_active_agents Number of active agents
+# TYPE cryptotrader_active_agents gauge
+cryptotrader_active_agents 0.0
+# HELP cryptotrader_cache_hit_rate Cache hit rate percentage
+# TYPE cryptotrader_cache_hit_rate gauge
+cryptotrader_cache_hit_rate 0.0
+# HELP cryptotrader_predictions_accuracy ML prediction accuracy
+# TYPE cryptotrader_predictions_accuracy gauge
+# HELP cryptotrader_sentiment_score Current market sentiment score
+# TYPE cryptotrader_sentiment_score gauge
+cryptotrader_sentiment_score 0.0
+# HELP cryptotrader_health_score Overall system health score
+# TYPE cryptotrader_health_score gauge
+cryptotrader_health_score 1.0

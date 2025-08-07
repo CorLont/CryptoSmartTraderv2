@@ -26,6 +26,7 @@ from core.error_handler import CentralizedErrorHandler
 from core.monitoring_system import ProductionMonitoringSystem
 from core.openai_enhanced_analyzer import OpenAIEnhancedAnalyzer
 from scripts.backup_system import AutomatedBackupSystem
+from core.comprehensive_market_scanner import ComprehensiveMarketScanner
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -65,10 +66,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
     security_manager = providers.Singleton(SecurityManager)
     
     # Core infrastructure
-    cache_manager = providers.Singleton(
-        CacheManager,
-        config_manager=config
-    )
+    cache_manager = providers.Singleton(CacheManager)
     
     health_monitor = providers.Singleton(
         HealthMonitor,
@@ -100,6 +98,14 @@ class ApplicationContainer(containers.DeclarativeContainer):
     backup_system = providers.Singleton(
         AutomatedBackupSystem,
         config_manager=config
+    )
+    
+    # Comprehensive market scanner
+    market_scanner = providers.Singleton(
+        ComprehensiveMarketScanner,
+        config_manager=config,
+        cache_manager=cache_manager,
+        error_handler=centralized_error_handler
     )
     
     # System orchestrator

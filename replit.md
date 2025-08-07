@@ -46,10 +46,13 @@ The system employs a multi-agent coordination architecture with six specialized 
 - **Daily Analysis Coordination:** Automated scheduler integrating continuous ML analysis and social scraping with scheduled daily reporting, progress tracking, and export capabilities
 
 ### Dashboard Architecture
-Three specialized Streamlit dashboards provide different views:
+Five specialized Streamlit dashboards provide comprehensive views:
 - **Main Dashboard:** System overview, market analysis, and agent performance monitoring
+- **Comprehensive Market Dashboard:** Complete cryptocurrency coverage with dynamic discovery and multi-timeframe analysis
+- **Analysis Control Dashboard:** Daily analysis coordination, OpenAI enhancement controls, and export functionality
 - **Agent Dashboard:** Individual agent monitoring, configuration, and performance analytics
 - **Portfolio Dashboard:** Portfolio management, risk metrics, position tracking, and trade history
+- **Production Monitoring Dashboard:** Enterprise-grade monitoring with real-time metrics, alerts, and health tracking
 
 ### Data Management
 - **Centralized Data Manager:** Coordinates data collection from multiple exchanges with automatic freshness monitoring
