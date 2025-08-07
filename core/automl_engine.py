@@ -1,674 +1,783 @@
 """
-CryptoSmartTrader V2 - AutoML Engine
-Automated machine learning met model selection en hyperparameter tuning
+AutoML Engine - Automated Machine Learning Pipeline
+Self-optimizing ML with hyperparameter tuning and meta-learning
 """
 
-import logging
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Any, Optional, Tuple, Union
-from datetime import datetime, timedelta
+import logging
+from typing import Dict, List, Any, Tuple, Optional, Callable
+from datetime import datetime
 import json
-import pickle
-from pathlib import Path
-import sys
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import threading
-import time
-from dataclasses import dataclass
-import warnings
-warnings.filterwarnings('ignore')
-
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# ML libraries
-try:
-    import lightgbm as lgb
-    import xgboost as xgb
-    from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-    from sklearn.linear_model import LinearRegression, Ridge, ElasticNet
-    from sklearn.svm import SVR
-    from sklearn.neural_network import MLPRegressor
-    from sklearn.model_selection import TimeSeriesSplit, cross_val_score
-    from sklearn.preprocessing import StandardScaler, RobustScaler
-    from sklearn.feature_selection import SelectKBest, f_regression, RFE
-    from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-    ML_AVAILABLE = True
-except ImportError as e:
-    logging.warning(f"Some ML libraries not available: {e}")
-    ML_AVAILABLE = False
 
 try:
     import optuna
+    from optuna import Trial
     OPTUNA_AVAILABLE = True
 except ImportError:
     OPTUNA_AVAILABLE = False
-    logging.warning("Optuna not available - AutoML optimization disabled")
 
-# Disable AutoML if required dependencies are missing
-if ML_AVAILABLE and not OPTUNA_AVAILABLE:
-    ML_AVAILABLE = False
-
-@dataclass 
-class ModelCandidate:
-    """Model candidate for AutoML"""
-    name: str
-    model_class: Any
-    param_space: Dict[str, Any]
-    gpu_enabled: bool = False
-    default_params: Dict[str, Any] = None
-
-@dataclass
-class AutoMLResult:
-    """AutoML experiment result"""
-    best_model: Any
-    best_params: Dict[str, Any]
-    best_score: float
-    model_name: str
-    feature_importance: Dict[str, float]
-    cross_val_scores: List[float]
-    training_time: float
-    timestamp: datetime
+from sklearn.model_selection import cross_val_score, TimeSeriesSplit
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.linear_model import Ridge, Lasso, ElasticNet
+from sklearn.svm import SVR
+from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
+from sklearn.feature_selection import SelectKBest, f_regression
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import xgboost as xgb
 
 class AutoMLEngine:
-    """Automated machine learning engine met model selection en hyperparameter tuning"""
+    """
+    Automated Machine Learning engine with hyperparameter optimization
+    and meta-learning for cryptocurrency prediction
+    """
     
     def __init__(self, container):
         self.container = container
         self.logger = logging.getLogger(__name__)
-        self.cache_manager = container.cache_manager()
         
-        # GPU detection
-        self.gpu_available = self._check_gpu_availability()
-        self.logger.info(f"AutoML Engine initialized. GPU available: {self.gpu_available}")
-        
-        # Model candidates
-        self.model_candidates = self._initialize_model_candidates()
-        
-        # AutoML state
-        self.current_experiments = {}
-        self.experiment_history = {}
-        self.best_models = {}
-        
-        # Feature selection methods
-        self.feature_selectors = {
-            'k_best': SelectKBest(f_regression),
-            'rfe_rf': RFE(RandomForestRegressor(n_estimators=50, random_state=42)),
-            'none': None
+        # AutoML configuration
+        self.config = {
+            'optimization_trials': 100,
+            'cv_folds': 5,
+            'optimization_timeout': 3600,  # 1 hour
+            'meta_learning_memory': 50,
+            'ensemble_size': 5,
+            'feature_selection_k': 30
         }
         
-        # Scalers
-        self.scalers = {
-            'standard': StandardScaler(),
-            'robust': RobustScaler(),
-            'none': None
+        # Model registry
+        self.model_templates = {
+            'xgboost': self._create_xgboost_objective,
+            'random_forest': self._create_rf_objective,
+            'gradient_boost': self._create_gb_objective,
+            'ridge': self._create_ridge_objective,
+            'elastic_net': self._create_elastic_objective,
+            'svr': self._create_svr_objective
         }
+        
+        # Optimized models storage
+        self.optimized_models = {}
+        
+        # Meta-learning database
+        self.meta_learning_db = {
+            'model_performances': [],
+            'hyperparameter_history': [],
+            'dataset_characteristics': [],
+            'optimization_history': []
+        }
+        
+        # Best configurations cache
+        self.best_configs = {}
+        
+        # Optimization studies
+        self.studies = {}
+        
+        self.logger.info("AutoML Engine initialized")
     
-    def _check_gpu_availability(self) -> bool:
-        """Check GPU availability for ML"""
+    def initialize_automl(self) -> bool:
+        """Initialize AutoML components"""
+        
         try:
-            # Check for CUDA/GPU support in LightGBM and XGBoost
-            import subprocess
+            if not OPTUNA_AVAILABLE:
+                self.logger.warning("Optuna not available - using grid search fallback")
+                return self._initialize_fallback()
             
-            # Test LightGBM GPU
-            try:
-                import lightgbm as lgb
-                # Try to create a GPU dataset
-                lgb_data = lgb.Dataset(np.random.random((100, 10)), label=np.random.random(100))
-                lgb.train({'device': 'gpu', 'objective': 'regression'}, lgb_data, num_boost_round=1, verbose=-1)
-                return True
-            except:
-                pass
+            # Create optimization studies for each horizon
+            for horizon in ['1h', '24h', '7d', '30d']:
+                study_name = f'crypto_prediction_{horizon}'
+                
+                self.studies[horizon] = optuna.create_study(
+                    study_name=study_name,
+                    direction='minimize',  # Minimize prediction error
+                    sampler=optuna.samplers.TPESampler(
+                        n_startup_trials=10,
+                        n_ei_candidates=24
+                    ),
+                    pruner=optuna.pruners.MedianPruner(
+                        n_startup_trials=5,
+                        n_warmup_steps=10,
+                        interval_steps=1
+                    )
+                )
             
-            # Test XGBoost GPU
-            try:
-                import xgboost as xgb
-                dtrain = xgb.DMatrix(np.random.random((100, 10)), label=np.random.random(100))
-                xgb.train({'tree_method': 'gpu_hist', 'objective': 'reg:squarederror'}, dtrain, num_boost_round=1, verbose_eval=False)
-                return True
-            except:
-                pass
-            
-            return False
+            self.logger.critical("AUTOML ENGINE INITIALIZED - Automated optimization active")
+            return True
             
         except Exception as e:
-            self.logger.warning(f"GPU availability check failed: {e}")
+            self.logger.error(f"AutoML initialization failed: {e}")
             return False
     
-    def _initialize_model_candidates(self) -> List[ModelCandidate]:
-        """Initialize model candidates for AutoML"""
-        candidates = []
+    def _initialize_fallback(self) -> bool:
+        """Initialize fallback AutoML without Optuna"""
         
-        if not ML_AVAILABLE:
-            return candidates
-        
-        # LightGBM
-        lgb_params = {
-            'objective': 'regression',
-            'metric': 'rmse',
-            'verbosity': -1,
-            'random_state': 42
+        # Simple grid search configurations
+        self.fallback_configs = {
+            'xgboost': [
+                {'n_estimators': 100, 'max_depth': 6, 'learning_rate': 0.1},
+                {'n_estimators': 200, 'max_depth': 8, 'learning_rate': 0.05},
+                {'n_estimators': 300, 'max_depth': 10, 'learning_rate': 0.01}
+            ],
+            'random_forest': [
+                {'n_estimators': 100, 'max_depth': 10, 'min_samples_split': 5},
+                {'n_estimators': 200, 'max_depth': 15, 'min_samples_split': 10},
+                {'n_estimators': 300, 'max_depth': 20, 'min_samples_split': 2}
+            ]
         }
         
-        if self.gpu_available:
-            lgb_params['device'] = 'gpu'
-            lgb_params['gpu_platform_id'] = 0
-            lgb_params['gpu_device_id'] = 0
-        
-        candidates.append(ModelCandidate(
-            name='lightgbm',
-            model_class=lgb.LGBMRegressor,
-            param_space={
-                'n_estimators': [100, 200, 500, 1000],
-                'learning_rate': [0.01, 0.05, 0.1, 0.2],
-                'max_depth': [3, 5, 7, 10, -1],
-                'num_leaves': [31, 63, 127, 255],
-                'subsample': [0.8, 0.9, 1.0],
-                'colsample_bytree': [0.8, 0.9, 1.0],
-                'reg_alpha': [0, 0.1, 0.5, 1.0],
-                'reg_lambda': [0, 0.1, 0.5, 1.0]
-            },
-            gpu_enabled=self.gpu_available,
-            default_params=lgb_params
-        ))
-        
-        # XGBoost
-        xgb_params = {
-            'objective': 'reg:squarederror',
-            'random_state': 42,
-            'verbosity': 0
-        }
-        
-        if self.gpu_available:
-            xgb_params['tree_method'] = 'gpu_hist'
-            xgb_params['gpu_id'] = 0
-        
-        candidates.append(ModelCandidate(
-            name='xgboost',
-            model_class=xgb.XGBRegressor,
-            param_space={
-                'n_estimators': [100, 200, 500, 1000],
-                'learning_rate': [0.01, 0.05, 0.1, 0.2],
-                'max_depth': [3, 5, 7, 10],
-                'subsample': [0.8, 0.9, 1.0],
-                'colsample_bytree': [0.8, 0.9, 1.0],
-                'reg_alpha': [0, 0.1, 0.5, 1.0],
-                'reg_lambda': [0, 0.1, 0.5, 1.0]
-            },
-            gpu_enabled=self.gpu_available,
-            default_params=xgb_params
-        ))
-        
-        # Random Forest
-        candidates.append(ModelCandidate(
-            name='random_forest',
-            model_class=RandomForestRegressor,
-            param_space={
-                'n_estimators': [100, 200, 500],
-                'max_depth': [5, 10, 15, None],
-                'min_samples_split': [2, 5, 10],
-                'min_samples_leaf': [1, 2, 4],
-                'max_features': ['sqrt', 'log2', None]
-            },
-            default_params={'random_state': 42, 'n_jobs': -1}
-        ))
-        
-        # Gradient Boosting
-        candidates.append(ModelCandidate(
-            name='gradient_boosting',
-            model_class=GradientBoostingRegressor,
-            param_space={
-                'n_estimators': [100, 200, 300],
-                'learning_rate': [0.05, 0.1, 0.15, 0.2],
-                'max_depth': [3, 5, 7],
-                'subsample': [0.8, 0.9, 1.0]
-            },
-            default_params={'random_state': 42}
-        ))
-        
-        # Neural Network
-        candidates.append(ModelCandidate(
-            name='mlp',
-            model_class=MLPRegressor,
-            param_space={
-                'hidden_layer_sizes': [(50,), (100,), (50, 50), (100, 50), (100, 100)],
-                'learning_rate_init': [0.001, 0.01, 0.1],
-                'alpha': [0.0001, 0.001, 0.01],
-                'activation': ['relu', 'tanh']
-            },
-            default_params={'random_state': 42, 'max_iter': 500}
-        ))
-        
-        # Support Vector Regression
-        candidates.append(ModelCandidate(
-            name='svr',
-            model_class=SVR,
-            param_space={
-                'C': [0.1, 1, 10, 100],
-                'gamma': ['scale', 'auto', 0.001, 0.01, 0.1],
-                'kernel': ['rbf', 'linear', 'poly']
-            }
-        ))
-        
-        # Linear models
-        candidates.extend([
-            ModelCandidate(
-                name='ridge',
-                model_class=Ridge,
-                param_space={'alpha': [0.1, 1, 10, 100, 1000]},
-                default_params={'random_state': 42}
-            ),
-            ModelCandidate(
-                name='elastic_net',
-                model_class=ElasticNet,
-                param_space={
-                    'alpha': [0.1, 1, 10],
-                    'l1_ratio': [0.1, 0.5, 0.7, 0.9]
-                },
-                default_params={'random_state': 42}
-            )
-        ])
-        
-        return candidates
+        return True
     
-    def run_automl_experiment(self, coin: str, training_data: pd.DataFrame, 
-                            target_column: str = 'target', 
-                            n_trials: int = 50,
-                            cv_folds: int = 5) -> Optional[AutoMLResult]:
-        """Run complete AutoML experiment"""
+    async def optimize_model_for_coin(self, 
+                                    coin: str,
+                                    training_data: pd.DataFrame,
+                                    target_column: str,
+                                    horizon: str) -> Dict[str, Any]:
+        """Optimize ML model for specific coin and horizon"""
+        
         try:
-            if not ML_AVAILABLE:
-                self.logger.error("AutoML not available - required dependencies missing")
-                return None
-                
-            self.logger.info(f"Starting AutoML experiment for {coin}")
-            start_time = time.time()
+            if training_data.empty or len(training_data) < 50:
+                return {
+                    'success': False,
+                    'reason': 'Insufficient training data',
+                    'samples': len(training_data)
+                }
             
             # Prepare data
-            X, y = self._prepare_automl_data(training_data, target_column)
+            X, y = self._prepare_optimization_data(training_data, target_column)
             
-            if X is None or len(X) < 100:
-                raise ValueError("Insufficient training data")
+            if len(X) == 0:
+                return {'success': False, 'reason': 'No valid features extracted'}
             
-            # Time series cross-validation
-            tscv = TimeSeriesSplit(n_splits=cv_folds)
+            # Characterize dataset for meta-learning
+            dataset_chars = self._characterize_dataset(X, y, coin, horizon)
             
-            best_score = float('-inf')
-            best_result = None
+            # Get meta-learning recommendations
+            recommended_models = self._get_meta_recommendations(dataset_chars)
             
-            # Test each model candidate
-            for candidate in self.model_candidates:
-                try:
-                    self.logger.info(f"Testing {candidate.name} for {coin}")
-                    
-                    # Hyperparameter optimization with Optuna
-                    if OPTUNA_AVAILABLE:
-                        study = optuna.create_study(
-                            direction='maximize',
-                            study_name=f"{coin}_{candidate.name}",
-                            sampler=optuna.samplers.TPESampler(seed=42)
-                        )
-                    else:
-                        # Fallback to simple grid search
-                        best_params = {}
-                        best_cv_score = -1.0
-                    
-                    def objective(trial):
-                        return self._objective_function(trial, candidate, X, y, tscv)
-                    
-                    if OPTUNA_AVAILABLE:
-                        study.optimize(objective, n_trials=n_trials, show_progress_bar=False, 
-                                     callbacks=[lambda study, trial: None])  # Silent optimization
-                        
-                        # Get best parameters and score
-                        best_params = study.best_params
-                        best_cv_score = study.best_value
-                    else:
-                        # Simple default parameters
-                        best_params = candidate.default_params.copy() if candidate.default_params else {}
-                        model = candidate.model_class(**best_params)
-                        scores = cross_val_score(model, X, y, cv=tscv, scoring='r2')
-                        best_cv_score = np.mean(scores)
-                    
-                    # Train final model with best parameters
-                    final_model = self._train_final_model(candidate, best_params, X, y)
-                    
-                    # Feature importance
-                    feature_importance = self._get_feature_importance(final_model, X.columns)
-                    
-                    # Cross-validation scores
-                    cv_scores = cross_val_score(final_model, X, y, cv=tscv, scoring='r2')
-                    
-                    result = AutoMLResult(
-                        best_model=final_model,
-                        best_params=best_params,
-                        best_score=best_cv_score,
-                        model_name=candidate.name,
-                        feature_importance=feature_importance,
-                        cross_val_scores=cv_scores.tolist(),
-                        training_time=time.time() - start_time,
-                        timestamp=datetime.now()
+            # Optimize each recommended model
+            optimization_results = {}
+            
+            for model_name in recommended_models:
+                self.logger.info(f"Optimizing {model_name} for {coin} {horizon}")
+                
+                if OPTUNA_AVAILABLE:
+                    result = await self._optimize_with_optuna(
+                        model_name, X, y, coin, horizon
                     )
-                    
-                    if best_cv_score > best_score:
-                        best_score = best_cv_score
-                        best_result = result
-                    
-                    self.logger.info(f"{candidate.name}: CV score = {best_cv_score:.4f}")
-                    
-                except Exception as e:
-                    self.logger.error(f"Failed to test {candidate.name}: {e}")
-                    continue
+                else:
+                    result = await self._optimize_with_grid_search(
+                        model_name, X, y, coin, horizon
+                    )
+                
+                optimization_results[model_name] = result
             
-            if best_result is None:
-                raise ValueError("No models could be trained successfully")
+            # Select best model
+            best_model_info = self._select_best_model(optimization_results)
             
-            # Store result
-            experiment_key = f"{coin}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            self.experiment_history[experiment_key] = best_result
-            self.best_models[coin] = best_result
+            # Store optimization results
+            self._store_optimization_results(
+                coin, horizon, best_model_info, dataset_chars
+            )
             
-            total_time = time.time() - start_time
-            self.logger.info(f"AutoML experiment completed for {coin}. Best model: {best_result.model_name} "
-                           f"(Score: {best_result.best_score:.4f}, Time: {total_time:.1f}s)")
-            
-            return best_result
+            return {
+                'success': True,
+                'coin': coin,
+                'horizon': horizon,
+                'best_model': best_model_info,
+                'all_results': optimization_results,
+                'dataset_characteristics': dataset_chars,
+                'optimization_time': datetime.now().isoformat()
+            }
             
         except Exception as e:
-            self.logger.error(f"AutoML experiment failed for {coin}: {e}")
-            raise
+            self.logger.error(f"Model optimization failed for {coin} {horizon}: {e}")
+            return {'success': False, 'error': str(e)}
     
-    def _prepare_automl_data(self, data: pd.DataFrame, target_column: str) -> Tuple[Optional[pd.DataFrame], Optional[pd.Series]]:
-        """Prepare data for AutoML"""
+    def _prepare_optimization_data(self, 
+                                 training_data: pd.DataFrame,
+                                 target_column: str) -> Tuple[np.ndarray, np.ndarray]:
+        """Prepare data for optimization"""
+        
         try:
-            # Drop rows with missing target
-            data = data.dropna(subset=[target_column])
+            # Remove target column from features
+            feature_columns = [col for col in training_data.columns if col != target_column]
             
-            # Separate features and target
-            y = data[target_column]
-            X = data.drop(columns=[target_column])
+            X = training_data[feature_columns].values
+            y = training_data[target_column].values
             
-            # Remove non-numeric columns
-            numeric_columns = X.select_dtypes(include=[np.number]).columns
-            X = X[numeric_columns]
+            # Remove any rows with NaN
+            valid_mask = ~(np.isnan(X).any(axis=1) | np.isnan(y))
+            X = X[valid_mask]
+            y = y[valid_mask]
             
-            # Remove constant columns
-            constant_columns = X.columns[X.nunique() <= 1]
-            X = X.drop(columns=constant_columns)
-            
-            # Handle infinite values
-            X = X.replace([np.inf, -np.inf], np.nan)
-            y = y.replace([np.inf, -np.inf], np.nan)
-            
-            # Drop rows with any NaN
-            mask = ~(X.isna().any(axis=1) | y.isna())
-            X = X[mask]
-            y = y[mask]
-            
-            if len(X) < 50:
-                self.logger.warning("Insufficient data after cleaning")
-                return None, None
+            # Feature selection
+            if X.shape[1] > self.config['feature_selection_k']:
+                selector = SelectKBest(score_func=f_regression, k=self.config['feature_selection_k'])
+                X = selector.fit_transform(X, y)
             
             return X, y
             
         except Exception as e:
             self.logger.error(f"Data preparation failed: {e}")
-            return None, None
+            return np.array([]), np.array([])
     
-    def _objective_function(self, trial, candidate: ModelCandidate, X: pd.DataFrame, 
-                          y: pd.Series, cv) -> float:
-        """Optuna objective function"""
+    def _characterize_dataset(self, 
+                            X: np.ndarray,
+                            y: np.ndarray,
+                            coin: str,
+                            horizon: str) -> Dict[str, Any]:
+        """Characterize dataset for meta-learning"""
+        
         try:
-            # Sample hyperparameters
-            params = candidate.default_params.copy() if candidate.default_params else {}
+            characteristics = {
+                'coin': coin,
+                'horizon': horizon,
+                'n_samples': X.shape[0],
+                'n_features': X.shape[1],
+                'target_mean': float(np.mean(y)),
+                'target_std': float(np.std(y)),
+                'target_skew': float(self._calculate_skewness(y)),
+                'target_range': float(np.max(y) - np.min(y)),
+                'feature_means': np.mean(X, axis=0).tolist(),
+                'feature_stds': np.std(X, axis=0).tolist(),
+                'correlation_with_target': [
+                    float(np.corrcoef(X[:, i], y)[0, 1]) if not np.isnan(np.corrcoef(X[:, i], y)[0, 1]) else 0.0
+                    for i in range(X.shape[1])
+                ],
+                'timestamp': datetime.now().isoformat()
+            }
             
-            for param_name, param_values in candidate.param_space.items():
-                if isinstance(param_values, list):
-                    if all(isinstance(v, (int, np.integer)) for v in param_values):
-                        params[param_name] = trial.suggest_categorical(param_name, param_values)
-                    elif all(isinstance(v, (float, np.floating)) for v in param_values):
-                        params[param_name] = trial.suggest_categorical(param_name, param_values)
-                    else:
-                        params[param_name] = trial.suggest_categorical(param_name, param_values)
-                elif isinstance(param_values, tuple) and len(param_values) == 2:
-                    low, high = param_values
-                    if isinstance(low, (int, np.integer)):
-                        params[param_name] = trial.suggest_int(param_name, low, high)
-                    else:
-                        params[param_name] = trial.suggest_float(param_name, low, high)
-            
-            # Create and evaluate model
-            model = candidate.model_class(**params)
-            
-            # Cross-validation
-            scores = cross_val_score(model, X, y, cv=cv, scoring='r2')
-            
-            return np.mean(scores)
+            return characteristics
             
         except Exception as e:
-            # Return very poor score on failure
-            return -1000
-    
-    def _train_final_model(self, candidate: ModelCandidate, best_params: Dict, 
-                          X: pd.DataFrame, y: pd.Series):
-        """Train final model with best parameters"""
-        params = candidate.default_params.copy() if candidate.default_params else {}
-        params.update(best_params)
-        
-        model = candidate.model_class(**params)
-        model.fit(X, y)
-        
-        return model
-    
-    def _get_feature_importance(self, model, feature_names: List[str]) -> Dict[str, float]:
-        """Extract feature importance from model"""
-        try:
-            importance_dict = {}
-            
-            # Different ways to get feature importance
-            if hasattr(model, 'feature_importances_'):
-                importances = model.feature_importances_
-            elif hasattr(model, 'coef_'):
-                importances = np.abs(model.coef_)
-            else:
-                # Default uniform importance
-                importances = np.ones(len(feature_names))
-            
-            # Normalize importances
-            if len(importances) == len(feature_names):
-                importances = importances / (np.sum(importances) + 1e-8)
-                
-                for name, importance in zip(feature_names, importances):
-                    importance_dict[name] = float(importance)
-            
-            return importance_dict
-            
-        except Exception as e:
-            self.logger.error(f"Feature importance extraction failed: {e}")
+            self.logger.error(f"Dataset characterization failed: {e}")
             return {}
     
-    def predict_with_automl(self, coin: str, input_data: pd.DataFrame) -> Dict[str, Any]:
-        """Make predictions using AutoML model"""
+    def _calculate_skewness(self, data: np.ndarray) -> float:
+        """Calculate skewness of data"""
+        
         try:
-            if coin not in self.best_models:
-                return {'success': False, 'error': 'No AutoML model available for coin'}
+            mean = np.mean(data)
+            std = np.std(data)
             
-            result = self.best_models[coin]
-            model = result.best_model
+            if std == 0:
+                return 0.0
             
-            # Prepare input data (same preprocessing as training)
-            X_pred = input_data.select_dtypes(include=[np.number])
+            skew = np.mean(((data - mean) / std) ** 3)
+            return skew
             
-            # Remove constant columns that might have been removed during training
-            if hasattr(model, 'feature_names_in_'):
-                # Use only features that were used during training
-                available_features = [col for col in model.feature_names_in_ if col in X_pred.columns]
-                X_pred = X_pred[available_features]
+        except:
+            return 0.0
+    
+    def _get_meta_recommendations(self, dataset_chars: Dict[str, Any]) -> List[str]:
+        """Get model recommendations based on meta-learning"""
+        
+        try:
+            # Default recommendation order
+            default_order = ['xgboost', 'random_forest', 'gradient_boost', 'ridge', 'elastic_net']
             
-            # Handle missing values
-            X_pred = X_pred.fillna(X_pred.mean())
+            if not dataset_chars or not self.meta_learning_db['model_performances']:
+                return default_order
             
-            # Make prediction
-            prediction = model.predict(X_pred)
+            # Find similar datasets in meta-learning database
+            similar_datasets = self._find_similar_datasets(dataset_chars)
             
-            # Prediction confidence (simplified)
-            confidence = min(0.95, max(0.1, result.best_score)) if result.best_score > 0 else 0.5
+            if not similar_datasets:
+                return default_order
+            
+            # Rank models based on performance on similar datasets
+            model_scores = {}
+            
+            for dataset in similar_datasets:
+                for perf in self.meta_learning_db['model_performances']:
+                    if (perf['coin'] == dataset['coin'] and 
+                        perf['horizon'] == dataset['horizon']):
+                        
+                        model_name = perf['model_name']
+                        score = perf['cv_score']
+                        
+                        if model_name not in model_scores:
+                            model_scores[model_name] = []
+                        model_scores[model_name].append(score)
+            
+            # Average scores and sort
+            avg_scores = {
+                model: np.mean(scores) 
+                for model, scores in model_scores.items()
+                if scores
+            }
+            
+            if avg_scores:
+                recommended = sorted(avg_scores.keys(), key=lambda x: avg_scores[x], reverse=True)
+                
+                # Include remaining models
+                for model in default_order:
+                    if model not in recommended:
+                        recommended.append(model)
+                
+                return recommended
+            
+            return default_order
+            
+        except Exception as e:
+            self.logger.error(f"Meta-learning recommendations failed: {e}")
+            return ['xgboost', 'random_forest', 'gradient_boost']
+    
+    def _find_similar_datasets(self, target_chars: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Find similar datasets in meta-learning database"""
+        
+        try:
+            similar_datasets = []
+            
+            for dataset in self.meta_learning_db['dataset_characteristics']:
+                # Calculate similarity score
+                similarity = self._calculate_dataset_similarity(target_chars, dataset)
+                
+                if similarity > 0.7:  # Similarity threshold
+                    similar_datasets.append(dataset)
+            
+            # Sort by similarity (most similar first)
+            similar_datasets.sort(
+                key=lambda x: self._calculate_dataset_similarity(target_chars, x),
+                reverse=True
+            )
+            
+            return similar_datasets[:10]  # Top 10 most similar
+            
+        except Exception as e:
+            self.logger.error(f"Similar dataset search failed: {e}")
+            return []
+    
+    def _calculate_dataset_similarity(self, 
+                                   dataset1: Dict[str, Any],
+                                   dataset2: Dict[str, Any]) -> float:
+        """Calculate similarity between two datasets"""
+        
+        try:
+            # Features to compare
+            numeric_features = [
+                'n_samples', 'n_features', 'target_mean', 'target_std', 'target_range'
+            ]
+            
+            similarities = []
+            
+            for feature in numeric_features:
+                if feature in dataset1 and feature in dataset2:
+                    val1 = dataset1[feature]
+                    val2 = dataset2[feature]
+                    
+                    if val1 == 0 and val2 == 0:
+                        sim = 1.0
+                    elif val1 == 0 or val2 == 0:
+                        sim = 0.0
+                    else:
+                        # Normalized similarity
+                        sim = 1.0 / (1.0 + abs(val1 - val2) / max(abs(val1), abs(val2)))
+                    
+                    similarities.append(sim)
+            
+            # Same horizon bonus
+            if (dataset1.get('horizon') == dataset2.get('horizon')):
+                similarities.append(1.5)  # Bonus for same horizon
+            
+            return np.mean(similarities) if similarities else 0.0
+            
+        except Exception as e:
+            self.logger.error(f"Similarity calculation failed: {e}")
+            return 0.0
+    
+    async def _optimize_with_optuna(self, 
+                                  model_name: str,
+                                  X: np.ndarray,
+                                  y: np.ndarray,
+                                  coin: str,
+                                  horizon: str) -> Dict[str, Any]:
+        """Optimize model using Optuna"""
+        
+        try:
+            if horizon not in self.studies:
+                return {'error': f'No study available for horizon {horizon}'}
+            
+            study = self.studies[horizon]
+            
+            # Create objective function
+            objective_func = self.model_templates[model_name](X, y)
+            
+            # Optimize
+            study.optimize(
+                objective_func,
+                n_trials=self.config['optimization_trials'],
+                timeout=self.config['optimization_timeout'],
+                show_progress_bar=False
+            )
+            
+            # Get best parameters
+            best_params = study.best_params
+            best_score = study.best_value
+            
+            # Train final model with best parameters
+            final_model = self._train_final_model(model_name, X, y, best_params)
             
             return {
-                'success': True,
-                'prediction': float(prediction[-1]) if len(prediction) > 0 else 0.0,
-                'predictions': prediction.tolist(),
-                'confidence': confidence,
-                'model_name': result.model_name,
-                'feature_importance': result.feature_importance,
-                'timestamp': datetime.now()
+                'model_name': model_name,
+                'best_params': best_params,
+                'best_score': best_score,
+                'n_trials': len(study.trials),
+                'model': final_model,
+                'optimization_method': 'optuna'
             }
             
         except Exception as e:
-            self.logger.error(f"AutoML prediction failed for {coin}: {e}")
-            return {'success': False, 'error': str(e)}
+            self.logger.error(f"Optuna optimization failed for {model_name}: {e}")
+            return {'error': str(e)}
     
-    def start_automl_training(self, coins: List[str] = None, n_trials: int = 30):
-        """Start AutoML training for multiple coins"""
-        def training_worker():
-            try:
-                if coins is None:
-                    # Get coins from cache
-                    discovered_coins = self.cache_manager.get("discovered_coins")
-                    train_coins = list(discovered_coins.keys())[:10] if discovered_coins else ['BTC', 'ETH']
-                else:
-                    train_coins = coins
-                
-                for coin in train_coins:
-                    try:
-                        # Get training data
-                        training_data = self._get_training_data(coin)
-                        
-                        if training_data is not None and len(training_data) > 100:
-                            # Run AutoML experiment
-                            result = self.run_automl_experiment(coin, training_data, n_trials=n_trials)
-                            
-                            self.logger.info(f"AutoML completed for {coin}: {result.model_name} "
-                                           f"(Score: {result.best_score:.4f})")
-                        else:
-                            self.logger.warning(f"Insufficient training data for {coin}")
-                            
-                    except Exception as e:
-                        self.logger.error(f"AutoML training failed for {coin}: {e}")
-                    
-                    time.sleep(2)  # Brief pause between coins
-                
-                self.logger.info("AutoML batch training completed")
-                
-            except Exception as e:
-                self.logger.error(f"AutoML training worker failed: {e}")
+    async def _optimize_with_grid_search(self, 
+                                       model_name: str,
+                                       X: np.ndarray,
+                                       y: np.ndarray,
+                                       coin: str,
+                                       horizon: str) -> Dict[str, Any]:
+        """Optimize model using grid search (fallback)"""
         
-        # Start training in background thread
-        training_thread = threading.Thread(target=training_worker, daemon=True)
-        training_thread.start()
-        
-        self.logger.info("Started AutoML batch training")
-    
-    def _get_training_data(self, coin: str) -> Optional[pd.DataFrame]:
-        """Get training data for coin"""
         try:
-            # Get cached price data
-            price_data = self.cache_manager.get(f"validated_price_data_{coin}")
-            if not price_data:
-                return None
+            if model_name not in self.fallback_configs:
+                return {'error': f'No fallback config for {model_name}'}
             
-            df = pd.DataFrame(price_data)
+            best_score = float('inf')
+            best_params = None
+            best_model = None
             
-            # Feature engineering
-            df['returns'] = df['close'].pct_change()
-            df['log_returns'] = np.log(df['close'] / df['close'].shift(1))
-            df['volatility'] = df['returns'].rolling(window=20).std()
+            configs = self.fallback_configs[model_name]
             
-            # Technical indicators
-            df['sma_20'] = df['close'].rolling(window=20).mean()
-            df['sma_50'] = df['close'].rolling(window=50).mean()
-            df['rsi'] = self._calculate_rsi(df['close'])
+            for config in configs:
+                # Train model with this config
+                model = self._create_model(model_name, config)
+                
+                # Cross-validation
+                cv_scores = cross_val_score(
+                    model, X, y,
+                    cv=TimeSeriesSplit(n_splits=self.config['cv_folds']),
+                    scoring='neg_mean_squared_error'
+                )
+                
+                score = -cv_scores.mean()
+                
+                if score < best_score:
+                    best_score = score
+                    best_params = config
+                    best_model = model
             
-            # Volume features
-            df['volume_sma'] = df['volume'].rolling(window=20).mean()
-            df['volume_ratio'] = df['volume'] / (df['volume_sma'] + 1e-8)
+            # Train final model
+            if best_model:
+                best_model.fit(X, y)
             
-            # Price ratios
-            df['high_low_ratio'] = df['high'] / (df['low'] + 1e-8)
-            df['close_open_ratio'] = df['close'] / (df['open'] + 1e-8)
-            
-            # Lags
-            df['returns_lag1'] = df['returns'].shift(1)
-            df['returns_lag2'] = df['returns'].shift(2)
-            df['volume_ratio_lag1'] = df['volume_ratio'].shift(1)
-            
-            # Target: next day return
-            df['target'] = df['returns'].shift(-1)
-            
-            # Clean data
-            result_df = df.dropna()
-            
-            return result_df if len(result_df) > 50 else None
+            return {
+                'model_name': model_name,
+                'best_params': best_params,
+                'best_score': best_score,
+                'n_trials': len(configs),
+                'model': best_model,
+                'optimization_method': 'grid_search'
+            }
             
         except Exception as e:
-            self.logger.error(f"Training data preparation failed for {coin}: {e}")
+            self.logger.error(f"Grid search optimization failed for {model_name}: {e}")
+            return {'error': str(e)}
+    
+    def _create_xgboost_objective(self, X: np.ndarray, y: np.ndarray) -> Callable:
+        """Create XGBoost optimization objective"""
+        
+        def objective(trial: Trial) -> float:
+            params = {
+                'n_estimators': trial.suggest_int('n_estimators', 50, 500),
+                'max_depth': trial.suggest_int('max_depth', 3, 15),
+                'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
+                'subsample': trial.suggest_float('subsample', 0.6, 1.0),
+                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0),
+                'reg_alpha': trial.suggest_float('reg_alpha', 0.0, 10.0),
+                'reg_lambda': trial.suggest_float('reg_lambda', 1.0, 10.0),
+                'random_state': 42
+            }
+            
+            model = xgb.XGBRegressor(**params)
+            
+            # Cross-validation
+            cv_scores = cross_val_score(
+                model, X, y,
+                cv=TimeSeriesSplit(n_splits=self.config['cv_folds']),
+                scoring='neg_mean_squared_error'
+            )
+            
+            return -cv_scores.mean()  # Minimize error
+        
+        return objective
+    
+    def _create_rf_objective(self, X: np.ndarray, y: np.ndarray) -> Callable:
+        """Create Random Forest optimization objective"""
+        
+        def objective(trial: Trial) -> float:
+            params = {
+                'n_estimators': trial.suggest_int('n_estimators', 50, 300),
+                'max_depth': trial.suggest_int('max_depth', 5, 30),
+                'min_samples_split': trial.suggest_int('min_samples_split', 2, 20),
+                'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 10),
+                'max_features': trial.suggest_categorical('max_features', ['auto', 'sqrt', 'log2']),
+                'random_state': 42
+            }
+            
+            model = RandomForestRegressor(**params)
+            
+            cv_scores = cross_val_score(
+                model, X, y,
+                cv=TimeSeriesSplit(n_splits=self.config['cv_folds']),
+                scoring='neg_mean_squared_error'
+            )
+            
+            return -cv_scores.mean()
+        
+        return objective
+    
+    def _create_gb_objective(self, X: np.ndarray, y: np.ndarray) -> Callable:
+        """Create Gradient Boosting optimization objective"""
+        
+        def objective(trial: Trial) -> float:
+            params = {
+                'n_estimators': trial.suggest_int('n_estimators', 50, 300),
+                'max_depth': trial.suggest_int('max_depth', 3, 10),
+                'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
+                'subsample': trial.suggest_float('subsample', 0.6, 1.0),
+                'random_state': 42
+            }
+            
+            model = GradientBoostingRegressor(**params)
+            
+            cv_scores = cross_val_score(
+                model, X, y,
+                cv=TimeSeriesSplit(n_splits=self.config['cv_folds']),
+                scoring='neg_mean_squared_error'
+            )
+            
+            return -cv_scores.mean()
+        
+        return objective
+    
+    def _create_ridge_objective(self, X: np.ndarray, y: np.ndarray) -> Callable:
+        """Create Ridge optimization objective"""
+        
+        def objective(trial: Trial) -> float:
+            params = {
+                'alpha': trial.suggest_float('alpha', 0.1, 100.0, log=True),
+                'random_state': 42
+            }
+            
+            # Scale features for Ridge
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+            
+            model = Ridge(**params)
+            
+            cv_scores = cross_val_score(
+                model, X_scaled, y,
+                cv=TimeSeriesSplit(n_splits=self.config['cv_folds']),
+                scoring='neg_mean_squared_error'
+            )
+            
+            return -cv_scores.mean()
+        
+        return objective
+    
+    def _create_elastic_objective(self, X: np.ndarray, y: np.ndarray) -> Callable:
+        """Create Elastic Net optimization objective"""
+        
+        def objective(trial: Trial) -> float:
+            params = {
+                'alpha': trial.suggest_float('alpha', 0.1, 10.0, log=True),
+                'l1_ratio': trial.suggest_float('l1_ratio', 0.0, 1.0),
+                'random_state': 42
+            }
+            
+            # Scale features
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+            
+            model = ElasticNet(**params)
+            
+            cv_scores = cross_val_score(
+                model, X_scaled, y,
+                cv=TimeSeriesSplit(n_splits=self.config['cv_folds']),
+                scoring='neg_mean_squared_error'
+            )
+            
+            return -cv_scores.mean()
+        
+        return objective
+    
+    def _create_svr_objective(self, X: np.ndarray, y: np.ndarray) -> Callable:
+        """Create SVR optimization objective"""
+        
+        def objective(trial: Trial) -> float:
+            params = {
+                'C': trial.suggest_float('C', 0.1, 100.0, log=True),
+                'epsilon': trial.suggest_float('epsilon', 0.01, 1.0),
+                'gamma': trial.suggest_categorical('gamma', ['scale', 'auto'])
+            }
+            
+            # Scale features for SVR
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+            
+            model = SVR(**params)
+            
+            cv_scores = cross_val_score(
+                model, X_scaled, y,
+                cv=TimeSeriesSplit(n_splits=self.config['cv_folds']),
+                scoring='neg_mean_squared_error'
+            )
+            
+            return -cv_scores.mean()
+        
+        return objective
+    
+    def _create_model(self, model_name: str, params: Dict[str, Any]):
+        """Create model instance with parameters"""
+        
+        if model_name == 'xgboost':
+            return xgb.XGBRegressor(**params)
+        elif model_name == 'random_forest':
+            return RandomForestRegressor(**params)
+        elif model_name == 'gradient_boost':
+            return GradientBoostingRegressor(**params)
+        elif model_name == 'ridge':
+            return Ridge(**params)
+        elif model_name == 'elastic_net':
+            return ElasticNet(**params)
+        elif model_name == 'svr':
+            return SVR(**params)
+        else:
+            raise ValueError(f"Unknown model: {model_name}")
+    
+    def _train_final_model(self, 
+                         model_name: str,
+                         X: np.ndarray,
+                         y: np.ndarray,
+                         params: Dict[str, Any]):
+        """Train final model with optimized parameters"""
+        
+        try:
+            model = self._create_model(model_name, params)
+            
+            # Scale data if needed
+            if model_name in ['ridge', 'elastic_net', 'svr']:
+                scaler = StandardScaler()
+                X = scaler.fit_transform(X)
+                
+                # Store scaler with model
+                model.scaler = scaler
+            
+            model.fit(X, y)
+            return model
+            
+        except Exception as e:
+            self.logger.error(f"Final model training failed: {e}")
             return None
     
-    def _calculate_rsi(self, prices: pd.Series, window: int = 14) -> pd.Series:
-        """Calculate RSI indicator"""
-        delta = prices.diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-        rs = gain / (loss + 1e-8)
-        rsi = 100 - (100 / (1 + rs))
-        return rsi
+    def _select_best_model(self, optimization_results: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        """Select best model from optimization results"""
+        
+        valid_results = {
+            name: result for name, result in optimization_results.items()
+            if 'error' not in result and 'best_score' in result
+        }
+        
+        if not valid_results:
+            return {'error': 'No valid optimization results'}
+        
+        # Find model with lowest error
+        best_model_name = min(valid_results.keys(), key=lambda x: valid_results[x]['best_score'])
+        best_result = valid_results[best_model_name]
+        
+        return {
+            'model_name': best_model_name,
+            'model': best_result['model'],
+            'best_params': best_result['best_params'],
+            'cv_score': best_result['best_score'],
+            'optimization_method': best_result.get('optimization_method', 'unknown'),
+            'n_trials': best_result.get('n_trials', 0)
+        }
+    
+    def _store_optimization_results(self, 
+                                  coin: str,
+                                  horizon: str,
+                                  best_model_info: Dict[str, Any],
+                                  dataset_chars: Dict[str, Any]):
+        """Store optimization results for meta-learning"""
+        
+        try:
+            # Store model performance
+            performance_record = {
+                'coin': coin,
+                'horizon': horizon,
+                'model_name': best_model_info['model_name'],
+                'cv_score': best_model_info['cv_score'],
+                'optimization_method': best_model_info.get('optimization_method'),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            self.meta_learning_db['model_performances'].append(performance_record)
+            
+            # Store dataset characteristics
+            self.meta_learning_db['dataset_characteristics'].append(dataset_chars)
+            
+            # Store hyperparameters
+            hyperparams_record = {
+                'coin': coin,
+                'horizon': horizon,
+                'model_name': best_model_info['model_name'],
+                'best_params': best_model_info['best_params'],
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            self.meta_learning_db['hyperparameter_history'].append(hyperparams_record)
+            
+            # Limit memory usage
+            max_records = self.config['meta_learning_memory']
+            
+            for key in self.meta_learning_db:
+                if len(self.meta_learning_db[key]) > max_records:
+                    self.meta_learning_db[key] = self.meta_learning_db[key][-max_records:]
+            
+            # Store optimized model
+            model_key = f"{coin}_{horizon}"
+            self.optimized_models[model_key] = best_model_info
+            
+            self.logger.info(f"Optimization results stored for {coin} {horizon}")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to store optimization results: {e}")
     
     def get_automl_status(self) -> Dict[str, Any]:
         """Get AutoML engine status"""
+        
         return {
-            'gpu_available': self.gpu_available,
-            'model_candidates': len(self.model_candidates),
-            'trained_models': len(self.best_models),
-            'experiment_history': len(self.experiment_history),
-            'available_models': [candidate.name for candidate in self.model_candidates],
-            'best_models': {coin: result.model_name for coin, result in self.best_models.items()},
-            'timestamp': datetime.now()
+            'optuna_available': OPTUNA_AVAILABLE,
+            'studies_initialized': len(self.studies),
+            'optimized_models': len(self.optimized_models),
+            'meta_learning_records': {
+                key: len(records) for key, records in self.meta_learning_db.items()
+            },
+            'config': self.config,
+            'last_updated': datetime.now().isoformat()
         }
     
-    def save_automl_models(self, filepath: str = "models/automl_models.pkl"):
-        """Save AutoML models"""
-        try:
-            models_dir = Path("models")
-            models_dir.mkdir(exist_ok=True)
-            
-            save_data = {
-                'best_models': self.best_models,
-                'experiment_history': self.experiment_history,
-                'timestamp': datetime.now()
-            }
-            
-            with open(filepath, 'wb') as f:
-                pickle.dump(save_data, f)
-            
-            self.logger.info(f"AutoML models saved to {filepath}")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to save AutoML models: {e}")
-    
-    def load_automl_models(self, filepath: str = "models/automl_models.pkl"):
-        """Load AutoML models"""
-        try:
-            if not Path(filepath).exists():
-                self.logger.warning(f"AutoML model file not found: {filepath}")
-                return
-            
-            with open(filepath, 'rb') as f:
-                save_data = pickle.load(f)
-            
-            self.best_models = save_data.get('best_models', {})
-            self.experiment_history = save_data.get('experiment_history', {})
-            
-            self.logger.info(f"Loaded {len(self.best_models)} AutoML models from {filepath}")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to load AutoML models: {e}")
+    def get_best_model_for_coin(self, coin: str, horizon: str) -> Optional[Any]:
+        """Get best optimized model for coin and horizon"""
+        
+        model_key = f"{coin}_{horizon}"
+        
+        if model_key in self.optimized_models:
+            return self.optimized_models[model_key]['model']
+        
+        return None

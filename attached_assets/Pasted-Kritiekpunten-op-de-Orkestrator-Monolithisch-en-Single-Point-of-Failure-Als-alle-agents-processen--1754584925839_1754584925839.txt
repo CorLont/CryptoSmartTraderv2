@@ -1,0 +1,51 @@
+Kritiekpunten op de Orkestrator
+Monolithisch en Single-Point-of-Failure:
+
+Als alle agents/processen worden gestart vanuit één hoofdscript (“run_everything.py” o.i.d.), crasht alles als één onderdeel vastloopt of blokkeert.
+
+Geen ingebouwde failover/self-healing. Agent-fout = systeemfout.
+
+Blocking en gebrekkige asynchroniciteit:
+
+Scrapers, ML, whale-tracking, etc. wachten op elkaar of blokkeren de event loop.
+
+Geen aparte process-pool, thread-pool of async-taskqueue per agent; slecht gebruik van multi-core CPU/GPU.
+
+Geen resource-isolatie per agent:
+
+Bij memory- of CPU-lekkage in één module (bv. grote ML-batch) vertraagt/knalt het hele systeem.
+
+Slechte foutafhandeling en monitoring:
+
+Exceptions in 1 agent worden soms “stil” gelogd, maar niet geëscaleerd.
+
+Geen restart/backoff of circuit breaker mechanisme.
+
+Gebrekkige hardware-utilisatie:
+
+Op jouw workstation zijn 16-32 threads en een RTX 2000 GPU beschikbaar, maar de architectuur benut vaak maar 1 core en GPU (alleen voor ML, niet voor data engineering).
+
+Ontbrekende async data pipes:
+
+Geen centrale, eventgedreven message-bus of async-queue (zoals Redis, Kafka, ZeroMQ, of zelfs Python’s asyncio.Queue) voor het aanleveren van resultaten tussen agents.
+
+Log, metrics en alerts niet gecentraliseerd:
+
+Logging is versnipperd per module, zonder centrale health/alert dispatcher of Prometheus/Grafana endpoint.
+
+Hoe bouw je een robuuste orkestrator voor jouw hardware?
+Architectuurschets (aanbevolen):
+Elke agent draait als zelfstandige, beheerde process of thread.
+
+Communicatie via een centrale async-queue (bv. Python asyncio.Queue, of Redis voor meer schaalbaarheid).
+
+Resource monitoring & healthchecks per agent; centrale supervisor die crashed agents restart of afknijpt.
+
+Volledige logs, errors, metrics en health naar één centrale module/dashboard.
+
+Zware ML-taken (training/inference) draaien op GPU en isoleren hun batch-memory gebruik.
+
+Scrapers, whale-trackers en TA-processen draaien multi-threaded of async om alle CPU-cores te benutten.
+
+Orkestrator fungeert als “manager of managers”, niet als allesdoener.
+

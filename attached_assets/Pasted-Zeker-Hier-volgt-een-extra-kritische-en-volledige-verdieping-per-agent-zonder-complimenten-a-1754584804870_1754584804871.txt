@@ -1,0 +1,62 @@
+Zeker! Hier volgt een **extra kritische en volledige verdieping per agent** — zonder complimenten, alleen verbeterpunten en aandachtspunten. Dit is gericht op maximale professionaliteit, betrouwbaarheid én onderscheidend vermogen:
+
+---
+
+## 1. **Sentiment Agent**
+
+* **Scraping is kwetsbaar**: Rate limits, account bans, API-wijzigingen en DDoS-risico’s worden niet structureel afgevangen. Geen evidence van captcha-solving, rotating proxies of anti-ban technieken.
+* **Datavervuiling door bots en fake engagement**: Er ontbreekt een bot- of spamfilter. Zonder detectie van coordinated bot attacks (pump groups) is je sentiment-score te manipuleren.
+* **Moeilijke entiteit-herkenning**: Coin-symbolen zijn ambigu (“SOL” = Solana of “Solvent?”). Keyword/NER disambiguatie ontbreekt.
+* **Sentimentmodel generaliseert mogelijk slecht**: Zonder retraining op nieuwe crypto-slang/memes kan het sentimentmodel snel achterlopen of dom worden.
+* **Geen confidence-score**: Sentimentoutput wordt als feit gepresenteerd, zonder kans/zekerheid of “data completeness” per coin.
+
+---
+
+## 2. **Technische Analyse Agent**
+
+* **I/O en compute bottleneck**: TA-indicatoren worden batch-gecompute, maar bulk-berekeningen zijn waarschijnlijk single-threaded of blocking — bij honderden coins ontstaat vertraging.
+* **Indicator-inflatie en overfitting**: Het toevoegen van tientallen indicatoren zonder selectiemechanisme verhoogt noise en het risico op curve fitting. Geen feature-pruning of validatie van nut per indicator.
+* **Geen regime- of trendherkenning**: Indicatoren zijn dom zonder een mechanisme dat marktfase (bull, bear, sideways) herkent.
+* **Ordeboekdata ontbreekt/te oppervlakkig**: Diepte, spoofing, liquidity gaps of large wall detection zijn afwezig of niet goed geïntegreerd als features.
+
+---
+
+## 3. **Whale/On-Chain Agent**
+
+* **On-chain scraping is traag en kwetsbaar**: Geen dedicated async-pipeline; rate-limiting en timeouts kunnen het hele proces blokkeren. Mogelijke incomplete datasets als nodes achterlopen.
+* **Gebrek aan label-accuratesse**: Wallets/adressen worden vaak foutief gelabeld; smart money is moeilijk van exchange flows te onderscheiden.
+* **Events/Unlocks onderbelicht**: Belangrijke governance events, token unlocks of exploit meldingen worden niet altijd uit on-chain gehaald of als feature toegevoegd.
+* **No false-positive bescherming**: Whale moves zonder context (“whale dump” op exchange vs interne verschuiving) leiden tot foute signalen zonder contextfilter.
+
+---
+
+## 4. **ML/AI Agent**
+
+* **Deep learning is optioneel, geen kernonderdeel**: Hierdoor mis je niet-lineaire en contextuele patronen, vooral bij multi-coin/multi-feature forecasting.
+* **Geen uncertainty modeling**: Alleen hard thresholding op output/probability, geen Bayesian/quantile regressie, ensemble std-dev of echte confidence-intervals.
+* **Feature engineering niet self-adaptief**: Feature-importance is statisch, terwijl feature-waarde per regime varieert (bijv. TA werkt in trends, niet in zijwaarts).
+* **Self-learning is reactief, niet proactief**: Retraining gebeurt bij merkbare performance drop, maar geen online/continual learning of meta-learning voor directe aanpassing.
+* **Modeldrift en datashift niet expliciet bewaakt**: Geen concrete drift- of data-distribution checks die warning geven vóór model performance inzakt.
+* **Explainability blijft oppervlakkig**: SHAP/LIME-waarden worden niet altijd direct teruggekoppeld in dashboards, waardoor gebruikers “zomaar” moeten vertrouwen.
+
+---
+
+## 5. **Backtest & Executie Agent**
+
+* **Backtests te rooskleurig**: Geen volledige correctie voor orderboek-slippage, platform-latency, API-fails, trading limits of real-world constraints.
+* **Scenario’s zijn simplistisch**: Geen stress-tests voor extreme marktvolatiliteit, market shutdowns, flash crashes, illiquiditeit.
+* **Geen trade delay modeling**: In productie zit tussen signaal en order een delay (scraping, ML, orderplacement), die ontbreekt in de simulatie.
+* **Geen smart order router/anti-pump-pump mechanisme**: Bij signaalstapeling ontstaat risico op self-induced pumps, front-running, of API bans.
+
+---
+
+## **Overkoepelende tekortkomingen**
+
+* **Agents zijn te afhankelijk van centrale orchestrator**: Geen failover, self-healing of auto-restart per agent. Een enkele crash kan alles ophouden.
+* **Async-architectuur is onvoldoende**: Bij resource contention/veel coins kan alles vastlopen door blocking calls.
+* **Lack of continuous deployment/testing**: Geen CI/CD, unittests, resource-mocks, of testnet validatie per agent.
+* **Geen integratie met moderne secrets management, resource limiting of logging best practices.**
+
+---
+
+**Wil je een kritische code-review of upgrade-voorstel van één specifieke agent of van de orkestrator? Laat het weten, dan lever ik direct een praktisch verbeterplan of codevoorbeeld.**
