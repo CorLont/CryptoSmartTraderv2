@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from core.cache_manager import CacheManager
 from core.config_manager import ConfigManager
 from core.health_monitor import HealthMonitor
+from core.openai_enhanced_analyzer import OpenAIEnhancedAnalyzer
 
 
 class DailyAnalysisScheduler:
@@ -33,6 +34,9 @@ class DailyAnalysisScheduler:
         self.cache_manager = cache_manager
         self.health_monitor = health_monitor
         self.logger = logging.getLogger(__name__)
+        
+        # Initialize OpenAI Enhanced Analyzer
+        self.openai_analyzer = OpenAIEnhancedAnalyzer(config_manager)
         
         # Service management
         self.running_services = {}
@@ -97,17 +101,23 @@ class DailyAnalysisScheduler:
         self.is_running = True
         self.logger.info("Starting daily analysis scheduler")
         
-        # Schedule daily tasks
+        # Schedule daily tasks with OpenAI enhancement
         if schedule:
             schedule.every().day.at("06:00").do(self._start_morning_analysis)
             schedule.every().day.at("12:00").do(self._update_midday_analysis)
             schedule.every().day.at("18:00").do(self._update_evening_analysis)
             schedule.every().day.at("23:30").do(self._generate_daily_report)
             
-            # Schedule continuous tasks
+            # Schedule continuous tasks with AI enhancement
             schedule.every(15).minutes.do(self._update_ml_predictions)
             schedule.every(5).minutes.do(self._update_social_sentiment)
             schedule.every(30).minutes.do(self._update_technical_analysis)
+            
+            # Schedule OpenAI enhanced analysis batches
+            schedule.every().hour.do(self._run_openai_enhancement_batch)
+            schedule.every().day.at("09:00").do(self._generate_ai_market_insights)
+            schedule.every().day.at("15:00").do(self._generate_ai_market_insights)
+            schedule.every().day.at("21:00").do(self._generate_ai_market_insights)
         
         # Start scheduler thread
         scheduler_thread = threading.Thread(target=self._run_scheduler, daemon=True)
@@ -513,3 +523,124 @@ class DailyAnalysisScheduler:
         cache_key = f"daily_analysis_{today}"
         
         return self.cache_manager.get(cache_key)
+    
+    def _run_openai_enhancement_batch(self):
+        """Run OpenAI enhancement batch processing"""
+        try:
+            self.logger.info("Running OpenAI enhancement batch")
+            today = datetime.now().strftime("%Y-%m-%d")
+            cache_key = f"daily_analysis_{today}"
+            
+            # Get current analysis data
+            daily_data = self.cache_manager.get(cache_key) or {}
+            
+            # Prepare batch data for OpenAI enhancement
+            batch_data = {}
+            
+            if daily_data.get("social_sentiment", {}).get("status") == "active":
+                batch_data["sentiment"] = daily_data["social_sentiment"]
+            
+            if daily_data.get("technical_analysis", {}).get("status") == "active":
+                batch_data["technical"] = daily_data["technical_analysis"]
+            
+            if daily_data.get("ml_analysis", {}).get("status") == "active":
+                batch_data["ml_predictions"] = daily_data["ml_analysis"]
+            
+            if batch_data:
+                # Process with OpenAI (run in thread to avoid blocking)
+                threading.Thread(
+                    target=self._process_openai_batch,
+                    args=(batch_data, today),
+                    daemon=True
+                ).start()
+                
+        except Exception as e:
+            self.logger.error(f"OpenAI enhancement batch failed: {e}")
+    
+    def _process_openai_batch(self, batch_data: Dict, date: str):
+        """Process OpenAI batch in background thread"""
+        try:
+            # Run async OpenAI processing
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            enhanced_results = loop.run_until_complete(
+                self.openai_analyzer.process_analysis_batch(batch_data)
+            )
+            
+            # Store enhanced results
+            cache_key = f"daily_analysis_{date}"
+            daily_data = self.cache_manager.get(cache_key) or {}
+            
+            daily_data["openai_enhanced"] = {
+                "enhanced_results": enhanced_results,
+                "enhancement_timestamp": datetime.now().isoformat(),
+                "batch_status": "completed"
+            }
+            
+            self.cache_manager.set(cache_key, daily_data, ttl_minutes=1440)
+            self.logger.info("OpenAI enhancement batch completed successfully")
+            
+        except Exception as e:
+            self.logger.error(f"OpenAI batch processing failed: {e}")
+        finally:
+            loop.close()
+    
+    def _generate_ai_market_insights(self):
+        """Generate AI-powered market insights"""
+        try:
+            self.logger.info("Generating AI market insights")
+            today = datetime.now().strftime("%Y-%m-%d")
+            cache_key = f"daily_analysis_{today}"
+            
+            # Get all available analysis data
+            daily_data = self.cache_manager.get(cache_key) or {}
+            
+            if daily_data:
+                # Generate comprehensive insights using OpenAI
+                threading.Thread(
+                    target=self._process_market_insights,
+                    args=(daily_data, today),
+                    daemon=True
+                ).start()
+                
+        except Exception as e:
+            self.logger.error(f"AI market insights generation failed: {e}")
+    
+    def _process_market_insights(self, daily_data: Dict, date: str):
+        """Process market insights in background thread"""
+        try:
+            # Run async market insights generation
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            market_insights = loop.run_until_complete(
+                self.openai_analyzer.generate_market_insights(daily_data)
+            )
+            
+            # Store market insights
+            cache_key = f"daily_analysis_{date}"
+            current_data = self.cache_manager.get(cache_key) or {}
+            
+            current_data["ai_market_insights"] = market_insights
+            
+            # Update daily summary with AI insights
+            if "daily_summary" not in current_data:
+                current_data["daily_summary"] = {}
+            
+            ai_insights = market_insights.get("ai_insights", {})
+            current_data["daily_summary"].update({
+                "ai_enhanced": True,
+                "ai_market_trend": ai_insights.get("market_trend", "neutral"),
+                "ai_confidence": ai_insights.get("confidence_score", 0.5),
+                "ai_recommendations": ai_insights.get("strategic_recommendations", []),
+                "ai_insights_timestamp": datetime.now().isoformat()
+            })
+            
+            self.cache_manager.set(cache_key, current_data, ttl_minutes=1440)
+            self.logger.info("AI market insights generated successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Market insights processing failed: {e}")
+        finally:
+            loop.close()

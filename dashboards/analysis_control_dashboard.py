@@ -208,6 +208,33 @@ class AnalysisControlDashboard:
                 self.daily_scheduler._collect_analysis_results()
                 st.success("Analysis results updated")
                 st.rerun()
+        
+        # OpenAI Enhancement section
+        if daily_data.get("openai_enhanced"):
+            st.subheader("🤖 AI Enhancement Status")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button("🚀 Run AI Enhancement"):
+                    self.daily_scheduler._run_openai_enhancement_batch()
+                    st.success("AI enhancement batch started")
+            
+            with col2:
+                if st.button("🧠 Generate AI Insights"):
+                    self.daily_scheduler._generate_ai_market_insights()
+                    st.success("AI market insights generation started")
+            
+            with col3:
+                enhanced_data = daily_data.get("openai_enhanced", {})
+                if enhanced_data.get("enhancement_timestamp"):
+                    st.metric("Last AI Enhancement", enhanced_data["enhancement_timestamp"][:16])
+                else:
+                    st.metric("AI Enhancement", "⏳ Pending")
+            
+            # Show AI insights if available
+            ai_insights = daily_data.get("ai_market_insights")
+            if ai_insights:
+                self._render_ai_insights(ai_insights)
     
     def _show_detailed_daily_report(self, daily_data: Dict):
         """Show detailed daily report in expandable section"""
@@ -229,6 +256,40 @@ class AnalysisControlDashboard:
             file_name=filename,
             mime="application/json"
         )
+    
+    def _render_ai_insights(self, ai_insights: Dict):
+        """Render AI-powered market insights"""
+        st.subheader("🧠 AI Market Insights")
+        
+        ai_data = ai_insights.get("ai_insights", {})
+        
+        if ai_data:
+            # Executive summary
+            executive_summary = ai_data.get("executive_summary", "")
+            if executive_summary:
+                st.info(f"**Executive Summary:** {executive_summary}")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**Strategic Recommendations:**")
+                recommendations = ai_data.get("strategic_recommendations", [])
+                for i, rec in enumerate(recommendations[:5], 1):
+                    st.write(f"{i}. {rec}")
+            
+            with col2:
+                st.write("**Risk Assessment:**")
+                risk_data = ai_data.get("risk_framework", {})
+                if risk_data:
+                    for risk_type, risk_level in risk_data.items():
+                        risk_emoji = "🟢" if risk_level == "low" else "🟡" if risk_level == "medium" else "🔴"
+                        st.write(f"{risk_emoji} {risk_type.title()}: {risk_level}")
+                else:
+                    st.write("Risk assessment pending...")
+            
+            # Detailed insights in expandable section
+            with st.expander("🔍 Detailed AI Analysis"):
+                st.json(ai_insights)
         
         with col1:
             self._render_ml_analysis_controls()
