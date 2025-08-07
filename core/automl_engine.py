@@ -19,6 +19,27 @@ try:
     OPTUNA_AVAILABLE = True
 except ImportError:
     OPTUNA_AVAILABLE = False
+    # Define dummy classes to prevent import errors
+    class Trial:
+        def suggest_int(self, name, low, high):
+            return (low + high) // 2
+        def suggest_float(self, name, low, high, log=False):
+            return (low + high) / 2
+        def suggest_categorical(self, name, choices):
+            return choices[0]
+    
+    class optuna:
+        @staticmethod
+        def create_study(*args, **kwargs):
+            return None
+        class samplers:
+            class TPESampler:
+                def __init__(self, *args, **kwargs):
+                    pass
+        class pruners:
+            class MedianPruner:
+                def __init__(self, *args, **kwargs):
+                    pass
 
 from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor

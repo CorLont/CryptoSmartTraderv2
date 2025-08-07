@@ -22,6 +22,54 @@ try:
 except ImportError:
     TORCH_AVAILABLE = False
     logging.warning("PyTorch not available - using simplified deep learning")
+    # Define dummy classes to prevent import errors
+    class nn:
+        class Module:
+            def __init__(self):
+                pass
+            def forward(self, x):
+                return x
+        class LSTM:
+            def __init__(self, *args, **kwargs):
+                pass
+        class MultiheadAttention:
+            def __init__(self, *args, **kwargs):
+                pass
+        class Linear:
+            def __init__(self, *args, **kwargs):
+                pass
+        class Dropout:
+            def __init__(self, *args, **kwargs):
+                pass
+        class ReLU:
+            def __init__(self, *args, **kwargs):
+                pass
+        class TransformerEncoder:
+            def __init__(self, *args, **kwargs):
+                pass
+        class TransformerEncoderLayer:
+            def __init__(self, *args, **kwargs):
+                pass
+        class Parameter:
+            def __init__(self, *args, **kwargs):
+                pass
+                
+    class optim:
+        class Adam:
+            def __init__(self, *args, **kwargs):
+                pass
+            def zero_grad(self):
+                pass
+            def step(self):
+                pass
+                
+    class torch:
+        @staticmethod
+        def FloatTensor(*args):
+            return None
+        @staticmethod
+        def randn(*args):
+            return None
 
 class LSTMPricePredictor(nn.Module):
     """Advanced LSTM network for price prediction"""
