@@ -14,6 +14,7 @@ from dashboards.main_dashboard import MainDashboard
 from dashboards.agent_dashboard import AgentDashboard  
 from dashboards.portfolio_dashboard import PortfolioDashboard
 from dashboards.performance_dashboard import PerformanceDashboard
+from dashboards.analysis_control_dashboard import AnalysisControlDashboard
 import logging
 
 # Setup logging
@@ -74,6 +75,7 @@ def main():
         "Navigate to:",
         [
             "🎯 Main Dashboard",
+            "🎛️ Analysis Control",
             "🤖 Agent Dashboard", 
             "💼 Portfolio Dashboard",
             "🔧 Performance Dashboard",
@@ -86,6 +88,10 @@ def main():
     if page == "🎯 Main Dashboard":
         main_dashboard = MainDashboard(config_manager, health_monitor)
         main_dashboard.render()
+        
+    elif page == "🎛️ Analysis Control":
+        analysis_control = AnalysisControlDashboard(container)
+        analysis_control.render()
         
     elif page == "🤖 Agent Dashboard":
         agent_dashboard = AgentDashboard(config_manager, health_monitor)
