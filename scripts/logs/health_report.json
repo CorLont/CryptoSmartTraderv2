@@ -1,0 +1,34 @@
+{
+  "timestamp": "2025-08-07T16:20:33.385180",
+  "errors_found": [
+    {
+      "component": "Exchange System",
+      "error": "Exchange system failure: 'DynamicContainer' object has no attribute 'comprehensive_market_scanner'",
+      "severity": "critical"
+    },
+    {
+      "component": "Real-time Pipeline",
+      "error": "Pipeline system failure: type object 'dependency_injector.providers.Self' has no attribute 'market_scanner'",
+      "severity": "high"
+    },
+    {
+      "component": "ML Systems",
+      "error": "ML system failure: type object 'dependency_injector.providers.Self' has no attribute 'cache_manager'",
+      "severity": "high"
+    }
+  ],
+  "warnings_found": [
+    {
+      "component": "Monitoring System",
+      "warning": "Monitoring not active",
+      "severity": "medium"
+    },
+    {
+      "component": "Metrics Server",
+      "warning": "Metrics server may not be running",
+      "severity": "low"
+    }
+  ],
+  "fixes_applied": [],
+  "system_status": "degraded"
+}

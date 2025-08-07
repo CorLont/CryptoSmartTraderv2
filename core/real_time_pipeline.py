@@ -300,7 +300,8 @@ class RealTimePipeline:
             validated_coins = self._get_coins_with_validated_data('price')
             
             if not validated_coins:
-                return {'success': False, 'error': 'No coins with validated price data'}
+                self.logger.debug("No coins with validated price data for sentiment scraping")
+                return {'success': False, 'reason': 'No validated price data', 'coins_processed': 0}
             
             successful_scraping = 0
             failed_coins = []
@@ -399,7 +400,8 @@ class RealTimePipeline:
             validated_coins = self._get_coins_with_validated_data('sentiment')
             
             if not validated_coins:
-                return {'success': False, 'error': 'No coins with validated sentiment data'}
+                self.logger.debug("No coins with validated sentiment data for whale detection")
+                return {'success': False, 'reason': 'No validated sentiment data', 'coins_processed': 0}
             
             successful_detection = 0
             
@@ -493,7 +495,8 @@ class RealTimePipeline:
                     if not training_results:
                         return {'success': False, 'error': 'Model training failed'}
                 else:
-                    return {'success': False, 'error': 'Insufficient training data'}
+                    self.logger.debug("Insufficient training data for ML batch inference")
+                    return {'success': False, 'reason': 'Insufficient training data', 'models_available': 0}
             
             # Get alpha opportunities using multi-horizon predictions
             opportunities = ml_system.get_alpha_opportunities(

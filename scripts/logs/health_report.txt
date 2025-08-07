@@ -1,0 +1,24 @@
+================================================================================
+CRYPTOSMARTTRADER V2 - PRODUCTION HEALTH REPORT
+================================================================================
+Generated: 2025-08-07T16:20:33.385180
+System Status: DEGRADED
+
+🔴 CRITICAL ERRORS:
+----------------------------------------
+• Exchange System: Exchange system failure: 'DynamicContainer' object has no attribute 'comprehensive_market_scanner' (Severity: critical)
+• Real-time Pipeline: Pipeline system failure: type object 'dependency_injector.providers.Self' has no attribute 'market_scanner' (Severity: high)
+• ML Systems: ML system failure: type object 'dependency_injector.providers.Self' has no attribute 'cache_manager' (Severity: high)
+
+🟡 WARNINGS:
+----------------------------------------
+• Monitoring System: Monitoring not active (Severity: medium)
+• Metrics Server: Metrics server may not be running (Severity: low)
+
+📋 RECOMMENDATIONS:
+----------------------------------------
+🚨 Immediate attention required for critical errors
+⚠️  High priority errors need resolution
+ℹ️  Review warnings for system optimization
+
+================================================================================

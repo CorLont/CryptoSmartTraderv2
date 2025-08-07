@@ -101,15 +101,29 @@ class ComprehensiveMarketScanner:
                 'sandbox': False
             })
             
-            # Coinbase Pro - for US market coverage
-            exchanges['coinbasepro'] = ccxt.coinbasepro({
-                'apiKey': '',
-                'secret': '',
-                'passphrase': '',
-                'timeout': 30000,
-                'enableRateLimit': True,
-                'sandbox': False
-            })
+            # Coinbase Pro - for US market coverage (check if available)
+            try:
+                if hasattr(ccxt, 'coinbasepro'):
+                    exchanges['coinbasepro'] = ccxt.coinbasepro({
+                        'apiKey': '',
+                        'secret': '',
+                        'passphrase': '',
+                        'timeout': 30000,
+                        'enableRateLimit': True,
+                        'sandbox': False
+                    })
+                elif hasattr(ccxt, 'coinbaseadvanced'):
+                    exchanges['coinbase'] = ccxt.coinbaseadvanced({
+                        'apiKey': '',
+                        'secret': '',
+                        'timeout': 30000,
+                        'enableRateLimit': True,
+                        'sandbox': False
+                    })
+                else:
+                    self.logger.warning("Coinbase exchanges not available in this ccxt version")
+            except Exception as coinbase_error:
+                self.logger.warning(f"Coinbase exchange not available: {coinbase_error}")
             
             self.logger.info(f"Initialized {len(exchanges)} exchanges")
             return exchanges
@@ -347,7 +361,11 @@ class ComprehensiveMarketScanner:
                         continue
                         
         except Exception as e:
-            self.logger.error(f"Batch analysis failed: {e}")
+            # Check for interpreter shutdown error
+            if "interpreter shutdown" in str(e) or "cannot schedule new futures" in str(e):
+                self.logger.warning(f"Batch analysis interrupted by shutdown: {e}")
+            else:
+                self.logger.error(f"Batch analysis failed: {e}")
     
     def _analyze_coin_timeframe(self, symbol: str, timeframe: str) -> Optional[Dict[str, Any]]:
         """Analyze a single coin on a specific timeframe"""

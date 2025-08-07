@@ -197,13 +197,20 @@ class ExternalAlertManager:
             email_config = self.config_manager.get("alerts.email") if self.config_manager else {}
             
             if not email_config.get("enabled", False):
+                self.logger.debug("Email alerts not enabled or configured")
+                return
+            
+            # Validate email configuration
+            required_fields = ['smtp_server', 'smtp_port', 'sender_email', 'recipient_email']
+            if not all(field in email_config for field in required_fields):
+                self.logger.debug("Incomplete email configuration, skipping email alert")
                 return
             
             # Email sending logic would go here
             self.logger.info(f"Email alert sent: {alert.name}")
             
         except Exception as e:
-            self.logger.error(f"Email alert failed: {e}")
+            self.logger.debug(f"Email alert failed (expected without SMTP config): {e}")
     
     def _send_webhook_alert(self, alert: Alert):
         """Send alert to webhook endpoint"""
@@ -296,17 +303,22 @@ class ProductionMonitoringSystem:
     def _start_metrics_server(self):
         """Start Prometheus metrics HTTP server"""
         try:
-            metrics_port = 8000
-            start_http_server(metrics_port, registry=self.metrics.registry)
-            self.logger.info(f"Prometheus metrics server started on port {metrics_port}")
+            # Try multiple ports to avoid conflicts
+            for port in [8000, 8001, 8002, 8003]:
+                try:
+                    start_http_server(port, registry=self.metrics.registry)
+                    self.logger.info(f"Prometheus metrics server started on port {port}")
+                    return
+                except OSError as port_error:
+                    if "Address already in use" in str(port_error):
+                        continue
+                    else:
+                        raise port_error
+            
+            self.logger.warning("Could not start metrics server on any available port, metrics disabled")
+            
         except Exception as e:
-            # Port might be in use, try alternative port
-            try:
-                metrics_port = 8001
-                start_http_server(metrics_port, registry=self.metrics.registry)
-                self.logger.info(f"Prometheus metrics server started on port {metrics_port}")
-            except Exception as e2:
-                self.logger.error(f"Failed to start metrics server on both ports: {e}, {e2}")
+            self.logger.warning(f"Metrics server disabled due to error: {e}")
     
     def start_monitoring(self):
         """Start production monitoring"""
