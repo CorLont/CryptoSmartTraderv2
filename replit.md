@@ -14,6 +14,13 @@ The system aims for high returns by combining technical indicators, sentiment an
 - **Bayesian Uncertainty:** Gaussian Process uncertainty quantification with ≥80% confidence filtering ✅ OPERATIONAL
 - **Daily Logging System:** Organized logs by date with 8 specialized log types for comprehensive monitoring ✅ OPERATIONAL
 
+**ENHANCED AGENT CAPABILITIES (August 2025):**
+- **Enhanced Sentiment Agent:** Anti-bot detection, rate limiting, confidence scoring, entity disambiguation ✅ IMPLEMENTED
+- **Enhanced Technical Agent:** Regime detection, parallel processing, dynamic indicator selection, compute optimization ✅ IMPLEMENTED
+- **Enhanced Whale Agent:** Async pipeline, address labeling, event detection, false positive filtering ✅ IMPLEMENTED
+- **Enhanced ML Agent:** Mandatory ensemble deep learning, uncertainty quantification, drift detection, explainability ✅ IMPLEMENTED
+- **Enhanced Orchestrator:** Self-healing agents, resource monitoring, failover mechanisms, graceful shutdown ✅ IMPLEMENTED
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
