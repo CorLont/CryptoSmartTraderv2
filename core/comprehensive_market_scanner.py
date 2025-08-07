@@ -583,6 +583,20 @@ class ComprehensiveMarketScanner:
                 self.scan_statistics['opportunities_found'] += 1
                 self.logger.info(f"Trading opportunity detected: {symbol} {timeframe} (score: {opportunity_score})")
                 
+                # Also log to daily structured logger
+                try:
+                    from config.daily_logging_config import log_trading
+                    log_trading(symbol, timeframe, opportunity_score, {
+                        'rsi': analysis.get('rsi', 0),
+                        'volume_ratio': analysis.get('volume_ratio', 0),
+                        'price_change_pct': analysis.get('price_change_pct', 0),
+                        'trend_direction': analysis.get('trend_direction', 'unknown'),
+                        'signals': signals[:5],  # Limit to first 5 signals
+                        'timestamp': datetime.now().isoformat()
+                    })
+                except Exception:
+                    pass  # Graceful fallback if daily logger not available
+                
         except Exception as e:
             self.logger.error(f"Opportunity evaluation failed: {e}")
     

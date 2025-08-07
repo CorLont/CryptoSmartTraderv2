@@ -1,0 +1,43 @@
+{
+  "date": "2025-08-07",
+  "log_files": [
+    "system_health.log",
+    "market_scanner.log",
+    "ml_predictor.log",
+    "sentiment_agent.log",
+    "whale_detector.log",
+    "trade_executor.log",
+    "orchestrator.log",
+    "errors.log",
+    "performance.log",
+    "api_calls.log",
+    "security.log"
+  ],
+  "file_sizes": {
+    "system": 387,
+    "market_scanner": 459,
+    "ml_predictor": 436,
+    "sentiment_agent": 201,
+    "whale_detector": 177,
+    "trade_executor": 159,
+    "orchestrator": 375,
+    "errors": 525,
+    "performance": 582,
+    "api_calls": 462,
+    "security": 187
+  },
+  "log_counts": {
+    "system": 3,
+    "market_scanner": 2,
+    "ml_predictor": 2,
+    "sentiment_agent": 1,
+    "whale_detector": 1,
+    "trade_executor": 1,
+    "orchestrator": 2,
+    "errors": 7,
+    "performance": 5,
+    "api_calls": 4,
+    "security": 1
+  },
+  "generated_at": "2025-08-07T17:35:56.484967"
+}
