@@ -2,14 +2,17 @@
   "version": "2.0.0",
   "created": "2025-08-07T13:49:21.772808",
   "exchanges": [
-    "kraken"
+    "kraken",
+    "binance"
   ],
   "api_rate_limit": 100,
   "timeout_seconds": 30,
   "agents": {
     "sentiment": {
       "enabled": true,
-      "update_interval": 300
+      "update_interval": 300,
+      "use_openai": true,
+      "openai_model": "gpt-4o"
     },
     "technical": {
       "enabled": true,
