@@ -228,12 +228,16 @@ class MainDashboard:
             labels=symbols,
             values=sizes,
             parents=[""] * len(symbols),
-            colorscale='RdYlGn',
-            zmid=0,
-            colorbar=dict(title="24h Change %"),
+            marker=dict(
+                colorscale='RdYlGn',
+                colorbar=dict(title="24h Change %"),
+                line=dict(width=2),
+                colors=changes,  # Use changes for color mapping
+                cmid=0
+            ),
             text=[f"{s}<br>{c:+.2f}%" for s, c in zip(symbols, changes)],
             textinfo="text",
-            hovertemplate='<b>%{label}</b><br>Change: %{color:+.2f}%<br>Market Cap: $%{value:,.0f}<extra></extra>'
+            hovertemplate='<b>%{label}</b><br>Change: %{text}<br>Market Cap: $%{value:,.0f}<extra></extra>'
         ))
         
         fig.update_layout(
