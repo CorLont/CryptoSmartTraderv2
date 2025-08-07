@@ -1,61 +1,182 @@
 {
-  "health": {
-    "timestamp": "2025-08-07T17:30:45.767658",
-    "grade": "F",
-    "score": 45.28,
-    "resources": {
-      "cpu_percent": 31.7,
-      "memory_percent": 70.0,
-      "memory_available_gb": 18.814983367919922,
-      "disk_percent": 70.2,
-      "disk_free_gb": 14.04311752319336
+  "passed": 20,
+  "failed": 1,
+  "warnings": 4,
+  "checks": [
+    {
+      "name": "Python Version",
+      "status": "\u2705 PASS",
+      "requirement": "Python 3.9+ required, found 3.11.13",
+      "passed": true,
+      "warning": false
     },
-    "agent_health": {
-      "sentiment": {
-        "status": "healthy",
-        "last_update": "2025-08-07T17:30:46.768259",
-        "uptime": 24.5,
-        "error_rate": 0.01,
-        "processed_items": 1000
-      },
-      "technical": {
-        "status": "healthy",
-        "last_update": "2025-08-07T17:30:46.768269",
-        "uptime": 24.5,
-        "error_rate": 0.01,
-        "processed_items": 1000
-      },
-      "ml_predictor": {
-        "status": "healthy",
-        "last_update": "2025-08-07T17:30:46.768272",
-        "uptime": 24.5,
-        "error_rate": 0.01,
-        "processed_items": 1000
-      },
-      "backtest": {
-        "status": "healthy",
-        "last_update": "2025-08-07T17:30:46.768276",
-        "uptime": 24.5,
-        "error_rate": 0.01,
-        "processed_items": 1000
-      },
-      "trade_executor": {
-        "status": "healthy",
-        "last_update": "2025-08-07T17:30:46.768279",
-        "uptime": 24.5,
-        "error_rate": 0.01,
-        "processed_items": 1000
-      },
-      "whale_detector": {
-        "status": "healthy",
-        "last_update": "2025-08-07T17:30:46.768282",
-        "uptime": 24.5,
-        "error_rate": 0.01,
-        "processed_items": 1000
-      }
+    {
+      "name": "Operating System",
+      "status": "\u2705 PASS",
+      "requirement": "Found Linux 6.2.16",
+      "passed": true,
+      "warning": true
     },
-    "data_coverage": 99.33774834437085,
-    "uptime": 28.48076898361111
-  },
-  "alerts": []
+    {
+      "name": "RAM Memory",
+      "status": "\u2705 PASS",
+      "requirement": "62.8GB total (16GB+ recommended for optimal performance)",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "CPU Cores",
+      "status": "\u2705 PASS",
+      "requirement": "8 logical cores (8+ recommended for distributed processing)",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "GPU CUDA Support",
+      "status": "\u26a0\ufe0f WARNING",
+      "requirement": "CUDA not available - ML training will be slower",
+      "passed": false,
+      "warning": true
+    },
+    {
+      "name": "Disk Space",
+      "status": "\u2705 PASS",
+      "requirement": "242.6GB free (20GB+ recommended)",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "Pip Package Manager",
+      "status": "\u2705 PASS",
+      "requirement": "Available: pip 25.0.1 from /nix/store/yaps09f01jp3fd1405qlr0qz6haf6z03-python3.11-pip-25.0.1/lib/python3.11/site-packages/pip (python 3.11)",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "C++ Build Tools",
+      "status": "\u2705 PASS",
+      "requirement": "GCC compiler available",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "TA-Lib Binary",
+      "status": "\u274c FAIL",
+      "requirement": "TA-Lib not installed - install binary first!",
+      "passed": false,
+      "warning": false
+    },
+    {
+      "name": "Redis Server",
+      "status": "\u26a0\ufe0f WARNING",
+      "requirement": "Redis not running (optional for advanced queuing)",
+      "passed": false,
+      "warning": true
+    },
+    {
+      "name": "CUDA Toolkit",
+      "status": "\u26a0\ufe0f WARNING",
+      "requirement": "CUDA Toolkit not installed",
+      "passed": false,
+      "warning": true
+    },
+    {
+      "name": "Internet Connection",
+      "status": "\u2705 PASS",
+      "requirement": "Internet connectivity verified",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "Kraken API",
+      "status": "\u2705 PASS",
+      "requirement": "API endpoint reachable: https://api.kraken.com/0/public/Time",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "CoinGecko API",
+      "status": "\u2705 PASS",
+      "requirement": "API endpoint reachable: https://api.coingecko.com/api/v3/ping",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "PyTorch",
+      "status": "\u2705 PASS",
+      "requirement": "PyTorch library available",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "Transformers",
+      "status": "\u26a0\ufe0f WARNING",
+      "requirement": "Transformers not installed",
+      "passed": false,
+      "warning": true
+    },
+    {
+      "name": "Scikit-learn",
+      "status": "\u2705 PASS",
+      "requirement": "Scikit-learn library available",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "XGBoost",
+      "status": "\u2705 PASS",
+      "requirement": "XGBoost library available",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "Pandas",
+      "status": "\u2705 PASS",
+      "requirement": "Pandas library available",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "NumPy",
+      "status": "\u2705 PASS",
+      "requirement": "NumPy library available",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "Plotly",
+      "status": "\u2705 PASS",
+      "requirement": "Plotly library available",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "Prometheus Client",
+      "status": "\u2705 PASS",
+      "requirement": "Prometheus Client available for monitoring",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "PSUtil",
+      "status": "\u2705 PASS",
+      "requirement": "PSUtil available for monitoring",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "AioHTTP",
+      "status": "\u2705 PASS",
+      "requirement": "AioHTTP available for monitoring",
+      "passed": true,
+      "warning": false
+    },
+    {
+      "name": "SetProcTitle",
+      "status": "\u2705 PASS",
+      "requirement": "SetProcTitle available for monitoring",
+      "passed": true,
+      "warning": false
+    }
+  ]
 }

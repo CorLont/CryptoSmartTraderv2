@@ -4,6 +4,22 @@ echo CryptoSmartTrader V2 - Windows Setup
 echo Complete Environment Configuration
 echo ========================================
 
+REM Run pre-installation health check
+echo [0/10] Running pre-installation health check...
+python system_health_check.py
+if errorlevel 1 (
+    echo.
+    echo WARNING: Health check found critical issues
+    echo Review the results above before continuing
+    echo.
+    set /p continue="Continue anyway? (y/N): "
+    if /i not "%continue%"=="y" (
+        echo Installation cancelled
+        pause
+        exit /b 1
+    )
+)
+
 REM Check admin privileges
 net session >nul 2>&1
 if errorlevel 1 (

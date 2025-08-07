@@ -4,6 +4,18 @@ echo CryptoSmartTrader V2 Dependency Installer
 echo Distributed System with Enhanced Monitoring
 echo ========================================
 
+REM Run system health check first
+echo [0/8] Running system health check...
+python system_health_check.py
+if errorlevel 1 (
+    echo.
+    echo CRITICAL: System health check failed
+    echo Please resolve the issues above before installation
+    echo Run: python system_health_check.py for detailed analysis
+    pause
+    exit /b 1
+)
+
 REM Check Python version
 python --version
 if errorlevel 1 (
