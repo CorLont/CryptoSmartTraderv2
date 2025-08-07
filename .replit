@@ -45,5 +45,9 @@ externalPort = 3000
 localPort = 8002
 externalPort = 3001
 
+[[ports]]
+localPort = 8003
+externalPort = 3002
+
 [agent]
 integrations = ["web_scraper==1.0.0"]
