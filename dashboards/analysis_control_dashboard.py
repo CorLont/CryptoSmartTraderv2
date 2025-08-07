@@ -66,6 +66,10 @@ class AnalysisControlDashboard:
         # Analysis controls
         col1, col2 = st.columns(2)
         
+        # Render daily analysis overview if available
+        if hasattr(self, 'daily_scheduler'):
+            self._render_daily_analysis_overview()
+    
     def _render_daily_analysis_overview(self):
         """Render daily analysis overview"""
         st.subheader("📈 Daily Analysis Overview")

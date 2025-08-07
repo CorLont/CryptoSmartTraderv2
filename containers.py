@@ -21,6 +21,11 @@ from agents.whale_detector_agent import WhaleDetectorAgent
 from models.ml_models import MLModelManager
 from data.coin_registry import CoinRegistry
 from utils.metrics import MetricsServer
+from core.daily_analysis_scheduler import DailyAnalysisScheduler
+from core.error_handler import CentralizedErrorHandler
+from core.monitoring_system import ProductionMonitoringSystem
+from core.openai_enhanced_analyzer import OpenAIEnhancedAnalyzer
+from scripts.backup_system import AutomatedBackupSystem
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -43,6 +48,12 @@ class ApplicationContainer(containers.DeclarativeContainer):
     
     error_handler = providers.Object(error_handler)
     
+    # Enterprise-grade error handling
+    centralized_error_handler = providers.Singleton(
+        CentralizedErrorHandler,
+        config_manager=config
+    )
+    
     rate_limiter = providers.Object(rate_limiter)
     
     system_optimizer = providers.Singleton(
@@ -61,6 +72,33 @@ class ApplicationContainer(containers.DeclarativeContainer):
     
     health_monitor = providers.Singleton(
         HealthMonitor,
+        config_manager=config
+    )
+    
+    # Production monitoring system
+    monitoring_system = providers.Singleton(
+        ProductionMonitoringSystem,
+        config_manager=config,
+        error_handler=centralized_error_handler
+    )
+    
+    # OpenAI enhanced analyzer
+    openai_analyzer = providers.Singleton(
+        OpenAIEnhancedAnalyzer,
+        config_manager=config
+    )
+    
+    # Daily analysis scheduler
+    daily_scheduler = providers.Singleton(
+        DailyAnalysisScheduler,
+        config_manager=config,
+        cache_manager=cache_manager,
+        health_monitor=health_monitor
+    )
+    
+    # Automated backup system
+    backup_system = providers.Singleton(
+        AutomatedBackupSystem,
         config_manager=config
     )
     

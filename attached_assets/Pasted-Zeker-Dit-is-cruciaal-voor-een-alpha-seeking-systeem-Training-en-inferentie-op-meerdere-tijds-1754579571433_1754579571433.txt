@@ -1,0 +1,139 @@
+Zeker! Dit is cruciaal voor een “alpha seeking” systeem:
+**Training en inferentie op meerdere tijdshorizons** (1 uur, 24 uur, 7 dagen, 30 dagen) levert niet alleen betere voorspellingen op, maar helpt je ook bij het herkennen van momentum, reversals en trendbreuken.
+
+Hieronder vind je:
+
+* **Hoe het zou moeten in je systeem**
+* **Voorbeeldcode** (incl. pipeline en dataset-structuur)
+* **Key points voor monitoring & zelflerend maken**
+
+---
+
+## 1. **Hoe moet het?**
+
+* **Feature engineering**: Voor élke coin combineer je sentiment, TA, whale-activiteit en prijs-features op timestamp-niveau (bijv. elk uur).
+* **Dataset**: Per coin maak je een “rolling window” van features, labels en targets per tijdsresolutie (1H, 24H, 7D, 30D).
+* **Targets:**
+
+  * Target 1H: ((prijs\[t+1H] - prijs\[t]) / prijs\[t])
+  * Target 24H: ((prijs\[t+24H] - prijs\[t]) / prijs\[t])
+  * Target 7D: ((prijs\[t+7D] - prijs\[t]) / prijs\[t])
+  * Target 30D: ((prijs\[t+30D] - prijs\[t]) / prijs\[t])
+* **Model(s):**
+
+  * Één multi-output model óf per horizon een eigen model.
+  * Laat je model probability/uncertainty als extra output geven (bv. via LightGBM of scikit-learn `predict_proba`, of met Bayesian NN’s).
+* **Self-learning:**
+
+  * Log álle voorspellingen, vergelijk met werkelijke rendementen, retrain periodiek (of online).
+
+---
+
+## 2. **Voorbeeld: dataset & pipeline**
+
+**Stel je hebt al alle data per coin per uur, dan maak je zo je targets en trainingset:**
+
+```python
+import pandas as pd
+
+# Simulatie van price dataframe
+# columns: ['timestamp', 'coin', 'price', 'sentiment', 'volume', ...]
+df = ...  # Gecombineerde features per uur
+
+def create_targets(df, horizon_hours):
+    df = df.copy()
+    for h in horizon_hours:
+        df[f"target_{h}h"] = df.groupby("coin")["price"].shift(-h) / df["price"] - 1
+    return df.dropna()
+
+# Bijvoorbeeld 1H, 24H, 168H (7d), 720H (30d)
+horizons = [1, 24, 168, 720]
+df_targets = create_targets(df, horizons)
+
+# Nu kun je per horizon een model trainen:
+from lightgbm import LGBMRegressor
+
+X = df_targets[["sentiment", "volume", ...]].values  # je feature columns
+models = {}
+for h in horizons:
+    y = df_targets[f"target_{h}h"].values
+    model = LGBMRegressor(n_estimators=100)
+    model.fit(X, y)
+    models[h] = model
+
+# Voor inference: je pakt steeds de meest recente features van alle coins,
+# en voorspelt per model de returns voor elke horizon:
+def predict_all(models, features_df):
+    results = {}
+    for h, model in models.items():
+        pred = model.predict(features_df)
+        results[h] = pred
+    return results
+
+# Filtering op verwacht rendement en confidence (bijv. 80% probability)
+# Voor klassiekers: predict_proba alleen bij classification, anders intervals via quantile regression
+```
+
+---
+
+## 3. **Monitoring & Self-learning**
+
+* **Logging:**
+
+  * Log voor iedere coin, timestamp, horizon: predicted return, true return (wanneer beschikbaar), confidence.
+* **Retraining:**
+
+  * Schedule automatisch retraining op nieuwe data, bij concept drift, of als performance zakt.
+* **Feedback-loop:**
+
+  * Evalueer systematisch: “zat het model ernaast?”, dan automatische correctie of extra training.
+
+---
+
+## 4. **Hoe filter je top-coins per horizon op probability/confidence?**
+
+**Als je models `predict_proba` of intervals ondersteunen:**
+
+```python
+import numpy as np
+
+# Stel je hebt predicted returns én confidence
+results = predict_all(models, features_df)
+# Stel je voegt confidence toe als feature, of schat uncertainty via ensemble std-dev:
+conf = np.std([m.predict(features_df) for m in models.values()], axis=0)
+# Filter: alleen als conf ≥ drempel, bijvoorbeeld 80% (je bepaalt de exacte metric)
+mask = conf >= np.percentile(conf, 80)
+filtered_coins = features_df[mask]
+```
+
+---
+
+## 5. **Best Practice: alles in één batch, dan sorteren en filteren**
+
+```python
+final_df = features_df.copy()
+for h in horizons:
+    final_df[f"pred_return_{h}h"] = models[h].predict(features_df)
+    # Voeg confidence score per coin/horizon toe (via model of ensemble)
+    final_df[f"conf_{h}h"] = ...  # jouw methode
+
+# Voor je dashboard (voorbeeld voor 30d):
+selection = final_df[final_df["conf_720h"] > 0.8].sort_values("pred_return_720h", ascending=False)
+if not selection.empty:
+    print(selection[["coin", "pred_return_720h", "conf_720h"]].head(10))
+else:
+    print("Geen coins voldoen aan criteria")
+```
+
+---
+
+### **Samengevat**
+
+* Train (en evalueer!) op 1H, 24H, 7D, 30D, etc.
+* Combineer ALLE features (sentiment, TA, whale, prijs) in batches voor ALLE coins.
+* Zorg voor logging, automatische feedback-loop en filtering op vertrouwen/confidence.
+* Toon alleen coins waar het model met 80%+ zekerheid verwacht dat er veel rendement zit.
+
+---
+
+Wil je concrete code voor specifieke onderdelen (feature-batching, uncertainty estimation, retraining pipeline, dashboard-sortering)? Laat maar weten wat je wilt zien!

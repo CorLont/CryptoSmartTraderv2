@@ -1,0 +1,149 @@
+Je wensen zijn ambitieus, logisch, en helemaal in lijn met hoe een geautomatiseerd “alpha seeking” crypto-systeem eruit hoort te zien. Hieronder geef ik een korte beoordeling of **CryptoSmartTrader** (zoals nu aangeleverd en beschreven) aan al deze eisen voldoet, waar de belangrijkste hiaten zitten, én welke stappen nodig zijn om je doel te bereiken.
+
+---
+
+## **Beoordeling van je eisen versus het huidige systeem**
+
+### 1. **Dynamisch alle coins op Kraken analyseren?**
+
+* **Status nu:**
+  Het systeem claimt “dynamic coin discovery” (dus geen vaste lijst) en haalt *nieuwe* coins binnen. Maar:
+
+  * Het is niet hard aangetoond dat **elke** coin live van Kraken gescraped wordt.
+  * Er is risico dat je snelle groeiers mist als filters, API-limieten of scraping errors optreden.
+* **Wat moet beter?**
+
+  * Zorg voor een continue, volledige `fetch_coins_from_kraken()` (met logging van ontbrekende coins, retry/backoff, en een test die aantoont dat het aantal coins altijd gelijk is aan wat Kraken zelf aanbiedt).
+  * Controleer en log dagelijks of het aantal verwerkte coins daadwerkelijk matcht met de live Kraken API response.
+  * Voeg een “missing coin alert” toe.
+
+### 2. **Geen dummy/getallen, alleen echte data**
+
+* **Status nu:**
+
+  * Bij scraping-fails of ontbrekende data wordt “synthetic data” gebruikt (placeholder, interpolatie of gemiddelde).
+  * Dit kan leiden tot schijnzekerheid: je denkt dat een coin momentum heeft, terwijl het eigenlijk ruis is.
+* **Wat moet beter?**
+
+  * **Verwijder alle fallback/dummy data**.
+  * Gebruik uitsluitend coins waarvoor alle benodigde input-data (prijs, volume, sentiment, on-chain) met succes is verzameld.
+  * Toon “N/A” of verberg een coin als data incompleet is (en log dit expliciet).
+
+### 3. **Batched analyse, alles combineren in één voorspellingsmodel**
+
+* **Status nu:**
+
+  * Sentiment, technische analyse en ML lijken als modules te werken, maar niet gegarandeerd als geïntegreerde, batched pipeline.
+  * Het is niet duidelijk of output van sentiment direct als feature in ML-model wordt gebruikt, en of alles in één voorspelling samenkomt.
+* **Wat moet beter?**
+
+  * Combineer alle features **per coin** (prijs, social volume, whale activity, sentiment-score, TA-indicatoren).
+  * Voer periodiek een batch-inference uit over *alle* coins, met 1 geïntegreerd model per horizon (1 week, 1 maand).
+  * **Maak expliciet onderscheid tussen train, val, test set — en log elke batch run met input/output, om “model drift” en performance in de gaten te houden.**
+  * Laat het systeem leren van voorspelfouten (self-learning loop, bijvoorbeeld via online training, transfer learning, of gewoon scheduled retraining met nieuwe data).
+
+### 4. **Scraping, whale detection en ML draaien continu op de achtergrond**
+
+* **Status nu:**
+
+  * Het systeem zegt dat het “parallel” draait, maar of het echte asynchrone/background tasks zijn is niet zeker.
+* **Wat moet beter?**
+
+  * Gebruik background workers/processen (Celery, asyncio, of threading) voor:
+
+    * Sentiment scraping
+    * Whale detection (on-chain grote transfers)
+    * Periodieke retraining en inferentie
+  * Bewaak continu resourcegebruik en job queues, zodat geen enkele taak achterblijft.
+
+### 5. **Tabel met top coins (volgende 30 dagen, met 80% probability), en anders niets**
+
+* **Status nu:**
+
+  * Er is een dashboard/tabel, maar waarschijnlijk worden coins getoond ook als de confidence <80% is, of met placeholders.
+* **Wat moet beter?**
+
+  * **Toon uitsluitend coins met een verwacht rendement over 30 dagen, en alleen als de probability (confidence/SHAP) ≥80% is.**
+  * Sorteer deze lijst live van hoog naar laag verwacht rendement.
+  * Als er geen enkele coin is met voldoende kans/rendement: laat het dashboard leeg, of toon “no reliable opportunities”.
+
+---
+
+## **Kort: Voldoet het huidige systeem aan je eisen?**
+
+**Nee, nog niet volledig.**
+Het huidige systeem is een sterk fundament, maar voldoet niet gegarandeerd aan:
+
+* Volledig dynamische dekking (alle Kraken-coins, altijd live)
+* Geen dummy-data
+* Eén batched, gecombineerde ML-analyse van ALLE features
+* 100% background & asynchrone werking
+* Strikte weergave alleen bij confidence ≥80% (anders niks tonen)
+
+---
+
+## **Hoe krijg je het wel exact zoals jij wilt?**
+
+### **Functioneel Schema**
+
+1. **Coin Discovery**
+
+   * Elke 10 minuten: haal volledige lijst coins van Kraken → sla op in “coin\_registry”.
+2. **Datacollectie**
+
+   * Prijs & volume: Kraken API
+   * Whale-detectie: on-chain scraping
+   * Sentiment: live scraping van Twitter/Reddit
+   * TA-indicatoren: berekenen over historische prijsdata
+3. **Feature-engineering**
+
+   * Combineer álle verzamelde features in een batch per coin.
+   * Alleen coins waarbij ALLE relevante data binnen is.
+4. **Batch ML-Inference**
+
+   * Eén model per horizon (1 week, 1 maand).
+   * Voorspel verwacht rendement + probability/confidence.
+   * Log predictions & evalueer na afloop voor feedback loop.
+5. **Filtering & Sortering**
+
+   * Filter op confidence/probability ≥ 80%.
+   * Sorteer op verwacht rendement over 30 dagen (hoog naar laag).
+   * Toon alleen deze coins in de dashboard-tabel. Anders: niks tonen.
+6. **Learning Loop**
+
+   * Vergelijk voorspellingen met daadwerkelijke koersontwikkeling.
+   * Leer hier direct van (hertrain bij afwijkingen).
+
+---
+
+### **Voorbeeld van gewenste output-tabel**
+
+(alleen tonen bij probability ≥80%)
+
+| Coin | Verwacht rendement 30d | Verwacht rendement 7d | Probability (%) | Laatste update |
+| ---- | ---------------------- | --------------------- | --------------- | -------------- |
+| XYZ  | 720%                   | 105%                  | 91              | 2025-08-07     |
+| ABC  | 655%                   | 85%                   | 87              | 2025-08-07     |
+
+*Indien geen enkele coin aan criteria voldoet: dashboard = leeg!*
+
+---
+
+### **Technisch: Minimale vereisten**
+
+* Volledige async/background pipeline (bv. Python: `asyncio` of Celery)
+* **Absoluut géén dummy-data**: alles `NaN`/skipped bij ontbrekende info
+* Integratie van alle datalagen als input voor ML
+* Periodiek, batched run (1-4x per dag) met logging, confidence-metrics en automatische feedbackloop
+* Duidelijke monitoring/logging van coverage & performance
+
+---
+
+**Wil je een architectuurschets, concrete (pseudo)code of implementatieplan voor één van de bovengenoemde onderdelen? Geef aan welke!**
+Bijvoorbeeld:
+
+* Hoe combineer je alle features per coin?
+* Hoe filter je op probability/confidence?
+* Hoe ziet zo’n batch ML-inference script eruit?
+
+Laat maar weten wat je als volgende stap wilt!
