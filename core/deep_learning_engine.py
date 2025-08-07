@@ -1,817 +1,882 @@
+#!/usr/bin/env python3
 """
 CryptoSmartTrader V2 - Deep Learning Engine
-State-of-the-art deep learning voor time series forecasting met GPU-versnelling
+LSTM, GRU, Transformer, N-BEATS as core components for multimodal sequence modeling
 """
 
+import numpy as np
+import pandas as pd
 import logging
+from typing import Dict, Any, List, Optional, Tuple, Union
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+import threading
+import pickle
+from pathlib import Path
+import warnings
+warnings.filterwarnings('ignore')
+
 try:
     import torch
     import torch.nn as nn
-    import torch.optim as optim
-    from torch.utils.data import DataLoader, TensorDataset
-    TORCH_AVAILABLE = True
+    import torch.nn.functional as F
+    from torch.utils.data import Dataset, DataLoader
+    from torch.optim import Adam, AdamW
+    from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
+    HAS_TORCH = True
 except ImportError:
-    TORCH_AVAILABLE = False
+    HAS_TORCH = False
     logging.warning("PyTorch not available - deep learning features disabled")
-import numpy as np
-import pandas as pd
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime, timedelta
-import pickle
-from pathlib import Path
-import sys
-import json
-from dataclasses import dataclass
-import threading
-import time
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+try:
+    from transformers import AutoTokenizer, AutoModel
+    HAS_TRANSFORMERS = True
+except ImportError:
+    HAS_TRANSFORMERS = False
+
+class ModelType(Enum):
+    LSTM = "lstm"
+    GRU = "gru"
+    TRANSFORMER = "transformer"
+    NBEATS = "nbeats"
+    MULTIMODAL_FUSION = "multimodal_fusion"
+
+class DataModality(Enum):
+    PRICE_TIME_SERIES = "price_timeseries"
+    SENTIMENT_TEXT = "sentiment_text"
+    WHALE_TRANSACTIONS = "whale_transactions"
+    TECHNICAL_INDICATORS = "technical_indicators"
+    MARKET_REGIME = "market_regime"
+    ORDER_BOOK = "order_book"
 
 @dataclass
-class ModelConfig:
-    """Deep learning model configuration"""
-    model_type: str  # lstm, gru, transformer, nbeats
-    input_size: int
-    hidden_size: int
-    num_layers: int
-    dropout: float
-    sequence_length: int
-    prediction_horizon: int
-    learning_rate: float
-    batch_size: int
-    epochs: int
-    use_gpu: bool
+class DeepLearningConfig:
+    """Configuration for deep learning models"""
+    sequence_length: int = 100
+    prediction_horizons: List[int] = field(default_factory=lambda: [1, 6, 24, 168])  # 1h, 6h, 1d, 1w
+    hidden_dim: int = 256
+    num_layers: int = 4
+    dropout_rate: float = 0.2
+    learning_rate: float = 1e-3
+    batch_size: int = 32
+    max_epochs: int = 100
+    early_stopping_patience: int = 10
+    gradient_clip_norm: float = 1.0
+    
+    # Model-specific configs
+    transformer_heads: int = 8
+    transformer_ff_dim: int = 1024
+    nbeats_stack_types: List[str] = field(default_factory=lambda: ['trend', 'seasonality', 'generic'])
+    nbeats_num_blocks: int = 3
+    nbeats_num_layers: int = 4
+    
+    # Multimodal fusion
+    fusion_method: str = "attention"  # attention, concat, cross_attention
+    text_embedding_dim: int = 768
+    enable_cross_modal_attention: bool = True
 
-if TORCH_AVAILABLE:
-    class LSTMForecaster(nn.Module):
-        """LSTM-based cryptocurrency forecaster"""
+class MultiModalDataset(Dataset):
+    """Dataset for multimodal deep learning"""
+    
+    def __init__(self, data_dict: Dict[str, np.ndarray], targets: np.ndarray, sequence_length: int = 100):
+        self.data_dict = data_dict
+        self.targets = targets
+        self.sequence_length = sequence_length
         
-        def __init__(self, config: ModelConfig):
-            super(LSTMForecaster, self).__init__()
-            self.config = config
-            
-            self.lstm = nn.LSTM(
-                input_size=config.input_size,
-                hidden_size=config.hidden_size,
-                num_layers=config.num_layers,
-                dropout=config.dropout,
-                batch_first=True
-            )
-            
-            self.attention = nn.MultiheadAttention(
-                embed_dim=config.hidden_size,
-                num_heads=8,
-                dropout=config.dropout,
-                batch_first=True
-            )
-            
-            self.prediction_head = nn.Sequential(
-                nn.Linear(config.hidden_size, config.hidden_size // 2),
-                nn.ReLU(),
-                nn.Dropout(config.dropout),
-                nn.Linear(config.hidden_size // 2, config.prediction_horizon)
-            )
-            
-            self.uncertainty_head = nn.Sequential(
-                nn.Linear(config.hidden_size, config.hidden_size // 2),
-                nn.ReLU(),
-                nn.Dropout(config.dropout),
-                nn.Linear(config.hidden_size // 2, config.prediction_horizon),
-                nn.Softplus()  # Ensure positive values for uncertainty
-            )
+        # Ensure all data has same length
+        self.length = min(len(v) for v in data_dict.values())
+        self.length = min(self.length, len(targets))
         
-        def forward(self, x):
-            # LSTM layer
-            lstm_out, (hidden, cell) = self.lstm(x)
-            
-            # Self-attention
-            attn_out, _ = self.attention(lstm_out, lstm_out, lstm_out)
-            
-            # Use last time step for prediction
-            last_output = attn_out[:, -1, :]
-            
-            # Predictions and uncertainty
-            predictions = self.prediction_head(last_output)
-            uncertainties = self.uncertainty_head(last_output)
-            
-            return predictions, uncertainties
+        # Adjust sequence length if needed
+        self.sequence_length = min(sequence_length, self.length - 1)
+    
+    def __len__(self):
+        return max(0, self.length - self.sequence_length)
+    
+    def __getitem__(self, idx):
+        sample = {}
+        
+        for modality, data in self.data_dict.items():
+            if len(data.shape) == 1:
+                sample[modality] = torch.FloatTensor(data[idx:idx + self.sequence_length])
+            else:
+                sample[modality] = torch.FloatTensor(data[idx:idx + self.sequence_length])
+        
+        target = torch.FloatTensor(self.targets[idx + self.sequence_length])
+        return sample, target
 
-    class TransformerForecaster(nn.Module):
-        """Transformer-based cryptocurrency forecaster"""
+class LSTMModel(nn.Module):
+    """Advanced LSTM model for sequence prediction"""
+    
+    def __init__(self, input_dim: int, hidden_dim: int, num_layers: int, output_dim: int, dropout: float = 0.2):
+        super().__init__()
         
-        def __init__(self, config: ModelConfig):
-            super(TransformerForecaster, self).__init__()
-            self.config = config
-            
-            # Positional encoding
-            self.pos_encoder = PositionalEncoding(config.input_size, config.dropout, max_len=config.sequence_length)
-            
-            # Transformer encoder
-            encoder_layer = nn.TransformerEncoderLayer(
-                d_model=config.input_size,
-                nhead=8,
-                dim_feedforward=config.hidden_size,
-                dropout=config.dropout,
-                batch_first=True
-            )
-            
-            self.transformer = nn.TransformerEncoder(
-                encoder_layer,
-                num_layers=config.num_layers
-            )
-            
-            # Prediction heads
-            self.prediction_head = nn.Sequential(
-                nn.Linear(config.input_size, config.hidden_size),
-                nn.ReLU(),
-                nn.Dropout(config.dropout),
-                nn.Linear(config.hidden_size, config.prediction_horizon)
-            )
-            
-            self.uncertainty_head = nn.Sequential(
-                nn.Linear(config.input_size, config.hidden_size),
-                nn.ReLU(),
-                nn.Dropout(config.dropout),
-                nn.Linear(config.hidden_size, config.prediction_horizon),
-                nn.Softplus()
-            )
+        self.hidden_dim = hidden_dim
+        self.num_layers = num_layers
+        
+        # LSTM layers
+        self.lstm = nn.LSTM(
+            input_dim, 
+            hidden_dim, 
+            num_layers, 
+            batch_first=True, 
+            dropout=dropout if num_layers > 1 else 0,
+            bidirectional=True
+        )
+        
+        # Attention mechanism
+        self.attention = nn.MultiheadAttention(
+            embed_dim=hidden_dim * 2,  # bidirectional
+            num_heads=8,
+            dropout=dropout,
+            batch_first=True
+        )
+        
+        # Output layers
+        self.dropout = nn.Dropout(dropout)
+        self.layer_norm = nn.LayerNorm(hidden_dim * 2)
+        self.output_projection = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim)
+        )
     
     def forward(self, x):
-        # Add positional encoding
-        x = self.pos_encoder(x)
+        batch_size = x.size(0)
+        
+        # LSTM forward pass
+        lstm_out, _ = self.lstm(x)
+        
+        # Self-attention
+        attended_out, _ = self.attention(lstm_out, lstm_out, lstm_out)
+        attended_out = self.layer_norm(attended_out + lstm_out)
+        
+        # Global max pooling and average pooling
+        max_pool = torch.max(attended_out, dim=1)[0]
+        avg_pool = torch.mean(attended_out, dim=1)
+        
+        # Combine pooled features
+        combined = max_pool + avg_pool
+        combined = self.dropout(combined)
+        
+        # Final prediction
+        output = self.output_projection(combined)
+        return output
+
+class TransformerModel(nn.Module):
+    """Transformer model for sequence prediction"""
+    
+    def __init__(self, input_dim: int, hidden_dim: int, num_layers: int, num_heads: int, output_dim: int, dropout: float = 0.2):
+        super().__init__()
+        
+        self.input_projection = nn.Linear(input_dim, hidden_dim)
+        self.positional_encoding = PositionalEncoding(hidden_dim, dropout)
+        
+        encoder_layers = nn.TransformerEncoderLayer(
+            d_model=hidden_dim,
+            nhead=num_heads,
+            dim_feedforward=hidden_dim * 4,
+            dropout=dropout,
+            activation='gelu',
+            batch_first=True
+        )
+        
+        self.transformer = nn.TransformerEncoder(encoder_layers, num_layers)
+        
+        self.output_projection = nn.Sequential(
+            nn.LayerNorm(hidden_dim),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim // 2, output_dim)
+        )
+    
+    def forward(self, x):
+        # Input projection and positional encoding
+        x = self.input_projection(x)
+        x = self.positional_encoding(x)
         
         # Transformer encoding
-        transformer_out = self.transformer(x)
+        encoded = self.transformer(x)
         
-        # Use last time step
-        last_output = transformer_out[:, -1, :]
+        # Global average pooling
+        pooled = torch.mean(encoded, dim=1)
         
-        # Predictions and uncertainty
-        predictions = self.prediction_head(last_output)
-        uncertainties = self.uncertainty_head(last_output)
-        
-        return predictions, uncertainties
+        # Final prediction
+        output = self.output_projection(pooled)
+        return output
 
-    class PositionalEncoding(nn.Module):
-        """Positional encoding for transformer"""
-        
-        def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
-            super().__init__()
-            self.dropout = nn.Dropout(p=dropout)
-            
-            position = torch.arange(max_len).unsqueeze(1)
-            div_term = torch.exp(torch.arange(0, d_model, 2) * (-np.log(10000.0) / d_model))
-            
-            pe = torch.zeros(max_len, 1, d_model)
-            pe[:, 0, 0::2] = torch.sin(position * div_term)
-            pe[:, 0, 1::2] = torch.cos(position * div_term)
-            
-            self.register_buffer('pe', pe)
-        
-        def forward(self, x):
-            seq_len = x.size(1)
-            x = x + self.pe[:seq_len].transpose(0, 1)
-            return self.dropout(x)
-
-    class NBEATSStack(nn.Module):
-        """N-BEATS Stack Module"""
-        
-        def __init__(self, input_size, hidden_size, sequence_length, prediction_horizon, stack_type='generic'):
-            super(NBEATSStack, self).__init__()
-            self.stack_type = stack_type
-            self.sequence_length = sequence_length
-            self.prediction_horizon = prediction_horizon
-            
-            # Dense layers
-            self.dense1 = nn.Linear(input_size, hidden_size)
-            self.dense2 = nn.Linear(hidden_size, hidden_size)
-            self.dense3 = nn.Linear(hidden_size, hidden_size)
-            self.dense4 = nn.Linear(hidden_size, hidden_size)
-            
-            # Basis expansion layers
-            self.backcast_layer = nn.Linear(hidden_size, sequence_length)
-            self.forecast_layer = nn.Linear(hidden_size, prediction_horizon)
-            
-        def forward(self, x):
-            # Forward pass through dense layers
-            out = torch.relu(self.dense1(x.view(x.size(0), -1)))
-            out = torch.relu(self.dense2(out))
-            out = torch.relu(self.dense3(out))
-            out = torch.relu(self.dense4(out))
-            
-            # Generate backcast and forecast
-            backcast = self.backcast_layer(out)
-            forecast = self.forecast_layer(out)
-            
-            return backcast.view(x.size(0), self.sequence_length, -1), forecast
+class PositionalEncoding(nn.Module):
+    """Positional encoding for transformer"""
     
-    class NBEATSForecaster(nn.Module):
-        """N-BEATS neural forecasting model"""
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
         
-        def __init__(self, config: ModelConfig):
-            super(NBEATSForecaster, self).__init__()
-            self.config = config
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-np.log(10000.0) / d_model))
+        pe = torch.zeros(max_len, 1, d_model)
+        pe[:, 0, 0::2] = torch.sin(position * div_term)
+        pe[:, 0, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+    
+    def forward(self, x):
+        x = x + self.pe[:x.size(1)].transpose(0, 1)
+        return self.dropout(x)
+
+class NBeatsBlock(nn.Module):
+    """N-BEATS block implementation"""
+    
+    def __init__(self, input_dim: int, theta_dim: int, basis_function: str, layers: int = 4, layer_width: int = 256):
+        super().__init__()
+        
+        self.layers = nn.ModuleList()
+        self.layers.append(nn.Linear(input_dim, layer_width))
+        
+        for _ in range(layers - 1):
+            self.layers.append(nn.Linear(layer_width, layer_width))
+        
+        self.basis_function = basis_function
+        self.theta_dim = theta_dim
+        
+        # Basis parameters
+        self.basis_parameters = nn.Linear(layer_width, theta_dim)
+        self.backcast_linear = nn.Linear(theta_dim, input_dim)
+        self.forecast_linear = nn.Linear(theta_dim, 1)  # Single step forecast
+    
+    def forward(self, x):
+        residual = x
+        
+        # Forward through layers
+        for layer in self.layers:
+            residual = F.relu(layer(residual))
+        
+        # Generate basis parameters
+        theta = self.basis_parameters(residual)
+        
+        # Generate backcast and forecast
+        backcast = self.backcast_linear(theta)
+        forecast = self.forecast_linear(theta)
+        
+        return backcast, forecast
+
+class NBeatsModel(nn.Module):
+    """N-BEATS model for time series forecasting"""
+    
+    def __init__(self, input_dim: int, stack_types: List[str], num_blocks: int, num_layers: int, layer_width: int = 256):
+        super().__init__()
+        
+        self.stacks = nn.ModuleList()
+        
+        for stack_type in stack_types:
+            stack = nn.ModuleList()
+            for _ in range(num_blocks):
+                if stack_type == 'trend':
+                    theta_dim = 3  # Linear trend parameters
+                elif stack_type == 'seasonality':
+                    theta_dim = 10  # Seasonal fourier components
+                else:  # generic
+                    theta_dim = 8
+                
+                block = NBeatsBlock(input_dim, theta_dim, stack_type, num_layers, layer_width)
+                stack.append(block)
             
-            # Stack configuration
-            self.trend_stack = NBEATSStack(
-                config.input_size, 
-                config.hidden_size, 
-                config.sequence_length,
-                config.prediction_horizon,
-                'trend'
-            )
+            self.stacks.append(stack)
+    
+    def forward(self, x):
+        residual = x
+        forecast = 0
+        
+        for stack in self.stacks:
+            stack_forecast = 0
             
-            self.seasonality_stack = NBEATSStack(
-                config.input_size,
-                config.hidden_size,
-                config.sequence_length, 
-                config.prediction_horizon,
-                'seasonality'
-            )
+            for block in stack:
+                backcast, block_forecast = block(residual)
+                residual = residual - backcast
+                stack_forecast = stack_forecast + block_forecast
             
-            self.generic_stack = NBEATSStack(
-                config.input_size,
-                config.hidden_size,
-                config.sequence_length,
-                config.prediction_horizon,
-                'generic'
+            forecast = forecast + stack_forecast
+        
+        return forecast
+
+class MultiModalFusionModel(nn.Module):
+    """Multimodal fusion model combining different data types"""
+    
+    def __init__(self, config: DeepLearningConfig, modality_dims: Dict[str, int], output_dim: int):
+        super().__init__()
+        
+        self.config = config
+        self.modality_dims = modality_dims
+        self.hidden_dim = config.hidden_dim
+        
+        # Modality-specific encoders
+        self.encoders = nn.ModuleDict()
+        
+        for modality, input_dim in modality_dims.items():
+            if 'text' in modality.lower() or 'sentiment' in modality.lower():
+                # Text encoder
+                self.encoders[modality] = self._create_text_encoder(input_dim)
+            elif 'timeseries' in modality.lower() or 'price' in modality.lower():
+                # Time series encoder
+                self.encoders[modality] = self._create_timeseries_encoder(input_dim)
+            else:
+                # Generic encoder
+                self.encoders[modality] = self._create_generic_encoder(input_dim)
+        
+        # Cross-modal attention
+        if config.enable_cross_modal_attention:
+            self.cross_attention = nn.MultiheadAttention(
+                embed_dim=self.hidden_dim,
+                num_heads=8,
+                dropout=config.dropout_rate,
+                batch_first=True
             )
         
-        def forward(self, x):
-            # Process through stacks
-            residual = x
-            forecast = torch.zeros(x.size(0), self.config.prediction_horizon).to(x.device)
+        # Fusion layer
+        total_dim = len(modality_dims) * self.hidden_dim
+        self.fusion_layer = nn.Sequential(
+            nn.Linear(total_dim, self.hidden_dim),
+            nn.LayerNorm(self.hidden_dim),
+            nn.GELU(),
+            nn.Dropout(config.dropout_rate),
+            nn.Linear(self.hidden_dim, output_dim)
+        )
+    
+    def _create_text_encoder(self, input_dim: int):
+        """Create text encoder"""
+        return nn.Sequential(
+            nn.Linear(input_dim, self.hidden_dim),
+            nn.LayerNorm(self.hidden_dim),
+            nn.GELU(),
+            nn.Dropout(self.config.dropout_rate),
+            nn.Linear(self.hidden_dim, self.hidden_dim)
+        )
+    
+    def _create_timeseries_encoder(self, input_dim: int):
+        """Create time series encoder with LSTM"""
+        return nn.Sequential(
+            nn.Linear(input_dim, self.hidden_dim),
+            nn.LSTM(self.hidden_dim, self.hidden_dim, batch_first=True),
+            nn.Dropout(self.config.dropout_rate)
+        )
+    
+    def _create_generic_encoder(self, input_dim: int):
+        """Create generic encoder"""
+        return nn.Sequential(
+            nn.Linear(input_dim, self.hidden_dim),
+            nn.LayerNorm(self.hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(self.config.dropout_rate),
+            nn.Linear(self.hidden_dim, self.hidden_dim)
+        )
+    
+    def forward(self, inputs: Dict[str, torch.Tensor]):
+        encoded_modalities = []
+        
+        # Encode each modality
+        for modality, data in inputs.items():
+            if modality in self.encoders:
+                encoder = self.encoders[modality]
+                
+                if isinstance(encoder[1], nn.LSTM):
+                    # Handle LSTM encoder
+                    x = encoder[0](data)
+                    lstm_out, _ = encoder[1](x)
+                    encoded = torch.mean(lstm_out, dim=1)  # Global average pooling
+                    encoded = encoder[2](encoded)  # Dropout
+                else:
+                    # Handle other encoders
+                    encoded = encoder(data.mean(dim=1) if len(data.shape) > 2 else data)
+                
+                encoded_modalities.append(encoded)
+        
+        if not encoded_modalities:
+            raise ValueError("No valid modalities found in input")
+        
+        # Cross-modal attention
+        if self.config.enable_cross_modal_attention and len(encoded_modalities) > 1:
+            # Stack encoded modalities
+            stacked = torch.stack(encoded_modalities, dim=1)
             
-            # Trend stack
-            backcast_trend, forecast_trend = self.trend_stack(residual)
-            residual = residual - backcast_trend
-            forecast = forecast + forecast_trend
+            # Apply cross-attention
+            attended, _ = self.cross_attention(stacked, stacked, stacked)
             
-            # Seasonality stack
-            backcast_season, forecast_season = self.seasonality_stack(residual)
-            residual = residual - backcast_season
-            forecast = forecast + forecast_season
-            
-            # Generic stack
-            backcast_generic, forecast_generic = self.generic_stack(residual)
-            forecast = forecast + forecast_generic
-            
-            return forecast
-else:
-    # Placeholder classes when PyTorch is not available
-    class LSTMForecaster:
-        def __init__(self, config): pass
-    class TransformerForecaster:
-        def __init__(self, config): pass
-    class NBEATSForecaster:
-        def __init__(self, config): pass
-    class PositionalEncoding:
-        def __init__(self, *args, **kwargs): pass
-    class NBEATSStack:
-        def __init__(self, *args, **kwargs): pass
+            # Flatten attended representations
+            fused_representation = attended.flatten(start_dim=1)
+        else:
+            # Simple concatenation
+            fused_representation = torch.cat(encoded_modalities, dim=1)
+        
+        # Final fusion and prediction
+        output = self.fusion_layer(fused_representation)
+        return output
 
 class DeepLearningEngine:
-    """Main deep learning engine for cryptocurrency forecasting"""
+    """Core deep learning engine for CryptoSmartTrader"""
     
-    def __init__(self, container):
-        self.container = container
-        self.logger = logging.getLogger(__name__)
-        self.cache_manager = container.cache_manager()
+    def __init__(self, config: Optional[DeepLearningConfig] = None):
+        self.config = config or DeepLearningConfig()
+        self.logger = logging.getLogger(f"{__name__}.DeepLearningEngine")
         
-        # Check PyTorch availability
-        if not TORCH_AVAILABLE:
-            self.logger.warning("PyTorch not available - deep learning features disabled")
-            self.device = "cpu"
-            self.torch_available = False
+        if not HAS_TORCH:
+            self.logger.error("PyTorch not available - deep learning disabled")
             return
         
-        # GPU setup
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.torch_available = True
-        self.logger.info(f"Deep learning engine initialized on device: {self.device}")
-        
-        # Model configurations (only create if PyTorch available)
-        if not self.torch_available:
-            self.model_configs = {}
-            self.trained_models = {}
-            self.model_performance = {}
-            self.is_training = False
-            self.training_thread = None
-            return
-            
-        self.model_configs = {
-            'lstm': ModelConfig(
-                model_type='lstm',
-                input_size=20,
-                hidden_size=128,
-                num_layers=3,
-                dropout=0.2,
-                sequence_length=60,
-                prediction_horizon=24,
-                learning_rate=0.001,
-                batch_size=32,
-                epochs=100,
-                use_gpu=TORCH_AVAILABLE and torch.cuda.is_available() if TORCH_AVAILABLE else False
-            ),
-            'transformer': ModelConfig(
-                model_type='transformer',
-                input_size=20,
-                hidden_size=256,
-                num_layers=4,
-                dropout=0.1,
-                sequence_length=60,
-                prediction_horizon=24,
-                learning_rate=0.0001,
-                batch_size=16,
-                epochs=50,
-                use_gpu=TORCH_AVAILABLE and torch.cuda.is_available() if TORCH_AVAILABLE else False
-            ),
-            'nbeats': ModelConfig(
-                model_type='nbeats',
-                input_size=20,
-                hidden_size=512,
-                num_layers=2,
-                dropout=0.1,
-                sequence_length=60,
-                prediction_horizon=24,
-                learning_rate=0.001,
-                batch_size=32,
-                epochs=200,
-                use_gpu=TORCH_AVAILABLE and torch.cuda.is_available() if TORCH_AVAILABLE else False
-            )
-        }
-        
-        # Trained models storage
-        self.trained_models = {}
-        self.model_performance = {}
+        # Model registry
+        self.models: Dict[str, Dict] = {}
+        self.active_models: Dict[str, nn.Module] = {}
         
         # Training state
-        self.is_training = False
-        self.training_thread = None
+        self.training_history: Dict[str, List] = {}
+        self.model_performance: Dict[str, Dict] = {}
+        
+        # Data preprocessing
+        self.scalers: Dict[str, Any] = {}
+        self.feature_extractors: Dict[str, Any] = {}
+        
+        # Model storage
+        self.model_dir = Path("models/deep_learning")
+        self.model_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Thread safety
+        self._lock = threading.RLock()
+        
+        # Device configuration
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        self.logger.info(f"Deep Learning Engine initialized on {self.device}")
     
-    def create_model(self, model_type: str, config: ModelConfig):
-        """Create deep learning model"""
-        if not self.torch_available:
-            raise ValueError("PyTorch not available - cannot create deep learning models")
-        try:
-            if model_type == 'lstm':
-                model = LSTMForecaster(config)
-            elif model_type == 'transformer':
-                model = TransformerForecaster(config)
-            elif model_type == 'nbeats':
-                model = NBEATSForecaster(config)
-            else:
-                raise ValueError(f"Unknown model type: {model_type}")
+    def create_model(self, model_type: ModelType, model_id: str, input_dims: Union[int, Dict[str, int]], 
+                    output_dim: int, **kwargs) -> bool:
+        """
+        Create a new deep learning model
+        
+        Args:
+            model_type: Type of model to create
+            model_id: Unique identifier for the model
+            input_dims: Input dimensions (int for single modality, dict for multimodal)
+            output_dim: Output dimension
+            **kwargs: Additional model-specific parameters
             
-            # Move to device
-            model = model.to(self.device)
-            
-            self.logger.info(f"Created {model_type} model with {sum(p.numel() for p in model.parameters())} parameters")
-            
-            return model
-            
-        except Exception as e:
-            self.logger.error(f"Model creation failed for {model_type}: {e}")
-            raise
-    
-    def prepare_sequences(self, data: pd.DataFrame, config: ModelConfig):
-        """Prepare sequences for training"""
-        try:
-            sequences = []
-            targets = []
-            
-            # Feature columns (excluding target)
-            feature_cols = [col for col in data.columns if col != 'target']
-            
-            for i in range(len(data) - config.sequence_length - config.prediction_horizon + 1):
-                # Input sequence
-                seq = data[feature_cols].iloc[i:i + config.sequence_length].values
+        Returns:
+            True if model created successfully
+        """
+        with self._lock:
+            try:
+                if not HAS_TORCH:
+                    self.logger.error("PyTorch not available")
+                    return False
                 
-                # Target sequence
-                target = data['target'].iloc[i + config.sequence_length:i + config.sequence_length + config.prediction_horizon].values
+                # Create model based on type
+                if model_type == ModelType.LSTM:
+                    model = LSTMModel(
+                        input_dims if isinstance(input_dims, int) else sum(input_dims.values()),
+                        self.config.hidden_dim,
+                        self.config.num_layers,
+                        output_dim,
+                        self.config.dropout_rate
+                    )
                 
-                sequences.append(seq)
-                targets.append(target)
-            
-            # Convert to tensors
-            if TORCH_AVAILABLE:
-                X = torch.FloatTensor(np.array(sequences))
-                y = torch.FloatTensor(np.array(targets))
-            else:
-                X = np.array(sequences)
-                y = np.array(targets)
-            
-            return X, y
-            
-        except Exception as e:
-            self.logger.error(f"Sequence preparation failed: {e}")
-            raise
-    
-    def train_model(self, coin: str, model_type: str, training_data: pd.DataFrame) -> Dict[str, Any]:
-        """Train deep learning model"""
-        try:
-            if not self.torch_available:
-                return {'success': False, 'error': 'PyTorch not available'}
+                elif model_type == ModelType.TRANSFORMER:
+                    model = TransformerModel(
+                        input_dims if isinstance(input_dims, int) else sum(input_dims.values()),
+                        self.config.hidden_dim,
+                        self.config.num_layers,
+                        self.config.transformer_heads,
+                        output_dim,
+                        self.config.dropout_rate
+                    )
                 
-            self.logger.info(f"Training {model_type} model for {coin}")
-            
-            config = self.model_configs[model_type]
-            
-            # Create model
-            model = self.create_model(model_type, config)
-            
-            # Prepare data
-            X, y = self.prepare_sequences(training_data, config)
-            
-            # Split train/validation
-            split_idx = int(len(X) * 0.8)
-            X_train, X_val = X[:split_idx], X[split_idx:]
-            y_train, y_val = y[:split_idx], y[split_idx:]
-            
-            # Move to device
-            X_train, X_val = X_train.to(self.device), X_val.to(self.device)
-            y_train, y_val = y_train.to(self.device), y_val.to(self.device)
-            
-            # Create data loaders
-            train_dataset = TensorDataset(X_train, y_train)
-            val_dataset = TensorDataset(X_val, y_val)
-            
-            train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-            val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False)
-            
-            # Optimizer and loss
-            optimizer = optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=0.01)
-            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=10, factor=0.5)
-            
-            # Training loop
-            best_val_loss = float('inf')
-            patience_counter = 0
-            training_history = []
-            
-            for epoch in range(config.epochs):
-                # Training phase
-                model.train()
-                train_loss = 0.0
+                elif model_type == ModelType.NBEATS:
+                    model = NBeatsModel(
+                        input_dims if isinstance(input_dims, int) else sum(input_dims.values()),
+                        self.config.nbeats_stack_types,
+                        self.config.nbeats_num_blocks,
+                        self.config.nbeats_num_layers
+                    )
                 
-                for batch_X, batch_y in train_loader:
-                    optimizer.zero_grad()
-                    
-                    predictions, uncertainties = model(batch_X)
-                    
-                    # Uncertainty-weighted loss
-                    mse_loss = nn.MSELoss()(predictions, batch_y)
-                    uncertainty_loss = torch.mean(uncertainties)
-                    
-                    loss = mse_loss + 0.1 * uncertainty_loss
-                    
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-                    optimizer.step()
-                    
-                    train_loss += loss.item()
+                elif model_type == ModelType.MULTIMODAL_FUSION:
+                    if not isinstance(input_dims, dict):
+                        raise ValueError("Multimodal fusion requires dict input_dims")
+                    model = MultiModalFusionModel(self.config, input_dims, output_dim)
                 
-                # Validation phase
-                model.eval()
-                val_loss = 0.0
-                
-                with torch.no_grad():
-                    for batch_X, batch_y in val_loader:
-                        predictions, uncertainties = model(batch_X)
-                        loss = nn.MSELoss()(predictions, batch_y)
-                        val_loss += loss.item()
-                
-                train_loss /= len(train_loader)
-                val_loss /= len(val_loader)
-                
-                scheduler.step(val_loss)
-                
-                training_history.append({
-                    'epoch': epoch,
-                    'train_loss': train_loss,
-                    'val_loss': val_loss,
-                    'learning_rate': optimizer.param_groups[0]['lr']
-                })
-                
-                # Early stopping
-                if val_loss < best_val_loss:
-                    best_val_loss = val_loss
-                    patience_counter = 0
-                    
-                    # Save best model
-                    model_key = f"{coin}_{model_type}"
-                    self.trained_models[model_key] = {
-                        'model': model.state_dict(),
-                        'config': config,
-                        'performance': {
-                            'val_loss': val_loss,
-                            'train_loss': train_loss,
-                            'epoch': epoch
-                        }
-                    }
                 else:
-                    patience_counter += 1
+                    raise ValueError(f"Unsupported model type: {model_type}")
                 
-                if patience_counter >= 20:  # Early stopping
-                    self.logger.info(f"Early stopping at epoch {epoch}")
-                    break
+                # Move to device
+                model = model.to(self.device)
                 
-                if epoch % 10 == 0:
-                    self.logger.info(f"Epoch {epoch}: train_loss={train_loss:.6f}, val_loss={val_loss:.6f}")
-            
-            # Store performance
-            model_key = f"{coin}_{model_type}"
-            self.model_performance[model_key] = {
-                'best_val_loss': best_val_loss,
-                'training_history': training_history,
-                'total_epochs': epoch + 1,
-                'model_type': model_type,
-                'timestamp': datetime.now()
-            }
-            
-            self.logger.info(f"Training completed for {coin} {model_type}: best_val_loss={best_val_loss:.6f}")
-            
-            return {
-                'success': True,
-                'model_key': model_key,
-                'best_val_loss': best_val_loss,
-                'total_epochs': epoch + 1
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Training failed for {coin} {model_type}: {e}")
-            return {'success': False, 'error': str(e)}
+                # Store model
+                self.models[model_id] = {
+                    'model': model,
+                    'type': model_type,
+                    'input_dims': input_dims,
+                    'output_dim': output_dim,
+                    'created_at': datetime.now(),
+                    'trained': False,
+                    'performance': {}
+                }
+                
+                self.active_models[model_id] = model
+                
+                self.logger.info(f"Created {model_type.value} model '{model_id}' with {sum(p.numel() for p in model.parameters())} parameters")
+                return True
+                
+            except Exception as e:
+                self.logger.error(f"Failed to create model {model_id}: {e}")
+                return False
     
-    def predict(self, coin: str, model_type: str, input_data: pd.DataFrame) -> Dict[str, Any]:
-        """Make predictions with trained model"""
-        try:
-            if not self.torch_available:
-                return {'success': False, 'error': 'PyTorch not available'}
+    def train_model(self, model_id: str, train_data: Dict[str, np.ndarray], 
+                   targets: np.ndarray, val_data: Optional[Dict[str, np.ndarray]] = None,
+                   val_targets: Optional[np.ndarray] = None) -> Dict[str, Any]:
+        """
+        Train a deep learning model
+        
+        Args:
+            model_id: Model identifier
+            train_data: Training data (dict for multimodal, single array for unimodal)
+            targets: Target values
+            val_data: Validation data (optional)
+            val_targets: Validation targets (optional)
+            
+        Returns:
+            Training results and metrics
+        """
+        with self._lock:
+            try:
+                if model_id not in self.models:
+                    raise ValueError(f"Model {model_id} not found")
                 
-            model_key = f"{coin}_{model_type}"
-            
-            if model_key not in self.trained_models:
-                return {'success': False, 'error': 'Model not trained'}
-            
-            # Load model
-            model_info = self.trained_models[model_key]
-            config = model_info['config']
-            
-            model = self.create_model(model_type, config)
-            model.load_state_dict(model_info['model'])
-            model.eval()
-            
-            # Prepare input
-            X, _ = self.prepare_sequences(input_data, config)
-            X = X[-1:].to(self.device)  # Last sequence only
-            
-            # Predict
-            with torch.no_grad():
-                predictions, uncertainties = model(X)
+                model_info = self.models[model_id]
+                model = model_info['model']
+                model_type = model_info['type']
                 
-                predictions = predictions.cpu().numpy().flatten()
-                uncertainties = uncertainties.cpu().numpy().flatten()
-            
-            # Calculate confidence intervals
-            confidence_intervals = []
-            for i, (pred, unc) in enumerate(zip(predictions, uncertainties)):
-                lower = pred - 1.96 * unc
-                upper = pred + 1.96 * unc
-                confidence_intervals.append({'lower': lower, 'upper': upper, 'std': unc})
-            
-            return {
-                'success': True,
-                'predictions': predictions.tolist(),
-                'uncertainties': uncertainties.tolist(),
-                'confidence_intervals': confidence_intervals,
-                'model_type': model_type,
-                'timestamp': datetime.now()
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Prediction failed for {coin} {model_type}: {e}")
-            return {'success': False, 'error': str(e)}
-    
-    def ensemble_predict(self, coin: str, input_data: pd.DataFrame) -> Dict[str, Any]:
-        """Ensemble prediction using multiple models"""
-        try:
-            predictions = {}
-            weights = {'lstm': 0.4, 'transformer': 0.35, 'nbeats': 0.25}
-            
-            total_weight = 0
-            ensemble_pred = None
-            ensemble_unc = None
-            
-            for model_type, weight in weights.items():
-                result = self.predict(coin, model_type, input_data)
+                # Prepare data loaders
+                train_dataset = self._prepare_dataset(train_data, targets, model_type)
+                train_loader = DataLoader(
+                    train_dataset, 
+                    batch_size=self.config.batch_size, 
+                    shuffle=True
+                )
                 
-                if result['success']:
-                    pred = np.array(result['predictions'])
-                    unc = np.array(result['uncertainties'])
+                val_loader = None
+                if val_data is not None and val_targets is not None:
+                    val_dataset = self._prepare_dataset(val_data, val_targets, model_type)
+                    val_loader = DataLoader(
+                        val_dataset, 
+                        batch_size=self.config.batch_size, 
+                        shuffle=False
+                    )
+                
+                # Setup training components
+                criterion = nn.MSELoss()
+                optimizer = AdamW(model.parameters(), lr=self.config.learning_rate, weight_decay=1e-5)
+                scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.5)
+                
+                # Training history
+                history = {
+                    'train_loss': [],
+                    'val_loss': [],
+                    'learning_rates': []
+                }
+                
+                best_val_loss = float('inf')
+                patience_counter = 0
+                
+                # Training loop
+                for epoch in range(self.config.max_epochs):
+                    # Training phase
+                    model.train()
+                    train_loss = 0.0
                     
-                    if ensemble_pred is None:
-                        ensemble_pred = weight * pred
-                        ensemble_unc = weight * unc
+                    for batch_idx, (batch_data, batch_targets) in enumerate(train_loader):
+                        optimizer.zero_grad()
+                        
+                        # Forward pass
+                        if isinstance(batch_data, dict):
+                            # Multimodal data
+                            batch_data = {k: v.to(self.device) for k, v in batch_data.items()}
+                        else:
+                            # Single modality
+                            batch_data = batch_data.to(self.device)
+                        
+                        batch_targets = batch_targets.to(self.device)
+                        
+                        outputs = model(batch_data)
+                        loss = criterion(outputs, batch_targets)
+                        
+                        # Backward pass
+                        loss.backward()
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), self.config.gradient_clip_norm)
+                        optimizer.step()
+                        
+                        train_loss += loss.item()
+                    
+                    avg_train_loss = train_loss / len(train_loader)
+                    history['train_loss'].append(avg_train_loss)
+                    history['learning_rates'].append(optimizer.param_groups[0]['lr'])
+                    
+                    # Validation phase
+                    if val_loader is not None:
+                        model.eval()
+                        val_loss = 0.0
+                        
+                        with torch.no_grad():
+                            for batch_data, batch_targets in val_loader:
+                                if isinstance(batch_data, dict):
+                                    batch_data = {k: v.to(self.device) for k, v in batch_data.items()}
+                                else:
+                                    batch_data = batch_data.to(self.device)
+                                
+                                batch_targets = batch_targets.to(self.device)
+                                outputs = model(batch_data)
+                                loss = criterion(outputs, batch_targets)
+                                val_loss += loss.item()
+                        
+                        avg_val_loss = val_loss / len(val_loader)
+                        history['val_loss'].append(avg_val_loss)
+                        
+                        # Learning rate scheduling
+                        scheduler.step(avg_val_loss)
+                        
+                        # Early stopping
+                        if avg_val_loss < best_val_loss:
+                            best_val_loss = avg_val_loss
+                            patience_counter = 0
+                            # Save best model
+                            self._save_model_checkpoint(model_id, model, epoch, avg_val_loss)
+                        else:
+                            patience_counter += 1
+                        
+                        if patience_counter >= self.config.early_stopping_patience:
+                            self.logger.info(f"Early stopping at epoch {epoch}")
+                            break
+                        
+                        if epoch % 10 == 0:
+                            self.logger.info(f"Epoch {epoch}: Train Loss={avg_train_loss:.6f}, Val Loss={avg_val_loss:.6f}")
                     else:
-                        ensemble_pred += weight * pred
-                        ensemble_unc += weight * unc
-                    
-                    total_weight += weight
-                    predictions[model_type] = result
-            
-            if total_weight > 0:
-                ensemble_pred /= total_weight
-                ensemble_unc /= total_weight
+                        if epoch % 10 == 0:
+                            self.logger.info(f"Epoch {epoch}: Train Loss={avg_train_loss:.6f}")
                 
+                # Update model info
+                model_info['trained'] = True
+                model_info['training_history'] = history
+                self.training_history[model_id] = history
+                
+                # Calculate final performance metrics
+                performance = self._calculate_model_performance(model, val_loader if val_loader else train_loader)
+                model_info['performance'] = performance
+                self.model_performance[model_id] = performance
+                
+                self.logger.info(f"Training completed for model {model_id}")
                 return {
                     'success': True,
-                    'ensemble_predictions': ensemble_pred.tolist(),
-                    'ensemble_uncertainties': ensemble_unc.tolist(),
-                    'individual_predictions': predictions,
-                    'total_weight': total_weight,
-                    'timestamp': datetime.now()
+                    'final_train_loss': history['train_loss'][-1],
+                    'final_val_loss': history['val_loss'][-1] if history['val_loss'] else None,
+                    'epochs_trained': len(history['train_loss']),
+                    'performance': performance
                 }
+                
+            except Exception as e:
+                self.logger.error(f"Training failed for model {model_id}: {e}")
+                return {'success': False, 'error': str(e)}
+    
+    def _prepare_dataset(self, data: Union[Dict[str, np.ndarray], np.ndarray], 
+                        targets: np.ndarray, model_type: ModelType) -> Dataset:
+        """Prepare dataset for training"""
+        if model_type == ModelType.MULTIMODAL_FUSION:
+            if not isinstance(data, dict):
+                raise ValueError("Multimodal fusion requires dict data")
+            return MultiModalDataset(data, targets, self.config.sequence_length)
+        else:
+            # Convert single modality data to format expected by MultiModalDataset
+            if isinstance(data, dict):
+                # Use first modality for single-modal models
+                data_array = next(iter(data.values()))
             else:
-                return {'success': False, 'error': 'No models available for ensemble'}
-                
-        except Exception as e:
-            self.logger.error(f"Ensemble prediction failed for {coin}: {e}")
-            return {'success': False, 'error': str(e)}
-    
-    def start_batch_training(self, coins: List[str] = None):
-        """Start batch training for multiple coins"""
-        if self.is_training:
-            self.logger.warning("Training already in progress")
-            return
-        
-        self.is_training = True
-        self.training_thread = threading.Thread(target=self._batch_training_loop, args=(coins,), daemon=True)
-        self.training_thread.start()
-        
-        self.logger.info("Started batch training process")
-    
-    def _batch_training_loop(self, coins: List[str] = None):
-        """Batch training loop"""
-        try:
-            if coins is None:
-                # Get coins from cache
-                discovered_coins = self.cache_manager.get("discovered_coins")
-                coins = list(discovered_coins.keys())[:20] if discovered_coins else ['BTC', 'ETH']
+                data_array = data
             
-            for coin in coins:
-                if not self.is_training:
-                    break
-                
-                try:
-                    # Get training data
-                    training_data = self._prepare_training_data(coin)
-                    
-                    if training_data is not None and len(training_data) > 200:
-                        # Train all model types
-                        for model_type in ['lstm', 'transformer', 'nbeats']:
-                            if not self.is_training:
-                                break
-                            
-                            result = self.train_model(coin, model_type, training_data)
-                            
-                            if result['success']:
-                                self.logger.info(f"Successfully trained {model_type} for {coin}")
-                            else:
-                                self.logger.error(f"Failed to train {model_type} for {coin}: {result.get('error')}")
-                            
-                            time.sleep(1)  # Brief pause between models
-                    else:
-                        self.logger.warning(f"Insufficient training data for {coin}")
-                        
-                except Exception as e:
-                    self.logger.error(f"Training failed for {coin}: {e}")
-                
-                time.sleep(5)  # Pause between coins
-            
-        except Exception as e:
-            self.logger.error(f"Batch training loop failed: {e}")
-        finally:
-            self.is_training = False
-            self.logger.info("Batch training completed")
+            return MultiModalDataset({'main': data_array}, targets, self.config.sequence_length)
     
-    def _prepare_training_data(self, coin: str) -> Optional[pd.DataFrame]:
-        """Prepare training data for a coin"""
+    def predict(self, model_id: str, input_data: Union[Dict[str, np.ndarray], np.ndarray]) -> Optional[np.ndarray]:
+        """
+        Make predictions with a trained model
+        
+        Args:
+            model_id: Model identifier
+            input_data: Input data for prediction
+            
+        Returns:
+            Predictions or None if failed
+        """
         try:
-            # Get cached price data
-            price_data = self.cache_manager.get(f"validated_price_data_{coin}")
-            if not price_data:
+            if model_id not in self.active_models:
                 return None
             
-            df = pd.DataFrame(price_data)
+            model = self.active_models[model_id]
+            model.eval()
             
-            # Feature engineering
-            df['returns'] = df['close'].pct_change()
-            df['log_returns'] = np.log(df['close'] / df['close'].shift(1))
-            df['volatility'] = df['returns'].rolling(window=20).std()
-            
-            # Technical indicators (simplified)
-            df['sma_20'] = df['close'].rolling(window=20).mean()
-            df['sma_50'] = df['close'].rolling(window=50).mean()
-            df['rsi'] = self._calculate_rsi(df['close'])
-            
-            # Volume features
-            df['volume_sma'] = df['volume'].rolling(window=20).mean()
-            df['volume_ratio'] = df['volume'] / df['volume_sma']
-            
-            # Price features
-            df['high_low_ratio'] = df['high'] / df['low']
-            df['close_open_ratio'] = df['close'] / df['open']
-            
-            # Target: next day return
-            df['target'] = df['returns'].shift(-1)
-            
-            # Select features
-            feature_columns = [
-                'returns', 'log_returns', 'volatility', 'sma_20', 'sma_50',
-                'rsi', 'volume_ratio', 'high_low_ratio', 'close_open_ratio'
-            ]
-            
-            # Normalize features
-            for col in feature_columns:
-                if col in df.columns:
-                    df[col] = (df[col] - df[col].mean()) / (df[col].std() + 1e-8)
-            
-            # Add target column
-            feature_columns.append('target')
-            
-            # Clean data
-            result_df = df[feature_columns].dropna()
-            
-            return result_df if len(result_df) > 100 else None
-            
+            with torch.no_grad():
+                # Prepare input
+                if isinstance(input_data, dict):
+                    batch_data = {k: torch.FloatTensor(v).unsqueeze(0).to(self.device) 
+                                for k, v in input_data.items()}
+                else:
+                    batch_data = torch.FloatTensor(input_data).unsqueeze(0).to(self.device)
+                
+                # Predict
+                output = model(batch_data)
+                predictions = output.cpu().numpy()
+                
+                return predictions.squeeze(0)
+                
         except Exception as e:
-            self.logger.error(f"Training data preparation failed for {coin}: {e}")
+            self.logger.error(f"Prediction failed for model {model_id}: {e}")
             return None
     
-    def _calculate_rsi(self, prices: pd.Series, window: int = 14) -> pd.Series:
-        """Calculate RSI indicator"""
-        delta = prices.diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-        rs = gain / loss
-        rsi = 100 - (100 / (1 + rs))
-        return rsi
-    
-    def get_training_status(self) -> Dict[str, Any]:
-        """Get current training status"""
+    def _calculate_model_performance(self, model: nn.Module, data_loader: DataLoader) -> Dict[str, float]:
+        """Calculate comprehensive model performance metrics"""
+        model.eval()
+        total_loss = 0.0
+        predictions = []
+        actuals = []
+        
+        criterion = nn.MSELoss()
+        
+        with torch.no_grad():
+            for batch_data, batch_targets in data_loader:
+                if isinstance(batch_data, dict):
+                    batch_data = {k: v.to(self.device) for k, v in batch_data.items()}
+                else:
+                    batch_data = batch_data.to(self.device)
+                
+                batch_targets = batch_targets.to(self.device)
+                outputs = model(batch_data)
+                
+                loss = criterion(outputs, batch_targets)
+                total_loss += loss.item()
+                
+                predictions.extend(outputs.cpu().numpy())
+                actuals.extend(batch_targets.cpu().numpy())
+        
+        predictions = np.array(predictions)
+        actuals = np.array(actuals)
+        
+        # Calculate metrics
+        mse = np.mean((predictions - actuals) ** 2)
+        mae = np.mean(np.abs(predictions - actuals))
+        rmse = np.sqrt(mse)
+        
+        # R-squared
+        ss_res = np.sum((actuals - predictions) ** 2)
+        ss_tot = np.sum((actuals - np.mean(actuals)) ** 2)
+        r2 = 1 - (ss_res / (ss_tot + 1e-8))
+        
+        # Directional accuracy
+        actual_direction = np.sign(actuals[1:] - actuals[:-1])
+        pred_direction = np.sign(predictions[1:] - predictions[:-1])
+        directional_accuracy = np.mean(actual_direction == pred_direction)
+        
         return {
-            'is_training': self.is_training,
-            'trained_models': len(self.trained_models),
-            'model_performance': self.model_performance,
-            'device': str(self.device),
-            'gpu_available': TORCH_AVAILABLE and torch.cuda.is_available() if TORCH_AVAILABLE else False,
-            'torch_available': self.torch_available if hasattr(self, 'torch_available') else False,
-            'timestamp': datetime.now()
+            'mse': float(mse),
+            'mae': float(mae),
+            'rmse': float(rmse),
+            'r2': float(r2),
+            'directional_accuracy': float(directional_accuracy),
+            'avg_loss': total_loss / len(data_loader)
         }
     
-    def stop_training(self):
-        """Stop training process"""
-        self.is_training = False
-        if self.training_thread:
-            self.training_thread.join(timeout=10)
-        
-        self.logger.info("Training process stopped")
-    
-    def save_models(self, filepath: str = "models/deep_learning_models.pkl"):
-        """Save trained models to disk"""
+    def _save_model_checkpoint(self, model_id: str, model: nn.Module, epoch: int, val_loss: float):
+        """Save model checkpoint"""
         try:
-            models_dir = Path("models")
-            models_dir.mkdir(exist_ok=True)
-            
-            save_data = {
-                'trained_models': self.trained_models,
-                'model_performance': self.model_performance,
-                'model_configs': self.model_configs,
-                'timestamp': datetime.now()
+            checkpoint = {
+                'model_state_dict': model.state_dict(),
+                'epoch': epoch,
+                'val_loss': val_loss,
+                'config': self.config.__dict__,
+                'timestamp': datetime.now().isoformat()
             }
             
-            with open(filepath, 'wb') as f:
-                pickle.dump(save_data, f)
-            
-            self.logger.info(f"Models saved to {filepath}")
+            checkpoint_path = self.model_dir / f"{model_id}_best.pt"
+            torch.save(checkpoint, checkpoint_path)
             
         except Exception as e:
-            self.logger.error(f"Failed to save models: {e}")
+            self.logger.error(f"Failed to save checkpoint for {model_id}: {e}")
     
-    def load_models(self, filepath: str = "models/deep_learning_models.pkl"):
-        """Load trained models from disk"""
+    def load_model(self, model_id: str, checkpoint_path: Optional[str] = None) -> bool:
+        """Load a saved model"""
         try:
-            if not Path(filepath).exists():
-                self.logger.warning(f"Model file not found: {filepath}")
-                return
+            if checkpoint_path is None:
+                checkpoint_path = self.model_dir / f"{model_id}_best.pt"
             
-            with open(filepath, 'rb') as f:
-                save_data = pickle.load(f)
+            if not Path(checkpoint_path).exists():
+                return False
             
-            self.trained_models = save_data.get('trained_models', {})
-            self.model_performance = save_data.get('model_performance', {})
+            checkpoint = torch.load(checkpoint_path, map_location=self.device)
             
-            self.logger.info(f"Loaded {len(self.trained_models)} models from {filepath}")
+            if model_id in self.active_models:
+                self.active_models[model_id].load_state_dict(checkpoint['model_state_dict'])
+                self.logger.info(f"Loaded model {model_id} from checkpoint")
+                return True
+            
+            return False
             
         except Exception as e:
-            self.logger.error(f"Failed to load models: {e}")
+            self.logger.error(f"Failed to load model {model_id}: {e}")
+            return False
+    
+    def get_model_summary(self) -> Dict[str, Any]:
+        """Get summary of all models"""
+        with self._lock:
+            summary = {
+                'total_models': len(self.models),
+                'trained_models': len([m for m in self.models.values() if m.get('trained', False)]),
+                'device': str(self.device),
+                'pytorch_available': HAS_TORCH,
+                'models': {}
+            }
+            
+            for model_id, model_info in self.models.items():
+                summary['models'][model_id] = {
+                    'type': model_info['type'].value,
+                    'trained': model_info.get('trained', False),
+                    'created_at': model_info['created_at'].isoformat(),
+                    'performance': model_info.get('performance', {}),
+                    'parameters': sum(p.numel() for p in model_info['model'].parameters()) if HAS_TORCH else 0
+                }
+            
+            return summary
+    
+    def get_training_progress(self, model_id: str) -> Optional[Dict[str, Any]]:
+        """Get training progress for a model"""
+        if model_id in self.training_history:
+            history = self.training_history[model_id]
+            return {
+                'epochs_completed': len(history['train_loss']),
+                'current_train_loss': history['train_loss'][-1] if history['train_loss'] else 0,
+                'current_val_loss': history['val_loss'][-1] if history['val_loss'] else 0,
+                'learning_rate': history['learning_rates'][-1] if history['learning_rates'] else 0,
+                'best_val_loss': min(history['val_loss']) if history['val_loss'] else None
+            }
+        return None
+
+
+# Singleton deep learning engine
+_deep_learning_engine = None
+_dl_lock = threading.Lock()
+
+def get_deep_learning_engine(config: Optional[DeepLearningConfig] = None) -> DeepLearningEngine:
+    """Get the singleton deep learning engine"""
+    global _deep_learning_engine
+    
+    with _dl_lock:
+        if _deep_learning_engine is None:
+            _deep_learning_engine = DeepLearningEngine(config)
+        return _deep_learning_engine
+
+def create_multimodal_model(model_id: str, modality_dims: Dict[str, int], output_dim: int) -> bool:
+    """Convenient function to create multimodal model"""
+    engine = get_deep_learning_engine()
+    return engine.create_model(ModelType.MULTIMODAL_FUSION, model_id, modality_dims, output_dim)
