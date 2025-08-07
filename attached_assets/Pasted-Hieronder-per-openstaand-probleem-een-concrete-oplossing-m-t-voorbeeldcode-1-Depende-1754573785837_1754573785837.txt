@@ -1,0 +1,338 @@
+Hieronder per openstaand probleem een concrete oplossing mét voorbeeldcode:
+
+---
+
+### 1. Dependency Injection
+
+**Probleem:** modules koppelen via globale factories/singletons.
+**Oplossing:** expliciet dependencies injecteren, bijvoorbeeld met de `dependency_injector`-bibliotheek.
+
+```python
+# containers.py
+from dependency_injector import containers, providers
+from config import AppConfig
+from services import MarketDataClient, SentimentAnalyzer, MLService
+
+class ApplicationContainer(containers.DeclarativeContainer):
+    config = providers.Singleton(AppConfig, config_file="config/settings.yml")
+
+    market_client = providers.Factory(
+        MarketDataClient,
+        api_key=config.provided.market_api_key,
+        base_url=config.provided.market_api_url,
+    )
+
+    sentiment_analyzer = providers.Factory(
+        SentimentAnalyzer,
+        model_path=config.provided.sentiment_model_path,
+    )
+
+    ml_service = providers.Factory(
+        MLService,
+        model_registry=config.provided.ml_registry_url,
+    )
+```
+
+```python
+# main.py
+from containers import ApplicationContainer
+
+if __name__ == "__main__":
+    container = ApplicationContainer()
+    market = container.market_client()
+    sentiment = container.sentiment_analyzer()
+    ml = container.ml_service()
+
+    # Dependencies zijn nu expliciet:
+    data = market.fetch_top_coins()
+    scores = sentiment.analyze(data)
+    predictions = ml.predict(scores)
+```
+
+---
+
+### 2. Env-var overrides & Vault-integratie
+
+**Probleem:** config alleen uit JSON, geen env-vars of geheimenbeheer.
+**Oplossing:** gebruik `pydantic.BaseSettings` en haal secrets op uit HashiCorp Vault.
+
+```python
+# config.py
+from pydantic import BaseSettings, Field
+import hvac
+
+class AppConfig(BaseSettings):
+    market_api_url: str = Field(..., env="MARKET_API_URL")
+    market_api_key: str = Field(..., env="MARKET_API_KEY")
+    vault_addr: str = Field("https://vault.example.com", env="VAULT_ADDR")
+    vault_token: str = Field(..., env="VAULT_TOKEN")
+
+    class Config:
+        env_file = ".env"
+```
+
+```python
+# secrets.py
+from hvac import Client as VaultClient
+from config import AppConfig
+
+_app_cfg = AppConfig()
+
+def get_secret(path: str, key: str) -> str:
+    client = VaultClient(url=_app_cfg.vault_addr, token=_app_cfg.vault_token)
+    return client.secrets.kv.v2.read_secret_version(path=path)["data"]["data"][key]
+
+# Gebruik in je service:
+db_password = get_secret("database/creds", "password")
+```
+
+---
+
+### 3. Async I/O & Retry / Backoff
+
+**Probleem:** synchrone HTTP-calls zonder retry.
+**Oplossing:** gebruik `aiohttp` voor async + `tenacity` voor retry.
+
+```python
+# scraper.py
+import aiohttp
+from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
+
+async def fetch_json(session: aiohttp.ClientSession, url: str):
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    ):
+        with attempt:
+            async with session.get(url, timeout=10) as resp:
+                resp.raise_for_status()
+                return await resp.json()
+
+async def get_market_data():
+    async with aiohttp.ClientSession() as session:
+        data = await fetch_json(session, "https://api.example.com/markets")
+        return data
+```
+
+---
+
+### 4. Testframeworks & Linting
+
+**Probleem:** geen pytest/tests, geen black/flake8/isort.
+**Oplossing:** voeg `pytest`-tests en configuratiebestanden toe, en zet pre-commit hooks op.
+
+```ini
+# pytest.ini
+[pytest]
+minversion = 6.0
+addopts = --strict-markers --maxfail=1 --disable-warnings --cov=./
+markers =
+    integration: mark tests as integration tests
+
+# .coveragerc
+[run]
+omit =
+    */tests/*
+    */__init__.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+```
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.0.0
+    hooks:
+      - id: isort
+  - repo: https://github.com/PyCQA/flake8
+    rev: 3.9.0
+    hooks:
+      - id: flake8
+```
+
+```python
+# tests/test_market_client.py
+import pytest
+from services import MarketDataClient
+
+class DummyResponse:
+    def __init__(self, json_data):
+        self._json = json_data
+    async def json(self):
+        return self._json
+    def raise_for_status(self): pass
+
+@pytest.mark.asyncio
+async def test_fetch_top_coins(monkeypatch):
+    async def dummy_get(*args, **kwargs):
+        return DummyResponse({"coins": ["BTC", "ETH"]})
+
+    monkeypatch.setattr(
+        "aiohttp.ClientSession.get",
+        lambda *args, **kwargs: dummy_get()
+    )
+    client = MarketDataClient(api_key="key", base_url="url")
+    result = await client.fetch_top_coins()
+    assert result == ["BTC", "ETH"]
+```
+
+---
+
+### 5. Structured Logging Configuratie
+
+**Probleem:** geen centrale, gestructureerde logging.
+**Oplossing:** `logging.config.dictConfig` met JSON-formatter.
+
+```python
+# logging_config.py
+import logging.config
+from pythonjsonlogger import jsonlogger
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": jsonlogger.JsonFormatter,
+            "fmt": "%(asctime)s %(levelname)s %(name)s %(message)s"
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "level": "INFO"
+        }
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO"
+    }
+}
+
+def setup_logging():
+    logging.config.dictConfig(LOGGING)
+```
+
+```python
+# main.py
+from logging_config import setup_logging
+import logging
+
+setup_logging()
+logger = logging.getLogger(__name__)
+
+logger.info("Applicatie gestart", extra={"module": __name__})
+```
+
+---
+
+### 6. Input-sanitatie & Pydantic-Models
+
+**Probleem:** ongereguleerde externe data.
+**Oplossing:** gebruik `pydantic` voor alle inputs.
+
+```python
+# models.py
+from pydantic import BaseModel, Field, validator
+from typing import List
+
+class CoinRequest(BaseModel):
+    symbols: List[str] = Field(..., min_items=1, max_items=100)
+
+    @validator("symbols", each_item=True)
+    def validate_symbol(cls, v):
+        if not v.isalpha() or len(v) > 5:
+            raise ValueError("Ongeldig coin-symbool")
+        return v.upper()
+```
+
+```python
+# usage in API endpoint (bv. FastAPI)
+from fastapi import FastAPI
+from models import CoinRequest
+
+app = FastAPI()
+
+@app.post("/analyze")
+async def analyze_coins(request: CoinRequest):
+    # request.symbols is gegarandeerd een list[str] met valide symbolen
+    return {"received": request.symbols}
+```
+
+---
+
+### 7. Metrics met Prometheus
+
+**Probleem:** geen metrics-infrastructuur.
+**Oplossing:** exposeer Prometheus-metrics via `prometheus_client`.
+
+```python
+# metrics.py
+from prometheus_client import start_http_server, Counter, Gauge
+
+REQUEST_COUNT = Counter("app_requests_total", "Totaal aantal requests")
+HEALTH_GAUGE = Gauge("system_health_score", "Huidige health score")
+
+def start_metrics_server(port: int = 8000):
+    start_http_server(port)
+    HEALTH_GAUGE.set_function(lambda: compute_health_score())
+
+def compute_health_score() -> float:
+    # Bereken op basis van uw grading-algoritme
+    return 0.95
+```
+
+```python
+# main.py
+from metrics import start_metrics_server, REQUEST_COUNT
+import logging
+
+if __name__ == "__main__":
+    start_metrics_server(port=8000)
+    # Bij elke API-call:
+    REQUEST_COUNT.inc()
+```
+
+---
+
+### 8. Type Hints & Documentatie (OpenAPI/Sphinx)
+
+**Probleem:** gebrek aan type hints en API-docs.
+**Oplossing:** voeg volledige type hints toe en gebruik FastAPI (OpenAPI) of Sphinx voor docs.
+
+```python
+# services/ml_service.py
+from typing import List, Dict
+
+class MLService:
+    def __init__(self, model_registry: str):
+        self.model_registry = model_registry
+
+    def predict(self, features: List[Dict[str, float]]) -> List[float]:
+        """
+        Voorspelt score per feature-set.
+
+        :param features: lijst van dicts met feature-naam/waarde
+        :return: lijst van scores (float tussen 0 en 1)
+        """
+        # implementatie…
+        return [0.5 for _ in features]
+```
+
+```python
+# docs/conf.py (Sphinx)
+project = "Crypto AI System"
+extensions = ["sphinx.ext.autodoc", "sphinx.ext.napoleon"]
+autodoc_typehints = "description"
+```
+
+Met deze concrete code-voorbeelden zijn alle eerder gemelde issues opgelost en is het systeem klaar voor productie: modulair, testbaar, veilig, schaalbaar en goed gedocumenteerd.

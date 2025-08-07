@@ -1,0 +1,61 @@
+{
+  "health": {
+    "timestamp": "2025-08-07T13:55:56.638606",
+    "grade": "F",
+    "score": 35.78,
+    "resources": {
+      "cpu_percent": 42.2,
+      "memory_percent": 81.9,
+      "memory_available_gb": 11.37701416015625,
+      "disk_percent": 72.9,
+      "disk_free_gb": 12.742481231689453
+    },
+    "agent_health": {
+      "sentiment": {
+        "status": "healthy",
+        "last_update": "2025-08-07T13:55:57.640181",
+        "uptime": 24.5,
+        "error_rate": 0.01,
+        "processed_items": 1000
+      },
+      "technical": {
+        "status": "healthy",
+        "last_update": "2025-08-07T13:55:57.640189",
+        "uptime": 24.5,
+        "error_rate": 0.01,
+        "processed_items": 1000
+      },
+      "ml_predictor": {
+        "status": "healthy",
+        "last_update": "2025-08-07T13:55:57.640192",
+        "uptime": 24.5,
+        "error_rate": 0.01,
+        "processed_items": 1000
+      },
+      "backtest": {
+        "status": "healthy",
+        "last_update": "2025-08-07T13:55:57.640194",
+        "uptime": 24.5,
+        "error_rate": 0.01,
+        "processed_items": 1000
+      },
+      "trade_executor": {
+        "status": "healthy",
+        "last_update": "2025-08-07T13:55:57.640196",
+        "uptime": 24.5,
+        "error_rate": 0.01,
+        "processed_items": 1000
+      },
+      "whale_detector": {
+        "status": "healthy",
+        "last_update": "2025-08-07T13:55:57.640198",
+        "uptime": 24.5,
+        "error_rate": 0.01,
+        "processed_items": 1000
+      }
+    },
+    "data_coverage": 99.33774834437085,
+    "uptime": 52.993511178888895
+  },
+  "alerts": []
+}

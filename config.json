@@ -1,0 +1,64 @@
+{
+  "version": "2.0.0",
+  "created": "2025-08-07T13:49:21.772808",
+  "exchanges": [
+    "kraken"
+  ],
+  "api_rate_limit": 100,
+  "timeout_seconds": 30,
+  "agents": {
+    "sentiment": {
+      "enabled": true,
+      "update_interval": 300
+    },
+    "technical": {
+      "enabled": true,
+      "update_interval": 60
+    },
+    "ml_predictor": {
+      "enabled": true,
+      "update_interval": 900
+    },
+    "backtest": {
+      "enabled": true,
+      "update_interval": 3600
+    },
+    "trade_executor": {
+      "enabled": true,
+      "update_interval": 120
+    },
+    "whale_detector": {
+      "enabled": true,
+      "update_interval": 180
+    }
+  },
+  "prediction_horizons": [
+    "1d",
+    "7d"
+  ],
+  "ml_models": [
+    "xgboost",
+    "lightgbm",
+    "sklearn"
+  ],
+  "ensemble_weights": {
+    "xgboost": 0.4,
+    "lightgbm": 0.4,
+    "sklearn": 0.2
+  },
+  "max_coins": 453,
+  "data_retention_days": 365,
+  "cache_ttl_minutes": 60,
+  "enable_gpu": false,
+  "parallel_workers": 4,
+  "memory_limit_gb": 8,
+  "health_check_interval": 5,
+  "alert_threshold": 80,
+  "log_level": "INFO",
+  "api_keys": {
+    "openai": "",
+    "anthropic": "",
+    "kraken": "",
+    "binance": ""
+  }
+}
