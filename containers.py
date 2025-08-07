@@ -28,6 +28,8 @@ from core.openai_enhanced_analyzer import OpenAIEnhancedAnalyzer
 from scripts.backup_system import AutomatedBackupSystem
 from core.comprehensive_market_scanner import ComprehensiveMarketScanner
 from core.gpu_accelerator import gpu_accelerator
+from core.alpha_seeker import AlphaSeeker
+from core.comprehensive_analyzer import ComprehensiveAnalyzer
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -111,6 +113,20 @@ class ApplicationContainer(containers.DeclarativeContainer):
     
     # GPU accelerator (singleton for system-wide GPU management)
     gpu_accelerator_provider = providers.Object(gpu_accelerator)
+    
+    # Alpha seeker for high-growth identification
+    alpha_seeker = providers.Singleton(
+        AlphaSeeker,
+        config_manager=config,
+        cache_manager=cache_manager,
+        openai_analyzer=openai_analyzer
+    )
+    
+    # Comprehensive analyzer for coordinated analysis
+    comprehensive_analyzer = providers.Factory(
+        ComprehensiveAnalyzer,
+        container=providers.Self
+    )
     
     # System orchestrator
     orchestrator = providers.Singleton(

@@ -83,6 +83,7 @@ def main():
     page = st.sidebar.selectbox(
         "Navigate to:",
         [
+            "🚀 Alpha Opportunities",
             "🎯 Main Dashboard",
             "🌍 Comprehensive Market",
             "🎛️ Analysis Control",
@@ -96,7 +97,12 @@ def main():
     )
     
     # Main content area
-    if page == "🎯 Main Dashboard":
+    if page == "🚀 Alpha Opportunities":
+        from dashboards.alpha_opportunities_dashboard import AlphaOpportunitiesDashboard
+        alpha_dashboard = AlphaOpportunitiesDashboard(container)
+        alpha_dashboard.render()
+        
+    elif page == "🎯 Main Dashboard":
         main_dashboard = MainDashboard(config_manager, health_monitor)
         main_dashboard.render()
         

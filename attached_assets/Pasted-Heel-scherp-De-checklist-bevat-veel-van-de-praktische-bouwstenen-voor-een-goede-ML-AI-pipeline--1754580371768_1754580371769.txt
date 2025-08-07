@@ -1,0 +1,55 @@
+Heel scherp! De checklist bevat veel van de **praktische bouwstenen** voor een goede ML/AI-pipeline, maar het is waar:
+**Hoe ML/AI zich écht kan onderscheiden** – dus *wat jouw systeem écht next level en uniek maakt ten opzichte van “gewone” bots of simpel ensemble-ML* – is **nog niet expliciet als aparte ontwerpstap** geadresseerd.
+
+Hieronder geef ik een kort en krachtig overzicht van **de punten waarop je ML/AI zich écht kan onderscheiden** én hoe je deze als “must-have” toevoegt aan je checklist:
+
+---
+
+## **Hoe onderscheidt jouw ML/AI zich écht?**
+
+1. **Deep learning time series (LSTM, Transformer, etc.):**
+   → Kan complexe, niet-lineaire patronen uit verschillende timeframes en features tegelijk leren; beter in regime shifts, trendbreuken en “nieuwe signalen”.
+
+2. **Multi-modal en multi-source feature fusion:**
+   → Combineer *alle* relevante bronnen (prijs, volume, sentiment, whale, news, events, orderboek, social, on-chain) en leer interacties tussen deze features.
+   → Gebruik bijvoorbeeld attention-mechanismen om te bepalen welke informatie wanneer belangrijk is.
+
+3. **Uncertainty/confidence modeling en filtering:**
+   → Je gebruikt niet alleen “point forecasts”, maar voorspelt óók de confidence/probability per coin/horizon, zodat je alleen de écht kansrijke (zekerheid >80%) trades toont.
+
+4. **Self-learning & live feedback loop:**
+   → Systeem leert continu van eigen fouten; voorspellingen worden geëvalueerd versus realiteit, en het model wordt automatisch bijgestuurd (concept drift adaptatie).
+
+5. **SHAP & feature explainability per trade:**
+   → Systeem legt bij élke top-voorspelling uit “waarom” een coin opvalt (bijv. “sentiment piekt”, “whale activity +60%”, “news impact”), zodat je kunt vertrouwen op de keuzes van de AI.
+
+6. **Anomaly- en regime detection (unsupervised ML):**
+   → Detecteer automatische outliers, market regime shifts of ongewone patronen die nieuwe kansen of risico’s inluiden (autoencoders, clustering, changepoint detection).
+
+7. **(Optioneel) AI-in-the-loop news/event mining:**
+   → Gebruik LLM’s/AI om nieuws, Github-releases, forums, memes, Discord-discussies *te interpreteren* en direct te verwerken als features.
+
+8. **Portfolio-allocatie gestuurd door AI:**
+   → Niet alleen “welke coin?”, maar óók “hoeveel investeren?” wordt als optimalisatieprobleem door je model opgelost (risk/reward-optimalisatie).
+
+---
+
+## **Toevoegen aan je checklist (voorbeeldfragment):**
+
+> **ML/AI Differentiators**
+>
+> * [ ] Deep learning time series models (LSTM, Transformer, N-BEATS) voor multi-horizon voorspellingen
+> * [ ] Multi-modal feature fusion (prijs, sentiment, whale, orderboek, nieuws, events, social, on-chain)
+> * [ ] Probability/confidence estimation en filtering van alleen high-conviction signals
+> * [ ] Self-learning pipeline met automatische feedback & concept drift handling
+> * [ ] SHAP/explainability per trade – inzicht in “waarom” een coin wordt gekozen
+> * [ ] Anomaly/market regime detection via unsupervised ML
+> * [ ] (Optioneel) AI-gebaseerde event/news/Discord/Reddit analyse
+> * [ ] AI-driven portfolio allocatie (hoeveel % in welke coin, per horizon)
+
+---
+
+**Kortom:**
+Dit zijn de “game changers” waarmee jouw systeem boven standaard tradingbots, basic TA-systemen en simpele regressiemodellen uitstijgt.
+
+**Wil je van een van deze onderdelen (bijv. explainability, deep learning pipeline, uncertainty filtering, of self-learning loop) een uitgewerkt stappenplan of codevoorbeeld? Laat weten welke, dan maak ik hem voor je!**

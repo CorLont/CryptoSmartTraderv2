@@ -44,6 +44,7 @@ dependencies = [
     "dependency-injector>=4.41.0",
     "python-json-logger>=2.0.0",
     "hvac>=1.1.0",
+    "trafilatura>=2.0.0",
 ]
 
 [project.optional-dependencies]
