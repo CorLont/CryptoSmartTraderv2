@@ -1,633 +1,613 @@
 #!/usr/bin/env python3
 """
 CryptoSmartTrader V2 - Shadow Trading Engine
-Implements live shadow testing and out-of-sample validation for production readiness
+Paper trading and model validation in live market conditions
 """
 
-import asyncio
-import logging
-import numpy as np
 import pandas as pd
+import numpy as np
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Tuple
-from pathlib import Path
-import json
-import pickle
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Tuple, Optional, Any
+from dataclasses import dataclass, field
 from enum import Enum
+import logging
+import json
+from pathlib import Path
 import threading
 import time
 
-class ShadowMode(Enum):
-    """Shadow trading modes"""
-    SILENT = "silent"  # Monitor only, no logging of trades
-    MONITORING = "monitoring"  # Log all trades but don't execute
-    PAPER_TRADING = "paper_trading"  # Full simulation with portfolio tracking
-    LIVE_VALIDATION = "live_validation"  # Compare with live market but don't trade
+# ML imports
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+import warnings
+warnings.filterwarnings('ignore')
+
+class ShadowTradeStatus(Enum):
+    """Status of shadow trades"""
+    PENDING = "pending"
+    EXECUTED = "executed"
+    CLOSED = "closed"
+    CANCELLED = "cancelled"
+
+class ShadowOrderType(Enum):
+    """Types of shadow orders"""
+    MARKET = "market"
+    LIMIT = "limit"
+    STOP_LOSS = "stop_loss"
+    TAKE_PROFIT = "take_profit"
 
 @dataclass
 class ShadowTrade:
-    """Shadow trade execution record"""
-    timestamp: datetime
-    symbol: str
-    action: str  # BUY/SELL
+    """Represents a shadow trade for paper trading"""
+    trade_id: str
+    coin: str
+    side: str  # buy/sell
+    order_type: ShadowOrderType
     quantity: float
-    price: float
-    confidence: float
-    model_version: str
-    market_regime: str
-    execution_latency: float
-    fees: float
-    expected_profit: float
-    actual_profit: Optional[float] = None
-    trade_id: str = ""
+    entry_price: float
+    exit_price: Optional[float] = None
+    stop_loss: Optional[float] = None
+    take_profit: Optional[float] = None
+    status: ShadowTradeStatus = ShadowTradeStatus.PENDING
+    entry_time: datetime = field(default_factory=datetime.now)
+    exit_time: Optional[datetime] = None
+    ml_prediction: Optional[float] = None
+    confidence: Optional[float] = None
+    strategy: str = "unknown"
+    metadata: Dict[str, Any] = field(default_factory=dict)
     
-    def __post_init__(self):
-        if not self.trade_id:
-            self.trade_id = f"{self.symbol}_{self.action}_{int(self.timestamp.timestamp())}"
+    @property
+    def pnl(self) -> float:
+        """Calculate PnL of the trade"""
+        if self.exit_price is None:
+            return 0.0
+        
+        if self.side == "buy":
+            return (self.exit_price - self.entry_price) / self.entry_price
+        else:  # sell
+            return (self.entry_price - self.exit_price) / self.entry_price
+    
+    @property
+    def holding_period_hours(self) -> float:
+        """Calculate holding period in hours"""
+        if self.exit_time is None:
+            return (datetime.now() - self.entry_time).total_seconds() / 3600
+        return (self.exit_time - self.entry_time).total_seconds() / 3600
+    
+    @property
+    def is_profitable(self) -> bool:
+        """Check if trade is profitable"""
+        return self.pnl > 0
 
 @dataclass
 class ShadowPortfolio:
-    """Shadow portfolio tracking"""
-    total_value: float
-    positions: Dict[str, float]  # symbol -> quantity
-    cash_balance: float
-    unrealized_pnl: float
-    realized_pnl: float
-    total_trades: int
-    winning_trades: int
-    losing_trades: int
-    max_drawdown: float
-    sharpe_ratio: float
+    """Represents a shadow trading portfolio"""
+    portfolio_id: str
+    initial_capital: float
+    current_capital: float
+    positions: Dict[str, float] = field(default_factory=dict)  # coin -> quantity
+    trades: List[ShadowTrade] = field(default_factory=list)
+    creation_time: datetime = field(default_factory=datetime.now)
+    last_updated: datetime = field(default_factory=datetime.now)
     
-class OutOfSampleValidator:
-    """Comprehensive out-of-sample validation system"""
+    @property
+    def total_pnl(self) -> float:
+        """Calculate total PnL"""
+        return (self.current_capital - self.initial_capital) / self.initial_capital
     
-    def __init__(self, config_manager=None):
-        self.config_manager = config_manager
+    @property
+    def total_trades(self) -> int:
+        """Get total number of trades"""
+        return len(self.trades)
+    
+    @property
+    def winning_trades(self) -> int:
+        """Get number of winning trades"""
+        return len([t for t in self.trades if t.is_profitable and t.status == ShadowTradeStatus.CLOSED])
+    
+    @property
+    def win_rate(self) -> float:
+        """Calculate win rate"""
+        closed_trades = [t for t in self.trades if t.status == ShadowTradeStatus.CLOSED]
+        if not closed_trades:
+            return 0.0
+        return self.winning_trades / len(closed_trades)
+
+class MarketDataProvider:
+    """Provides live market data for shadow trading"""
+    
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.validation_results = {}
-        self.holdout_data = {}
+        self.price_cache = {}
+        self.last_update = {}
+    
+    def get_current_price(self, coin: str) -> float:
+        """Get current market price for a coin"""
         
-    def create_validation_split(self, data: pd.DataFrame, 
-                              holdout_ratio: float = 0.2) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """Create time-based train/validation split"""
-        try:
-            split_idx = int(len(data) * (1 - holdout_ratio))
-            
-            train_data = data.iloc[:split_idx].copy()
-            validation_data = data.iloc[split_idx:].copy()
-            
-            self.logger.info(f"Created validation split: {len(train_data)} train, {len(validation_data)} validation")
-            
-            return train_data, validation_data
-            
-        except Exception as e:
-            self.logger.error(f"Validation split creation failed: {e}")
-            return data, pd.DataFrame()
+        # Check cache freshness (5-minute cache)
+        if coin in self.last_update:
+            if datetime.now() - self.last_update[coin] < timedelta(minutes=5):
+                return self.price_cache.get(coin, 0.0)
+        
+        # In real implementation, this would fetch from exchange API
+        # For demo, generate realistic prices
+        base_prices = {
+            'BTC': 45000,
+            'ETH': 2800,
+            'ADA': 0.85,
+            'DOT': 15.2,
+            'SOL': 180,
+            'MATIC': 1.2,
+            'LINK': 25.5,
+            'UNI': 12.8
+        }
+        
+        base_price = base_prices.get(coin, 100)
+        
+        # Add some realistic price movement
+        volatility = 0.02  # 2% volatility
+        price_change = np.random.normal(0, volatility)
+        current_price = base_price * (1 + price_change)
+        
+        # Update cache
+        self.price_cache[coin] = current_price
+        self.last_update[coin] = datetime.now()
+        
+        return current_price
     
-    def validate_model_performance(self, model, validation_data: pd.DataFrame, 
-                                 target_col: str = 'target') -> Dict[str, Any]:
-        """Comprehensive out-of-sample model validation"""
-        try:
-            if target_col not in validation_data.columns:
-                return {'error': 'target_column_missing'}
-            
-            # Prepare features and target
-            feature_cols = [col for col in validation_data.columns if col != target_col]
-            X_val = validation_data[feature_cols].fillna(0)
-            y_true = validation_data[target_col].fillna(0)
-            
-            if len(X_val) < 5:
-                return {'error': 'insufficient_validation_data'}
-            
-            # Generate predictions
-            try:
-                y_pred = model.predict(X_val)
-            except Exception as e:
-                return {'error': f'prediction_failed: {e}'}
-            
-            # Calculate comprehensive metrics
-            metrics = self._calculate_validation_metrics(y_true, y_pred)
-            
-            # Time-based analysis
-            time_analysis = self._analyze_temporal_performance(
-                validation_data.index, y_true, y_pred
-            )
-            
-            # Confidence analysis
-            confidence_analysis = self._analyze_prediction_confidence(y_pred)
-            
-            results = {
-                'validation_metrics': metrics,
-                'temporal_analysis': time_analysis,
-                'confidence_analysis': confidence_analysis,
-                'data_period': {
-                    'start': validation_data.index[0].isoformat() if hasattr(validation_data.index[0], 'isoformat') else str(validation_data.index[0]),
-                    'end': validation_data.index[-1].isoformat() if hasattr(validation_data.index[-1], 'isoformat') else str(validation_data.index[-1]),
-                    'samples': len(validation_data)
-                },
-                'model_info': {
-                    'type': type(model).__name__,
-                    'features_used': len(feature_cols)
-                }
-            }
-            
-            self.validation_results[datetime.now().isoformat()] = results
-            
-            return results
-            
-        except Exception as e:
-            self.logger.error(f"Model validation failed: {e}")
-            return {'error': str(e)}
+    def get_historical_price(self, coin: str, timestamp: datetime) -> float:
+        """Get historical price for a coin at specific timestamp"""
+        
+        # For demo, return current price with some variation
+        current_price = self.get_current_price(coin)
+        
+        # Add time-based variation
+        hours_ago = (datetime.now() - timestamp).total_seconds() / 3600
+        drift = np.random.normal(0, 0.001 * hours_ago)  # Price drift over time
+        
+        return current_price * (1 + drift)
+
+class ShadowOrderExecutor:
+    """Executes shadow orders based on market conditions"""
     
-    def _calculate_validation_metrics(self, y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
-        """Calculate comprehensive validation metrics"""
-        try:
-            from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-            
-            mse = mean_squared_error(y_true, y_pred)
-            mae = mean_absolute_error(y_true, y_pred)
-            r2 = r2_score(y_true, y_pred)
-            
-            # Additional metrics
-            mape = np.mean(np.abs((y_true - y_pred) / (y_true + 1e-10))) * 100
-            direction_accuracy = np.mean(np.sign(y_true) == np.sign(y_pred))
-            
-            return {
-                'mse': float(mse),
-                'mae': float(mae),
-                'r2_score': float(r2),
-                'mape': float(mape),
-                'direction_accuracy': float(direction_accuracy),
-                'prediction_std': float(np.std(y_pred)),
-                'target_std': float(np.std(y_true))
-            }
-            
-        except Exception as e:
-            self.logger.warning(f"Metrics calculation failed: {e}")
-            return {'error': str(e)}
+    def __init__(self, market_data: MarketDataProvider):
+        self.logger = logging.getLogger(__name__)
+        self.market_data = market_data
     
-    def _analyze_temporal_performance(self, timestamps, y_true: np.ndarray, 
-                                    y_pred: np.ndarray) -> Dict[str, Any]:
-        """Analyze model performance over time"""
-        try:
-            # Performance degradation analysis
-            window_size = max(10, len(y_true) // 5)
-            performance_over_time = []
-            
-            for i in range(0, len(y_true) - window_size, window_size // 2):
-                window_true = y_true[i:i + window_size]
-                window_pred = y_pred[i:i + window_size]
-                
-                window_mse = np.mean((window_true - window_pred) ** 2)
-                performance_over_time.append({
-                    'start_idx': i,
-                    'mse': float(window_mse),
-                    'timestamp': timestamps[i] if hasattr(timestamps[i], 'isoformat') else str(timestamps[i])
-                })
-            
-            # Detect performance degradation
-            if len(performance_over_time) >= 2:
-                first_half_mse = np.mean([p['mse'] for p in performance_over_time[:len(performance_over_time)//2]])
-                second_half_mse = np.mean([p['mse'] for p in performance_over_time[len(performance_over_time)//2:]])
-                degradation_ratio = second_half_mse / (first_half_mse + 1e-10)
-            else:
-                degradation_ratio = 1.0
-            
-            return {
-                'performance_windows': performance_over_time,
-                'degradation_ratio': float(degradation_ratio),
-                'degradation_detected': degradation_ratio > 1.5
-            }
-            
-        except Exception as e:
-            self.logger.warning(f"Temporal analysis failed: {e}")
-            return {'error': str(e)}
+    def can_execute_order(self, trade: ShadowTrade, current_price: float) -> bool:
+        """Check if order can be executed at current price"""
+        
+        if trade.order_type == ShadowOrderType.MARKET:
+            return True
+        
+        elif trade.order_type == ShadowOrderType.LIMIT:
+            if trade.side == "buy":
+                return current_price <= trade.entry_price
+            else:  # sell
+                return current_price >= trade.entry_price
+        
+        elif trade.order_type == ShadowOrderType.STOP_LOSS:
+            if trade.side == "buy":
+                return current_price >= trade.entry_price
+            else:  # sell
+                return current_price <= trade.entry_price
+        
+        return False
     
-    def _analyze_prediction_confidence(self, y_pred: np.ndarray) -> Dict[str, Any]:
-        """Analyze prediction confidence and uncertainty"""
-        try:
-            # Simple confidence metrics based on prediction distribution
-            pred_mean = np.mean(y_pred)
-            pred_std = np.std(y_pred)
-            pred_range = np.max(y_pred) - np.min(y_pred)
+    def execute_entry(self, trade: ShadowTrade) -> bool:
+        """Execute trade entry"""
+        
+        current_price = self.market_data.get_current_price(trade.coin)
+        
+        if self.can_execute_order(trade, current_price):
+            if trade.order_type == ShadowOrderType.MARKET:
+                trade.entry_price = current_price
             
-            # Stability metric
-            stability = 1.0 / (1.0 + pred_std)  # Higher stability = lower std
+            trade.status = ShadowTradeStatus.EXECUTED
+            trade.entry_time = datetime.now()
             
-            return {
-                'prediction_mean': float(pred_mean),
-                'prediction_std': float(pred_std),
-                'prediction_range': float(pred_range),
-                'stability_score': float(stability),
-                'extreme_predictions': int(np.sum(np.abs(y_pred) > 2 * pred_std))
-            }
-            
-        except Exception as e:
-            self.logger.warning(f"Confidence analysis failed: {e}")
-            return {'error': str(e)}
+            self.logger.info(f"Executed shadow trade: {trade.side} {trade.quantity} {trade.coin} at {trade.entry_price}")
+            return True
+        
+        return False
+    
+    def check_exit_conditions(self, trade: ShadowTrade) -> Optional[float]:
+        """Check if trade should be exited"""
+        
+        if trade.status != ShadowTradeStatus.EXECUTED:
+            return None
+        
+        current_price = self.market_data.get_current_price(trade.coin)
+        
+        # Check stop loss
+        if trade.stop_loss is not None:
+            if trade.side == "buy" and current_price <= trade.stop_loss:
+                return current_price
+            elif trade.side == "sell" and current_price >= trade.stop_loss:
+                return current_price
+        
+        # Check take profit
+        if trade.take_profit is not None:
+            if trade.side == "buy" and current_price >= trade.take_profit:
+                return current_price
+            elif trade.side == "sell" and current_price <= trade.take_profit:
+                return current_price
+        
+        return None
+    
+    def execute_exit(self, trade: ShadowTrade, exit_price: float):
+        """Execute trade exit"""
+        
+        trade.exit_price = exit_price
+        trade.exit_time = datetime.now()
+        trade.status = ShadowTradeStatus.CLOSED
+        
+        self.logger.info(f"Closed shadow trade: {trade.trade_id} at {exit_price}, PnL: {trade.pnl:.2%}")
 
 class ShadowTradingEngine:
-    """Shadow trading engine for live validation without capital risk"""
+    """Main shadow trading engine"""
     
-    def __init__(self, config_manager=None, cache_manager=None):
-        self.config_manager = config_manager
-        self.cache_manager = cache_manager
-        self.logger = logging.getLogger(__name__)
-        
-        # Shadow trading configuration
-        self.shadow_mode = ShadowMode.MONITORING
-        self.initial_capital = 100000.0  # Virtual capital for shadow trading
-        
-        # Portfolio tracking
-        self.shadow_portfolio = ShadowPortfolio(
-            total_value=self.initial_capital,
-            positions={},
-            cash_balance=self.initial_capital,
-            unrealized_pnl=0.0,
-            realized_pnl=0.0,
-            total_trades=0,
-            winning_trades=0,
-            losing_trades=0,
-            max_drawdown=0.0,
-            sharpe_ratio=0.0
-        )
-        
-        # Trading history
-        self.shadow_trades = []
-        self.performance_history = []
-        
-        # Live monitoring
-        self.is_monitoring = False
-        self.monitoring_thread = None
-        
-        self.logger.info(f"Shadow Trading Engine initialized in {self.shadow_mode.value} mode")
-    
-    def start_shadow_trading(self, mode: ShadowMode = ShadowMode.MONITORING):
-        """Start shadow trading in specified mode"""
-        try:
-            self.shadow_mode = mode
-            self.is_monitoring = True
-            
-            if self.monitoring_thread is None or not self.monitoring_thread.is_alive():
-                self.monitoring_thread = threading.Thread(target=self._monitoring_loop, daemon=True)
-                self.monitoring_thread.start()
-            
-            self.logger.info(f"Shadow trading started in {mode.value} mode")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to start shadow trading: {e}")
-    
-    def stop_shadow_trading(self):
-        """Stop shadow trading"""
-        try:
-            self.is_monitoring = False
-            
-            if self.monitoring_thread and self.monitoring_thread.is_alive():
-                self.monitoring_thread.join(timeout=5)
-            
-            self.logger.info("Shadow trading stopped")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to stop shadow trading: {e}")
-    
-    def execute_shadow_trade(self, signal: Dict[str, Any], current_price: float) -> Optional[ShadowTrade]:
-        """Execute a shadow trade based on trading signal"""
-        try:
-            symbol = signal.get('symbol', 'UNKNOWN')
-            action = signal.get('action', 'BUY')
-            confidence = signal.get('confidence', 0.5)
-            quantity = self._calculate_position_size(symbol, action, confidence, current_price)
-            
-            if quantity <= 0:
-                return None
-            
-            # Calculate fees (typical crypto exchange fees)
-            fees = quantity * current_price * 0.001  # 0.1% fee
-            
-            # Create shadow trade
-            shadow_trade = ShadowTrade(
-                timestamp=datetime.now(),
-                symbol=symbol,
-                action=action,
-                quantity=quantity,
-                price=current_price,
-                confidence=confidence,
-                model_version=signal.get('model_version', 'unknown'),
-                market_regime=signal.get('market_regime', 'unknown'),
-                execution_latency=signal.get('latency', 0.0),
-                fees=fees,
-                expected_profit=signal.get('expected_profit', 0.0)
-            )
-            
-            # Update shadow portfolio
-            self._update_shadow_portfolio(shadow_trade)
-            
-            # Record trade
-            self.shadow_trades.append(shadow_trade)
-            
-            # Log trade (if not in silent mode)
-            if self.shadow_mode != ShadowMode.SILENT:
-                self.logger.info(f"Shadow trade executed: {action} {quantity:.6f} {symbol} @ {current_price:.2f}")
-            
-            return shadow_trade
-            
-        except Exception as e:
-            self.logger.error(f"Shadow trade execution failed: {e}")
-            return None
-    
-    def _calculate_position_size(self, symbol: str, action: str, 
-                               confidence: float, price: float) -> float:
-        """Calculate appropriate position size for shadow trade"""
-        try:
-            # Risk-based position sizing
-            max_position_value = self.shadow_portfolio.total_value * 0.05  # Max 5% per position
-            confidence_multiplier = min(confidence, 1.0)  # Cap at 1.0
-            
-            # Adjust for confidence
-            position_value = max_position_value * confidence_multiplier
-            
-            # Calculate quantity
-            if action == 'BUY':
-                if self.shadow_portfolio.cash_balance < position_value:
-                    position_value = self.shadow_portfolio.cash_balance * 0.9  # Leave some cash
-                
-                quantity = position_value / price
-                
-            else:  # SELL
-                current_position = self.shadow_portfolio.positions.get(symbol, 0.0)
-                quantity = min(current_position, position_value / price)
-            
-            return max(0.0, quantity)
-            
-        except Exception as e:
-            self.logger.warning(f"Position size calculation failed: {e}")
-            return 0.0
-    
-    def _update_shadow_portfolio(self, trade: ShadowTrade):
-        """Update shadow portfolio with executed trade"""
-        try:
-            symbol = trade.symbol
-            trade_value = trade.quantity * trade.price
-            
-            if trade.action == 'BUY':
-                # Add position
-                self.shadow_portfolio.positions[symbol] = (
-                    self.shadow_portfolio.positions.get(symbol, 0.0) + trade.quantity
-                )
-                # Reduce cash
-                self.shadow_portfolio.cash_balance -= (trade_value + trade.fees)
-                
-            else:  # SELL
-                # Reduce position
-                current_position = self.shadow_portfolio.positions.get(symbol, 0.0)
-                self.shadow_portfolio.positions[symbol] = max(0.0, current_position - trade.quantity)
-                
-                # Add cash
-                self.shadow_portfolio.cash_balance += (trade_value - trade.fees)
-                
-                # Calculate realized P&L
-                # Simplified: assume average cost basis
-                if current_position > 0:
-                    profit = trade_value - (trade.quantity * trade.price)  # Simplified
-                    self.shadow_portfolio.realized_pnl += profit
-                    
-                    if profit > 0:
-                        self.shadow_portfolio.winning_trades += 1
-                    else:
-                        self.shadow_portfolio.losing_trades += 1
-            
-            self.shadow_portfolio.total_trades += 1
-            
-            # Clean up zero positions
-            self.shadow_portfolio.positions = {
-                k: v for k, v in self.shadow_portfolio.positions.items() if v > 1e-8
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Portfolio update failed: {e}")
-    
-    def update_portfolio_value(self, current_prices: Dict[str, float]):
-        """Update portfolio value with current market prices"""
-        try:
-            # Calculate unrealized P&L
-            unrealized_pnl = 0.0
-            
-            for symbol, quantity in self.shadow_portfolio.positions.items():
-                if symbol in current_prices:
-                    position_value = quantity * current_prices[symbol]
-                    # Simplified: assume average cost basis of current price (for demo)
-                    unrealized_pnl += position_value - (quantity * current_prices[symbol])
-            
-            self.shadow_portfolio.unrealized_pnl = unrealized_pnl
-            
-            # Calculate total portfolio value
-            portfolio_value = self.shadow_portfolio.cash_balance
-            for symbol, quantity in self.shadow_portfolio.positions.items():
-                if symbol in current_prices:
-                    portfolio_value += quantity * current_prices[symbol]
-            
-            self.shadow_portfolio.total_value = portfolio_value
-            
-            # Update max drawdown
-            peak_value = max(self.initial_capital, self.shadow_portfolio.total_value)
-            current_drawdown = (peak_value - self.shadow_portfolio.total_value) / peak_value
-            self.shadow_portfolio.max_drawdown = max(self.shadow_portfolio.max_drawdown, current_drawdown)
-            
-            # Update performance history
-            self.performance_history.append({
-                'timestamp': datetime.now().isoformat(),
-                'total_value': portfolio_value,
-                'realized_pnl': self.shadow_portfolio.realized_pnl,
-                'unrealized_pnl': unrealized_pnl,
-                'positions_count': len(self.shadow_portfolio.positions)
-            })
-            
-            # Keep only last 1000 records
-            if len(self.performance_history) > 1000:
-                self.performance_history = self.performance_history[-1000:]
-                
-        except Exception as e:
-            self.logger.error(f"Portfolio value update failed: {e}")
-    
-    def _monitoring_loop(self):
-        """Main monitoring loop for shadow trading"""
-        try:
-            while self.is_monitoring:
-                # Simulate monitoring cycle
-                time.sleep(60)  # Check every minute
-                
-                # Log status periodically
-                if len(self.shadow_trades) % 10 == 0 and len(self.shadow_trades) > 0:
-                    self._log_performance_summary()
-                
-        except Exception as e:
-            self.logger.error(f"Monitoring loop error: {e}")
-    
-    def _log_performance_summary(self):
-        """Log shadow trading performance summary"""
-        try:
-            total_return = (self.shadow_portfolio.total_value - self.initial_capital) / self.initial_capital * 100
-            win_rate = (self.shadow_portfolio.winning_trades / 
-                       max(1, self.shadow_portfolio.winning_trades + self.shadow_portfolio.losing_trades)) * 100
-            
-            self.logger.info(f"Shadow Trading Summary: "
-                           f"Return: {total_return:.2f}%, "
-                           f"Trades: {self.shadow_portfolio.total_trades}, "
-                           f"Win Rate: {win_rate:.1f}%, "
-                           f"Max DD: {self.shadow_portfolio.max_drawdown:.2f}%")
-            
-        except Exception as e:
-            self.logger.warning(f"Performance summary logging failed: {e}")
-    
-    def get_shadow_trading_report(self) -> Dict[str, Any]:
-        """Generate comprehensive shadow trading report"""
-        try:
-            total_return = (self.shadow_portfolio.total_value - self.initial_capital) / self.initial_capital * 100
-            
-            if self.shadow_portfolio.total_trades > 0:
-                win_rate = (self.shadow_portfolio.winning_trades / 
-                           max(1, self.shadow_portfolio.winning_trades + self.shadow_portfolio.losing_trades)) * 100
-            else:
-                win_rate = 0.0
-            
-            # Calculate Sharpe ratio (simplified)
-            if len(self.performance_history) > 1:
-                returns = []
-                for i in range(1, len(self.performance_history)):
-                    prev_value = self.performance_history[i-1]['total_value']
-                    curr_value = self.performance_history[i]['total_value']
-                    ret = (curr_value - prev_value) / prev_value
-                    returns.append(ret)
-                
-                if len(returns) > 0 and np.std(returns) > 0:
-                    self.shadow_portfolio.sharpe_ratio = np.mean(returns) / np.std(returns) * np.sqrt(365)  # Annualized
-                else:
-                    self.shadow_portfolio.sharpe_ratio = 0.0
-            
-            report = {
-                'mode': self.shadow_mode.value,
-                'performance': {
-                    'total_return_pct': total_return,
-                    'total_value': self.shadow_portfolio.total_value,
-                    'realized_pnl': self.shadow_portfolio.realized_pnl,
-                    'unrealized_pnl': self.shadow_portfolio.unrealized_pnl,
-                    'max_drawdown_pct': self.shadow_portfolio.max_drawdown * 100,
-                    'sharpe_ratio': self.shadow_portfolio.sharpe_ratio
-                },
-                'trading_stats': {
-                    'total_trades': self.shadow_portfolio.total_trades,
-                    'winning_trades': self.shadow_portfolio.winning_trades,
-                    'losing_trades': self.shadow_portfolio.losing_trades,
-                    'win_rate_pct': win_rate
-                },
-                'portfolio': {
-                    'cash_balance': self.shadow_portfolio.cash_balance,
-                    'positions': dict(self.shadow_portfolio.positions),
-                    'positions_count': len(self.shadow_portfolio.positions)
-                },
-                'recent_trades': [asdict(trade) for trade in self.shadow_trades[-10:]],  # Last 10 trades
-                'monitoring_status': self.is_monitoring,
-                'report_timestamp': datetime.now().isoformat()
-            }
-            
-            return report
-            
-        except Exception as e:
-            self.logger.error(f"Shadow trading report generation failed: {e}")
-            return {'error': str(e), 'timestamp': datetime.now().isoformat()}
-
-# Main coordinator class
-class LiveValidationCoordinator:
-    """Coordinates shadow trading and out-of-sample validation"""
-    
-    def __init__(self, config_manager=None, cache_manager=None):
-        self.config_manager = config_manager
-        self.cache_manager = cache_manager
+    def __init__(self, initial_capital: float = 100000):
         self.logger = logging.getLogger(__name__)
         
         # Initialize components
-        self.shadow_engine = ShadowTradingEngine(config_manager, cache_manager)
-        self.validator = OutOfSampleValidator(config_manager)
+        self.market_data = MarketDataProvider()
+        self.order_executor = ShadowOrderExecutor(self.market_data)
         
-        self.logger.info("Live Validation Coordinator initialized")
+        # Initialize portfolio
+        self.portfolio = ShadowPortfolio(
+            portfolio_id=f"shadow_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            initial_capital=initial_capital,
+            current_capital=initial_capital
+        )
+        
+        # Trading state
+        self.is_running = False
+        self.monitoring_thread = None
+        self.trade_counter = 0
+        
+        # Performance tracking
+        self.performance_history = []
+        self.daily_pnl = []
     
-    def start_live_validation(self, shadow_mode: ShadowMode = ShadowMode.MONITORING):
-        """Start comprehensive live validation"""
-        try:
-            self.shadow_engine.start_shadow_trading(shadow_mode)
-            self.logger.info(f"Live validation started in {shadow_mode.value} mode")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to start live validation: {e}")
+    def create_shadow_trade(self, coin: str, side: str, quantity: float, 
+                          order_type: ShadowOrderType = ShadowOrderType.MARKET,
+                          entry_price: Optional[float] = None,
+                          stop_loss: Optional[float] = None,
+                          take_profit: Optional[float] = None,
+                          strategy: str = "manual",
+                          ml_prediction: Optional[float] = None,
+                          confidence: Optional[float] = None) -> ShadowTrade:
+        """Create a new shadow trade"""
+        
+        self.trade_counter += 1
+        trade_id = f"shadow_{self.trade_counter}_{datetime.now().strftime('%H%M%S')}"
+        
+        # Get market price for market orders
+        if order_type == ShadowOrderType.MARKET:
+            entry_price = self.market_data.get_current_price(coin)
+        
+        trade = ShadowTrade(
+            trade_id=trade_id,
+            coin=coin,
+            side=side,
+            order_type=order_type,
+            quantity=quantity,
+            entry_price=entry_price or 0,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+            strategy=strategy,
+            ml_prediction=ml_prediction,
+            confidence=confidence
+        )
+        
+        return trade
     
-    def stop_live_validation(self):
-        """Stop live validation"""
-        try:
-            self.shadow_engine.stop_shadow_trading()
-            self.logger.info("Live validation stopped")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to stop live validation: {e}")
+    def submit_trade(self, trade: ShadowTrade) -> bool:
+        """Submit a shadow trade for execution"""
+        
+        # Validate trade
+        if not self._validate_trade(trade):
+            return False
+        
+        # Add to portfolio
+        self.portfolio.trades.append(trade)
+        
+        # Try immediate execution for market orders
+        if trade.order_type == ShadowOrderType.MARKET:
+            success = self.order_executor.execute_entry(trade)
+            if success:
+                self._update_portfolio_position(trade)
+            return success
+        
+        self.logger.info(f"Submitted shadow trade: {trade.trade_id}")
+        return True
     
-    def get_comprehensive_report(self) -> Dict[str, Any]:
-        """Get comprehensive validation and shadow trading report"""
-        try:
-            shadow_report = self.shadow_engine.get_shadow_trading_report()
+    def _validate_trade(self, trade: ShadowTrade) -> bool:
+        """Validate trade parameters"""
+        
+        if trade.quantity <= 0:
+            self.logger.error("Trade quantity must be positive")
+            return False
+        
+        # Check if we have enough capital
+        current_price = trade.entry_price or self.market_data.get_current_price(trade.coin)
+        trade_value = trade.quantity * current_price
+        
+        if trade.side == "buy" and trade_value > self.portfolio.current_capital * 0.1:  # Max 10% per trade
+            self.logger.error("Trade size too large relative to capital")
+            return False
+        
+        return True
+    
+    def _update_portfolio_position(self, trade: ShadowTrade):
+        """Update portfolio position after trade execution"""
+        
+        if trade.side == "buy":
+            if trade.coin not in self.portfolio.positions:
+                self.portfolio.positions[trade.coin] = 0
+            self.portfolio.positions[trade.coin] += trade.quantity
             
+            # Reduce cash
+            trade_value = trade.quantity * trade.entry_price
+            self.portfolio.current_capital -= trade_value
+            
+        elif trade.side == "sell":
+            if trade.coin in self.portfolio.positions:
+                self.portfolio.positions[trade.coin] -= trade.quantity
+                if self.portfolio.positions[trade.coin] <= 0:
+                    del self.portfolio.positions[trade.coin]
+            
+            # Increase cash
+            trade_value = trade.quantity * trade.entry_price
+            self.portfolio.current_capital += trade_value
+        
+        self.portfolio.last_updated = datetime.now()
+    
+    def start_monitoring(self):
+        """Start the shadow trading monitoring loop"""
+        
+        if self.is_running:
+            return
+        
+        self.is_running = True
+        self.monitoring_thread = threading.Thread(target=self._monitoring_loop)
+        self.monitoring_thread.daemon = True
+        self.monitoring_thread.start()
+        
+        self.logger.info("Started shadow trading monitoring")
+    
+    def stop_monitoring(self):
+        """Stop the shadow trading monitoring loop"""
+        
+        self.is_running = False
+        if self.monitoring_thread:
+            self.monitoring_thread.join(timeout=5)
+        
+        self.logger.info("Stopped shadow trading monitoring")
+    
+    def _monitoring_loop(self):
+        """Main monitoring loop for shadow trades"""
+        
+        while self.is_running:
+            try:
+                # Check pending orders
+                for trade in self.portfolio.trades:
+                    if trade.status == ShadowTradeStatus.PENDING:
+                        self.order_executor.execute_entry(trade)
+                        if trade.status == ShadowTradeStatus.EXECUTED:
+                            self._update_portfolio_position(trade)
+                    
+                    elif trade.status == ShadowTradeStatus.EXECUTED:
+                        exit_price = self.order_executor.check_exit_conditions(trade)
+                        if exit_price is not None:
+                            self.order_executor.execute_exit(trade, exit_price)
+                            self._update_portfolio_position_on_exit(trade)
+                
+                # Update performance metrics
+                self._update_performance_metrics()
+                
+                # Sleep for monitoring interval
+                time.sleep(10)  # Check every 10 seconds
+                
+            except Exception as e:
+                self.logger.error(f"Error in monitoring loop: {e}")
+                time.sleep(30)  # Wait longer on error
+    
+    def _update_portfolio_position_on_exit(self, trade: ShadowTrade):
+        """Update portfolio after trade exit"""
+        
+        if trade.side == "buy":
+            # Remove position
+            if trade.coin in self.portfolio.positions:
+                self.portfolio.positions[trade.coin] -= trade.quantity
+                if self.portfolio.positions[trade.coin] <= 0:
+                    del self.portfolio.positions[trade.coin]
+            
+            # Add cash from sale
+            trade_value = trade.quantity * trade.exit_price
+            self.portfolio.current_capital += trade_value
+        
+        self.portfolio.last_updated = datetime.now()
+    
+    def _update_performance_metrics(self):
+        """Update performance tracking metrics"""
+        
+        # Calculate current portfolio value
+        portfolio_value = self.portfolio.current_capital
+        
+        for coin, quantity in self.portfolio.positions.items():
+            current_price = self.market_data.get_current_price(coin)
+            portfolio_value += quantity * current_price
+        
+        # Update current capital
+        self.portfolio.current_capital = portfolio_value
+        
+        # Track daily performance
+        today = datetime.now().date()
+        daily_return = (portfolio_value - self.portfolio.initial_capital) / self.portfolio.initial_capital
+        
+        # Add to history
+        perf_entry = {
+            'timestamp': datetime.now(),
+            'portfolio_value': portfolio_value,
+            'total_return': daily_return,
+            'daily_return': daily_return,  # Simplified
+            'positions': len(self.portfolio.positions),
+            'total_trades': len(self.portfolio.trades)
+        }
+        
+        self.performance_history.append(perf_entry)
+        
+        # Keep only last 1000 entries
+        if len(self.performance_history) > 1000:
+            self.performance_history = self.performance_history[-1000:]
+    
+    def get_performance_summary(self) -> Dict[str, Any]:
+        """Get comprehensive performance summary"""
+        
+        closed_trades = [t for t in self.portfolio.trades if t.status == ShadowTradeStatus.CLOSED]
+        
+        if not closed_trades:
             return {
-                'shadow_trading': shadow_report,
-                'validation_results': self.validator.validation_results,
-                'system_status': {
-                    'shadow_engine_active': self.shadow_engine.is_monitoring,
-                    'total_validations': len(self.validator.validation_results),
-                    'total_shadow_trades': len(self.shadow_engine.shadow_trades)
-                },
-                'timestamp': datetime.now().isoformat()
+                'total_trades': 0,
+                'win_rate': 0,
+                'total_pnl': 0,
+                'message': 'No closed trades yet'
             }
-            
-        except Exception as e:
-            self.logger.error(f"Comprehensive report generation failed: {e}")
-            return {'error': str(e), 'timestamp': datetime.now().isoformat()}
+        
+        # Calculate metrics
+        total_pnl = sum(t.pnl for t in closed_trades)
+        winning_trades = [t for t in closed_trades if t.is_profitable]
+        losing_trades = [t for t in closed_trades if not t.is_profitable]
+        
+        avg_win = np.mean([t.pnl for t in winning_trades]) if winning_trades else 0
+        avg_loss = np.mean([t.pnl for t in losing_trades]) if losing_trades else 0
+        
+        # Calculate Sharpe ratio (simplified)
+        if closed_trades:
+            returns = [t.pnl for t in closed_trades]
+            sharpe_ratio = np.mean(returns) / np.std(returns) if np.std(returns) > 0 else 0
+        else:
+            sharpe_ratio = 0
+        
+        summary = {
+            'portfolio_id': self.portfolio.portfolio_id,
+            'total_trades': len(closed_trades),
+            'win_rate': len(winning_trades) / len(closed_trades),
+            'total_pnl': total_pnl,
+            'average_win': avg_win,
+            'average_loss': avg_loss,
+            'profit_factor': abs(avg_win / avg_loss) if avg_loss != 0 else float('inf'),
+            'sharpe_ratio': sharpe_ratio,
+            'current_capital': self.portfolio.current_capital,
+            'portfolio_return': self.portfolio.total_pnl,
+            'active_positions': len(self.portfolio.positions),
+            'pending_orders': len([t for t in self.portfolio.trades if t.status == ShadowTradeStatus.PENDING]),
+            'last_updated': datetime.now()
+        }
+        
+        return summary
+    
+    def get_trade_history(self, status_filter: Optional[ShadowTradeStatus] = None) -> List[Dict[str, Any]]:
+        """Get trade history with optional status filter"""
+        
+        trades = self.portfolio.trades
+        
+        if status_filter:
+            trades = [t for t in trades if t.status == status_filter]
+        
+        trade_data = []
+        for trade in trades:
+            trade_dict = {
+                'trade_id': trade.trade_id,
+                'coin': trade.coin,
+                'side': trade.side,
+                'quantity': trade.quantity,
+                'entry_price': trade.entry_price,
+                'exit_price': trade.exit_price,
+                'pnl': trade.pnl if trade.status == ShadowTradeStatus.CLOSED else None,
+                'status': trade.status.value,
+                'strategy': trade.strategy,
+                'confidence': trade.confidence,
+                'holding_period_hours': trade.holding_period_hours,
+                'entry_time': trade.entry_time,
+                'exit_time': trade.exit_time
+            }
+            trade_data.append(trade_dict)
+        
+        return trade_data
+    
+    def close_all_positions(self):
+        """Close all open positions"""
+        
+        for trade in self.portfolio.trades:
+            if trade.status == ShadowTradeStatus.EXECUTED:
+                current_price = self.market_data.get_current_price(trade.coin)
+                self.order_executor.execute_exit(trade, current_price)
+                self._update_portfolio_position_on_exit(trade)
+        
+        self.logger.info("Closed all shadow trading positions")
 
-# Convenience function
-def get_live_validation_coordinator(config_manager=None, cache_manager=None) -> LiveValidationCoordinator:
-    """Get configured live validation coordinator"""
-    return LiveValidationCoordinator(config_manager, cache_manager)
+# Global instance
+_shadow_engine = None
+
+def get_shadow_trading_engine() -> ShadowTradingEngine:
+    """Get or create shadow trading engine"""
+    global _shadow_engine
+    
+    if _shadow_engine is None:
+        _shadow_engine = ShadowTradingEngine()
+    
+    return _shadow_engine
+
+def submit_shadow_trade(coin: str, side: str, quantity: float, strategy: str = "ml_signal",
+                       ml_prediction: Optional[float] = None, confidence: Optional[float] = None) -> bool:
+    """Submit a shadow trade for paper trading"""
+    
+    engine = get_shadow_trading_engine()
+    
+    # Calculate position sizing based on confidence (if provided)
+    if confidence is not None and confidence > 0:
+        # Reduce quantity for low confidence trades
+        quantity *= max(0.1, confidence)
+    
+    trade = engine.create_shadow_trade(
+        coin=coin,
+        side=side,
+        quantity=quantity,
+        strategy=strategy,
+        ml_prediction=ml_prediction,
+        confidence=confidence
+    )
+    
+    return engine.submit_trade(trade)
+
+def start_shadow_trading():
+    """Start shadow trading monitoring"""
+    engine = get_shadow_trading_engine()
+    engine.start_monitoring()
+
+def get_shadow_performance() -> Dict[str, Any]:
+    """Get shadow trading performance summary"""
+    engine = get_shadow_trading_engine()
+    return engine.get_performance_summary()
 
 if __name__ == "__main__":
-    # Test the shadow trading engine
-    coordinator = get_live_validation_coordinator()
+    # Demo usage
+    logging.basicConfig(level=logging.INFO)
     
-    print("Testing Shadow Trading Engine...")
+    engine = get_shadow_trading_engine()
+    engine.start_monitoring()
     
-    # Start shadow trading
-    coordinator.start_live_validation(ShadowMode.PAPER_TRADING)
+    # Submit some demo trades
+    submit_shadow_trade("BTC", "buy", 0.01, "demo_strategy", 0.05, 0.8)
+    submit_shadow_trade("ETH", "buy", 0.1, "demo_strategy", 0.03, 0.7)
     
-    # Simulate some trades
-    test_signal = {
-        'symbol': 'BTC/USD',
-        'action': 'BUY',
-        'confidence': 0.8,
-        'model_version': 'test_v1',
-        'market_regime': 'bull_trending'
-    }
+    # Wait a bit
+    time.sleep(5)
     
-    shadow_trade = coordinator.shadow_engine.execute_shadow_trade(test_signal, 50000.0)
-    if shadow_trade:
-        print(f"Shadow trade executed: {shadow_trade.trade_id}")
+    # Get performance
+    performance = get_shadow_performance()
+    print("Shadow trading performance:", performance)
     
-    # Update portfolio with current prices
-    coordinator.shadow_engine.update_portfolio_value({'BTC/USD': 51000.0})
-    
-    # Get report
-    report = coordinator.get_comprehensive_report()
-    print(f"\nShadow Trading Report:")
-    print(f"  Total Value: ${report['shadow_trading']['performance']['total_value']:,.2f}")
-    print(f"  Total Return: {report['shadow_trading']['performance']['total_return_pct']:.2f}%")
-    print(f"  Total Trades: {report['shadow_trading']['trading_stats']['total_trades']}")
-    
-    # Stop
-    coordinator.stop_live_validation()
-    print("Shadow trading test completed")
+    engine.stop_monitoring()

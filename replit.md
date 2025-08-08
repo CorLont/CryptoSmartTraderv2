@@ -1,23 +1,7 @@
 # Replit.md
 
 ## Overview
-CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies using a coordinated ensemble of specialized AI agents, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions with OpenAI intelligence, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies.
-
-The system emphasizes:
-- Zero synthetic data tolerance and mandatory deep learning (LSTM/Transformer/N-BEATS models).
-- Cross-coin feature fusion and true async processing for high concurrency.
-- Enterprise security, Bayesian uncertainty quantification, and dynamic coin discovery.
-- Enhanced capabilities across sentiment, technical, whale, ML, and backtest agents, as well as the orchestrator.
-- Advanced AI/ML features like automated feature engineering, meta-learning, causal inference, and shadow trading.
-- Multi-agent cooperation, model monitoring, and black swan simulation.
-- Deep learning time series, multi-modal feature fusion, confidence filtering, and self-learning loops.
-- SHAP explainability, anomaly detection, AI news mining, and AI portfolio optimization.
-- Real-time order book data integration, CI/CD pipeline, and comprehensive testing.
-- Robustness features including an Enterprise Security Manager, Async Coordination Manager, and comprehensive audit trails.
-- Advanced ML/AI features like Feature Fusion Engine, Market Regime Detector, and Shadow Testing Engine.
-- Core deep learning with LSTM, GRU, Transformer, and N-BEATS models, alongside multimodal data processing.
-- Uncertainty modeling with Bayesian neural networks and quantile regression for probabilistic outputs.
-- A distributed orchestrator for high availability and resource optimization.
+CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies using a coordinated ensemble of specialized AI agents, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions with OpenAI intelligence, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies. Key features include zero synthetic data tolerance, mandatory deep learning, cross-coin feature fusion, true async processing, enterprise security, Bayesian uncertainty quantification, dynamic coin discovery, advanced AI/ML capabilities (automated feature engineering, meta-learning, causal inference, shadow trading), multi-agent cooperation, model monitoring, black swan simulation, and real-time order book data integration.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -52,14 +36,19 @@ The system employs a multi-agent coordination architecture with six specialized 
 - **Input Validation & Security:** Pydantic models for strict validation.
 - **Monitoring & Observability:** Prometheus metrics, structured JSON logging, OpenAPI documentation.
 - **Multi-Horizon ML System:** Training and inference across 1H, 24H, 7D, and 30D horizons with feature engineering, ensemble modeling, and self-learning.
-
-### Dashboard Architecture
-Five specialized Streamlit dashboards: Main, Comprehensive Market, Analysis Control, Agent, Portfolio, Production Monitoring, and Crypto AI System.
-
-### Data Management
-- **Centralized Data Manager:** Coordinates data collection from exchanges.
-- **Coin Registry:** Dynamic cryptocurrency discovery.
-- **ML Model Manager:** Handles model training and ensemble management.
+- **Dashboard Architecture:** Five specialized Streamlit dashboards: Main, Comprehensive Market, Analysis Control, Agent, Portfolio, Production Monitoring, and Crypto AI System.
+- **Data Management:** Centralized Data Manager, Dynamic Coin Registry, ML Model Manager.
+- **Deep Learning Engine:** Standardized use of LSTM, GRU, Transformer, N-BEATS for complex pattern detection.
+- **Uncertainty Modeling:** Bayesian neural networks, quantile regression, and ensemble methods for probabilistic outputs and risk-aware trading.
+- **Continual Learning & Meta-Learning:** Automated retraining with drift detection, online learning, and few-shot adaptation for new markets.
+- **Automated Feature Engineering:** Auto-featuretools, deep feature synthesis, and genetic algorithms for continuous feature discovery.
+- **Market Regime Detection:** Unsupervised learning (autoencoders, clustering) for adaptive model switching.
+- **Causal Inference:** Double Machine Learning, Granger Causality, and counterfactual predictions for understanding market movements.
+- **Reinforcement Learning:** PPO for dynamic, risk-aware portfolio allocation and real-time rebalancing.
+- **Self-Healing System:** Autonomous monitoring, black swan detection, and auto-disabling/recovery features.
+- **Synthetic Data Augmentation:** Generation of black swan, regime shift, and flash crash scenarios for robust stress testing.
+- **Human-in-the-Loop & Explainability:** Active learning, feedback-driven learning, and SHAP for model transparency and human validation.
+- **Shadow Trading:** Full paper trading engine with realistic market simulation for pre-production model validation.
 
 ## External Dependencies
 
@@ -80,7 +69,6 @@ Five specialized Streamlit dashboards: Main, Comprehensive Market, Analysis Cont
 
 ### Optional Performance Libraries
 - **cupy**
-- **openai**
 
 ### System Utilities
 - **logging**, **json**, **pickle**
@@ -95,95 +83,3 @@ Five specialized Streamlit dashboards: Main, Comprehensive Market, Analysis Cont
 - **Email SMTP**
 - **HashiCorp Vault**
 - **Prometheus**
-
-## Implementation Progress
-
-**DEEP LEARNING & SEQUENCE MODELING (August 2025):**
-- **Deep Learning Engine:** LSTM, GRU, Transformer, N-BEATS as standard components for complex non-linear pattern detection ✅ IMPLEMENTED
-- **Multimodal Data Processor:** Text, time series, and graph feature processing for deep neural networks ✅ IMPLEMENTED
-- **Advanced Sequence Models:** Bidirectional LSTM with attention, Transformer encoders with positional encoding ✅ IMPLEMENTED
-- **Multimodal Fusion:** Cross-modal attention mechanisms combining sentiment, price, whale, and regime data ✅ IMPLEMENTED
-- **Neural Architecture:** Self-attention, residual connections, layer normalization for enterprise-grade deep learning ✅ IMPLEMENTED
-
-**UNCERTAINTY MODELING & PROBABILISTIC OUTPUT (August 2025):**
-- **Uncertainty Engine:** Bayesian neural networks, quantile regression, ensemble spread for prediction confidence ✅ IMPLEMENTED
-- **Probabilistic Trader:** Uncertainty-aware trading decisions with confidence thresholds ✅ IMPLEMENTED
-- **Bayesian Neural Networks:** Variational inference for epistemic uncertainty quantification ✅ IMPLEMENTED
-- **Quantile Regression:** Prediction intervals and aleatoric uncertainty modeling ✅ IMPLEMENTED
-- **Monte Carlo Dropout:** Dropout-based uncertainty estimation for model uncertainty ✅ IMPLEMENTED
-- **Ensemble Methods:** Model disagreement for uncertainty quantification ✅ IMPLEMENTED
-- **Risk-Aware Position Sizing:** Dynamic position sizing based on prediction uncertainty ✅ IMPLEMENTED
-
-**CONTINUAL LEARNING & META-LEARNING (August 2025):**
-- **Continual Learning Engine:** Automated retraining with drift detection and catastrophic forgetting prevention ✅ IMPLEMENTED
-- **Meta-Learning Coordinator:** Model-agnostic meta-learning (MAML) for fast adaptation to new coins/markets ✅ IMPLEMENTED
-- **Drift Detection System:** Statistical drift detection for concept drift, covariate shift, and performance degradation ✅ IMPLEMENTED
-- **Online Learning:** Real-time model updates with rehearsal buffers and elastic weight consolidation ✅ IMPLEMENTED
-- **Automated Retraining:** Fully automated retrain schema with priority-based task scheduling ✅ IMPLEMENTED
-- **Few-Shot Learning:** Rapid adaptation to new cryptocurrencies with minimal training data ✅ IMPLEMENTED
-- **Knowledge Distillation:** Teacher-student framework for preserving learned knowledge during updates ✅ IMPLEMENTED
-
-**AUTOMATED FEATURE ENGINEERING & DISCOVERY (August 2025):**
-- **Automated Feature Engineering:** Auto-featuretools, deep feature synthesis, auto-crosses with attention-based feature pruning ✅ IMPLEMENTED
-- **Feature Discovery Engine:** Continuous feature discovery and optimization with genetic algorithms ✅ IMPLEMENTED
-- **SHAP Regime Analyzer:** Advanced SHAP analysis with live regime-specific feature adaptation ✅ IMPLEMENTED
-- **Live Feature Adaptation:** Real-time feature set adjustment based on market regime changes ✅ IMPLEMENTED
-- **Deep Feature Synthesis:** Temporal features, cross features, polynomial features with technical indicators ✅ IMPLEMENTED
-- **Feature Importance Analysis:** SHAP, permutation, tree-based, mutual information methods ✅ IMPLEMENTED
-- **Regime-Specific Feature Sets:** Dynamic feature selection optimized for each market regime ✅ IMPLEMENTED
-
-**MARKET REGIME DETECTION & ADAPTIVE MODEL SWITCHING (August 2025):**
-- **Market Regime Detector:** Unsupervised learning with autoencoders, clustering, and PCA for regime detection ✅ IMPLEMENTED
-- **Autoencoder Regime Detection:** Deep neural networks for unsupervised regime pattern recognition ✅ IMPLEMENTED
-- **Clustering-Based Detection:** KMeans, GMM, and DBSCAN for regime segmentation ✅ IMPLEMENTED
-- **Adaptive Model Switcher:** Dynamic model, feature set, and threshold switching based on detected regimes ✅ IMPLEMENTED
-- **Regime-Specific Optimization:** Bull/bear/trending/volatile regime adaptation with optimal model selection ✅ IMPLEMENTED
-- **Ensemble Regime Detection:** Multi-method voting system for robust regime classification ✅ IMPLEMENTED
-- **Real-Time Adaptation:** Live model switching with performance monitoring and rollback capabilities ✅ IMPLEMENTED
-
-**CAUSAL INFERENCE & COUNTERFACTUAL ANALYSIS (August 2025):**
-- **Double Machine Learning:** Advanced causal inference using ML for nuisance function estimation ✅ IMPLEMENTED
-- **Granger Causality Testing:** Temporal causal relationship detection with lag optimization ✅ IMPLEMENTED
-- **Difference-in-Differences:** Treatment effect estimation for market interventions ✅ IMPLEMENTED
-- **Counterfactual Predictions:** What-if analysis for trading decisions and market scenarios ✅ IMPLEMENTED
-- **Causal Graph Construction:** Automatic discovery and visualization of market causal relationships ✅ IMPLEMENTED
-- **Movement Explanation Engine:** AI-powered explanation of WHY price movements happen ✅ IMPLEMENTED
-- **Intervention Analysis:** Predict outcomes of market interventions before execution ✅ IMPLEMENTED
-
-**REINFORCEMENT LEARNING PORTFOLIO ALLOCATION (August 2025):**
-- **PPO Portfolio Agent:** Proximal Policy Optimization for dynamic asset allocation ✅ IMPLEMENTED
-- **Multi-Asset Environment:** Realistic trading environment with transaction costs and slippage ✅ IMPLEMENTED
-- **Dynamic Reward Functions:** Sharpe ratio, max drawdown, and risk-adjusted return optimization ✅ IMPLEMENTED
-- **Continuous Action Space:** Smooth allocation adjustments for optimal portfolio management ✅ IMPLEMENTED
-- **Risk-Aware Position Sizing:** Automatic position sizing based on uncertainty and market conditions ✅ IMPLEMENTED
-- **Real-Time Rebalancing:** Intelligent rebalancing decisions based on market regime changes ✅ IMPLEMENTED
-- **Performance Monitoring:** Comprehensive backtesting and performance attribution analysis ✅ IMPLEMENTED
-
-**SELF-HEALING & AUTO-DISABLING SYSTEM (August 2025):**
-- **Autonomous Performance Monitoring:** Continuous tracking of all system components with configurable thresholds ✅ IMPLEMENTED
-- **Black Swan Detection:** Real-time detection of extreme market events and automatic protective measures ✅ IMPLEMENTED
-- **Auto-Disabling Engine:** Automatic component shutdown during performance degradation or anomalies ✅ IMPLEMENTED
-- **Data Gap Detection:** Identification and response to data interruptions and API failures ✅ IMPLEMENTED
-- **Security Alert System:** Real-time monitoring for security threats and unusual activity patterns ✅ IMPLEMENTED
-- **Intelligent Auto-Recovery:** Smart component recovery with failure tracking and attempt limits ✅ IMPLEMENTED
-- **Component Health Tracking:** Detailed health metrics for each system component with trend analysis ✅ IMPLEMENTED
-- **Alert Management:** Multi-level alert system with automatic escalation and notification ✅ IMPLEMENTED
-- **Manual Override Controls:** Administrative controls for manual component management ✅ IMPLEMENTED
-
-**CAUSAL INFERENCE & COUNTERFACTUALS ENGINE (August 2025):**
-- **Double Machine Learning:** Advanced causal effect estimation using ML for nuisance function estimation ✅ IMPLEMENTED
-- **Granger Causality Testing:** Temporal causal relationship detection with lag optimization ✅ IMPLEMENTED
-- **Difference-in-Differences:** Treatment effect estimation for market interventions ✅ IMPLEMENTED
-- **Counterfactual Predictions:** What-if analysis for trading decisions and market scenarios ✅ IMPLEMENTED
-- **Causal Graph Construction:** Automatic discovery and visualization of market causal relationships ✅ IMPLEMENTED
-- **Movement Explanation Engine:** AI-powered explanation of WHY price movements happen ✅ IMPLEMENTED
-- **Intervention Analysis:** Predict outcomes of market interventions before execution ✅ IMPLEMENTED
-
-**REINFORCEMENT LEARNING PORTFOLIO ALLOCATION (August 2025):**
-- **PPO Portfolio Agent:** Proximal Policy Optimization for dynamic asset allocation ✅ IMPLEMENTED
-- **Multi-Asset Environment:** Realistic trading environment with transaction costs and slippage ✅ IMPLEMENTED
-- **Dynamic Reward Functions:** Sharpe ratio, max drawdown, and risk-adjusted return optimization ✅ IMPLEMENTED
-- **Continuous Action Space:** Smooth allocation adjustments for optimal portfolio management ✅ IMPLEMENTED
-- **Risk-Aware Position Sizing:** Automatic position sizing based on uncertainty and market conditions ✅ IMPLEMENTED
-- **Real-Time Rebalancing:** Intelligent rebalancing decisions based on market regime changes ✅ IMPLEMENTED
-- **Performance Monitoring:** Comprehensive backtesting and performance attribution analysis ✅ IMPLEMENTED

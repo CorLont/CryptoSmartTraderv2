@@ -54,6 +54,9 @@ def main():
             "🧠 Causal Inference",
             "🤖 RL Portfolio Allocation",
             "🔧 Self-Healing System",
+            "🎲 Synthetic Data Augmentation",
+            "👤 Human-in-the-Loop",
+            "📊 Shadow Trading",
             "⚙️ System Configuration",
             "📈 Health Monitor"
         ]
@@ -71,6 +74,12 @@ def main():
             render_rl_dashboard()
         elif page == "🔧 Self-Healing System":
             render_self_healing_dashboard()
+        elif page == "🎲 Synthetic Data Augmentation":
+            render_synthetic_data_dashboard()
+        elif page == "👤 Human-in-the-Loop":
+            render_human_in_loop_dashboard()
+        elif page == "📊 Shadow Trading":
+            render_shadow_trading_dashboard()
         else:
             render_placeholder_dashboard(page)
             
@@ -265,6 +274,85 @@ def render_self_healing_dashboard():
         if st.button("🧪 Test Self-Healing"):
             st.warning("Self-healing system would automatically protect against anomalies here!")
             st.info("Features include black swan detection, auto-disabling faulty components, and intelligent recovery.")
+
+def render_synthetic_data_dashboard():
+    """Render synthetic data augmentation dashboard"""
+    st.title("🎲 Synthetic Data Augmentation")
+    st.markdown("Generate synthetic market scenarios for edge case training and stress testing")
+    
+    try:
+        from dashboards.synthetic_data_dashboard import SyntheticDataDashboard
+        synthetic_dashboard = SyntheticDataDashboard()
+        synthetic_dashboard.render()
+    except Exception as e:
+        st.error(f"Synthetic data dashboard unavailable: {e}")
+        
+        # Fallback content
+        st.header("🎲 Stress Testing & Edge Cases")
+        st.info("""**Capabilities:**
+
+- **Black Swan Generator:** Market crash scenarios with configurable severity
+- **Regime Shift Generator:** Bull/bear/sideways transition scenarios  
+- **Flash Crash Generator:** Sudden market drop and recovery patterns
+- **Whale Manipulation Generator:** Pump-dump and accumulation patterns
+- **Adversarial Noise Generator:** Model robustness testing scenarios
+- **Stress Testing Engine:** Comprehensive model validation against edge cases""")
+        
+        if st.button("🎲 Generate Test Scenarios"):
+            st.success("Synthetic scenario generation would create edge case data here!")
+
+def render_human_in_loop_dashboard():
+    """Render human-in-the-loop dashboard"""
+    st.title("👤 Human-in-the-Loop Learning")
+    st.markdown("Active learning and feedback integration for continuous model improvement")
+    
+    try:
+        from dashboards.human_in_loop_dashboard import HumanInLoopDashboard
+        hitl_dashboard = HumanInLoopDashboard()
+        hitl_dashboard.render()
+    except Exception as e:
+        st.error(f"Human-in-the-loop dashboard unavailable: {e}")
+        
+        # Fallback content
+        st.header("👤 Expert Feedback System")
+        st.info("""**Features:**
+
+- **Active Learning Engine:** Identifies uncertain predictions for human review
+- **Trade Feedback Processor:** Expert assessment of trade quality and outcomes
+- **Prediction Validation:** Human validation of model predictions with confidence scoring
+- **Uncertainty-Based Querying:** Smart selection of predictions needing expert input
+- **Calibration Assessment:** Analysis of model confidence vs human judgment
+- **Interactive Learning Loop:** Continuous improvement through human-AI collaboration""")
+        
+        if st.button("👤 Submit Expert Feedback"):
+            st.success("Human feedback system would collect expert insights here!")
+
+def render_shadow_trading_dashboard():
+    """Render shadow trading dashboard"""
+    st.title("📊 Shadow Trading & Model Validation")
+    st.markdown("Paper trading simulation for risk-free strategy validation")
+    
+    try:
+        from dashboards.shadow_trading_dashboard import ShadowTradingDashboard
+        shadow_dashboard = ShadowTradingDashboard()
+        shadow_dashboard.render()
+    except Exception as e:
+        st.error(f"Shadow trading dashboard unavailable: {e}")
+        
+        # Fallback content
+        st.header("📊 Paper Trading Engine")
+        st.info("""**Capabilities:**
+
+- **Paper Trading Engine:** Full shadow trading with realistic market simulation
+- **Shadow Portfolio Management:** Portfolio tracking with position management  
+- **Live Market Data Integration:** Real-time price feeds for validation
+- **Order Execution Simulation:** Market, limit, stop-loss order simulation
+- **Performance Attribution:** Detailed analysis of shadow trading performance
+- **Risk Management Testing:** Validation of risk controls in live conditions
+- **Model Validation Pipeline:** Pre-production testing of ML models""")
+        
+        if st.button("📊 Start Shadow Trading"):
+            st.success("Shadow trading engine would begin paper trading simulation here!")
 
 def render_placeholder_dashboard(page_name):
     """Render placeholder for other dashboards"""
