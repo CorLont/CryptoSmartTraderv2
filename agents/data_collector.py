@@ -5,6 +5,7 @@ Replaces blocking I/O with concurrent async operations
 """
 
 import asyncio
+import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from pathlib import Path
@@ -17,6 +18,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from .base_agent import BaseAgent
 from core.async_data_manager import AsyncDataManager, RateLimitConfig
 from core.dependency_container import Container
+from core.logging_manager import get_logger
 from config.settings import AppSettings
 
 class AsyncDataCollectorAgent(BaseAgent):
@@ -34,6 +36,12 @@ class AsyncDataCollectorAgent(BaseAgent):
         self.settings = settings
         self.data_manager = data_manager
         self.rate_limit_config = rate_limit_config
+        
+        # Initialize structured logger
+        self.structured_logger = get_logger({
+            'log_dir': str(settings.logging.log_dir),
+            'metrics_port': settings.logging.metrics_port
+        })
         
         # Configuration from settings
         self.collection_interval = self.config.get('collection_interval', 45)
@@ -98,33 +106,59 @@ class AsyncDataCollectorAgent(BaseAgent):
     
     async def collect_comprehensive_market_data(self) -> Dict[str, Any]:
         """Collect comprehensive market data using async batch operations"""
-        try:
-            # Use the async data manager for concurrent collection
-            market_data = await self.data_manager.batch_collect_all_exchanges()
-            
-            # Enhance with collection metadata
-            market_data.update({
-                "collection_method": "async_concurrent",
-                "agent": self.name,
-                "collection_duration": None,  # Will be calculated
-                "data_completeness": self.calculate_data_completeness(market_data)
-            })
-            
-            self.logger.info(
-                f"Collected data from {market_data['summary']['successful']} exchanges "
-                f"({market_data['summary']['failed']} failed)"
-            )
-            
-            return market_data
-            
-        except Exception as e:
-            self.logger.error(f"Failed to collect market data: {e}")
-            return {
-                "timestamp": datetime.now().isoformat(),
-                "error": str(e),
-                "exchanges": {},
-                "summary": {"successful": 0, "failed": 1}
-            }
+        with self.structured_logger.correlation_context(
+            operation="data_collection",
+            agent_name=self.name
+        ) as ctx:
+            try:
+                # Use the async data manager for concurrent collection
+                collection_start = time.time()
+                market_data = await self.data_manager.batch_collect_all_exchanges()
+                collection_duration = time.time() - collection_start
+                
+                # Calculate data completeness
+                completeness = self.calculate_data_completeness(market_data)
+                
+                # Enhance with collection metadata
+                market_data.update({
+                    "collection_method": "async_concurrent",
+                    "agent": self.name,
+                    "collection_duration": collection_duration,
+                    "data_completeness": completeness
+                })
+                
+                # Log completeness metrics for each exchange
+                for exchange_name, exchange_data in market_data.get("exchanges", {}).items():
+                    if isinstance(exchange_data, dict) and "error" not in exchange_data:
+                        exchange_completeness = 1.0 if exchange_data.get("tickers") else 0.0
+                        self.structured_logger.log_data_completeness(
+                            exchange_name, "tickers", exchange_completeness
+                        )
+                
+                self.structured_logger.info(
+                    f"Market data collection completed successfully",
+                    extra={
+                        "successful_exchanges": market_data['summary']['successful'],
+                        "failed_exchanges": market_data['summary']['failed'],
+                        "collection_duration": collection_duration,
+                        "overall_completeness": completeness["overall"]
+                    }
+                )
+                
+                return market_data
+                
+            except Exception as e:
+                self.structured_logger.error(
+                    f"Failed to collect market data: {str(e)}",
+                    extra={"error_type": type(e).__name__},
+                    exc_info=True
+                )
+                return {
+                    "timestamp": datetime.now().isoformat(),
+                    "error": str(e),
+                    "exchanges": {},
+                    "summary": {"successful": 0, "failed": 1}
+                }
     
     def calculate_data_completeness(self, market_data: Dict[str, Any]) -> Dict[str, float]:
         """Calculate completeness metrics for collected data"""
@@ -210,50 +244,108 @@ class AsyncDataCollectorAgent(BaseAgent):
             self.logger.error(f"Cleanup failed: {e}")
     
     async def main_loop(self):
-        """Main async collection loop with robust error handling"""
-        self.logger.info("Starting async data collection loop")
-        
-        # Initialize async components
-        await self.initialize_async_components()
-        
-        consecutive_errors = 0
-        max_consecutive_errors = 5
-        
-        while self.running:
-            collection_start = datetime.now()
+        """Main async collection loop with comprehensive monitoring"""
+        with self.structured_logger.correlation_context(
+            operation="main_collection_loop",
+            agent_name=self.name
+        ):
+            self.structured_logger.info("Starting async data collection loop")
             
-            try:
-                # Collect comprehensive market data
-                market_data = await self.collect_comprehensive_market_data()
+            # Initialize async components
+            await self.initialize_async_components()
+            
+            consecutive_errors = 0
+            max_consecutive_errors = 5
+            
+            while self.running:
+                loop_start = time.time()
                 
-                # Calculate collection duration
-                collection_duration = (datetime.now() - collection_start).total_seconds()
-                market_data["collection_duration"] = collection_duration
-                
-                # Store data asynchronously
-                await self.store_data_async(market_data)
-                
-                # Reset error counter on success
-                consecutive_errors = 0
-                
-                # Dynamic interval adjustment based on performance
-                if collection_duration > self.collection_interval * 0.8:
-                    self.logger.warning(f"Collection took {collection_duration:.1f}s, adjusting interval")
-                    await asyncio.sleep(max(30, self.collection_interval - collection_duration))
-                else:
-                    await asyncio.sleep(self.collection_interval)
-                
-            except Exception as e:
-                consecutive_errors += 1
-                self.logger.error(f"Collection error ({consecutive_errors}/{max_consecutive_errors}): {e}")
-                
-                # Exponential backoff on repeated errors
-                if consecutive_errors >= max_consecutive_errors:
-                    self.logger.error("Too many consecutive errors, circuit breaker activated")
-                    await asyncio.sleep(300)  # 5 minute circuit breaker
-                    consecutive_errors = 0
-                else:
-                    await asyncio.sleep(min(60, 10 * consecutive_errors))
+                with self.structured_logger.correlation_context(
+                    operation="collection_cycle",
+                    agent_name=self.name
+                ) as cycle_ctx:
+                    try:
+                        # Collect comprehensive market data
+                        market_data = await self.collect_comprehensive_market_data()
+                        
+                        # Store data asynchronously
+                        await self.store_data_async(market_data)
+                        
+                        # Calculate total cycle duration
+                        cycle_duration = time.time() - loop_start
+                        
+                        # Reset error counter on success
+                        consecutive_errors = 0
+                        
+                        # Log cycle completion
+                        self.structured_logger.info(
+                            "Collection cycle completed successfully",
+                            extra={
+                                "cycle_duration": cycle_duration,
+                                "next_collection_in": self.collection_interval
+                            }
+                        )
+                        
+                        # Dynamic interval adjustment based on performance
+                        if cycle_duration > self.collection_interval * 0.8:
+                            adjusted_sleep = max(30, self.collection_interval - cycle_duration)
+                            self.structured_logger.warning(
+                                "Collection cycle took longer than expected, adjusting sleep",
+                                extra={
+                                    "cycle_duration": cycle_duration,
+                                    "interval_threshold": self.collection_interval * 0.8,
+                                    "adjusted_sleep": adjusted_sleep
+                                }
+                            )
+                            await asyncio.sleep(adjusted_sleep)
+                        else:
+                            await asyncio.sleep(self.collection_interval)
+                        
+                    except Exception as e:
+                        consecutive_errors += 1
+                        
+                        self.structured_logger.error(
+                            "Collection cycle failed",
+                            extra={
+                                "consecutive_errors": consecutive_errors,
+                                "max_consecutive_errors": max_consecutive_errors,
+                                "error_type": type(e).__name__
+                            },
+                            exc_info=True
+                        )
+                        
+                        # Circuit breaker logic with exponential backoff
+                        if consecutive_errors >= max_consecutive_errors:
+                            circuit_breaker_duration = 300  # 5 minutes
+                            
+                            self.structured_logger.critical(
+                                "Circuit breaker activated due to consecutive errors",
+                                extra={
+                                    "consecutive_errors": consecutive_errors,
+                                    "circuit_breaker_duration": circuit_breaker_duration
+                                }
+                            )
+                            
+                            # Set circuit breaker state metric
+                            self.structured_logger.metrics.circuit_breaker_state.labels(
+                                component=self.name
+                            ).set(1)  # Open state
+                            
+                            await asyncio.sleep(circuit_breaker_duration)
+                            consecutive_errors = 0
+                            
+                            # Reset circuit breaker state
+                            self.structured_logger.metrics.circuit_breaker_state.labels(
+                                component=self.name
+                            ).set(0)  # Closed state
+                            
+                        else:
+                            backoff_duration = min(60, 10 * consecutive_errors)
+                            self.structured_logger.warning(
+                                "Applying exponential backoff",
+                                extra={"backoff_duration": backoff_duration}
+                            )
+                            await asyncio.sleep(backoff_duration)
     
     async def cleanup(self):
         """Cleanup async resources"""

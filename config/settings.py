@@ -75,12 +75,28 @@ class AgentSettings(BaseSettings):
     max_cpu_percent: int = Field(90, ge=50, le=100)
 
 class LoggingSettings(BaseSettings):
-    """Logging configuration"""
+    """Enterprise logging and monitoring configuration"""
     log_level: LogLevel = Field(LogLevel.INFO, env="LOG_LEVEL")
     log_dir: Path = Field(Path("logs"), env="LOG_DIR")
     log_rotation_mb: int = Field(100, ge=10, le=1000)
     log_retention_days: int = Field(30, ge=1, le=365)
     enable_json_logging: bool = Field(True, env="ENABLE_JSON_LOGGING")
+    
+    # Metrics and monitoring
+    metrics_port: int = Field(8090, ge=8000, le=9999, env="METRICS_PORT")
+    enable_prometheus: bool = Field(True, env="ENABLE_PROMETHEUS")
+    prometheus_pushgateway: Optional[str] = Field(None, env="PROMETHEUS_PUSHGATEWAY")
+    
+    # Alert thresholds
+    error_rate_threshold: float = Field(0.1, ge=0.0, le=1.0, env="ERROR_RATE_THRESHOLD")
+    memory_usage_threshold: int = Field(90, ge=50, le=100, env="MEMORY_USAGE_THRESHOLD")
+    cpu_usage_threshold: int = Field(95, ge=50, le=100, env="CPU_USAGE_THRESHOLD")
+    api_latency_threshold: float = Field(5.0, ge=1.0, le=60.0, env="API_LATENCY_THRESHOLD")
+    data_completeness_threshold: float = Field(0.8, ge=0.0, le=1.0, env="DATA_COMPLETENESS_THRESHOLD")
+    
+    # Correlation and tracing
+    enable_correlation_tracking: bool = Field(True, env="ENABLE_CORRELATION_TRACKING")
+    correlation_header_name: str = Field("X-Correlation-ID", env="CORRELATION_HEADER_NAME")
     
     @validator('log_dir')
     def create_log_dir(cls, v):

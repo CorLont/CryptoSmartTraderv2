@@ -18,6 +18,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_i
 from asyncio_throttle.throttler import Throttler
 import ccxt.async_support as ccxt_async
 from dataclasses import dataclass
+from core.logging_manager import get_logger
 
 @dataclass
 class RateLimitConfig:
@@ -32,6 +33,7 @@ class AsyncDataManager:
         self.session: Optional[aiohttp.ClientSession] = None
         self.exchanges: Dict[str, Any] = {}
         self.logger = logging.getLogger(__name__)
+        self.structured_logger = get_logger()
         
         # Global rate limiter for all API calls
         self.api_semaphore = asyncio.Semaphore(self.rate_limit_config.burst_size)
@@ -227,12 +229,44 @@ class AsyncDataManager:
         return ohlcv_data
     
     async def fetch_single_ohlcv_async(self, exchange, symbol: str, timeframe: str) -> List[List]:
-        """Fetch single OHLCV with rate limiting"""
+        """Fetch single OHLCV with rate limiting and metrics"""
+        start_time = time.time()
+        
         async with self.throttler:
             try:
-                return await exchange.fetch_ohlcv(symbol, timeframe, limit=100)
+                result = await exchange.fetch_ohlcv(symbol, timeframe, limit=100)
+                
+                # Log successful API request
+                duration = time.time() - start_time
+                self.structured_logger.log_api_request(
+                    exchange=exchange.name if hasattr(exchange, 'name') else 'unknown',
+                    endpoint=f"ohlcv/{symbol}/{timeframe}",
+                    duration=duration,
+                    status='success'
+                )
+                
+                return result
+                
             except Exception as e:
-                self.logger.warning(f"Failed to fetch OHLCV for {symbol} {timeframe}: {e}")
+                duration = time.time() - start_time
+                
+                # Log failed API request
+                self.structured_logger.log_api_request(
+                    exchange=exchange.name if hasattr(exchange, 'name') else 'unknown',
+                    endpoint=f"ohlcv/{symbol}/{timeframe}",
+                    duration=duration,
+                    status='error'
+                )
+                
+                self.structured_logger.warning(
+                    f"Failed to fetch OHLCV data",
+                    extra={
+                        "symbol": symbol,
+                        "timeframe": timeframe,
+                        "error": str(e),
+                        "duration": duration
+                    }
+                )
                 return []
     
     async def fetch_order_book_async(self, exchange) -> Dict[str, Any]:
