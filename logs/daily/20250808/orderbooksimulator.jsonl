@@ -1,0 +1,109 @@
+{"asctime": "2025-08-08 17:04:08", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_1_1754672648 - filled, filled 0.1/0.1"}
+{"asctime": "2025-08-08 17:04:08", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_1_1754672648 - buy 0.1 BTC/USD at market"}
+{"asctime": "2025-08-08 17:04:08", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_2_1754672648 - sell 0.05 BTC/USD at 51000.0"}
+{"asctime": "2025-08-08 17:04:08", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_3_1754672648 - cancelled, filled 0.0/0.2"}
+{"asctime": "2025-08-08 17:04:08", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_3_1754672648 - buy 0.2 BTC/USD at 49500.0"}
+{"asctime": "2025-08-08 17:04:08", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order cancelled: order_BTC/USD_2_1754672648"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_1_1754672764 - filled, filled 0.1/0.1"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_1_1754672764 - buy 0.1 BTC/USD at market"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_2_1754672764 - sell 0.05 BTC/USD at 51000.0"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_3_1754672764 - cancelled, filled 0.0/0.2"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_3_1754672764 - buy 0.2 BTC/USD at 49500.0"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "FOK order order_BTC/USD_4_1754672764 cancelled - partial fill not allowed"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_4_1754672764 - cancelled, filled 0.0/0.3"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_4_1754672764 - buy 0.3 BTC/USD at 50100.0"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Updated slippage estimates for BTC/USD: 8 buckets"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Started paper trading session: paper_integration_20250808_170604"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered symbol for paper trading: BTC/USD"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_1_1754672764 - filled, filled 0.05/0.05"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_1_1754672764 - buy 0.05 BTC/USD at market"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672764 - buy 0.05 BTC/USD at 50100.179635"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Insufficient position: required 0.060000000000000005, available 0.05"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_2_1754672764 - filled, filled 0.07/0.07"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_2_1754672764 - buy 0.07 BTC/USD at market"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672764 - buy 0.07 BTC/USD at 50100.213090"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_3_1754672764 - filled, filled 0.08/0.08"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_3_1754672764 - sell 0.08 BTC/USD at market"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672764 - sell 0.08 BTC/USD at 49899.772848"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_4_1754672764 - filled, filled 0.09/0.09"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_4_1754672764 - buy 0.09 BTC/USD at market"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672764 - buy 0.09 BTC/USD at 50100.242154"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_5_1754672764 - filled, filled 0.1/0.1"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_5_1754672764 - sell 0.1 BTC/USD at market"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672764 - sell 0.1 BTC/USD at 49899.745510"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_6_1754672764 - filled, filled 0.11/0.11"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_6_1754672764 - buy 0.11 BTC/USD at market"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672764 - buy 0.11 BTC/USD at 50100.268238"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Quantity precision 17 exceeds maximum 8"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Order rejected: order_BTC/USD_7_1754672764"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Paper trade rejected: BTC/USD sell 0.12000000000000001"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_8_1754672764 - filled, filled 0.13/0.13"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_8_1754672764 - buy 0.13 BTC/USD at market"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672764 - buy 0.13 BTC/USD at 50100.292127"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_9_1754672764 - filled, filled 0.14/0.14"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_9_1754672764 - sell 0.14 BTC/USD at market"}
+{"asctime": "2025-08-08 17:06:04", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672764 - sell 0.14 BTC/USD at 49899.697802"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_1_1754672959 - filled, filled 0.1/0.1"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_1_1754672959 - buy 0.1 BTC/USD at market"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_2_1754672959 - sell 0.05 BTC/USD at 51000.0"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_3_1754672959 - cancelled, filled 0.0/0.2"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_3_1754672959 - buy 0.2 BTC/USD at 49500.0"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "FOK order order_BTC/USD_4_1754672959 cancelled - partial fill not allowed"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_4_1754672959 - cancelled, filled 0.0/0.3"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_4_1754672959 - buy 0.3 BTC/USD at 50100.0"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Updated slippage estimates for BTC/USD: 8 buckets"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Started paper trading session: paper_test_validation_20250808_170919"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered symbol for paper trading: BTC/USD"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered symbol for paper trading: ETH/USD"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered symbol for paper trading: ADA/USD"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Insufficient position: required 0.0921127011055022, available 0.0"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Quantity precision 17 exceeds maximum 8"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Order rejected: order_ADA/USD_1_1754672959"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Paper trade rejected: ADA/USD buy 0.05192315263182237"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Quantity precision 17 exceeds maximum 8"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Order rejected: order_BTC/USD_1_1754672959"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Paper trade rejected: BTC/USD buy 0.03122128845632889"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Insufficient position: required 0.046477916477716916, available 0.0"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Quantity precision 17 exceeds maximum 8"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Order rejected: order_ETH/USD_1_1754672959"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Paper trade rejected: ETH/USD buy 0.06692864799036756"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Insufficient position: required 0.056135368468522476, available 0.0"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Quantity precision 17 exceeds maximum 8"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Order rejected: order_BTC/USD_2_1754672959"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Paper trade rejected: BTC/USD buy 0.01622195075679575"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Insufficient position: required 0.018765405329819698, available 0.0"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No position to close for BTC/USD"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No position to close for ETH/USD"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Session duration 0 days < minimum 1 days"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Saved session data to logs/paper_trading/paper_test_validation_20250808_170919.json"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Ended paper trading session: paper_test_validation_20250808_170919 - Status: insufficient_data"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Started paper trading session: paper_integration_20250808_170919"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered symbol for paper trading: BTC/USD"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_1_1754672959 - filled, filled 0.05/0.05"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_1_1754672959 - buy 0.05 BTC/USD at market"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672959 - buy 0.05 BTC/USD at 50100.179635"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Insufficient position: required 0.060000000000000005, available 0.05"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_2_1754672959 - filled, filled 0.07/0.07"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_2_1754672959 - buy 0.07 BTC/USD at market"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672959 - buy 0.07 BTC/USD at 50100.213090"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_3_1754672959 - filled, filled 0.08/0.08"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_3_1754672959 - sell 0.08 BTC/USD at market"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672959 - sell 0.08 BTC/USD at 49899.772848"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_4_1754672959 - filled, filled 0.09/0.09"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_4_1754672959 - buy 0.09 BTC/USD at market"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672959 - buy 0.09 BTC/USD at 50100.242154"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_5_1754672959 - filled, filled 0.1/0.1"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_5_1754672959 - sell 0.1 BTC/USD at market"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672959 - sell 0.1 BTC/USD at 49899.745510"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_6_1754672959 - filled, filled 0.11/0.11"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_6_1754672959 - buy 0.11 BTC/USD at market"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672959 - buy 0.11 BTC/USD at 50100.268238"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Quantity precision 17 exceeds maximum 8"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Order rejected: order_BTC/USD_7_1754672959"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Paper trade rejected: BTC/USD sell 0.12000000000000001"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_8_1754672959 - filled, filled 0.13/0.13"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_8_1754672959 - buy 0.13 BTC/USD at market"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672959 - buy 0.13 BTC/USD at 50100.292127"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order processed: order_BTC/USD_9_1754672959 - filled, filled 0.14/0.14"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order submitted: order_BTC/USD_9_1754672959 - sell 0.14 BTC/USD at market"}
+{"asctime": "2025-08-08 17:09:19", "name": "OrderBookSimulator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Paper trade executed: trade_BTC/USD_1754672959 - sell 0.14 BTC/USD at 49899.697802"}
