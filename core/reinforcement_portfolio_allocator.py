@@ -1,1056 +1,912 @@
 #!/usr/bin/env python3
 """
 CryptoSmartTrader V2 - Reinforcement Learning Portfolio Allocator
-Dynamic portfolio allocation using RL agents instead of fixed formulas
+Advanced RL-based dynamic portfolio allocation using PPO and continuous action spaces
 """
 
+import logging
+import json
 import numpy as np
 import pandas as pd
-import logging
-from typing import Dict, Any, List, Optional, Tuple, Union
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from enum import Enum
-import threading
-import warnings
-import pickle
-import json
+from typing import Dict, List, Optional, Tuple, Any
+from dataclasses import dataclass, asdict
 from pathlib import Path
+import warnings
 warnings.filterwarnings('ignore')
 
-try:
-    import torch
-    import torch.nn as nn
-    import torch.nn.functional as F
-    import torch.optim as optim
-    from torch.distributions import Categorical, Normal
-    HAS_TORCH = True
-except ImportError:
-    HAS_TORCH = False
-
-try:
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.metrics import sharpe_ratio
-    HAS_SKLEARN = True
-except ImportError:
-    HAS_SKLEARN = False
-
-class ActionSpace(Enum):
-    DISCRETE = "discrete"
-    CONTINUOUS = "continuous"
-    HYBRID = "hybrid"
-
-class RewardMetric(Enum):
-    SHARPE_RATIO = "sharpe_ratio"
-    SORTINO_RATIO = "sortino_ratio"
-    CALMAR_RATIO = "calmar_ratio"
-    MAX_DRAWDOWN = "max_drawdown"
-    TOTAL_RETURN = "total_return"
-    RISK_ADJUSTED_RETURN = "risk_adjusted_return"
-    KELLY_CRITERION = "kelly_criterion"
-
-class RLAlgorithm(Enum):
-    PPO = "ppo"  # Proximal Policy Optimization
-    SAC = "sac"  # Soft Actor-Critic
-    A3C = "a3c"  # Asynchronous Advantage Actor-Critic
-    DDPG = "ddpg"  # Deep Deterministic Policy Gradient
-    TD3 = "td3"  # Twin Delayed DDPG
+# RL and ML imports
+from sklearn.preprocessing import StandardScaler
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from collections import deque
+import random
 
 @dataclass
 class PortfolioState:
-    """Current portfolio state for RL agent"""
-    allocations: np.ndarray  # Current allocations per asset
-    returns: np.ndarray     # Recent returns history
-    volatilities: np.ndarray  # Recent volatility history
-    correlations: np.ndarray  # Correlation matrix
-    market_features: np.ndarray  # Market indicators
-    cash_ratio: float = 0.0
-    total_value: float = 100000.0
-    drawdown: float = 0.0
-    sharpe_ratio: float = 0.0
-    time_step: int = 0
+    """Portfolio state representation"""
+    timestamp: datetime
+    prices: np.ndarray
+    returns: np.ndarray
+    volatilities: np.ndarray
+    correlations: np.ndarray
+    market_features: np.ndarray
+    current_allocation: np.ndarray
+    portfolio_value: float
+    cash_ratio: float
 
 @dataclass
-class PortfolioAction:
-    """Portfolio action from RL agent"""
-    new_allocations: np.ndarray
-    rebalance_strength: float = 1.0
-    risk_level: float = 0.5
-    confidence: float = 0.0
+class AllocationAction:
+    """Portfolio allocation action"""
+    timestamp: datetime
+    target_allocation: np.ndarray
+    rebalance_amount: np.ndarray
+    transaction_cost: float
+    confidence: float
+    reasoning: str
 
 @dataclass
-class RLPortfolioConfig:
-    """Configuration for RL portfolio allocator"""
-    # Asset universe
-    max_assets: int = 20
-    min_allocation: float = 0.0
-    max_allocation: float = 0.3
-    cash_buffer: float = 0.05
-    
-    # RL parameters
-    algorithm: RLAlgorithm = RLAlgorithm.PPO
-    action_space: ActionSpace = ActionSpace.CONTINUOUS
-    state_features: int = 50
-    hidden_layers: List[int] = field(default_factory=lambda: [256, 128, 64])
-    learning_rate: float = 3e-4
-    
-    # Training parameters
-    batch_size: int = 64
-    buffer_size: int = 10000
-    update_frequency: int = 100
-    target_update_frequency: int = 1000
-    
-    # Reward configuration
-    primary_reward: RewardMetric = RewardMetric.SHARPE_RATIO
-    reward_weights: Dict[RewardMetric, float] = field(default_factory=lambda: {
-        RewardMetric.SHARPE_RATIO: 0.4,
-        RewardMetric.MAX_DRAWDOWN: 0.3,
-        RewardMetric.TOTAL_RETURN: 0.2,
-        RewardMetric.RISK_ADJUSTED_RETURN: 0.1
-    })
-    
-    # Risk management
-    max_drawdown_threshold: float = 0.15
-    risk_free_rate: float = 0.02
-    rebalance_threshold: float = 0.05
-    
-    # Model persistence
-    save_models: bool = True
-    model_cache_dir: str = "models/rl_portfolio"
+class PortfolioPerformance:
+    """Portfolio performance metrics"""
+    timestamp: datetime
+    portfolio_value: float
+    returns: float
+    volatility: float
+    sharpe_ratio: float
+    max_drawdown: float
+    win_rate: float
+    total_transactions: int
+    transaction_costs: float
 
 class PPOActor(nn.Module):
-    """PPO Actor network for portfolio allocation"""
+    """PPO Actor Network for continuous portfolio allocation"""
     
-    def __init__(self, state_dim: int, action_dim: int, hidden_layers: List[int]):
-        super().__init__()
+    def __init__(self, state_dim: int, action_dim: int, hidden_dim: int = 256):
+        super(PPOActor, self).__init__()
         
-        layers = []
-        prev_dim = state_dim
-        
-        for hidden_dim in hidden_layers:
-            layers.extend([
-                nn.Linear(prev_dim, hidden_dim),
-                nn.ReLU(),
-                nn.Dropout(0.2)
-            ])
-            prev_dim = hidden_dim
-        
-        self.network = nn.Sequential(*layers)
-        
-        # Output layers for mean and std of action distribution
-        self.mean_layer = nn.Linear(prev_dim, action_dim)
-        self.std_layer = nn.Linear(prev_dim, action_dim)
+        self.network = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 2, action_dim)
+        )
         
         # Initialize weights
-        self.apply(self._init_weights)
-    
-    def _init_weights(self, m):
-        if isinstance(m, nn.Linear):
-            nn.init.xavier_uniform_(m.weight)
-            nn.init.constant_(m.bias, 0)
+        for layer in self.network:
+            if isinstance(layer, nn.Linear):
+                nn.init.orthogonal_(layer.weight, gain=0.01)
+                nn.init.constant_(layer.bias, 0.0)
     
     def forward(self, state):
-        x = self.network(state)
-        
-        # Mean of action distribution (raw logits)
-        mean = self.mean_layer(x)
-        
-        # Standard deviation (ensure positive)
-        std = F.softplus(self.std_layer(x)) + 1e-6
-        
-        return mean, std
-    
-    def get_action(self, state, deterministic=False):
-        """Get action from current policy"""
-        mean, std = self.forward(state)
-        
-        if deterministic:
-            action = mean
-        else:
-            # Sample from normal distribution
-            dist = Normal(mean, std)
-            action = dist.sample()
+        """Forward pass through actor network"""
+        # Get raw allocation logits
+        allocation_logits = self.network(state)
         
         # Apply softmax to ensure allocations sum to 1
-        allocation_logits = action
-        allocations = F.softmax(allocation_logits, dim=-1)
+        allocation_probs = F.softmax(allocation_logits, dim=-1)
         
-        # Calculate log probability
-        log_prob = dist.log_prob(action).sum(dim=-1)
-        
-        return allocations, log_prob
+        return allocation_probs
 
 class PPOCritic(nn.Module):
-    """PPO Critic network for value estimation"""
+    """PPO Critic Network for value estimation"""
     
-    def __init__(self, state_dim: int, hidden_layers: List[int]):
-        super().__init__()
+    def __init__(self, state_dim: int, hidden_dim: int = 256):
+        super(PPOCritic, self).__init__()
         
-        layers = []
-        prev_dim = state_dim
-        
-        for hidden_dim in hidden_layers:
-            layers.extend([
-                nn.Linear(prev_dim, hidden_dim),
-                nn.ReLU(),
-                nn.Dropout(0.2)
-            ])
-            prev_dim = hidden_dim
-        
-        layers.append(nn.Linear(prev_dim, 1))  # Single value output
-        
-        self.network = nn.Sequential(*layers)
+        self.network = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 2, 1)
+        )
         
         # Initialize weights
-        self.apply(self._init_weights)
-    
-    def _init_weights(self, m):
-        if isinstance(m, nn.Linear):
-            nn.init.xavier_uniform_(m.weight)
-            nn.init.constant_(m.bias, 0)
+        for layer in self.network:
+            if isinstance(layer, nn.Linear):
+                nn.init.orthogonal_(layer.weight)
+                nn.init.constant_(layer.bias, 0.0)
     
     def forward(self, state):
+        """Forward pass through critic network"""
         return self.network(state)
 
-class PortfolioEnvironment:
-    """Portfolio trading environment for RL"""
+class TradingEnvironment:
+    """Cryptocurrency trading environment for RL training"""
     
-    def __init__(self, data: pd.DataFrame, config: RLPortfolioConfig):
-        self.data = data
-        self.config = config
-        self.logger = logging.getLogger(f"{__name__}.PortfolioEnvironment")
+    def __init__(self, market_data: pd.DataFrame, initial_capital: float = 100000.0, 
+                 transaction_cost: float = 0.001):
+        self.market_data = market_data
+        self.initial_capital = initial_capital
+        self.transaction_cost = transaction_cost
         
         # Environment state
         self.current_step = 0
-        self.portfolio_value = 100000.0
-        self.initial_value = 100000.0
-        self.cash = 0.0
-        self.positions = {}
-        
-        # Asset information
-        self.asset_columns = [col for col in data.columns if col.endswith('_close')]
-        self.n_assets = min(len(self.asset_columns), config.max_assets)
-        
-        if self.n_assets == 0:
-            # Fallback: use any numeric columns
-            numeric_columns = data.select_dtypes(include=[np.number]).columns.tolist()
-            self.asset_columns = numeric_columns[:config.max_assets]
-            self.n_assets = len(self.asset_columns)
-        
-        # History tracking
-        self.portfolio_history = []
+        self.portfolio_value = initial_capital
+        self.cash = initial_capital
+        self.holdings = {}
         self.allocation_history = []
-        self.return_history = []
+        self.performance_history = []
         
-        self.logger.info(f"Portfolio environment initialized with {self.n_assets} assets")
+        # Market features
+        self.coin_columns = [col for col in market_data.columns if 'price' in col.lower()]
+        self.n_assets = len(self.coin_columns)
+        
+        # Preprocessors
+        self.scaler = StandardScaler()
+        self._preprocess_data()
+        
+        self.logger = logging.getLogger(__name__)
+    
+    def _preprocess_data(self):
+        """Preprocess market data for RL training"""
+        # Calculate returns
+        for col in self.coin_columns:
+            self.market_data[f"{col}_return"] = self.market_data[col].pct_change()
+            self.market_data[f"{col}_volatility"] = self.market_data[f"{col}_return"].rolling(24).std()
+        
+        # Calculate market features
+        self.market_data['market_volatility'] = self.market_data[[f"{col}_return" for col in self.coin_columns]].std(axis=1)
+        self.market_data['market_momentum'] = self.market_data[[f"{col}_return" for col in self.coin_columns]].mean(axis=1)
+        
+        # Drop NaN values
+        self.market_data = self.market_data.dropna()
+        
+        # Normalize features
+        feature_columns = [col for col in self.market_data.columns if 'return' in col or 'volatility' in col or 'momentum' in col]
+        self.market_data[feature_columns] = self.scaler.fit_transform(self.market_data[feature_columns])
     
     def reset(self) -> np.ndarray:
         """Reset environment to initial state"""
         self.current_step = 0
-        self.portfolio_value = self.initial_value
-        self.cash = self.config.cash_buffer * self.portfolio_value
-        
-        # Initialize equal allocations
-        equal_allocation = (1.0 - self.config.cash_buffer) / self.n_assets
-        self.positions = {asset: equal_allocation for asset in self.asset_columns[:self.n_assets]}
-        
-        # Clear history
-        self.portfolio_history = [self.portfolio_value]
+        self.portfolio_value = self.initial_capital
+        self.cash = self.initial_capital
+        self.holdings = {coin: 0.0 for coin in self.coin_columns}
         self.allocation_history = []
-        self.return_history = []
+        self.performance_history = []
         
         return self._get_state()
     
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict]:
-        """Execute one step in the environment"""
-        try:
-            # Validate action
-            if len(action) != self.n_assets:
-                action = np.ones(self.n_assets) / self.n_assets
-            
-            # Normalize allocations to sum to 1
-            allocations = np.clip(action, self.config.min_allocation, self.config.max_allocation)
-            allocations = allocations / allocations.sum()
-            
-            # Move to next time step
-            self.current_step += 1
-            
-            # Check if episode is done
-            done = self.current_step >= len(self.data) - 1
-            
-            if done:
-                return self._get_state(), 0.0, done, {}
-            
-            # Calculate returns for this step
-            returns = self._calculate_returns()
-            
-            # Update portfolio based on allocations and returns
-            old_value = self.portfolio_value
-            self._update_portfolio(allocations, returns)
-            
-            # Calculate reward
-            reward = self._calculate_reward(old_value)
-            
-            # Update history
-            self.allocation_history.append(allocations.copy())
-            self.portfolio_history.append(self.portfolio_value)
-            
-            if len(self.portfolio_history) > 1:
-                period_return = (self.portfolio_value - old_value) / old_value
-                self.return_history.append(period_return)
-            
-            # Create info dict
-            info = {
-                'portfolio_value': self.portfolio_value,
-                'period_return': self.return_history[-1] if self.return_history else 0.0,
-                'allocations': allocations.copy(),
-                'drawdown': self._calculate_drawdown()
-            }
-            
-            return self._get_state(), reward, done, info
-            
-        except Exception as e:
-            self.logger.error(f"Environment step failed: {e}")
-            return self._get_state(), -1.0, True, {}
-    
     def _get_state(self) -> np.ndarray:
         """Get current environment state"""
-        try:
-            if self.current_step >= len(self.data):
-                return np.zeros(self.config.state_features)
-            
-            # Current data point
-            current_data = self.data.iloc[self.current_step]
-            
-            # Asset prices (normalized)
-            asset_prices = []
-            for asset in self.asset_columns[:self.n_assets]:
-                if asset in current_data:
-                    asset_prices.append(current_data[asset])
-                else:
-                    asset_prices.append(0.0)
-            
-            # Price features
-            price_features = np.array(asset_prices)
-            if len(price_features) > 0:
-                price_features = price_features / (np.max(price_features) + 1e-8)
-            
-            # Portfolio features
-            current_allocations = np.array([self.positions.get(asset, 0.0) for asset in self.asset_columns[:self.n_assets]])
-            
-            # Recent returns
-            recent_returns = []
-            lookback = min(10, self.current_step)
-            
-            if lookback > 0 and len(self.return_history) >= lookback:
-                recent_returns = self.return_history[-lookback:]
-            else:
-                recent_returns = [0.0] * 10
-            
-            # Pad or trim to exact size
-            recent_returns = (recent_returns + [0.0] * 10)[:10]
-            
-            # Market indicators
-            market_indicators = [
-                self._calculate_drawdown(),
-                self._calculate_sharpe_ratio(),
-                len(self.return_history),
-                self.portfolio_value / self.initial_value - 1.0  # Total return
-            ]
-            
-            # Combine all features
-            state_features = np.concatenate([
-                price_features,
-                current_allocations,
-                recent_returns,
-                market_indicators
-            ])
-            
-            # Ensure fixed size
-            if len(state_features) > self.config.state_features:
-                state_features = state_features[:self.config.state_features]
-            elif len(state_features) < self.config.state_features:
-                padding = np.zeros(self.config.state_features - len(state_features))
-                state_features = np.concatenate([state_features, padding])
-            
-            return state_features.astype(np.float32)
-            
-        except Exception as e:
-            self.logger.error(f"State calculation failed: {e}")
-            return np.zeros(self.config.state_features)
+        if self.current_step >= len(self.market_data):
+            self.current_step = len(self.market_data) - 1
+        
+        current_data = self.market_data.iloc[self.current_step]
+        
+        # Price features
+        prices = np.array([current_data[col] for col in self.coin_columns])
+        
+        # Return features
+        returns = np.array([current_data[f"{col}_return"] for col in self.coin_columns])
+        
+        # Volatility features
+        volatilities = np.array([current_data[f"{col}_volatility"] for col in self.coin_columns])
+        
+        # Market features
+        market_features = np.array([
+            current_data['market_volatility'],
+            current_data['market_momentum']
+        ])
+        
+        # Portfolio features
+        current_allocation = np.array([self.holdings.get(coin, 0.0) / max(self.portfolio_value, 1.0) 
+                                     for coin in self.coin_columns])
+        
+        cash_ratio = self.cash / max(self.portfolio_value, 1.0)
+        
+        # Combine all features
+        state = np.concatenate([
+            prices,
+            returns,
+            volatilities,
+            market_features,
+            current_allocation,
+            [cash_ratio]
+        ])
+        
+        return state.astype(np.float32)
     
-    def _calculate_returns(self) -> Dict[str, float]:
-        """Calculate asset returns for current period"""
-        returns = {}
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict]:
+        """Execute action and return next state, reward, done, info"""
+        # Ensure action is valid allocation (sums to 1)
+        action = action / (np.sum(action) + 1e-8)
+        action = np.clip(action, 0.0, 1.0)
         
-        if self.current_step == 0:
-            return {asset: 0.0 for asset in self.asset_columns[:self.n_assets]}
+        # Calculate current portfolio value
+        current_prices = np.array([self.market_data.iloc[self.current_step][col] for col in self.coin_columns])
         
-        try:
-            current_data = self.data.iloc[self.current_step]
-            previous_data = self.data.iloc[self.current_step - 1]
-            
-            for asset in self.asset_columns[:self.n_assets]:
-                if asset in current_data and asset in previous_data:
-                    current_price = current_data[asset]
-                    previous_price = previous_data[asset]
-                    
-                    if previous_price > 0:
-                        returns[asset] = (current_price - previous_price) / previous_price
-                    else:
-                        returns[asset] = 0.0
-                else:
-                    returns[asset] = 0.0
-            
-            return returns
-            
-        except Exception as e:
-            self.logger.error(f"Return calculation failed: {e}")
-            return {asset: 0.0 for asset in self.asset_columns[:self.n_assets]}
-    
-    def _update_portfolio(self, allocations: np.ndarray, returns: Dict[str, float]):
-        """Update portfolio based on allocations and returns"""
-        try:
-            # Calculate new portfolio value
-            portfolio_return = 0.0
-            
-            for i, asset in enumerate(self.asset_columns[:self.n_assets]):
-                if i < len(allocations):
-                    allocation = allocations[i]
-                    asset_return = returns.get(asset, 0.0)
-                    portfolio_return += allocation * asset_return
-                    
-                    # Update position
-                    self.positions[asset] = allocation
-            
-            # Update portfolio value
-            self.portfolio_value *= (1.0 + portfolio_return)
-            
-            # Update cash
-            self.cash = self.config.cash_buffer * self.portfolio_value
-            
-        except Exception as e:
-            self.logger.error(f"Portfolio update failed: {e}")
-    
-    def _calculate_reward(self, old_value: float) -> float:
-        """Calculate reward for current step"""
-        try:
-            rewards = {}
-            
-            # Period return
-            period_return = (self.portfolio_value - old_value) / old_value if old_value > 0 else 0.0
-            
-            # Sharpe ratio reward
-            if len(self.return_history) >= 10:
-                returns_array = np.array(self.return_history[-10:])
-                if np.std(returns_array) > 0:
-                    sharpe = (np.mean(returns_array) - self.config.risk_free_rate / 252) / np.std(returns_array)
-                    rewards[RewardMetric.SHARPE_RATIO] = sharpe
-                else:
-                    rewards[RewardMetric.SHARPE_RATIO] = 0.0
-            else:
-                rewards[RewardMetric.SHARPE_RATIO] = 0.0
-            
-            # Drawdown penalty
-            drawdown = self._calculate_drawdown()
-            rewards[RewardMetric.MAX_DRAWDOWN] = -drawdown * 10  # Penalty for drawdown
-            
-            # Total return reward
-            total_return = self.portfolio_value / self.initial_value - 1.0
-            rewards[RewardMetric.TOTAL_RETURN] = total_return
-            
-            # Risk-adjusted return
-            if len(self.return_history) >= 5:
-                returns_std = np.std(self.return_history[-5:])
-                if returns_std > 0:
-                    risk_adjusted = period_return / returns_std
-                    rewards[RewardMetric.RISK_ADJUSTED_RETURN] = risk_adjusted
-                else:
-                    rewards[RewardMetric.RISK_ADJUSTED_RETURN] = period_return
-            else:
-                rewards[RewardMetric.RISK_ADJUSTED_RETURN] = period_return
-            
-            # Combine rewards based on weights
-            total_reward = 0.0
-            for metric, weight in self.config.reward_weights.items():
-                if metric in rewards:
-                    total_reward += weight * rewards[metric]
-            
-            # Additional penalties
-            if drawdown > self.config.max_drawdown_threshold:
-                total_reward -= 5.0  # Large penalty for excessive drawdown
-            
-            return float(total_reward)
-            
-        except Exception as e:
-            self.logger.error(f"Reward calculation failed: {e}")
-            return 0.0
-    
-    def _calculate_drawdown(self) -> float:
-        """Calculate current drawdown"""
-        if len(self.portfolio_history) < 2:
-            return 0.0
+        # Calculate target allocation in dollars
+        target_allocation_dollars = action * self.portfolio_value
         
-        peak = max(self.portfolio_history)
-        current = self.portfolio_history[-1]
+        # Calculate rebalancing needed
+        current_allocation_dollars = np.array([self.holdings.get(coin, 0.0) * current_prices[i] 
+                                             for i, coin in enumerate(self.coin_columns)])
         
-        return (peak - current) / peak if peak > 0 else 0.0
-    
-    def _calculate_sharpe_ratio(self) -> float:
-        """Calculate Sharpe ratio"""
-        if len(self.return_history) < 10:
-            return 0.0
+        rebalance_amounts = target_allocation_dollars - current_allocation_dollars
         
-        returns_array = np.array(self.return_history)
-        excess_returns = returns_array - self.config.risk_free_rate / 252
+        # Calculate transaction costs
+        transaction_cost_total = np.sum(np.abs(rebalance_amounts)) * self.transaction_cost
         
-        if np.std(excess_returns) > 0:
-            return np.mean(excess_returns) / np.std(excess_returns) * np.sqrt(252)
+        # Execute rebalancing
+        for i, coin in enumerate(self.coin_columns):
+            if current_prices[i] > 0:
+                self.holdings[coin] = target_allocation_dollars[i] / current_prices[i]
+        
+        # Update cash
+        self.cash = max(0.0, self.portfolio_value - np.sum(target_allocation_dollars) - transaction_cost_total)
+        
+        # Move to next step
+        self.current_step += 1
+        
+        # Calculate new portfolio value
+        if self.current_step < len(self.market_data):
+            new_prices = np.array([self.market_data.iloc[self.current_step][col] for col in self.coin_columns])
+            new_portfolio_value = np.sum([self.holdings.get(coin, 0.0) * new_prices[i] 
+                                        for i, coin in enumerate(self.coin_columns)]) + self.cash
         else:
-            return 0.0
-
-class PPOPortfolioAgent:
-    """PPO agent for portfolio allocation"""
-    
-    def __init__(self, config: RLPortfolioConfig):
-        self.config = config
-        self.logger = logging.getLogger(f"{__name__}.PPOPortfolioAgent")
+            new_portfolio_value = self.portfolio_value
         
-        if not HAS_TORCH:
-            raise ImportError("PyTorch required for RL portfolio allocation")
+        # Calculate reward
+        reward = self._calculate_reward(new_portfolio_value, transaction_cost_total, action)
         
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # Update portfolio value
+        previous_value = self.portfolio_value
+        self.portfolio_value = new_portfolio_value
         
-        # Networks
-        self.actor = PPOActor(
-            config.state_features,
-            config.max_assets,
-            config.hidden_layers
-        ).to(self.device)
+        # Check if done
+        done = self.current_step >= len(self.market_data) - 1
         
-        self.critic = PPOCritic(
-            config.state_features,
-            config.hidden_layers
-        ).to(self.device)
+        # Create info
+        info = {
+            'portfolio_value': self.portfolio_value,
+            'transaction_cost': transaction_cost_total,
+            'allocation': action.copy(),
+            'return': (new_portfolio_value - previous_value) / previous_value if previous_value > 0 else 0.0
+        }
         
-        # Optimizers
-        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=config.learning_rate)
-        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=config.learning_rate)
-        
-        # Training data
-        self.memory = []
-        self.training_step = 0
-        
-        self.logger.info(f"PPO Portfolio Agent initialized on {self.device}")
-    
-    def get_action(self, state: np.ndarray, deterministic: bool = False) -> Tuple[np.ndarray, float]:
-        """Get action from agent"""
-        try:
-            state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-            
-            with torch.no_grad():
-                allocations, log_prob = self.actor.get_action(state_tensor, deterministic)
-            
-            return allocations.cpu().numpy()[0], log_prob.cpu().item()
-            
-        except Exception as e:
-            self.logger.error(f"Action selection failed: {e}")
-            # Return equal allocations as fallback
-            n_assets = self.config.max_assets
-            return np.ones(n_assets) / n_assets, 0.0
-    
-    def store_transition(self, state: np.ndarray, action: np.ndarray, 
-                        reward: float, next_state: np.ndarray, 
-                        done: bool, log_prob: float):
-        """Store transition in memory"""
-        self.memory.append({
-            'state': state,
-            'action': action,
-            'reward': reward,
-            'next_state': next_state,
-            'done': done,
-            'log_prob': log_prob
+        # Store allocation history
+        self.allocation_history.append({
+            'timestamp': self.market_data.index[self.current_step - 1],
+            'allocation': action.copy(),
+            'portfolio_value': self.portfolio_value,
+            'transaction_cost': transaction_cost_total
         })
         
-        # Keep memory size manageable
-        if len(self.memory) > self.config.buffer_size:
-            self.memory = self.memory[-self.config.buffer_size:]
+        return self._get_state(), reward, done, info
     
-    def update(self):
-        """Update agent networks"""
-        try:
-            if len(self.memory) < self.config.batch_size:
-                return
+    def _calculate_reward(self, new_portfolio_value: float, transaction_cost: float, 
+                         allocation: np.ndarray) -> float:
+        """Calculate reward for the current action"""
+        # Portfolio return
+        portfolio_return = (new_portfolio_value - self.portfolio_value) / max(self.portfolio_value, 1.0)
+        
+        # Risk penalty (concentration penalty)
+        concentration_penalty = np.sum(allocation ** 2)  # Herfindahl index
+        
+        # Transaction cost penalty
+        cost_penalty = transaction_cost / max(self.portfolio_value, 1.0)
+        
+        # Combine rewards
+        reward = portfolio_return - 0.1 * concentration_penalty - 10.0 * cost_penalty
+        
+        # Bonus for positive returns
+        if portfolio_return > 0:
+            reward += 0.1 * portfolio_return
+        
+        return reward
+
+class PPOPortfolioAgent:
+    """PPO-based portfolio allocation agent"""
+    
+    def __init__(self, state_dim: int, action_dim: int, lr: float = 3e-4):
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        
+        # Networks
+        self.actor = PPOActor(state_dim, action_dim)
+        self.critic = PPOCritic(state_dim)
+        
+        # Optimizers
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=lr)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=lr)
+        
+        # PPO hyperparameters
+        self.epsilon = 0.2
+        self.gamma = 0.99
+        self.lambda_gae = 0.95
+        self.value_coef = 0.5
+        self.entropy_coef = 0.01
+        
+        # Training data storage
+        self.states = []
+        self.actions = []
+        self.rewards = []
+        self.values = []
+        self.log_probs = []
+        self.dones = []
+        
+        self.logger = logging.getLogger(__name__)
+    
+    def get_action(self, state: np.ndarray, training: bool = True) -> Tuple[np.ndarray, float]:
+        """Get action from current policy"""
+        state_tensor = torch.FloatTensor(state).unsqueeze(0)
+        
+        with torch.no_grad():
+            action_probs = self.actor(state_tensor)
+            value = self.critic(state_tensor)
+        
+        if training:
+            # Sample from policy during training
+            dist = torch.distributions.Categorical(action_probs)
+            action_indices = dist.sample()
+            log_prob = dist.log_prob(action_indices).sum()
             
-            self.logger.debug(f"Updating PPO agent with {len(self.memory)} transitions")
+            # Convert to allocation weights
+            action = action_probs.squeeze().numpy()
+        else:
+            # Use deterministic policy during evaluation
+            action = action_probs.squeeze().numpy()
+            log_prob = 0.0
+        
+        return action, log_prob
+    
+    def store_transition(self, state: np.ndarray, action: np.ndarray, reward: float, 
+                        value: float, log_prob: float, done: bool):
+        """Store transition for training"""
+        self.states.append(state)
+        self.actions.append(action)
+        self.rewards.append(reward)
+        self.values.append(value)
+        self.log_probs.append(log_prob)
+        self.dones.append(done)
+    
+    def compute_gae(self, next_value: float = 0.0) -> Tuple[List[float], List[float]]:
+        """Compute Generalized Advantage Estimation"""
+        advantages = []
+        returns = []
+        
+        gae = 0
+        for i in reversed(range(len(self.rewards))):
+            if i == len(self.rewards) - 1:
+                next_non_terminal = 1.0 - self.dones[i]
+                next_value_i = next_value
+            else:
+                next_non_terminal = 1.0 - self.dones[i]
+                next_value_i = self.values[i + 1]
             
-            # Convert memory to tensors
-            states = torch.FloatTensor([t['state'] for t in self.memory]).to(self.device)
-            actions = torch.FloatTensor([t['action'] for t in self.memory]).to(self.device)
-            rewards = torch.FloatTensor([t['reward'] for t in self.memory]).to(self.device)
-            next_states = torch.FloatTensor([t['next_state'] for t in self.memory]).to(self.device)
-            dones = torch.BoolTensor([t['done'] for t in self.memory]).to(self.device)
-            old_log_probs = torch.FloatTensor([t['log_prob'] for t in self.memory]).to(self.device)
+            delta = self.rewards[i] + self.gamma * next_value_i * next_non_terminal - self.values[i]
+            gae = delta + self.gamma * self.lambda_gae * next_non_terminal * gae
             
-            # Calculate advantages and returns
-            with torch.no_grad():
-                values = self.critic(states).squeeze()
-                next_values = self.critic(next_states).squeeze()
-                
-                # Calculate returns using GAE
-                returns = torch.zeros_like(rewards)
-                advantages = torch.zeros_like(rewards)
-                
-                gae = 0
-                gamma = 0.99
-                lam = 0.95
-                
-                for t in reversed(range(len(rewards))):
-                    if t == len(rewards) - 1:
-                        next_value = 0 if dones[t] else next_values[t]
-                    else:
-                        next_value = values[t + 1]
-                    
-                    delta = rewards[t] + gamma * next_value - values[t]
-                    gae = delta + gamma * lam * gae
-                    advantages[t] = gae
-                    returns[t] = advantages[t] + values[t]
+            advantages.insert(0, gae)
+            returns.insert(0, gae + self.values[i])
+        
+        return advantages, returns
+    
+    def update_policy(self, n_epochs: int = 10):
+        """Update policy using PPO"""
+        if len(self.states) == 0:
+            return
+        
+        # Compute advantages and returns
+        advantages, returns = self.compute_gae()
+        
+        # Convert to tensors
+        states = torch.FloatTensor(np.array(self.states))
+        actions = torch.FloatTensor(np.array(self.actions))
+        old_log_probs = torch.FloatTensor(self.log_probs)
+        advantages_tensor = torch.FloatTensor(advantages)
+        returns_tensor = torch.FloatTensor(returns)
+        
+        # Normalize advantages
+        advantages_tensor = (advantages_tensor - advantages_tensor.mean()) / (advantages_tensor.std() + 1e-8)
+        
+        # PPO update
+        for epoch in range(n_epochs):
+            # Forward pass
+            action_probs = self.actor(states)
+            values = self.critic(states).squeeze()
             
-            # Normalize advantages
-            if advantages.std() > 0:
-                advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+            # Calculate new log probabilities
+            # For continuous actions, use MSE loss
+            action_loss = F.mse_loss(action_probs, actions)
             
-            # PPO update
-            clip_epsilon = 0.2
+            # Value loss
+            value_loss = F.mse_loss(values, returns_tensor)
             
-            for _ in range(4):  # Multiple epochs
-                # Sample batch
-                batch_indices = torch.randint(0, len(states), (self.config.batch_size,))
-                
-                batch_states = states[batch_indices]
-                batch_actions = actions[batch_indices]
-                batch_returns = returns[batch_indices]
-                batch_advantages = advantages[batch_indices]
-                batch_old_log_probs = old_log_probs[batch_indices]
-                
-                # Actor update
-                mean, std = self.actor(batch_states)
-                dist = torch.distributions.Normal(mean, std)
-                
-                # Calculate log probabilities for batch actions
-                new_log_probs = dist.log_prob(batch_actions).sum(dim=-1)
-                
-                # Policy ratio
-                ratio = torch.exp(new_log_probs - batch_old_log_probs)
-                
-                # Clipped objective
-                surr1 = ratio * batch_advantages
-                surr2 = torch.clamp(ratio, 1 - clip_epsilon, 1 + clip_epsilon) * batch_advantages
-                actor_loss = -torch.min(surr1, surr2).mean()
-                
-                # Critic update
-                batch_values = self.critic(batch_states).squeeze()
-                critic_loss = F.mse_loss(batch_values, batch_returns)
-                
-                # Update networks
-                self.actor_optimizer.zero_grad()
-                actor_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 0.5)
-                self.actor_optimizer.step()
-                
-                self.critic_optimizer.zero_grad()
-                critic_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 0.5)
-                self.critic_optimizer.step()
+            # Entropy bonus
+            entropy = -torch.sum(action_probs * torch.log(action_probs + 1e-8), dim=1).mean()
             
-            # Clear memory after update
-            self.memory = []
-            self.training_step += 1
+            # Total loss
+            total_loss = action_loss + self.value_coef * value_loss - self.entropy_coef * entropy
             
-        except Exception as e:
-            self.logger.error(f"PPO update failed: {e}")
+            # Update actor
+            self.actor_optimizer.zero_grad()
+            action_loss.backward(retain_graph=True)
+            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 0.5)
+            self.actor_optimizer.step()
+            
+            # Update critic
+            self.critic_optimizer.zero_grad()
+            value_loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 0.5)
+            self.critic_optimizer.step()
+        
+        # Clear buffers
+        self.states.clear()
+        self.actions.clear()
+        self.rewards.clear()
+        self.values.clear()
+        self.log_probs.clear()
+        self.dones.clear()
+        
+        self.logger.info(f"PPO update completed - Action Loss: {action_loss:.4f}, Value Loss: {value_loss:.4f}")
 
 class ReinforcementPortfolioAllocator:
-    """Main reinforcement learning portfolio allocator"""
+    """Main RL-based portfolio allocation system"""
     
-    def __init__(self, config: Optional[RLPortfolioConfig] = None):
-        self.config = config or RLPortfolioConfig()
-        self.logger = logging.getLogger(f"{__name__}.ReinforcementPortfolioAllocator")
+    def __init__(self, config_path: str = "config/rl_portfolio_config.json"):
+        self.logger = logging.getLogger(__name__)
+        self.config_path = Path(config_path)
         
-        # Core components
-        self.agent: Optional[PPOPortfolioAgent] = None
-        self.environment: Optional[PortfolioEnvironment] = None
+        # Components
+        self.environment = None
+        self.agent = None
         
-        # State tracking
-        self.current_allocations: Optional[np.ndarray] = None
-        self.training_history: List[Dict[str, Any]] = []
-        self.performance_metrics: Dict[str, float] = {}
+        # Training state
+        self.is_trained = False
+        self.training_history = []
+        self.performance_metrics = []
         
-        # Model persistence
-        self.model_cache_dir = Path(self.config.model_cache_dir)
-        self.model_cache_dir.mkdir(parents=True, exist_ok=True)
-        
-        self._lock = threading.RLock()
+        # Load configuration
+        self.config = self._load_config()
         
         self.logger.info("Reinforcement Learning Portfolio Allocator initialized")
     
-    def initialize_agent(self, data: pd.DataFrame) -> bool:
-        """Initialize RL agent and environment"""
-        with self._lock:
-            try:
-                self.logger.info("Initializing RL agent and environment")
-                
-                # Create environment
-                self.environment = PortfolioEnvironment(data, self.config)
-                
-                # Update config based on actual assets
-                self.config.max_assets = self.environment.n_assets
-                
-                # Create agent
-                if self.config.algorithm == RLAlgorithm.PPO:
-                    self.agent = PPOPortfolioAgent(self.config)
-                else:
-                    raise NotImplementedError(f"Algorithm {self.config.algorithm.value} not yet implemented")
-                
-                # Try to load existing model
-                self._load_model()
-                
-                self.logger.info(f"RL agent initialized with {self.environment.n_assets} assets")
-                return True
-                
-            except Exception as e:
-                self.logger.error(f"Agent initialization failed: {e}")
-                return False
-    
-    def train(self, data: pd.DataFrame, episodes: int = 1000) -> Dict[str, Any]:
-        """Train the RL agent"""
-        with self._lock:
-            try:
-                if not self.initialize_agent(data):
-                    return {'success': False, 'error': 'Agent initialization failed'}
-                
-                self.logger.info(f"Training RL agent for {episodes} episodes")
-                
-                training_results = {
-                    'episode_rewards': [],
-                    'episode_returns': [],
-                    'episode_sharpe_ratios': [],
-                    'final_allocations': [],
-                    'best_episode': 0,
-                    'best_reward': float('-inf')
-                }
-                
-                for episode in range(episodes):
-                    try:
-                        episode_result = self._run_episode(training=True)
-                        
-                        # Track results
-                        training_results['episode_rewards'].append(episode_result['total_reward'])
-                        training_results['episode_returns'].append(episode_result['total_return'])
-                        training_results['episode_sharpe_ratios'].append(episode_result['sharpe_ratio'])
-                        training_results['final_allocations'].append(episode_result['final_allocations'])
-                        
-                        # Update best episode
-                        if episode_result['total_reward'] > training_results['best_reward']:
-                            training_results['best_reward'] = episode_result['total_reward']
-                            training_results['best_episode'] = episode
-                        
-                        # Periodic logging
-                        if episode % 100 == 0:
-                            recent_rewards = training_results['episode_rewards'][-10:]
-                            avg_reward = np.mean(recent_rewards) if recent_rewards else 0
-                            
-                            self.logger.info(
-                                f"Episode {episode}: avg_reward={avg_reward:.4f}, "
-                                f"best_reward={training_results['best_reward']:.4f}"
-                            )
-                        
-                        # Update agent
-                        if episode % self.config.update_frequency == 0:
-                            self.agent.update()
-                        
-                    except Exception as e:
-                        self.logger.error(f"Episode {episode} failed: {e}")
-                        continue
-                
-                # Save trained model
-                if self.config.save_models:
-                    self._save_model()
-                
-                # Calculate final metrics
-                training_results['success'] = True
-                training_results['final_avg_reward'] = np.mean(training_results['episode_rewards'][-100:]) if training_results['episode_rewards'] else 0
-                training_results['final_avg_return'] = np.mean(training_results['episode_returns'][-100:]) if training_results['episode_returns'] else 0
-                training_results['final_avg_sharpe'] = np.mean(training_results['episode_sharpe_ratios'][-100:]) if training_results['episode_sharpe_ratios'] else 0
-                
-                self.training_history.append(training_results)
-                
-                self.logger.info(f"Training completed: avg_reward={training_results['final_avg_reward']:.4f}")
-                
-                return training_results
-                
-            except Exception as e:
-                self.logger.error(f"Training failed: {e}")
-                return {'success': False, 'error': str(e)}
-    
-    def _run_episode(self, training: bool = True) -> Dict[str, Any]:
-        """Run single episode"""
+    def _load_config(self) -> Dict[str, Any]:
+        """Load RL configuration"""
+        default_config = {
+            "training": {
+                "episodes": 1000,
+                "learning_rate": 3e-4,
+                "update_frequency": 10,
+                "batch_size": 64
+            },
+            "environment": {
+                "initial_capital": 100000.0,
+                "transaction_cost": 0.001,
+                "lookback_window": 24
+            },
+            "agent": {
+                "hidden_dim": 256,
+                "epsilon": 0.2,
+                "gamma": 0.99,
+                "lambda_gae": 0.95
+            },
+            "risk_management": {
+                "max_allocation_per_asset": 0.4,
+                "min_allocation_per_asset": 0.02,
+                "rebalance_threshold": 0.05
+            }
+        }
+        
         try:
-            state = self.environment.reset()
-            total_reward = 0.0
-            steps = 0
+            if self.config_path.exists():
+                with open(self.config_path, 'r') as f:
+                    loaded_config = json.load(f)
+                    default_config.update(loaded_config)
+        except Exception as e:
+            self.logger.warning(f"Could not load config, using defaults: {e}")
+        
+        return default_config
+    
+    def setup_environment(self, market_data: pd.DataFrame):
+        """Setup trading environment with market data"""
+        try:
+            self.environment = TradingEnvironment(
+                market_data,
+                initial_capital=self.config["environment"]["initial_capital"],
+                transaction_cost=self.config["environment"]["transaction_cost"]
+            )
             
-            episode_allocations = []
-            episode_rewards = []
+            # Setup agent
+            state_dim = len(self.environment._get_state())
+            action_dim = self.environment.n_assets
+            
+            self.agent = PPOPortfolioAgent(
+                state_dim=state_dim,
+                action_dim=action_dim,
+                lr=self.config["training"]["learning_rate"]
+            )
+            
+            self.logger.info(f"Environment setup: {action_dim} assets, {state_dim} state dimensions")
+            
+        except Exception as e:
+            self.logger.error(f"Error setting up environment: {e}")
+            raise
+    
+    def train_agent(self, n_episodes: int = None) -> Dict[str, Any]:
+        """Train the RL agent"""
+        if self.environment is None or self.agent is None:
+            raise ValueError("Environment and agent must be setup first")
+        
+        n_episodes = n_episodes or self.config["training"]["episodes"]
+        update_frequency = self.config["training"]["update_frequency"]
+        
+        training_results = {
+            "episodes": [],
+            "rewards": [],
+            "portfolio_values": [],
+            "sharpe_ratios": []
+        }
+        
+        try:
+            for episode in range(n_episodes):
+                state = self.environment.reset()
+                episode_reward = 0
+                episode_returns = []
+                
+                while True:
+                    # Get action from agent
+                    action, log_prob = self.agent.get_action(state, training=True)
+                    
+                    # Get value estimate
+                    state_tensor = torch.FloatTensor(state).unsqueeze(0)
+                    with torch.no_grad():
+                        value = self.agent.critic(state_tensor).item()
+                    
+                    # Execute action
+                    next_state, reward, done, info = self.environment.step(action)
+                    
+                    # Store transition
+                    self.agent.store_transition(state, action, reward, value, log_prob, done)
+                    
+                    episode_reward += reward
+                    episode_returns.append(info['return'])
+                    
+                    state = next_state
+                    
+                    if done:
+                        break
+                
+                # Update policy
+                if episode % update_frequency == 0:
+                    self.agent.update_policy()
+                
+                # Calculate episode metrics
+                final_portfolio_value = self.environment.portfolio_value
+                episode_sharpe = self._calculate_sharpe_ratio(episode_returns)
+                
+                # Store results
+                training_results["episodes"].append(episode)
+                training_results["rewards"].append(episode_reward)
+                training_results["portfolio_values"].append(final_portfolio_value)
+                training_results["sharpe_ratios"].append(episode_sharpe)
+                
+                # Log progress
+                if episode % 100 == 0:
+                    self.logger.info(f"Episode {episode}: Reward={episode_reward:.4f}, "
+                                   f"Portfolio Value=${final_portfolio_value:.2f}, "
+                                   f"Sharpe Ratio={episode_sharpe:.4f}")
+            
+            self.is_trained = True
+            self.training_history = training_results
+            
+            self.logger.info(f"Training completed: {n_episodes} episodes")
+            
+            return {
+                "success": True,
+                "episodes_trained": n_episodes,
+                "final_portfolio_value": training_results["portfolio_values"][-1],
+                "final_sharpe_ratio": training_results["sharpe_ratios"][-1],
+                "average_reward": np.mean(training_results["rewards"][-100:]),  # Last 100 episodes
+                "training_results": training_results
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error during training: {e}")
+            return {"success": False, "error": str(e)}
+    
+    def get_optimal_allocation(self, current_state: Dict[str, Any]) -> AllocationAction:
+        """Get optimal portfolio allocation for current market state"""
+        try:
+            if not self.is_trained or self.agent is None:
+                # Fallback to equal weight allocation
+                n_assets = len(current_state.get('prices', []))
+                if n_assets == 0:
+                    n_assets = 5  # Default
+                
+                allocation = np.ones(n_assets) / n_assets
+                
+                return AllocationAction(
+                    timestamp=datetime.now(),
+                    target_allocation=allocation,
+                    rebalance_amount=np.zeros(n_assets),
+                    transaction_cost=0.0,
+                    confidence=0.5,
+                    reasoning="Equal weight allocation (agent not trained)"
+                )
+            
+            # Prepare state vector
+            state_vector = self._prepare_state_vector(current_state)
+            
+            # Get action from trained agent
+            allocation, _ = self.agent.get_action(state_vector, training=False)
+            
+            # Apply risk management constraints
+            allocation = self._apply_risk_constraints(allocation)
+            
+            # Calculate rebalancing needed
+            current_allocation = np.array(current_state.get('current_allocation', allocation))
+            rebalance_amount = allocation - current_allocation
+            
+            # Estimate transaction cost
+            transaction_cost = np.sum(np.abs(rebalance_amount)) * self.config["environment"]["transaction_cost"]
+            
+            # Calculate confidence based on action certainty
+            confidence = self._calculate_confidence(allocation)
+            
+            # Generate reasoning
+            reasoning = self._generate_allocation_reasoning(allocation, current_state)
+            
+            return AllocationAction(
+                timestamp=datetime.now(),
+                target_allocation=allocation,
+                rebalance_amount=rebalance_amount,
+                transaction_cost=transaction_cost,
+                confidence=confidence,
+                reasoning=reasoning
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Error getting optimal allocation: {e}")
+            # Return safe equal weight allocation
+            n_assets = 5
+            allocation = np.ones(n_assets) / n_assets
+            
+            return AllocationAction(
+                timestamp=datetime.now(),
+                target_allocation=allocation,
+                rebalance_amount=np.zeros(n_assets),
+                transaction_cost=0.0,
+                confidence=0.1,
+                reasoning=f"Error in allocation calculation: {e}"
+            )
+    
+    def _prepare_state_vector(self, current_state: Dict[str, Any]) -> np.ndarray:
+        """Prepare state vector from current market state"""
+        # Extract features from current state
+        prices = np.array(current_state.get('prices', [1.0] * 5))
+        returns = np.array(current_state.get('returns', [0.0] * 5))
+        volatilities = np.array(current_state.get('volatilities', [0.1] * 5))
+        market_features = np.array(current_state.get('market_features', [0.0, 0.0]))
+        current_allocation = np.array(current_state.get('current_allocation', [0.2] * 5))
+        cash_ratio = current_state.get('cash_ratio', 0.0)
+        
+        # Combine all features
+        state_vector = np.concatenate([
+            prices,
+            returns,
+            volatilities,
+            market_features,
+            current_allocation,
+            [cash_ratio]
+        ])
+        
+        return state_vector.astype(np.float32)
+    
+    def _apply_risk_constraints(self, allocation: np.ndarray) -> np.ndarray:
+        """Apply risk management constraints to allocation"""
+        max_allocation = self.config["risk_management"]["max_allocation_per_asset"]
+        min_allocation = self.config["risk_management"]["min_allocation_per_asset"]
+        
+        # Apply constraints
+        allocation = np.clip(allocation, min_allocation, max_allocation)
+        
+        # Renormalize to sum to 1
+        allocation = allocation / np.sum(allocation)
+        
+        return allocation
+    
+    def _calculate_confidence(self, allocation: np.ndarray) -> float:
+        """Calculate confidence in allocation decision"""
+        # Higher concentration = higher confidence in specific assets
+        concentration = np.sum(allocation ** 2)  # Herfindahl index
+        
+        # Convert to confidence score (0 to 1)
+        # More concentrated allocations get higher confidence
+        confidence = min(0.95, max(0.1, concentration * 2))
+        
+        return confidence
+    
+    def _generate_allocation_reasoning(self, allocation: np.ndarray, 
+                                     current_state: Dict[str, Any]) -> str:
+        """Generate human-readable reasoning for allocation"""
+        # Find top allocations
+        top_indices = np.argsort(allocation)[-3:][::-1]  # Top 3
+        
+        reasoning_parts = []
+        
+        coin_names = current_state.get('coin_names', [f'Asset_{i}' for i in range(len(allocation))])
+        
+        for i in top_indices:
+            percentage = allocation[i] * 100
+            if percentage > 5:  # Only mention significant allocations
+                coin_name = coin_names[i] if i < len(coin_names) else f'Asset_{i}'
+                reasoning_parts.append(f"{coin_name}: {percentage:.1f}%")
+        
+        if len(reasoning_parts) > 0:
+            reasoning = f"Recommended allocation - {', '.join(reasoning_parts)}"
+        else:
+            reasoning = "Diversified allocation across all assets"
+        
+        # Add market context
+        returns = current_state.get('returns', [])
+        if len(returns) > 0:
+            avg_return = np.mean(returns)
+            if avg_return > 0.02:
+                reasoning += " (Bullish market conditions)"
+            elif avg_return < -0.02:
+                reasoning += " (Bearish market conditions)"
+            else:
+                reasoning += " (Neutral market conditions)"
+        
+        return reasoning
+    
+    def _calculate_sharpe_ratio(self, returns: List[float]) -> float:
+        """Calculate Sharpe ratio for returns"""
+        if len(returns) < 2:
+            return 0.0
+        
+        returns_array = np.array(returns)
+        mean_return = np.mean(returns_array)
+        std_return = np.std(returns_array)
+        
+        if std_return == 0:
+            return 0.0
+        
+        # Annualized Sharpe ratio (assuming daily returns)
+        sharpe = (mean_return * 365) / (std_return * np.sqrt(365))
+        
+        return sharpe
+    
+    def evaluate_performance(self, market_data: pd.DataFrame) -> PortfolioPerformance:
+        """Evaluate portfolio performance on historical data"""
+        try:
+            if not self.is_trained or self.environment is None:
+                self.logger.warning("Agent not trained or environment not setup")
+                return None
+            
+            # Reset environment for evaluation
+            state = self.environment.reset()
+            portfolio_values = [self.environment.initial_capital]
+            returns = []
+            transaction_costs = []
+            allocations = []
             
             while True:
-                # Get action from agent
-                action, log_prob = self.agent.get_action(state, deterministic=not training)
+                # Get action (deterministic)
+                action, _ = self.agent.get_action(state, training=False)
                 
                 # Execute action
                 next_state, reward, done, info = self.environment.step(action)
                 
-                # Store transition for training
-                if training:
-                    self.agent.store_transition(state, action, reward, next_state, done, log_prob)
-                
-                # Update tracking
-                total_reward += reward
-                episode_allocations.append(action.copy())
-                episode_rewards.append(reward)
+                # Store metrics
+                portfolio_values.append(info['portfolio_value'])
+                returns.append(info['return'])
+                transaction_costs.append(info['transaction_cost'])
+                allocations.append(info['allocation'])
                 
                 state = next_state
-                steps += 1
                 
                 if done:
                     break
             
-            # Calculate episode metrics
-            final_value = self.environment.portfolio_value
-            total_return = (final_value - self.environment.initial_value) / self.environment.initial_value
-            sharpe_ratio = self.environment._calculate_sharpe_ratio()
-            max_drawdown = max([self.environment._calculate_drawdown()] + [0.0])
+            # Calculate performance metrics
+            total_return = (portfolio_values[-1] - portfolio_values[0]) / portfolio_values[0]
+            returns_array = np.array(returns)
+            volatility = np.std(returns_array) * np.sqrt(252)  # Annualized
+            sharpe_ratio = self._calculate_sharpe_ratio(returns)
             
-            return {
-                'total_reward': total_reward,
-                'total_return': total_return,
-                'sharpe_ratio': sharpe_ratio,
-                'max_drawdown': max_drawdown,
-                'final_value': final_value,
-                'steps': steps,
-                'final_allocations': episode_allocations[-1] if episode_allocations else np.array([]),
-                'episode_allocations': episode_allocations,
-                'episode_rewards': episode_rewards
-            }
+            # Calculate max drawdown
+            portfolio_values_array = np.array(portfolio_values)
+            peak = np.maximum.accumulate(portfolio_values_array)
+            drawdown = (portfolio_values_array - peak) / peak
+            max_drawdown = np.min(drawdown)
             
-        except Exception as e:
-            self.logger.error(f"Episode execution failed: {e}")
-            return {
-                'total_reward': -10.0,
-                'total_return': -0.1,
-                'sharpe_ratio': -1.0,
-                'max_drawdown': 0.5,
-                'final_value': 50000.0,
-                'steps': 0,
-                'final_allocations': np.array([]),
-                'episode_allocations': [],
-                'episode_rewards': []
-            }
-    
-    def get_optimal_allocation(self, data: pd.DataFrame) -> Dict[str, Any]:
-        """Get optimal portfolio allocation using trained agent"""
-        with self._lock:
-            try:
-                if self.agent is None:
-                    if not self.initialize_agent(data):
-                        return {'success': False, 'error': 'Agent not available'}
-                
-                # Get current state
-                if self.environment is None:
-                    self.environment = PortfolioEnvironment(data, self.config)
-                
-                # Reset environment to get current state
-                state = self.environment.reset()
-                
-                # Get action from trained agent
-                allocations, confidence = self.agent.get_action(state, deterministic=True)
-                
-                # Validate allocations
-                allocations = np.clip(allocations, self.config.min_allocation, self.config.max_allocation)
-                allocations = allocations / allocations.sum()  # Ensure sum to 1
-                
-                # Map to asset names
-                asset_allocations = {}
-                for i, asset in enumerate(self.environment.asset_columns[:self.environment.n_assets]):
-                    if i < len(allocations):
-                        asset_allocations[asset] = float(allocations[i])
-                
-                # Add cash allocation
-                cash_allocation = self.config.cash_buffer
-                asset_allocations['cash'] = cash_allocation
-                
-                # Calculate expected metrics
-                expected_return, expected_volatility = self._estimate_portfolio_metrics(data, allocations)
-                
-                self.current_allocations = allocations
-                
-                return {
-                    'success': True,
-                    'allocations': asset_allocations,
-                    'expected_return': expected_return,
-                    'expected_volatility': expected_volatility,
-                    'confidence': confidence,
-                    'rebalance_recommended': self._should_rebalance(allocations),
-                    'risk_level': np.std(allocations),  # Concentration as risk proxy
-                    'diversification_score': 1.0 - np.sum(allocations**2)  # Herfindahl index
-                }
-                
-            except Exception as e:
-                self.logger.error(f"Optimal allocation calculation failed: {e}")
-                return {'success': False, 'error': str(e)}
-    
-    def _estimate_portfolio_metrics(self, data: pd.DataFrame, allocations: np.ndarray) -> Tuple[float, float]:
-        """Estimate portfolio return and volatility"""
-        try:
-            if len(self.environment.asset_columns) == 0:
-                return 0.0, 0.0
+            # Win rate
+            positive_returns = len([r for r in returns if r > 0])
+            win_rate = positive_returns / len(returns) if len(returns) > 0 else 0.0
             
-            # Calculate historical returns for each asset
-            asset_returns = {}
-            for asset in self.environment.asset_columns[:len(allocations)]:
-                if asset in data.columns:
-                    prices = data[asset].dropna()
-                    if len(prices) > 1:
-                        returns = prices.pct_change().dropna()
-                        asset_returns[asset] = returns.mean() if len(returns) > 0 else 0.0
-                    else:
-                        asset_returns[asset] = 0.0
-                else:
-                    asset_returns[asset] = 0.0
-            
-            # Portfolio expected return
-            expected_return = sum(
-                allocations[i] * asset_returns.get(asset, 0.0)
-                for i, asset in enumerate(self.environment.asset_columns[:len(allocations)])
+            performance = PortfolioPerformance(
+                timestamp=datetime.now(),
+                portfolio_value=portfolio_values[-1],
+                returns=total_return,
+                volatility=volatility,
+                sharpe_ratio=sharpe_ratio,
+                max_drawdown=abs(max_drawdown),
+                win_rate=win_rate,
+                total_transactions=len(transaction_costs),
+                transaction_costs=sum(transaction_costs)
             )
             
-            # Simplified volatility estimation (without correlation matrix)
-            asset_volatilities = {}
-            for asset in self.environment.asset_columns[:len(allocations)]:
-                if asset in data.columns:
-                    prices = data[asset].dropna()
-                    if len(prices) > 1:
-                        returns = prices.pct_change().dropna()
-                        asset_volatilities[asset] = returns.std() if len(returns) > 0 else 0.0
-                    else:
-                        asset_volatilities[asset] = 0.0
-                else:
-                    asset_volatilities[asset] = 0.0
+            self.performance_metrics.append(performance)
             
-            # Portfolio volatility (assuming independence - simplified)
-            expected_volatility = np.sqrt(sum(
-                (allocations[i] * asset_volatilities.get(asset, 0.0))**2
-                for i, asset in enumerate(self.environment.asset_columns[:len(allocations)])
-            ))
+            self.logger.info(f"Performance evaluation: Return={total_return:.2%}, "
+                           f"Sharpe={sharpe_ratio:.4f}, Max DD={abs(max_drawdown):.2%}")
             
-            return float(expected_return), float(expected_volatility)
+            return performance
             
         except Exception as e:
-            self.logger.error(f"Portfolio metrics estimation failed: {e}")
-            return 0.0, 0.0
-    
-    def _should_rebalance(self, new_allocations: np.ndarray) -> bool:
-        """Determine if portfolio should be rebalanced"""
-        if self.current_allocations is None:
-            return True
-        
-        # Calculate allocation drift
-        drift = np.abs(new_allocations - self.current_allocations).max()
-        return drift > self.config.rebalance_threshold
-    
-    def _save_model(self):
-        """Save trained model"""
-        try:
-            if self.agent is None:
-                return
-            
-            model_path = self.model_cache_dir / "rl_portfolio_agent.pt"
-            
-            torch.save({
-                'actor_state_dict': self.agent.actor.state_dict(),
-                'critic_state_dict': self.agent.critic.state_dict(),
-                'actor_optimizer_state_dict': self.agent.actor_optimizer.state_dict(),
-                'critic_optimizer_state_dict': self.agent.critic_optimizer.state_dict(),
-                'config': self.config,
-                'training_step': self.agent.training_step
-            }, model_path)
-            
-            self.logger.info(f"Model saved to {model_path}")
-            
-        except Exception as e:
-            self.logger.error(f"Model saving failed: {e}")
-    
-    def _load_model(self):
-        """Load trained model"""
-        try:
-            model_path = self.model_cache_dir / "rl_portfolio_agent.pt"
-            
-            if not model_path.exists():
-                self.logger.info("No saved model found")
-                return
-            
-            checkpoint = torch.load(model_path, map_location=self.agent.device)
-            
-            self.agent.actor.load_state_dict(checkpoint['actor_state_dict'])
-            self.agent.critic.load_state_dict(checkpoint['critic_state_dict'])
-            self.agent.actor_optimizer.load_state_dict(checkpoint['actor_optimizer_state_dict'])
-            self.agent.critic_optimizer.load_state_dict(checkpoint['critic_optimizer_state_dict'])
-            self.agent.training_step = checkpoint.get('training_step', 0)
-            
-            self.logger.info(f"Model loaded from {model_path}")
-            
-        except Exception as e:
-            self.logger.error(f"Model loading failed: {e}")
+            self.logger.error(f"Error evaluating performance: {e}")
+            return None
     
     def get_allocation_summary(self) -> Dict[str, Any]:
         """Get comprehensive allocation summary"""
-        with self._lock:
-            return {
-                'algorithm': self.config.algorithm.value,
-                'max_assets': self.config.max_assets,
-                'current_allocations': self.current_allocations.tolist() if self.current_allocations is not None else [],
-                'training_episodes': len(self.training_history),
-                'last_training_performance': self.training_history[-1] if self.training_history else {},
-                'performance_metrics': self.performance_metrics,
-                'model_trained': self.agent is not None,
-                'config': {
-                    'primary_reward': self.config.primary_reward.value,
-                    'max_drawdown_threshold': self.config.max_drawdown_threshold,
-                    'rebalance_threshold': self.config.rebalance_threshold,
-                    'learning_rate': self.config.learning_rate
-                }
+        try:
+            summary = {
+                "training_status": self.is_trained,
+                "training_episodes": len(self.training_history.get("episodes", [])) if self.training_history else 0,
+                "performance_evaluations": len(self.performance_metrics),
+                "last_updated": datetime.now().isoformat()
             }
+            
+            # Add training results if available
+            if self.training_history:
+                recent_rewards = self.training_history["rewards"][-100:] if self.training_history["rewards"] else []
+                recent_values = self.training_history["portfolio_values"][-100:] if self.training_history["portfolio_values"] else []
+                
+                summary["training_results"] = {
+                    "average_recent_reward": np.mean(recent_rewards) if recent_rewards else 0.0,
+                    "best_portfolio_value": max(recent_values) if recent_values else 0.0,
+                    "final_portfolio_value": recent_values[-1] if recent_values else 0.0
+                }
+            
+            # Add latest performance if available
+            if self.performance_metrics:
+                latest_performance = self.performance_metrics[-1]
+                summary["latest_performance"] = asdict(latest_performance)
+            
+            return summary
+            
+        except Exception as e:
+            self.logger.error(f"Error generating allocation summary: {e}")
+            return {"error": str(e)}
 
 
-# Singleton RL portfolio allocator
+# Singleton instance
 _rl_portfolio_allocator = None
-_rpa_lock = threading.Lock()
 
-def get_rl_portfolio_allocator(config: Optional[RLPortfolioConfig] = None) -> ReinforcementPortfolioAllocator:
-    """Get the singleton RL portfolio allocator"""
+def get_rl_portfolio_allocator() -> ReinforcementPortfolioAllocator:
+    """Get or create RL portfolio allocator singleton"""
     global _rl_portfolio_allocator
-    
-    with _rpa_lock:
-        if _rl_portfolio_allocator is None:
-            _rl_portfolio_allocator = ReinforcementPortfolioAllocator(config)
-        return _rl_portfolio_allocator
+    if _rl_portfolio_allocator is None:
+        _rl_portfolio_allocator = ReinforcementPortfolioAllocator()
+    return _rl_portfolio_allocator
 
-def optimize_portfolio_allocation(data: pd.DataFrame) -> Dict[str, Any]:
-    """Convenient function to get optimal portfolio allocation"""
+def train_rl_allocator(market_data: pd.DataFrame, n_episodes: int = 500) -> Dict[str, Any]:
+    """Convenient function to train RL allocator"""
     allocator = get_rl_portfolio_allocator()
-    return allocator.get_optimal_allocation(data)
+    allocator.setup_environment(market_data)
+    return allocator.train_agent(n_episodes)
 
-def train_portfolio_agent(data: pd.DataFrame, episodes: int = 1000) -> Dict[str, Any]:
-    """Convenient function to train portfolio RL agent"""
+def get_optimal_allocation(current_state: Dict[str, Any]) -> AllocationAction:
+    """Convenient function to get optimal allocation"""
     allocator = get_rl_portfolio_allocator()
-    return allocator.train(data, episodes)
+    return allocator.get_optimal_allocation(current_state)
+
+def evaluate_rl_performance(market_data: pd.DataFrame) -> PortfolioPerformance:
+    """Convenient function to evaluate RL performance"""
+    allocator = get_rl_portfolio_allocator()
+    return allocator.evaluate_performance(market_data)

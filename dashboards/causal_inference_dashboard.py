@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 CryptoSmartTrader V2 - Causal Inference Dashboard
-Interactive dashboard for causal analysis and counterfactual predictions
+Interactive dashboard for causality discovery and counterfactual analysis
 """
 
 import streamlit as st
@@ -20,13 +20,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.causal_inference_engine import (
     get_causal_inference_engine,
-    discover_market_causality,
-    explain_price_movement,
-    CausalMethod,
-    InterventionType,
-    CausalInferenceConfig
+    analyze_causality,
+    test_granger_causality,
+    predict_counterfactuals,
+    discover_market_causality
 )
-from core.data_manager import get_data_manager
 
 class CausalInferenceDashboard:
     """Interactive dashboard for causal inference and analysis"""
@@ -34,9 +32,8 @@ class CausalInferenceDashboard:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         
-        # Initialize components
+        # Initialize causal inference engine
         self.causal_engine = get_causal_inference_engine()
-        self.data_manager = get_data_manager()
         
         # Page config
         st.set_page_config(
@@ -49,960 +46,817 @@ class CausalInferenceDashboard:
     def render(self):
         """Render the main dashboard"""
         st.title("🧠 Causal Inference & Counterfactual Analysis")
-        st.markdown("Understand WHY market movements happen, not just correlations")
+        st.markdown("Discover WHY market movements happen using advanced causal inference")
         
         # Sidebar controls
         self._render_sidebar()
         
         # Main content tabs
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
-            "🔍 Causal Discovery", 
-            "🎯 Movement Explanation", 
-            "🔮 Counterfactual Predictions",
-            "📊 Causal Graph Visualization",
-            "⚙️ Configuration"
+            "📈 Market Causality", 
+            "🔍 Granger Causality", 
+            "🔮 Counterfactual Analysis",
+            "💡 Price Explanations",
+            "📊 Analysis Results"
         ])
         
         with tab1:
-            self._render_causal_discovery_tab()
+            self._render_market_causality_tab()
         
         with tab2:
-            self._render_movement_explanation_tab()
+            self._render_granger_causality_tab()
         
         with tab3:
             self._render_counterfactual_tab()
         
         with tab4:
-            self._render_causal_graph_tab()
+            self._render_price_explanation_tab()
         
         with tab5:
-            self._render_configuration_tab()
+            self._render_results_tab()
     
     def _render_sidebar(self):
         """Render sidebar controls"""
         st.sidebar.header("🧠 Causal Analysis Controls")
         
-        # Data selection
-        try:
-            available_coins = self.data_manager.get_supported_coins()
-            if available_coins:
-                selected_coin = st.sidebar.selectbox(
-                    "Select Cryptocurrency",
-                    options=available_coins[:50],
-                    index=0
-                )
-                st.session_state.causal_selected_coin = selected_coin
+        # Analysis type selection
+        analysis_type = st.sidebar.selectbox(
+            "Analysis Type",
+            ["Market Causality Discovery", "Custom Causal Analysis", "Granger Testing", "Counterfactual Scenarios"]
+        )
+        
+        st.sidebar.markdown("---")
+        
+        # Data generation for demo
+        st.sidebar.subheader("📊 Demo Data")
+        
+        if st.sidebar.button("🎲 Generate Demo Market Data", use_container_width=True):
+            demo_data = self._generate_demo_data()
+            st.session_state['demo_market_data'] = demo_data
+            st.sidebar.success("Demo data generated!")
+        
+        # Quick analysis
+        st.sidebar.subheader("🚀 Quick Analysis")
+        
+        if st.sidebar.button("🔍 Discover Market Causality", use_container_width=True):
+            if 'demo_market_data' in st.session_state:
+                with st.spinner("Analyzing market causality..."):
+                    results = discover_market_causality(st.session_state['demo_market_data'])
+                    st.session_state['causality_results'] = results
+                st.sidebar.success("Analysis completed!")
             else:
-                st.sidebar.error("No coins available")
-                st.session_state.causal_selected_coin = "BTC/EUR"
-        except Exception as e:
-            st.sidebar.error(f"Error loading coins: {e}")
-            st.session_state.causal_selected_coin = "BTC/EUR"
+                st.sidebar.warning("Generate demo data first!")
         
-        # Timeframe selection
-        timeframes = ["1h", "4h", "1d", "1w"]
-        selected_timeframe = st.sidebar.selectbox(
-            "Analysis Timeframe",
-            options=timeframes,
-            index=2
-        )
-        st.session_state.causal_timeframe = selected_timeframe
+        if st.sidebar.button("📈 Test Granger Causality", use_container_width=True):
+            if 'demo_market_data' in st.session_state:
+                with st.spinner("Testing Granger causality..."):
+                    data = st.session_state['demo_market_data']
+                    variables = [col for col in data.columns if 'price' in col.lower() or 'volume' in col.lower()][:4]
+                    results = test_granger_causality(data, variables)
+                    st.session_state['granger_results'] = results
+                st.sidebar.success("Granger analysis completed!")
+            else:
+                st.sidebar.warning("Generate demo data first!")
         
-        # Analysis period
-        periods = {
-            "Last Week": timedelta(weeks=1),
-            "Last Month": timedelta(days=30),
-            "Last 3 Months": timedelta(days=90),
-            "Last 6 Months": timedelta(days=180)
-        }
+        if st.sidebar.button("🔮 Generate Counterfactuals", use_container_width=True):
+            if 'demo_market_data' in st.session_state:
+                with st.spinner("Generating counterfactual scenarios..."):
+                    data = st.session_state['demo_market_data']
+                    price_cols = [col for col in data.columns if 'price' in col.lower()]
+                    if price_cols:
+                        outcome = price_cols[0]
+                        interventions = [col for col in data.columns if col != outcome][:3]
+                        results = predict_counterfactuals(data, outcome, interventions)
+                        st.session_state['counterfactual_results'] = results
+                st.sidebar.success("Counterfactual analysis completed!")
+            else:
+                st.sidebar.warning("Generate demo data first!")
         
-        selected_period = st.sidebar.selectbox(
-            "Analysis Period",
-            options=list(periods.keys()),
-            index=2
-        )
-        st.session_state.causal_period = periods[selected_period]
-        
-        # Causal methods
-        st.sidebar.subheader("🔧 Analysis Methods")
-        
-        available_methods = [
-            "Double Machine Learning",
-            "Granger Causality",
-            "Difference-in-Differences"
-        ]
-        
-        selected_methods = st.sidebar.multiselect(
-            "Causal Methods",
-            options=available_methods,
-            default=available_methods
-        )
-        st.session_state.causal_methods = selected_methods
-        
-        # Statistical settings
-        st.sidebar.subheader("📊 Statistical Settings")
+        # Settings
+        st.sidebar.subheader("⚙️ Analysis Settings")
         
         significance_level = st.sidebar.slider(
             "Significance Level",
             min_value=0.01,
             max_value=0.10,
             value=0.05,
-            step=0.01
+            step=0.01,
+            format="%.2f"
         )
-        st.session_state.significance_level = significance_level
         
-        min_effect_size = st.sidebar.slider(
-            "Minimum Effect Size",
-            min_value=0.001,
-            max_value=0.05,
-            value=0.01,
-            step=0.001
+        confidence_threshold = st.sidebar.slider(
+            "Confidence Threshold",
+            min_value=0.5,
+            max_value=0.95,
+            value=0.7,
+            step=0.05,
+            format="%.2f"
         )
-        st.session_state.min_effect_size = min_effect_size
-        
-        # Action buttons
-        st.sidebar.subheader("🚀 Actions")
-        
-        if st.sidebar.button("🔍 Discover Causal Effects", use_container_width=True):
-            self._run_causal_discovery()
-        
-        if st.sidebar.button("📈 Explain Recent Movement", use_container_width=True):
-            self._explain_recent_movement()
-        
-        if st.sidebar.button("🔄 Refresh Analysis", use_container_width=True):
-            st.rerun()
     
-    def _render_causal_discovery_tab(self):
-        """Render causal discovery tab"""
-        st.header("🔍 Causal Discovery")
+    def _render_market_causality_tab(self):
+        """Render market causality discovery tab"""
+        st.header("📈 Market Causality Discovery")
+        st.markdown("Discover causal relationships in cryptocurrency markets using Double Machine Learning")
         
-        col1, col2 = st.columns([2, 1])
+        # Check if analysis results are available
+        if 'causality_results' not in st.session_state:
+            st.info("🔍 Run 'Discover Market Causality' from the sidebar to see results")
+            
+            # Show what the analysis would discover
+            st.subheader("🎯 What We Can Discover")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                **🔍 Causal Effects:**
+                - Does volume cause price changes?
+                - How does sentiment affect market movements?
+                - What drives whale activity?
+                - Cross-coin causal relationships
+                """)
+            
+            with col2:
+                st.markdown("""
+                **📊 Methods Used:**
+                - Double Machine Learning (DML)
+                - Causal inference with confounders
+                - Statistical significance testing
+                - Effect size estimation
+                """)
+            
+            return
+        
+        # Display results
+        results = st.session_state['causality_results']
+        
+        # Summary metrics
+        summary = results.get('summary', {})
+        
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            # Load market data
-            data = self._load_market_data()
-            
-            if data is not None and len(data) > 100:
-                st.subheader("📊 Market Data Analysis")
-                
-                # Data summary
-                metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-                
-                with metric_col1:
-                    st.metric("Data Points", len(data))
-                
-                with metric_col2:
-                    st.metric("Features", len(data.columns))
-                
-                with metric_col3:
-                    latest_price = data['close'].iloc[-1] if 'close' in data.columns else 0
-                    st.metric("Latest Price", f"€{latest_price:.4f}")
-                
-                with metric_col4:
-                    volatility = data['close'].pct_change().std() * 100 if 'close' in data.columns else 0
-                    st.metric("Volatility", f"{volatility:.2f}%")
-                
-                # Feature engineering for causal analysis
-                enhanced_data = self._engineer_causal_features(data)
-                
-                if st.button("🚀 Run Causal Discovery", use_container_width=True):
-                    with st.spinner("Discovering causal relationships..."):
-                        try:
-                            # Define treatment and outcome variables
-                            treatment_vars = [
-                                'volume_spike', 'price_momentum', 'volatility_change',
-                                'trend_change', 'support_resistance_break'
-                            ]
-                            
-                            outcome_vars = [
-                                'price_change', 'future_return_1h', 'future_return_24h',
-                                'volatility_future', 'volume_future'
-                            ]
-                            
-                            # Add these variables to enhanced data
-                            enhanced_data = self._add_treatment_outcome_vars(enhanced_data, treatment_vars, outcome_vars)
-                            
-                            # Run causal discovery
-                            causal_effects = self.causal_engine.discover_causal_effects(
-                                enhanced_data, treatment_vars, outcome_vars
-                            )
-                            
-                            if causal_effects:
-                                st.success(f"✅ Discovered {len(causal_effects)} significant causal effects!")
-                                
-                                # Display results
-                                self._display_causal_effects(causal_effects)
-                                
-                            else:
-                                st.warning("No significant causal effects discovered with current settings")
-                        
-                        except Exception as e:
-                            st.error(f"Causal discovery failed: {e}")
-                            self.logger.error(f"Causal discovery error: {e}")
-            
-            else:
-                st.warning("Insufficient data for causal analysis. Need at least 100 data points.")
+            st.metric("Total Effects", summary.get('total_causal_effects', 0))
         
         with col2:
-            # Causal discovery status
-            st.subheader("📈 Discovery Status")
-            
-            summary = self.causal_engine.get_causal_summary()
-            
-            st.metric("Effects Discovered", summary.get('total_effects_discovered', 0))
-            
-            # Method breakdown
-            st.subheader("🔧 Methods Used")
-            methods_data = summary.get('effects_by_method', {})
-            
-            for method, count in methods_data.items():
-                if count > 0:
-                    st.write(f"**{method.replace('_', ' ').title()}:** {count}")
-            
-            # Strongest effects
-            strongest_effects = summary.get('strongest_effects', [])
-            if strongest_effects:
-                st.subheader("💪 Strongest Effects")
-                
-                for i, effect in enumerate(strongest_effects[:5]):
-                    with st.expander(f"Effect {i+1}: {effect['treatment']} → {effect['outcome']}"):
-                        st.write(f"**Effect Size:** {effect['effect_size']:.4f}")
-                        st.write(f"**P-value:** {effect['p_value']:.4f}")
-                        st.write(f"**Method:** {effect['method'].replace('_', ' ').title()}")
-    
-    def _render_movement_explanation_tab(self):
-        """Render movement explanation tab"""
-        st.header("🎯 Price Movement Explanation")
+            st.metric("Significant Effects", summary.get('significant_effects', 0))
         
-        # Load data
-        data = self._load_market_data()
+        with col3:
+            st.metric("Granger Relations", summary.get('significant_granger', 0))
         
-        if data is not None and len(data) > 50:
-            # Recent price movement analysis
-            st.subheader("📈 Recent Price Analysis")
+        with col4:
+            st.metric("Counterfactuals", summary.get('high_confidence_scenarios', 0))
+        
+        # Causal effects visualization
+        st.subheader("🎯 Discovered Causal Effects")
+        
+        causal_effects = results.get('causal_effects', [])
+        
+        if causal_effects:
+            # Create causal effects dataframe
+            effects_data = []
+            for effect in causal_effects:
+                effects_data.append({
+                    'Treatment': effect['treatment'],
+                    'Outcome': effect['outcome'],
+                    'Effect Size': effect['effect_size'],
+                    'P-Value': effect['p_value'],
+                    'Significant': '✅' if effect['significance'] else '❌',
+                    'Method': effect['method'],
+                    'Sample Size': effect['sample_size']
+                })
             
-            recent_data = data.tail(20)
+            effects_df = pd.DataFrame(effects_data)
+            st.dataframe(effects_df, use_container_width=True)
             
-            if 'close' in recent_data.columns:
-                # Price chart
-                fig = go.Figure()
+            # Visualization of effect sizes
+            fig = go.Figure()
+            
+            significant_effects = [e for e in causal_effects if e['significance']]
+            
+            if significant_effects:
+                treatments = [e['treatment'] for e in significant_effects]
+                outcomes = [e['outcome'] for e in significant_effects]
+                effect_sizes = [e['effect_size'] for e in significant_effects]
                 
-                fig.add_trace(go.Scatter(
-                    x=recent_data.index,
-                    y=recent_data['close'],
-                    mode='lines+markers',
-                    name='Price',
-                    line=dict(color='blue', width=2)
+                fig.add_trace(go.Bar(
+                    x=[f"{t} → {o}" for t, o in zip(treatments, outcomes)],
+                    y=effect_sizes,
+                    marker_color=['green' if e > 0 else 'red' for e in effect_sizes],
+                    text=[f"{e:.4f}" for e in effect_sizes],
+                    textposition='auto'
                 ))
                 
                 fig.update_layout(
-                    title="Recent Price Movement",
-                    xaxis_title="Time",
-                    yaxis_title="Price (EUR)",
+                    title="Significant Causal Effects",
+                    xaxis_title="Treatment → Outcome",
+                    yaxis_title="Effect Size",
                     height=400
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
-                
-                # Calculate price change
-                start_price = recent_data['close'].iloc[0]
-                end_price = recent_data['close'].iloc[-1]
-                price_change = (end_price - start_price) / start_price * 100
-                
-                st.metric("Price Change", f"{price_change:.2f}%")
-            
-            # Movement explanation
-            if st.button("🔍 Explain Movement", use_container_width=True):
-                with st.spinner("Analyzing causal factors..."):
-                    try:
-                        # Engineer features for explanation
-                        enhanced_data = self._engineer_causal_features(data)
-                        enhanced_data = self._add_treatment_outcome_vars(enhanced_data, [], ['price_change'])
-                        
-                        # Get explanation
-                        explanation = self.causal_engine.explain_movement(enhanced_data, 'price_change')
-                        
-                        if explanation['confidence'] > 0.1:
-                            st.success(f"✅ Movement explained with {explanation['confidence']:.1%} confidence")
-                            
-                            # Primary causes
-                            primary_causes = explanation.get('primary_causes', [])
-                            if primary_causes:
-                                st.subheader("🎯 Primary Causes")
-                                
-                                for cause in primary_causes:
-                                    with st.expander(f"📊 {cause['cause'].replace('_', ' ').title()}"):
-                                        col1, col2 = st.columns(2)
-                                        
-                                        with col1:
-                                            st.write(f"**Effect Size:** {cause['effect_size']:.4f}")
-                                            st.write(f"**Contribution:** {cause['contribution_ratio']:.1%}")
-                                            st.write(f"**Confidence:** {cause['confidence']:.1%}")
-                                        
-                                        with col2:
-                                            st.write(f"**Method:** {cause['method'].replace('_', ' ').title()}")
-                                            st.write(f"**Change:** {cause['treatment_change']:.4f}")
-                                            st.write(f"**Lag:** {cause.get('lag', 0)} periods")
-                                        
-                                        st.write(f"**Mechanism:** {cause.get('mechanism', 'Unknown')}")
-                            
-                            # Contributing factors
-                            contributing_factors = explanation.get('contributing_factors', [])
-                            if contributing_factors:
-                                st.subheader("📈 Contributing Factors")
-                                
-                                factors_df = pd.DataFrame([
-                                    {
-                                        'Factor': factor['cause'].replace('_', ' ').title(),
-                                        'Contribution': f"{factor['contribution_ratio']:.1%}",
-                                        'Confidence': f"{factor['confidence']:.1%}",
-                                        'Effect Size': f"{factor['effect_size']:.4f}"
-                                    }
-                                    for factor in contributing_factors
-                                ])
-                                
-                                st.dataframe(factors_df, use_container_width=True)
-                        
-                        else:
-                            st.warning("Unable to explain movement with sufficient confidence")
-                            st.info("This could indicate the movement was due to random factors or external events not captured in the data")
-                    
-                    except Exception as e:
-                        st.error(f"Movement explanation failed: {e}")
-        
-        else:
-            st.warning("Insufficient data for movement explanation")
-    
-    def _render_counterfactual_tab(self):
-        """Render counterfactual predictions tab"""
-        st.header("🔮 Counterfactual Predictions")
-        st.markdown("Predict what would happen under different scenarios")
-        
-        # Load data
-        data = self._load_market_data()
-        
-        if data is not None and len(data) > 50:
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.subheader("🎛️ Intervention Settings")
-                
-                # Select intervention variable
-                intervention_vars = [
-                    'volume_spike', 'price_momentum', 'volatility_change',
-                    'trend_change', 'support_resistance_break'
-                ]
-                
-                selected_intervention = st.selectbox(
-                    "Intervention Variable",
-                    options=intervention_vars,
-                    format_func=lambda x: x.replace('_', ' ').title()
-                )
-                
-                # Select outcome variable
-                outcome_vars = [
-                    'price_change', 'future_return_1h', 'future_return_24h'
-                ]
-                
-                selected_outcome = st.selectbox(
-                    "Outcome Variable",
-                    options=outcome_vars,
-                    format_func=lambda x: x.replace('_', ' ').title()
-                )
-                
-                # Intervention value
-                intervention_value = st.slider(
-                    "Intervention Value",
-                    min_value=-2.0,
-                    max_value=2.0,
-                    value=0.0,
-                    step=0.1
-                )
-                
-                if st.button("🔮 Predict Counterfactual", use_container_width=True):
-                    with st.spinner("Calculating counterfactual outcome..."):
-                        try:
-                            # Engineer features
-                            enhanced_data = self._engineer_causal_features(data)
-                            enhanced_data = self._add_treatment_outcome_vars(enhanced_data, [selected_intervention], [selected_outcome])
-                            
-                            # Predict counterfactual
-                            counterfactual = self.causal_engine.predict_counterfactual(
-                                enhanced_data, selected_intervention, selected_outcome, intervention_value
-                            )
-                            
-                            if counterfactual is not None:
-                                # Current value
-                                current_value = enhanced_data[selected_outcome].iloc[-1] if selected_outcome in enhanced_data.columns else 0
-                                
-                                # Display results
-                                st.success("✅ Counterfactual prediction completed")
-                                
-                                st.metric(
-                                    "Predicted Outcome",
-                                    f"{counterfactual:.4f}",
-                                    delta=f"{counterfactual - current_value:.4f}"
-                                )
-                                
-                                # Store results for visualization
-                                st.session_state.counterfactual_result = {
-                                    'intervention': selected_intervention,
-                                    'outcome': selected_outcome,
-                                    'intervention_value': intervention_value,
-                                    'current_value': current_value,
-                                    'predicted_value': counterfactual,
-                                    'change': counterfactual - current_value
-                                }
-                            
-                            else:
-                                st.warning("No causal relationship found for this intervention")
-                        
-                        except Exception as e:
-                            st.error(f"Counterfactual prediction failed: {e}")
-            
-            with col2:
-                st.subheader("📊 Counterfactual Results")
-                
-                # Display stored results
-                if 'counterfactual_result' in st.session_state:
-                    result = st.session_state.counterfactual_result
-                    
-                    # Results table
-                    results_df = pd.DataFrame([
-                        {'Metric': 'Current Value', 'Value': f"{result['current_value']:.4f}"},
-                        {'Metric': 'Predicted Value', 'Value': f"{result['predicted_value']:.4f}"},
-                        {'Metric': 'Change', 'Value': f"{result['change']:.4f}"},
-                        {'Metric': 'Percentage Change', 'Value': f"{(result['change'] / result['current_value'] * 100):.2f}%" if result['current_value'] != 0 else "N/A"}
-                    ])
-                    
-                    st.dataframe(results_df, use_container_width=True)
-                    
-                    # Visualization
-                    fig = go.Figure()
-                    
-                    fig.add_trace(go.Bar(
-                        x=['Current', 'Counterfactual'],
-                        y=[result['current_value'], result['predicted_value']],
-                        marker_color=['blue', 'orange'],
-                        text=[f"{result['current_value']:.4f}", f"{result['predicted_value']:.4f}"],
-                        textposition='auto'
-                    ))
-                    
-                    fig.update_layout(
-                        title=f"Counterfactual: {result['intervention'].replace('_', ' ').title()} → {result['outcome'].replace('_', ' ').title()}",
-                        yaxis_title=result['outcome'].replace('_', ' ').title(),
-                        height=400
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                else:
-                    st.info("Run a counterfactual prediction to see results here")
-        
-        else:
-            st.warning("Insufficient data for counterfactual analysis")
-    
-    def _render_causal_graph_tab(self):
-        """Render causal graph visualization tab"""
-        st.header("📊 Causal Graph Visualization")
-        
-        summary = self.causal_engine.get_causal_summary()
-        
-        if summary.get('total_effects_discovered', 0) > 0:
-            st.subheader("🌐 Causal Network")
-            
-            # Get causal graph
-            causal_graph = self.causal_engine.causal_graph
-            
-            if causal_graph and len(causal_graph.edges) > 0:
-                # Create network visualization
-                self._create_causal_network_plot(causal_graph)
-                
-                # Graph statistics
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.metric("Nodes", len(causal_graph.nodes))
-                
-                with col2:
-                    st.metric("Causal Relationships", len(causal_graph.edges))
-                
-                with col3:
-                    # Calculate network density
-                    max_edges = len(causal_graph.nodes) * (len(causal_graph.nodes) - 1)
-                    density = len(causal_graph.edges) / max_edges if max_edges > 0 else 0
-                    st.metric("Network Density", f"{density:.2%}")
-                
-                # Edge details
-                st.subheader("🔗 Causal Relationships")
-                
-                edges_df = pd.DataFrame([
-                    {
-                        'From': edge[0].replace('_', ' ').title(),
-                        'To': edge[1].replace('_', ' ').title(),
-                        'Strength': f"{edge[2]:.4f}",
-                        'Direction': '→'
-                    }
-                    for edge in causal_graph.edges
-                ])
-                
-                st.dataframe(edges_df, use_container_width=True)
-            
             else:
-                st.info("No causal graph available. Run causal discovery first.")
-        
+                st.info("No significant causal effects discovered in this analysis.")
         else:
-            st.info("No causal effects discovered yet. Use the Causal Discovery tab to find relationships.")
+            st.info("No causal effects analyzed yet.")
     
-    def _render_configuration_tab(self):
-        """Render configuration tab"""
-        st.header("⚙️ Causal Inference Configuration")
+    def _render_granger_causality_tab(self):
+        """Render Granger causality analysis tab"""
+        st.header("🔍 Granger Causality Analysis")
+        st.markdown("Test temporal causal relationships between time series")
         
-        # Current configuration
-        config = self.causal_engine.config
+        # Check if results are available
+        if 'granger_results' not in st.session_state:
+            st.info("🔍 Run 'Test Granger Causality' from the sidebar to see results")
+            
+            # Explain Granger causality
+            st.subheader("📚 What is Granger Causality?")
+            
+            st.markdown("""
+            **Granger Causality** tests whether one time series can predict another:
+            
+            - **X Granger-causes Y** if past values of X improve prediction of Y
+            - Based on temporal precedence and predictive power
+            - Tests statistical causality, not true causation
+            - Useful for understanding market dynamics and lead-lag relationships
+            
+            **Applications in Crypto Trading:**
+            - Does Bitcoin price lead altcoin prices?
+            - Can volume predict price movements?
+            - Do sentiment indicators precede market moves?
+            """)
+            
+            return
         
-        col1, col2 = st.columns(2)
+        # Display results
+        results = st.session_state['granger_results']
+        
+        if not results:
+            st.warning("No Granger causality results available.")
+            return
+        
+        # Summary statistics
+        total_tests = len(results)
+        significant_tests = len([r for r in results if r.is_causal])
+        bidirectional = len([r for r in results if r.direction == 'bidirectional'])
+        
+        col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.subheader("📊 Statistical Settings")
-            
-            new_significance = st.slider(
-                "Significance Level",
-                min_value=0.01,
-                max_value=0.10,
-                value=config.significance_level,
-                step=0.01
-            )
-            
-            new_min_effect = st.slider(
-                "Minimum Effect Size",
-                min_value=0.001,
-                max_value=0.05,
-                value=config.min_effect_size,
-                step=0.001
-            )
-            
-            new_min_evidence = st.slider(
-                "Minimum Evidence Strength",
-                min_value=0.1,
-                max_value=1.0,
-                value=config.min_evidence_strength,
-                step=0.1
-            )
-            
-            st.subheader("📈 Data Requirements")
-            
-            new_min_samples = st.number_input(
-                "Minimum Samples",
-                min_value=50,
-                max_value=1000,
-                value=config.min_samples,
-                step=50
-            )
-            
-            new_lookback = st.number_input(
-                "Lookback Periods",
-                min_value=20,
-                max_value=500,
-                value=config.lookback_periods,
-                step=10
-            )
+            st.metric("Total Tests", total_tests)
         
         with col2:
-            st.subheader("🔧 Method Settings")
-            
-            # Available methods
-            all_methods = [method.value for method in CausalMethod]
-            current_methods = [method.value for method in config.enabled_methods]
-            
-            new_methods = st.multiselect(
-                "Enabled Methods",
-                options=all_methods,
-                default=current_methods,
-                format_func=lambda x: x.replace('_', ' ').title()
-            )
-            
-            st.subheader("💾 Model Settings")
-            
-            new_save_models = st.checkbox(
-                "Save Models",
-                value=config.save_models
-            )
-            
-            new_n_folds = st.slider(
-                "Cross-Validation Folds",
-                min_value=3,
-                max_value=10,
-                value=config.n_folds
-            )
+            st.metric("Significant", significant_tests, delta=f"{significant_tests/total_tests:.1%}" if total_tests > 0 else "0%")
         
-        # Save configuration
-        if st.button("💾 Save Configuration", type="primary"):
-            try:
-                # Update configuration
-                new_config = CausalInferenceConfig(
-                    enabled_methods=[CausalMethod(method) for method in new_methods],
-                    min_samples=new_min_samples,
-                    lookback_periods=new_lookback,
-                    significance_level=new_significance,
-                    min_effect_size=new_min_effect,
-                    min_evidence_strength=new_min_evidence,
-                    save_models=new_save_models,
-                    n_folds=new_n_folds
-                )
-                
-                # Reinitialize engine with new config
-                self.causal_engine.config = new_config
-                
-                st.success("✅ Configuration updated successfully!")
-                st.rerun()
-            
-            except Exception as e:
-                st.error(f"Configuration update failed: {e}")
+        with col3:
+            st.metric("Bidirectional", bidirectional)
         
-        # Current status
-        st.subheader("📊 Current Status")
+        # Results table
+        st.subheader("📋 Granger Causality Results")
         
-        status_df = pd.DataFrame([
-            {'Setting': 'Significance Level', 'Value': f"{config.significance_level}"},
-            {'Setting': 'Min Effect Size', 'Value': f"{config.min_effect_size}"},
-            {'Setting': 'Min Evidence Strength', 'Value': f"{config.min_evidence_strength}"},
-            {'Setting': 'Min Samples', 'Value': f"{config.min_samples}"},
-            {'Setting': 'Lookback Periods', 'Value': f"{config.lookback_periods}"},
-            {'Setting': 'Enabled Methods', 'Value': f"{len(config.enabled_methods)}"},
-            {'Setting': 'Save Models', 'Value': f"{config.save_models}"}
-        ])
+        # Convert results to dataframe
+        granger_data = []
+        for result in results:
+            granger_data.append({
+                'Cause': result.cause,
+                'Effect': result.effect,
+                'F-Statistic': f"{result.f_statistic:.4f}",
+                'P-Value': f"{result.p_value:.4f}",
+                'Is Causal': '✅' if result.is_causal else '❌',
+                'Direction': result.direction.title(),
+                'Optimal Lag': result.lag_order,
+                'AIC Score': f"{result.aic_score:.2f}"
+            })
         
-        st.dataframe(status_df, use_container_width=True)
-    
-    def _load_market_data(self) -> pd.DataFrame:
-        """Load market data for analysis"""
-        try:
-            coin = st.session_state.get('causal_selected_coin', 'BTC/EUR')
-            timeframe = st.session_state.get('causal_timeframe', '1d')
-            period = st.session_state.get('causal_period', timedelta(days=90))
-            
-            end_time = datetime.now()
-            start_time = end_time - period
-            
-            data = self.data_manager.get_historical_data(coin, timeframe, start_time, end_time)
-            return data
-            
-        except Exception as e:
-            self.logger.error(f"Error loading market data: {e}")
-            return None
-    
-    def _engineer_causal_features(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Engineer features for causal analysis"""
-        try:
-            enhanced_data = data.copy()
-            
-            if 'close' in data.columns:
-                # Price-based features
-                enhanced_data['price_change'] = data['close'].pct_change()
-                enhanced_data['price_momentum'] = data['close'].rolling(5).mean() / data['close'].rolling(20).mean() - 1
-                enhanced_data['volatility'] = enhanced_data['price_change'].rolling(10).std()
-                enhanced_data['volatility_change'] = enhanced_data['volatility'].pct_change()
-                
-                # Technical indicators
-                enhanced_data['rsi'] = self._calculate_rsi(data['close'])
-                enhanced_data['macd'] = self._calculate_macd(data['close'])
-                
-                # Support/resistance
-                enhanced_data['support_resistance_break'] = self._detect_breakouts(data['close'])
-                
-                # Trend detection
-                enhanced_data['trend_change'] = self._detect_trend_changes(data['close'])
-            
-            if 'volume' in data.columns:
-                # Volume features
-                enhanced_data['volume_change'] = data['volume'].pct_change()
-                enhanced_data['volume_spike'] = (data['volume'] / data['volume'].rolling(20).mean() - 1).clip(-1, 3)
-                enhanced_data['volume_trend'] = data['volume'].rolling(10).mean() / data['volume'].rolling(30).mean() - 1
-            
-            # Fill NaN values
-            enhanced_data = enhanced_data.fillna(0)
-            
-            return enhanced_data
-            
-        except Exception as e:
-            self.logger.error(f"Feature engineering failed: {e}")
-            return data
-    
-    def _add_treatment_outcome_vars(self, data: pd.DataFrame, treatments: List[str], outcomes: List[str]) -> pd.DataFrame:
-        """Add treatment and outcome variables to data"""
-        try:
-            enhanced_data = data.copy()
-            
-            # Add future returns as outcomes
-            if 'close' in data.columns:
-                enhanced_data['future_return_1h'] = data['close'].shift(-1) / data['close'] - 1
-                enhanced_data['future_return_24h'] = data['close'].shift(-24) / data['close'] - 1
-                enhanced_data['volatility_future'] = enhanced_data['price_change'].shift(-5).rolling(5).std()
-            
-            if 'volume' in data.columns:
-                enhanced_data['volume_future'] = data['volume'].shift(-1)
-            
-            # Ensure all required variables exist
-            for var in treatments + outcomes:
-                if var not in enhanced_data.columns:
-                    enhanced_data[var] = 0.0
-            
-            return enhanced_data.fillna(0)
-            
-        except Exception as e:
-            self.logger.error(f"Treatment/outcome variable creation failed: {e}")
-            return data
-    
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
-        """Calculate RSI indicator"""
-        try:
-            delta = prices.diff()
-            gain = delta.where(delta > 0, 0).rolling(window=period).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-            rs = gain / (loss + 1e-8)
-            return 100 - (100 / (1 + rs))
-        except:
-            return pd.Series([50] * len(prices), index=prices.index)
-    
-    def _calculate_macd(self, prices: pd.Series) -> pd.Series:
-        """Calculate MACD indicator"""
-        try:
-            ema12 = prices.ewm(span=12).mean()
-            ema26 = prices.ewm(span=26).mean()
-            return ema12 - ema26
-        except:
-            return pd.Series([0] * len(prices), index=prices.index)
-    
-    def _detect_breakouts(self, prices: pd.Series) -> pd.Series:
-        """Detect support/resistance breakouts"""
-        try:
-            # Simple breakout detection
-            rolling_max = prices.rolling(20).max()
-            rolling_min = prices.rolling(20).min()
-            
-            upper_break = (prices > rolling_max.shift(1)).astype(int)
-            lower_break = (prices < rolling_min.shift(1)).astype(int) * -1
-            
-            return upper_break + lower_break
-        except:
-            return pd.Series([0] * len(prices), index=prices.index)
-    
-    def _detect_trend_changes(self, prices: pd.Series) -> pd.Series:
-        """Detect trend changes"""
-        try:
-            # Simple trend change detection using moving averages
-            short_ma = prices.rolling(5).mean()
-            long_ma = prices.rolling(20).mean()
-            
-            trend_signal = (short_ma > long_ma).astype(int)
-            trend_change = trend_signal.diff().abs()
-            
-            return trend_change.fillna(0)
-        except:
-            return pd.Series([0] * len(prices), index=prices.index)
-    
-    def _display_causal_effects(self, effects: List):
-        """Display discovered causal effects"""
-        try:
-            st.subheader("🔍 Discovered Causal Effects")
-            
-            for i, effect in enumerate(effects[:10]):  # Show top 10
-                with st.expander(f"Effect {i+1}: {effect.treatment} → {effect.outcome}"):
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.write(f"**Effect Size:** {effect.effect_size:.4f}")
-                        st.write(f"**P-value:** {effect.p_value:.4f}")
-                        st.write(f"**Evidence Strength:** {effect.evidence_strength:.2%}")
-                    
-                    with col2:
-                        st.write(f"**Method:** {effect.method.value.replace('_', ' ').title()}")
-                        st.write(f"**Confidence Interval:** [{effect.confidence_interval[0]:.4f}, {effect.confidence_interval[1]:.4f}]")
-                        st.write(f"**Temporal Lag:** {effect.temporal_lag} periods")
-                    
-                    if effect.mechanism:
-                        st.write(f"**Mechanism:** {effect.mechanism}")
-                    
-                    # Visualize effect
-                    self._visualize_causal_effect(effect)
+        granger_df = pd.DataFrame(granger_data)
+        st.dataframe(granger_df, use_container_width=True)
         
-        except Exception as e:
-            st.error(f"Effect display failed: {e}")
+        # Visualization
+        st.subheader("🕸️ Causality Network")
+        
+        # Create network visualization
+        significant_results = [r for r in results if r.is_causal]
+        
+        if significant_results:
+            self._plot_causality_network(significant_results)
+        else:
+            st.info("No significant Granger causal relationships found.")
+        
+        # Statistical distribution
+        st.subheader("📊 Statistical Distribution")
+        
+        p_values = [r.p_value for r in results]
+        f_statistics = [r.f_statistic for r in results]
+        
+        fig = make_subplots(rows=1, cols=2, subplot_titles=["P-Value Distribution", "F-Statistic Distribution"])
+        
+        fig.add_trace(
+            go.Histogram(x=p_values, nbinsx=20, name="P-Values"),
+            row=1, col=1
+        )
+        
+        fig.add_trace(
+            go.Histogram(x=f_statistics, nbinsx=20, name="F-Statistics"),
+            row=1, col=2
+        )
+        
+        fig.add_vline(x=0.05, line_dash="dash", line_color="red", annotation_text="α=0.05", row=1, col=1)
+        
+        fig.update_layout(height=400, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
     
-    def _visualize_causal_effect(self, effect):
-        """Visualize individual causal effect"""
-        try:
-            # Create effect size visualization
-            fig = go.Figure()
+    def _render_counterfactual_tab(self):
+        """Render counterfactual analysis tab"""
+        st.header("🔮 Counterfactual Analysis")
+        st.markdown("Explore 'what-if' scenarios and intervention effects")
+        
+        # Check if results are available
+        if 'counterfactual_results' not in st.session_state:
+            st.info("🔍 Run 'Generate Counterfactuals' from the sidebar to see results")
             
-            # Effect size with confidence interval
+            # Explain counterfactual analysis
+            st.subheader("🤔 What are Counterfactuals?")
+            
+            st.markdown("""
+            **Counterfactual Analysis** answers "What if?" questions:
+            
+            - **What if** volume increased by 50%?
+            - **What if** sentiment was more positive?
+            - **What if** whale activity decreased?
+            
+            **Key Benefits:**
+            - Understand intervention effects before acting
+            - Quantify potential outcomes of trading decisions
+            - Risk assessment for different scenarios
+            - Strategic planning and optimization
+            """)
+            
+            # Demo scenario
+            st.subheader("💡 Example Scenarios")
+            
+            scenarios = [
+                "Volume increases by 100% → Price impact?",
+                "Sentiment score improves to 0.8 → Market response?",
+                "Whale activity drops by 50% → Volatility change?",
+                "RSI reaches oversold (30) → Recovery probability?"
+            ]
+            
+            for scenario in scenarios:
+                st.info(f"🔮 {scenario}")
+            
+            return
+        
+        # Display results
+        results = st.session_state['counterfactual_results']
+        
+        if not results:
+            st.warning("No counterfactual results available.")
+            return
+        
+        # Summary metrics
+        total_scenarios = len(results)
+        high_confidence = len([r for r in results if r.confidence > 0.7])
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Total Scenarios", total_scenarios)
+        
+        with col2:
+            st.metric("High Confidence", high_confidence, delta=f"{high_confidence/total_scenarios:.1%}" if total_scenarios > 0 else "0%")
+        
+        with col3:
+            avg_confidence = np.mean([r.confidence for r in results])
+            st.metric("Avg Confidence", f"{avg_confidence:.1%}")
+        
+        # Scenarios table
+        st.subheader("📋 Counterfactual Scenarios")
+        
+        # Convert results to dataframe
+        cf_data = []
+        for result in results:
+            cf_data.append({
+                'Scenario ID': result.scenario_id,
+                'Treatment': result.treatment_variable,
+                'Original Value': f"{result.original_value:.4f}",
+                'Counterfactual Value': f"{result.counterfactual_value:.4f}",
+                'Predicted Outcome': f"{result.predicted_outcome:.4f}",
+                'Confidence': f"{result.confidence:.1%}",
+                'Explanation': result.explanation[:80] + "..." if len(result.explanation) > 80 else result.explanation
+            })
+        
+        cf_df = pd.DataFrame(cf_data)
+        st.dataframe(cf_df, use_container_width=True)
+        
+        # Visualization
+        st.subheader("📊 Counterfactual Effects")
+        
+        # Group by treatment variable
+        treatment_effects = {}
+        for result in results:
+            if result.treatment_variable not in treatment_effects:
+                treatment_effects[result.treatment_variable] = []
+            
+            effect = result.predicted_outcome - result.original_value
+            treatment_effects[result.treatment_variable].append({
+                'effect': effect,
+                'confidence': result.confidence,
+                'cf_value': result.counterfactual_value,
+                'original': result.original_value
+            })
+        
+        # Plot effects by treatment
+        fig = go.Figure()
+        
+        for treatment, effects in treatment_effects.items():
+            cf_values = [e['cf_value'] for e in effects]
+            effect_sizes = [e['effect'] for e in effects]
+            confidences = [e['confidence'] for e in effects]
+            
             fig.add_trace(go.Scatter(
-                x=[effect.effect_size],
-                y=[effect.treatment],
+                x=cf_values,
+                y=effect_sizes,
                 mode='markers',
-                marker=dict(size=15, color='blue'),
-                name='Effect Size',
-                error_x=dict(
-                    type='data',
-                    array=[effect.confidence_interval[1] - effect.effect_size],
-                    arrayminus=[effect.effect_size - effect.confidence_interval[0]]
-                )
-            ))
-            
-            # Add zero line
-            fig.add_vline(x=0, line_dash="dash", line_color="red", annotation_text="No Effect")
-            
-            fig.update_layout(
-                title=f"Causal Effect: {effect.treatment} → {effect.outcome}",
-                xaxis_title="Effect Size",
-                yaxis_title="Treatment",
-                height=300
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-        except Exception as e:
-            self.logger.error(f"Effect visualization failed: {e}")
-    
-    def _create_causal_network_plot(self, causal_graph):
-        """Create causal network visualization"""
-        try:
-            # Create network plot using plotly
-            import networkx as nx
-            
-            # Create NetworkX graph
-            G = nx.DiGraph()
-            
-            # Add nodes
-            for node in causal_graph.nodes:
-                G.add_node(node)
-            
-            # Add edges
-            for edge in causal_graph.edges:
-                G.add_edge(edge[0], edge[1], weight=abs(edge[2]))
-            
-            # Calculate layout
-            pos = nx.spring_layout(G, k=2, iterations=50)
-            
-            # Extract coordinates
-            node_x = [pos[node][0] for node in G.nodes()]
-            node_y = [pos[node][1] for node in G.nodes()]
-            
-            # Create edge traces
-            edge_x = []
-            edge_y = []
-            
-            for edge in G.edges():
-                x0, y0 = pos[edge[0]]
-                x1, y1 = pos[edge[1]]
-                edge_x.extend([x0, x1, None])
-                edge_y.extend([y0, y1, None])
-            
-            # Create plot
-            fig = go.Figure()
-            
-            # Add edges
-            fig.add_trace(go.Scatter(
-                x=edge_x, y=edge_y,
-                line=dict(width=2, color='lightgray'),
-                hoverinfo='none',
-                mode='lines',
-                name='Causal Relationships'
-            ))
-            
-            # Add nodes
-            fig.add_trace(go.Scatter(
-                x=node_x, y=node_y,
-                mode='markers+text',
-                hoverinfo='text',
-                text=[node.replace('_', ' ').title() for node in G.nodes()],
-                textposition="middle center",
+                name=treatment,
                 marker=dict(
-                    size=20,
-                    color='lightblue',
-                    line=dict(width=2, color='black')
+                    size=[c*20 + 5 for c in confidences],  # Size by confidence
+                    opacity=0.6
                 ),
-                name='Variables'
+                text=[f"Confidence: {c:.1%}" for c in confidences],
+                hovertemplate="<b>%{fullData.name}</b><br>" +
+                             "Intervention Value: %{x:.4f}<br>" +
+                             "Effect Size: %{y:.4f}<br>" +
+                             "%{text}<extra></extra>"
             ))
+        
+        fig.update_layout(
+            title="Counterfactual Effects by Treatment Variable",
+            xaxis_title="Intervention Value",
+            yaxis_title="Predicted Effect Size",
+            height=500
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # High-confidence scenarios
+        st.subheader("⭐ High-Confidence Scenarios")
+        
+        high_conf_scenarios = [r for r in results if r.confidence > 0.7]
+        
+        if high_conf_scenarios:
+            for scenario in high_conf_scenarios[:5]:  # Show top 5
+                with st.expander(f"🎯 {scenario.scenario_id} (Confidence: {scenario.confidence:.1%})"):
+                    st.write(f"**Treatment:** {scenario.treatment_variable}")
+                    st.write(f"**Original Value:** {scenario.original_value:.4f}")
+                    st.write(f"**Counterfactual Value:** {scenario.counterfactual_value:.4f}")
+                    st.write(f"**Predicted Outcome:** {scenario.predicted_outcome:.4f}")
+                    st.write(f"**Explanation:** {scenario.explanation}")
+        else:
+            st.info("No high-confidence scenarios found.")
+    
+    def _render_price_explanation_tab(self):
+        """Render price movement explanation tab"""
+        st.header("💡 Price Movement Explanations")
+        st.markdown("Understand WHY significant price movements happened")
+        
+        # Demo explanation
+        st.subheader("🔍 Example: Explaining BTC Price Movement")
+        
+        # Simulated explanation
+        st.markdown("""
+        **Date:** 2025-08-08 12:00 UTC  
+        **Movement:** BTC/EUR +5.2% increase  
+        **Timeframe:** 1-hour candle
+        """)
+        
+        # Causal factors
+        st.subheader("🎯 Identified Causal Factors")
+        
+        factors = [
+            {
+                "factor": "Volume Surge",
+                "contribution": 0.68,
+                "description": "Trading volume increased 340% above average",
+                "confidence": 0.89
+            },
+            {
+                "factor": "Positive Sentiment",
+                "contribution": 0.42,
+                "description": "Social sentiment improved to 0.78 (from 0.52)",
+                "confidence": 0.76
+            },
+            {
+                "factor": "Whale Activity",
+                "contribution": 0.31,
+                "description": "Large buy orders detected (>$50M)",
+                "confidence": 0.82
+            },
+            {
+                "factor": "Technical Breakout",
+                "contribution": 0.25,
+                "description": "Price broke above resistance at €42,500",
+                "confidence": 0.71
+            }
+        ]
+        
+        for factor in factors:
+            col1, col2, col3 = st.columns([2, 1, 1])
             
-            fig.update_layout(
-                title="Causal Network Graph",
-                showlegend=False,
-                hovermode='closest',
-                margin=dict(b=20,l=5,r=5,t=40),
-                annotations=[ dict(
-                    text="Arrows show causal direction",
-                    showarrow=False,
-                    xref="paper", yref="paper",
-                    x=0.005, y=-0.002,
-                    xanchor='left', yanchor='bottom',
-                    font=dict(color="gray", size=12)
-                )],
-                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                height=600
+            with col1:
+                st.write(f"**{factor['factor']}**")
+                st.write(factor['description'])
+            
+            with col2:
+                st.metric("Contribution", f"{factor['contribution']:.2f}")
+            
+            with col3:
+                confidence_color = "green" if factor['confidence'] > 0.8 else "orange" if factor['confidence'] > 0.6 else "red"
+                st.markdown(f"**Confidence:** :{confidence_color}[{factor['confidence']:.1%}]")
+        
+        # Visualization
+        st.subheader("📊 Factor Contribution Analysis")
+        
+        factor_names = [f['factor'] for f in factors]
+        contributions = [f['contribution'] for f in factors]
+        confidences = [f['confidence'] for f in factors]
+        
+        fig = go.Figure()
+        
+        fig.add_trace(go.Bar(
+            x=factor_names,
+            y=contributions,
+            marker=dict(
+                color=confidences,
+                colorscale='RdYlGn',
+                showscale=True,
+                colorbar=dict(title="Confidence")
+            ),
+            text=[f"{c:.2f}" for c in contributions],
+            textposition='auto'
+        ))
+        
+        fig.update_layout(
+            title="Causal Factor Contributions to Price Movement",
+            xaxis_title="Factors",
+            yaxis_title="Contribution Score",
+            height=400
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Counterfactual scenarios
+        st.subheader("🔮 What If Scenarios")
+        
+        st.markdown("**What would have happened if these factors were different?**")
+        
+        scenarios = [
+            "If volume stayed normal → Price would have increased only +1.8%",
+            "If sentiment remained negative → Price would have decreased -0.5%",
+            "If no whale activity → Price change would be +2.3%",
+            "If technical resistance held → Price would be flat (0.0%)"
+        ]
+        
+        for scenario in scenarios:
+            st.info(f"🔮 {scenario}")
+    
+    def _render_results_tab(self):
+        """Render comprehensive analysis results tab"""
+        st.header("📊 Comprehensive Analysis Results")
+        st.markdown("Summary of all causal inference analyses")
+        
+        # Get analysis summary
+        try:
+            summary = self.causal_engine.get_analysis_summary()
+            
+            # Overall metrics
+            st.subheader("📈 Analysis Overview")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                total_effects = summary['causal_effects']['total']
+                st.metric("Causal Effects", total_effects)
+            
+            with col2:
+                significant_effects = summary['causal_effects']['significant']
+                st.metric("Significant Effects", significant_effects, 
+                         delta=f"{significant_effects/total_effects:.1%}" if total_effects > 0 else "0%")
+            
+            with col3:
+                granger_tests = summary['granger_causality']['total_tests']
+                st.metric("Granger Tests", granger_tests)
+            
+            with col4:
+                cf_scenarios = summary['counterfactual_predictions']['total_scenarios']
+                st.metric("Counterfactuals", cf_scenarios)
+            
+            # Recent analyses
+            st.subheader("🕒 Recent Analyses")
+            
+            # Causal effects
+            recent_effects = summary['causal_effects'].get('recent', [])
+            if recent_effects:
+                st.write("**Recent Causal Effects:**")
+                for effect in recent_effects:
+                    significance = "✅" if effect['significance'] else "❌"
+                    st.write(f"- {effect['treatment']} → {effect['outcome']}: {effect['effect_size']:.4f} {significance}")
+            
+            # Granger results
+            recent_granger = summary['granger_causality'].get('recent', [])
+            if recent_granger:
+                st.write("**Recent Granger Tests:**")
+                for result in recent_granger:
+                    causality = "✅" if result['is_causal'] else "❌"
+                    st.write(f"- {result['cause']} → {result['effect']}: {result['direction']} {causality}")
+            
+            # Counterfactuals
+            recent_cf = summary['counterfactual_predictions'].get('recent', [])
+            if recent_cf:
+                st.write("**Recent Counterfactuals:**")
+                for cf in recent_cf:
+                    st.write(f"- {cf['treatment_variable']}: {cf['confidence']:.1%} confidence")
+            
+            # Analysis capabilities
+            st.subheader("🎯 Analysis Capabilities")
+            
+            capabilities = [
+                "🔍 **Double Machine Learning:** Robust causal effect estimation with confounders",
+                "📈 **Granger Causality:** Temporal causality testing for time series",
+                "🔮 **Counterfactual Prediction:** What-if scenario analysis",
+                "💡 **Price Explanations:** Understanding why movements happen",
+                "🕸️ **Causal Networks:** Visualizing market relationships",
+                "📊 **Statistical Testing:** Rigorous significance testing",
+                "⚡ **Real-time Analysis:** Continuous causality monitoring",
+                "🎯 **Market Regime Aware:** Context-dependent causality"
+            ]
+            
+            for capability in capabilities:
+                st.markdown(capability)
+            
+        except Exception as e:
+            st.error(f"Error loading analysis results: {e}")
+            
+            # Fallback content
+            st.info("No analysis results available yet. Run analyses from the sidebar to see comprehensive results.")
+    
+    def _generate_demo_data(self) -> pd.DataFrame:
+        """Generate demo cryptocurrency market data"""
+        np.random.seed(42)
+        
+        # Generate 1000 time points
+        n_points = 1000
+        dates = pd.date_range(start='2024-01-01', periods=n_points, freq='H')
+        
+        # Generate correlated time series
+        # Base price movements
+        btc_returns = np.random.normal(0, 0.02, n_points)
+        btc_returns = np.cumsum(btc_returns)
+        btc_price = 40000 + btc_returns * 1000
+        
+        # Correlated altcoin
+        eth_returns = 0.7 * btc_returns + np.random.normal(0, 0.015, n_points)
+        eth_price = 2500 + eth_returns * 100
+        
+        # Volume with some causality
+        volume_btc = 1000 + 50 * np.abs(btc_returns) + np.random.normal(0, 100, n_points)
+        volume_eth = 800 + 40 * np.abs(eth_returns) + np.random.normal(0, 80, n_points)
+        
+        # Sentiment (lagged effect on price)
+        sentiment = np.zeros(n_points)
+        for i in range(1, n_points):
+            sentiment[i] = 0.5 + 0.3 * sentiment[i-1] + 0.1 * btc_returns[i-1] + np.random.normal(0, 0.1)
+        sentiment = np.clip(sentiment, 0, 1)
+        
+        # Whale activity (causes volume spikes)
+        whale_activity = np.random.exponential(0.1, n_points)
+        volume_btc += whale_activity * 200
+        volume_eth += whale_activity * 150
+        
+        # Technical indicators
+        rsi_btc = 50 + 30 * np.sin(np.arange(n_points) * 0.1) + np.random.normal(0, 5, n_points)
+        rsi_btc = np.clip(rsi_btc, 0, 100)
+        
+        rsi_eth = 50 + 25 * np.sin(np.arange(n_points) * 0.12) + np.random.normal(0, 5, n_points)
+        rsi_eth = np.clip(rsi_eth, 0, 100)
+        
+        # Create DataFrame
+        data = pd.DataFrame({
+            'timestamp': dates,
+            'btc_price': btc_price,
+            'eth_price': eth_price,
+            'btc_volume': volume_btc,
+            'eth_volume': volume_eth,
+            'sentiment_score': sentiment,
+            'whale_activity': whale_activity,
+            'btc_rsi': rsi_btc,
+            'eth_rsi': rsi_eth
+        })
+        
+        # Add price changes
+        data['btc_price_change'] = data['btc_price'].pct_change()
+        data['eth_price_change'] = data['eth_price'].pct_change()
+        data['btc_volume_change'] = data['btc_volume'].pct_change()
+        data['eth_volume_change'] = data['eth_volume'].pct_change()
+        
+        # Drop NaN values
+        data = data.dropna()
+        
+        return data
+    
+    def _plot_causality_network(self, granger_results):
+        """Plot network visualization of Granger causality relationships"""
+        import networkx as nx
+        
+        # Create network graph
+        G = nx.DiGraph()
+        
+        # Add edges for significant relationships
+        for result in granger_results:
+            if result.is_causal:
+                # Edge weight based on F-statistic
+                weight = min(result.f_statistic / 10, 5)  # Normalize weight
+                G.add_edge(result.cause, result.effect, weight=weight, f_stat=result.f_statistic)
+                
+                if result.direction == 'bidirectional':
+                    G.add_edge(result.effect, result.cause, weight=weight, f_stat=result.f_statistic)
+        
+        if len(G.edges()) == 0:
+            st.info("No significant relationships to visualize.")
+            return
+        
+        # Calculate layout
+        pos = nx.spring_layout(G, k=1, iterations=50)
+        
+        # Extract edge information
+        edge_x = []
+        edge_y = []
+        edge_weights = []
+        
+        for edge in G.edges():
+            x0, y0 = pos[edge[0]]
+            x1, y1 = pos[edge[1]]
+            edge_x.extend([x0, x1, None])
+            edge_y.extend([y0, y1, None])
+            edge_weights.append(G[edge[0]][edge[1]]['weight'])
+        
+        # Create edge traces
+        edge_trace = go.Scatter(
+            x=edge_x, y=edge_y,
+            line=dict(width=2, color='lightblue'),
+            hoverinfo='none',
+            mode='lines'
+        )
+        
+        # Create node traces
+        node_x = []
+        node_y = []
+        node_text = []
+        node_info = []
+        
+        for node in G.nodes():
+            x, y = pos[node]
+            node_x.append(x)
+            node_y.append(y)
+            node_text.append(node)
+            
+            # Node info with degree
+            in_degree = G.in_degree(node)
+            out_degree = G.out_degree(node)
+            node_info.append(f"{node}<br>In: {in_degree}, Out: {out_degree}")
+        
+        node_trace = go.Scatter(
+            x=node_x, y=node_y,
+            mode='markers+text',
+            text=node_text,
+            textposition="middle center",
+            hovertext=node_info,
+            hoverinfo='text',
+            marker=dict(
+                size=30,
+                color='lightcoral',
+                line=dict(width=2, color='darkred')
             )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-        except Exception as e:
-            st.error(f"Network visualization failed: {e}")
-            self.logger.error(f"Network plot error: {e}")
-    
-    def _run_causal_discovery(self):
-        """Run causal discovery from sidebar"""
-        try:
-            with st.spinner("Running causal discovery..."):
-                data = self._load_market_data()
-                
-                if data is not None and len(data) > 100:
-                    enhanced_data = self._engineer_causal_features(data)
-                    
-                    treatment_vars = ['volume_spike', 'price_momentum', 'volatility_change']
-                    outcome_vars = ['price_change', 'future_return_1h', 'future_return_24h']
-                    
-                    enhanced_data = self._add_treatment_outcome_vars(enhanced_data, treatment_vars, outcome_vars)
-                    
-                    effects = self.causal_engine.discover_causal_effects(
-                        enhanced_data, treatment_vars, outcome_vars
-                    )
-                    
-                    if effects:
-                        st.success(f"✅ Discovered {len(effects)} causal effects!")
-                    else:
-                        st.warning("No significant effects found")
-                    
-                    st.rerun()
-                else:
-                    st.error("Insufficient data for causal discovery")
+        )
         
-        except Exception as e:
-            st.error(f"Causal discovery failed: {e}")
-    
-    def _explain_recent_movement(self):
-        """Explain recent movement from sidebar"""
-        try:
-            with st.spinner("Explaining recent movement..."):
-                data = self._load_market_data()
-                
-                if data is not None:
-                    enhanced_data = self._engineer_causal_features(data)
-                    enhanced_data = self._add_treatment_outcome_vars(enhanced_data, [], ['price_change'])
-                    
-                    explanation = self.causal_engine.explain_movement(enhanced_data, 'price_change')
-                    
-                    if explanation['confidence'] > 0.1:
-                        st.success(f"✅ Movement explained with {explanation['confidence']:.1%} confidence")
-                    else:
-                        st.warning("Unable to explain recent movement")
-                    
-                    st.rerun()
-                else:
-                    st.error("No data available for explanation")
+        # Create figure
+        fig = go.Figure(data=[edge_trace, node_trace],
+                       layout=go.Layout(
+                           title="Granger Causality Network",
+                           titlefont_size=16,
+                           showlegend=False,
+                           hovermode='closest',
+                           margin=dict(b=20,l=5,r=5,t=40),
+                           annotations=[ dict(
+                               text="Arrows show causal direction",
+                               showarrow=False,
+                               xref="paper", yref="paper",
+                               x=0.005, y=-0.002 ) ],
+                           xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                           yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                           height=500
+                       ))
         
-        except Exception as e:
-            st.error(f"Movement explanation failed: {e}")
+        st.plotly_chart(fig, use_container_width=True)
 
 
 def main():
