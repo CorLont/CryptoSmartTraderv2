@@ -1,0 +1,5 @@
+{"asctime": "2025-08-08 16:53:56", "name": "FineTuneScheduler", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Created fine-tuning job finetune_ml_predictor_1754672036 for ml_predictor (reason: drift_detected, priority: high)"}
+{"asctime": "2025-08-08 16:53:56", "name": "FineTuneScheduler", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Created fine-tuning job finetune_sentiment_analyzer_1754672036 for sentiment_analyzer (reason: performance_degradation, priority: medium)"}
+{"asctime": "2025-08-08 16:53:56", "name": "FineTuneScheduler", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Created fine-tuning job finetune_whale_detector_1754672036 for whale_detector (reason: scheduled, priority: low)"}
+{"asctime": "2025-08-08 16:53:56", "name": "FineTuneScheduler", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Queued fine-tuning job finetune_ml_predictor_1754672036 for processing"}
+{"asctime": "2025-08-08 16:53:56", "name": "FineTuneScheduler", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Queued fine-tuning job finetune_sentiment_analyzer_1754672036 for processing"}

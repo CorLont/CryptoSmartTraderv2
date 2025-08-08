@@ -1,0 +1,6 @@
+{"asctime": "2025-08-08 16:54:04", "name": "AutoDisableSystem", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Health score improved to 90.0. Starting grace period before auto-enable."}
+{"asctime": "2025-08-08 16:54:04", "name": "AutoDisableSystem", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Health check failed: 'function' object has no attribute 'lower'"}
+{"asctime": "2025-08-08 16:54:04", "name": "AutoDisableSystem", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Health score improved to 85.0. Starting grace period before auto-enable."}
+{"asctime": "2025-08-08 16:56:14", "name": "AutoDisableSystem", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Health score improved to 90.0. Starting grace period before auto-enable."}
+{"asctime": "2025-08-08 16:56:14", "name": "AutoDisableSystem", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Health check failed: 'function' object has no attribute 'lower'"}
+{"asctime": "2025-08-08 16:56:14", "name": "AutoDisableSystem", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Health score improved to 85.0. Starting grace period before auto-enable."}

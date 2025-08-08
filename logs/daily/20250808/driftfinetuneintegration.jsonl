@@ -1,0 +1,7 @@
+{"asctime": "2025-08-08 16:56:21", "name": "DriftFineTuneIntegration", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added status change callback"}
+{"asctime": "2025-08-08 16:56:21", "name": "DriftFineTuneIntegration", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting drift detection + fine-tune + auto-disable integration"}
+{"asctime": "2025-08-08 16:56:21", "name": "DriftFineTuneIntegration", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Integration monitoring started"}
+{"asctime": "2025-08-08 16:56:21", "name": "DriftFineTuneIntegration", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Health score improved to 85.0. Starting grace period before auto-enable."}
+{"asctime": "2025-08-08 16:56:24", "name": "DriftFineTuneIntegration", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Created fine-tuning job finetune_sentiment_analyzer_1754672184 for sentiment_analyzer (reason: manual_testing, priority: high)"}
+{"asctime": "2025-08-08 16:56:24", "name": "DriftFineTuneIntegration", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Manually triggered fine-tuning job finetune_sentiment_analyzer_1754672184 for sentiment_analyzer"}
+{"asctime": "2025-08-08 16:56:24", "name": "DriftFineTuneIntegration", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Integration monitoring stopped"}

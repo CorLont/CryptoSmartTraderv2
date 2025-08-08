@@ -72,6 +72,10 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Distributed Process Isolation System:** Multi-process agent architecture with complete isolation, automatic restart, health monitoring, and circuit breakers.
 - **Async Queue System with Rate Limiting:** Enterprise async message queue system using `asyncio.Queue` (Redis compatible) with centralized rate limiter, message prioritization, and retry logic.
 - **Prometheus Metrics & Monitoring:** Comprehensive metrics collection (latency, error-ratio, data completeness, CPU/memory/GPU usage) via Prometheus HTTP endpoint (port 8090) for Grafana integration.
+- **Drift Detection System (August 2025):** Complete drift detection with error trending analysis, KS-test for feature distribution monitoring, and performance degradation detection. Triggers alerts for relative error increases >15%, distribution shifts (p<0.01), and accuracy drops >10% with severity classification (low/medium/high/critical).
+- **Fine-Tune Scheduler with EWC (August 2025):** Automated fine-tuning system with replay buffer (10k samples), Elastic Weight Consolidation (EWC) for continual learning, priority-based job scheduling, and small learning-rate updates (1e-4 base, 5e-5 for drift). Supports drift-triggered, scheduled, and manual fine-tuning jobs.
+- **Auto-Disable System (August 2025):** Trading safety system that automatically disables live trading when health <60 (paper trading), <30 (all trading disabled), with grace period for auto-enable, manual override capabilities, and comprehensive status change logging with reason tracking.
+- **Drift-Fine-Tune-Auto-Disable Integration (August 2025):** Complete integration system that monitors drift detection, triggers fine-tuning responses with delays, calculates system health scores, and automatically manages trading modes. Includes pending drift response queuing, critical drift immediate disable, and health-based fine-tune job creation.
 
 ## External Dependencies
 
