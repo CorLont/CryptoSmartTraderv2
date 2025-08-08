@@ -1,0 +1,142 @@
+{
+  "log_type": "preinstall_check",
+  "timestamp": "2025-08-08T15:57:47.704734",
+  "summary": {
+    "total_checks": 18,
+    "errors": 1,
+    "warnings": 3,
+    "system_ready": false
+  },
+  "checks": [
+    {
+      "name": "python_version",
+      "status": "passed",
+      "message": "Python 3.11.13 \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:39.937370"
+    },
+    {
+      "name": "operating_system",
+      "status": "passed",
+      "message": "Linux x86_64 \u2713",
+      "details": {
+        "system": "Linux",
+        "machine": "x86_64",
+        "version": "#1-NixOS SMP PREEMPT_DYNAMIC Tue Jan  1 00:00:00 UTC 1980"
+      },
+      "timestamp": "2025-08-08T15:57:39.937766"
+    },
+    {
+      "name": "disk_space",
+      "status": "passed",
+      "message": "Free space: 243.5GB / 256.0GB \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:39.954812"
+    },
+    {
+      "name": "memory",
+      "status": "passed",
+      "message": "RAM: 62.8GB (available: 17.5GB) \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:39.983593"
+    },
+    {
+      "name": "directory_structure",
+      "status": "passed",
+      "message": "All 12 required directories exist \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:39.985515"
+    },
+    {
+      "name": "permissions",
+      "status": "passed",
+      "message": "File system permissions \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:39.994062"
+    },
+    {
+      "name": "core_dependencies",
+      "status": "passed",
+      "message": "All 8 core dependencies available \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:41.862294"
+    },
+    {
+      "name": "ml_dependencies",
+      "status": "warning",
+      "message": "Available: PyTorch, scikit-learn, XGBoost. Missing: HuggingFace Transformers",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:46.907370"
+    },
+    {
+      "name": "optional_dependencies",
+      "status": "passed",
+      "message": "Optional deps available: 3/4",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:47.221704"
+    },
+    {
+      "name": "environment_config",
+      "status": "failed",
+      "message": "Config check failed: `BaseSettings` has been moved to the `pydantic-settings` package. See https://docs.pydantic.dev/2.9/migration/#basesettings-has-moved-to-pydantic-settings for more details.\n\nFor further information visit https://errors.pydantic.dev/2.9/u/import-error",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:47.270082"
+    },
+    {
+      "name": "logging_setup",
+      "status": "passed",
+      "message": "Logging system configured, daily logs: logs/daily/20250808 \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:47.272151"
+    },
+    {
+      "name": "network_connectivity",
+      "status": "passed",
+      "message": "Network connectivity \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:47.281996"
+    },
+    {
+      "name": "api_endpoints",
+      "status": "passed",
+      "message": "API endpoints accessible: HTTP Test, Kraken API \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:47.695351"
+    },
+    {
+      "name": "gpu_availability",
+      "status": "warning",
+      "message": "No GPU available, will use CPU",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:47.696216"
+    },
+    {
+      "name": "cuda_support",
+      "status": "warning",
+      "message": "CUDA not available",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:47.696708"
+    },
+    {
+      "name": "security_config",
+      "status": "passed",
+      "message": "Security configuration \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:47.697906"
+    },
+    {
+      "name": "data_directories",
+      "status": "passed",
+      "message": "Data directories ready (4 created) \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:47.699007"
+    },
+    {
+      "name": "cache_system",
+      "status": "passed",
+      "message": "Cache system functional \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:47.702030"
+    }
+  ]
+}

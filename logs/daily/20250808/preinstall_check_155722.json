@@ -1,0 +1,16 @@
+{
+  "log_type": "preinstall_check",
+  "timestamp": "2025-08-08T15:57:22.102699",
+  "summary": {
+    "total_checks": 18,
+    "errors": 1,
+    "warnings": 3,
+    "system_ready": false
+  },
+  "checks": [
+    {
+      "name": "python_version",
+      "status": "passed",
+      "message": "Python 3.11.13 \u2713",
+      "details": null,
+      "timestamp": 

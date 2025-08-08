@@ -1,0 +1,142 @@
+{
+  "log_type": "preinstall_check",
+  "timestamp": "2025-08-08T15:58:08.085102",
+  "summary": {
+    "total_checks": 18,
+    "errors": 1,
+    "warnings": 3,
+    "system_ready": false
+  },
+  "checks": [
+    {
+      "name": "python_version",
+      "status": "passed",
+      "message": "Python 3.11.13 \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:57.208705"
+    },
+    {
+      "name": "operating_system",
+      "status": "passed",
+      "message": "Linux x86_64 \u2713",
+      "details": {
+        "system": "Linux",
+        "machine": "x86_64",
+        "version": "#1-NixOS SMP PREEMPT_DYNAMIC Tue Jan  1 00:00:00 UTC 1980"
+      },
+      "timestamp": "2025-08-08T15:57:57.208886"
+    },
+    {
+      "name": "disk_space",
+      "status": "passed",
+      "message": "Free space: 243.5GB / 256.0GB \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:57.225019"
+    },
+    {
+      "name": "memory",
+      "status": "passed",
+      "message": "RAM: 62.8GB (available: 17.7GB) \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:57.246796"
+    },
+    {
+      "name": "directory_structure",
+      "status": "passed",
+      "message": "All 12 required directories exist \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:57.247558"
+    },
+    {
+      "name": "permissions",
+      "status": "passed",
+      "message": "File system permissions \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:57.248755"
+    },
+    {
+      "name": "core_dependencies",
+      "status": "passed",
+      "message": "All 8 core dependencies available \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:57:59.070359"
+    },
+    {
+      "name": "ml_dependencies",
+      "status": "warning",
+      "message": "Available: PyTorch, scikit-learn, XGBoost. Missing: HuggingFace Transformers",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:03.902703"
+    },
+    {
+      "name": "optional_dependencies",
+      "status": "passed",
+      "message": "Optional deps available: 3/4",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:04.181972"
+    },
+    {
+      "name": "environment_config",
+      "status": "failed",
+      "message": "Config check failed: No module named 'configs.agent_configs'",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:04.538187"
+    },
+    {
+      "name": "logging_setup",
+      "status": "passed",
+      "message": "Logging system configured, daily logs: logs/daily/20250808 \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:04.539538"
+    },
+    {
+      "name": "network_connectivity",
+      "status": "passed",
+      "message": "Network connectivity \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:04.549514"
+    },
+    {
+      "name": "api_endpoints",
+      "status": "passed",
+      "message": "API endpoints accessible: HTTP Test, Kraken API \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:08.076785"
+    },
+    {
+      "name": "gpu_availability",
+      "status": "warning",
+      "message": "No GPU available, will use CPU",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:08.077345"
+    },
+    {
+      "name": "cuda_support",
+      "status": "warning",
+      "message": "CUDA not available",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:08.077638"
+    },
+    {
+      "name": "security_config",
+      "status": "passed",
+      "message": "Security configuration \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:08.078753"
+    },
+    {
+      "name": "data_directories",
+      "status": "passed",
+      "message": "Data directories ready (4 created) \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:08.079598"
+    },
+    {
+      "name": "cache_system",
+      "status": "passed",
+      "message": "Cache system functional \u2713",
+      "details": null,
+      "timestamp": "2025-08-08T15:58:08.082136"
+    }
+  ]
+}
