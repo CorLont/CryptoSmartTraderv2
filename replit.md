@@ -1,7 +1,11 @@
 # Replit.md
 
 ## Overview
-CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies using a coordinated ensemble of specialized AI agents, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions with OpenAI intelligence, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies. Key features include zero synthetic data tolerance, mandatory deep learning, cross-coin feature fusion, true async processing, enterprise security, Bayesian uncertainty quantification, dynamic coin discovery, advanced AI/ML capabilities (automated feature engineering, meta-learning, causal inference, shadow trading), multi-agent cooperation, model monitoring, black swan simulation, and real-time order book data integration.
+CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies using a coordinated ensemble of specialized AI agents, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions with OpenAI intelligence, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies. 
+
+**Enterprise Architecture Goals:** Hogere voorspellingsnauwkeurigheid, nul dummy-data, strikte confidence-gate, robuuste async scraping, moderne ML/AI (uncertainty, regime, ensembles), en daily eval + GO/NOGO.
+
+Key features include zero synthetic data tolerance, mandatory deep learning, cross-coin feature fusion, true async processing, enterprise security, Bayesian uncertainty quantification, dynamic coin discovery, advanced AI/ML capabilities (automated feature engineering, meta-learning, causal inference, shadow trading), multi-agent cooperation, model monitoring, black swan simulation, and real-time order book data integration.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
