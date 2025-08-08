@@ -1,0 +1,89 @@
+1) Code‑controle op fouten (wat gaat hier vaak mis + hoe je het aantoont/herstelt)
+A. Datatijd & label‑bouw (meest fataal)
+Label‑leakage / look‑ahead
+Symptoom: hogere “accuracy” in backtests dan live; plots falen in productie.
+Check (unit test):
+
+python
+Kopiëren
+Bewerken
+import pandas as pd
+df = build_features(...)          # met kolommen: timestamp, coin, close
+lbl = make_labels(df, horizon_h=720)  # voegt 'target_720h'
+assert (lbl["timestamp"] < lbl["label_timestamp"]).all(), "Look-ahead!"
+# en: geen enkele feature mag later dan timestamp liggen:
+late_cols = [c for c in lbl.columns if c.startswith("feat_")]
+assert not (lbl[late_cols].isna().any().any() and lbl["target_720h"].notna().any())
+Fix: labels met shift(-h) bouwen, pas daarna features alignen en alle future kolommen droppen.
+
+Timezone/ronding mismatch
+Symptoom: features uit 12:00:59 worden met label van 12:01:00 vergeleken.
+Check: assert op exact gelijke timestamps na floor('1H') voor alle bronnen.
+Fix: één centrale normalize_ts(dt, tz='UTC') en overal aanroepen.
+
+B. Completeness & NaN’s
+Silent forward‑fill of NaN
+Symptoom: model lijkt stabiel maar voorspelt op ingevulde rommel.
+Check:
+
+python
+Kopiëren
+Bewerken
+feats = build_features(...)
+required = ["sent_score","whale_score","rsi","volume"]
+assert feats[required].notna().all().all(), "Er zitten NaN's in verplichte features"
+Fix: no‑fallback in productie: coin met NaN in verplichte features → skip (train én infer).
+
+C. Splits & evaluatie
+Dataleakage door verkeerde splits (shuffle op rijen i.p.v. op tijd)
+Check: enforce time‑series split.
+Fix (sklearn):
+
+python
+Kopiëren
+Bewerken
+from sklearn.model_selection import TimeSeriesSplit
+tscv = TimeSeriesSplit(n_splits=5)
+# nooit random KFold/ShuffleSplit voor tijdreeksen
+Targets mis‑geschaald (bv. % als 5 in plaats van 0.05)
+Check: sanity range assert: abs(target).quantile(0.99) < 2 voor 30d returns.
+Fix: uniforme to_return = price.shift(-h)/price - 1.0.
+
+D. Concurrency & IO
+Blocking scraping (sequentieel, timeouts)
+Check: grote runs duren onevenredig lang; logs zonder overlap.
+Fix: aiohttp + semaforen + tenacity retry/backoff; geen globale sessie mutaties.
+
+Race‑conditions bij feature schrijfs
+Check: incidenteel corrupte parquet/csv.
+Fix: schrijf naar tmp + atomic rename.
+
+E. ML/AI
+Ongekalibreerde kansscores → 80% gate is fictie
+Check: reliability plot: in 0.8–0.9 bin moet ≥0.7 hit‑rate.
+Fix: CalibratedClassifierCV (isotonic) of conformal prediction voor regressie‑bands.
+
+Geen uncertainty (alleen point estimate)
+Check: conf_* kolommen ontbreken of constant.
+Fix: MC‑Dropout/ensemble spread; sla mu, sigma op.
+
+Regime blind → model stort in bij regime‑wechsel
+Check: fout stijgt sterk bij hoge vol (top 10% ATR).
+Fix: regime feature of model‑router (bull/bear/sideways).
+
+F. Backtest & Execution
+Geen slippage/fees/latency → te rooskleurig
+Check: verschil “paper” vs “sim” te groot.
+Fix: L2 depth simulator, partial fills, fee tiers, p50/p90 slippage in evaluator.
+
+G. Logging/monitoring
+Secrets in logs
+Check: grep “api_key|token” in logs.
+Fix: logger‑filter die waarden maskeert.
+
+Geen correlation‑id per run
+Fix: voeg run_id = uuid4() aan elke logregel en bestandsnaam toe.
+
+H. Infra/tests
+Geen CI lint/type/pytest
+Fix: pre-commit met black/isort/flake8/mypy; pytest-asyncio voor scrapers; coverage gate ≥80%.

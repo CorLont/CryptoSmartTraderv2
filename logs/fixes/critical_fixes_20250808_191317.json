@@ -1,0 +1,20 @@
+{
+  "fixes_timestamp": "2025-08-08T19:13:17.575734",
+  "fixes_duration": 5.668787956237793,
+  "total_fixes_attempted": 10,
+  "fixes_successful": 10,
+  "fixes_failed": [],
+  "fixes_applied": [
+    "Timestamp validation utilities created",
+    "Completeness gate already exists",
+    "Time series splits implementation created",
+    "Probability calibration implementation created",
+    "Uncertainty quantification implementation created",
+    "Slippage modeling implementation created",
+    "Secrets masking added to logging manager",
+    "Correlation IDs already implemented",
+    "Async implementation found: 49 files",
+    "Atomic file operations implementation created"
+  ],
+  "overall_success_rate": 1.0
+}

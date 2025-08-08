@@ -20,6 +20,27 @@ from logging.handlers import RotatingFileHandler
 import warnings
 warnings.filterwarnings('ignore')
 
+import re
+
+def mask_sensitive_data(message: str) -> str:
+    """Mask sensitive data in log messages"""
+    
+    # Patterns to mask
+    patterns = [
+        (r'(api_key["']?\s*[:=]\s*["']?)([^"'\s]+)', r'\1***MASKED***'),
+        (r'(token["']?\s*[:=]\s*["']?)([^"'\s]+)', r'\1***MASKED***'),
+        (r'(secret["']?\s*[:=]\s*["']?)([^"'\s]+)', r'\1***MASKED***'),
+        (r'(password["']?\s*[:=]\s*["']?)([^"'\s]+)', r'\1***MASKED***'),
+        (r'(key["']?\s*[:=]\s*["']?)([A-Za-z0-9+/]{20,})', r'\1***MASKED***')
+    ]
+    
+    masked_message = message
+    for pattern, replacement in patterns:
+        masked_message = re.sub(pattern, replacement, masked_message, flags=re.IGNORECASE)
+    
+    return masked_message
+
+
 # Try prometheus imports
 try:
     from prometheus_client import Counter, Histogram, Gauge, CollectorRegistry, start_http_server

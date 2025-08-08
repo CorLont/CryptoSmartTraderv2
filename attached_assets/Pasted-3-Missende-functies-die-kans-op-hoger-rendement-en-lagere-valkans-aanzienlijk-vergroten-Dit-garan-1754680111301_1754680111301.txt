@@ -1,0 +1,54 @@
+3) Missende functies die kans op hoger rendement (en lagere valkans) aanzienlijk vergroten
+Dit garandeert niets, maar verhoogt je edge en beschermt je downside.
+
+A. Signaal‑kwaliteit
+Meta‑labeling (Lopez de Prado) + triple‑barrier
+Nut: filtert valse signalen; pakt kwaliteitslabel i.p.v. directioneel label.
+Implement: na eerste model‑signal, train een tweede classifier of probability dat stop‑loss/target geraakt wordt.
+
+Event/News impact scoring
+Nut: listings/unlocks/partnerships bewegen altcoins disproportioneel.
+Implement: LLM‑samenvatting → impact score + half‑life feature.
+
+Futures data (funding rate, OI, basis)
+Nut: detecteert leverage squeezes en crowding.
+Implement: voeg funding/OI als leading features toe.
+
+Orderboek‑imbalance & spoof‑detectie
+Nut: kortetermijn edge voor entries/exits; vermijdt fake walls.
+Implement: features van L2 depth; detecteer abrupte order‑cancellations.
+
+DEX‑liquiditeit / unlock‑kalender (microcaps)
+Nut: voorkom illiquide pumps; anticipeer unlock dumps.
+Implement: track token unlock feeds + pool‑liquidity metrics.
+
+B. Model‑kant
+Transformer/TFT/N‑BEATS baseline naast LSTM/GBM
+Nut: beter bij lange‑afhankelijke & multivariate context.
+Implement: PyTorch Forecasting; MC‑Dropout voor intervals.
+
+Conformal prediction voor voorspel‑banden
+Nut: formele, data‑gedreven onzekerheidsintervallen.
+Implement: conformal regressor om 80/90% interval te krijgen → betere gating.
+
+Regime‑router (Mixture‑of‑Experts)
+Nut: optimaliseert per regime.
+Implement: gating net dat per regime experts weegt.
+
+Continual learning met replay/EWC
+Nut: sneller bijleren zonder vergeten; robuuster bij drift.
+Implement: Avalanche (PyTorch) pipeline.
+
+C. Portfolio & uitvoering
+Uncertainty‑aware sizing (Kelly-lite)
+Nut: meer gewicht bij lagere σ / hogere conf; minder bij twijfel.
+Implement: position = f(pred, conf, σ, liquidity cap).
+
+Correlation/cluster caps
+Nut: voorkomt dat je 5 hoog‑gecorreleerde picks tegelijk houdt.
+Implement: cluster assets en cap exposure per cluster.
+
+Hard risk overlays
+Nut: bescherming tegen regime shock.
+Implement: auto‑de‑risk bij BTC‑drawdown > X% of health < 60.
+
