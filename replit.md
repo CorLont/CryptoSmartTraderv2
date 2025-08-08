@@ -5,6 +5,7 @@ CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intel
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+Data integrity policy: No demo/synthetic data - only authentic data from real sources. When data is unavailable or unreliable, show clear error states with specific reasons and required actions.
 
 ## System Architecture
 

@@ -93,21 +93,23 @@ def render_trading_opportunities(min_return, confidence_filter):
     st.title("💰 TOP KOOP KANSEN")
     st.markdown("### 🎯 De beste coins om NU te kopen met verwachte rendementen")
     
-    # Demo mode banner
-    st.info("🔧 **DEMO MODUS**: Systeem toont voorbeelddata. Voor live data zijn API keys nodig.")
+    # Check data availability
+    data_status = check_data_availability()
     
-    # Generate opportunities
-    opportunities = get_trading_opportunities()
+    if not data_status['has_live_data']:
+        render_data_error_state(data_status)
+        return
     
-    # Filter opportunities
-    min_return_val = float(min_return.replace('%', ''))
-    filtered = [
-        coin for coin in opportunities 
-        if coin['expected_30d'] >= min_return_val and coin['confidence'] >= confidence_filter
-    ]
+    if not data_status['models_trained']:
+        render_model_training_required()
+        return
     
-    if not filtered:
-        st.warning("Geen coins voldoen aan de filters. Probeer minder strenge criteria.")
+    # Only show if we have reliable data
+    opportunities = get_authentic_trading_opportunities()
+    
+    if not opportunities:
+        st.error("Geen betrouwbare handelskansen beschikbaar op dit moment")
+        st.info("Mogelijke oorzaken: API problemen, onvoldoende data, model hertraining nodig")
         return
     
     # TOP 3 HIGHLIGHTS
@@ -194,70 +196,113 @@ def render_trading_opportunities(min_return, confidence_filter):
     with summary_col4:
         st.metric("⚡ Analyseerde coins", f"{len(opportunities)}", delta="Live")
 
-def get_trading_opportunities():
-    """Generate detailed trading opportunities"""
+def check_data_availability():
+    """Check if we have access to live data and trained models"""
+    import os
     
-    coins_data = [
-        {"symbol": "BTC", "name": "Bitcoin", "current_price": 45230.50},
-        {"symbol": "ETH", "name": "Ethereum", "current_price": 2845.30},
-        {"symbol": "ADA", "name": "Cardano", "current_price": 0.85},
-        {"symbol": "SOL", "name": "Solana", "current_price": 98.45},
-        {"symbol": "DOT", "name": "Polkadot", "current_price": 12.35},
-        {"symbol": "AVAX", "name": "Avalanche", "current_price": 28.90},
-        {"symbol": "MATIC", "name": "Polygon", "current_price": 1.25},
-        {"symbol": "ALGO", "name": "Algorand", "current_price": 0.45},
-        {"symbol": "ATOM", "name": "Cosmos", "current_price": 15.80},
-        {"symbol": "FTM", "name": "Fantom", "current_price": 0.75},
-        {"symbol": "NEAR", "name": "NEAR Protocol", "current_price": 4.25},
-        {"symbol": "ICP", "name": "Internet Computer", "current_price": 8.90},
-        {"symbol": "FLOW", "name": "Flow", "current_price": 2.15},
-        {"symbol": "MANA", "name": "Decentraland", "current_price": 0.95},
-        {"symbol": "SAND", "name": "The Sandbox", "current_price": 1.35}
-    ]
+    # Check for required API keys
+    required_keys = ['KRAKEN_API_KEY', 'BINANCE_API_KEY', 'OPENAI_API_KEY']
+    missing_keys = [key for key in required_keys if not os.getenv(key)]
     
-    risk_levels = ["Laag", "Gemiddeld", "Hoog"]
-    macd_signals = ["Bullish", "Bearish", "Neutral"]
-    volume_trends = ["📈 Stijgend", "📉 Dalend", "➡️ Stabiel"]
-    whale_statuses = ["🐋 Actief", "😴 Rustig", "👀 Observerend"]
+    # Check if models exist and are trained
+    model_files = ['models/lstm_model.pkl', 'models/transformer_model.pkl', 'models/ensemble_model.pkl']
+    missing_models = [f for f in model_files if not os.path.exists(f)]
     
-    for coin in coins_data:
-        # Generate conservative demo predictions
-        base_7d = random.uniform(-2, 8)
-        base_30d = random.uniform(5, 35)
-        confidence = random.uniform(45, 75)  # Lower confidence for demo mode
-        
-        coin.update({
-            "expected_7d": base_7d,
-            "expected_30d": base_30d,
-            "confidence": confidence,
-            "risk": random.choice(risk_levels),
-            "rsi": random.uniform(25, 75),
-            "macd_signal": random.choice(macd_signals),
-            "volume_trend": random.choice(volume_trends),
-            "whale_status": random.choice(whale_statuses),
-            "volume_24h": random.uniform(1000000, 50000000),
-            "market_cap": coin["current_price"] * random.uniform(100000000, 1000000000)
-        })
+    return {
+        'has_live_data': len(missing_keys) == 0,
+        'missing_keys': missing_keys,
+        'models_trained': len(missing_models) == 0,
+        'missing_models': missing_models,
+        'data_age': check_data_freshness() if len(missing_keys) == 0 else None
+    }
+
+def check_data_freshness():
+    """Check how fresh our data is"""
+    try:
+        # This would check the last update time of data files
+        return "fresh"  # placeholder
+    except:
+        return "stale"
+
+def render_data_error_state(data_status):
+    """Show clear error state when data is not available"""
+    st.error("❌ GEEN LIVE DATA BESCHIKBAAR")
     
-    # Sort by expected 30d return, then by confidence
-    return sorted(coins_data, key=lambda x: (x['expected_30d'], x['confidence']), reverse=True)
+    st.markdown("### 🔑 Ontbrekende API Keys:")
+    for key in data_status['missing_keys']:
+        st.markdown(f"- **{key}**: Niet geconfigureerd")
+    
+    st.markdown("### 📋 Vereiste Stappen:")
+    st.markdown("""
+    1. **Verkrijg API keys** van:
+       - Kraken exchange (KRAKEN_API_KEY, KRAKEN_SECRET)
+       - Binance exchange (BINANCE_API_KEY, BINANCE_SECRET) 
+       - OpenAI (OPENAI_API_KEY)
+    
+    2. **Configureer environment variabelen** in .env file
+    
+    3. **Start data collectie** voor minimaal 48 uur
+    
+    4. **Train ML modellen** op verzamelde data
+    """)
+    
+    if st.button("🔧 API Keys Instellen"):
+        st.info("Voeg je API keys toe aan de .env file en herstart het systeem")
+
+def render_model_training_required():
+    """Show when models need to be trained"""
+    st.warning("⚠️ MODELLEN NIET GETRAIND")
+    
+    st.markdown("### 🧠 ML Modellen Status:")
+    st.markdown("- **LSTM Model**: Niet getraind")
+    st.markdown("- **Transformer Model**: Niet getraind") 
+    st.markdown("- **Ensemble Model**: Niet getraind")
+    
+    st.markdown("### 📊 Training Vereisten:")
+    st.markdown("""
+    - Minimaal 90 dagen historische data per coin
+    - Technical indicators berekend en gevalideerd
+    - Sentiment data verzameld en gelabeld
+    - Backtesting uitgevoerd met out-of-sample data
+    """)
+    
+    if st.button("🚀 Start Model Training"):
+        st.info("Model training zou hier starten met echte data pipeline")
+
+def get_authentic_trading_opportunities():
+    """Get real trading opportunities from live data and trained models"""
+    # This would connect to real APIs and trained models
+    # For now, return empty since we don't have real data
+    return []
 
 def render_market_status():
     """Render market status dashboard"""
     st.title("📊 Markt Status")
     st.markdown("### 🌍 Live crypto markt overzicht")
     
-    # Market metrics
-    col1, col2, col3, col4 = st.columns(4)
+    # Check data availability first
+    data_status = check_data_availability()
     
-    with col1:
-        st.metric("💰 Totale Markt Cap", "$1.85T", delta="+3.2%")
-    with col2:
-        st.metric("📊 Volume 24h", "$94.2B", delta="+18.5%")
-    with col3:
-        st.metric("🔥 Bullish Coins", "342", delta="+27")
-    with col4:
-        st.metric("🎯 Sterke Signalen", "18", delta="+6")
+    if not data_status['has_live_data']:
+        st.error("❌ GEEN LIVE MARKTDATA")
+        st.markdown("**Reden**: Ontbrekende API verbindingen")
+        
+        for key in data_status['missing_keys']:
+            st.markdown(f"- {key} niet geconfigureerd")
+        
+        st.info("Configureer exchange API keys voor live marktdata")
+        return
+    
+    # Only show if we have real data
+    market_data = get_live_market_data()
+    
+    if not market_data:
+        st.error("❌ MARKTDATA NIET BESCHIKBAAR")
+        st.markdown("**Mogelijke oorzaken**:")
+        st.markdown("- Exchange API problemen")
+        st.markdown("- Netwerkverbinding issues") 
+        st.markdown("- Rate limiting actief")
+        return
     
     # Market trends
     st.subheader("📈 Markt Trends")
@@ -290,28 +335,42 @@ def render_predictions_dashboard():
     st.title("🧠 AI Voorspellingen")
     st.markdown("### 🤖 Machine Learning prijs voorspellingen")
     
-    # Model status
-    col1, col2, col3 = st.columns(3)
+    # Check model status
+    data_status = check_data_availability()
     
-    with col1:
-        st.metric("🤖 LSTM Model", "Demo", delta="Niet getraind")
-    with col2:
-        st.metric("🧠 Transformer", "Demo", delta="Niet getraind")
-    with col3:
-        st.metric("📊 Ensemble", "Demo", delta="Niet getraind")
+    if not data_status['models_trained']:
+        st.error("❌ GEEN GETRAINDE MODELLEN")
+        
+        st.markdown("### 🧠 Model Status:")
+        for model in data_status['missing_models']:
+            st.markdown(f"- **{model}**: Niet gevonden")
+        
+        st.markdown("### ⚠️ Vereisten voor betrouwbare voorspellingen:")
+        st.markdown("""
+        - Minimaal 90 dagen trainingsdata
+        - Gevalideerde model accuracy >80%
+        - Out-of-sample backtesting uitgevoerd
+        - Model performance monitoring actief
+        """)
+        return
     
-    # Predictions table
-    st.subheader("🎯 24-Uurs Voorspellingen")
+    # Only show if models are properly trained and validated
+    predictions = get_validated_predictions()
     
-    predictions = [
-        {"Coin": "BTC", "Nu": "$45,230", "24h": "$46,120", "Change": "+2.0%", "Conf": "Demo"},
-        {"Coin": "ETH", "Nu": "$2,845", "24h": "$2,920", "Change": "+2.6%", "Conf": "Demo"},
-        {"Coin": "ADA", "Nu": "$0.85", "24h": "$0.87", "Change": "+2.4%", "Conf": "Demo"},
-        {"Coin": "SOL", "Nu": "$98.45", "24h": "$101.20", "Change": "+2.8%", "Conf": "Demo"}
-    ]
+    if not predictions:
+        st.warning("⚠️ MODELLEN HERTRAINING NODIG")
+        st.markdown("**Reden**: Model performance onder acceptabel niveau")
+        return
     
-    predictions_df = pd.DataFrame(predictions)
-    st.dataframe(predictions_df, use_container_width=True)
+def get_live_market_data():
+    """Get real market data from exchanges"""
+    # This would connect to real exchange APIs
+    return None
+
+def get_validated_predictions():
+    """Get predictions only from properly validated models"""
+    # This would load trained models and generate real predictions
+    return None
 
 def show_coin_analysis(coin):
     """Show detailed analysis for a specific coin"""
