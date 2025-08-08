@@ -1,0 +1,47 @@
+{
+  "test_type": "regime_detection_validation",
+  "timestamp": "2025-08-08T16:20:02.898520",
+  "components_tested": [
+    "HMM regime detection (hmmlearn/pomegranate)",
+    "Rule-based regime classification",
+    "Regime-specific model routing",
+    "Regime-feature model integration",
+    "A/B performance comparison",
+    "Bull/Bear/Sideways classification",
+    "Low/High volatility detection"
+  ],
+  "regime_detection": {
+    "methods": [
+      "HMM (Gaussian)",
+      "Rule-based classification"
+    ],
+    "regimes": [
+      "bull",
+      "bear",
+      "sideways",
+      "low_vol",
+      "high_vol"
+    ],
+    "features": [
+      "price returns",
+      "volatility measures",
+      "trend indicators",
+      "momentum signals",
+      "drawdown metrics"
+    ]
+  },
+  "model_routing": {
+    "strategies": [
+      "regime_specific",
+      "regime_feature"
+    ],
+    "regime_specific": "Separate models per regime",
+    "regime_feature": "Single model with regime features",
+    "baseline_comparison": "Regime-agnostic model"
+  },
+  "acceptatie_criteria": {
+    "regime_labels": "Per timestamp/asset available",
+    "ab_test": "Regime-aware pipeline lower MAE than baseline",
+    "performance_threshold": "MAE improvement > 5%"
+  }
+}
