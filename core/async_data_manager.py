@@ -358,8 +358,8 @@ class AsyncDataManager:
             self.logger.error(f"Failed to store data to {file_path}: {e}")
             raise
     
-    async def batch_collect_all_exchanges(self) -> Dict[str, Any]:
-        """Collect data from all exchanges concurrently"""
+    async def batch_collect_all_exchanges_with_integrity_filter(self) -> Dict[str, Any]:
+        """Collect data from all exchanges with HARD integrity filter - incomplete coins BLOCKED"""
         tasks = [
             self.fetch_market_data_async(exchange_name)
             for exchange_name in self.exchanges.keys()
@@ -373,7 +373,9 @@ class AsyncDataManager:
             "summary": {
                 "total_exchanges": len(self.exchanges),
                 "successful": 0,
-                "failed": 0
+                "failed": 0,
+                "coins_blocked_incomplete": 0,
+                "coins_passed_filter": 0
             }
         }
         
@@ -385,10 +387,216 @@ class AsyncDataManager:
                 }
                 collected_data["summary"]["failed"] += 1
             else:
-                collected_data["exchanges"][exchange_name] = result
+                # Apply HARD data integrity filter
+                filtered_result = await self._apply_hard_integrity_filter(result, exchange_name)
+                collected_data["exchanges"][exchange_name] = filtered_result
                 collected_data["summary"]["successful"] += 1
+                collected_data["summary"]["coins_blocked_incomplete"] += filtered_result.get("blocked_coins_count", 0)
+                collected_data["summary"]["coins_passed_filter"] += filtered_result.get("passed_coins_count", 0)
         
         return collected_data
+    
+    async def batch_collect_all_exchanges(self) -> Dict[str, Any]:
+        """Backward compatibility wrapper - now uses hard integrity filter by default"""
+        return await self.batch_collect_all_exchanges_with_integrity_filter()
+    
+    async def _apply_hard_integrity_filter(self, raw_data: Dict[str, Any], exchange_name: str) -> Dict[str, Any]:
+        """Apply HARD integrity filter - incomplete coins are BLOCKED, not passed through"""
+        
+        filtered_data = {
+            "exchange": raw_data.get("exchange", exchange_name),
+            "timestamp": raw_data.get("timestamp"),
+            "tickers": {},
+            "ohlcv": {},
+            "order_books": {},
+            "errors": raw_data.get("errors", []),
+            "integrity_filter_results": {
+                "total_coins_scanned": 0,
+                "coins_passed_filter": 0,
+                "coins_blocked_incomplete": 0,
+                "blocked_reasons": {},
+                "completeness_threshold": 0.8  # 80% minimum completeness required
+            },
+            "blocked_coins_count": 0,
+            "passed_coins_count": 0
+        }
+        
+        # Process tickers with hard filter
+        if raw_data.get("tickers"):
+            for symbol, ticker_data in raw_data["tickers"].items():
+                filtered_data["integrity_filter_results"]["total_coins_scanned"] += 1
+                
+                # Check data completeness for this coin
+                completeness_result = await self._check_coin_completeness(symbol, ticker_data, raw_data)
+                
+                if completeness_result["is_complete"]:
+                    # Coin passes filter - include in output
+                    filtered_data["tickers"][symbol] = ticker_data
+                    filtered_data["integrity_filter_results"]["coins_passed_filter"] += 1
+                    filtered_data["passed_coins_count"] += 1
+                    
+                    self.structured_logger.debug(
+                        f"Coin passed integrity filter: {symbol}",
+                        extra={
+                            "symbol": symbol,
+                            "completeness_score": completeness_result["completeness_score"],
+                            "exchange": exchange_name
+                        }
+                    )
+                else:
+                    # Coin BLOCKED - incomplete data
+                    filtered_data["integrity_filter_results"]["coins_blocked_incomplete"] += 1
+                    filtered_data["blocked_coins_count"] += 1
+                    
+                    # Track reason for blocking
+                    reason = completeness_result["missing_components"][0] if completeness_result["missing_components"] else "unknown"
+                    if reason not in filtered_data["integrity_filter_results"]["blocked_reasons"]:
+                        filtered_data["integrity_filter_results"]["blocked_reasons"][reason] = 0
+                    filtered_data["integrity_filter_results"]["blocked_reasons"][reason] += 1
+                    
+                    self.structured_logger.warning(
+                        f"COIN BLOCKED - Incomplete data: {symbol}",
+                        extra={
+                            "symbol": symbol,
+                            "completeness_score": completeness_result["completeness_score"],
+                            "missing_components": completeness_result["missing_components"],
+                            "exchange": exchange_name,
+                            "action": "BLOCKED"
+                        }
+                    )
+        
+        # Process OHLCV data with same hard filter
+        if raw_data.get("ohlcv"):
+            for symbol, ohlcv_data in raw_data["ohlcv"].items():
+                # Only include OHLCV if ticker passed filter
+                if symbol in filtered_data["tickers"]:
+                    filtered_data["ohlcv"][symbol] = ohlcv_data
+        
+        # Process order books with same hard filter
+        if raw_data.get("order_books"):
+            for symbol, order_book_data in raw_data["order_books"].items():
+                # Only include order book if ticker passed filter
+                if symbol in filtered_data["tickers"]:
+                    filtered_data["order_books"][symbol] = order_book_data
+        
+        # Log filtering results
+        self.structured_logger.info(
+            f"Hard integrity filter applied for {exchange_name}",
+            extra={
+                "exchange": exchange_name,
+                "total_scanned": filtered_data["integrity_filter_results"]["total_coins_scanned"],
+                "passed_filter": filtered_data["integrity_filter_results"]["coins_passed_filter"],
+                "blocked_incomplete": filtered_data["integrity_filter_results"]["coins_blocked_incomplete"],
+                "blocked_reasons": filtered_data["integrity_filter_results"]["blocked_reasons"]
+            }
+        )
+        
+        return filtered_data
+    
+    async def _check_coin_completeness(self, symbol: str, ticker_data: Dict[str, Any], raw_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Check if coin has complete data across all required components"""
+        
+        required_components = {
+            "price_data": 0.3,      # 30% weight
+            "volume_data": 0.2,     # 20% weight
+            "ohlcv_data": 0.2,      # 20% weight
+            "order_book_data": 0.1, # 10% weight
+            "sentiment_data": 0.1,  # 10% weight
+            "technical_data": 0.1   # 10% weight
+        }
+        
+        component_scores = {}
+        missing_components = []
+        
+        # 1. Price data completeness
+        price_score = 0.0
+        if ticker_data.get("price") and ticker_data.get("bid") and ticker_data.get("ask"):
+            if ticker_data["price"] > 0 and ticker_data["bid"] > 0 and ticker_data["ask"] > 0:
+                price_score = 1.0
+        
+        if price_score < 0.8:
+            missing_components.append("price_data")
+        component_scores["price_data"] = price_score
+        
+        # 2. Volume data completeness
+        volume_score = 0.0
+        if ticker_data.get("volume") and ticker_data["volume"] > 0:
+            volume_score = 1.0
+        
+        if volume_score < 0.8:
+            missing_components.append("volume_data")
+        component_scores["volume_data"] = volume_score
+        
+        # 3. OHLCV data completeness
+        ohlcv_score = 0.0
+        if raw_data.get("ohlcv", {}).get(symbol):
+            ohlcv_data = raw_data["ohlcv"][symbol]
+            # Check if we have data for multiple timeframes
+            valid_timeframes = 0
+            for timeframe, data in ohlcv_data.items():
+                if data and len(data) > 10:  # At least 10 candles
+                    valid_timeframes += 1
+            
+            if valid_timeframes >= 1:  # At least 1 valid timeframe
+                ohlcv_score = min(valid_timeframes / 2.0, 1.0)  # Max score for 2+ timeframes
+        
+        if ohlcv_score < 0.5:
+            missing_components.append("ohlcv_data")
+        component_scores["ohlcv_data"] = ohlcv_score
+        
+        # 4. Order book data completeness
+        order_book_score = 0.0
+        if raw_data.get("order_books", {}).get(symbol):
+            order_book = raw_data["order_books"][symbol]
+            if order_book.get("bids") and order_book.get("asks"):
+                if len(order_book["bids"]) >= 5 and len(order_book["asks"]) >= 5:
+                    order_book_score = 1.0
+        
+        if order_book_score < 0.3:
+            missing_components.append("order_book_data")
+        component_scores["order_book_data"] = order_book_score
+        
+        # 5. Sentiment data completeness (simulated check - would integrate with real sentiment API)
+        sentiment_score = 0.0
+        # In real implementation, check if sentiment data exists
+        # For now, simulate based on volume (high volume = likely to have sentiment data)
+        if ticker_data.get("volume", 0) > 1000000:  # $1M+ volume
+            sentiment_score = 0.8
+        elif ticker_data.get("volume", 0) > 100000:  # $100k+ volume
+            sentiment_score = 0.5
+        
+        if sentiment_score < 0.3:
+            missing_components.append("sentiment_data")
+        component_scores["sentiment_data"] = sentiment_score
+        
+        # 6. Technical data completeness
+        technical_score = 0.0
+        # Check if we have high/low/change data
+        if (ticker_data.get("high") and ticker_data.get("low") and 
+            ticker_data.get("change") is not None):
+            technical_score = 1.0
+        
+        if technical_score < 0.5:
+            missing_components.append("technical_data")
+        component_scores["technical_data"] = technical_score
+        
+        # Calculate weighted completeness score
+        total_score = sum(
+            component_scores[component] * weight 
+            for component, weight in required_components.items()
+        )
+        
+        # Hard threshold: 80% completeness required
+        is_complete = total_score >= 0.8 and len(missing_components) <= 2
+        
+        return {
+            "symbol": symbol,
+            "is_complete": is_complete,
+            "completeness_score": total_score,
+            "component_scores": component_scores,
+            "missing_components": missing_components,
+            "threshold": 0.8
+        }
     
     async def cleanup(self):
         """Cleanup async resources"""

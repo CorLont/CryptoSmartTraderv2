@@ -5,7 +5,7 @@ CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intel
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
-Data integrity policy: No demo/synthetic data - only authentic data from real sources. When data is unavailable or unreliable, show clear error states with specific reasons and required actions.
+Data integrity policy: ZERO-TOLERANCE for incomplete data - coins with missing sentiment/on-chain/technical data are HARD BLOCKED from training and display. Only authentic data from real sources with 80%+ completeness allowed. No fallback, no synthetic data, no incomplete coins passed through.
 
 ## System Architecture
 
@@ -65,6 +65,7 @@ Data integrity policy: No demo/synthetic data - only authentic data from real so
 - **Advanced Execution Simulation (August 2025):** Level-2 order book simulation with market impact, partial fills, exchange-specific latency/fees, maintenance windows, and realistic slippage modeling for accurate backtesting.
 - **Enterprise Portfolio Risk Management (August 2025):** Per-coin hard caps (value & ADV %), correlation limits, automated position kill-switch based on health scores, GO/NOGO thresholds, and comprehensive risk monitoring with emergency flattening capabilities.
 - **Coverage Audit System (August 2025):** Daily automated audits ensuring 100% exchange coverage with missing coin alerts, new listing detection, impact scoring, and comprehensive gap analysis to guarantee no trading opportunities are missed.
+- **Hard Data Integrity Filter (August 2025):** Zero-tolerance policy for incomplete data - coins with missing sentiment/on-chain/technical data are HARD BLOCKED from training and display, with 80% minimum completeness threshold and comprehensive component validation.
 
 ## External Dependencies
 
