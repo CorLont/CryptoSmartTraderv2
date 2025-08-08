@@ -1,0 +1,2 @@
+{"asctime": "2025-08-08 15:31:11", "name": "CryptoSmartTrader", "levelname": "ERROR", "correlation_id": null, "operation": null, "agent_name": null, "message": "Failed to start metrics server: [Errno 98] Address already in use"}
+{"asctime": "2025-08-08 15:31:11", "name": "CryptoSmartTrader", "levelname": "ERROR", "correlation_id": null, "operation": null, "agent_name": null, "message": "Failed to start metrics server: [Errno 98] Address already in use"}

@@ -71,6 +71,7 @@ Data integrity policy: ZERO-TOLERANCE for incomplete data - coins with missing s
 - **Shadow Trading Engine with Mandatory Soak Period (August 2025):** Comprehensive paper trading system with 4-8 week mandatory soak period, P&L verification, false positive ratio monitoring, and automated live trading authorization only after passing all validation criteria.
 - **Multi-Horizon Signal Quality Validator (August 2025):** Enterprise signal validation system with Precision@K ≥60%, hit-rates ≥55%, MAE calibration ≤0.25×median(|pred|), Sharpe ≥1.0, max drawdown ≤15%, and calibration testing across 1H/24H/7D/30D horizons using 4-8 weeks out-of-sample data.
 - **Advanced Execution Simulator (August 2025):** Level-2 order book simulation with market impact, partial fills, exchange-specific latency/fees, maintenance windows, and realistic slippage modeling for accurate backtesting. Validates slippage p50 ≤25 bps, p90 ≤80 bps, fill-rate ≥95%, and end-to-end latency p95 targets.
+- **System Health Monitor with GO/NO-GO Gates (August 2025):** Enterprise health scoring system with weighted components (validation accuracy 25%, Sharpe ratio 20%, feedback hit-rate 15%, error ratio 15%, data completeness 15%, tuning freshness 10%). Score ≥85 = GO (live trading), 60-85 = WARNING (paper only), <60 = NO-GO (blocked). Dashboard shows nothing when confidence <80% AND incomplete features.
 
 ## External Dependencies
 
