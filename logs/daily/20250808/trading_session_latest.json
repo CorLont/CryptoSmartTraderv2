@@ -1,0 +1,8 @@
+{
+  "timestamp": "2025-08-08T17:26:17.093349",
+  "log_type": "trading_session",
+  "metrics": {
+    "session_id": "test_123",
+    "duration_minutes": 45
+  }
+}

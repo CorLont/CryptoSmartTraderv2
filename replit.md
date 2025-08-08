@@ -83,6 +83,10 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Backup/Restore System (August 2025):** Complete backup and restore scripts for models, configs, logs, and data. Features incremental backups, pre-restore validation, categorized restoration, and system snapshot creation with verification.
 - **Windows Deployment Automation (August 2025):** Full Windows deployment with antivirus/firewall exception configuration, port setup, and comprehensive .bat runners for installation, services, evaluation, and one-click pipeline execution.
 - **One-Click Pipeline (August 2025):** Complete automated pipeline runner executing scrape → features → predict → strict gate → export → eval → logs/daily workflow with fallback mechanisms and comprehensive logging.
+- **Strict 80% Confidence Gate (August 2025):** Ultra-strict orchestration filtering with `strict_toplist()` function ensuring only >= 80% confidence predictions pass through, with horizon-specific filtering and comprehensive gate status reporting.
+- **Monte Carlo Dropout Inference (August 2025):** Bayesian uncertainty quantification for neural networks using MC Dropout with 30+ forward passes, confidence interval calculation, and uncertainty-aware prediction filtering.
+- **Regime Detection HMM (August 2025):** Hidden Markov Model-based market regime classification (bear/neutral/bull) with fallback volatility/trend analysis, regime statistics calculation, and adaptive trading strategy support.
+- **Daily Logging Bundler (August 2025):** Ultra-compact daily metrics logging system with automatic bundling, compression, cleanup, and timestamped file management including convenience functions for different log types.
 
 ## External Dependencies
 
