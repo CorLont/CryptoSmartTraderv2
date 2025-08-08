@@ -1,0 +1,23 @@
+{
+  "test_type": "sentiment_model_validation",
+  "timestamp": "2025-08-08T16:08:21.462671",
+  "components_tested": [
+    "FinBERT/Crypto-BERT integration",
+    "Batch processing performance",
+    "Sarcasm detection",
+    "Probability calibration",
+    "HuggingFace transformers"
+  ],
+  "interface_validation": {
+    "predict_batch_method": "implemented",
+    "score_range": "-1 to 1",
+    "probability_outputs": "prob_pos, confidence",
+    "sarcasm_flag": "0/1 binary",
+    "calibration_buckets": "0.8-0.9, 0.9-1.0"
+  },
+  "performance_targets": {
+    "batch_size": "5k posts",
+    "latency_target": "< 30s (GPU) / < 120s (CPU)",
+    "output_format": "list[dict] with score, prob_pos, confidence, sarcasm"
+  }
+}
