@@ -49,6 +49,15 @@ dependencies = [
     "torch>=2.8.0",
     "aiofiles>=24.1.0",
     "asyncio-throttle>=1.0.2",
+    "pytest>=8.4.1",
+    "pytest-mock>=3.14.1",
+    "pytest-xdist>=3.8.0",
+    "respx>=0.22.0",
+    "factory-boy>=3.3.3",
+    "coverage>=7.10.2",
+    "pytest-asyncio>=1.1.0",
+    "pytest-cov>=6.2.1",
+    "httpx>=0.28.1",
 ]
 
 [project.optional-dependencies]

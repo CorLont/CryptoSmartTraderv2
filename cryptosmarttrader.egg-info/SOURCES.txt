@@ -30,6 +30,7 @@ core/ai_news_event_mining.py
 core/ai_portfolio_optimizer.py
 core/alpha_seeker.py
 core/async_coordinator.py
+core/async_data_manager.py
 core/async_orchestrator.py
 core/automated_feature_engineering.py
 core/automl_engine.py
@@ -49,6 +50,7 @@ core/dashboard_manager.py
 core/data_manager.py
 core/deep_learning_engine.py
 core/deep_ml_engine.py
+core/dependency_container.py
 core/distributed_orchestrator.py
 core/enhanced_orchestrator.py
 core/error_handler.py
@@ -61,6 +63,7 @@ core/gpu_accelerator.py
 core/health_monitor.py
 core/human_in_the_loop.py
 core/live_feature_adaptation.py
+core/logging_manager.py
 core/market_impact_engine.py
 core/market_regime_detector.py
 core/meta_learning_coordinator.py
@@ -78,6 +81,7 @@ core/probabilistic_trader.py
 core/real_time_pipeline.py
 core/reinforcement_portfolio_allocator.py
 core/risk_management.py
+core/secrets_manager.py
 core/security_manager.py
 core/self_healing_system.py
 core/shadow_testing_engine.py

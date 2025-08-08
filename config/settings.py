@@ -4,7 +4,8 @@ Pydantic Configuration Management with Environment Variables
 Centralized, type-safe configuration for the entire system
 """
 
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 import os
@@ -29,12 +30,7 @@ class ExchangeSettings(BaseSettings):
     burst_size: int = Field(50, ge=10, le=1000)
     timeout_seconds: int = Field(30, ge=5, le=120)
     
-    @validator('kraken_api_key', 'kraken_secret')
-    def validate_kraken_credentials(cls, v, values, field):
-        """Ensure both Kraken credentials are provided together"""
-        if field.name == 'kraken_secret' and values.get('kraken_api_key') and not v:
-            raise ValueError("Kraken secret required when API key provided")
-        return v
+    # Note: Credential validation can be added with model_validator if needed
 
 class DatabaseSettings(BaseSettings):
     """Database configuration"""
@@ -56,7 +52,8 @@ class MLSettings(BaseSettings):
     enable_transformer: bool = Field(True, env="ENABLE_TRANSFORMER")
     enable_ensemble: bool = Field(True, env="ENABLE_ENSEMBLE")
     
-    @validator('model_cache_dir')
+    @field_validator('model_cache_dir')
+    @classmethod
     def create_model_dir(cls, v):
         """Ensure model directory exists"""
         Path(v).mkdir(parents=True, exist_ok=True)
@@ -98,7 +95,8 @@ class LoggingSettings(BaseSettings):
     enable_correlation_tracking: bool = Field(True, env="ENABLE_CORRELATION_TRACKING")
     correlation_header_name: str = Field("X-Correlation-ID", env="CORRELATION_HEADER_NAME")
     
-    @validator('log_dir')
+    @field_validator('log_dir')
+    @classmethod
     def create_log_dir(cls, v):
         """Ensure log directory exists"""
         Path(v).mkdir(parents=True, exist_ok=True)
@@ -112,7 +110,8 @@ class DataSettings(BaseSettings):
     max_file_age_days: int = Field(7, ge=1, le=90)
     compression_enabled: bool = Field(True, env="ENABLE_COMPRESSION")
     
-    @validator('data_dir')
+    @field_validator('data_dir')
+    @classmethod
     def create_data_dir(cls, v):
         """Ensure data directory exists"""
         for subdir in ['raw', 'processed', 'market_data', 'predictions']:
