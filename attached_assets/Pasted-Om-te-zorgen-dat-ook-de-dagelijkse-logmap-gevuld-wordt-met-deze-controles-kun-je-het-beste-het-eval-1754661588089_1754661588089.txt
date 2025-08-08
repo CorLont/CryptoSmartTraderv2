@@ -1,0 +1,80 @@
+Om te zorgen dat ook de dagelijkse logmap gevuld wordt met deze controles, kun je het beste het evaluatie- en health-score-script uitbreiden met een vaste logdirectory, bestandsnaam op basis van datum/tijd en structured JSON-output.
+
+Hier is een voorbeeld waarin alle kernmetrics (coverage, precision@K, hit-rate, MAE, Sharpe, calibration, health-score) automatisch worden weggeschreven naar logs/daily/YYYYMMDD/:
+
+python
+Kopiëren
+Bewerken
+import json
+from pathlib import Path
+from datetime import datetime
+from evaluator import precision_at_k, hit_rate, mae_calibration, sharpe_strategy
+from coverage_audit import audit
+from health_score import system_health
+
+def save_daily_log(metrics: dict):
+    # Bepaal mapnaam op basis van datum
+    today_str = datetime.utcnow().strftime("%Y%m%d")
+    log_dir = Path("logs/daily") / today_str
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    # Bestandsnaam met tijd
+    ts_str = datetime.utcnow().strftime("%H%M%S")
+    logfile = log_dir / f"daily_metrics_{ts_str}.json"
+
+    # Schrijf metrics als JSON
+    with open(logfile, "w") as f:
+        json.dump(metrics, f, indent=2)
+
+    print(f"Dagelijkse log geschreven naar: {logfile}")
+
+if __name__ == "__main__":
+    # Voorbeeld: laadt predictions en prices, berekent evaluatie + healthscore
+    import pandas as pd
+
+    pred = pd.read_csv("exports/predictions.csv", parse_dates=["timestamp"])
+    prices = pd.read_csv("exports/prices.csv", parse_dates=["timestamp"])
+
+    # ... bereken realized returns en merge (zoals in evaluator.py) ...
+    # df = merge_pred_real(...)
+
+    # Mock-metrics ter illustratie:
+    metrics = {
+        "coverage": audit(["BTC/USD", "ETH/USD"]),
+        "precision_at_5": 0.62,
+        "hit_rate_conf80": 0.58,
+        "mae": 0.042,
+        "sharpe": 1.15,
+        "calibration": {
+            "80-90%": 0.72,
+            "90-100%": 0.78
+        },
+        "health_score": system_health(
+            validation_accuracy=0.91,
+            sharpe_norm=0.575,  # Sharpe 1.15 / max 2
+            feedback_success=0.87,
+            error_ratio=0.05,
+            data_completeness=0.99,
+            tuning_freshness=1.0
+        ),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+    save_daily_log(metrics)
+Wat dit doet:
+
+Maakt elke dag een aparte map logs/daily/YYYYMMDD.
+
+Schrijft daar per run een JSON met alle kerncijfers.
+
+Namen bevatten tijd zodat meerdere runs op één dag bewaard blijven.
+
+Bevat alle GO/NOGO-criteria zodat je terug kunt kijken hoe het systeem presteerde.
+
+Advies voor integratie:
+
+Roep dit script aan als laatste stap in je dagelijkse pipeline of .bat file.
+
+Koppel het dashboard aan deze JSON’s, zodat je historische grafieken kunt maken van precision, hit-rate, Sharpe en health-score.
+
+Laat het script ook een latest.json bijwerken in logs/daily/ zodat het dashboard altijd de laatste stand heeft.

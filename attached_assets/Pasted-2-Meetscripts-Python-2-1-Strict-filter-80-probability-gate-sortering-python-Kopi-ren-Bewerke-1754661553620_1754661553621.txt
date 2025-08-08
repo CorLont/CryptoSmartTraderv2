@@ -1,0 +1,165 @@
+2) Meetscripts (Python)
+2.1 Strict filter (80% probability gate) + sortering
+python
+Kopiëren
+Bewerken
+# strict_filter.py
+import pandas as pd
+
+def strict_toplist(pred_df: pd.DataFrame, min_conf: float = 0.80, horizon_col="pred_30d", conf_col="conf_30d"):
+    """
+    pred_df kolommen: coin, pred_1h,... pred_30d, conf_1h,... conf_30d, timestamp
+    Toont alleen coins die aan de conf-drempel voldoen; anders lege df.
+    """
+    df = pred_df.copy()
+    df = df[df[conf_col] >= min_conf].sort_values(horizon_col, ascending=False)
+    # Niets tonen als leeg:
+    return df.reset_index(drop=True)
+2.2 Kraken coverage audit (live lijst vs verwerkte lijst)
+python
+Kopiëren
+Bewerken
+# coverage_audit.py
+import ccxt
+import json
+from datetime import datetime
+
+def kraken_symbols():
+    ex = ccxt.kraken()
+    markets = ex.load_markets()
+    # filter spot crypto, zonder fiat
+    return sorted([m for m in markets if ":" not in m and "/" in m])
+
+def audit(processed_symbols: list[str]) -> dict:
+    live = set(kraken_symbols())
+    proc = set(processed_symbols)
+    return {
+        "missing": sorted(list(live - proc)),
+        "extra": sorted(list(proc - live)),
+        "coverage_pct": round(100 * len(proc & live) / max(1, len(live)), 2)
+    }
+
+if __name__ == "__main__":
+    with open("last_run_processed_symbols.json","r") as f:
+        processed = json.load(f)  # bv. door je pipeline geschreven
+    rep = audit(processed)
+    rep["timestamp"] = datetime.utcnow().isoformat()
+    with open(f"logs/coverage/coverage_{rep['timestamp'].replace(':','-')}.json","w") as f:
+        json.dump(rep, f, indent=2)
+    print(rep)
+2.3 Realized returns bouwen en evalueren (precision@K, hit‑rate, MAE, Sharpe)
+python
+Kopiëren
+Bewerken
+# evaluator.py
+import pandas as pd
+import numpy as np
+
+def realized_forward_return(prices: pd.DataFrame, horizon_hours: int) -> pd.DataFrame:
+    # prices kolommen: timestamp, coin, close; per uur gesampled
+    prices = prices.sort_values(["coin","timestamp"]).copy()
+    prices["fwd"] = prices.groupby("coin")["close"].shift(-horizon_hours)
+    prices[f"ret_{horizon_hours}h"] = prices["fwd"] / prices["close"] - 1
+    return prices.drop(columns=["fwd"])
+
+def merge_pred_real(pred: pd.DataFrame, real: pd.DataFrame, horizon_hours: int,
+                    pred_col: str, conf_col: str) -> pd.DataFrame:
+    # aligneren op (coin,timestamp) sleutel
+    df = pred.merge(real[["coin","timestamp",f"ret_{horizon_hours}h"]],
+                    on=["coin","timestamp"], how="inner")
+    df = df.rename(columns={f"ret_{horizon_hours}h": "realized"})
+    df = df[[ "coin","timestamp", pred_col, conf_col, "realized" ]]
+    df = df.dropna()
+    return df
+
+def precision_at_k(df: pd.DataFrame, k: int) -> float:
+    # top-k per run (timestamp) op basis van predicted return
+    precs = []
+    for t, g in df.groupby("timestamp"):
+        g = g.sort_values(df.columns[2], ascending=False)  # predicted
+        topk = g.head(k)
+        wins = (topk["realized"] > 0).mean()
+        if len(topk) == k:
+            precs.append(wins)
+    return float(np.mean(precs)) if precs else np.nan
+
+def hit_rate(df: pd.DataFrame, conf_thr: float) -> float:
+    sel = df[df[df.columns[3]] >= conf_thr]  # confidence col
+    if sel.empty: return np.nan
+    return float((sel["realized"] > 0).mean())
+
+def mae_calibration(df: pd.DataFrame) -> float:
+    pred = df[df.columns[2]].values
+    real = df["realized"].values
+    return float(np.mean(np.abs(pred - real)))
+
+def sharpe_strategy(df: pd.DataFrame, conf_thr: float) -> float:
+    # simpele equal-weight strategy: elke run alle picks met conf>=thr
+    sel = df[df[df.columns[3]] >= conf_thr].copy()
+    if sel.empty: return np.nan
+    # aggregate per timestamp (avg return)
+    agg = sel.groupby("timestamp")["realized"].mean()
+    if agg.std() == 0 or np.isnan(agg.std()): return np.nan
+    return float(np.sqrt(365) * agg.mean() / agg.std())  # daily-ish approx (pas aan naar jouw sampling)
+
+if __name__ == "__main__":
+    # Voorbeeld-bestanden:
+    # predictions.csv: timestamp,coin,pred_168h,conf_168h, ... (168h = 7d)
+    # prices.csv: timestamp,coin,close (hourly)
+    pred = pd.read_csv("exports/predictions.csv", parse_dates=["timestamp"])
+    prices = pd.read_csv("exports/prices.csv", parse_dates=["timestamp"])
+
+    horizon = 720  # 30d
+    prices30 = realized_forward_return(prices, horizon)
+    df = merge_pred_real(pred, prices30, horizon, pred_col="pred_720h", conf_col="conf_720h")
+
+    out = {
+        "precision_at_5": precision_at_k(df, k=5),
+        "hit_rate_conf80": hit_rate(df, conf_thr=0.80),
+        "mae": mae_calibration(df),
+        "sharpe": sharpe_strategy(df, conf_thr=0.80),
+        "n_samples": int(len(df))
+    }
+    print(out)
+2.4 Calibration‑check (verwachte vs gerealiseerde buckets)
+python
+Kopiëren
+Bewerken
+# calibration.py
+import pandas as pd
+import numpy as np
+
+def bin_by_confidence(df: pd.DataFrame, conf_col: str, bins=(0.8, 0.9, 1.01)):
+    labels = [f"{int(a*100)}–{int(b*100)}%" for a,b in zip(bins[:-1], bins[1:])]
+    cats = pd.cut(df[conf_col], bins=bins, labels=labels, include_lowest=True)
+    res = df.groupby(cats)["realized"].apply(lambda s: (s>0).mean()).rename("success_rate").reset_index()
+    return res
+
+if __name__ == "__main__":
+    df = pd.read_csv("exports/pred_vs_real_30d.csv", parse_dates=["timestamp"])
+    print(bin_by_confidence(df, conf_col="conf_720h"))
+2.5 System Health Score (GO/NOGO)
+python
+Kopiëren
+Bewerken
+# health_score.py
+import json
+from pathlib import Path
+
+def system_health(validation_accuracy, sharpe_norm, feedback_success, error_ratio, data_completeness, tuning_freshness):
+    score = (
+        0.4 * validation_accuracy +
+        0.2 * sharpe_norm +
+        0.1 * feedback_success +
+        0.1 * (1 - min(error_ratio, 0.3)) +
+        0.1 * data_completeness +
+        0.1 * tuning_freshness
+    ) * 100
+    return round(score, 1)
+
+if __name__ == "__main__":
+    # typische inputs laad je uit je logs/metrics jsons
+    metrics = json.loads(Path("logs/system/last_metrics.json").read_text())
+    s = system_health(**metrics)
+    print({"system_health": s, "decision": "GO" if s >= 85 else ("WARN" if s >= 60 else "NOGO")})
+3) Hoe je dit inzet (operational playbook)

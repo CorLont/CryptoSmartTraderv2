@@ -10,7 +10,7 @@ Data integrity policy: No demo/synthetic data - only authentic data from real so
 ## System Architecture
 
 ### Core Architecture Pattern
-The system employs a multi-agent coordination architecture with specialized AI agents operating in parallel: Sentiment Analysis, Technical Analysis, ML Predictor, Backtest, Trade Executor, and Whale Detector.
+**Distributed Multi-Process Architecture (August 2025)** - The system employs a distributed orchestrator managing 8 isolated agent processes with circuit breakers, exponential backoff, health monitoring, and automatic restart capabilities. Each agent runs in complete process isolation to eliminate single points of failure: Data Collector, Sentiment Analyzer, Technical Analyzer, ML Predictor, Whale Detector, Risk Manager, Portfolio Optimizer, and Health Monitor.
 
 ### Perfect Workstation Deployment (August 2025)
 **Geoptimaliseerd voor perfect draaien op workstation met 3 hoofd .bat bestanden:**
