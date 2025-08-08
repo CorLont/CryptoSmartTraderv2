@@ -63,6 +63,7 @@ Data integrity policy: No demo/synthetic data - only authentic data from real so
 - **Human-in-the-Loop & Explainability:** Active learning, feedback-driven learning, and SHAP for model transparency and human validation.
 - **Shadow Trading:** Full paper trading engine with realistic market simulation for pre-production model validation.
 - **Advanced Execution Simulation (August 2025):** Level-2 order book simulation with market impact, partial fills, exchange-specific latency/fees, maintenance windows, and realistic slippage modeling for accurate backtesting.
+- **Enterprise Portfolio Risk Management (August 2025):** Per-coin hard caps (value & ADV %), correlation limits, automated position kill-switch based on health scores, GO/NOGO thresholds, and comprehensive risk monitoring with emergency flattening capabilities.
 
 ## External Dependencies
 
