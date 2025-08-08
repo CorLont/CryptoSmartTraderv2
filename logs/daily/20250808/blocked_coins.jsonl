@@ -1,0 +1,2 @@
+{"timestamp": "2025-08-08T17:42:52.309304", "symbol": "ADA", "completeness": 0.8333333333333334, "critical_fields_complete": false, "blocked_reasons": ["Critical field missing: price_data.close", "Critical field missing: sentiment_data.sentiment_score"]}
+{"timestamp": "2025-08-08T17:42:52.311280", "symbol": "ADA", "completeness": 0.8333333333333334, "critical_fields_complete": false, "blocked_reasons": ["Critical field missing: price_data.close", "Critical field missing: sentiment_data.sentiment_score"]}

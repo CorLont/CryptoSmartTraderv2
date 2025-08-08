@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-08-08T17:42:52.311733",
+  "total_coins": 3,
+  "passed_coins": 2,
+  "blocked_coins": 1,
+  "pass_rate": 0.6666666666666666,
+  "blocked_symbols": [
+    "ADA"
+  ]
+}
