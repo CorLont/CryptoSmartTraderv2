@@ -1,0 +1,25 @@
+{"asctime": "2025-08-08 16:30:22", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250808_163022"}
+{"asctime": "2025-08-08 16:30:22", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "STRICT GATE CLOSED: dashboard_20250808_163022 - only 0/15 candidates passed (minimum: 1)"}
+{"asctime": "2025-08-08 16:30:22", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available - confidence threshold not met"}
+{"asctime": "2025-08-08 16:30:22", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available in dashboard - strict confidence gate active"}
+{"asctime": "2025-08-08 16:31:33", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: gate_20250808_163133"}
+{"asctime": "2025-08-08 16:31:33", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "STRICT GATE PASSED: gate_20250808_163133 - 3/5 candidates passed"}
+{"asctime": "2025-08-08 16:31:33", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: gate_20250808_163133"}
+{"asctime": "2025-08-08 16:31:33", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "STRICT GATE: No input candidates for gate_20250808_163133"}
+{"asctime": "2025-08-08 16:31:50", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250808_163150"}
+{"asctime": "2025-08-08 16:31:50", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "STRICT GATE CLOSED: dashboard_20250808_163150 - only 0/15 candidates passed (minimum: 1)"}
+{"asctime": "2025-08-08 16:31:50", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available - confidence threshold not met"}
+{"asctime": "2025-08-08 16:31:50", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available in dashboard - strict confidence gate active"}
+{"asctime": "2025-08-08 16:32:57", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_test_001"}
+{"asctime": "2025-08-08 16:32:57", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "STRICT GATE PASSED: dashboard_test_001 - 5/8 candidates passed"}
+{"asctime": "2025-08-08 16:32:57", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generating explanations for 5 predictions"}
+{"asctime": "2025-08-08 16:32:57", "name": "StrictConfidenceGate", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "No explainer found for model ensemble"}
+{"asctime": "2025-08-08 16:32:57", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No explanations generated, using fallback"}
+{"asctime": "2025-08-08 16:32:57", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: empty_state_test"}
+{"asctime": "2025-08-08 16:32:57", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "STRICT GATE CLOSED: empty_state_test - only 0/4 candidates passed (minimum: 1)"}
+{"asctime": "2025-08-08 16:32:57", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available - confidence threshold not met"}
+{"asctime": "2025-08-08 16:32:57", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available in dashboard_empty_test - strict confidence gate active"}
+{"asctime": "2025-08-08 16:33:22", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250808_163322"}
+{"asctime": "2025-08-08 16:33:22", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "STRICT GATE CLOSED: dashboard_20250808_163322 - only 0/15 candidates passed (minimum: 1)"}
+{"asctime": "2025-08-08 16:33:22", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available - confidence threshold not met"}
+{"asctime": "2025-08-08 16:33:22", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available in dashboard - strict confidence gate active"}

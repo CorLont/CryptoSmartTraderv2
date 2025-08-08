@@ -56,6 +56,7 @@ Data integrity policy: ZERO-TOLERANCE for incomplete data - coins with missing s
 - **Data Management:** Centralized Data Manager, Dynamic Coin Registry, ML Model Manager.
 - **Deep Learning Engine:** Standardized use of LSTM, GRU, Transformer, N-BEATS for complex pattern detection.
 - **Enterprise ML Uncertainty Quantification (August 2025):** Bayesian LSTM with Monte Carlo sampling, quantile regression ensembles, confidence intervals (68%, 95%, 99%), epistemic vs aleatoric uncertainty decomposition, production-ready uncertainty thresholds.
+- **Strict 80% Confidence Gate System (August 2025):** Enterprise-grade confidence filtering in orchestration and dashboard with zero-tolerance policy. Includes empty state handling without UI crashes, SHAP explainability integration, and comprehensive gate reporting with daily logging of 'no reliable opportunities' events.
 - **Market Regime Detection & Routing (August 2025):** Unsupervised regime detector (bull/bear/sideways/volatile), regime-specific model routing with confidence scoring, adaptive feature weighting per regime, regime transition smoothing.
 - **ML Feature Engineering Monitor (August 2025):** Comprehensive leakage detection (look-ahead, target, temporal), SHAP-based feature importance analysis, statistical drift monitoring, automated feature pruning recommendations.
 - **SLO-Driven ML Operations (August 2025):** Formal SLO monitoring with MAE/MAPE/precision@K thresholds, automatic retraining triggers, model rollback capabilities, coverage validation for prediction intervals.

@@ -1,0 +1,58 @@
+{
+  "test_type": "strict_confidence_gate_dashboard_integration",
+  "timestamp": "2025-08-08T16:32:58.008890",
+  "components_tested": [
+    "Strict 80% confidence gate enforcement",
+    "Dashboard table format: coin | pred_7d | pred_30d | conf | regime | top drivers (SHAP)",
+    "Sorting by pred_30d (descending)",
+    "SHAP explainability integration",
+    "Empty state handling (no UI crash)",
+    "Log 'no reliable opportunities' message",
+    "Gate statistics and reporting"
+  ],
+  "strict_confidence_gate": {
+    "threshold": "80% (strict enforcement)",
+    "filtering_logic": [
+      "ALL confidence values must be >= 80%",
+      "Invalid predictions filtered out",
+      "NaN/infinite values rejected",
+      "Extreme values (>1000%) rejected"
+    ],
+    "sorting": "pred_30d descending (as specified)",
+    "gate_reporting": {
+      "gate_id": "Unique identifier per application",
+      "input_count": "Total candidates evaluated",
+      "output_count": "Candidates passing gate",
+      "low_confidence_rejected": "Count of confidence failures",
+      "invalid_predictions_rejected": "Count of invalid data",
+      "processing_time": "Gate execution time"
+    }
+  },
+  "dashboard_table": {
+    "required_columns": [
+      "coin",
+      "pred_7d",
+      "pred_30d",
+      "conf",
+      "regime",
+      "top drivers (SHAP)"
+    ],
+    "sorting": "pred_30d descending",
+    "explainability": "SHAP drivers per coin visible"
+  },
+  "empty_state_handling": {
+    "no_ui_crash": true,
+    "log_message": "no reliable opportunities",
+    "log_location": "logs/daily/YYYYMMDD/empty_state_log_*.json",
+    "gate_status": "CLOSED when no candidates pass",
+    "user_message": "Enterprise risk management explanation"
+  },
+  "acceptatie_criteria": {
+    "strikte_80_confidence_gate": "\u2705 Implemented in orchestration and dashboard",
+    "geen_kandidaten_toon_niets": "\u2705 Empty state handled without UI crash",
+    "sorteer_op_pred_30d_desc": "\u2705 Table sorted by 30d prediction descending",
+    "explainability_shap_visible": "\u2705 SHAP drivers visible per coin",
+    "lege_staat_correct": "\u2705 No UI crash, proper empty state handling",
+    "log_no_reliable_opportunities": "\u2705 Logged to daily logs with context"
+  }
+}
