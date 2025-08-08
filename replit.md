@@ -67,6 +67,7 @@ Data integrity policy: ZERO-TOLERANCE for incomplete data - coins with missing s
 - **Coverage Audit System (August 2025):** Daily automated audits ensuring 100% exchange coverage with missing coin alerts, new listing detection, impact scoring, and comprehensive gap analysis to guarantee no trading opportunities are missed.
 - **Hard Data Integrity Filter (August 2025):** Zero-tolerance policy for incomplete data - coins with missing sentiment/on-chain/technical data are HARD BLOCKED from training and display, with 80% minimum completeness threshold and comprehensive component validation.
 - **Multi-Horizon Batch Inference Engine (August 2025):** Unified batch processing system for all coins across all horizons (1H/4H/24H/7D/30D) with atomic operations, uniform feature engineering, parallel processing, and comprehensive SLO monitoring for systematic ML predictions.
+- **Strict Confidence Gate Manager (August 2025):** Hard confidence threshold enforcement in orchestration and dashboard - shows NOTHING when no candidates meet 80% confidence threshold, with comprehensive empty state handling and gate status monitoring.
 
 ## External Dependencies
 

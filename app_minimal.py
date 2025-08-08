@@ -23,6 +23,16 @@ sys.path.append(str(project_root))
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Import confidence gate manager
+try:
+    from core.confidence_gate_manager import (
+        get_confidence_gate_manager, CandidateResult, ConfidenceGateConfig
+    )
+    CONFIDENCE_GATE_AVAILABLE = True
+except ImportError:
+    CONFIDENCE_GATE_AVAILABLE = False
+    logger.warning("Confidence gate manager not available")
+
 def main():
     """Minimal application entry point"""
     try:
@@ -58,21 +68,29 @@ def main():
         ]
     )
     
-    # Filters in sidebar
+    # Filters in sidebar with STRICT confidence gate
     st.sidebar.markdown("### ⚙️ Filters")
     min_return = st.sidebar.selectbox("Min. rendement 30d", ["25%", "50%", "100%", "200%"], index=1)
-    confidence_filter = st.sidebar.slider("Min. vertrouwen (%)", 60, 95, 75)
+    confidence_filter = st.sidebar.slider("Min. vertrouwen (%)", 60, 95, 80)  # Default to 80%
+    
+    # Strict gate configuration
+    st.sidebar.markdown("### 🛡️ Confidence Gate")
+    strict_mode = st.sidebar.checkbox("Strict mode (toon niets < threshold)", value=True)
+    if strict_mode:
+        st.sidebar.warning("⚠️ Alleen ≥80% confidence wordt getoond")
+    else:
+        st.sidebar.info("ℹ️ Soft filtering actief")
     
     # Route to appropriate dashboard
     try:
         if page == "🎯 TOP KOOP KANSEN":
-            render_trading_opportunities(min_return, confidence_filter)
+            render_trading_opportunities(min_return, confidence_filter, strict_mode)
         elif page == "📊 Markt Status":
             render_market_status()
         elif page == "🧠 AI Voorspellingen":
-            render_predictions_dashboard()
+            render_predictions_dashboard(confidence_filter, strict_mode)
         else:
-            render_trading_opportunities(min_return, confidence_filter)
+            render_trading_opportunities(min_return, confidence_filter, strict_mode)
     except Exception as e:
         st.error(f"Dashboard rendering error: {e}")
         st.info("Please check system status and try refreshing the page.")
@@ -88,8 +106,8 @@ def main():
         st.error(f"Dashboard error: {e}")
         logger.error(f"Dashboard error for {page}: {e}")
 
-def render_trading_opportunities(min_return, confidence_filter):
-    """Render trading opportunities with expected returns"""
+def render_trading_opportunities(min_return, confidence_filter, strict_mode=True):
+    """Render trading opportunities with confidence gate filtering"""
     st.title("💰 TOP KOOP KANSEN")
     st.markdown("### 🎯 De beste coins om NU te kopen met verwachte rendementen")
     
@@ -112,19 +130,27 @@ def render_trading_opportunities(min_return, confidence_filter):
         st.warning("⚠️ MODELLEN NIET GETRAIND - Toont basis marktdata")
         st.info("Voor AI voorspellingen zijn getrainde modellen nodig (zie AI Voorspellingen tab)")
     
-    # Show real market opportunities with enhanced Kraken data analysis
-    
-    # Filter opportunities based on user criteria
-    min_return_val = float(min_return.replace('%', ''))
-    filtered = [
-        coin for coin in opportunities 
-        if coin['expected_30d'] >= min_return_val and coin['score'] >= confidence_filter
-    ]
-    
-    if not filtered:
-        st.warning("Geen coins voldoen aan de huidige filters. Probeer minder strenge criteria.")
-        st.info(f"Beschikbare opportunities: {len(opportunities)} | Filters: {min_return}+ rendement, {confidence_filter}+ score")
-        return
+    # Apply confidence gate if available and strict mode enabled
+    if CONFIDENCE_GATE_AVAILABLE and strict_mode:
+        filtered = apply_confidence_gate_filter(
+            opportunities, confidence_filter, min_return
+        )
+        
+        if not filtered:
+            render_confidence_gate_empty_state(confidence_filter, len(opportunities))
+            return
+    else:
+        # Traditional filtering
+        min_return_val = float(min_return.replace('%', ''))
+        filtered = [
+            coin for coin in opportunities 
+            if coin['expected_30d'] >= min_return_val and coin['score'] >= confidence_filter
+        ]
+        
+        if not filtered:
+            st.warning("Geen coins voldoen aan de huidige filters. Probeer minder strenge criteria.")
+            st.info(f"Beschikbare opportunities: {len(opportunities)} | Filters: {min_return}+ rendement, {confidence_filter}+ score")
+            return
     
     # TOP 3 RECOMMENDATIONS - Display prominently
     st.markdown("### 🏆 TOP 3 KANSEN (Kraken Live Data)")
@@ -441,8 +467,109 @@ def render_market_status():
     movers_df = pd.DataFrame(movers_data)
     st.dataframe(movers_df, use_container_width=True)
 
-def render_predictions_dashboard():
-    """Render AI predictions dashboard"""
+def apply_confidence_gate_filter(opportunities, confidence_threshold, min_return):
+    """Apply confidence gate filtering to opportunities"""
+    
+    if not CONFIDENCE_GATE_AVAILABLE:
+        return opportunities
+    
+    # Convert opportunities to candidates
+    candidates = []
+    for opp in opportunities:
+        candidate = CandidateResult(
+            symbol=opp['symbol'],
+            prediction=opp['expected_30d'],
+            confidence=opp['score'] / 100.0,  # Convert score to confidence
+            horizon="30d",
+            timestamp=datetime.now(),
+            features={},
+            metadata=opp
+        )
+        candidates.append(candidate)
+    
+    # Configure confidence gate
+    config = ConfidenceGateConfig(
+        minimum_confidence=confidence_threshold / 100.0,
+        minimum_candidates=1,
+        strict_mode=True,
+        show_empty_state=True
+    )
+    
+    # Apply gate
+    confidence_gate = get_confidence_gate_manager(config)
+    filtered_candidates = confidence_gate.get_filtered_recommendations(candidates)
+    
+    # Convert back to opportunities
+    filtered_opportunities = []
+    for candidate in filtered_candidates:
+        filtered_opportunities.append(candidate.metadata)
+    
+    return filtered_opportunities
+
+def render_confidence_gate_empty_state(confidence_threshold, total_opportunities):
+    """Render empty state when confidence gate blocks all candidates"""
+    
+    st.warning("🛡️ CONFIDENCE GATE GESLOTEN")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### ⚠️ Geen High-Confidence Kansen")
+        st.markdown(f"""
+        **Situatie**: Geen cryptocurrencies voldoen aan de {confidence_threshold}% confidence drempel.
+        
+        **Onderzocht**: {total_opportunities} crypto's
+        **Drempel**: {confidence_threshold}% minimum confidence
+        **Resultaat**: 0 kansen doorstaan de strenge filter
+        """)
+        
+        st.info("💡 Dit is goed! Het systeem voorkomt slechte trades door alleen high-confidence kansen te tonen.")
+    
+    with col2:
+        st.markdown("### 🎯 Wat Nu Te Doen")
+        st.markdown("""
+        **Opties**:
+        
+        1. **Wacht op betere kansen** (aanbevolen)
+           - Marktcondities zijn nu niet gunstig
+           - High-confidence systeem beschermt je kapitaal
+        
+        2. **Verlaag confidence drempel** 
+           - Verhoogd risico op slechte trades
+           - Gebruik alleen voor testing/research
+        
+        3. **Controleer over enkele uren**
+           - Marktcondities veranderen constant
+           - Nieuwe data kan kansen creëren
+        """)
+        
+        # Show confidence distribution if available
+        if CONFIDENCE_GATE_AVAILABLE:
+            gate_manager = get_confidence_gate_manager()
+            if gate_manager.last_gate_result:
+                st.markdown("### 📊 Confidence Verdeling")
+                dist = gate_manager.last_gate_result.confidence_distribution
+                for bucket, count in dist.items():
+                    if count > 0:
+                        st.markdown(f"- {bucket}: {count} coins")
+    
+    # Disable strict mode option
+    st.markdown("---")
+    with st.expander("🔧 Ontwikkelaars Opties"):
+        st.warning("⚠️ Deze opties zijn alleen voor testing/development")
+        if st.button("🚫 Tijdelijk uitschakelen strict mode"):
+            st.error("Functie uitgeschakeld - gebruik sidebar toggle")
+        
+        st.markdown("""
+        **Waarom strict mode belangrijk is**:
+        - Voorkomt FOMO trades met lage confidence
+        - Beschermt tegen valse signalen
+        - Dwingt af dat alleen best-validated kansen getoond worden
+        - Vermindert emotioneel handelen
+        """)
+
+def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
+    """Render AI predictions dashboard with confidence gate"""
     st.title("🧠 AI Voorspellingen")
     st.markdown("### 🤖 Machine Learning prijs voorspellingen")
     
