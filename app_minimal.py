@@ -4,6 +4,12 @@ Minimal CryptoSmartTrader V2 Application
 """
 
 import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
+from datetime import datetime, timedelta
+import random
 import sys
 import os
 from pathlib import Path
@@ -190,7 +196,6 @@ def render_trading_opportunities(min_return, confidence_filter):
 
 def get_trading_opportunities():
     """Generate detailed trading opportunities"""
-    import random
     
     coins_data = [
         {"symbol": "BTC", "name": "Bitcoin", "current_price": 45230.50},
@@ -257,8 +262,6 @@ def render_market_status():
     # Market trends
     st.subheader("📈 Markt Trends")
     
-    import plotly.graph_objects as go
-    
     # Sample market data
     dates = pd.date_range(start="2025-01-01", periods=30, freq="D")
     btc_prices = 45000 + np.cumsum(np.random.randn(30) * 1000)
@@ -279,7 +282,8 @@ def render_market_status():
         {"Coin": "ALGO", "Prijs": "$0.52", "24h": "+14.5%"}
     ]
     
-    st.dataframe(pd.DataFrame(movers_data), use_container_width=True)
+    movers_df = pd.DataFrame(movers_data)
+    st.dataframe(movers_df, use_container_width=True)
 
 def render_predictions_dashboard():
     """Render AI predictions dashboard"""
@@ -306,7 +310,8 @@ def render_predictions_dashboard():
         {"Coin": "SOL", "Nu": "$98.45", "24h": "$112.30", "Change": "+14.1%", "Conf": "87%"}
     ]
     
-    st.dataframe(pd.DataFrame(predictions), use_container_width=True)
+    predictions_df = pd.DataFrame(predictions)
+    st.dataframe(predictions_df, use_container_width=True)
 
 def show_coin_analysis(coin):
     """Show detailed analysis for a specific coin"""
