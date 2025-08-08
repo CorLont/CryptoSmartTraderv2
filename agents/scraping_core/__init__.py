@@ -1,16 +1,28 @@
+#!/usr/bin/env python3
 """
-Scraping Core - Robust Async Data Collection Framework
-Enterprise-grade scraping infrastructure with rate limiting and error handling
+Scraping Core Module - Enterprise Data Collection Framework
 """
 
-from .scraping_orchestrator import ScrapingOrchestrator
-from .async_scraper import AsyncScraper
-from .rate_limiter import RateLimiter
-from .data_validator import DataValidator
+from .async_client import AsyncScrapeClient, get_async_client, close_async_client
+from .data_sources import (
+    TwitterScraper, RedditScraper, NewsScraper, 
+    TelegramScraper, DiscordScraper, ScrapeResult,
+    AVAILABLE_SOURCES
+)
+from .orchestrator import ScrapingOrchestrator, get_scraping_orchestrator, ScrapingResults
 
 __all__ = [
+    'AsyncScrapeClient',
+    'get_async_client', 
+    'close_async_client',
+    'TwitterScraper',
+    'RedditScraper', 
+    'NewsScraper',
+    'TelegramScraper',
+    'DiscordScraper',
+    'ScrapeResult',
+    'AVAILABLE_SOURCES',
     'ScrapingOrchestrator',
-    'AsyncScraper', 
-    'RateLimiter',
-    'DataValidator'
+    'get_scraping_orchestrator',
+    'ScrapingResults'
 ]

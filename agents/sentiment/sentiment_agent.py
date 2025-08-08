@@ -11,7 +11,7 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 
 from core.logging_manager import get_logger
-from agents.scraping_core import AsyncScraper, RateLimiter
+from agents.scraping_core import AsyncScrapeClient, get_async_client
 
 @dataclass
 class SentimentResult:

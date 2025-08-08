@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-08-08T16:04:13.693571",
+  "total_sources": 0,
+  "proxy_config": {
+    "enabled": false,
+    "proxy_count": 0,
+    "rotation_interval": 300
+  },
+  "sources": {},
+  "summary": {
+    "total_requests": 0,
+    "total_successful": 0,
+    "total_failed": 0,
+    "overall_success_rate": 0,
+    "healthy_sources": 0,
+    "degraded_sources": 0,
+    "unhealthy_sources": 0
+  }
+}
