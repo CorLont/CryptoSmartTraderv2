@@ -84,7 +84,7 @@ class DistributedOrchestrator:
     def setup_agents(self):
         """Configure all independent agent processes"""
         agent_configs = [
-            AgentConfig("data_collector", "agents.data_collector", timeout=180),
+            AgentConfig("async_data_collector", "agents.data_collector", timeout=120),  # Faster with async
             AgentConfig("sentiment_analyzer", "agents.sentiment_analyzer", timeout=120),
             AgentConfig("technical_analyzer", "agents.technical_analyzer", timeout=90),
             AgentConfig("ml_predictor", "agents.ml_predictor", timeout=300),

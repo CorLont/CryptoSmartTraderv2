@@ -474,7 +474,58 @@ def render_predictions_dashboard():
         return
     
 def get_live_market_data():
-    """Get real market data from Kraken exchange with API authentication"""
+    """Get real market data using async data manager with fallback to sync"""
+    try:
+        import asyncio
+        from pathlib import Path
+        import json
+        
+        # Try to get data from async collector first
+        data_file = Path("data/market_data/current_market_data.json")
+        if data_file.exists():
+            try:
+                with open(data_file, 'r') as f:
+                    async_data = json.load(f)
+                
+                # Extract and format data from async collector
+                market_data = []
+                for exchange_name, exchange_data in async_data.get("exchanges", {}).items():
+                    if exchange_data.get("tickers"):
+                        for symbol, ticker in exchange_data["tickers"].items():
+                            if symbol.endswith('/USD'):
+                                coin_name = symbol.split('/')[0]
+                                market_data.append({
+                                    'symbol': coin_name,
+                                    'full_symbol': symbol,
+                                    'price': ticker['price'],
+                                    'bid': ticker['bid'],
+                                    'ask': ticker['ask'],
+                                    'spread': ticker['spread'],
+                                    'change_24h': ticker['change'],
+                                    'volume_24h': ticker['volume'],
+                                    'high_24h': ticker['high'],
+                                    'low_24h': ticker['low'],
+                                    'timestamp': ticker['timestamp'],
+                                    'source': f"async_{exchange_name}"
+                                })
+                
+                if market_data:
+                    # Sort by volume and return top 25
+                    market_data.sort(key=lambda x: x['volume_24h'] or 0, reverse=True)
+                    return market_data[:25]
+            
+            except Exception as e:
+                print(f"Error reading async data: {e}")
+        
+        # Fallback to direct sync call if async data unavailable
+        return get_sync_market_data()
+        
+    except Exception as e:
+        print(f"Error in get_live_market_data: {e}")
+        return None
+
+def get_sync_market_data():
+    """Fallback sync market data fetching"""
     try:
         import ccxt
         import os
@@ -484,7 +535,6 @@ def get_live_market_data():
         kraken_secret = os.getenv('KRAKEN_SECRET')
         
         if kraken_key and kraken_secret:
-            # Authenticated connection for enhanced data access
             exchange = ccxt.kraken({
                 'apiKey': kraken_key,
                 'secret': kraken_secret,
@@ -492,17 +542,13 @@ def get_live_market_data():
                 'enableRateLimit': True,
             })
         else:
-            # Public data only
-            exchange = ccxt.kraken()
+            exchange = ccxt.kraken({'enableRateLimit': True})
         
-        # Get all available markets
         markets = exchange.load_markets()
         tickers = exchange.fetch_tickers()
         
-        # Focus on USD pairs (most liquid)
         usd_pairs = {k: v for k, v in tickers.items() if k.endswith('/USD')}
         
-        # Sort by volume and get top 25
         sorted_pairs = sorted(usd_pairs.items(), 
                             key=lambda x: x[1]['quoteVolume'] or 0, 
                             reverse=True)[:25]
@@ -511,7 +557,6 @@ def get_live_market_data():
         for symbol, ticker in sorted_pairs:
             coin_name = symbol.split('/')[0]
             
-            # Enhanced data with spread and additional metrics
             market_data.append({
                 'symbol': coin_name,
                 'full_symbol': symbol,
@@ -521,17 +566,16 @@ def get_live_market_data():
                 'spread': ((ticker['ask'] - ticker['bid']) / ticker['bid'] * 100) if ticker['bid'] else 0,
                 'change_24h': ticker['percentage'],
                 'volume_24h': ticker['quoteVolume'],
-                'base_volume': ticker['baseVolume'],
                 'high_24h': ticker['high'],
                 'low_24h': ticker['low'],
-                'open_24h': ticker['open'],
-                'timestamp': ticker['timestamp']
+                'timestamp': ticker['timestamp'],
+                'source': 'sync_kraken'
             })
         
         return market_data
         
     except Exception as e:
-        print(f"Error fetching Kraken market data: {e}")
+        print(f"Error fetching sync market data: {e}")
         return None
 
 def get_validated_predictions():

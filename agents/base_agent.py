@@ -58,6 +58,8 @@ class BaseAgent(ABC):
     
     def update_heartbeat(self):
         """Update heartbeat for health monitoring"""
+        import os
+        
         self.last_heartbeat = datetime.now()
         
         heartbeat_data = {
