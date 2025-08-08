@@ -1,61 +1,67 @@
 {
   "health": {
-    "timestamp": "2025-08-07T20:06:29.370625",
-    "grade": "F",
-    "score": 29.840000000000007,
+    "timestamp": "2025-08-08T11:50:25.525350",
+    "grade": "D",
+    "score": 67.46000000000001,
     "resources": {
-      "cpu_percent": 65.8,
-      "memory_percent": 74.8,
-      "memory_available_gb": 15.831344604492188,
-      "disk_percent": 69.6,
-      "disk_free_gb": 14.325260162353516
+      "cpu_percent": 12.4,
+      "memory_percent": 34.3,
+      "memory_available_gb": 41.268531799316406,
+      "disk_percent": 69.3,
+      "disk_free_gb": 14.446537017822266
     },
     "agent_health": {
       "sentiment": {
         "status": "healthy",
-        "last_update": "2025-08-07T20:06:30.371529",
+        "last_update": "2025-08-08T11:50:26.525796",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       },
       "technical": {
         "status": "healthy",
-        "last_update": "2025-08-07T20:06:30.371542",
+        "last_update": "2025-08-08T11:50:26.525804",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       },
       "ml_predictor": {
         "status": "healthy",
-        "last_update": "2025-08-07T20:06:30.371546",
+        "last_update": "2025-08-08T11:50:26.525807",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       },
       "backtest": {
         "status": "healthy",
-        "last_update": "2025-08-07T20:06:30.371549",
+        "last_update": "2025-08-08T11:50:26.525809",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       },
       "trade_executor": {
         "status": "healthy",
-        "last_update": "2025-08-07T20:06:30.371553",
+        "last_update": "2025-08-08T11:50:26.525811",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       },
       "whale_detector": {
         "status": "healthy",
-        "last_update": "2025-08-07T20:06:30.371556",
+        "last_update": "2025-08-08T11:50:26.525813",
         "uptime": 24.5,
         "error_rate": 0.01,
         "processed_items": 1000
       }
     },
     "data_coverage": 99.33774834437085,
-    "uptime": 31.076214338055554
+    "uptime": 22.247646070833333
   },
-  "alerts": []
+  "alerts": [
+    {
+      "timestamp": "2025-08-08T11:45:25.525243",
+      "type": "error",
+      "message": "System health below threshold: 66.8%"
+    }
+  ]
 }

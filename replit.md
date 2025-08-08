@@ -122,3 +122,12 @@ Five specialized Streamlit dashboards: Main, Comprehensive Market, Analysis Cont
 - **Automated Retraining:** Fully automated retrain schema with priority-based task scheduling ✅ IMPLEMENTED
 - **Few-Shot Learning:** Rapid adaptation to new cryptocurrencies with minimal training data ✅ IMPLEMENTED
 - **Knowledge Distillation:** Teacher-student framework for preserving learned knowledge during updates ✅ IMPLEMENTED
+
+**AUTOMATED FEATURE ENGINEERING & DISCOVERY (August 2025):**
+- **Automated Feature Engineering:** Auto-featuretools, deep feature synthesis, auto-crosses with attention-based feature pruning ✅ IMPLEMENTED
+- **Feature Discovery Engine:** Continuous feature discovery and optimization with genetic algorithms ✅ IMPLEMENTED
+- **SHAP Regime Analyzer:** Advanced SHAP analysis with live regime-specific feature adaptation ✅ IMPLEMENTED
+- **Live Feature Adaptation:** Real-time feature set adjustment based on market regime changes ✅ IMPLEMENTED
+- **Deep Feature Synthesis:** Temporal features, cross features, polynomial features with technical indicators ✅ IMPLEMENTED
+- **Feature Importance Analysis:** SHAP, permutation, tree-based, mutual information methods ✅ IMPLEMENTED
+- **Regime-Specific Feature Sets:** Dynamic feature selection optimized for each market regime ✅ IMPLEMENTED
