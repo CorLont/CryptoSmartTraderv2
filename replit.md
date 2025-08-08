@@ -9,7 +9,13 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Core Architecture Pattern
-The system employs a multi-agent coordination architecture with six specialized AI agents operating in parallel: Sentiment Analysis, Technical Analysis, ML Predictor, Backtest, Trade Executor, and Whale Detector.
+The system employs a multi-agent coordination architecture with specialized AI agents operating in parallel: Sentiment Analysis, Technical Analysis, ML Predictor, Backtest, Trade Executor, and Whale Detector.
+
+### Perfect Workstation Deployment (August 2025)
+**Geoptimaliseerd voor perfect draaien op workstation met 3 hoofd .bat bestanden:**
+- **1_install_all_dependencies.bat:** Complete installatie van alle Python dependencies, directory setup, GPU configuratie
+- **2_start_background_services.bat:** 8 background services (data collection, ML prediction, sentiment analysis, whale detection, technical analysis, risk management, portfolio optimization, health monitoring)
+- **3_start_dashboard.bat:** Dashboard launcher met health check en alle 8 gespecialiseerde dashboards
 
 ### Technology Stack
 - **Frontend:** Streamlit.
