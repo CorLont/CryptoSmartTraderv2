@@ -1,0 +1,21 @@
+{
+  "scaling_config": {
+    "prediction_horizon_minutes": 30,
+    "scaling_sensitivity": "medium",
+    "resource_headroom_percent": 20,
+    "scaling_algorithms": [
+      "linear_regression",
+      "exponential_smoothing",
+      "lstm_forecasting"
+    ],
+    "auto_scaling_enabled": true,
+    "manual_override_available": true
+  },
+  "monitoring_config": {
+    "cpu_utilization_window": 300,
+    "memory_pressure_threshold": 0.8,
+    "gpu_saturation_detection": true,
+    "io_bottleneck_prediction": true,
+    "network_congestion_awareness": true
+  }
+}

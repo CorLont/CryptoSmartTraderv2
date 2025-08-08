@@ -1,0 +1,34 @@
+{
+  "profiles": {
+    "ml_training": {
+      "cpu_priority": "high",
+      "memory_allocation": "aggressive",
+      "gpu_utilization": "maximum",
+      "io_pattern": "sequential_heavy"
+    },
+    "ml_inference": {
+      "cpu_priority": "realtime",
+      "memory_allocation": "optimized",
+      "gpu_utilization": "burst",
+      "io_pattern": "random_light"
+    },
+    "data_processing": {
+      "cpu_priority": "medium",
+      "memory_allocation": "streaming",
+      "gpu_utilization": "minimal",
+      "io_pattern": "sequential_moderate"
+    },
+    "api_serving": {
+      "cpu_priority": "responsive",
+      "memory_allocation": "cached",
+      "gpu_utilization": "on_demand",
+      "io_pattern": "random_moderate"
+    }
+  },
+  "adaptive_config": {
+    "workload_detection": "automatic",
+    "switching_latency": "sub_second",
+    "profile_learning": "enabled",
+    "performance_feedback": "continuous"
+  }
+}

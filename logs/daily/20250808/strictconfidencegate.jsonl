@@ -91,3 +91,11 @@
 {"asctime": "2025-08-08 18:14:26", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "STRICT GATE CLOSED: dashboard_20250808_181426 - only 0/15 candidates passed (minimum: 1)"}
 {"asctime": "2025-08-08 18:14:26", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available - confidence threshold not met"}
 {"asctime": "2025-08-08 18:14:26", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available in dashboard - strict confidence gate active"}
+{"asctime": "2025-08-08 18:25:16", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250808_182516"}
+{"asctime": "2025-08-08 18:25:16", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "STRICT GATE CLOSED: dashboard_20250808_182516 - only 0/15 candidates passed (minimum: 1)"}
+{"asctime": "2025-08-08 18:25:16", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available - confidence threshold not met"}
+{"asctime": "2025-08-08 18:25:16", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available in dashboard - strict confidence gate active"}
+{"asctime": "2025-08-08 18:29:29", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250808_182929"}
+{"asctime": "2025-08-08 18:29:29", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "STRICT GATE CLOSED: dashboard_20250808_182929 - only 0/15 candidates passed (minimum: 1)"}
+{"asctime": "2025-08-08 18:29:29", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available - confidence threshold not met"}
+{"asctime": "2025-08-08 18:29:29", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "No reliable opportunities available in dashboard - strict confidence gate active"}

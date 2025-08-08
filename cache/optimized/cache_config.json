@@ -1,0 +1,20 @@
+{
+  "l1_cache": {
+    "size_mb": 1024,
+    "type": "memory",
+    "eviction_policy": "LRU",
+    "preload_enabled": true
+  },
+  "l2_cache": {
+    "size_mb": 4096,
+    "type": "disk_ssd",
+    "compression": true,
+    "async_writes": true
+  },
+  "l3_cache": {
+    "size_mb": 2048,
+    "type": "persistent",
+    "replication": true,
+    "versioning": true
+  }
+}
