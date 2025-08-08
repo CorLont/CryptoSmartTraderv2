@@ -34,6 +34,13 @@ try:
 except ImportError:
     NVML_AVAILABLE = False
 
+# Try PyTorch for GPU operations
+try:
+    import torch
+    PYTORCH_AVAILABLE = True
+except ImportError:
+    PYTORCH_AVAILABLE = False
+
 class DataGapMitigation:
     """
     Mitigate data gaps and API bans with rotating proxies, retries, secondary providers
@@ -184,7 +191,7 @@ class DataGapMitigation:
         self.provider_cooldowns[provider] = cooldown_until
         self.failed_providers.add(provider)
     
-    def _get_next_proxy(self) -> str:
+    def _get_next_proxy(self) -> Optional[str]:
         """Get next proxy in rotation"""
         
         if not self.proxy_list:
@@ -470,26 +477,28 @@ class GPUBottleneckMitigation:
         
         try:
             if GPU_MONITORING_AVAILABLE:
+                import GPUtil
                 gpus = GPUtil.getGPUs()
                 if gpus:
                     gpu = gpus[0]
                     memory_info.update({
-                        'total_memory': gpu.memoryTotal,
-                        'used_memory': gpu.memoryUsed,
-                        'free_memory': gpu.memoryFree,
-                        'utilization': gpu.memoryUtil
+                        'total_memory': int(gpu.memoryTotal),
+                        'used_memory': int(gpu.memoryUsed),
+                        'free_memory': int(gpu.memoryFree),
+                        'utilization': float(gpu.memoryUtil)
                     })
             
             elif NVML_AVAILABLE:
+                import pynvml
                 pynvml.nvmlInit()
                 handle = pynvml.nvmlDeviceGetHandleByIndex(0)
                 mem_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
                 
                 memory_info.update({
-                    'total_memory': mem_info.total // 1024**2,  # MB
-                    'used_memory': mem_info.used // 1024**2,
-                    'free_memory': mem_info.free // 1024**2,
-                    'utilization': mem_info.used / mem_info.total
+                    'total_memory': int(mem_info.total // 1024**2),  # MB
+                    'used_memory': int(mem_info.used // 1024**2),
+                    'free_memory': int(mem_info.free // 1024**2),
+                    'utilization': float(mem_info.used / mem_info.total)
                 })
         
         except Exception as e:

@@ -1,0 +1,56 @@
+{
+  "date": "20250808",
+  "generated_at": "2025-08-08T17:49:44.774476",
+  "system_health": {
+    "timestamp": "2025-08-08T17:49:48.614374",
+    "health_score": 57.51,
+    "cpu_usage": 38.1,
+    "memory_usage": 74.5,
+    "disk_usage": 4.2,
+    "process_count": 9,
+    "gpu_available": false,
+    "gpu_memory_usage": 0,
+    "gpu_utilization": 0,
+    "uptime_hours": 55.916837388608194
+  },
+  "trading_performance": {
+    "total_trades": 0,
+    "total_pnl": 0.0,
+    "win_rate": 0,
+    "avg_pnl_per_trade": 0.0
+  },
+  "confidence_gate": {
+    "gate_events": 2,
+    "total_candidates": 0,
+    "total_passed": 0,
+    "pass_rate": 0,
+    "avg_candidates_per_event": 0.0
+  },
+  "model_performance": {
+    "model_evaluations": 2,
+    "total_predictions": 0,
+    "avg_accuracy": 0.0,
+    "avg_confidence": 0.0
+  },
+  "risk_assessment": {
+    "error_count": 51,
+    "warning_count": 9,
+    "critical_alerts": 0,
+    "risk_score": 100,
+    "risk_level": "critical"
+  },
+  "coverage_report": {
+    "status": "no_coverage_data",
+    "message": "No coverage data available"
+  },
+  "overall_health": {
+    "overall_score": 19.17,
+    "health_level": "critical",
+    "components_evaluated": 4
+  },
+  "recommendations": [
+    "High error count - review system logs and error handling",
+    "Low model accuracy - consider retraining or feature engineering",
+    "Very low confidence gate pass rate - review prediction quality"
+  ]
+}

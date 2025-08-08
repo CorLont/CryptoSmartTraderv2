@@ -1,0 +1,71 @@
+{
+  "timestamp": 1754474088.0,
+  "detected_hardware": {
+    "cpu_count": 8,
+    "cpu_freq": 0.0,
+    "ram_gb": 63,
+    "platform": "Linux",
+    "python_version": "3.11.13 (main, Jun  3 2025, 18:38:25) [GCC 14.3.0]",
+    "gpu_available": false,
+    "gpu_count": 0,
+    "gpu_memory_gb": 0
+  },
+  "optimization_applied": {
+    "cpu_optimization": {
+      "worker_processes": 6,
+      "async_workers": 4,
+      "parallel_inference": true,
+      "numa_optimization": false,
+      "cpu_affinity_enabled": true,
+      "process_priority": "above_normal"
+    },
+    "memory_optimization": {
+      "max_cache_size_gb": 8,
+      "feature_cache_gb": 4,
+      "model_cache_gb": 2,
+      "data_buffer_gb": 4,
+      "memory_mapping_enabled": true,
+      "swap_management": "aggressive"
+    },
+    "gpu_optimization": {
+      "enabled": false,
+      "fallback_to_cpu": true,
+      "max_batch_size": 64,
+      "mixed_precision": false,
+      "memory_fraction": 0.0,
+      "allow_memory_growth": false,
+      "cache_size_mb": 0,
+      "cuda_optimization": false,
+      "tensor_cores_enabled": false,
+      "memory_pool_size_mb": 0
+    },
+    "storage_optimization": {
+      "cache_to_disk": true,
+      "async_io": true,
+      "prefetch_enabled": true,
+      "compression_enabled": false,
+      "temp_dir": "./cache/temp",
+      "model_storage_dir": "./models/optimized"
+    },
+    "process_optimization": {
+      "agent_isolation": true,
+      "process_restart_threshold": 1000,
+      "health_check_interval": 30,
+      "circuit_breaker_threshold": 5,
+      "exponential_backoff": true,
+      "graceful_shutdown_timeout": 30
+    }
+  },
+  "compatibility_check": {
+    "cpu_compatible": true,
+    "ram_compatible": true,
+    "gpu_compatible": false,
+    "platform_compatible": true,
+    "python_compatible": true,
+    "overall_compatible": true
+  },
+  "recommendations": [
+    "Excellent RAM capacity - enable aggressive caching",
+    "GPU not detected - install CUDA-compatible GPU for acceleration"
+  ]
+}
