@@ -1,0 +1,41 @@
+{
+  "test_type": "enhanced_ml_system_validation",
+  "timestamp": "2025-08-08T16:15:12.469435",
+  "components_tested": [
+    "Multi-horizon prediction (1h, 24h, 7d, 30d)",
+    "XGBoost/LightGBM tree ensembles",
+    "LSTM with MC Dropout",
+    "Uncertainty quantification",
+    "Performance requirements validation"
+  ],
+  "ml_models": {
+    "tree_models": [
+      "XGBoost",
+      "LightGBM"
+    ],
+    "deep_learning": [
+      "LSTM with MC Dropout"
+    ],
+    "horizons": [
+      "1h",
+      "24h",
+      "7d",
+      "30d"
+    ],
+    "uncertainty_methods": [
+      "Tree ensemble variance",
+      "MC Dropout (N=30 samples)"
+    ]
+  },
+  "interface_validation": {
+    "predict_all_function": "ml/models/predict.py",
+    "output_format": "coin, timestamp, pred_{h}, conf_{h}",
+    "horizons": "{1,24,168,720}",
+    "gpu_acceleration": "PyTorch CUDA support"
+  },
+  "performance_requirements": {
+    "inference_target": "All coins < 10 min",
+    "confidence_requirement": "No predictions without confidence",
+    "uncertainty_quantification": "\u03c3-based confidence mapping"
+  }
+}
