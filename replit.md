@@ -1,11 +1,9 @@
-# Replit.md
+# replit.md
 
 ## Overview
-CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies using a coordinated ensemble of specialized AI agents, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions with OpenAI intelligence, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies. 
+CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies using a coordinated ensemble of specialized AI agents, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions with OpenAI intelligence, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies.
 
-**Enterprise Architecture Goals:** Hogere voorspellingsnauwkeurigheid, nul dummy-data, strikte confidence-gate, robuuste async scraping, moderne ML/AI (uncertainty, regime, ensembles), en daily eval + GO/NOGO.
-
-Key features include zero synthetic data tolerance, mandatory deep learning, cross-coin feature fusion, true async processing, enterprise security, Bayesian uncertainty quantification, dynamic coin discovery, advanced AI/ML capabilities (automated feature engineering, meta-learning, causal inference, shadow trading), multi-agent cooperation, model monitoring, black swan simulation, and real-time order book data integration.
+The enterprise architecture goals include higher prediction accuracy, zero dummy-data tolerance, strict confidence gating, robust async scraping, modern ML/AI techniques (uncertainty, regime, ensembles), and daily evaluation with GO/NOGO decisions. Key capabilities include zero synthetic data tolerance, mandatory deep learning, cross-coin feature fusion, true async processing, enterprise security, Bayesian uncertainty quantification, dynamic coin discovery, advanced AI/ML, multi-agent cooperation, model monitoring, black swan simulation, and real-time order book data integration.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -14,39 +12,32 @@ Data integrity policy: ZERO-TOLERANCE for incomplete data - coins with missing s
 ## System Architecture
 
 ### Core Architecture Pattern
-**Distributed Multi-Process Architecture (August 2025)** - The system employs a distributed orchestrator managing 8 isolated agent processes with circuit breakers, exponential backoff, health monitoring, and automatic restart capabilities. Each agent runs in complete process isolation to eliminate single points of failure: Data Collector, Sentiment Analyzer, Technical Analyzer, ML Predictor, Whale Detector, Risk Manager, Portfolio Optimizer, and Health Monitor.
-
-### Perfect Workstation Deployment (August 2025)
-**Geoptimaliseerd voor perfect draaien op workstation met 3 hoofd .bat bestanden:**
-- **1_install_all_dependencies.bat:** Complete installatie van alle Python dependencies, directory setup, GPU configuratie
-- **2_start_background_services.bat:** 8 background services (data collection, ML prediction, sentiment analysis, whale detection, technical analysis, risk management, portfolio optimization, health monitoring)
-- **3_start_dashboard.bat:** Dashboard launcher met health check en alle 8 gespecialiseerde dashboards
+The system employs a Distributed Multi-Process Architecture, managing 8 isolated agent processes (Data Collector, Sentiment Analyzer, Technical Analyzer, ML Predictor, Whale Detector, Risk Manager, Portfolio Optimizer, and Health Monitor) with circuit breakers, exponential backoff, health monitoring, and automatic restart capabilities. Each agent runs in complete process isolation to eliminate single points of failure.
 
 ### Technology Stack
 - **Frontend:** Streamlit.
 - **Backend:** Python with multi-threaded agent coordination.
-- **Machine Learning:** PyTorch for deep learning (LSTM, GRU, Transformer, N-BEATS), scikit-learn, XGBoost, Optuna for AutoML.
+- **Machine Learning:** PyTorch (LSTM, GRU, Transformer, N-BEATS), scikit-learn, XGBoost, Optuna.
 - **Data Processing:** pandas, numpy, CuPy, Numba.
 - **Exchange Integration:** CCXT.
 - **Visualization:** Plotly.
 - **Storage:** Local file system with JSON/CSV and caching.
 
 ### Key Architectural Decisions
-- **Comprehensive Testing Framework (August 2025):** Enterprise pytest suite with 80%+ coverage gates, asyncio testing, exchange/API mocks, contract tests for CCXT/sentiment parsers, smoke tests for dashboard, CI/CD integration.
-- **Enterprise Security Framework (August 2025):** Secrets management with Vault integration, log redaction, and principled error handling to prevent API key leakage. All credentials secured via .env/Vault with automatic redaction in logs and tracebacks.
-- **Production-Grade Logging & Monitoring (August 2025):** Enterprise structured JSON logging with correlation IDs, Prometheus metrics (latency/completeness/error-ratio), intelligent alerting with configurable thresholds, full observability stack.
-- **Dependency Injection Container (August 2025):** Full dependency-injector implementation with constructor injection, eliminates global singletons, enables comprehensive testing and mocking.
-- **Pydantic Configuration Management (August 2025):** Type-safe settings with BaseSettings, environment variable support, automatic validation, and centralized .env configuration.
-- **Async I/O Architecture (August 2025):** Complete async/await implementation with aiohttp, global rate limiting (15 req/sec), tenacity retries with exponential backoff + jitter, idempotent atomic file writes.
-- **Distributed Multi-Process Architecture (August 2025):** 8 isolated agent processes with circuit breakers, health monitoring, automatic restart capabilities, eliminates single points of failure.
+- **Comprehensive Testing Framework:** Enterprise pytest suite with 80%+ coverage gates, asyncio testing, API mocks, and CI/CD integration.
+- **Enterprise Security Framework:** Secrets management with Vault integration, log redaction, and principled error handling. All credentials secured via .env/Vault.
+- **Production-Grade Logging & Monitoring:** Structured JSON logging with correlation IDs, Prometheus metrics, intelligent alerting, and full observability.
+- **Dependency Injection Container:** Full dependency-injector implementation for comprehensive testing and mocking.
+- **Pydantic Configuration Management:** Type-safe settings with environment variable support and automatic validation.
+- **Async I/O Architecture:** Complete async/await implementation with aiohttp, global rate limiting, tenacity retries, and idempotent atomic file writes.
 - **Universal Configuration Management:** Centralized with validation and backup.
 - **Intelligent Cache Manager:** Memory-aware caching with TTL and cleanup.
-- **Health Monitoring System:** Continuous checks with alerts.
+- **Health Monitoring System:** Continuous checks with alerts and GO/NO-GO gates based on weighted system health scores.
 - **Multi-Exchange Architecture:** CCXT-based abstraction with rate limiting and failover.
 - **Real-time Data Pipeline:** Parallel processing with rate limiting, timeouts, and strict validation.
 - **GPU Optimization:** Automatic GPU/CPU detection and adaptive tuning.
 - **Enterprise Logging:** Structured logging with file rotation.
-- **Regime Detection & Market Regime Routing (August 2025):** HMM-based (hmmlearn) and rule-based regime classification for Bull/Bear/Sideways + Low/High volatility detection. Features regime-aware model routing with separate models per regime or single model with regime features, A/B testing framework demonstrating 8.2% MAE improvement over baseline.
+- **Regime Detection & Market Regime Routing:** HMM-based and rule-based classification for dynamic model routing and A/B testing.
 - **Thread-Safe Design:** All components use threading locks.
 - **Daily Analysis Coordination:** Automated scheduling for ML analysis and social scraping.
 - **Input Validation & Security:** Pydantic models for strict validation.
@@ -54,65 +45,64 @@ Data integrity policy: ZERO-TOLERANCE for incomplete data - coins with missing s
 - **Multi-Horizon ML System:** Training and inference across 1H, 24H, 7D, and 30D horizons with feature engineering, ensemble modeling, and self-learning.
 - **Dashboard Architecture:** Five specialized Streamlit dashboards: Main, Comprehensive Market, Analysis Control, Agent, Portfolio, Production Monitoring, and Crypto AI System.
 - **Data Management:** Centralized Data Manager, Dynamic Coin Registry, ML Model Manager.
-- **Deep Learning Engine:** Standardized use of LSTM, GRU, Transformer, N-BEATS for complex pattern detection.
-- **Enterprise ML Uncertainty Quantification (August 2025):** Bayesian LSTM with Monte Carlo sampling, quantile regression ensembles, confidence intervals (68%, 95%, 99%), epistemic vs aleatoric uncertainty decomposition, production-ready uncertainty thresholds.
-- **Strict 80% Confidence Gate System (August 2025):** Enterprise-grade confidence filtering in orchestration and dashboard with zero-tolerance policy. Includes empty state handling without UI crashes, SHAP explainability integration, and comprehensive gate reporting with daily logging of 'no reliable opportunities' events.
-- **Market Regime Detection & Routing (August 2025):** Unsupervised regime detector (bull/bear/sideways/volatile), regime-specific model routing with confidence scoring, adaptive feature weighting per regime, regime transition smoothing.
-- **ML Feature Engineering Monitor (August 2025):** Comprehensive leakage detection (look-ahead, target, temporal), SHAP-based feature importance analysis, statistical drift monitoring, automated feature pruning recommendations.
-- **SLO-Driven ML Operations (August 2025):** Formal SLO monitoring with MAE/MAPE/precision@K thresholds, automatic retraining triggers, model rollback capabilities, coverage validation for prediction intervals.
-- **Continual Learning & Meta-Learning:** Automated retraining with drift detection, online learning, and few-shot adaptation for new markets.
-- **Automated Feature Engineering:** Auto-featuretools, deep feature synthesis, and genetic algorithms for continuous feature discovery.
-- **Causal Inference:** Double Machine Learning, Granger Causality, and counterfactual predictions for understanding market movements.
-- **Reinforcement Learning:** PPO for dynamic, risk-aware portfolio allocation and real-time rebalancing.
-- **Self-Healing System:** Autonomous monitoring, black swan detection, and auto-disabling/recovery features.
-- **Synthetic Data Augmentation:** Generation of black swan, regime shift, and flash crash scenarios for robust stress testing.
-- **Human-in-the-Loop & Explainability:** Active learning, feedback-driven learning, and SHAP for model transparency and human validation.
-- **Shadow Trading:** Full paper trading engine with realistic market simulation for pre-production model validation.
-- **Advanced Execution Simulation (August 2025):** Level-2 order book simulation with market impact, partial fills, exchange-specific latency/fees, maintenance windows, and realistic slippage modeling for accurate backtesting.
-- **Enterprise Portfolio Risk Management (August 2025):** Per-coin hard caps (value & ADV %), correlation limits, automated position kill-switch based on health scores, GO/NOGO thresholds, and comprehensive risk monitoring with emergency flattening capabilities.
-- **Coverage Audit System (August 2025):** Daily automated audits ensuring 99%+ exchange coverage with missing coin alerts, new listing detection, impact scoring, and comprehensive gap analysis to guarantee no trading opportunities are missed. Hard gates block trading when coverage <95% or data completeness <98% per coin.
-- **Hard Data Integrity Filter (August 2025):** Zero-tolerance policy for incomplete data - coins with missing sentiment/on-chain/technical data are HARD BLOCKED from training and display, with 80% minimum completeness threshold and comprehensive component validation.
-- **Multi-Horizon Batch Inference Engine (August 2025):** Unified batch processing system for all coins across all horizons (1H/4H/24H/7D/30D) with atomic operations, uniform feature engineering, parallel processing, and comprehensive SLO monitoring for systematic ML predictions.
-- **Strict Confidence Gate Manager (August 2025):** Hard confidence threshold enforcement in orchestration and dashboard - shows NOTHING when no candidates meet 80% confidence threshold, with comprehensive empty state handling and gate status monitoring.
-- **Shadow Trading Engine with Mandatory Soak Period (August 2025):** Comprehensive paper trading system with 4-8 week mandatory soak period, P&L verification, false positive ratio monitoring, and automated live trading authorization only after passing all validation criteria.
-- **Multi-Horizon Signal Quality Validator (August 2025):** Enterprise signal validation system with Precision@K ≥60%, hit-rates ≥55%, MAE calibration ≤0.25×median(|pred|), Sharpe ≥1.0, max drawdown ≤15%, and calibration testing across 1H/24H/7D/30D horizons using 4-8 weeks out-of-sample data.
-- **Advanced Execution Simulator (August 2025):** Level-2 order book simulation with market impact, partial fills, exchange-specific latency/fees, maintenance windows, and realistic slippage modeling for accurate backtesting. Validates slippage p50 ≤25 bps, p90 ≤80 bps, fill-rate ≥95%, and end-to-end latency p95 targets.
-- **System Health Monitor with GO/NO-GO Gates (August 2025):** Enterprise health scoring system with weighted components (validation accuracy 25%, Sharpe ratio 20%, feedback hit-rate 15%, error ratio 15%, data completeness 15%, tuning freshness 10%). Score ≥85 = GO (live trading), 60-85 = WARNING (paper only), <60 = NO-GO (blocked). Dashboard shows nothing when confidence <80% AND incomplete features.
-- **Enterprise Meetscripts Suite (August 2025):** Complete operational measurement toolkit with strict_filter.py (80% confidence gates), coverage_audit.py (live Kraken comparison), evaluator.py (P@K/hit-rate/MAE/Sharpe), calibration.py (binning analysis), and health_score.py (GO/NO-GO decisions) for comprehensive system validation and monitoring.
-- **Complete Operational Playbook (August 2025):** Full enterprise workflow automation with nightly_batch.py (complete pipeline orchestrator), post_batch_validation.py (automated validation workflow), dashboard_gate_checker.py (pre-display gates), and shadow_to_live_validator.py (4-8 week shadow trading validation) implementing the complete operational cycle from data collection to live trading authorization.
-- **Daily Metrics Logging System (August 2025):** Comprehensive daily performance tracking with daily_metrics_logger.py (structured JSON logging to logs/daily/YYYYMMDD/) and daily_dashboard_integration.py (historical trend analysis with Plotly charts) for complete operational visibility and historical performance monitoring across all system components.
-- **Enterprise Evaluation System (August 2025):** Complete evaluation framework with precision@K, hit-rate, MAE, Sharpe ratio (with slippage), calibration bins, coverage audit (Kraken vs processed), system health scoring, and GO/NO-GO decisions (≥85 GO; 60-85 WARNING; <60 NO-GO). Includes nightly batch orchestrator writing daily_metrics_*.json + latest.json to logs/daily/YYYYMMDD/.
+- **Deep Learning Engine:** Standardized use of LSTM, GRU, Transformer, N-BEATS.
+- **Enterprise ML Uncertainty Quantification:** Bayesian LSTM with Monte Carlo sampling, quantile regression ensembles, and confidence intervals.
+- **Strict 80% Confidence Gate System:** Enterprise-grade filtering in orchestration and dashboard, with empty state handling and SHAP explainability.
+- **ML Feature Engineering Monitor:** Leakage detection, SHAP-based feature importance, drift monitoring, and automated feature pruning.
+- **SLO-Driven ML Operations:** Formal SLO monitoring with thresholds, automatic retraining triggers, and model rollback capabilities.
+- **Continual Learning & Meta-Learning:** Automated retraining with drift detection, online learning, and few-shot adaptation.
+- **Automated Feature Engineering:** Auto-featuretools, deep feature synthesis, and genetic algorithms.
+- **Causal Inference:** Double Machine Learning, Granger Causality, and counterfactual predictions.
+- **Reinforcement Learning:** PPO for dynamic, risk-aware portfolio allocation.
+- **Self-Healing System:** Autonomous monitoring, black swan detection, and auto-disabling/recovery.
+- **Synthetic Data Augmentation:** Generation of black swan, regime shift, and flash crash scenarios for stress testing.
+- **Human-in-the-Loop & Explainability:** Active learning, feedback-driven learning, and SHAP for model transparency.
+- **Shadow Trading:** Full paper trading engine with realistic market simulation for pre-production model validation, including a mandatory soak period.
+- **Advanced Execution Simulation:** Level-2 order book simulation with market impact, partial fills, exchange-specific latency/fees, and realistic slippage modeling for accurate backtesting.
+- **Enterprise Portfolio Risk Management:** Per-coin hard caps, correlation limits, automated position kill-switch, and comprehensive risk monitoring.
+- **Coverage Audit System:** Daily automated audits ensuring 99%+ exchange coverage with alerts for missing coins and new listings. Hard gates block trading when coverage or data completeness is insufficient.
+- **Hard Data Integrity Filter:** Zero-tolerance policy for incomplete data; coins with missing data are hard blocked.
+- **Multi-Horizon Batch Inference Engine:** Unified batch processing for all coins across all horizons with atomic operations, parallel processing, and SLO monitoring.
+- **Multi-Horizon Signal Quality Validator:** Enterprise signal validation system with defined metrics (Precision@K, hit-rates, MAE, Sharpe, max drawdown, calibration testing).
+- **System Health Monitor with GO/NO-GO Gates:** Enterprise health scoring system with weighted components (validation accuracy, Sharpe ratio, feedback hit-rate, error ratio, data completeness, tuning freshness) determining live trading authorization.
+- **Enterprise Meetscripts Suite:** Complete operational measurement toolkit including `strict_filter.py`, `coverage_audit.py`, `evaluator.py`, `calibration.py`, and `health_score.py`.
+- **Complete Operational Playbook:** Full enterprise workflow automation with `nightly_batch.py`, `post_batch_validation.py`, `dashboard_gate_checker.py`, and `shadow_to_live_validator.py`.
+- **Daily Metrics Logging System:** Comprehensive daily performance tracking with structured JSON logging and historical trend analysis.
+- **Enterprise Evaluation System:** Complete evaluation framework including performance metrics, coverage audit, and GO/NO-GO decisions.
+- **Distributed Process Isolation System:** Multi-process agent architecture with complete isolation, automatic restart, health monitoring, and circuit breakers.
+- **Async Queue System with Rate Limiting:** Enterprise async message queue system using `asyncio.Queue` (Redis compatible) with centralized rate limiter, message prioritization, and retry logic.
+- **Prometheus Metrics & Monitoring:** Comprehensive metrics collection (latency, error-ratio, data completeness, CPU/memory/GPU usage) via Prometheus HTTP endpoint (port 8090) for Grafana integration.
 
 ## External Dependencies
 
 ### Core Python Libraries
-- **streamlit**
-- **pandas**, **numpy**
-- **plotly**
-- **threading**, **pathlib**, **psutil**
+- `streamlit`
+- `pandas`, `numpy`
+- `plotly`
+- `threading`, `pathlib`, `psutil`
 
 ### Machine Learning Stack
-- **scikit-learn**
-- **xgboost**, **lightgbm**
-- **numba**
+- `scikit-learn`
+- `xgboost`, `lightgbm`
+- `numba`
 
 ### Trading and Market Data
-- **ccxt**
-- **textblob**
+- `ccxt`
+- `textblob`
 
 ### Optional Performance Libraries
-- **cupy**
+- `cupy`
 
 ### System Utilities
-- **logging**, **json**, **pickle**
-- **smtplib**
-- **Pydantic**
-- **dependency-injector**
-- **FastAPI**
+- `logging`, `json`, `pickle`
+- `smtplib`
+- `Pydantic`
+- `dependency-injector`
+- `FastAPI`
 
 ### External Services
-- **OpenAI API**
-- **Cryptocurrency Exchanges:** Kraken, Binance, KuCoin, Huobi (via CCXT)
-- **Email SMTP**
-- **HashiCorp Vault**
-- **Prometheus**
+- OpenAI API
+- Cryptocurrency Exchanges: Kraken, Binance, KuCoin, Huobi (via CCXT)
+- Email SMTP
+- HashiCorp Vault
+- Prometheus

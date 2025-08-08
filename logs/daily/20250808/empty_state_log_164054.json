@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-08-08T16:40:54.207937",
+  "context": "dashboard",
+  "confidence_threshold": 0.8,
+  "message": "no reliable opportunities",
+  "gate_statistics": {
+    "total_applications": 1,
+    "recent_applications": 1,
+    "recent_pass_rate": 0.0,
+    "average_input_candidates": 15.0,
+    "average_output_candidates": 0.0,
+    "rejection_counts": {
+      "low_confidence": 15,
+      "missing_data": 0,
+      "invalid_predictions": 0
+    },
+    "confidence_threshold": 0.8,
+    "last_application": {
+      "gate_id": "dashboard_20250808_164054",
+      "timestamp": "2025-08-08T16:40:54.207382",
+      "input_count": 15,
+      "output_count": 0,
+      "status": "no_candidates",
+      "confidence_threshold": 0.8,
+      "rejection_rate": 1.0,
+      "error": null,
+      "low_confidence_rejected": 15,
+      "invalid_predictions_rejected": 0,
+      "processing_time": 0.003551959991455078
+    }
+  }
+}

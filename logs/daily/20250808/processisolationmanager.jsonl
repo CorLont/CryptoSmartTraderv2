@@ -1,0 +1,147 @@
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent DataCollector"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent MLPredictor"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent FailingAgent"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting process isolation monitoring"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting all agents"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting agent DataCollector"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent DataCollector started with PID 18625"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting agent MLPredictor"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent DataCollector process started"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent MLPredictor started with PID 18626"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting agent FailingAgent"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent MLPredictor process started"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent started with PID 18627"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Started 3/3 agents"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent process started"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "ML predictor agent started"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Running ML predictions..."}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Failing agent started"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Data collector agent started"}
+{"asctime": "2025-08-08 16:45:22", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Collecting market data..."}
+{"asctime": "2025-08-08 16:45:24", "name": "ProcessIsolationManager", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent process failed: Simulated agent failure"}
+{"asctime": "2025-08-08 16:45:24", "name": "ProcessIsolationManager", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Traceback (most recent call last):\n  File \"/home/runner/workspace/core/process_isolation.py\", line 253, in _run_agent\n    target_func(self.stop_event)\n  File \"/home/runner/workspace/core/process_isolation.py\", line 492, in mock_failing_agent\n    raise Exception(\"Simulated agent failure\")\nException: Simulated agent failure\n"}
+{"asctime": "2025-08-08 16:45:27", "name": "ProcessIsolationManager", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent unhealthy, marking for restart"}
+{"asctime": "2025-08-08 16:45:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Auto-restarting agent FailingAgent"}
+{"asctime": "2025-08-08 16:45:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Restarting agent FailingAgent"}
+{"asctime": "2025-08-08 16:45:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Waiting 1.0s before restart (attempt 1)"}
+{"asctime": "2025-08-08 16:45:29", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting agent FailingAgent"}
+{"asctime": "2025-08-08 16:45:29", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent started with PID 18628"}
+{"asctime": "2025-08-08 16:45:29", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent restarted successfully"}
+{"asctime": "2025-08-08 16:45:29", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent process started"}
+{"asctime": "2025-08-08 16:45:29", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Failing agent started"}
+{"asctime": "2025-08-08 16:45:31", "name": "ProcessIsolationManager", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent process failed: Simulated agent failure"}
+{"asctime": "2025-08-08 16:45:31", "name": "ProcessIsolationManager", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Traceback (most recent call last):\n  File \"/home/runner/workspace/core/process_isolation.py\", line 253, in _run_agent\n    target_func(self.stop_event)\n  File \"/home/runner/workspace/core/process_isolation.py\", line 492, in mock_failing_agent\n    raise Exception(\"Simulated agent failure\")\nException: Simulated agent failure\n"}
+{"asctime": "2025-08-08 16:45:32", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Collecting market data..."}
+{"asctime": "2025-08-08 16:45:34", "name": "ProcessIsolationManager", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent unhealthy, marking for restart"}
+{"asctime": "2025-08-08 16:45:34", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Auto-restarting agent FailingAgent"}
+{"asctime": "2025-08-08 16:45:34", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Restarting agent FailingAgent"}
+{"asctime": "2025-08-08 16:45:34", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Waiting 2.0s before restart (attempt 2)"}
+{"asctime": "2025-08-08 16:45:37", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting agent FailingAgent"}
+{"asctime": "2025-08-08 16:45:37", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent started with PID 18629"}
+{"asctime": "2025-08-08 16:45:37", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent restarted successfully"}
+{"asctime": "2025-08-08 16:45:37", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent process started"}
+{"asctime": "2025-08-08 16:45:37", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Failing agent started"}
+{"asctime": "2025-08-08 16:45:37", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Running ML predictions..."}
+{"asctime": "2025-08-08 16:45:39", "name": "ProcessIsolationManager", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent process failed: Simulated agent failure"}
+{"asctime": "2025-08-08 16:45:39", "name": "ProcessIsolationManager", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Traceback (most recent call last):\n  File \"/home/runner/workspace/core/process_isolation.py\", line 253, in _run_agent\n    target_func(self.stop_event)\n  File \"/home/runner/workspace/core/process_isolation.py\", line 492, in mock_failing_agent\n    raise Exception(\"Simulated agent failure\")\nException: Simulated agent failure\n"}
+{"asctime": "2025-08-08 16:45:42", "name": "ProcessIsolationManager", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent unhealthy, marking for restart"}
+{"asctime": "2025-08-08 16:45:42", "name": "ProcessIsolationManager", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Agent FailingAgent exceeded max restarts (2)"}
+{"asctime": "2025-08-08 16:45:42", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Collecting market data..."}
+{"asctime": "2025-08-08 16:45:52", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Process isolation monitoring stopped"}
+{"asctime": "2025-08-08 16:45:52", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Stopping all agents"}
+{"asctime": "2025-08-08 16:45:52", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Stopping agent DataCollector"}
+{"asctime": "2025-08-08 16:45:52", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent DataCollector received signal 15"}
+{"asctime": "2025-08-08 16:45:52", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Running ML predictions..."}
+{"asctime": "2025-08-08 16:45:52", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Data collector agent stopped"}
+{"asctime": "2025-08-08 16:45:52", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent DataCollector process finished"}
+{"asctime": "2025-08-08 16:45:52", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent DataCollector stopped"}
+{"asctime": "2025-08-08 16:45:52", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Stopping agent MLPredictor"}
+{"asctime": "2025-08-08 16:45:52", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent MLPredictor received signal 15"}
+{"asctime": "2025-08-08 16:46:02", "name": "ProcessIsolationManager", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Force killing agent MLPredictor"}
+{"asctime": "2025-08-08 16:46:02", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent MLPredictor stopped"}
+{"asctime": "2025-08-08 16:46:02", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Stopped 3/3 agents"}
+{"asctime": "2025-08-08 16:47:17", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent TestAgent"}
+{"asctime": "2025-08-08 16:47:17", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting process isolation monitoring"}
+{"asctime": "2025-08-08 16:47:17", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting agent TestAgent"}
+{"asctime": "2025-08-08 16:47:17", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent TestAgent started with PID 18787"}
+{"asctime": "2025-08-08 16:47:17", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent TestAgent process started"}
+{"asctime": "2025-08-08 16:47:17", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Data collector agent started"}
+{"asctime": "2025-08-08 16:47:17", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Collecting market data..."}
+{"asctime": "2025-08-08 16:47:19", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Stopping agent TestAgent"}
+{"asctime": "2025-08-08 16:47:19", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent TestAgent received signal 15"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Data collector agent stopped"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent TestAgent process finished"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent TestAgent stopped"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Process isolation monitoring stopped"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: Latency"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: ErrorRatio"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: Completeness"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: System"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Prometheus metrics server started on port 8092"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Metrics server stopped"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Initializing distributed orchestrator"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Using asyncio queue backend"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: data_collection"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: ml_prediction"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: sentiment_analysis"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: technical_analysis"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: whale_detection"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: risk_assessment"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: portfolio_optimization"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: health_check"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Queue system initialized"}
+{"asctime": "2025-08-08 16:47:27", "name": "ProcessIsolationManager", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Failed to initialize orchestrator: Duplicated timeseries in CollectorRegistry: {'cryptosmarttrader_operation_duration_seconds_sum', 'cryptosmarttrader_operation_duration_seconds_created', 'cryptosmarttrader_operation_duration_seconds', 'cryptosmarttrader_operation_duration_seconds_count', 'cryptosmarttrader_operation_duration_seconds_bucket'}"}
+{"asctime": "2025-08-08 16:48:39", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent TestAgent"}
+{"asctime": "2025-08-08 16:48:39", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting process isolation monitoring"}
+{"asctime": "2025-08-08 16:48:39", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting agent TestAgent"}
+{"asctime": "2025-08-08 16:48:39", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent TestAgent started with PID 18970"}
+{"asctime": "2025-08-08 16:48:39", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent TestAgent process started"}
+{"asctime": "2025-08-08 16:48:40", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Data collector agent started"}
+{"asctime": "2025-08-08 16:48:40", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Collecting market data..."}
+{"asctime": "2025-08-08 16:48:41", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Stopping agent TestAgent"}
+{"asctime": "2025-08-08 16:48:42", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent TestAgent received signal 15"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Data collector agent stopped"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent TestAgent process finished"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Agent TestAgent stopped"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Process isolation monitoring stopped"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: Latency"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: ErrorRatio"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: Completeness"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: System"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Prometheus metrics server started on port 8092"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Metrics server stopped"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Initializing distributed orchestrator"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Using asyncio queue backend"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: data_collection"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: ml_prediction"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: sentiment_analysis"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: technical_analysis"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: whale_detection"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: risk_assessment"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: portfolio_optimization"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: health_check"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Queue system initialized"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: Latency"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: ErrorRatio"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: Completeness"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: System"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Failed to start metrics server: [Errno 98] Address already in use"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Failed to start metrics server"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent DataCollector"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent: DataCollector"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent SentimentAnalyzer"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent: SentimentAnalyzer"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent TechnicalAnalyzer"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent: TechnicalAnalyzer"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent MLPredictor"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent: MLPredictor"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent WhaleDetector"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent: WhaleDetector"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent RiskManager"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent: RiskManager"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent PortfolioOptimizer"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent: PortfolioOptimizer"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent HealthMonitor"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered agent: HealthMonitor"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Initialized 8 agents"}
+{"asctime": "2025-08-08 16:48:50", "name": "ProcessIsolationManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Distributed orchestrator initialized successfully"}

@@ -1,0 +1,8 @@
+{"asctime": "2025-08-08 16:46:31", "name": "PrometheusMetricsServer", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: Latency"}
+{"asctime": "2025-08-08 16:46:31", "name": "PrometheusMetricsServer", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: ErrorRatio"}
+{"asctime": "2025-08-08 16:46:31", "name": "PrometheusMetricsServer", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: Completeness"}
+{"asctime": "2025-08-08 16:46:31", "name": "PrometheusMetricsServer", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Added metrics collector: System"}
+{"asctime": "2025-08-08 16:46:31", "name": "PrometheusMetricsServer", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Prometheus metrics server started on port 8091"}
+{"asctime": "2025-08-08 16:46:31", "name": "PrometheusMetricsServer", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting metrics collection loop (interval: 2.0s)"}
+{"asctime": "2025-08-08 16:46:46", "name": "PrometheusMetricsServer", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Metrics server stopped"}
+{"asctime": "2025-08-08 16:46:46", "name": "PrometheusMetricsServer", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Metrics collection loop stopped"}

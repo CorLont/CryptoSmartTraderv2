@@ -1,0 +1,10 @@
+{"asctime": "2025-08-08 16:46:02", "name": "AsyncioQueueBackend", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: data_collection"}
+{"asctime": "2025-08-08 16:46:02", "name": "AsyncioQueueBackend", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Registered handler for message type: ml_prediction"}
+{"asctime": "2025-08-08 16:46:03", "name": "AsyncioQueueBackend", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Processing data collection: BTC0"}
+{"asctime": "2025-08-08 16:46:03", "name": "AsyncioQueueBackend", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Processing data collection: BTC1"}
+{"asctime": "2025-08-08 16:46:03", "name": "AsyncioQueueBackend", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Processing data collection: BTC2"}
+{"asctime": "2025-08-08 16:46:03", "name": "AsyncioQueueBackend", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Processing data collection: BTC3"}
+{"asctime": "2025-08-08 16:46:03", "name": "AsyncioQueueBackend", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Processing data collection: BTC4"}
+{"asctime": "2025-08-08 16:46:03", "name": "AsyncioQueueBackend", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Processing ML prediction: ensemble_0"}
+{"asctime": "2025-08-08 16:46:03", "name": "AsyncioQueueBackend", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Processing ML prediction: ensemble_1"}
+{"asctime": "2025-08-08 16:46:03", "name": "AsyncioQueueBackend", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Processing ML prediction: ensemble_2"}
