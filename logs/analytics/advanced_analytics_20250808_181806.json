@@ -1,0 +1,81 @@
+{
+  "analytics_timestamp": "2025-08-08T18:18:06.049041",
+  "analytics_duration": 0.007899284362792969,
+  "insights_count": 1,
+  "high_impact_insights": 1,
+  "actionable_insights": 1,
+  "analytics_results": {
+    "performance_trends": {
+      "status": "insufficient_data"
+    },
+    "trading_effectiveness": {
+      "total_predictions": 0,
+      "total_opportunities": 0,
+      "overall_pass_rate": 0.0,
+      "active_days": 1,
+      "avg_daily_predictions": 0.0,
+      "predictions_per_day_trend": 0.0
+    },
+    "confidence_patterns": {
+      "measurements": 1,
+      "avg_pass_rate": 5.0,
+      "pass_rate_std": 0.0,
+      "min_pass_rate": 5.0,
+      "max_pass_rate": 5.0,
+      "avg_candidates": 100.0,
+      "pass_rate_trend": 0.0,
+      "volatility_index": 0.0
+    },
+    "prediction_accuracy": {
+      "simulated_data": true,
+      "estimated_accuracy": 68.5,
+      "confidence_calibration": 0.72,
+      "model_stability": 0.85,
+      "regime_adaptation": 0.78
+    },
+    "resource_utilization": {
+      "status": "no_data"
+    },
+    "error_patterns": {
+      "total_errors": 0,
+      "error_categories": {},
+      "error_trend": 0.0,
+      "critical_errors": 0
+    },
+    "predictive_insights": {
+      "status": "insufficient_data"
+    },
+    "optimization_opportunities": {
+      "opportunities_identified": 1,
+      "opportunities": [
+        {
+          "category": "Performance",
+          "opportunity": "Increase parallel processing",
+          "potential_improvement": "30-50% throughput increase",
+          "implementation_effort": "Medium"
+        }
+      ],
+      "total_potential_improvement": "High",
+      "priority_order": [
+        "Increase parallel processing"
+      ]
+    }
+  },
+  "insights": [
+    {
+      "category": "Trading",
+      "insight_type": "Performance",
+      "title": "Very Low Confidence Pass Rate",
+      "description": "Only 0.00% of predictions pass confidence gate",
+      "confidence": 0.95,
+      "impact_level": "HIGH",
+      "actionable": true,
+      "recommended_action": "Review confidence thresholds and model performance"
+    }
+  ],
+  "trend_analysis": {},
+  "recommendations": [
+    "Review confidence thresholds and model performance",
+    "Scale up processing to utilize available CPU capacity"
+  ]
+}
