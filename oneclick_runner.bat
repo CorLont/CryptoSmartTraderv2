@@ -1,39 +1,31 @@
 @echo off
-title CryptoSmartTrader V2 - One-Click Runner
-echo ==========================================
-echo CryptoSmartTrader V2 - One-Click Runner
-echo ==========================================
-echo.
-echo 🔄 Complete pipeline: scrape → features → predict → strict gate → export → eval → logs/daily
-echo.
+echo CryptoSmartTrader V2 - One-Click Complete Pipeline
+echo ===============================================
 
-REM Set environment
-set PYTHONPATH=%cd%
-set CRYPTOSMARTTRADER_ENV=production
+echo Running complete system validation...
+python core/system_validator.py
 
-REM Start timestamp
-echo 🕐 Started: %date% %time%
-echo.
+echo Running workstation optimization...
+python core/workstation_optimizer.py
 
-REM Run complete pipeline
-python scripts/oneclick_pipeline.py
-if %errorlevel% neq 0 (
-    echo.
-    echo ❌ Pipeline failed with error code: %errorlevel%
-    echo 📋 Check logs/daily/ for detailed error information
-    echo.
-    pause
-    exit /b 1
-)
+echo Generating daily health report...
+python core/daily_health_dashboard.py
 
-echo.
-echo ✅ Complete pipeline finished successfully!
-echo 🕐 Completed: %date% %time%
-echo.
-echo 📋 Results available in:
-echo    - exports/daily/
-echo    - logs/daily/
-echo.
-echo 🚀 To view results, run: start_dashboard.bat
-echo.
+echo Starting complete pipeline...
+echo 1. Data collection and validation
+echo 2. ML prediction generation
+echo 3. Strict confidence filtering
+echo 4. Risk assessment
+echo 5. Trading opportunity export
+
+python -c "
+import sys, os
+sys.path.append('.')
+from orchestration.strict_gate import run_strict_orchestration
+result = run_strict_orchestration()
+print(f'Pipeline completed: {result}')
+"
+
+echo Pipeline execution completed!
+echo Check logs/daily/%date:~-4,4%%date:~-10,2%%date:~-7,2%/ for results
 pause

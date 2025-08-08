@@ -1,0 +1,2 @@
+{"timestamp": "2025-08-08T18:04:52.723447", "metric_name": "cpu_usage", "value": 45.2, "category": "system"}
+{"timestamp": "2025-08-08T18:04:52.724719", "metric_name": "memory_usage", "value": 32.1, "category": "system"}

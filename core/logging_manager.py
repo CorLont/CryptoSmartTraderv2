@@ -239,9 +239,10 @@ class StructuredLogger:
         try:
             metrics_port = self.config.get('metrics_port', 8090)
             start_http_server(metrics_port, registry=self.metrics.registry)
-            self.app_logger.info(f"Metrics server started on port {metrics_port}")
+            # Use print for startup to avoid correlation_id issues
+            print(f"Metrics server started on port {metrics_port}")
         except Exception as e:
-            self.app_logger.error(f"Failed to start metrics server: {e}")
+            print(f"Failed to start metrics server: {e}")
     
     @contextmanager
     def correlation_context(self, operation: str, agent_name: str = None, **kwargs):

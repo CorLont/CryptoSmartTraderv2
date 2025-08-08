@@ -1,0 +1,9 @@
+{"asctime": "2025-08-08 18:04:52,615", "name": "CryptoSmartTrader.JSON", "levelname": "INFO", "message": "Test info message"}
+{"asctime": "2025-08-08 18:04:52,617", "name": "CryptoSmartTrader.JSON", "levelname": "WARNING", "message": "Test warning message"}
+{"asctime": "2025-08-08 18:04:52,619", "name": "CryptoSmartTrader.JSON", "levelname": "ERROR", "message": "Test error message"}
+{"asctime": "2025-08-08 18:04:52,620", "name": "CryptoSmartTrader.JSON", "levelname": "INFO", "message": "Operation started: test_operation", "correlation_id": "dac34566-561f-46fd-b945-1698e70f32da", "operation": "test_operation", "agent_name": "test_agent"}
+{"asctime": "2025-08-08 18:04:52,621", "name": "CryptoSmartTrader.JSON", "levelname": "INFO", "message": "Inside correlation context", "correlation_id": "dac34566-561f-46fd-b945-1698e70f32da", "operation": "test_operation", "agent_name": "test_agent"}
+{"asctime": "2025-08-08 18:04:52,722", "name": "CryptoSmartTrader.JSON", "levelname": "INFO", "message": "Operation completed: test_operation in 0.102s", "correlation_id": "dac34566-561f-46fd-b945-1698e70f32da", "operation": "test_operation", "agent_name": "test_agent"}
+{"asctime": "2025-08-08 18:04:52,724", "name": "CryptoSmartTrader.JSON", "levelname": "INFO", "message": "Health metric: cpu_usage = 45.2 (system)", "timestamp": "2025-08-08T18:04:52.723447", "metric_name": "cpu_usage", "value": 45.2, "category": "system"}
+{"asctime": "2025-08-08 18:04:52,725", "name": "CryptoSmartTrader.JSON", "levelname": "INFO", "message": "Health metric: memory_usage = 32.1 (system)", "timestamp": "2025-08-08T18:04:52.724719", "metric_name": "memory_usage", "value": 32.1, "category": "system"}
+{"asctime": "2025-08-08 18:04:52,726", "name": "CryptoSmartTrader.JSON", "levelname": "INFO", "message": "Confidence gate: 5/100 passed (5.0%)", "timestamp": "2025-08-08T18:04:52.725640", "total_candidates": 100, "passed_count": 5, "pass_rate": 0.05}

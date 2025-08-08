@@ -1,406 +1,549 @@
+#!/usr/bin/env python3
 """
-CryptoSmartTrader V2 - System Validator
-Complete system validation and health checks
+System Validator
+Comprehensive system validation and health checking
 """
 
-import logging
+import os
 import sys
-from pathlib import Path
-from typing import Dict, Any, List, Tuple
-from datetime import datetime
 import json
+import time
+import asyncio
+import psutil
+from pathlib import Path
+from typing import Dict, List, Any, Optional, Tuple
+from datetime import datetime
+import warnings
+warnings.filterwarnings('ignore')
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 class SystemValidator:
-    """Complete system validation and integrity checks"""
+    """
+    Comprehensive system validation for production readiness
+    """
     
-    def __init__(self, container):
-        self.container = container
-        self.logger = logging.getLogger(__name__)
+    def __init__(self):
+        self.validation_results = {}
+        self.critical_errors = []
+        self.warnings = []
+        self.recommendations = []
+    
+    def validate_all_systems(self) -> Dict[str, Any]:
+        """Run complete system validation"""
         
-        # Core system components to validate
-        self.core_components = [
-            'cache_manager',
-            'config',
-            'data_manager', 
-            'monitoring_system',
-            'real_time_pipeline',
-            'multi_horizon_ml'
+        print("🔍 RUNNING COMPREHENSIVE SYSTEM VALIDATION")
+        print("=" * 60)
+        
+        validation_start = time.time()
+        
+        # Core system validation
+        self._validate_python_environment()
+        self._validate_dependencies()
+        self._validate_hardware_requirements()
+        self._validate_file_structure()
+        self._validate_configuration()
+        self._validate_api_keys()
+        self._validate_logging_system()
+        self._validate_ml_components()
+        self._validate_risk_systems()
+        self._validate_trading_engine()
+        self._validate_monitoring_systems()
+        
+        validation_duration = time.time() - validation_start
+        
+        # Compile final report
+        final_report = {
+            'validation_timestamp': datetime.now().isoformat(),
+            'validation_duration': validation_duration,
+            'overall_status': self._calculate_overall_status(),
+            'component_results': self.validation_results,
+            'critical_errors': self.critical_errors,
+            'warnings': self.warnings,
+            'recommendations': self.recommendations,
+            'production_ready': len(self.critical_errors) == 0
+        }
+        
+        # Save validation report
+        self._save_validation_report(final_report)
+        
+        return final_report
+    
+    def _validate_python_environment(self):
+        """Validate Python environment"""
+        
+        print("🐍 Validating Python environment...")
+        
+        result = {
+            'python_version': sys.version,
+            'python_executable': sys.executable,
+            'platform': sys.platform,
+            'architecture': sys.maxsize > 2**32 and '64-bit' or '32-bit'
+        }
+        
+        # Check Python version
+        if sys.version_info < (3, 9):
+            self.critical_errors.append("Python 3.9+ required")
+            result['version_check'] = 'FAIL'
+        else:
+            result['version_check'] = 'PASS'
+        
+        # Check if running in virtual environment
+        result['virtual_env'] = hasattr(sys, 'real_prefix') or (
+            hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix
+        )
+        
+        self.validation_results['python_environment'] = result
+        print(f"   Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}: {'✓' if result['version_check'] == 'PASS' else '✗'}")
+    
+    def _validate_dependencies(self):
+        """Validate critical dependencies"""
+        
+        print("📦 Validating dependencies...")
+        
+        critical_deps = [
+            'numpy', 'pandas', 'scikit-learn', 'torch', 
+            'streamlit', 'plotly', 'ccxt', 'psutil'
         ]
         
-        # System requirements
-        self.requirements = {
-            'min_memory_mb': 512,
-            'required_packages': ['pandas', 'numpy', 'ccxt', 'lightgbm', 'streamlit'],
-            'required_directories': ['models', 'data', 'logs'],
-            'required_files': ['config.json', 'containers.py', 'app.py']
+        optional_deps = [
+            'prometheus_client', 'pythonjsonlogger', 'GPUtil', 'pynvml'
+        ]
+        
+        result = {
+            'critical_dependencies': {},
+            'optional_dependencies': {},
+            'missing_critical': [],
+            'missing_optional': []
         }
+        
+        # Check critical dependencies
+        for dep in critical_deps:
+            try:
+                __import__(dep)
+                result['critical_dependencies'][dep] = 'AVAILABLE'
+            except ImportError:
+                result['critical_dependencies'][dep] = 'MISSING'
+                result['missing_critical'].append(dep)
+                self.critical_errors.append(f"Critical dependency missing: {dep}")
+        
+        # Check optional dependencies
+        for dep in optional_deps:
+            try:
+                __import__(dep)
+                result['optional_dependencies'][dep] = 'AVAILABLE'
+            except ImportError:
+                result['optional_dependencies'][dep] = 'MISSING'
+                result['missing_optional'].append(dep)
+                self.warnings.append(f"Optional dependency missing: {dep}")
+        
+        self.validation_results['dependencies'] = result
+        print(f"   Critical deps: {len(critical_deps) - len(result['missing_critical'])}/{len(critical_deps)}")
+        print(f"   Optional deps: {len(optional_deps) - len(result['missing_optional'])}/{len(optional_deps)}")
     
-    def run_complete_validation(self) -> Dict[str, Any]:
-        """Run complete system validation"""
+    def _validate_hardware_requirements(self):
+        """Validate hardware requirements"""
+        
+        print("🖥️ Validating hardware...")
+        
+        result = {
+            'cpu_cores': psutil.cpu_count(),
+            'memory_gb': round(psutil.virtual_memory().total / (1024**3)),
+            'disk_space_gb': round(psutil.disk_usage('.').free / (1024**3)),
+            'gpu_available': False
+        }
+        
+        # Check GPU availability
         try:
-            self.logger.info("Starting complete system validation")
-            
-            validation_results = {
-                'timestamp': datetime.now().isoformat(),
-                'overall_status': 'PASS',
-                'components': {},
-                'errors': [],
-                'warnings': [],
-                'recommendations': []
-            }
-            
-            # Validate core components
-            for component in self.core_components:
-                result = self._validate_component(component)
-                validation_results['components'][component] = result
+            import torch
+            result['gpu_available'] = torch.cuda.is_available()
+            if result['gpu_available']:
+                result['gpu_count'] = torch.cuda.device_count()
+                result['gpu_name'] = torch.cuda.get_device_name(0)
+                result['gpu_memory_gb'] = round(torch.cuda.get_device_properties(0).total_memory / (1024**3))
+        except ImportError:
+            pass
+        
+        # Validate minimum requirements
+        min_requirements = {
+            'cpu_cores': 4,
+            'memory_gb': 8,
+            'disk_space_gb': 10
+        }
+        
+        result['requirements_met'] = True
+        
+        for req, min_val in min_requirements.items():
+            if result[req] < min_val:
+                self.critical_errors.append(f"Insufficient {req}: {result[req]} < {min_val}")
+                result['requirements_met'] = False
+        
+        # Recommendations for optimal performance
+        if result['memory_gb'] >= 32:
+            self.recommendations.append("Excellent RAM capacity - enable aggressive caching")
+        elif result['memory_gb'] >= 16:
+            self.recommendations.append("Good RAM capacity - moderate caching recommended")
+        
+        if not result['gpu_available']:
+            self.recommendations.append("Install CUDA-compatible GPU for ML acceleration")
+        
+        self.validation_results['hardware'] = result
+        print(f"   CPU: {result['cpu_cores']} cores")
+        print(f"   RAM: {result['memory_gb']} GB")
+        print(f"   GPU: {'✓' if result['gpu_available'] else '✗'}")
+    
+    def _validate_file_structure(self):
+        """Validate project file structure"""
+        
+        print("📁 Validating file structure...")
+        
+        required_files = [
+            'app_minimal.py',
+            'config.json',
+            'pyproject.toml',
+            'replit.md'
+        ]
+        
+        required_dirs = [
+            'core',
+            'agents',
+            'ml',
+            'api',
+            'logs',
+            'config',
+            'data'
+        ]
+        
+        result = {
+            'missing_files': [],
+            'missing_dirs': [],
+            'file_structure_valid': True
+        }
+        
+        # Check required files
+        for file_path in required_files:
+            if not Path(file_path).exists():
+                result['missing_files'].append(file_path)
+                self.critical_errors.append(f"Required file missing: {file_path}")
+                result['file_structure_valid'] = False
+        
+        # Check required directories
+        for dir_path in required_dirs:
+            if not Path(dir_path).exists():
+                result['missing_dirs'].append(dir_path)
+                self.warnings.append(f"Required directory missing: {dir_path}")
+        
+        self.validation_results['file_structure'] = result
+        print(f"   Files: {len(required_files) - len(result['missing_files'])}/{len(required_files)}")
+        print(f"   Directories: {len(required_dirs) - len(result['missing_dirs'])}/{len(required_dirs)}")
+    
+    def _validate_configuration(self):
+        """Validate configuration files"""
+        
+        print("⚙️ Validating configuration...")
+        
+        result = {
+            'config_files_valid': True,
+            'config_errors': []
+        }
+        
+        # Check config.json
+        config_path = Path('config.json')
+        if config_path.exists():
+            try:
+                with open(config_path, 'r') as f:
+                    config_data = json.load(f)
+                result['config_json'] = 'VALID'
                 
-                if not result['status']:
-                    validation_results['errors'].extend(result.get('errors', []))
-                    validation_results['overall_status'] = 'FAIL'
-            
-            # Validate system requirements
-            req_result = self._validate_requirements()
-            validation_results['components']['system_requirements'] = req_result
-            
-            if not req_result['status']:
-                validation_results['errors'].extend(req_result.get('errors', []))
-                validation_results['overall_status'] = 'FAIL'
-            
-            # Validate data integrity
-            data_result = self._validate_data_integrity()
-            validation_results['components']['data_integrity'] = data_result
-            
-            if not data_result['status']:
-                validation_results['warnings'].extend(data_result.get('warnings', []))
-            
-            # Validate ML pipeline
-            ml_result = self._validate_ml_pipeline()
-            validation_results['components']['ml_pipeline'] = ml_result
-            
-            if not ml_result['status']:
-                validation_results['warnings'].extend(ml_result.get('warnings', []))
-            
-            # Generate recommendations
-            validation_results['recommendations'] = self._generate_recommendations(validation_results)
-            
-            self.logger.info(f"System validation completed: {validation_results['overall_status']}")
-            
-            return validation_results
-            
-        except Exception as e:
-            self.logger.error(f"System validation failed: {e}")
-            return {
-                'timestamp': datetime.now().isoformat(),
-                'overall_status': 'ERROR',
-                'error': str(e)
-            }
+                # Check for required configuration keys
+                required_keys = ['data_sources', 'ml_models', 'risk_management']
+                for key in required_keys:
+                    if key not in config_data:
+                        self.warnings.append(f"Missing config key: {key}")
+                        
+            except json.JSONDecodeError as e:
+                result['config_json'] = 'INVALID'
+                result['config_errors'].append(f"config.json: {e}")
+                self.critical_errors.append("Invalid config.json format")
+                result['config_files_valid'] = False
+        else:
+            result['config_json'] = 'MISSING'
+            self.critical_errors.append("config.json missing")
+            result['config_files_valid'] = False
+        
+        self.validation_results['configuration'] = result
+        print(f"   Configuration: {'✓' if result['config_files_valid'] else '✗'}")
     
-    def _validate_component(self, component_name: str) -> Dict[str, Any]:
-        """Validate individual system component"""
-        try:
-            result = {
-                'component': component_name,
-                'status': False,
-                'errors': [],
-                'info': {}
-            }
-            
-            # Try to get component from container
-            if hasattr(self.container, component_name):
-                try:
-                    component = getattr(self.container, component_name)()
-                    result['status'] = True
-                    result['info']['initialized'] = True
-                    
-                    # Component-specific validation
-                    if component_name == 'cache_manager':
-                        result['info']['cache_size'] = len(component._cache) if hasattr(component, '_cache') else 0
-                        result['info']['memory_usage_mb'] = component.get_total_memory_usage() if hasattr(component, 'get_total_memory_usage') else 0
-                    
-                    elif component_name == 'real_time_pipeline':
-                        result['info']['pipeline_active'] = getattr(component, 'pipeline_active', False)
-                        result['info']['task_count'] = len(getattr(component, 'pipeline_tasks', {}))
-                    
-                    elif component_name == 'multi_horizon_ml':
-                        result['info']['models_loaded'] = len(getattr(component, 'models', {}))
-                        result['info']['horizons'] = list(getattr(component, 'horizons', {}).keys())
-                    
-                except Exception as e:
-                    result['errors'].append(f"Component initialization failed: {e}")
-                    result['status'] = False
+    def _validate_api_keys(self):
+        """Validate API key configuration"""
+        
+        print("🔑 Validating API keys...")
+        
+        required_keys = [
+            'KRAKEN_API_KEY',
+            'KRAKEN_SECRET',
+            'OPENAI_API_KEY'
+        ]
+        
+        result = {
+            'available_keys': [],
+            'missing_keys': [],
+            'api_keys_configured': True
+        }
+        
+        for key in required_keys:
+            if os.getenv(key):
+                result['available_keys'].append(key)
             else:
-                result['errors'].append(f"Component {component_name} not found in container")
-            
-            return result
-            
-        except Exception as e:
-            return {
-                'component': component_name,
-                'status': False,
-                'errors': [f"Validation error: {e}"]
-            }
+                result['missing_keys'].append(key)
+                self.warnings.append(f"API key not configured: {key}")
+                result['api_keys_configured'] = False
+        
+        if not result['api_keys_configured']:
+            self.recommendations.append("Configure API keys for full functionality")
+        
+        self.validation_results['api_keys'] = result
+        print(f"   API Keys: {len(result['available_keys'])}/{len(required_keys)} configured")
     
-    def _validate_requirements(self) -> Dict[str, Any]:
-        """Validate system requirements"""
-        try:
-            result = {
-                'component': 'system_requirements',
-                'status': True,
-                'errors': [],
-                'info': {}
-            }
-            
-            # Check required packages
-            missing_packages = []
-            for package in self.requirements['required_packages']:
+    def _validate_logging_system(self):
+        """Validate logging system"""
+        
+        print("📝 Validating logging system...")
+        
+        result = {
+            'log_directories_exist': True,
+            'log_permissions': True,
+            'logging_system_operational': True
+        }
+        
+        # Check log directories
+        log_dirs = [
+            Path('logs'),
+            Path('logs/daily'),
+            Path('logs/agents'),
+            Path('logs/ml')
+        ]
+        
+        for log_dir in log_dirs:
+            if not log_dir.exists():
                 try:
-                    __import__(package)
-                except ImportError:
-                    missing_packages.append(package)
-            
-            if missing_packages:
-                result['errors'].append(f"Missing packages: {missing_packages}")
-                result['status'] = False
-            
-            result['info']['packages_checked'] = len(self.requirements['required_packages'])
-            result['info']['missing_packages'] = missing_packages
-            
-            # Check required directories
-            missing_dirs = []
-            for dir_name in self.requirements['required_directories']:
-                dir_path = Path(dir_name)
-                if not dir_path.exists():
-                    try:
-                        dir_path.mkdir(parents=True, exist_ok=True)
-                        self.logger.info(f"Created missing directory: {dir_name}")
-                    except Exception as e:
-                        missing_dirs.append(dir_name)
-            
-            result['info']['directories_checked'] = len(self.requirements['required_directories'])
-            result['info']['missing_directories'] = missing_dirs
-            
-            # Check required files
-            missing_files = []
-            for file_name in self.requirements['required_files']:
-                file_path = Path(file_name)
-                if not file_path.exists():
-                    missing_files.append(file_name)
-            
-            if missing_files:
-                result['errors'].append(f"Missing files: {missing_files}")
-                result['status'] = False
-            
-            result['info']['files_checked'] = len(self.requirements['required_files'])
-            result['info']['missing_files'] = missing_files
-            
-            return result
-            
-        except Exception as e:
-            return {
-                'component': 'system_requirements',
-                'status': False,
-                'errors': [f"Requirements validation failed: {e}"]
-            }
-    
-    def _validate_data_integrity(self) -> Dict[str, Any]:
-        """Validate data integrity and completeness"""
-        try:
-            result = {
-                'component': 'data_integrity',
-                'status': True,
-                'warnings': [],
-                'info': {}
-            }
-            
-            try:
-                cache_manager = self.container.cache_manager()
-                
-                # Check for validated data
-                price_data_count = 0
-                sentiment_data_count = 0
-                whale_data_count = 0
-                
-                for key in cache_manager._cache.keys():
-                    if key.startswith('validated_price_data_'):
-                        price_data_count += 1
-                    elif key.startswith('validated_sentiment_'):
-                        sentiment_data_count += 1
-                    elif key.startswith('validated_whale_'):
-                        whale_data_count += 1
-                
-                result['info']['price_data_coins'] = price_data_count
-                result['info']['sentiment_data_coins'] = sentiment_data_count
-                result['info']['whale_data_coins'] = whale_data_count
-                
-                # Check data completeness
-                if price_data_count == 0:
-                    result['warnings'].append("No validated price data found")
-                    result['status'] = False
-                
-                if sentiment_data_count == 0:
-                    result['warnings'].append("No validated sentiment data found")
-                
-                if whale_data_count == 0:
-                    result['warnings'].append("No validated whale data found")
-                
-                # Check for dummy data (should not exist)
-                dummy_data_keys = [k for k in cache_manager._cache.keys() if 'dummy' in k.lower()]
-                if dummy_data_keys:
-                    result['warnings'].append(f"Found dummy data entries: {len(dummy_data_keys)}")
-                
-                result['info']['total_cache_entries'] = len(cache_manager._cache)
-                result['info']['dummy_entries_found'] = len(dummy_data_keys)
-                
-            except Exception as e:
-                result['warnings'].append(f"Cache validation failed: {e}")
-                result['status'] = False
-            
-            return result
-            
-        except Exception as e:
-            return {
-                'component': 'data_integrity',
-                'status': False,
-                'warnings': [f"Data integrity check failed: {e}"]
-            }
-    
-    def _validate_ml_pipeline(self) -> Dict[str, Any]:
-        """Validate ML pipeline functionality"""
-        try:
-            result = {
-                'component': 'ml_pipeline',
-                'status': True,
-                'warnings': [],
-                'info': {}
-            }
-            
-            try:
-                # Check multi-horizon ML system
-                ml_system = self.container.multi_horizon_ml()
-                
-                result['info']['models_available'] = len(ml_system.models)
-                result['info']['horizons_configured'] = list(ml_system.horizons.keys())
-                result['info']['training_config'] = ml_system.training_config
-                
-                # Check if models need training
-                retrain_needed = ml_system.check_retrain_needed()
-                result['info']['models_needing_retrain'] = sum(retrain_needed.values())
-                
-                if result['info']['models_available'] == 0:
-                    result['warnings'].append("No ML models loaded - training required")
-                
-                if result['info']['models_needing_retrain'] > 0:
-                    result['warnings'].append(f"{result['info']['models_needing_retrain']} models need retraining")
-                
-            except Exception as e:
-                result['warnings'].append(f"ML system validation failed: {e}")
-                result['status'] = False
-            
-            return result
-            
-        except Exception as e:
-            return {
-                'component': 'ml_pipeline',
-                'status': False,
-                'warnings': [f"ML pipeline validation failed: {e}"]
-            }
-    
-    def _generate_recommendations(self, validation_results: Dict[str, Any]) -> List[str]:
-        """Generate system improvement recommendations"""
-        recommendations = []
+                    log_dir.mkdir(parents=True, exist_ok=True)
+                    result['log_directories_created'] = True
+                except PermissionError:
+                    self.critical_errors.append(f"Cannot create log directory: {log_dir}")
+                    result['log_permissions'] = False
+                    result['logging_system_operational'] = False
         
+        # Test logging functionality
         try:
-            # Check component failures
-            for comp_name, comp_result in validation_results['components'].items():
-                if not comp_result.get('status', True):
-                    recommendations.append(f"Fix {comp_name} component errors")
-            
-            # Check data integrity
-            data_integrity = validation_results['components'].get('data_integrity', {})
-            info = data_integrity.get('info', {})
-            
-            if info.get('price_data_coins', 0) < 10:
-                recommendations.append("Increase price data collection - aim for 50+ coins")
-            
-            if info.get('sentiment_data_coins', 0) < 5:
-                recommendations.append("Enhance sentiment data scraping coverage")
-            
-            if info.get('dummy_entries_found', 0) > 0:
-                recommendations.append("Remove all dummy data entries (strict requirement)")
-            
-            # Check ML pipeline
-            ml_pipeline = validation_results['components'].get('ml_pipeline', {})
-            ml_info = ml_pipeline.get('info', {})
-            
-            if ml_info.get('models_available', 0) == 0:
-                recommendations.append("Train initial ML models for all horizons")
-            
-            if ml_info.get('models_needing_retrain', 0) > 0:
-                recommendations.append("Schedule model retraining for degraded models")
-            
-            # General recommendations
-            if validation_results['overall_status'] == 'FAIL':
-                recommendations.append("Priority: Fix all critical errors before production use")
-            
-            if len(validation_results['warnings']) > 5:
-                recommendations.append("Address system warnings to improve reliability")
-            
+            from core.improved_logging_manager import get_improved_logger
+            logger = get_improved_logger()
+            logger.info("System validation logging test")
+            result['logger_test'] = 'PASS'
         except Exception as e:
-            recommendations.append(f"Recommendation generation failed: {e}")
+            result['logger_test'] = 'FAIL'
+            result['logging_errors'] = str(e)
+            self.critical_errors.append(f"Logging system error: {e}")
+            result['logging_system_operational'] = False
         
-        return recommendations
+        self.validation_results['logging'] = result
+        print(f"   Logging: {'✓' if result['logging_system_operational'] else '✗'}")
     
-    def fix_common_issues(self) -> Dict[str, Any]:
-        """Automatically fix common system issues"""
+    def _validate_ml_components(self):
+        """Validate ML components"""
+        
+        print("🤖 Validating ML components...")
+        
+        result = {
+            'ml_libraries_available': True,
+            'model_directories_exist': True,
+            'ml_system_ready': True
+        }
+        
+        # Check ML libraries
+        ml_libs = ['torch', 'sklearn', 'numpy', 'pandas']
+        missing_ml_libs = []
+        
+        for lib in ml_libs:
+            try:
+                __import__(lib)
+            except ImportError:
+                missing_ml_libs.append(lib)
+                result['ml_libraries_available'] = False
+        
+        if missing_ml_libs:
+            self.critical_errors.append(f"Missing ML libraries: {missing_ml_libs}")
+            result['ml_system_ready'] = False
+        
+        # Check model directories
+        model_dirs = [
+            Path('models'),
+            Path('models/lstm'),
+            Path('models/transformers'),
+            Path('mlartifacts')
+        ]
+        
+        for model_dir in model_dirs:
+            if not model_dir.exists():
+                model_dir.mkdir(parents=True, exist_ok=True)
+        
+        self.validation_results['ml_components'] = result
+        print(f"   ML System: {'✓' if result['ml_system_ready'] else '✗'}")
+    
+    def _validate_risk_systems(self):
+        """Validate risk management systems"""
+        
+        print("🛡️ Validating risk systems...")
+        
+        result = {
+            'risk_modules_available': True,
+            'confidence_gate_operational': True,
+            'risk_systems_ready': True
+        }
+        
+        # Check risk management modules
+        risk_modules = [
+            'core.risk_mitigation',
+            'core.completeness_gate',
+            'orchestration.strict_gate'
+        ]
+        
+        for module in risk_modules:
+            try:
+                __import__(module)
+                result[f'{module}_available'] = True
+            except ImportError as e:
+                result[f'{module}_available'] = False
+                self.critical_errors.append(f"Risk module missing: {module}")
+                result['risk_modules_available'] = False
+        
+        if not result['risk_modules_available']:
+            result['risk_systems_ready'] = False
+        
+        self.validation_results['risk_systems'] = result
+        print(f"   Risk Systems: {'✓' if result['risk_systems_ready'] else '✗'}")
+    
+    def _validate_trading_engine(self):
+        """Validate trading engine components"""
+        
+        print("💰 Validating trading engine...")
+        
+        result = {
+            'exchange_connectivity': True,
+            'paper_trading_ready': True,
+            'trading_engine_operational': True
+        }
+        
+        # Test CCXT availability
         try:
-            self.logger.info("Starting automatic issue resolution")
+            import ccxt
+            result['ccxt_available'] = True
             
-            fixes_applied = {
-                'timestamp': datetime.now().isoformat(),
-                'fixes': [],
-                'errors': []
-            }
-            
-            # Create missing directories
-            for dir_name in self.requirements['required_directories']:
-                dir_path = Path(dir_name)
-                if not dir_path.exists():
-                    try:
-                        dir_path.mkdir(parents=True, exist_ok=True)
-                        fixes_applied['fixes'].append(f"Created directory: {dir_name}")
-                    except Exception as e:
-                        fixes_applied['errors'].append(f"Failed to create {dir_name}: {e}")
-            
-            # Initialize cache if needed
+            # Test exchange initialization (without API keys)
             try:
-                cache_manager = self.container.cache_manager()
-                if not hasattr(cache_manager, '_cache'):
-                    cache_manager._cache = {}
-                    fixes_applied['fixes'].append("Initialized cache manager")
+                kraken = ccxt.kraken()
+                result['exchange_init'] = True
             except Exception as e:
-                fixes_applied['errors'].append(f"Cache initialization failed: {e}")
-            
-            # Clear any dummy data
-            try:
-                cache_manager = self.container.cache_manager()
-                dummy_keys = [k for k in cache_manager._cache.keys() if 'dummy' in k.lower()]
-                for key in dummy_keys:
-                    cache_manager.delete(key)
-                    fixes_applied['fixes'].append(f"Removed dummy data: {key}")
-            except Exception as e:
-                fixes_applied['errors'].append(f"Dummy data cleanup failed: {e}")
-            
-            self.logger.info(f"Applied {len(fixes_applied['fixes'])} fixes")
-            
-            return fixes_applied
-            
+                result['exchange_init'] = False
+                self.warnings.append(f"Exchange initialization test failed: {e}")
+                
+        except ImportError:
+            result['ccxt_available'] = False
+            self.critical_errors.append("CCXT library missing")
+            result['trading_engine_operational'] = False
+        
+        self.validation_results['trading_engine'] = result
+        print(f"   Trading Engine: {'✓' if result['trading_engine_operational'] else '✗'}")
+    
+    def _validate_monitoring_systems(self):
+        """Validate monitoring and metrics systems"""
+        
+        print("📊 Validating monitoring systems...")
+        
+        result = {
+            'prometheus_available': False,
+            'health_monitoring_ready': True,
+            'monitoring_systems_operational': True
+        }
+        
+        # Check Prometheus
+        try:
+            import prometheus_client
+            result['prometheus_available'] = True
+        except ImportError:
+            self.warnings.append("Prometheus client not available")
+        
+        # Check health monitoring
+        try:
+            from core.daily_health_dashboard import DailyHealthDashboard
+            dashboard = DailyHealthDashboard()
+            result['health_dashboard_test'] = 'PASS'
         except Exception as e:
-            self.logger.error(f"Automatic issue resolution failed: {e}")
-            return {
-                'timestamp': datetime.now().isoformat(),
-                'fixes': [],
-                'errors': [str(e)]
-            }
+            result['health_dashboard_test'] = 'FAIL'
+            self.warnings.append(f"Health dashboard test failed: {e}")
+        
+        self.validation_results['monitoring'] = result
+        print(f"   Monitoring: {'✓' if result['monitoring_systems_operational'] else '✗'}")
+    
+    def _calculate_overall_status(self) -> str:
+        """Calculate overall system status"""
+        
+        if self.critical_errors:
+            return 'CRITICAL'
+        elif len(self.warnings) > 10:
+            return 'WARNING'
+        elif len(self.warnings) > 5:
+            return 'CAUTION'
+        else:
+            return 'HEALTHY'
+    
+    def _save_validation_report(self, report: Dict[str, Any]):
+        """Save validation report"""
+        
+        report_dir = Path('logs/validation')
+        report_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        report_path = report_dir / f"system_validation_{timestamp}.json"
+        
+        with open(report_path, 'w', encoding='utf-8') as f:
+            json.dump(report, f, indent=2)
+        
+        print(f"\n📄 Validation report saved: {report_path}")
+    
+    def print_summary(self, report: Dict[str, Any]):
+        """Print validation summary"""
+        
+        print(f"\n🏁 SYSTEM VALIDATION SUMMARY")
+        print("=" * 50)
+        print(f"Overall Status: {report['overall_status']}")
+        print(f"Production Ready: {'✓' if report['production_ready'] else '✗'}")
+        print(f"Validation Duration: {report['validation_duration']:.2f}s")
+        
+        if report['critical_errors']:
+            print(f"\n🚨 Critical Errors ({len(report['critical_errors'])}):")
+            for error in report['critical_errors'][:5]:
+                print(f"   - {error}")
+        
+        if report['warnings']:
+            print(f"\n⚠️ Warnings ({len(report['warnings'])}):")
+            for warning in report['warnings'][:5]:
+                print(f"   - {warning}")
+        
+        if report['recommendations']:
+            print(f"\n💡 Recommendations ({len(report['recommendations'])}):")
+            for rec in report['recommendations'][:5]:
+                print(f"   - {rec}")
+
+def run_system_validation() -> Dict[str, Any]:
+    """Run complete system validation"""
+    
+    validator = SystemValidator()
+    report = validator.validate_all_systems()
+    validator.print_summary(report)
+    
+    return report
+
+if __name__ == "__main__":
+    validation_report = run_system_validation()

@@ -1,0 +1,38 @@
+{
+  "hardware_profile": "i9-32GB-RTX2000",
+  "cpu_optimization": {
+    "worker_processes": 6,
+    "async_workers": 4,
+    "parallel_inference": true,
+    "numa_optimization": true,
+    "cpu_affinity": true
+  },
+  "memory_optimization": {
+    "max_cache_size_gb": 8,
+    "feature_cache_gb": 4,
+    "model_cache_gb": 2,
+    "data_buffer_gb": 4,
+    "aggressive_caching": true
+  },
+  "gpu_optimization": {
+    "target_gpu": "RTX2000",
+    "vram_gb": 8,
+    "max_batch_size": 512,
+    "mixed_precision": true,
+    "memory_fraction": 0.8,
+    "tensor_cores": true,
+    "automatic_fallback": true
+  },
+  "io_optimization": {
+    "async_io": true,
+    "prefetch_enabled": true,
+    "compression_level": "medium",
+    "temp_dir": "./cache/temp"
+  },
+  "ports": {
+    "streamlit_main": 5000,
+    "streamlit_test": 5001,
+    "prometheus_metrics": 8090,
+    "api_server": 8000
+  }
+}

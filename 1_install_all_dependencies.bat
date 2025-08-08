@@ -1,53 +1,26 @@
 @echo off
-echo ==========================================
-echo CryptoSmartTrader V2 - Installation
-echo ==========================================
-echo.
+echo CryptoSmartTrader V2 - Dependency Installation
+echo =============================================
 
-REM Check Python installation
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ❌ Python not found! Please install Python 3.11 or later
-    echo Download from: https://www.python.org/downloads/
-    pause
-    exit /b 1
-)
-
-echo ✅ Python found
-echo.
-
-REM Install dependencies
-echo 📦 Installing dependencies...
-python -m pip install --upgrade pip
+echo Installing Python dependencies...
+pip install --upgrade pip
 pip install -r requirements.txt
-if %errorlevel% neq 0 (
-    echo ❌ Failed to install dependencies
-    pause
-    exit /b 1
-)
 
-echo ✅ Dependencies installed
-echo.
+echo Installing PyTorch with CUDA support...
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
-REM Configure antivirus exceptions
-echo 🛡️ Configuring antivirus exceptions...
-python scripts/windows_deployment.py --antivirus
-echo.
+echo Installing optional GPU monitoring...
+pip install GPUtil pynvml
 
-REM Configure firewall
-echo 🔥 Configuring firewall rules...
-python scripts/windows_deployment.py --firewall
-echo.
+echo Creating necessary directories...
+mkdir logs\daily 2>nul
+mkdir models\backup 2>nul
+mkdir cache\temp 2>nul
+mkdir data\raw 2>nul
 
-REM Create directories
-echo 📁 Creating directories...
-mkdir logs 2>nul
-mkdir cache 2>nul
-mkdir exports 2>nul
-mkdir model_backup 2>nul
-mkdir backups 2>nul
+echo Configuring Windows Defender exclusions...
+powershell -Command "Add-MpPreference -ExclusionPath '%CD%'"
+powershell -Command "Add-MpPreference -ExclusionProcess 'python.exe'"
 
-echo ✅ Installation completed!
-echo.
-echo 🚀 To start the system, run: start_dashboard.bat
+echo Dependencies installed successfully!
 pause

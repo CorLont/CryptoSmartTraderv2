@@ -1,28 +1,16 @@
 @echo off
-echo ==========================================
-echo CryptoSmartTrader V2 - Starting Dashboard
-echo ==========================================
-echo.
+echo CryptoSmartTrader V2 - Starting Background Services
+echo ================================================
 
-REM Check if system is already running
-netstat -an | find ":5000" >nul 2>&1
-if %errorlevel% equ 0 (
-    echo ⚠️ Dashboard already running on port 5000
-    echo Opening browser...
-    start http://localhost:5000
-    pause
-    exit /b 0
-)
+echo Starting Prometheus metrics server...
+start /B python -c "from prometheus_client import start_http_server; start_http_server(8090); import time; time.sleep(3600)"
 
-echo 🚀 Starting CryptoSmartTrader Dashboard...
-echo.
-echo 📊 Dashboard will be available at: http://localhost:5000
-echo 📈 Test app will be available at: http://localhost:5001
-echo.
-echo Press Ctrl+C to stop the system
-echo.
+echo Starting health monitoring...
+start /B python core/daily_health_dashboard.py
 
-REM Start the dashboard
-python -m streamlit run app_minimal.py --server.port 5000 --server.headless true
+echo Starting MLflow tracking server...
+start /B mlflow server --host 0.0.0.0 --port 5555 --backend-store-uri sqlite:///mlflow.db
 
+echo Background services started!
+echo Check ports: 8090 (metrics), 5555 (MLflow)
 pause
