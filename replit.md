@@ -131,3 +131,12 @@ Five specialized Streamlit dashboards: Main, Comprehensive Market, Analysis Cont
 - **Deep Feature Synthesis:** Temporal features, cross features, polynomial features with technical indicators ✅ IMPLEMENTED
 - **Feature Importance Analysis:** SHAP, permutation, tree-based, mutual information methods ✅ IMPLEMENTED
 - **Regime-Specific Feature Sets:** Dynamic feature selection optimized for each market regime ✅ IMPLEMENTED
+
+**MARKET REGIME DETECTION & ADAPTIVE MODEL SWITCHING (August 2025):**
+- **Market Regime Detector:** Unsupervised learning with autoencoders, clustering, and PCA for regime detection ✅ IMPLEMENTED
+- **Autoencoder Regime Detection:** Deep neural networks for unsupervised regime pattern recognition ✅ IMPLEMENTED
+- **Clustering-Based Detection:** KMeans, GMM, and DBSCAN for regime segmentation ✅ IMPLEMENTED
+- **Adaptive Model Switcher:** Dynamic model, feature set, and threshold switching based on detected regimes ✅ IMPLEMENTED
+- **Regime-Specific Optimization:** Bull/bear/trending/volatile regime adaptation with optimal model selection ✅ IMPLEMENTED
+- **Ensemble Regime Detection:** Multi-method voting system for robust regime classification ✅ IMPLEMENTED
+- **Real-Time Adaptation:** Live model switching with performance monitoring and rollback capabilities ✅ IMPLEMENTED

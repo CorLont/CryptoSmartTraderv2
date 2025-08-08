@@ -100,6 +100,8 @@ def main():
             "💼 Portfolio Dashboard",
             "🔍 Production Monitoring",
             "📊 Performance Dashboard",
+            "🔧 Automated Feature Engineering",
+            "🌍 Market Regime Detection",
             "⚙️ System Configuration",
             "📈 Health Monitor"
         ]
@@ -165,6 +167,16 @@ def main():
     elif page == "📊 Performance Dashboard":
         performance_dashboard = PerformanceDashboard(container)
         performance_dashboard.render()
+        
+    elif page == "🔧 Automated Feature Engineering":
+        from dashboards.automated_feature_engineering_dashboard import AutomatedFeatureEngineeringDashboard
+        fe_dashboard = AutomatedFeatureEngineeringDashboard()
+        fe_dashboard.render()
+        
+    elif page == "🌍 Market Regime Detection":
+        from dashboards.market_regime_dashboard import MarketRegimeDashboard
+        regime_dashboard = MarketRegimeDashboard()
+        regime_dashboard.render()
         
     elif page == "⚙️ System Configuration":
         render_config_page(config_manager)

@@ -1,683 +1,1047 @@
 #!/usr/bin/env python3
 """
-CryptoSmartTrader V2 - Market Regime Detection Engine
-Advanced market regime detection and volatility classification with auto-model switching
+CryptoSmartTrader V2 - Market Regime Detection
+Automatic regime detection using unsupervised learning and adaptive model switching
 """
 
 import numpy as np
 import pandas as pd
 import logging
-from typing import Dict, Any, List, Optional, Tuple, Callable
+from typing import Dict, Any, List, Optional, Tuple, Union
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 import threading
-from sklearn.cluster import KMeans
-from sklearn.mixture import GaussianMixture
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 import warnings
+import pickle
+from pathlib import Path
 warnings.filterwarnings('ignore')
 
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    from torch.utils.data import DataLoader, TensorDataset
+    HAS_TORCH = True
+except ImportError:
+    HAS_TORCH = False
+
+try:
+    from sklearn.cluster import KMeans, DBSCAN, GaussianMixture
+    from sklearn.decomposition import PCA, ICA
+    from sklearn.preprocessing import StandardScaler, RobustScaler
+    from sklearn.metrics import silhouette_score, calinski_harabasz_score
+    from sklearn.ensemble import IsolationForest
+    from sklearn.manifold import TSNE
+    HAS_SKLEARN = True
+except ImportError:
+    HAS_SKLEARN = False
+
 class MarketRegime(Enum):
-    BULL_TRENDING = "bull_trending"
-    BEAR_TRENDING = "bear_trending"
-    SIDEWAYS_LOW_VOL = "sideways_low_vol"
-    SIDEWAYS_HIGH_VOL = "sideways_high_vol"
+    BULL_MARKET = "bull_market"
+    BEAR_MARKET = "bear_market"
+    SIDEWAYS = "sideways"
+    HIGH_VOLATILITY = "high_volatility"
+    LOW_VOLATILITY = "low_volatility"
+    TRENDING_UP = "trending_up"
+    TRENDING_DOWN = "trending_down"
+    CONSOLIDATION = "consolidation"
+    BREAKOUT = "breakout"
     CRASH = "crash"
-    BUBBLE = "bubble"
     RECOVERY = "recovery"
-    ACCUMULATION = "accumulation"
-    DISTRIBUTION = "distribution"
     UNKNOWN = "unknown"
 
-class VolatilityRegime(Enum):
-    ULTRA_LOW = "ultra_low"     # < 10% annualized
-    LOW = "low"                 # 10-30% annualized
-    MEDIUM = "medium"           # 30-60% annualized
-    HIGH = "high"               # 60-100% annualized
-    EXTREME = "extreme"         # > 100% annualized
+class DetectionMethod(Enum):
+    AUTOENCODER = "autoencoder"
+    CLUSTERING = "clustering"
+    PCA_BASED = "pca_based"
+    STATISTICAL = "statistical"
+    ENSEMBLE = "ensemble"
 
 @dataclass
 class RegimeDetectionConfig:
     """Configuration for market regime detection"""
-    lookback_periods: List[int] = field(default_factory=lambda: [20, 50, 100, 200])
-    volatility_window: int = 20
-    trend_window: int = 50
-    volume_window: int = 20
-    regime_min_duration: int = 5  # Minimum periods for regime change
-    confidence_threshold: float = 0.6
-    volatility_quantiles: List[float] = field(default_factory=lambda: [0.2, 0.4, 0.6, 0.8])
-    enable_ml_clustering: bool = True
-    n_regime_clusters: int = 6
-    update_frequency: int = 10  # Update every N periods
+    # Detection methods
+    primary_method: DetectionMethod = DetectionMethod.ENSEMBLE
+    enable_autoencoder: bool = True
+    enable_clustering: bool = True
+    enable_pca_analysis: bool = True
+    
+    # Data parameters
+    lookback_periods: int = 100
+    min_regime_duration: int = 5
+    regime_change_threshold: float = 0.3
+    
+    # Feature engineering
+    technical_indicators: List[str] = field(default_factory=lambda: [
+        'sma_short', 'sma_long', 'ema_short', 'ema_long',
+        'rsi', 'macd', 'bollinger_upper', 'bollinger_lower',
+        'volatility', 'volume_sma', 'atr'
+    ])
+    
+    # Clustering parameters
+    n_clusters: int = 6
+    clustering_method: str = 'kmeans'  # 'kmeans', 'gmm', 'dbscan'
+    
+    # Autoencoder parameters
+    autoencoder_latent_dim: int = 8
+    autoencoder_epochs: int = 100
+    reconstruction_threshold: float = 0.1
+    
+    # Regime validation
+    min_confidence_score: float = 0.7
+    ensemble_voting_threshold: float = 0.6
+    
+    # Model persistence
+    save_models: bool = True
+    model_cache_dir: str = "models/regime_detection"
 
 @dataclass
-class RegimeSignal:
-    """Market regime detection signal"""
+class RegimeDetectionResult:
+    """Result of market regime detection"""
     regime: MarketRegime
-    volatility_regime: VolatilityRegime
     confidence: float
+    method: DetectionMethod
+    features_used: List[str]
+    detection_timestamp: datetime
+    regime_probability: Dict[MarketRegime, float] = field(default_factory=dict)
+    supporting_evidence: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class RegimeTransition:
+    """Market regime transition record"""
     timestamp: datetime
-    indicators: Dict[str, float] = field(default_factory=dict)
-    regime_duration: int = 0
-    trend_strength: float = 0.0
-    volatility_percentile: float = 0.0
-    volume_profile: str = "normal"
+    from_regime: MarketRegime
+    to_regime: MarketRegime
+    confidence: float
+    trigger_features: List[str]
+    transition_strength: float
+
+class AutoencoderRegimeDetector(nn.Module):
+    """Autoencoder for unsupervised regime detection"""
+    
+    def __init__(self, input_dim: int, latent_dim: int = 8):
+        super().__init__()
+        
+        self.input_dim = input_dim
+        self.latent_dim = latent_dim
+        
+        # Encoder
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim, input_dim // 2),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(input_dim // 2, input_dim // 4),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(input_dim // 4, latent_dim),
+            nn.Tanh()
+        )
+        
+        # Decoder
+        self.decoder = nn.Sequential(
+            nn.Linear(latent_dim, input_dim // 4),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(input_dim // 4, input_dim // 2),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(input_dim // 2, input_dim)
+        )
+        
+        # Regime classifier (trained on latent representations)
+        self.regime_classifier = nn.Sequential(
+            nn.Linear(latent_dim, latent_dim * 2),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(latent_dim * 2, len(MarketRegime)),
+            nn.Softmax(dim=-1)
+        )
+    
+    def forward(self, x):
+        """Forward pass"""
+        latent = self.encoder(x)
+        reconstructed = self.decoder(latent)
+        regime_probs = self.regime_classifier(latent)
+        
+        return reconstructed, latent, regime_probs
+    
+    def encode(self, x):
+        """Encode input to latent space"""
+        return self.encoder(x)
+    
+    def get_reconstruction_error(self, x):
+        """Calculate reconstruction error"""
+        with torch.no_grad():
+            reconstructed, _, _ = self.forward(x)
+            mse_loss = F.mse_loss(reconstructed, x, reduction='none')
+            return mse_loss.mean(dim=1)
 
 class MarketRegimeDetector:
-    """Advanced market regime detection and classification system"""
+    """Advanced market regime detector using multiple unsupervised methods"""
     
     def __init__(self, config: Optional[RegimeDetectionConfig] = None):
         self.config = config or RegimeDetectionConfig()
         self.logger = logging.getLogger(f"{__name__}.MarketRegimeDetector")
         
-        # State tracking
-        self.current_regime = MarketRegime.UNKNOWN
-        self.current_volatility_regime = VolatilityRegime.MEDIUM
-        self.regime_history: List[RegimeSignal] = []
-        self.regime_start_time = datetime.now()
-        self.regime_duration = 0
+        # Models and components
+        self.autoencoder: Optional[AutoencoderRegimeDetector] = None
+        self.clustering_model = None
+        self.pca_model = None
         
-        # ML models for regime detection
-        self.regime_clusterer = None
-        self.volatility_scaler = StandardScaler()
-        self.regime_features_cache = {}
+        # Initialize scaler based on availability
+        if HAS_SKLEARN:
+            self.scaler = StandardScaler()
+        else:
+            self.scaler = None
         
-        # Historical data for regime classification
-        self.price_history = []
-        self.volume_history = []
-        self.volatility_history = []
+        # Detection state
+        self.current_regime: MarketRegime = MarketRegime.UNKNOWN
+        self.regime_confidence: float = 0.0
+        self.regime_history: List[RegimeDetectionResult] = []
+        self.regime_transitions: List[RegimeTransition] = []
         
-        # Thread safety
+        # Feature cache
+        self.feature_cache: Dict[str, np.ndarray] = {}
+        self.regime_features: Dict[MarketRegime, Dict[str, float]] = {}
+        
+        # Model persistence
+        self.model_cache_dir = Path(self.config.model_cache_dir)
+        self.model_cache_dir.mkdir(parents=True, exist_ok=True)
+        
         self._lock = threading.RLock()
         
-        # Model switching callbacks
-        self.regime_change_callbacks: List[Callable] = []
+        # Initialize device
+        if HAS_TORCH:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            self.device = 'cpu'
         
-        self.logger.info("Market Regime Detector initialized with ML clustering")
+        self.logger.info(f"Market Regime Detector initialized on {self.device}")
     
-    def add_regime_change_callback(self, callback: Callable[[RegimeSignal], None]):
-        """Add callback for regime changes"""
-        with self._lock:
-            self.regime_change_callbacks.append(callback)
-    
-    def update_market_data(self, price_data: pd.DataFrame, volume_data: Optional[pd.DataFrame] = None) -> RegimeSignal:
-        """
-        Update market data and detect current regime
-        
-        Args:
-            price_data: DataFrame with OHLCV data
-            volume_data: Optional volume data
-            
-        Returns:
-            Current regime signal
-        """
+    def fit(self, data: pd.DataFrame, target_column: str = 'close') -> 'MarketRegimeDetector':
+        """Fit the regime detection models"""
         with self._lock:
             try:
-                # Validate and process input data
-                if price_data.empty:
-                    return self._get_current_regime_signal()
+                self.logger.info(f"Training regime detection models on {len(data)} samples")
                 
-                # Extract key market features
-                market_features = self._extract_market_features(price_data, volume_data)
+                # Extract and engineer features
+                features = self._engineer_regime_features(data, target_column)
                 
-                # Detect current regime
-                regime_signal = self._detect_regime(market_features, price_data)
+                if len(features) < self.config.lookback_periods:
+                    self.logger.warning(f"Insufficient data for training: {len(features)} < {self.config.lookback_periods}")
+                    return self
                 
-                # Check for regime change
-                if regime_signal.regime != self.current_regime:
-                    self._handle_regime_change(regime_signal)
+                # Scale features
+                if self.scaler is not None:
+                    scaled_features = self.scaler.fit_transform(features.values)
+                else:
+                    # Simple normalization fallback
+                    feature_values = features.values
+                    scaled_features = (feature_values - feature_values.mean(axis=0)) / (feature_values.std(axis=0) + 1e-8)
                 
-                # Update regime duration
-                regime_signal.regime_duration = self.regime_duration
+                # Train autoencoder
+                if self.config.enable_autoencoder and HAS_TORCH:
+                    self._train_autoencoder(scaled_features)
                 
-                # Store in history
-                self.regime_history.append(regime_signal)
-                if len(self.regime_history) > 1000:  # Limit history size
-                    self.regime_history = self.regime_history[-1000:]
+                # Train clustering models
+                if self.config.enable_clustering and HAS_SKLEARN:
+                    self._train_clustering_models(scaled_features)
                 
-                # Update cache
-                self._update_historical_cache(price_data, volume_data)
+                # Train PCA model
+                if self.config.enable_pca_analysis and HAS_SKLEARN:
+                    self._train_pca_model(scaled_features)
                 
-                return regime_signal
+                # Extract regime characteristics
+                self._extract_regime_characteristics(scaled_features, features.index)
+                
+                # Save models
+                if self.config.save_models:
+                    self._save_models()
+                
+                self.logger.info("Regime detection models trained successfully")
+                return self
                 
             except Exception as e:
-                self.logger.error(f"Regime detection update failed: {e}")
-                return self._get_current_regime_signal()
+                self.logger.error(f"Model training failed: {e}")
+                return self
     
-    def _extract_market_features(self, price_data: pd.DataFrame, volume_data: Optional[pd.DataFrame]) -> Dict[str, float]:
-        """Extract comprehensive market features for regime detection"""
-        features = {}
-        
-        try:
-            # Ensure we have required columns
-            if 'close' not in price_data.columns:
-                if 'price' in price_data.columns:
-                    price_data = price_data.rename(columns={'price': 'close'})
+    def detect_regime(self, data: pd.DataFrame, target_column: str = 'close') -> RegimeDetectionResult:
+        """Detect current market regime"""
+        with self._lock:
+            try:
+                # Extract features for current period
+                features = self._engineer_regime_features(data, target_column)
+                
+                if len(features) < self.config.min_regime_duration:
+                    return RegimeDetectionResult(
+                        regime=MarketRegime.UNKNOWN,
+                        confidence=0.0,
+                        method=DetectionMethod.STATISTICAL,
+                        features_used=[],
+                        detection_timestamp=datetime.now()
+                    )
+                
+                # Use recent data for detection
+                recent_features = features.tail(self.config.lookback_periods)
+                
+                if self.scaler is not None:
+                    scaled_features = self.scaler.transform(recent_features.values)
                 else:
-                    # Use first numeric column as price
-                    numeric_cols = price_data.select_dtypes(include=[np.number]).columns
-                    if len(numeric_cols) > 0:
-                        price_data = price_data.rename(columns={numeric_cols[0]: 'close'})
-                    else:
-                        raise ValueError("No numeric price data found")
-            
-            prices = price_data['close'].dropna()
-            if len(prices) < 20:
-                return self._get_default_features()
+                    # Simple normalization fallback
+                    feature_values = recent_features.values
+                    scaled_features = (feature_values - feature_values.mean(axis=0)) / (feature_values.std(axis=0) + 1e-8)
+                
+                # Ensemble detection
+                if self.config.primary_method == DetectionMethod.ENSEMBLE:
+                    result = self._ensemble_detection(scaled_features, recent_features.index)
+                
+                elif self.config.primary_method == DetectionMethod.AUTOENCODER:
+                    result = self._autoencoder_detection(scaled_features, recent_features.index)
+                
+                elif self.config.primary_method == DetectionMethod.CLUSTERING:
+                    result = self._clustering_detection(scaled_features, recent_features.index)
+                
+                elif self.config.primary_method == DetectionMethod.PCA_BASED:
+                    result = self._pca_detection(scaled_features, recent_features.index)
+                
+                else:  # STATISTICAL
+                    result = self._statistical_detection(recent_features)
+                
+                # Update regime history
+                self._update_regime_history(result)
+                
+                # Check for regime transitions
+                self._check_regime_transition(result)
+                
+                return result
+                
+            except Exception as e:
+                self.logger.error(f"Regime detection failed: {e}")
+                return RegimeDetectionResult(
+                    regime=MarketRegime.UNKNOWN,
+                    confidence=0.0,
+                    method=DetectionMethod.STATISTICAL,
+                    features_used=[],
+                    detection_timestamp=datetime.now()
+                )
+    
+    def _engineer_regime_features(self, data: pd.DataFrame, target_column: str) -> pd.DataFrame:
+        """Engineer features for regime detection"""
+        try:
+            features = pd.DataFrame(index=data.index)
             
             # Price-based features
-            returns = prices.pct_change().dropna()
-            
-            # Trend features
-            for window in self.config.lookback_periods:
-                if len(prices) >= window:
-                    # Trend strength
-                    price_change = (prices.iloc[-1] - prices.iloc[-window]) / prices.iloc[-window]
-                    features[f'trend_{window}'] = price_change
-                    
-                    # Linear regression slope
-                    x = np.arange(window)
-                    y = prices.iloc[-window:].values
-                    slope = np.polyfit(x, y, 1)[0] / np.mean(y)  # Normalized slope
-                    features[f'slope_{window}'] = slope
-            
-            # Volatility features
-            if len(returns) >= self.config.volatility_window:
-                vol_window = min(self.config.volatility_window, len(returns))
-                volatility = returns.iloc[-vol_window:].std() * np.sqrt(252)  # Annualized
-                features['volatility'] = volatility
+            if target_column in data.columns:
+                price = data[target_column].fillna(method='ffill') if hasattr(data[target_column], 'fillna') else data[target_column]
                 
-                # Rolling volatility trend
-                if len(returns) >= vol_window * 2:
-                    recent_vol = returns.iloc[-vol_window:].std()
-                    older_vol = returns.iloc[-vol_window*2:-vol_window].std()
-                    vol_trend = (recent_vol - older_vol) / older_vol if older_vol > 0 else 0
-                    features['volatility_trend'] = vol_trend
+                # Moving averages
+                features['sma_short'] = price.rolling(10).mean()
+                features['sma_long'] = price.rolling(50).mean()
+                features['ema_short'] = price.ewm(span=12).mean()
+                features['ema_long'] = price.ewm(span=26).mean()
                 
-                # Volatility clustering (GARCH-like)
-                abs_returns = np.abs(returns.iloc[-vol_window:])
-                vol_clustering = abs_returns.autocorr(lag=1) if len(abs_returns) > 1 else 0
-                features['volatility_clustering'] = vol_clustering or 0
-            
-            # Momentum features
-            if len(returns) >= 20:
-                # RSI-like momentum
-                gains = returns[returns > 0].sum()
-                losses = -returns[returns < 0].sum()
-                rsi = 100 - (100 / (1 + gains / max(losses, 1e-8)))
-                features['momentum_rsi'] = rsi
+                # Price ratios
+                features['price_sma_ratio'] = price / features['sma_long']
+                features['sma_cross'] = features['sma_short'] / features['sma_long']
                 
-                # Price momentum
-                momentum_periods = [5, 10, 20]
-                for period in momentum_periods:
-                    if len(returns) >= period:
-                        momentum = returns.iloc[-period:].sum()
-                        features[f'momentum_{period}'] = momentum
-            
-            # Volume features (if available)
-            if volume_data is not None and not volume_data.empty:
-                volume = volume_data.iloc[:, 0] if volume_data.shape[1] > 0 else volume_data
-                if len(volume) >= self.config.volume_window:
-                    vol_window = min(self.config.volume_window, len(volume))
-                    
-                    # Volume trend
-                    recent_vol = volume.iloc[-vol_window//2:].mean()
-                    older_vol = volume.iloc[-vol_window:-vol_window//2].mean()
-                    vol_trend = (recent_vol - older_vol) / older_vol if older_vol > 0 else 0
-                    features['volume_trend'] = vol_trend
-                    
-                    # Volume volatility
-                    vol_vol = volume.iloc[-vol_window:].std() / volume.iloc[-vol_window:].mean()
-                    features['volume_volatility'] = vol_vol or 0
-            
-            # Market structure features
-            if len(prices) >= 50:
-                # Support/resistance levels
-                recent_prices = prices.iloc[-50:]
-                price_range = recent_prices.max() - recent_prices.min()
-                current_position = (prices.iloc[-1] - recent_prices.min()) / max(price_range, 1e-8)
-                features['price_position'] = current_position
+                # Returns and volatility
+                returns = price.pct_change().fillna(0)
+                features['returns'] = returns
+                features['returns_abs'] = returns.abs()
+                features['volatility'] = returns.rolling(20).std()
+                features['volatility_short'] = returns.rolling(5).std()
                 
-                # Drawdown
-                rolling_max = prices.rolling(window=50, min_periods=1).max()
-                drawdown = (prices - rolling_max) / rolling_max
-                max_drawdown = drawdown.iloc[-50:].min()
-                features['max_drawdown'] = max_drawdown
+                # Momentum indicators
+                features['rsi'] = self._calculate_rsi(price)
+                features['macd'], features['macd_signal'] = self._calculate_macd(price)
+                features['macd_histogram'] = features['macd'] - features['macd_signal']
+                
+                # Bollinger bands
+                bb_upper, bb_lower = self._calculate_bollinger_bands(price)
+                features['bollinger_upper'] = bb_upper
+                features['bollinger_lower'] = bb_lower
+                features['bollinger_position'] = (price - bb_lower) / (bb_upper - bb_lower)
+                
+                # ATR (Average True Range)
+                if all(col in data.columns for col in ['high', 'low']):
+                    features['atr'] = self._calculate_atr(data['high'], data['low'], price)
+                
+                # Trend strength
+                features['trend_strength'] = price.rolling(20).apply(
+                    lambda x: np.corrcoef(np.arange(len(x)), x)[0, 1] if len(x) > 1 else 0
+                )
+            
+            # Volume-based features
+            if 'volume' in data.columns:
+                volume = data['volume'].fillna(0)
+                features['volume'] = volume
+                features['volume_sma'] = volume.rolling(20).mean()
+                features['volume_ratio'] = volume / features['volume_sma']
+                features['volume_volatility'] = volume.rolling(10).std()
+                
+                # Price-volume features
+                if target_column in data.columns:
+                    features['price_volume_corr'] = price.rolling(20).corr(volume)
+            
+            # Regime-specific features
+            features['regime_momentum'] = features['returns'].rolling(10).mean()
+            features['regime_volatility_regime'] = features['volatility'].rolling(20).mean()
+            features['regime_trend_consistency'] = features['trend_strength'].rolling(10).std()
+            
+            # Higher-order moments
+            features['skewness'] = returns.rolling(20).skew()
+            features['kurtosis'] = returns.rolling(20).kurt()
+            
+            # Fill NaN values
+            try:
+                features = features.fillna(method='ffill').fillna(0)
+            except:
+                features = features.fillna(0)
             
             return features
             
         except Exception as e:
-            self.logger.warning(f"Feature extraction failed: {e}")
-            return self._get_default_features()
+            self.logger.error(f"Feature engineering failed: {e}")
+            return pd.DataFrame(index=data.index)
     
-    def _get_default_features(self) -> Dict[str, float]:
-        """Get default features when extraction fails"""
-        return {
-            'trend_20': 0.0,
-            'trend_50': 0.0,
-            'volatility': 0.5,
-            'momentum_rsi': 50.0,
-            'volume_trend': 0.0,
-            'price_position': 0.5
-        }
-    
-    def _detect_regime(self, features: Dict[str, float], price_data: pd.DataFrame) -> RegimeSignal:
-        """Detect current market regime based on features"""
+    def _train_autoencoder(self, features: np.ndarray):
+        """Train autoencoder for regime detection"""
         try:
-            # Rule-based regime detection
-            regime = self._rule_based_regime_detection(features)
+            if not HAS_TORCH:
+                self.logger.warning("PyTorch not available, skipping autoencoder training")
+                return
             
-            # ML-based regime detection (if enabled and trained)
-            if self.config.enable_ml_clustering and self.regime_clusterer is not None:
-                ml_regime = self._ml_based_regime_detection(features)
-                # Combine rule-based and ML-based detection
-                regime = self._combine_regime_predictions(regime, ml_regime, features)
+            input_dim = features.shape[1]
+            self.autoencoder = AutoencoderRegimeDetector(
+                input_dim=input_dim,
+                latent_dim=self.config.autoencoder_latent_dim
+            ).to(self.device)
             
-            # Detect volatility regime
-            volatility_regime = self._detect_volatility_regime(features)
+            # Prepare data
+            X_tensor = torch.FloatTensor(features).to(self.device)
+            dataset = TensorDataset(X_tensor)
+            dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
             
-            # Calculate confidence
-            confidence = self._calculate_regime_confidence(features, regime)
+            # Training setup
+            optimizer = torch.optim.Adam(self.autoencoder.parameters(), lr=1e-3)
+            reconstruction_criterion = nn.MSELoss()
             
-            # Create regime signal
-            signal = RegimeSignal(
-                regime=regime,
-                volatility_regime=volatility_regime,
-                confidence=confidence,
-                timestamp=datetime.now(),
-                indicators=features.copy(),
-                trend_strength=self._calculate_trend_strength(features),
-                volatility_percentile=self._calculate_volatility_percentile(features.get('volatility', 0.5)),
-                volume_profile=self._analyze_volume_profile(features)
-            )
+            # Training loop
+            self.autoencoder.train()
+            for epoch in range(self.config.autoencoder_epochs):
+                total_loss = 0.0
+                
+                for batch in dataloader:
+                    batch_data = batch[0]
+                    
+                    optimizer.zero_grad()
+                    
+                    reconstructed, latent, regime_probs = self.autoencoder(batch_data)
+                    
+                    # Reconstruction loss
+                    recon_loss = reconstruction_criterion(reconstructed, batch_data)
+                    
+                    # Total loss (can add regularization terms here)
+                    total_loss_batch = recon_loss
+                    
+                    total_loss_batch.backward()
+                    optimizer.step()
+                    
+                    total_loss += total_loss_batch.item()
+                
+                if epoch % 20 == 0:
+                    avg_loss = total_loss / len(dataloader)
+                    self.logger.debug(f"Autoencoder epoch {epoch}, loss: {avg_loss:.4f}")
             
-            return signal
+            self.logger.info("Autoencoder training completed")
             
         except Exception as e:
-            self.logger.error(f"Regime detection failed: {e}")
-            return RegimeSignal(
+            self.logger.error(f"Autoencoder training failed: {e}")
+    
+    def _train_clustering_models(self, features: np.ndarray):
+        """Train clustering models for regime detection"""
+        try:
+            if not HAS_SKLEARN:
+                self.logger.warning("Scikit-learn not available, skipping clustering")
+                return
+            
+            if self.config.clustering_method == 'kmeans':
+                self.clustering_model = KMeans(
+                    n_clusters=self.config.n_clusters,
+                    random_state=42,
+                    n_init=10
+                )
+            
+            elif self.config.clustering_method == 'gmm':
+                self.clustering_model = GaussianMixture(
+                    n_components=self.config.n_clusters,
+                    random_state=42
+                )
+            
+            elif self.config.clustering_method == 'dbscan':
+                self.clustering_model = DBSCAN(
+                    eps=0.5,
+                    min_samples=5
+                )
+            
+            # Fit clustering model
+            cluster_labels = self.clustering_model.fit_predict(features)
+            
+            # Evaluate clustering quality
+            if len(np.unique(cluster_labels)) > 1:
+                silhouette = silhouette_score(features, cluster_labels)
+                calinski = calinski_harabasz_score(features, cluster_labels)
+                
+                self.logger.info(f"Clustering quality - Silhouette: {silhouette:.3f}, Calinski: {calinski:.1f}")
+            
+            self.logger.info(f"Clustering model trained with {len(np.unique(cluster_labels))} clusters")
+            
+        except Exception as e:
+            self.logger.error(f"Clustering training failed: {e}")
+    
+    def _train_pca_model(self, features: np.ndarray):
+        """Train PCA model for dimensionality reduction and regime detection"""
+        try:
+            if not HAS_SKLEARN:
+                self.logger.warning("Scikit-learn not available, skipping PCA")
+                return
+            
+            # Fit PCA
+            n_components = min(10, features.shape[1])
+            self.pca_model = PCA(n_components=n_components)
+            
+            pca_features = self.pca_model.fit_transform(features)
+            
+            # Calculate explained variance
+            explained_variance = self.pca_model.explained_variance_ratio_.sum()
+            
+            self.logger.info(f"PCA model trained, explained variance: {explained_variance:.3f}")
+            
+        except Exception as e:
+            self.logger.error(f"PCA training failed: {e}")
+    
+    def _extract_regime_characteristics(self, features: np.ndarray, index: pd.Index):
+        """Extract characteristics for each detected regime"""
+        try:
+            # This is a simplified implementation
+            # In practice, you would use the clustering results to define regime characteristics
+            
+            for regime in MarketRegime:
+                if regime != MarketRegime.UNKNOWN:
+                    # For now, create default characteristics
+                    self.regime_features[regime] = {
+                        'volatility_threshold': 0.02,
+                        'trend_threshold': 0.01,
+                        'volume_threshold': 1.5
+                    }
+            
+        except Exception as e:
+            self.logger.error(f"Regime characteristic extraction failed: {e}")
+    
+    def _ensemble_detection(self, features: np.ndarray, index: pd.Index) -> RegimeDetectionResult:
+        """Ensemble-based regime detection"""
+        try:
+            detection_methods = []
+            regime_votes = {}
+            
+            # Autoencoder detection
+            if self.autoencoder is not None:
+                autoencoder_result = self._autoencoder_detection(features, index)
+                detection_methods.append(autoencoder_result)
+                regime_votes[autoencoder_result.regime] = regime_votes.get(autoencoder_result.regime, 0) + autoencoder_result.confidence
+            
+            # Clustering detection
+            if self.clustering_model is not None:
+                clustering_result = self._clustering_detection(features, index)
+                detection_methods.append(clustering_result)
+                regime_votes[clustering_result.regime] = regime_votes.get(clustering_result.regime, 0) + clustering_result.confidence
+            
+            # PCA detection
+            if self.pca_model is not None:
+                pca_result = self._pca_detection(features, index)
+                detection_methods.append(pca_result)
+                regime_votes[pca_result.regime] = regime_votes.get(pca_result.regime, 0) + pca_result.confidence
+            
+            # Statistical detection (always available)
+            features_df = pd.DataFrame(features, index=index)
+            statistical_result = self._statistical_detection(features_df)
+            detection_methods.append(statistical_result)
+            regime_votes[statistical_result.regime] = regime_votes.get(statistical_result.regime, 0) + statistical_result.confidence
+            
+            # Ensemble voting
+            if regime_votes:
+                best_regime = max(regime_votes.items(), key=lambda x: x[1])
+                ensemble_confidence = best_regime[1] / len(detection_methods)
+                
+                # Normalize confidence
+                ensemble_confidence = min(1.0, ensemble_confidence)
+                
+                return RegimeDetectionResult(
+                    regime=best_regime[0],
+                    confidence=ensemble_confidence,
+                    method=DetectionMethod.ENSEMBLE,
+                    features_used=list(range(features.shape[1])),
+                    detection_timestamp=datetime.now(),
+                    regime_probability={regime: score/len(detection_methods) for regime, score in regime_votes.items()},
+                    supporting_evidence={
+                        'method_results': [
+                            {'method': result.method.value, 'regime': result.regime.value, 'confidence': result.confidence}
+                            for result in detection_methods
+                        ]
+                    }
+                )
+            
+            else:
+                return RegimeDetectionResult(
+                    regime=MarketRegime.UNKNOWN,
+                    confidence=0.0,
+                    method=DetectionMethod.ENSEMBLE,
+                    features_used=[],
+                    detection_timestamp=datetime.now()
+                )
+            
+        except Exception as e:
+            self.logger.error(f"Ensemble detection failed: {e}")
+            return RegimeDetectionResult(
                 regime=MarketRegime.UNKNOWN,
-                volatility_regime=VolatilityRegime.MEDIUM,
                 confidence=0.0,
-                timestamp=datetime.now()
+                method=DetectionMethod.ENSEMBLE,
+                features_used=[],
+                detection_timestamp=datetime.now()
             )
     
-    def _rule_based_regime_detection(self, features: Dict[str, float]) -> MarketRegime:
-        """Rule-based regime detection using market indicators"""
-        trend_20 = features.get('trend_20', 0)
-        trend_50 = features.get('trend_50', 0)
-        volatility = features.get('volatility', 0.5)
-        momentum_rsi = features.get('momentum_rsi', 50)
-        max_drawdown = features.get('max_drawdown', 0)
-        volume_trend = features.get('volume_trend', 0)
-        
-        # Crash detection
-        if trend_20 < -0.15 and volatility > 0.8 and max_drawdown < -0.2:
-            return MarketRegime.CRASH
-        
-        # Bubble detection
-        if trend_20 > 0.3 and volatility > 0.6 and momentum_rsi > 80:
-            return MarketRegime.BUBBLE
-        
-        # Bull trending
-        if trend_20 > 0.05 and trend_50 > 0.02 and momentum_rsi > 55:
-            return MarketRegime.BULL_TRENDING
-        
-        # Bear trending
-        if trend_20 < -0.05 and trend_50 < -0.02 and momentum_rsi < 45:
-            return MarketRegime.BEAR_TRENDING
-        
-        # Recovery
-        if trend_20 > 0.1 and max_drawdown < -0.1 and volume_trend > 0.1:
-            return MarketRegime.RECOVERY
-        
-        # Accumulation
-        if abs(trend_20) < 0.03 and volatility < 0.4 and volume_trend > 0:
-            return MarketRegime.ACCUMULATION
-        
-        # Distribution
-        if abs(trend_20) < 0.03 and volatility < 0.4 and volume_trend < -0.05:
-            return MarketRegime.DISTRIBUTION
-        
-        # Sideways markets
-        if abs(trend_20) < 0.05 and abs(trend_50) < 0.03:
-            if volatility < 0.4:
-                return MarketRegime.SIDEWAYS_LOW_VOL
-            else:
-                return MarketRegime.SIDEWAYS_HIGH_VOL
-        
-        return MarketRegime.UNKNOWN
-    
-    def _ml_based_regime_detection(self, features: Dict[str, float]) -> MarketRegime:
-        """ML-based regime detection using clustering"""
+    def _autoencoder_detection(self, features: np.ndarray, index: pd.Index) -> RegimeDetectionResult:
+        """Autoencoder-based regime detection"""
         try:
-            if self.regime_clusterer is None:
-                return MarketRegime.UNKNOWN
+            if self.autoencoder is None or not HAS_TORCH:
+                return self._statistical_detection(pd.DataFrame(features, index=index))
             
-            # Prepare feature vector
-            feature_names = ['trend_20', 'trend_50', 'volatility', 'momentum_rsi', 'volume_trend', 'max_drawdown']
-            feature_vector = np.array([features.get(name, 0) for name in feature_names]).reshape(1, -1)
+            self.autoencoder.eval()
             
-            # Scale features
-            scaled_features = self.volatility_scaler.transform(feature_vector)
+            with torch.no_grad():
+                X_tensor = torch.FloatTensor(features).to(self.device)
+                
+                # Get reconstruction error and regime probabilities
+                reconstructed, latent, regime_probs = self.autoencoder(X_tensor)
+                reconstruction_errors = self.autoencoder.get_reconstruction_error(X_tensor)
+                
+                # Average regime probabilities over recent period
+                avg_regime_probs = regime_probs.mean(dim=0).cpu().numpy()
+                
+                # Map probabilities to regimes
+                regime_list = list(MarketRegime)
+                max_prob_idx = np.argmax(avg_regime_probs)
+                detected_regime = regime_list[max_prob_idx] if max_prob_idx < len(regime_list) else MarketRegime.UNKNOWN
+                
+                confidence = float(avg_regime_probs[max_prob_idx])
+                
+                # Check for anomalies (high reconstruction error might indicate regime change)
+                avg_reconstruction_error = reconstruction_errors.mean().item()
+                if avg_reconstruction_error > self.config.reconstruction_threshold:
+                    confidence *= 0.7  # Reduce confidence for anomalous periods
+                
+                regime_probability = {
+                    regime_list[i]: float(avg_regime_probs[i]) 
+                    for i in range(min(len(regime_list), len(avg_regime_probs)))
+                }
+                
+                return RegimeDetectionResult(
+                    regime=detected_regime,
+                    confidence=confidence,
+                    method=DetectionMethod.AUTOENCODER,
+                    features_used=list(range(features.shape[1])),
+                    detection_timestamp=datetime.now(),
+                    regime_probability=regime_probability,
+                    supporting_evidence={
+                        'reconstruction_error': avg_reconstruction_error,
+                        'latent_representation': latent.mean(dim=0).cpu().numpy().tolist()
+                    }
+                )
             
-            # Predict cluster
-            cluster = self.regime_clusterer.predict(scaled_features)[0]
+        except Exception as e:
+            self.logger.error(f"Autoencoder detection failed: {e}")
+            return self._statistical_detection(pd.DataFrame(features, index=index))
+    
+    def _clustering_detection(self, features: np.ndarray, index: pd.Index) -> RegimeDetectionResult:
+        """Clustering-based regime detection"""
+        try:
+            if self.clustering_model is None or not HAS_SKLEARN:
+                return self._statistical_detection(pd.DataFrame(features, index=index))
             
-            # Map cluster to regime (this mapping would be learned during training)
+            # Predict cluster for recent data
+            recent_features = features[-min(10, len(features)):]  # Last 10 periods
+            cluster_predictions = self.clustering_model.predict(recent_features)
+            
+            # Most common cluster
+            most_common_cluster = np.bincount(cluster_predictions).argmax()
+            
+            # Map cluster to regime (simplified mapping)
             cluster_to_regime = {
-                0: MarketRegime.BULL_TRENDING,
-                1: MarketRegime.BEAR_TRENDING,
-                2: MarketRegime.SIDEWAYS_LOW_VOL,
-                3: MarketRegime.SIDEWAYS_HIGH_VOL,
-                4: MarketRegime.CRASH,
-                5: MarketRegime.RECOVERY
+                0: MarketRegime.BULL_MARKET,
+                1: MarketRegime.BEAR_MARKET,
+                2: MarketRegime.SIDEWAYS,
+                3: MarketRegime.HIGH_VOLATILITY,
+                4: MarketRegime.TRENDING_UP,
+                5: MarketRegime.TRENDING_DOWN
             }
             
-            return cluster_to_regime.get(cluster, MarketRegime.UNKNOWN)
+            detected_regime = cluster_to_regime.get(most_common_cluster, MarketRegime.UNKNOWN)
+            
+            # Calculate confidence based on cluster consistency
+            cluster_consistency = np.mean(cluster_predictions == most_common_cluster)
+            
+            return RegimeDetectionResult(
+                regime=detected_regime,
+                confidence=cluster_consistency,
+                method=DetectionMethod.CLUSTERING,
+                features_used=list(range(features.shape[1])),
+                detection_timestamp=datetime.now(),
+                supporting_evidence={
+                    'cluster_id': int(most_common_cluster),
+                    'cluster_consistency': float(cluster_consistency),
+                    'cluster_predictions': cluster_predictions.tolist()
+                }
+            )
             
         except Exception as e:
-            self.logger.warning(f"ML regime detection failed: {e}")
-            return MarketRegime.UNKNOWN
+            self.logger.error(f"Clustering detection failed: {e}")
+            return self._statistical_detection(pd.DataFrame(features, index=index))
     
-    def _combine_regime_predictions(self, rule_regime: MarketRegime, ml_regime: MarketRegime, features: Dict[str, float]) -> MarketRegime:
-        """Combine rule-based and ML-based regime predictions"""
-        # If both agree, high confidence
-        if rule_regime == ml_regime:
-            return rule_regime
-        
-        # Priority rules for critical regimes
-        if rule_regime == MarketRegime.CRASH or ml_regime == MarketRegime.CRASH:
-            # Crash detection requires high confidence
-            volatility = features.get('volatility', 0.5)
-            if volatility > 0.8:
-                return MarketRegime.CRASH
-        
-        if rule_regime == MarketRegime.BUBBLE or ml_regime == MarketRegime.BUBBLE:
-            # Bubble detection
-            trend_20 = features.get('trend_20', 0)
-            if trend_20 > 0.2:
-                return MarketRegime.BUBBLE
-        
-        # Default to rule-based for disagreement
-        return rule_regime
-    
-    def _detect_volatility_regime(self, features: Dict[str, float]) -> VolatilityRegime:
-        """Detect current volatility regime"""
-        volatility = features.get('volatility', 0.5)
-        
-        if volatility < 0.1:
-            return VolatilityRegime.ULTRA_LOW
-        elif volatility < 0.3:
-            return VolatilityRegime.LOW
-        elif volatility < 0.6:
-            return VolatilityRegime.MEDIUM
-        elif volatility < 1.0:
-            return VolatilityRegime.HIGH
-        else:
-            return VolatilityRegime.EXTREME
-    
-    def _calculate_regime_confidence(self, features: Dict[str, float], regime: MarketRegime) -> float:
-        """Calculate confidence in regime detection"""
+    def _pca_detection(self, features: np.ndarray, index: pd.Index) -> RegimeDetectionResult:
+        """PCA-based regime detection"""
         try:
-            # Base confidence on feature consistency
-            trend_20 = features.get('trend_20', 0)
-            trend_50 = features.get('trend_50', 0)
-            volatility = features.get('volatility', 0.5)
-            momentum_rsi = features.get('momentum_rsi', 50)
+            if self.pca_model is None or not HAS_SKLEARN:
+                return self._statistical_detection(pd.DataFrame(features, index=index))
             
-            confidence = 0.5  # Base confidence
+            # Transform to PCA space
+            pca_features = self.pca_model.transform(features)
             
-            # Trend consistency
-            if regime in [MarketRegime.BULL_TRENDING, MarketRegime.RECOVERY]:
-                if trend_20 > 0 and trend_50 > 0:
-                    confidence += 0.2
-                if momentum_rsi > 50:
-                    confidence += 0.1
-            elif regime in [MarketRegime.BEAR_TRENDING, MarketRegime.CRASH]:
-                if trend_20 < 0 and trend_50 < 0:
-                    confidence += 0.2
-                if momentum_rsi < 50:
-                    confidence += 0.1
+            # Analyze PCA components for regime characteristics
+            recent_pca = pca_features[-min(20, len(pca_features)):]
             
-            # Volatility consistency
-            if regime == MarketRegime.CRASH and volatility > 0.8:
-                confidence += 0.2
-            elif regime == MarketRegime.SIDEWAYS_LOW_VOL and volatility < 0.3:
-                confidence += 0.2
+            # Simple heuristic based on PCA components
+            pc1_mean = np.mean(recent_pca[:, 0])
+            pc2_mean = np.mean(recent_pca[:, 1]) if recent_pca.shape[1] > 1 else 0
             
-            # Duration consistency (longer duration = higher confidence)
-            if self.regime_duration > 10:
-                confidence += min(0.2, self.regime_duration / 100)
+            # Map PCA space to regimes (simplified)
+            if pc1_mean > 0.5:
+                if pc2_mean > 0:
+                    detected_regime = MarketRegime.BULL_MARKET
+                else:
+                    detected_regime = MarketRegime.TRENDING_UP
+            elif pc1_mean < -0.5:
+                if pc2_mean > 0:
+                    detected_regime = MarketRegime.BEAR_MARKET
+                else:
+                    detected_regime = MarketRegime.TRENDING_DOWN
+            else:
+                if abs(pc2_mean) > 0.5:
+                    detected_regime = MarketRegime.HIGH_VOLATILITY
+                else:
+                    detected_regime = MarketRegime.SIDEWAYS
             
-            return min(1.0, max(0.0, confidence))
+            # Confidence based on how clear the signal is
+            confidence = min(1.0, (abs(pc1_mean) + abs(pc2_mean)) / 2)
+            
+            return RegimeDetectionResult(
+                regime=detected_regime,
+                confidence=confidence,
+                method=DetectionMethod.PCA_BASED,
+                features_used=list(range(features.shape[1])),
+                detection_timestamp=datetime.now(),
+                supporting_evidence={
+                    'pc1_mean': float(pc1_mean),
+                    'pc2_mean': float(pc2_mean),
+                    'explained_variance': self.pca_model.explained_variance_ratio_.tolist()
+                }
+            )
+            
+        except Exception as e:
+            self.logger.error(f"PCA detection failed: {e}")
+            return self._statistical_detection(pd.DataFrame(features, index=index))
+    
+    def _statistical_detection(self, features: pd.DataFrame) -> RegimeDetectionResult:
+        """Statistical rule-based regime detection (fallback method)"""
+        try:
+            # Simple statistical regime detection based on returns and volatility
+            if 'returns' in features.columns and 'volatility' in features.columns:
+                recent_returns = features['returns'].tail(20).mean()
+                recent_volatility = features['volatility'].tail(20).mean()
+                
+                # Regime classification rules
+                if recent_volatility > 0.05:  # High volatility threshold
+                    if abs(recent_returns) > 0.03:
+                        detected_regime = MarketRegime.CRASH if recent_returns < 0 else MarketRegime.BREAKOUT
+                    else:
+                        detected_regime = MarketRegime.HIGH_VOLATILITY
+                
+                elif recent_volatility < 0.01:  # Low volatility threshold
+                    detected_regime = MarketRegime.LOW_VOLATILITY
+                
+                elif recent_returns > 0.02:  # Bull market threshold
+                    detected_regime = MarketRegime.BULL_MARKET
+                
+                elif recent_returns < -0.02:  # Bear market threshold
+                    detected_regime = MarketRegime.BEAR_MARKET
+                
+                elif abs(recent_returns) < 0.005:  # Sideways market
+                    detected_regime = MarketRegime.SIDEWAYS
+                
+                else:
+                    detected_regime = MarketRegime.TRENDING_UP if recent_returns > 0 else MarketRegime.TRENDING_DOWN
+                
+                # Confidence based on how clear the signals are
+                volatility_signal = min(1.0, recent_volatility / 0.05)
+                returns_signal = min(1.0, abs(recent_returns) / 0.03)
+                confidence = (volatility_signal + returns_signal) / 2
+                
+            else:
+                detected_regime = MarketRegime.UNKNOWN
+                confidence = 0.0
+                recent_returns = 0.0
+                recent_volatility = 0.0
+            
+            return RegimeDetectionResult(
+                regime=detected_regime,
+                confidence=confidence,
+                method=DetectionMethod.STATISTICAL,
+                features_used=['returns', 'volatility'],
+                detection_timestamp=datetime.now(),
+                supporting_evidence={
+                    'recent_returns': float(recent_returns),
+                    'recent_volatility': float(recent_volatility)
+                }
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Statistical detection failed: {e}")
+            return RegimeDetectionResult(
+                regime=MarketRegime.UNKNOWN,
+                confidence=0.0,
+                method=DetectionMethod.STATISTICAL,
+                features_used=[],
+                detection_timestamp=datetime.now()
+            )
+    
+    def _update_regime_history(self, result: RegimeDetectionResult):
+        """Update regime detection history"""
+        try:
+            self.regime_history.append(result)
+            
+            # Keep only recent history
+            max_history = 1000
+            if len(self.regime_history) > max_history:
+                self.regime_history = self.regime_history[-max_history:]
+            
+            # Update current regime if confidence is high enough
+            if result.confidence >= self.config.min_confidence_score:
+                self.current_regime = result.regime
+                self.regime_confidence = result.confidence
+            
+        except Exception as e:
+            self.logger.error(f"Regime history update failed: {e}")
+    
+    def _check_regime_transition(self, result: RegimeDetectionResult):
+        """Check for regime transitions"""
+        try:
+            if (self.current_regime != MarketRegime.UNKNOWN and 
+                result.regime != self.current_regime and 
+                result.confidence >= self.config.regime_change_threshold):
+                
+                # Create transition record
+                transition = RegimeTransition(
+                    timestamp=datetime.now(),
+                    from_regime=self.current_regime,
+                    to_regime=result.regime,
+                    confidence=result.confidence,
+                    trigger_features=result.features_used,
+                    transition_strength=abs(result.confidence - self.regime_confidence)
+                )
+                
+                self.regime_transitions.append(transition)
+                
+                # Keep only recent transitions
+                max_transitions = 100
+                if len(self.regime_transitions) > max_transitions:
+                    self.regime_transitions = self.regime_transitions[-max_transitions:]
+                
+                self.logger.info(f"Regime transition detected: {self.current_regime.value} -> {result.regime.value}")
+            
+        except Exception as e:
+            self.logger.error(f"Transition check failed: {e}")
+    
+    def _save_models(self):
+        """Save trained models to disk"""
+        try:
+            # Save autoencoder
+            if self.autoencoder is not None and HAS_TORCH:
+                torch.save(
+                    self.autoencoder.state_dict(),
+                    self.model_cache_dir / "autoencoder.pt"
+                )
+            
+            # Save clustering model
+            if self.clustering_model is not None:
+                with open(self.model_cache_dir / "clustering_model.pkl", 'wb') as f:
+                    pickle.dump(self.clustering_model, f)
+            
+            # Save PCA model
+            if self.pca_model is not None:
+                with open(self.model_cache_dir / "pca_model.pkl", 'wb') as f:
+                    pickle.dump(self.pca_model, f)
+            
+            # Save scaler
+            with open(self.model_cache_dir / "scaler.pkl", 'wb') as f:
+                pickle.dump(self.scaler, f)
+            
+            self.logger.info("Models saved successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Model saving failed: {e}")
+    
+    def load_models(self):
+        """Load trained models from disk"""
+        try:
+            # Load autoencoder
+            autoencoder_path = self.model_cache_dir / "autoencoder.pt"
+            if autoencoder_path.exists() and HAS_TORCH:
+                # Need to know input dimensions to recreate model
+                # This is a simplified approach
+                self.autoencoder = AutoencoderRegimeDetector(
+                    input_dim=20,  # Default, should be stored separately
+                    latent_dim=self.config.autoencoder_latent_dim
+                ).to(self.device)
+                self.autoencoder.load_state_dict(torch.load(autoencoder_path, map_location=self.device))
+            
+            # Load clustering model
+            clustering_path = self.model_cache_dir / "clustering_model.pkl"
+            if clustering_path.exists():
+                with open(clustering_path, 'rb') as f:
+                    self.clustering_model = pickle.load(f)
+            
+            # Load PCA model
+            pca_path = self.model_cache_dir / "pca_model.pkl"
+            if pca_path.exists():
+                with open(pca_path, 'rb') as f:
+                    self.pca_model = pickle.load(f)
+            
+            # Load scaler
+            scaler_path = self.model_cache_dir / "scaler.pkl"
+            if scaler_path.exists():
+                with open(scaler_path, 'rb') as f:
+                    self.scaler = pickle.load(f)
+            
+            self.logger.info("Models loaded successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Model loading failed: {e}")
+    
+    def get_regime_summary(self) -> Dict[str, Any]:
+        """Get comprehensive regime detection summary"""
+        with self._lock:
+            return {
+                'current_regime': self.current_regime.value,
+                'regime_confidence': self.regime_confidence,
+                'detection_method': self.config.primary_method.value,
+                'regime_history_length': len(self.regime_history),
+                'recent_transitions': [
+                    {
+                        'timestamp': t.timestamp.isoformat(),
+                        'from_regime': t.from_regime.value,
+                        'to_regime': t.to_regime.value,
+                        'confidence': t.confidence
+                    }
+                    for t in self.regime_transitions[-5:]  # Last 5 transitions
+                ],
+                'regime_distribution': self._get_regime_distribution(),
+                'model_status': {
+                    'autoencoder_available': self.autoencoder is not None,
+                    'clustering_available': self.clustering_model is not None,
+                    'pca_available': self.pca_model is not None,
+                    'scaler_fitted': hasattr(self.scaler, 'mean_')
+                },
+                'avg_detection_confidence': np.mean([r.confidence for r in self.regime_history[-50:]]) if self.regime_history else 0.0
+            }
+    
+    def _get_regime_distribution(self) -> Dict[str, float]:
+        """Get distribution of regimes in recent history"""
+        try:
+            if not self.regime_history:
+                return {}
+            
+            recent_regimes = [r.regime for r in self.regime_history[-100:]]  # Last 100 detections
+            
+            regime_counts = {}
+            for regime in recent_regimes:
+                regime_counts[regime.value] = regime_counts.get(regime.value, 0) + 1
+            
+            total = len(recent_regimes)
+            return {regime: count / total for regime, count in regime_counts.items()}
             
         except Exception:
-            return 0.5
+            return {}
     
-    def _calculate_trend_strength(self, features: Dict[str, float]) -> float:
-        """Calculate overall trend strength"""
-        trend_20 = features.get('trend_20', 0)
-        trend_50 = features.get('trend_50', 0)
-        momentum_rsi = features.get('momentum_rsi', 50)
-        
-        # Combine multiple trend indicators
-        trend_strength = (abs(trend_20) + abs(trend_50)) / 2
-        momentum_strength = abs(momentum_rsi - 50) / 50
-        
-        return (trend_strength + momentum_strength) / 2
-    
-    def _calculate_volatility_percentile(self, current_volatility: float) -> float:
-        """Calculate volatility percentile compared to history"""
-        if len(self.volatility_history) < 20:
-            return 0.5
-        
-        percentile = np.percentile(self.volatility_history, 
-                                  100 * np.sum(np.array(self.volatility_history) <= current_volatility) / len(self.volatility_history))
-        return percentile / 100
-    
-    def _analyze_volume_profile(self, features: Dict[str, float]) -> str:
-        """Analyze volume profile"""
-        volume_trend = features.get('volume_trend', 0)
-        volume_volatility = features.get('volume_volatility', 0)
-        
-        if volume_trend > 0.1:
-            return "increasing"
-        elif volume_trend < -0.1:
-            return "decreasing"
-        elif volume_volatility > 1.0:
-            return "volatile"
-        else:
-            return "normal"
-    
-    def _handle_regime_change(self, new_signal: RegimeSignal):
-        """Handle regime change and notify callbacks"""
-        old_regime = self.current_regime
-        self.current_regime = new_signal.regime
-        self.current_volatility_regime = new_signal.volatility_regime
-        self.regime_start_time = datetime.now()
-        self.regime_duration = 0
-        
-        self.logger.info(f"Regime change detected: {old_regime.value} -> {new_signal.regime.value} (confidence: {new_signal.confidence:.2f})")
-        
-        # Notify callbacks
-        for callback in self.regime_change_callbacks:
-            try:
-                callback(new_signal)
-            except Exception as e:
-                self.logger.error(f"Regime change callback failed: {e}")
-    
-    def _update_historical_cache(self, price_data: pd.DataFrame, volume_data: Optional[pd.DataFrame]):
-        """Update historical data cache"""
+    # Technical indicator calculation methods
+    def _calculate_rsi(self, prices: pd.Series, window: int = 14) -> pd.Series:
+        """Calculate RSI"""
         try:
-            if not price_data.empty:
-                prices = price_data['close'] if 'close' in price_data.columns else price_data.iloc[:, 0]
-                self.price_history.extend(prices.tolist())
-                
-                # Calculate volatility
-                if len(prices) > 1:
-                    returns = prices.pct_change().dropna()
-                    if len(returns) > 0:
-                        volatility = returns.std() * np.sqrt(252)
-                        self.volatility_history.append(volatility)
-            
-            if volume_data is not None and not volume_data.empty:
-                volumes = volume_data.iloc[:, 0] if volume_data.shape[1] > 0 else volume_data
-                self.volume_history.extend(volumes.tolist())
-            
-            # Limit cache size
-            max_history = 5000
-            if len(self.price_history) > max_history:
-                self.price_history = self.price_history[-max_history:]
-            if len(self.volume_history) > max_history:
-                self.volume_history = self.volume_history[-max_history:]
-            if len(self.volatility_history) > max_history:
-                self.volatility_history = self.volatility_history[-max_history:]
-            
-            # Update regime duration
-            self.regime_duration += 1
-            
-        except Exception as e:
-            self.logger.warning(f"Historical cache update failed: {e}")
+            delta = prices.diff()
+            gain = delta.where(delta > 0, 0).rolling(window=window).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+            rs = gain / (loss + 1e-8)
+            return 100 - (100 / (1 + rs))
+        except Exception:
+            return pd.Series(50, index=prices.index)
     
-    def _get_current_regime_signal(self) -> RegimeSignal:
-        """Get current regime signal"""
-        return RegimeSignal(
-            regime=self.current_regime,
-            volatility_regime=self.current_volatility_regime,
-            confidence=0.5,
-            timestamp=datetime.now(),
-            regime_duration=self.regime_duration
-        )
-    
-    def train_ml_models(self, historical_data: pd.DataFrame) -> bool:
-        """Train ML models for regime detection"""
+    def _calculate_macd(self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> Tuple[pd.Series, pd.Series]:
+        """Calculate MACD"""
         try:
-            if historical_data.empty or len(historical_data) < 100:
-                self.logger.warning("Insufficient data for ML model training")
-                return False
-            
-            # Extract features for training
-            features_list = []
-            for i in range(50, len(historical_data) - 50, 10):  # Sample every 10 periods
-                window_data = historical_data.iloc[i-50:i+50]
-                features = self._extract_market_features(window_data, None)
-                if features:
-                    features_list.append([
-                        features.get('trend_20', 0),
-                        features.get('trend_50', 0),
-                        features.get('volatility', 0.5),
-                        features.get('momentum_rsi', 50),
-                        features.get('volume_trend', 0),
-                        features.get('max_drawdown', 0)
-                    ])
-            
-            if len(features_list) < 50:
-                return False
-            
-            X = np.array(features_list)
-            
-            # Scale features
-            X_scaled = self.volatility_scaler.fit_transform(X)
-            
-            # Train clustering model
-            self.regime_clusterer = GaussianMixture(
-                n_components=self.config.n_regime_clusters,
-                random_state=42
-            )
-            self.regime_clusterer.fit(X_scaled)
-            
-            self.logger.info(f"ML regime detection models trained on {len(features_list)} samples")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"ML model training failed: {e}")
-            return False
+            ema_fast = prices.ewm(span=fast).mean()
+            ema_slow = prices.ewm(span=slow).mean()
+            macd = ema_fast - ema_slow
+            macd_signal = macd.ewm(span=signal).mean()
+            return macd, macd_signal
+        except Exception:
+            return pd.Series(0, index=prices.index), pd.Series(0, index=prices.index)
     
-    def get_regime_statistics(self) -> Dict[str, Any]:
-        """Get regime detection statistics"""
-        with self._lock:
-            stats = {
-                'current_regime': self.current_regime.value,
-                'current_volatility_regime': self.current_volatility_regime.value,
-                'regime_duration': self.regime_duration,
-                'regime_start_time': self.regime_start_time.isoformat(),
-                'total_regime_changes': len(self.regime_history),
-                'ml_models_trained': self.regime_clusterer is not None,
-                'historical_data_points': {
-                    'prices': len(self.price_history),
-                    'volumes': len(self.volume_history),
-                    'volatilities': len(self.volatility_history)
-                }
-            }
-            
-            # Regime distribution in history
-            if self.regime_history:
-                regime_counts = {}
-                for signal in self.regime_history[-100:]:  # Last 100 signals
-                    regime_counts[signal.regime.value] = regime_counts.get(signal.regime.value, 0) + 1
-                stats['recent_regime_distribution'] = regime_counts
-            
-            return stats
+    def _calculate_bollinger_bands(self, prices: pd.Series, window: int = 20, num_std: float = 2) -> Tuple[pd.Series, pd.Series]:
+        """Calculate Bollinger Bands"""
+        try:
+            rolling_mean = prices.rolling(window=window).mean()
+            rolling_std = prices.rolling(window=window).std()
+            upper_band = rolling_mean + (rolling_std * num_std)
+            lower_band = rolling_mean - (rolling_std * num_std)
+            return upper_band, lower_band
+        except Exception:
+            return pd.Series(prices), pd.Series(prices)
     
-    def get_regime_recommendations(self) -> Dict[str, Any]:
-        """Get recommendations based on current regime"""
-        current_signal = self._get_current_regime_signal()
-        
-        recommendations = {
-            'regime': current_signal.regime.value,
-            'volatility_regime': current_signal.volatility_regime.value,
-            'confidence': current_signal.confidence,
-            'recommended_actions': [],
-            'risk_adjustments': {},
-            'model_preferences': {}
-        }
-        
-        # Regime-specific recommendations
-        if current_signal.regime == MarketRegime.BULL_TRENDING:
-            recommendations['recommended_actions'] = ['increase_long_exposure', 'momentum_strategies']
-            recommendations['risk_adjustments'] = {'position_size': 1.2, 'stop_loss': 0.95}
-            recommendations['model_preferences'] = {'trend_following': 1.5, 'mean_reversion': 0.5}
-            
-        elif current_signal.regime == MarketRegime.BEAR_TRENDING:
-            recommendations['recommended_actions'] = ['reduce_exposure', 'defensive_strategies']
-            recommendations['risk_adjustments'] = {'position_size': 0.6, 'stop_loss': 0.98}
-            recommendations['model_preferences'] = {'trend_following': 1.3, 'momentum': 0.7}
-            
-        elif current_signal.regime == MarketRegime.CRASH:
-            recommendations['recommended_actions'] = ['emergency_exit', 'cash_preservation']
-            recommendations['risk_adjustments'] = {'position_size': 0.2, 'stop_loss': 0.99}
-            recommendations['model_preferences'] = {'all_models': 0.1}  # Minimal exposure
-            
-        elif current_signal.regime == MarketRegime.SIDEWAYS_LOW_VOL:
-            recommendations['recommended_actions'] = ['mean_reversion', 'range_trading']
-            recommendations['risk_adjustments'] = {'position_size': 1.0, 'stop_loss': 0.96}
-            recommendations['model_preferences'] = {'mean_reversion': 1.5, 'trend_following': 0.7}
-            
-        elif current_signal.regime == MarketRegime.SIDEWAYS_HIGH_VOL:
-            recommendations['recommended_actions'] = ['volatility_strategies', 'breakout_preparation']
-            recommendations['risk_adjustments'] = {'position_size': 0.8, 'stop_loss': 0.97}
-            recommendations['model_preferences'] = {'volatility_based': 1.3, 'breakout': 1.2}
-        
-        return recommendations
+    def _calculate_atr(self, high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14) -> pd.Series:
+        """Calculate Average True Range"""
+        try:
+            high_low = high - low
+            high_close = (high - close.shift()).abs()
+            low_close = (low - close.shift()).abs()
+            true_range = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+            return true_range.rolling(window=window).mean()
+        except Exception:
+            return pd.Series(0, index=high.index)
 
 
-# Singleton regime detector
-_regime_detector = None
-_detector_lock = threading.Lock()
+# Singleton market regime detector
+_market_regime_detector = None
+_mrd_lock = threading.Lock()
 
 def get_market_regime_detector(config: Optional[RegimeDetectionConfig] = None) -> MarketRegimeDetector:
     """Get the singleton market regime detector"""
-    global _regime_detector
+    global _market_regime_detector
     
-    with _detector_lock:
-        if _regime_detector is None:
-            _regime_detector = MarketRegimeDetector(config)
-        return _regime_detector
+    with _mrd_lock:
+        if _market_regime_detector is None:
+            _market_regime_detector = MarketRegimeDetector(config)
+        return _market_regime_detector
 
-def detect_market_regime(price_data: pd.DataFrame, volume_data: Optional[pd.DataFrame] = None) -> RegimeSignal:
-    """Convenient function to detect market regime"""
+def detect_current_regime(data: pd.DataFrame, target_column: str = 'close') -> RegimeDetectionResult:
+    """Convenient function to detect current market regime"""
     detector = get_market_regime_detector()
-    return detector.update_market_data(price_data, volume_data)
+    return detector.detect_regime(data, target_column)
