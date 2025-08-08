@@ -88,6 +88,12 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Ultra Performance Optimizer:** AI-driven adaptive performance optimization with hardware-specific tuning and predictive scaling.
 - **Code Audit System:** Complete code quality audit based on enterprise checklist covering all critical failure modes.
 - **Critical Fixes Applier:** Automatic application of fixes for timestamp validation, calibration, slippage modeling, and security issues.
+- **Meta-Labeling System:** Lopez de Prado triple-barrier method for signal quality filtering and false signal elimination.
+- **Event Impact Scoring:** LLM-powered news analysis with impact scoring and half-life decay modeling for event-driven alpha.
+- **Futures Data Features:** Funding rates, open interest, and basis features for leverage squeeze detection and crowding signals.
+- **Advanced Transformers:** Temporal Fusion Transformer (TFT) and N-BEATS ensemble for superior multi-horizon forecasting.
+- **Conformal Prediction:** Formal uncertainty quantification with adaptive confidence intervals for better risk gating.
+- **Advanced Portfolio Optimization:** Kelly-lite position sizing with uncertainty awareness, correlation caps, and hard risk overlays.
 
 ## External Dependencies
 
