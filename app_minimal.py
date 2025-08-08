@@ -100,17 +100,19 @@ def render_trading_opportunities(min_return, confidence_filter):
         render_data_error_state(data_status)
         return
     
-    if not data_status['models_trained']:
-        render_model_training_required()
-        return
-    
-    # Only show if we have reliable data
+    # Get real market data first
     opportunities = get_authentic_trading_opportunities()
     
     if not opportunities:
-        st.error("Geen betrouwbare handelskansen beschikbaar op dit moment")
-        st.info("Mogelijke oorzaken: API problemen, onvoldoende data, model hertraining nodig")
+        st.error("❌ MARKTDATA NIET BESCHIKBAAR")
+        st.info("Problemen met exchange verbinding. Probeer over enkele minuten opnieuw.")
         return
+    
+    if not data_status['models_trained']:
+        st.warning("⚠️ MODELLEN NIET GETRAIND - Toont basis marktdata")
+        st.info("Voor AI voorspellingen zijn getrainde modellen nodig (zie AI Voorspellingen tab)")
+    
+    # Show real market opportunities (basic analysis without ML models)
     
     # TOP 3 HIGHLIGHTS
     st.markdown("### 🔥 TOP 3 AANBEVELINGEN")
@@ -200,20 +202,21 @@ def check_data_availability():
     """Check if we have access to live data and trained models"""
     import os
     
-    # Check for required API keys
-    required_keys = ['KRAKEN_API_KEY', 'BINANCE_API_KEY', 'OPENAI_API_KEY']
-    missing_keys = [key for key in required_keys if not os.getenv(key)]
+    # We can get public market data via CCXT without API keys
+    # Only OpenAI key is available, exchange keys missing but not needed for public data
+    has_openai = bool(os.getenv('OPENAI_API_KEY'))
     
     # Check if models exist and are trained
     model_files = ['models/lstm_model.pkl', 'models/transformer_model.pkl', 'models/ensemble_model.pkl']
     missing_models = [f for f in model_files if not os.path.exists(f)]
     
     return {
-        'has_live_data': len(missing_keys) == 0,
-        'missing_keys': missing_keys,
+        'has_live_data': True,  # CCXT can get public data without keys
+        'has_openai': has_openai,
+        'missing_keys': [],  # No API keys required for public market data
         'models_trained': len(missing_models) == 0,
         'missing_models': missing_models,
-        'data_age': check_data_freshness() if len(missing_keys) == 0 else None
+        'can_get_market_data': True
     }
 
 def check_data_freshness():
@@ -270,10 +273,41 @@ def render_model_training_required():
         st.info("Model training zou hier starten met echte data pipeline")
 
 def get_authentic_trading_opportunities():
-    """Get real trading opportunities from live data and trained models"""
-    # This would connect to real APIs and trained models
-    # For now, return empty since we don't have real data
-    return []
+    """Get real trading opportunities from live data"""
+    try:
+        # Get live market data
+        market_data = get_live_market_data()
+        if not market_data:
+            return []
+        
+        opportunities = []
+        for coin in market_data:
+            # Basic analysis based on real data
+            change_24h = coin['change_24h'] or 0
+            volume = coin['volume_24h'] or 0
+            
+            # Simple scoring based on momentum and volume
+            momentum_score = min(100, max(0, 50 + change_24h * 2))
+            volume_score = min(100, max(0, (volume / 1000000) * 10))
+            combined_score = (momentum_score + volume_score) / 2
+            
+            if combined_score > 40:  # Only show reasonable opportunities
+                opportunities.append({
+                    'symbol': coin['symbol'],
+                    'name': coin['symbol'],
+                    'current_price': coin['price'],
+                    'change_24h': change_24h,
+                    'volume_24h': volume,
+                    'score': combined_score,
+                    'momentum': 'Bullish' if change_24h > 2 else 'Bearish' if change_24h < -2 else 'Neutral'
+                })
+        
+        # Sort by score
+        return sorted(opportunities, key=lambda x: x['score'], reverse=True)[:10]
+        
+    except Exception as e:
+        print(f"Error getting opportunities: {e}")
+        return []
 
 def render_market_status():
     """Render market status dashboard"""
@@ -293,7 +327,7 @@ def render_market_status():
         st.info("Configureer exchange API keys voor live marktdata")
         return
     
-    # Only show if we have real data
+    # Get real market data
     market_data = get_live_market_data()
     
     if not market_data:
@@ -303,6 +337,23 @@ def render_market_status():
         st.markdown("- Netwerkverbinding issues") 
         st.markdown("- Rate limiting actief")
         return
+    
+    # Calculate real market metrics
+    total_volume = sum(coin['volume_24h'] for coin in market_data if coin['volume_24h'])
+    bullish_count = len([coin for coin in market_data if coin['change_24h'] and coin['change_24h'] > 0])
+    bearish_count = len([coin for coin in market_data if coin['change_24h'] and coin['change_24h'] < 0])
+    
+    # Market metrics from real data
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("📊 Coins Geanalyseerd", f"{len(market_data)}", delta="Live data")
+    with col2:
+        st.metric("📈 Volume 24h", f"${total_volume/1e9:.1f}B", delta="Real-time")
+    with col3:
+        st.metric("🟢 Bullish", f"{bullish_count}", delta=f"+{bullish_count-bearish_count}")
+    with col4:
+        st.metric("🔴 Bearish", f"{bearish_count}", delta=f"{bearish_count-bullish_count}")
     
     # Market trends
     st.subheader("📈 Markt Trends")
@@ -363,9 +414,41 @@ def render_predictions_dashboard():
         return
     
 def get_live_market_data():
-    """Get real market data from exchanges"""
-    # This would connect to real exchange APIs
-    return None
+    """Get real market data from exchanges via CCXT"""
+    try:
+        import ccxt
+        
+        # Use Kraken for public market data (no API key needed)
+        exchange = ccxt.kraken()
+        
+        # Get top cryptocurrencies
+        markets = exchange.load_markets()
+        tickers = exchange.fetch_tickers()
+        
+        # Filter for major USD pairs
+        usd_pairs = {k: v for k, v in tickers.items() if k.endswith('/USD')}
+        
+        # Sort by volume and get top 20
+        sorted_pairs = sorted(usd_pairs.items(), 
+                            key=lambda x: x[1]['quoteVolume'] or 0, 
+                            reverse=True)[:20]
+        
+        market_data = []
+        for symbol, ticker in sorted_pairs:
+            coin_name = symbol.split('/')[0]
+            market_data.append({
+                'symbol': coin_name,
+                'price': ticker['last'],
+                'change_24h': ticker['percentage'],
+                'volume_24h': ticker['quoteVolume'],
+                'market_cap': ticker['last'] * ticker['baseVolume'] if ticker['baseVolume'] else 0
+            })
+        
+        return market_data
+        
+    except Exception as e:
+        print(f"Error fetching market data: {e}")
+        return None
 
 def get_validated_predictions():
     """Get predictions only from properly validated models"""
