@@ -93,8 +93,8 @@ def render_trading_opportunities(min_return, confidence_filter):
     st.title("💰 TOP KOOP KANSEN")
     st.markdown("### 🎯 De beste coins om NU te kopen met verwachte rendementen")
     
-    # Alert banner
-    st.success("🚨 **LIVE UPDATE**: 8 sterke koopsignalen gedetecteerd!")
+    # Demo mode banner
+    st.info("🔧 **DEMO MODUS**: Systeem toont voorbeelddata. Voor live data zijn API keys nodig.")
     
     # Generate opportunities
     opportunities = get_trading_opportunities()
@@ -129,8 +129,8 @@ def render_trading_opportunities(min_return, confidence_filter):
             </div>
             """, unsafe_allow_html=True)
             
-            if coin['confidence'] >= 85:
-                st.success("💎 STERK KOOPSIGNAAL")
+            if coin['confidence'] >= 65:
+                st.info("📊 DEMO SIGNAAL")
     
     st.markdown("---")
     
@@ -174,11 +174,11 @@ def render_trading_opportunities(min_return, confidence_filter):
                 st.markdown(f"**Risico:** <span style='color: {risk_color}'>{coin['risk']}</span>", 
                            unsafe_allow_html=True)
                 
-                # Action recommendation
-                if coin['confidence'] >= 85:
-                    st.success("💎 **STERK KOOPSIGNAAL**")
-                elif coin['confidence'] >= 75:
-                    st.warning("⚡ **GOEDE KANS**")
+                # Action recommendation (demo mode)
+                if coin['confidence'] >= 65:
+                    st.info("📊 **DEMO SIGNAAL** - Niet voor echte trades")
+                elif coin['confidence'] >= 55:
+                    st.warning("⚠️ **DEMO DATA** - Alleen voor testing")
     
     # Market summary
     st.markdown("### 📈 Markt Samenvatting")
@@ -221,10 +221,10 @@ def get_trading_opportunities():
     whale_statuses = ["🐋 Actief", "😴 Rustig", "👀 Observerend"]
     
     for coin in coins_data:
-        # Generate realistic returns and analysis
-        base_7d = random.uniform(-3, 20)
-        base_30d = random.uniform(15, 250)
-        confidence = random.uniform(70, 95)
+        # Generate conservative demo predictions
+        base_7d = random.uniform(-2, 8)
+        base_30d = random.uniform(5, 35)
+        confidence = random.uniform(45, 75)  # Lower confidence for demo mode
         
         coin.update({
             "expected_7d": base_7d,
@@ -294,20 +294,20 @@ def render_predictions_dashboard():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("🤖 LSTM Model", "97.2%", delta="Accuracy")
+        st.metric("🤖 LSTM Model", "Demo", delta="Niet getraind")
     with col2:
-        st.metric("🧠 Transformer", "94.8%", delta="Performance")
+        st.metric("🧠 Transformer", "Demo", delta="Niet getraind")
     with col3:
-        st.metric("📊 Ensemble", "98.5%", delta="Combined")
+        st.metric("📊 Ensemble", "Demo", delta="Niet getraind")
     
     # Predictions table
     st.subheader("🎯 24-Uurs Voorspellingen")
     
     predictions = [
-        {"Coin": "BTC", "Nu": "$45,230", "24h": "$47,850", "Change": "+5.8%", "Conf": "92%"},
-        {"Coin": "ETH", "Nu": "$2,845", "24h": "$3,120", "Change": "+9.7%", "Conf": "89%"},
-        {"Coin": "ADA", "Nu": "$0.85", "24h": "$0.98", "Change": "+15.3%", "Conf": "85%"},
-        {"Coin": "SOL", "Nu": "$98.45", "24h": "$112.30", "Change": "+14.1%", "Conf": "87%"}
+        {"Coin": "BTC", "Nu": "$45,230", "24h": "$46,120", "Change": "+2.0%", "Conf": "Demo"},
+        {"Coin": "ETH", "Nu": "$2,845", "24h": "$2,920", "Change": "+2.6%", "Conf": "Demo"},
+        {"Coin": "ADA", "Nu": "$0.85", "24h": "$0.87", "Change": "+2.4%", "Conf": "Demo"},
+        {"Coin": "SOL", "Nu": "$98.45", "24h": "$101.20", "Change": "+2.8%", "Conf": "Demo"}
     ]
     
     predictions_df = pd.DataFrame(predictions)
