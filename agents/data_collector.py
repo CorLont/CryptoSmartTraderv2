@@ -1,44 +1,50 @@
 #!/usr/bin/env python3
 """
-Async Data Collector Agent - Fully Async with Rate Limiting
+Async Data Collector Agent - Fully Async with Dependency Injection
 Replaces blocking I/O with concurrent async operations
 """
 
 import asyncio
-import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from pathlib import Path
 import sys
+from dependency_injector.wiring import Provide, inject
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
 from .base_agent import BaseAgent
 from core.async_data_manager import AsyncDataManager, RateLimitConfig
+from core.dependency_container import Container
+from config.settings import AppSettings
 
 class AsyncDataCollectorAgent(BaseAgent):
-    def __init__(self, config: Dict[str, Any] = None):
+    @inject
+    def __init__(
+        self, 
+        config: Optional[Dict[str, Any]] = None,
+        settings: AppSettings = Provide[Container.config],
+        data_manager: AsyncDataManager = Provide[Container.async_data_manager],
+        rate_limit_config: RateLimitConfig = Provide[Container.rate_limit_config]
+    ):
         super().__init__("async_data_collector", config)
         
-        self.collection_interval = self.config.get('collection_interval', 45)  # Faster collection
-        self.data_dir = Path("data/market_data")
+        # Inject dependencies
+        self.settings = settings
+        self.data_manager = data_manager
+        self.rate_limit_config = rate_limit_config
+        
+        # Configuration from settings
+        self.collection_interval = self.config.get('collection_interval', 45)
+        self.data_dir = settings.data.data_dir / "market_data"
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Configure aggressive rate limiting for high-frequency collection
-        self.rate_limit_config = RateLimitConfig(
-            requests_per_second=15.0,  # Higher throughput
-            burst_size=75,             # Larger burst capacity
-            cool_down_period=30        # Shorter cooldown
-        )
-        
-        self.data_manager: AsyncDataManager = None
     
     async def initialize_async_components(self):
-        """Initialize async data manager"""
+        """Initialize async data manager (if not already injected)"""
         try:
-            self.data_manager = AsyncDataManager(self.rate_limit_config)
-            await self.data_manager.initialize()
+            if not hasattr(self.data_manager, 'session') or self.data_manager.session is None:
+                await self.data_manager.initialize()
             self.logger.info("Async data manager initialized")
         except Exception as e:
             self.logger.error(f"Failed to initialize async components: {e}")
@@ -255,13 +261,20 @@ class AsyncDataCollectorAgent(BaseAgent):
             await self.data_manager.cleanup()
         await super().cleanup()
 
-def run():
-    """Entry point for the async data collector agent"""
+@inject
+def run(
+    settings: AppSettings = Provide[Container.config]
+):
+    """Entry point for the async data collector agent with DI"""
     import asyncio
+    from core.dependency_container import wire_container
+    
+    # Wire the container
+    wire_container([__name__])
     
     config = {
-        'collection_interval': 45,  # Faster with async
-        'health_check_interval': 30
+        'collection_interval': 45,
+        'health_check_interval': settings.agents.health_check_interval
     }
     
     agent = AsyncDataCollectorAgent(config)

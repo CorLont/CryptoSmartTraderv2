@@ -28,6 +28,10 @@ Data integrity policy: No demo/synthetic data - only authentic data from real so
 - **Storage:** Local file system with JSON/CSV and caching.
 
 ### Key Architectural Decisions
+- **Dependency Injection Container (August 2025):** Full dependency-injector implementation with constructor injection, eliminates global singletons, enables comprehensive testing and mocking.
+- **Pydantic Configuration Management (August 2025):** Type-safe settings with BaseSettings, environment variable support, automatic validation, and centralized .env configuration.
+- **Async I/O Architecture (August 2025):** Complete async/await implementation with aiohttp, global rate limiting (15 req/sec), tenacity retries with exponential backoff + jitter, idempotent atomic file writes.
+- **Distributed Multi-Process Architecture (August 2025):** 8 isolated agent processes with circuit breakers, health monitoring, automatic restart capabilities, eliminates single points of failure.
 - **Universal Configuration Management:** Centralized with validation and backup.
 - **Intelligent Cache Manager:** Memory-aware caching with TTL and cleanup.
 - **Health Monitoring System:** Continuous checks with alerts.
@@ -37,9 +41,6 @@ Data integrity policy: No demo/synthetic data - only authentic data from real so
 - **Enterprise Logging:** Structured logging with file rotation.
 - **Thread-Safe Design:** All components use threading locks.
 - **Daily Analysis Coordination:** Automated scheduling for ML analysis and social scraping.
-- **Dependency Injection:** Using `dependency-injector` for explicit and testable design.
-- **Enhanced Configuration Management:** Pydantic settings with environment variable support.
-- **Async I/O & Resilience:** Asynchronous HTTP with exponential backoff and error handling.
 - **Input Validation & Security:** Pydantic models for strict validation.
 - **Monitoring & Observability:** Prometheus metrics, structured JSON logging, OpenAPI documentation.
 - **Multi-Horizon ML System:** Training and inference across 1H, 24H, 7D, and 30D horizons with feature engineering, ensemble modeling, and self-learning.
