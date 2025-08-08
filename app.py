@@ -102,6 +102,8 @@ def main():
             "📊 Performance Dashboard",
             "🔧 Automated Feature Engineering",
             "🌍 Market Regime Detection",
+            "🧠 Causal Inference",
+            "🤖 RL Portfolio Allocation",
             "⚙️ System Configuration",
             "📈 Health Monitor"
         ]
@@ -177,6 +179,16 @@ def main():
         from dashboards.market_regime_dashboard import MarketRegimeDashboard
         regime_dashboard = MarketRegimeDashboard()
         regime_dashboard.render()
+        
+    elif page == "🧠 Causal Inference":
+        from dashboards.causal_inference_dashboard import CausalInferenceDashboard
+        causal_dashboard = CausalInferenceDashboard()
+        causal_dashboard.render()
+        
+    elif page == "🤖 RL Portfolio Allocation":
+        from dashboards.rl_portfolio_dashboard import RLPortfolioDashboard
+        rl_dashboard = RLPortfolioDashboard()
+        rl_dashboard.render()
         
     elif page == "⚙️ System Configuration":
         render_config_page(config_manager)

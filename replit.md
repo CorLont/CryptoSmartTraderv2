@@ -140,3 +140,21 @@ Five specialized Streamlit dashboards: Main, Comprehensive Market, Analysis Cont
 - **Regime-Specific Optimization:** Bull/bear/trending/volatile regime adaptation with optimal model selection ✅ IMPLEMENTED
 - **Ensemble Regime Detection:** Multi-method voting system for robust regime classification ✅ IMPLEMENTED
 - **Real-Time Adaptation:** Live model switching with performance monitoring and rollback capabilities ✅ IMPLEMENTED
+
+**CAUSAL INFERENCE & COUNTERFACTUAL ANALYSIS (August 2025):**
+- **Double Machine Learning:** Advanced causal inference using ML for nuisance function estimation ✅ IMPLEMENTED
+- **Granger Causality Testing:** Temporal causal relationship detection with lag optimization ✅ IMPLEMENTED
+- **Difference-in-Differences:** Treatment effect estimation for market interventions ✅ IMPLEMENTED
+- **Counterfactual Predictions:** What-if analysis for trading decisions and market scenarios ✅ IMPLEMENTED
+- **Causal Graph Construction:** Automatic discovery and visualization of market causal relationships ✅ IMPLEMENTED
+- **Movement Explanation Engine:** AI-powered explanation of WHY price movements happen ✅ IMPLEMENTED
+- **Intervention Analysis:** Predict outcomes of market interventions before execution ✅ IMPLEMENTED
+
+**REINFORCEMENT LEARNING PORTFOLIO ALLOCATION (August 2025):**
+- **PPO Portfolio Agent:** Proximal Policy Optimization for dynamic asset allocation ✅ IMPLEMENTED
+- **Multi-Asset Environment:** Realistic trading environment with transaction costs and slippage ✅ IMPLEMENTED
+- **Dynamic Reward Functions:** Sharpe ratio, max drawdown, and risk-adjusted return optimization ✅ IMPLEMENTED
+- **Continuous Action Space:** Smooth allocation adjustments for optimal portfolio management ✅ IMPLEMENTED
+- **Risk-Aware Position Sizing:** Automatic position sizing based on uncertainty and market conditions ✅ IMPLEMENTED
+- **Real-Time Rebalancing:** Intelligent rebalancing decisions based on market regime changes ✅ IMPLEMENTED
+- **Performance Monitoring:** Comprehensive backtesting and performance attribution analysis ✅ IMPLEMENTED
