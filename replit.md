@@ -62,6 +62,7 @@ Data integrity policy: No demo/synthetic data - only authentic data from real so
 - **Synthetic Data Augmentation:** Generation of black swan, regime shift, and flash crash scenarios for robust stress testing.
 - **Human-in-the-Loop & Explainability:** Active learning, feedback-driven learning, and SHAP for model transparency and human validation.
 - **Shadow Trading:** Full paper trading engine with realistic market simulation for pre-production model validation.
+- **Advanced Execution Simulation (August 2025):** Level-2 order book simulation with market impact, partial fills, exchange-specific latency/fees, maintenance windows, and realistic slippage modeling for accurate backtesting.
 
 ## External Dependencies
 
