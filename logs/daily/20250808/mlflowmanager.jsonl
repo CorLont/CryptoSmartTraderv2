@@ -1,0 +1,5 @@
+{"asctime": "2025-08-08 17:19:30", "name": "MLflowManager", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "MLflow not available - using local file tracking"}
+{"asctime": "2025-08-08 17:19:30", "name": "MLflowManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Started local run: test_model (horizon: 1H, regime: bull_market)"}
+{"asctime": "2025-08-08 17:19:31", "name": "MLflowManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Logged model locally: test_predictor (horizon: 1H, regime: bull_market)"}
+{"asctime": "2025-08-08 17:19:31", "name": "MLflowManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Ended local run with status: FINISHED"}
+{"asctime": "2025-08-08 17:19:31", "name": "MLflowManager", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Loaded local model for horizon: 1H, regime: bull_market"}

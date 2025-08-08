@@ -1,0 +1,12 @@
+{
+  "run_id": "test_model_1H_bull_market_1754673570",
+  "run_name": "test_model",
+  "horizon": "1H",
+  "regime": "bull_market",
+  "tags": {
+    "test": "true"
+  },
+  "start_time": "2025-08-08T17:19:30.940815",
+  "status": "FINISHED",
+  "end_time": "2025-08-08T17:19:31.176751"
+}

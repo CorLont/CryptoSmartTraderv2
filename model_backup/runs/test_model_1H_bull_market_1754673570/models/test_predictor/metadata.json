@@ -1,0 +1,9 @@
+{
+  "model_name": "test_predictor",
+  "horizon": "1H",
+  "regime": "bull_market",
+  "model_type": "pytorch",
+  "created_at": "2025-08-08T17:19:31.174476",
+  "version": "1.0",
+  "features": 20
+}

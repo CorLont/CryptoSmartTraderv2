@@ -79,6 +79,10 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **L2 Orderbook Simulator (August 2025):** Complete Level-2 order book simulation with realistic market microstructure, partial fills, exchange fees, Time-in-Force handling (GTC/IOC/FOK/DAY), latency simulation, and market impact modeling. Supports all order types with realistic execution scenarios.
 - **Slippage Estimator (August 2025):** Real-time slippage estimation system with p50/p90/p95 percentile calculations across order size buckets. Features outlier removal, confidence intervals, market impact estimation, and predictive slippage modeling for trading evaluation.
 - **Paper Trading Engine (August 2025):** Mandatory 4-week paper trading validation system with complete execution logging, realistic market simulation, comprehensive performance metrics calculation, and strict validation criteria. Includes Sharpe ratio calculation, drawdown analysis, and complete audit trail for regulatory compliance.
+- **MLflow Manager (August 2025):** Complete MLflow integration for model tracking, versioning, and registry with horizon/regime tags. Features local file-based fallback when MLflow unavailable, run management, metrics/parameters logging, and model artifact storage with metadata.
+- **Backup/Restore System (August 2025):** Complete backup and restore scripts for models, configs, logs, and data. Features incremental backups, pre-restore validation, categorized restoration, and system snapshot creation with verification.
+- **Windows Deployment Automation (August 2025):** Full Windows deployment with antivirus/firewall exception configuration, port setup, and comprehensive .bat runners for installation, services, evaluation, and one-click pipeline execution.
+- **One-Click Pipeline (August 2025):** Complete automated pipeline runner executing scrape → features → predict → strict gate → export → eval → logs/daily workflow with fallback mechanisms and comprehensive logging.
 
 ## External Dependencies
 
