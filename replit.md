@@ -64,6 +64,7 @@ Data integrity policy: No demo/synthetic data - only authentic data from real so
 - **Shadow Trading:** Full paper trading engine with realistic market simulation for pre-production model validation.
 - **Advanced Execution Simulation (August 2025):** Level-2 order book simulation with market impact, partial fills, exchange-specific latency/fees, maintenance windows, and realistic slippage modeling for accurate backtesting.
 - **Enterprise Portfolio Risk Management (August 2025):** Per-coin hard caps (value & ADV %), correlation limits, automated position kill-switch based on health scores, GO/NOGO thresholds, and comprehensive risk monitoring with emergency flattening capabilities.
+- **Coverage Audit System (August 2025):** Daily automated audits ensuring 100% exchange coverage with missing coin alerts, new listing detection, impact scoring, and comprehensive gap analysis to guarantee no trading opportunities are missed.
 
 ## External Dependencies
 
