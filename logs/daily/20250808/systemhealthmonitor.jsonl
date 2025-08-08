@@ -1,0 +1,9 @@
+{"asctime": "2025-08-08 16:37:54", "name": "SystemHealthMonitor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive health assessment"}
+{"asctime": "2025-08-08 16:37:54", "name": "SystemHealthMonitor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Validation accuracy score: 73.6"}
+{"asctime": "2025-08-08 16:37:54", "name": "SystemHealthMonitor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Sharpe ratio score: 84.0"}
+{"asctime": "2025-08-08 16:37:54", "name": "SystemHealthMonitor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Feedback hit rate score: 100.0"}
+{"asctime": "2025-08-08 16:37:54", "name": "SystemHealthMonitor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Error ratio score: 100.0"}
+{"asctime": "2025-08-08 16:37:54", "name": "SystemHealthMonitor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Data completeness score: 90.0"}
+{"asctime": "2025-08-08 16:37:54", "name": "SystemHealthMonitor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Tuning freshness score: 100.0"}
+{"asctime": "2025-08-08 16:37:54", "name": "SystemHealthMonitor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Overall health score: 88.7 (GO)"}
+{"asctime": "2025-08-08 16:37:54", "name": "SystemHealthMonitor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Health assessment completed in 0.00s"}

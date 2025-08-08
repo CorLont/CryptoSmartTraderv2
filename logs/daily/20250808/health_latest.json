@@ -1,0 +1,31 @@
+{
+  "overall_score": 88.7,
+  "status": "GO",
+  "recommendation": "Live trading authorized",
+  "component_scores": {
+    "validation_accuracy": 73.6,
+    "sharpe_ratio": 84.0,
+    "feedback_hit_rate": 100,
+    "error_ratio": 100,
+    "data_completeness": 90.0,
+    "tuning_freshness": 100
+  },
+  "component_weights": {
+    "validation_accuracy": 0.25,
+    "sharpe_ratio": 0.2,
+    "feedback_hit_rate": 0.15,
+    "error_ratio": 0.15,
+    "data_completeness": 0.15,
+    "tuning_freshness": 0.1
+  },
+  "timestamp": "2025-08-08T16:37:54.284414",
+  "assessment_duration": 0.003943204879760742,
+  "assessment_timestamp": "2025-08-08T16:37:54.284799",
+  "data_sources": {
+    "evaluation_metrics": true,
+    "coverage_audit": true,
+    "feedback_data": true,
+    "system_logs": true,
+    "model_info": true
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "date": "2025-08-08",
+  "timestamp": "2025-08-08T16:40:10.115703",
+  "job_duration": 1.2938878536224365,
+  "evaluation_metrics": {
+    "evaluation_timestamp": "2025-08-08T16:40:08.851292",
+    "evaluation_duration": 0.02700185775756836,
+    "data_summary": {
+      "predictions_count": 10,
+      "actuals_count": 10,
+      "merged_count": 10
+    },
+    "precision_at_k": {
+      "precision_at_1": 0.0,
+      "precision_at_3": 0.0,
+      "precision_at_5": 0.0,
+      "precision_at_10": 0.0
+    },
+    "hit_rates": {
+      "hit_rate_7d": 0.9,
+      "hit_rate_30d": 0.8
+    },
+    "mae_metrics": {
+      "mae_7d": 0.06314046727561945,
+      "mae_normalized_7d": 0.4958206763483499,
+      "mae_30d": 0.14517032436837393,
+      "mae_normalized_30d": 0.5940819986653448
+    },
+    "sharpe_metrics": {
+      "sharpe_ratio": -1.4768282924445162,
+      "total_return": -0.02726453630094711,
+      "volatility": 0.0019216903188630202,
+      "final_value": 9727.354636990529,
+      "num_trades": 10
+    },
+    "calibration_metrics": {
+      "calibration_error": 0.8122179359464594,
+      "bins": [
+        {
+          "bin": 0,
+          "confidence_range": "0.0-0.1",
+          "mean_confidence": 0.6749446269581894,
+          "actual_rate": 0.0,
+          "calibration_error": 0.6749446269581894,
+          "bin_size": 1
+        },
+        {
+          "bin": 1,
+          "confidence_range": "0.1-0.2",
+          "mean_confidence": 0.7254413963323526,
+          "actual_rate": 0.0,
+          "calibration_error": 0.7254413963323526,
+          "bin_size": 1
+        },
+        {
+          "bin": 3,
+          "confidence_range": "0.3-0.4",
+          "mean_confidence": 0.7600233307462505,
+          "actual_rate": 0.0,
+          "calibration_error": 0.7600233307462505,
+          "bin_size": 2
+        },
+        {
+          "bin": 6,
+          "confidence_range": "0.6-0.7",
+          "mean_confidence": 0.8500420274868123,
+          "actual_rate": 0.0,
+          "calibration_error": 0.8500420274868123,
+          "bin_size": 1
+        },
+        {
+          "bin": 7,
+          "confidence_range": "0.7-0.8",
+          "mean_confidence": 0.8617203654874781,
+          "actual_rate": 0.0,
+          "calibration_error": 0.8617203654874781,
+          "bin_size": 1
+        },
+        {
+          "bin": 8,
+          "confidence_range": "0.8-0.9",
+          "mean_confidence": 0.892996846601098,
+          "actual_rate": 0.0,
+          "calibration_error": 0.892996846601098,
+          "bin_size": 1
+        },
+        {
+          "bin": 9,
+          "confidence_range": "0.9-1.0",
+          "mean_confidence": 0.920356958013035,
+          "actual_rate": 0.0,
+          "calibration_error": 0.920356958013035,
+          "bin_size": 3
+        }
+      ],
+      "n_samples": 10
+    },
+    "acceptatie_criteria": {
+      "precision_at_5_gte_60_percent": false,
+      "hit_rate_7d_gte_55_percent": 

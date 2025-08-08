@@ -1,0 +1,95 @@
+{"asctime": "2025-08-08 16:37:47", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive system evaluation"}
+{"asctime": "2025-08-08 16:37:47", "name": "ComprehensiveEvaluator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No matching prediction-actual pairs found"}
+{"asctime": "2025-08-08 16:37:47", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Hit rate 7d: 0.900"}
+{"asctime": "2025-08-08 16:37:47", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Hit rate 30d: 0.900"}
+{"asctime": "2025-08-08 16:37:47", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "MAE 7d: 0.0516"}
+{"asctime": "2025-08-08 16:37:47", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "MAE 30d: 0.0995"}
+{"asctime": "2025-08-08 16:37:47", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Sharpe ratio: -0.480, Total return: -0.009"}
+{"asctime": "2025-08-08 16:37:47", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Overall calibration error: 0.7905"}
+{"asctime": "2025-08-08 16:37:47", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Comprehensive evaluation completed in 0.03s"}
+{"asctime": "2025-08-08 16:40:04", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive system evaluation"}
+{"asctime": "2025-08-08 16:40:04", "name": "ComprehensiveEvaluator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No matching prediction-actual pairs found"}
+{"asctime": "2025-08-08 16:40:04", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Hit rate 7d: 0.800"}
+{"asctime": "2025-08-08 16:40:04", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Hit rate 30d: 1.000"}
+{"asctime": "2025-08-08 16:40:04", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "MAE 7d: 0.0987"}
+{"asctime": "2025-08-08 16:40:04", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "MAE 30d: 0.1252"}
+{"asctime": "2025-08-08 16:40:04", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Sharpe ratio: -0.677, Total return: -0.005"}
+{"asctime": "2025-08-08 16:40:04", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Overall calibration error: 0.7550"}
+{"asctime": "2025-08-08 16:40:04", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Comprehensive evaluation completed in 0.03s"}
+{"asctime": "2025-08-08 16:40:04", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive coverage audit"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Retrieved 475 coins from Kraken"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Found 15 processed coins"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Coverage analysis: 2.7% (13/475)"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Coverage audit completed in 1.59s"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive health assessment"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Validation accuracy score: 73.6"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Sharpe ratio score: 84.0"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Feedback hit rate score: 100.0"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Error ratio score: 100.0"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Data completeness score: 90.0"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Tuning freshness score: 100.0"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Overall health score: 88.7 (GO)"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Health assessment completed in 0.00s"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting nightly metrics job for 2025-08-08"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Running evaluation metrics collection"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive system evaluation"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No matching prediction-actual pairs found"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Hit rate 7d: 0.800"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Hit rate 30d: 0.800"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "MAE 7d: 0.0713"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "MAE 30d: 0.1259"}
+{"asctime": "2025-08-08 16:40:05", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Sharpe ratio: -1.131, Total return: -0.030"}
+{"asctime": "2025-08-08 16:40:06", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Overall calibration error: 0.8161"}
+{"asctime": "2025-08-08 16:40:06", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Comprehensive evaluation completed in 0.03s"}
+{"asctime": "2025-08-08 16:40:06", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Running coverage audit"}
+{"asctime": "2025-08-08 16:40:06", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive coverage audit"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Retrieved 475 coins from Kraken"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Found 15 processed coins"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Coverage analysis: 2.7% (13/475)"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Coverage audit completed in 2.79s"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive health assessment"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Validation accuracy score: 30.0"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Sharpe ratio score: 0.0"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Feedback hit rate score: 100.0"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Error ratio score: 100.0"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Data completeness score: 0.0"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Tuning freshness score: 100.0"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Overall health score: 47.5 (NO-GO)"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Health assessment completed in 0.00s"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Failed to save daily metrics: Object of type bool is not JSON serializable"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Nightly metrics job completed in 2.83s"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "\ud83c\udf19 Starting complete nightly pipeline for 2025-08-08"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Running pre-flight checks"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Nightly job scheduled for 02:00"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting nightly metrics job for 2025-08-08"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Running evaluation metrics collection"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive system evaluation"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No matching prediction-actual pairs found"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Hit rate 7d: 0.900"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Hit rate 30d: 0.800"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "MAE 7d: 0.0631"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "MAE 30d: 0.1452"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Sharpe ratio: -1.477, Total return: -0.027"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Overall calibration error: 0.8122"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Comprehensive evaluation completed in 0.03s"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Running coverage audit"}
+{"asctime": "2025-08-08 16:40:08", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive coverage audit"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Retrieved 475 coins from Kraken"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Found 15 processed coins"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Coverage analysis: 2.7% (13/475)"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Coverage audit completed in 1.26s"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Starting comprehensive health assessment"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Validation accuracy score: 30.0"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Sharpe ratio score: 0.0"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Feedback hit rate score: 100.0"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Error ratio score: 100.0"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Data completeness score: 0.0"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Tuning freshness score: 100.0"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Overall health score: 47.5 (NO-GO)"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Health assessment completed in 0.00s"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Failed to save daily metrics: Object of type bool is not JSON serializable"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Nightly metrics job completed in 1.30s"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Scheduled nightly job completed successfully"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Running post-processing tasks"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Failed to save pipeline results: Object of type bool is not JSON serializable"}
+{"asctime": "2025-08-08 16:40:10", "name": "ComprehensiveEvaluator", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "\u2705 Complete nightly pipeline finished in 1.31s"}

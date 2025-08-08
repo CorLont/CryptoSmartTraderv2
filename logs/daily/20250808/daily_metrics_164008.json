@@ -1,0 +1,84 @@
+{
+  "date": "2025-08-08",
+  "timestamp": "2025-08-08T16:40:08.800558",
+  "job_duration": 2.8302955627441406,
+  "evaluation_metrics": {
+    "evaluation_timestamp": "2025-08-08T16:40:06.001054",
+    "evaluation_duration": 0.024252653121948242,
+    "data_summary": {
+      "predictions_count": 10,
+      "actuals_count": 10,
+      "merged_count": 10
+    },
+    "precision_at_k": {
+      "precision_at_1": 0.0,
+      "precision_at_3": 0.0,
+      "precision_at_5": 0.0,
+      "precision_at_10": 0.0
+    },
+    "hit_rates": {
+      "hit_rate_7d": 0.8,
+      "hit_rate_30d": 0.8
+    },
+    "mae_metrics": {
+      "mae_7d": 0.07131362404217685,
+      "mae_normalized_7d": 0.9284855508189329,
+      "mae_30d": 0.1259288441922524,
+      "mae_normalized_30d": 1.19358606482567
+    },
+    "sharpe_metrics": {
+      "sharpe_ratio": -1.1314517791840424,
+      "total_return": -0.0302498680361643,
+      "volatility": 0.002777383883688764,
+      "final_value": 9697.501319638357,
+      "num_trades": 10
+    },
+    "calibration_metrics": {
+      "calibration_error": 0.8160889531975396,
+      "bins": [
+        {
+          "bin": 0,
+          "confidence_range": "0.0-0.1",
+          "mean_confidence": 0.6771358133956933,
+          "actual_rate": 0.0,
+          "calibration_error": 0.6771358133956933,
+          "bin_size": 2
+        },
+        {
+          "bin": 4,
+          "confidence_range": "0.4-0.5",
+          "mean_confidence": 0.7829078296317304,
+          "actual_rate": 0.0,
+          "calibration_error": 0.7829078296317304,
+          "bin_size": 1
+        },
+        {
+          "bin": 5,
+          "confidence_range": "0.5-0.6",
+          "mean_confidence": 0.8277976987118271,
+          "actual_rate": 0.0,
+          "calibration_error": 0.8277976987118271,
+          "bin_size": 1
+        },
+        {
+          "bin": 6,
+          "confidence_range": "0.6-0.7",
+          "mean_confidence": 0.8496933360019978,
+          "actual_rate": 0.0,
+          "calibration_error": 0.8496933360019978,
+          "bin_size": 4
+        },
+        {
+          "bin": 9,
+          "confidence_range": "0.9-1.0",
+          "mean_confidence": 0.94291008824645,
+          "actual_rate": 0.0,
+          "calibration_error": 0.94291008824645,
+          "bin_size": 2
+        }
+      ],
+      "n_samples": 10
+    },
+    "acceptatie_criteria": {
+      "precision_at_5_gte_60_percent": false,
+      "hit_rate_7d_gte_55_percent": 
