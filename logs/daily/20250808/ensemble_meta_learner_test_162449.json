@@ -1,0 +1,54 @@
+{
+  "test_type": "ensemble_meta_learner_validation",
+  "timestamp": "2025-08-08T16:24:49.324687",
+  "components_tested": [
+    "Meta-learner stacking with regime features",
+    "Online weight adjustment (sliding window)",
+    "Performance comparison (Precision@5, MAE)",
+    "Failsafe mechanisms per regime",
+    "Logistic/GBM meta-models",
+    "Base model uncertainty integration"
+  ],
+  "meta_learning": {
+    "stacking_inputs": [
+      "Base model predictions",
+      "Base model uncertainties",
+      "Regime features",
+      "Cross-model variance",
+      "Model agreement scores"
+    ],
+    "meta_models": [
+      "Logistic Regression",
+      "Gradient Boosting (XGBoost)"
+    ],
+    "output_metrics": [
+      "Classification probabilities",
+      "Confidence scores"
+    ]
+  },
+  "online_weights": {
+    "method": "Sliding window performance tracking",
+    "window_size": "100 samples default",
+    "weight_update": "Softmax with temperature=2.0",
+    "performance_metrics": [
+      "MAE",
+      "Standard deviation",
+      "Stability bonus"
+    ]
+  },
+  "failsafe_system": {
+    "levels": [
+      "Meta-learner (primary)",
+      "Regime-specific best expert",
+      "Global best expert",
+      "Ultimate simple average"
+    ],
+    "confidence_degradation": "0.75 \u2192 0.60 \u2192 0.60 \u2192 0.20",
+    "automatic_fallback": true
+  },
+  "acceptatie_criteria": {
+    "ensemble_beats_single": "MAE and Precision@5",
+    "performance_threshold": "Ensemble > beste single model",
+    "failsafe_requirement": "Als meta faalt, fallback naar beste expert per regime"
+  }
+}
