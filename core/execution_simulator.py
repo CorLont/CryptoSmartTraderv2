@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """
-Advanced Execution Simulator with Level-2 Order Book and Realistic Market Impact
-Implements comprehensive backtesting with slippage, partial fills, latency, and fees
+Execution Simulator - Advanced Order Execution & Risk Simulation
+Implements realistic slippage, fill rates, and latency modeling for trading validation
 """
 
+import asyncio
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any, Set
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 import json
+from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
+from scipy import stats
+import uuid
 
 from core.logging_manager import get_logger
 
@@ -20,13 +24,8 @@ class OrderType(str, Enum):
     """Order types"""
     MARKET = "market"
     LIMIT = "limit"
-    STOP_LOSS = "stop_loss"
-    TAKE_PROFIT = "take_profit"
-
-class OrderSide(str, Enum):
-    """Order sides"""
-    BUY = "buy"
-    SELL = "sell"
+    IOC = "ioc"  # Immediate or Cancel
+    FOK = "fok"  # Fill or Kill
 
 class OrderStatus(str, Enum):
     """Order execution status"""
@@ -35,761 +34,760 @@ class OrderStatus(str, Enum):
     FILLED = "filled"
     CANCELLED = "cancelled"
     REJECTED = "rejected"
+    EXPIRED = "expired"
 
-class ExchangeType(str, Enum):
-    """Exchange types with different characteristics"""
-    MAJOR_CEX = "major_cex"  # Binance, Coinbase, Kraken
-    MINOR_CEX = "minor_cex"  # Smaller centralized exchanges
-    DEX = "dex"              # Decentralized exchanges
+class ExecutionQuality(str, Enum):
+    """Execution quality assessment"""
+    EXCELLENT = "excellent"   # p50 ≤ 15 bps, p90 ≤ 60 bps
+    GOOD = "good"            # p50 ≤ 25 bps, p90 ≤ 80 bps
+    ACCEPTABLE = "acceptable" # p50 ≤ 35 bps, p90 ≤ 100 bps
+    POOR = "poor"            # Above acceptable thresholds
+
+@dataclass
+class ExecutionConfig:
+    """Configuration for execution simulation"""
+    # Slippage targets (basis points)
+    target_slippage_p50: float = 25.0    # 25 bps median slippage
+    target_slippage_p90: float = 80.0    # 80 bps 90th percentile
+    
+    # Fill rate targets
+    target_fill_rate: float = 0.95       # 95% fill rate
+    
+    # Latency targets (seconds)
+    target_latency_p95: float = 2.0      # 2 second 95th percentile
+    
+    # Market impact parameters
+    base_market_impact_bps: float = 5.0  # Base market impact
+    impact_decay_factor: float = 0.8     # Impact decay over time
+    
+    # Order book simulation
+    bid_ask_spread_bps: float = 10.0     # 10 bps spread
+    order_book_depth: int = 10           # Number of price levels
+    
+    # Time in force simulation
+    default_tif_seconds: int = 300       # 5 minutes default
+    
+    # Exchange simulation
+    exchange_latency_ms: float = 50.0    # 50ms exchange latency
+    network_jitter_ms: float = 20.0     # 20ms network jitter
 
 @dataclass
 class OrderBookLevel:
-    """Single level in order book"""
+    """Single order book price level"""
     price: float
-    size: float
-    timestamp: datetime
+    quantity: float
+    side: str  # 'bid' or 'ask'
 
 @dataclass
-class OrderBook:
-    """Level-2 order book representation"""
+class SimulatedOrderBook:
+    """Simulated order book for execution testing"""
     symbol: str
-    bids: List[OrderBookLevel]  # Sorted by price descending
-    asks: List[OrderBookLevel]  # Sorted by price ascending
     timestamp: datetime
-    spread_bps: float = 0.0
-    
-    def __post_init__(self):
-        """Calculate spread after initialization"""
-        if self.bids and self.asks:
-            best_bid = self.bids[0].price
-            best_ask = self.asks[0].price
-            mid_price = (best_bid + best_ask) / 2
-            self.spread_bps = ((best_ask - best_bid) / mid_price) * 10000
+    bids: List[OrderBookLevel]
+    asks: List[OrderBookLevel]
+    mid_price: float
+    spread_bps: float
 
 @dataclass
-class ExecutionFill:
-    """Individual fill from order execution"""
-    price: float
-    size: float
-    fee: float
-    timestamp: datetime
-    fee_currency: str
-    order_book_level: int  # Which level of order book was hit
-
-@dataclass
-class Order:
-    """Trading order with execution tracking"""
+class ExecutionResult:
+    """Result of order execution simulation"""
     order_id: str
     symbol: str
-    side: OrderSide
+    side: str
     order_type: OrderType
-    size: float
-    price: Optional[float] = None  # None for market orders
-    timestamp: datetime = field(default_factory=datetime.now)
-    status: OrderStatus = OrderStatus.PENDING
-    fills: List[ExecutionFill] = field(default_factory=list)
-    remaining_size: float = 0.0
-    average_fill_price: float = 0.0
-    total_fees: float = 0.0
-    slippage_bps: float = 0.0
+    requested_quantity: float
+    filled_quantity: float
+    average_fill_price: float
     
-    def __post_init__(self):
-        """Initialize remaining size"""
-        if self.remaining_size == 0.0:
-            self.remaining_size = self.size
+    # Execution metrics
+    slippage_bps: float
+    market_impact_bps: float
+    total_cost_bps: float
+    
+    # Timing metrics
+    signal_timestamp: datetime
+    order_timestamp: datetime
+    first_fill_timestamp: Optional[datetime]
+    last_fill_timestamp: Optional[datetime]
+    end_to_end_latency_ms: float
+    execution_latency_ms: float
+    
+    # Fill metrics
+    fill_rate: float
+    num_fills: int
+    status: OrderStatus
+    
+    # Market data
+    mid_price_at_signal: float
+    mid_price_at_order: float
+    bid_ask_spread_bps: float
+    
+    # Metadata
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
-class MarketConditions:
-    """Current market conditions affecting execution"""
-    volatility: float  # Recent volatility measure
-    volume_ratio: float  # Current volume vs average
-    spread_ratio: float  # Current spread vs average
-    depth_ratio: float  # Order book depth vs average
-    market_impact_factor: float = 1.0  # Multiplier for impact calculations
-
-@dataclass
-class ExchangeProfile:
-    """Exchange-specific execution characteristics"""
-    name: str
-    exchange_type: ExchangeType
-    base_fee_bps: float  # Base trading fee in basis points
-    fee_tiers: Dict[float, float]  # Volume -> fee rate mapping
-    min_order_size: float
-    max_order_size: float
-    latency_ms: Tuple[float, float]  # (min, max) latency
-    rate_limit_orders_per_second: float
-    maintenance_probability: float  # Daily probability of maintenance
-    partial_fill_probability: float  # Probability of partial fills
-    slippage_multiplier: float = 1.0  # Exchange-specific slippage factor
+class ExecutionValidationReport:
+    """Comprehensive execution validation report"""
+    validation_id: str
+    timestamp: datetime
+    total_orders: int
+    
+    # Slippage metrics
+    slippage_p50: float
+    slippage_p90: float
+    slippage_p95: float
+    slippage_mean: float
+    slippage_std: float
+    
+    # Fill rate metrics
+    overall_fill_rate: float
+    market_order_fill_rate: float
+    limit_order_fill_rate: float
+    
+    # Latency metrics
+    latency_p50_ms: float
+    latency_p90_ms: float
+    latency_p95_ms: float
+    latency_mean_ms: float
+    
+    # Execution quality
+    execution_quality: ExecutionQuality
+    quality_score: float
+    
+    # Performance by order size
+    small_order_performance: Dict[str, float]
+    medium_order_performance: Dict[str, float]
+    large_order_performance: Dict[str, float]
+    
+    # Market impact analysis
+    impact_correlation: float
+    impact_decay_rate: float
+    
+    # Status
+    validation_passed: bool
+    failed_criteria: List[str]
+    passed_criteria: List[str]
+    
+    # Recommendations
+    recommendations: List[str]
 
 class OrderBookSimulator:
-    """Simulates realistic level-2 order book behavior"""
+    """Realistic order book simulation"""
     
-    def __init__(self):
+    def __init__(self, config: ExecutionConfig):
+        self.config = config
         self.logger = get_logger()
         
-    def generate_realistic_order_book(
-        self, 
-        symbol: str, 
-        mid_price: float, 
-        market_conditions: MarketConditions,
-        depth_levels: int = 20
-    ) -> OrderBook:
-        """Generate realistic order book based on market conditions"""
-        
-        timestamp = datetime.now()
-        
-        # Calculate base spread based on volatility and market conditions
-        base_spread_bps = 5.0 + (market_conditions.volatility * 100) * market_conditions.spread_ratio
-        spread = (base_spread_bps / 10000) * mid_price
-        
-        best_bid = mid_price - spread / 2
-        best_ask = mid_price + spread / 2
-        
-        # Generate bid levels
-        bids = []
-        current_price = best_bid
-        for level in range(depth_levels):
-            # Exponential decay in size with depth
-            base_size = 1000 * np.exp(-level * 0.3) * market_conditions.depth_ratio
-            # Add randomness
-            size = base_size * (0.5 + np.random.random())
-            
-            bids.append(OrderBookLevel(
-                price=current_price,
-                size=size,
-                timestamp=timestamp
-            ))
-            
-            # Price decay with some randomness
-            price_step = spread * (0.1 + np.random.random() * 0.2)
-            current_price -= price_step
-        
-        # Generate ask levels
-        asks = []
-        current_price = best_ask
-        for level in range(depth_levels):
-            # Exponential decay in size with depth
-            base_size = 1000 * np.exp(-level * 0.3) * market_conditions.depth_ratio
-            # Add randomness
-            size = base_size * (0.5 + np.random.random())
-            
-            asks.append(OrderBookLevel(
-                price=current_price,
-                size=size,
-                timestamp=timestamp
-            ))
-            
-            # Price increase with some randomness
-            price_step = spread * (0.1 + np.random.random() * 0.2)
-            current_price += price_step
-        
-        return OrderBook(
-            symbol=symbol,
-            bids=sorted(bids, key=lambda x: x.price, reverse=True),
-            asks=sorted(asks, key=lambda x: x.price),
-            timestamp=timestamp
-        )
-    
-    def simulate_market_impact(
-        self, 
-        order: Order, 
-        order_book: OrderBook, 
-        market_conditions: MarketConditions
-    ) -> float:
-        """Calculate market impact based on order size and market depth"""
-        
-        # Get relevant side of order book
-        levels = order_book.asks if order.side == OrderSide.BUY else order_book.bids
-        
-        if not levels:
-            return 0.5  # High impact if no liquidity
-        
-        # Calculate total available liquidity in first few levels
-        total_liquidity = sum(level.size for level in levels[:5])
-        
-        # Calculate order size as percentage of available liquidity
-        liquidity_ratio = order.size / (total_liquidity + 1e-10)
-        
-        # Base impact factor
-        base_impact = liquidity_ratio * 0.1  # 10% impact per 100% of liquidity
-        
-        # Adjust for market conditions
-        volatility_adjustment = market_conditions.volatility * 0.5
-        volume_adjustment = (1.0 / market_conditions.volume_ratio) * 0.3
-        
-        # Total market impact
-        total_impact = (base_impact + volatility_adjustment + volume_adjustment) * market_conditions.market_impact_factor
-        
-        return min(total_impact, 0.05)  # Cap at 5% impact
-
-class ExchangeSimulator:
-    """Simulates exchange-specific execution behavior"""
-    
-    def __init__(self):
-        self.logger = get_logger()
-        self.exchange_profiles = self._initialize_exchange_profiles()
-        self.order_book_simulator = OrderBookSimulator()
-        
-    def _initialize_exchange_profiles(self) -> Dict[str, ExchangeProfile]:
-        """Initialize realistic exchange profiles"""
-        
-        return {
-            'kraken': ExchangeProfile(
-                name='kraken',
-                exchange_type=ExchangeType.MAJOR_CEX,
-                base_fee_bps=26.0,  # 0.26%
-                fee_tiers={
-                    0: 26.0,
-                    50000: 24.0,
-                    100000: 22.0,
-                    250000: 20.0,
-                    500000: 18.0,
-                    1000000: 16.0
-                },
-                min_order_size=0.0001,
-                max_order_size=1000000,
-                latency_ms=(50, 200),
-                rate_limit_orders_per_second=1.0,
-                maintenance_probability=0.02,  # 2% daily chance
-                partial_fill_probability=0.15,
-                slippage_multiplier=1.0
-            ),
-            'binance': ExchangeProfile(
-                name='binance',
-                exchange_type=ExchangeType.MAJOR_CEX,
-                base_fee_bps=10.0,  # 0.10%
-                fee_tiers={
-                    0: 10.0,
-                    100000: 9.0,
-                    500000: 8.0,
-                    1000000: 7.0,
-                    5000000: 6.0,
-                    10000000: 5.0
-                },
-                min_order_size=0.00001,
-                max_order_size=9000000,
-                latency_ms=(20, 100),
-                rate_limit_orders_per_second=10.0,
-                maintenance_probability=0.01,  # 1% daily chance
-                partial_fill_probability=0.10,
-                slippage_multiplier=0.8
-            ),
-            'coinbase': ExchangeProfile(
-                name='coinbase',
-                exchange_type=ExchangeType.MAJOR_CEX,
-                base_fee_bps=50.0,  # 0.50%
-                fee_tiers={
-                    0: 50.0,
-                    10000: 35.0,
-                    50000: 25.0,
-                    100000: 15.0,
-                    1000000: 10.0,
-                    15000000: 5.0
-                },
-                min_order_size=0.001,
-                max_order_size=10000000,
-                latency_ms=(100, 300),
-                rate_limit_orders_per_second=2.0,
-                maintenance_probability=0.015,  # 1.5% daily chance
-                partial_fill_probability=0.20,
-                slippage_multiplier=1.2
-            )
-        }
-    
-    def calculate_trading_fee(
-        self, 
-        exchange_name: str, 
-        trade_volume_30d: float, 
-        trade_amount: float
-    ) -> float:
-        """Calculate trading fee based on volume tier"""
-        
-        if exchange_name not in self.exchange_profiles:
-            return trade_amount * 0.001  # 0.1% default fee
-        
-        profile = self.exchange_profiles[exchange_name]
-        
-        # Find applicable fee tier
-        fee_rate = profile.base_fee_bps
-        for volume_threshold, tier_fee in sorted(profile.fee_tiers.items(), reverse=True):
-            if trade_volume_30d >= volume_threshold:
-                fee_rate = tier_fee
-                break
-        
-        return trade_amount * (fee_rate / 10000)
-    
-    def simulate_execution_latency(self, exchange_name: str) -> float:
-        """Simulate realistic execution latency"""
-        
-        if exchange_name not in self.exchange_profiles:
-            return np.random.uniform(100, 500)  # Default latency
-        
-        profile = self.exchange_profiles[exchange_name]
-        min_latency, max_latency = profile.latency_ms
-        
-        # Use gamma distribution for realistic latency simulation
-        shape = 2.0
-        scale = (max_latency - min_latency) / 4
-        latency = min_latency + np.random.gamma(shape, scale)
-        
-        return min(latency, max_latency * 2)  # Cap at 2x max
-    
-    def check_maintenance_window(self, exchange_name: str) -> bool:
-        """Check if exchange is in maintenance"""
-        
-        if exchange_name not in self.exchange_profiles:
-            return False
-        
-        profile = self.exchange_profiles[exchange_name]
-        return np.random.random() < profile.maintenance_probability / 24  # Hourly probability
-
-class ExecutionSimulator:
-    """Main execution simulator with comprehensive market microstructure"""
-    
-    def __init__(self):
-        self.logger = get_logger()
-        self.exchange_simulator = ExchangeSimulator()
-        self.order_book_simulator = OrderBookSimulator()
-        
-        # Execution tracking
-        self.executed_orders: List[Order] = []
-        self.execution_history: List[Dict[str, Any]] = []
-        
-        # Performance metrics
-        self.total_slippage = 0.0
-        self.total_fees = 0.0
-        self.partial_fill_count = 0
-        self.rejected_orders = 0
-        
-    def execute_order(
-        self, 
-        order: Order, 
-        current_price: float,
-        market_conditions: MarketConditions,
-        exchange_name: str = 'kraken',
-        user_volume_30d: float = 0.0
-    ) -> Order:
-        """Execute order with realistic market microstructure simulation"""
-        
-        execution_start = datetime.now()
+    def generate_order_book(self, symbol: str, mid_price: float, volatility: float = 0.02) -> SimulatedOrderBook:
+        """Generate realistic order book"""
         
         try:
-            # Check if exchange is in maintenance
-            if self.exchange_simulator.check_maintenance_window(exchange_name):
-                order.status = OrderStatus.REJECTED
-                self.rejected_orders += 1
-                self.logger.warning(
-                    f"Order rejected - exchange maintenance",
-                    extra={'order_id': order.order_id, 'exchange': exchange_name}
-                )
-                return order
+            timestamp = datetime.now()
             
-            # Simulate execution latency
-            latency_ms = self.exchange_simulator.simulate_execution_latency(exchange_name)
+            # Calculate spread based on volatility and symbol
+            base_spread_bps = self.config.bid_ask_spread_bps
+            spread_multiplier = 1.0 + (volatility / 0.02)  # Higher volatility = wider spreads
+            spread_bps = base_spread_bps * spread_multiplier
+            spread_absolute = mid_price * (spread_bps / 10000)
             
-            # Generate realistic order book
-            order_book = self.order_book_simulator.generate_realistic_order_book(
-                order.symbol, current_price, market_conditions
+            # Generate bid side
+            bids = []
+            bid_price = mid_price - (spread_absolute / 2)
+            
+            for i in range(self.config.order_book_depth):
+                # Price decreases as we go deeper
+                price_offset = i * (spread_absolute / self.config.order_book_depth) * 0.5
+                price = bid_price - price_offset
+                
+                # Quantity increases with depth (typical order book shape)
+                base_quantity = np.random.exponential(1000)
+                quantity_multiplier = 1.0 + (i * 0.3)  # More liquidity at deeper levels
+                quantity = base_quantity * quantity_multiplier
+                
+                bids.append(OrderBookLevel(
+                    price=price,
+                    quantity=quantity,
+                    side="bid"
+                ))
+            
+            # Generate ask side
+            asks = []
+            ask_price = mid_price + (spread_absolute / 2)
+            
+            for i in range(self.config.order_book_depth):
+                # Price increases as we go deeper
+                price_offset = i * (spread_absolute / self.config.order_book_depth) * 0.5
+                price = ask_price + price_offset
+                
+                # Quantity similar to bid side
+                base_quantity = np.random.exponential(1000)
+                quantity_multiplier = 1.0 + (i * 0.3)
+                quantity = base_quantity * quantity_multiplier
+                
+                asks.append(OrderBookLevel(
+                    price=price,
+                    quantity=quantity,
+                    side="ask"
+                ))
+            
+            return SimulatedOrderBook(
+                symbol=symbol,
+                timestamp=timestamp,
+                bids=bids,
+                asks=asks,
+                mid_price=mid_price,
+                spread_bps=spread_bps
             )
             
-            # Calculate market impact
-            market_impact = self.order_book_simulator.simulate_market_impact(
-                order, order_book, market_conditions
+        except Exception as e:
+            self.logger.error(f"Order book generation failed: {e}")
+            raise
+
+class ExecutionSimulator:
+    """Advanced execution simulation engine"""
+    
+    def __init__(self, config: Optional[ExecutionConfig] = None):
+        self.config = config or ExecutionConfig()
+        self.logger = get_logger()
+        self.order_book_simulator = OrderBookSimulator(self.config)
+        
+    async def simulate_order_execution(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        order_type: OrderType = OrderType.MARKET,
+        signal_timestamp: Optional[datetime] = None,
+        mid_price: Optional[float] = None,
+        volatility: float = 0.02
+    ) -> ExecutionResult:
+        """Simulate realistic order execution"""
+        
+        order_id = f"sim_order_{uuid.uuid4().hex[:8]}"
+        signal_time = signal_timestamp or datetime.now()
+        
+        try:
+            # Simulate signal processing latency
+            processing_latency_ms = np.random.gamma(2, 25)  # Gamma distribution ~50ms mean
+            order_timestamp = signal_time + timedelta(milliseconds=processing_latency_ms)
+            
+            # Get current market price
+            current_mid_price = mid_price or await self._get_market_price(symbol)
+            
+            # Generate order book
+            order_book = self.order_book_simulator.generate_order_book(
+                symbol, current_mid_price, volatility
             )
             
-            # Execute order against order book
-            if order.order_type == OrderType.MARKET:
-                order = self._execute_market_order(
-                    order, order_book, market_conditions, exchange_name, 
-                    user_volume_30d, market_impact
-                )
+            # Simulate order execution
+            execution_result = await self._execute_order_on_book(
+                order_id=order_id,
+                symbol=symbol,
+                side=side,
+                quantity=quantity,
+                order_type=order_type,
+                order_book=order_book,
+                signal_timestamp=signal_time,
+                order_timestamp=order_timestamp
+            )
+            
+            return execution_result
+            
+        except Exception as e:
+            self.logger.error(f"Order execution simulation failed: {e}")
+            
+            # Return failed execution
+            return ExecutionResult(
+                order_id=order_id,
+                symbol=symbol,
+                side=side,
+                order_type=order_type,
+                requested_quantity=quantity,
+                filled_quantity=0.0,
+                average_fill_price=0.0,
+                slippage_bps=float('inf'),
+                market_impact_bps=float('inf'),
+                total_cost_bps=float('inf'),
+                signal_timestamp=signal_time,
+                order_timestamp=signal_time,
+                first_fill_timestamp=None,
+                last_fill_timestamp=None,
+                end_to_end_latency_ms=float('inf'),
+                execution_latency_ms=float('inf'),
+                fill_rate=0.0,
+                num_fills=0,
+                status=OrderStatus.REJECTED,
+                mid_price_at_signal=current_mid_price if mid_price else 0.0,
+                mid_price_at_order=current_mid_price if mid_price else 0.0,
+                bid_ask_spread_bps=0.0,
+                metadata={"error": str(e)}
+            )
+    
+    async def _execute_order_on_book(
+        self,
+        order_id: str,
+        symbol: str,
+        side: str,
+        quantity: float,
+        order_type: OrderType,
+        order_book: SimulatedOrderBook,
+        signal_timestamp: datetime,
+        order_timestamp: datetime
+    ) -> ExecutionResult:
+        """Execute order against simulated order book"""
+        
+        try:
+            # Determine which side of book to trade against
+            target_levels = order_book.asks if side == "buy" else order_book.bids
+            
+            # Calculate market impact based on order size
+            total_book_liquidity = sum(level.quantity for level in target_levels)
+            impact_ratio = quantity / total_book_liquidity if total_book_liquidity > 0 else 1.0
+            
+            # Base market impact increases with order size
+            market_impact_bps = self.config.base_market_impact_bps * (impact_ratio ** 0.5)
+            
+            # Simulate exchange latency
+            exchange_latency_ms = np.random.gamma(
+                2, self.config.exchange_latency_ms / 2
+            ) + np.random.normal(0, self.config.network_jitter_ms)
+            
+            first_fill_time = order_timestamp + timedelta(milliseconds=exchange_latency_ms)
+            
+            # Simulate order execution across multiple levels
+            fills = []
+            remaining_quantity = quantity
+            total_fill_value = 0.0
+            
+            for level in target_levels:
+                if remaining_quantity <= 0:
+                    break
+                
+                # Determine fill quantity for this level
+                available_quantity = level.quantity
+                
+                # Apply random partial fill factor
+                if order_type == OrderType.MARKET:
+                    fill_probability = 0.95  # 95% chance of filling at each level
+                else:
+                    fill_probability = 0.80  # 80% for limit orders
+                
+                if np.random.random() > fill_probability:
+                    continue  # Skip this level
+                
+                # Calculate fill quantity
+                fill_quantity = min(remaining_quantity, available_quantity)
+                
+                # Apply slippage and impact
+                base_price = level.price
+                
+                # Add market impact
+                impact_adjustment = base_price * (market_impact_bps / 10000)
+                if side == "buy":
+                    impact_adjustment = abs(impact_adjustment)
+                else:
+                    impact_adjustment = -abs(impact_adjustment)
+                
+                # Add random slippage component
+                random_slippage_bps = np.random.gamma(2, 5)  # ~10 bps mean
+                random_slippage = base_price * (random_slippage_bps / 10000)
+                if side == "buy":
+                    random_slippage = abs(random_slippage)
+                else:
+                    random_slippage = -abs(random_slippage)
+                
+                fill_price = base_price + impact_adjustment + random_slippage
+                
+                fills.append({
+                    "quantity": fill_quantity,
+                    "price": fill_price,
+                    "timestamp": first_fill_time + timedelta(milliseconds=len(fills) * 10)
+                })
+                
+                total_fill_value += fill_quantity * fill_price
+                remaining_quantity -= fill_quantity
+            
+            # Calculate execution metrics
+            if fills:
+                filled_quantity = sum(fill["quantity"] for fill in fills)
+                average_fill_price = total_fill_value / filled_quantity if filled_quantity > 0 else 0.0
+                last_fill_time = fills[-1]["timestamp"]
+                
+                # Calculate slippage vs mid price
+                mid_price = order_book.mid_price
+                slippage_absolute = abs(average_fill_price - mid_price)
+                slippage_bps = (slippage_absolute / mid_price) * 10000
+                
+                # Total cost including market impact
+                total_cost_bps = slippage_bps + market_impact_bps
+                
+                # Determine order status
+                fill_rate = filled_quantity / quantity
+                if fill_rate >= 0.99:
+                    status = OrderStatus.FILLED
+                elif fill_rate > 0:
+                    status = OrderStatus.PARTIALLY_FILLED
+                else:
+                    status = OrderStatus.CANCELLED
+                
             else:
-                order = self._execute_limit_order(
-                    order, order_book, market_conditions, exchange_name,
-                    user_volume_30d, market_impact
-                )
+                # No fills
+                filled_quantity = 0.0
+                average_fill_price = 0.0
+                last_fill_time = None
+                slippage_bps = float('inf')
+                total_cost_bps = float('inf')
+                fill_rate = 0.0
+                status = OrderStatus.CANCELLED
             
-            # Record execution metrics
-            execution_time = (datetime.now() - execution_start).total_seconds() * 1000
+            # Calculate latency metrics
+            end_to_end_latency_ms = (order_timestamp - signal_timestamp).total_seconds() * 1000
             
-            self.execution_history.append({
-                'order_id': order.order_id,
-                'symbol': order.symbol,
-                'side': order.side.value,
-                'size': order.size,
-                'execution_time_ms': execution_time,
-                'latency_ms': latency_ms,
-                'market_impact': market_impact,
-                'slippage_bps': order.slippage_bps,
-                'total_fees': order.total_fees,
-                'fill_count': len(order.fills),
-                'status': order.status.value,
-                'exchange': exchange_name,
-                'timestamp': execution_start.isoformat()
-            })
+            if first_fill_time:
+                execution_latency_ms = (first_fill_time - order_timestamp).total_seconds() * 1000
+            else:
+                execution_latency_ms = float('inf')
             
-            self.executed_orders.append(order)
-            
-            # Update performance metrics
-            self.total_slippage += order.slippage_bps
-            self.total_fees += order.total_fees
-            if order.status == OrderStatus.PARTIALLY_FILLED:
-                self.partial_fill_count += 1
-            
-            self.logger.info(
-                f"Order executed: {order.order_id}",
-                extra={
-                    'order_id': order.order_id,
-                    'status': order.status.value,
-                    'slippage_bps': order.slippage_bps,
-                    'fees': order.total_fees,
-                    'execution_time_ms': execution_time
+            return ExecutionResult(
+                order_id=order_id,
+                symbol=symbol,
+                side=side,
+                order_type=order_type,
+                requested_quantity=quantity,
+                filled_quantity=filled_quantity,
+                average_fill_price=average_fill_price,
+                slippage_bps=slippage_bps,
+                market_impact_bps=market_impact_bps,
+                total_cost_bps=total_cost_bps,
+                signal_timestamp=signal_timestamp,
+                order_timestamp=order_timestamp,
+                first_fill_timestamp=first_fill_time,
+                last_fill_timestamp=last_fill_time,
+                end_to_end_latency_ms=end_to_end_latency_ms,
+                execution_latency_ms=execution_latency_ms,
+                fill_rate=fill_rate,
+                num_fills=len(fills),
+                status=status,
+                mid_price_at_signal=order_book.mid_price,
+                mid_price_at_order=order_book.mid_price,
+                bid_ask_spread_bps=order_book.spread_bps,
+                metadata={
+                    "impact_ratio": impact_ratio,
+                    "total_book_liquidity": total_book_liquidity,
+                    "fills": fills
                 }
             )
             
         except Exception as e:
-            order.status = OrderStatus.REJECTED
-            self.rejected_orders += 1
-            self.logger.error(
-                f"Order execution failed: {e}",
-                extra={'order_id': order.order_id, 'error': str(e)}
-            )
-        
-        return order
+            self.logger.error(f"Order book execution failed: {e}")
+            raise
     
-    def _execute_market_order(
+    async def _get_market_price(self, symbol: str) -> float:
+        """Get current market price for symbol"""
+        
+        # Simulate realistic prices
+        base_prices = {
+            "BTC/USD": 45000.0,
+            "ETH/USD": 3000.0,
+            "ADA/USD": 0.50,
+            "SOL/USD": 100.0,
+            "DOT/USD": 7.50
+        }
+        
+        base_price = base_prices.get(symbol, 1.0)
+        
+        # Add realistic price movement
+        noise = np.random.normal(0, 0.005)  # 0.5% volatility
+        current_price = base_price * (1 + noise)
+        
+        return max(current_price, 0.0001)
+    
+    async def validate_execution_performance(
         self, 
-        order: Order, 
-        order_book: OrderBook,
-        market_conditions: MarketConditions,
-        exchange_name: str,
-        user_volume_30d: float,
-        market_impact: float
-    ) -> Order:
-        """Execute market order with level-by-level fills"""
+        execution_results: List[ExecutionResult]
+    ) -> ExecutionValidationReport:
+        """Validate execution performance against targets"""
         
-        # Get relevant side of order book
-        levels = order_book.asks if order.side == OrderSide.BUY else order_book.bids
+        validation_id = f"execution_validation_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
-        if not levels:
-            order.status = OrderStatus.REJECTED
-            return order
-        
-        remaining_size = order.size
-        total_cost = 0.0
-        
-        # Execute against order book levels
-        for level_idx, level in enumerate(levels):
-            if remaining_size <= 0:
-                break
+        try:
+            if not execution_results:
+                raise ValueError("No execution results provided")
             
-            # Calculate fill size for this level
-            available_size = level.size
-            fill_size = min(remaining_size, available_size)
+            # Filter valid executions
+            valid_executions = [
+                r for r in execution_results 
+                if r.status in [OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED]
+                and not np.isinf(r.slippage_bps)
+            ]
             
-            # Apply market impact to price
-            impact_adjustment = market_impact * (level_idx + 1) * 0.1  # Increasing impact with depth
-            if order.side == OrderSide.BUY:
-                fill_price = level.price * (1 + impact_adjustment)
+            if not valid_executions:
+                raise ValueError("No valid executions to analyze")
+            
+            # Calculate slippage metrics
+            slippages = [r.slippage_bps for r in valid_executions]
+            slippage_p50 = np.percentile(slippages, 50)
+            slippage_p90 = np.percentile(slippages, 90)
+            slippage_p95 = np.percentile(slippages, 95)
+            slippage_mean = np.mean(slippages)
+            slippage_std = np.std(slippages)
+            
+            # Calculate fill rates
+            all_orders = execution_results
+            overall_fill_rate = np.mean([r.fill_rate for r in all_orders])
+            
+            market_orders = [r for r in all_orders if r.order_type == OrderType.MARKET]
+            market_order_fill_rate = np.mean([r.fill_rate for r in market_orders]) if market_orders else 0.0
+            
+            limit_orders = [r for r in all_orders if r.order_type == OrderType.LIMIT]
+            limit_order_fill_rate = np.mean([r.fill_rate for r in limit_orders]) if limit_orders else 0.0
+            
+            # Calculate latency metrics
+            latencies = [r.end_to_end_latency_ms for r in valid_executions if not np.isinf(r.end_to_end_latency_ms)]
+            if latencies:
+                latency_p50_ms = np.percentile(latencies, 50)
+                latency_p90_ms = np.percentile(latencies, 90)
+                latency_p95_ms = np.percentile(latencies, 95)
+                latency_mean_ms = np.mean(latencies)
             else:
-                fill_price = level.price * (1 - impact_adjustment)
+                latency_p50_ms = latency_p90_ms = latency_p95_ms = latency_mean_ms = float('inf')
             
-            # Calculate fees
-            fill_value = fill_size * fill_price
-            fee = self.exchange_simulator.calculate_trading_fee(
-                exchange_name, user_volume_30d, fill_value
+            # Determine execution quality
+            execution_quality, quality_score = self._assess_execution_quality(
+                slippage_p50, slippage_p90, overall_fill_rate, latency_p95_ms
             )
             
-            # Create fill
-            fill = ExecutionFill(
-                price=fill_price,
-                size=fill_size,
-                fee=fee,
+            # Analyze performance by order size
+            small_orders = [r for r in valid_executions if r.requested_quantity <= 1000]
+            medium_orders = [r for r in valid_executions if 1000 < r.requested_quantity <= 10000]
+            large_orders = [r for r in valid_executions if r.requested_quantity > 10000]
+            
+            small_order_performance = self._calculate_size_performance(small_orders)
+            medium_order_performance = self._calculate_size_performance(medium_orders)
+            large_order_performance = self._calculate_size_performance(large_orders)
+            
+            # Market impact analysis
+            quantities = [r.requested_quantity for r in valid_executions]
+            impacts = [r.market_impact_bps for r in valid_executions]
+            
+            if len(quantities) > 5:
+                impact_correlation, _ = stats.pearsonr(quantities, impacts)
+                impact_decay_rate = self.config.impact_decay_factor
+            else:
+                impact_correlation = 0.0
+                impact_decay_rate = 0.0
+            
+            # Validation criteria
+            failed_criteria = []
+            passed_criteria = []
+            
+            # Check slippage targets
+            if slippage_p50 <= self.config.target_slippage_p50:
+                passed_criteria.append("slippage_p50")
+            else:
+                failed_criteria.append("slippage_p50")
+            
+            if slippage_p90 <= self.config.target_slippage_p90:
+                passed_criteria.append("slippage_p90")
+            else:
+                failed_criteria.append("slippage_p90")
+            
+            # Check fill rate
+            if overall_fill_rate >= self.config.target_fill_rate:
+                passed_criteria.append("fill_rate")
+            else:
+                failed_criteria.append("fill_rate")
+            
+            # Check latency
+            if latency_p95_ms <= (self.config.target_latency_p95 * 1000):
+                passed_criteria.append("latency_p95")
+            else:
+                failed_criteria.append("latency_p95")
+            
+            validation_passed = len(failed_criteria) == 0
+            
+            # Generate recommendations
+            recommendations = self._generate_execution_recommendations(
+                failed_criteria, slippage_p50, slippage_p90, overall_fill_rate, latency_p95_ms
+            )
+            
+            return ExecutionValidationReport(
+                validation_id=validation_id,
                 timestamp=datetime.now(),
-                fee_currency=order.symbol.split('/')[1] if '/' in order.symbol else 'USD',
-                order_book_level=level_idx
+                total_orders=len(execution_results),
+                slippage_p50=slippage_p50,
+                slippage_p90=slippage_p90,
+                slippage_p95=slippage_p95,
+                slippage_mean=slippage_mean,
+                slippage_std=slippage_std,
+                overall_fill_rate=overall_fill_rate,
+                market_order_fill_rate=market_order_fill_rate,
+                limit_order_fill_rate=limit_order_fill_rate,
+                latency_p50_ms=latency_p50_ms,
+                latency_p90_ms=latency_p90_ms,
+                latency_p95_ms=latency_p95_ms,
+                latency_mean_ms=latency_mean_ms,
+                execution_quality=execution_quality,
+                quality_score=quality_score,
+                small_order_performance=small_order_performance,
+                medium_order_performance=medium_order_performance,
+                large_order_performance=large_order_performance,
+                impact_correlation=impact_correlation,
+                impact_decay_rate=impact_decay_rate,
+                validation_passed=validation_passed,
+                failed_criteria=failed_criteria,
+                passed_criteria=passed_criteria,
+                recommendations=recommendations
             )
             
-            order.fills.append(fill)
-            remaining_size -= fill_size
-            total_cost += fill_value
-            order.total_fees += fee
+        except Exception as e:
+            self.logger.error(f"Execution validation failed: {e}")
             
-            # Check for partial fill simulation
-            profile = self.exchange_simulator.exchange_profiles.get(exchange_name)
-            if profile and np.random.random() < profile.partial_fill_probability:
-                # Simulate partial fill - stop execution early
-                break
-        
-        # Update order status
-        order.remaining_size = remaining_size
-        if remaining_size > 0:
-            order.status = OrderStatus.PARTIALLY_FILLED
-        else:
-            order.status = OrderStatus.FILLED
-        
-        # Calculate average fill price and slippage
-        if order.fills:
-            filled_size = sum(fill.size for fill in order.fills)
-            order.average_fill_price = sum(fill.price * fill.size for fill in order.fills) / filled_size
-            
-            # Calculate slippage vs mid price
-            mid_price = (order_book.bids[0].price + order_book.asks[0].price) / 2
-            if order.side == OrderSide.BUY:
-                order.slippage_bps = ((order.average_fill_price - mid_price) / mid_price) * 10000
-            else:
-                order.slippage_bps = ((mid_price - order.average_fill_price) / mid_price) * 10000
-        
-        return order
+            return ExecutionValidationReport(
+                validation_id=validation_id,
+                timestamp=datetime.now(),
+                total_orders=0,
+                slippage_p50=float('inf'),
+                slippage_p90=float('inf'),
+                slippage_p95=float('inf'),
+                slippage_mean=float('inf'),
+                slippage_std=float('inf'),
+                overall_fill_rate=0.0,
+                market_order_fill_rate=0.0,
+                limit_order_fill_rate=0.0,
+                latency_p50_ms=float('inf'),
+                latency_p90_ms=float('inf'),
+                latency_p95_ms=float('inf'),
+                latency_mean_ms=float('inf'),
+                execution_quality=ExecutionQuality.POOR,
+                quality_score=0.0,
+                small_order_performance={},
+                medium_order_performance={},
+                large_order_performance={},
+                impact_correlation=0.0,
+                impact_decay_rate=0.0,
+                validation_passed=False,
+                failed_criteria=["validation_error"],
+                passed_criteria=[],
+                recommendations=[f"Fix execution validation error: {e}"]
+            )
     
-    def _execute_limit_order(
+    def _assess_execution_quality(
         self, 
-        order: Order, 
-        order_book: OrderBook,
-        market_conditions: MarketConditions,
-        exchange_name: str,
-        user_volume_30d: float,
-        market_impact: float
-    ) -> Order:
-        """Execute limit order based on current market conditions"""
+        slippage_p50: float, 
+        slippage_p90: float, 
+        fill_rate: float, 
+        latency_p95_ms: float
+    ) -> Tuple[ExecutionQuality, float]:
+        """Assess overall execution quality"""
         
-        # Get best price from opposite side
-        if order.side == OrderSide.BUY:
-            best_offer = order_book.asks[0].price if order_book.asks else float('inf')
-            can_execute = order.price >= best_offer
+        # Quality scoring
+        scores = []
+        
+        # Slippage score
+        if slippage_p50 <= 15 and slippage_p90 <= 60:
+            slippage_score = 1.0
+        elif slippage_p50 <= 25 and slippage_p90 <= 80:
+            slippage_score = 0.8
+        elif slippage_p50 <= 35 and slippage_p90 <= 100:
+            slippage_score = 0.6
         else:
-            best_bid = order_book.bids[0].price if order_book.bids else 0.0
-            can_execute = order.price <= best_bid
+            slippage_score = 0.3
         
-        if not can_execute:
-            # Order goes to order book (not executed immediately)
-            order.status = OrderStatus.PENDING
-            return order
+        scores.append(slippage_score)
         
-        # Execute as if market order at limit price
-        fill_price = order.price
-        fill_size = order.size
-        
-        # Calculate fees
-        fill_value = fill_size * fill_price
-        fee = self.exchange_simulator.calculate_trading_fee(
-            exchange_name, user_volume_30d, fill_value
-        )
-        
-        # Create fill
-        fill = ExecutionFill(
-            price=fill_price,
-            size=fill_size,
-            fee=fee,
-            timestamp=datetime.now(),
-            fee_currency=order.symbol.split('/')[1] if '/' in order.symbol else 'USD',
-            order_book_level=0  # Limit orders execute at best level
-        )
-        
-        order.fills.append(fill)
-        order.remaining_size = 0.0
-        order.status = OrderStatus.FILLED
-        order.average_fill_price = fill_price
-        order.total_fees = fee
-        
-        # Calculate slippage vs mid price
-        mid_price = (order_book.bids[0].price + order_book.asks[0].price) / 2
-        if order.side == OrderSide.BUY:
-            order.slippage_bps = ((fill_price - mid_price) / mid_price) * 10000
+        # Fill rate score
+        if fill_rate >= 0.98:
+            fill_score = 1.0
+        elif fill_rate >= 0.95:
+            fill_score = 0.8
+        elif fill_rate >= 0.90:
+            fill_score = 0.6
         else:
-            order.slippage_bps = ((mid_price - fill_price) / mid_price) * 10000
+            fill_score = 0.3
         
-        return order
+        scores.append(fill_score)
+        
+        # Latency score
+        if latency_p95_ms <= 1000:
+            latency_score = 1.0
+        elif latency_p95_ms <= 2000:
+            latency_score = 0.8
+        elif latency_p95_ms <= 5000:
+            latency_score = 0.6
+        else:
+            latency_score = 0.3
+        
+        scores.append(latency_score)
+        
+        # Overall quality score
+        quality_score = np.mean(scores)
+        
+        # Determine quality level
+        if quality_score >= 0.9:
+            quality = ExecutionQuality.EXCELLENT
+        elif quality_score >= 0.75:
+            quality = ExecutionQuality.GOOD
+        elif quality_score >= 0.55:
+            quality = ExecutionQuality.ACCEPTABLE
+        else:
+            quality = ExecutionQuality.POOR
+        
+        return quality, quality_score
     
-    def backtest_strategy(
-        self, 
-        trades: List[Dict[str, Any]], 
-        market_data: pd.DataFrame,
-        exchange_name: str = 'kraken',
-        user_volume_30d: float = 100000
-    ) -> Dict[str, Any]:
-        """Run comprehensive backtest with realistic execution simulation"""
+    def _calculate_size_performance(self, orders: List[ExecutionResult]) -> Dict[str, float]:
+        """Calculate performance metrics for order size category"""
         
-        backtest_results = {
-            'start_time': datetime.now().isoformat(),
-            'total_trades': len(trades),
-            'executed_orders': [],
-            'performance_metrics': {},
-            'execution_statistics': {},
-            'risk_metrics': {}
-        }
-        
-        portfolio_value = 100000  # Starting portfolio value
-        portfolio_history = []
-        total_pnl = 0.0
-        
-        for i, trade in enumerate(trades):
-            try:
-                # Get market conditions for this trade
-                market_row = market_data.iloc[i] if i < len(market_data) else market_data.iloc[-1]
-                
-                market_conditions = MarketConditions(
-                    volatility=market_row.get('volatility', 0.02),
-                    volume_ratio=market_row.get('volume_ratio', 1.0),
-                    spread_ratio=market_row.get('spread_ratio', 1.0),
-                    depth_ratio=market_row.get('depth_ratio', 1.0),
-                    market_impact_factor=1.0
-                )
-                
-                # Create order
-                order = Order(
-                    order_id=f"backtest_{i}",
-                    symbol=trade.get('symbol', 'BTC/USD'),
-                    side=OrderSide(trade['side']),
-                    order_type=OrderType(trade.get('type', 'market')),
-                    size=trade['size'],
-                    price=trade.get('price'),
-                    timestamp=market_row.get('timestamp', datetime.now())
-                )
-                
-                # Execute order
-                executed_order = self.execute_order(
-                    order, 
-                    market_row.get('price', market_row.get('close', 0)),
-                    market_conditions,
-                    exchange_name,
-                    user_volume_30d
-                )
-                
-                backtest_results['executed_orders'].append({
-                    'order_id': executed_order.order_id,
-                    'status': executed_order.status.value,
-                    'average_fill_price': executed_order.average_fill_price,
-                    'slippage_bps': executed_order.slippage_bps,
-                    'total_fees': executed_order.total_fees,
-                    'fill_count': len(executed_order.fills)
-                })
-                
-                # Update portfolio value
-                if executed_order.status in [OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED]:
-                    trade_pnl = self._calculate_trade_pnl(executed_order, trade)
-                    total_pnl += trade_pnl
-                    portfolio_value += trade_pnl
-                
-                portfolio_history.append({
-                    'timestamp': market_row.get('timestamp', datetime.now()).isoformat(),
-                    'portfolio_value': portfolio_value,
-                    'pnl': total_pnl
-                })
-                
-            except Exception as e:
-                self.logger.error(f"Backtest trade {i} failed: {e}")
-        
-        # Calculate performance metrics
-        backtest_results['performance_metrics'] = self._calculate_backtest_metrics(
-            portfolio_history, backtest_results['executed_orders']
-        )
-        
-        # Calculate execution statistics
-        backtest_results['execution_statistics'] = self._calculate_execution_statistics()
-        
-        self.logger.info(
-            f"Backtest completed: {len(trades)} trades",
-            extra={
-                'total_trades': len(trades),
-                'successful_executions': len([o for o in backtest_results['executed_orders'] if o['status'] == 'filled']),
-                'total_slippage_bps': sum(o['slippage_bps'] for o in backtest_results['executed_orders']),
-                'total_fees': sum(o['total_fees'] for o in backtest_results['executed_orders'])
+        if not orders:
+            return {
+                "avg_slippage_bps": float('inf'),
+                "avg_fill_rate": 0.0,
+                "avg_latency_ms": float('inf'),
+                "count": 0
             }
-        )
         
-        return backtest_results
+        return {
+            "avg_slippage_bps": np.mean([o.slippage_bps for o in orders if not np.isinf(o.slippage_bps)]),
+            "avg_fill_rate": np.mean([o.fill_rate for o in orders]),
+            "avg_latency_ms": np.mean([o.end_to_end_latency_ms for o in orders if not np.isinf(o.end_to_end_latency_ms)]),
+            "count": len(orders)
+        }
     
-    def _calculate_trade_pnl(self, order: Order, trade: Dict[str, Any]) -> float:
-        """Calculate P&L for executed trade (simplified)"""
-        if order.status != OrderStatus.FILLED:
-            return 0.0
-        
-        # This is a simplified P&L calculation
-        # In practice, you'd need exit prices and position tracking
-        base_pnl = order.average_fill_price * order.size * 0.01  # 1% assumed profit
-        return base_pnl - order.total_fees
-    
-    def _calculate_backtest_metrics(
+    def _generate_execution_recommendations(
         self, 
-        portfolio_history: List[Dict[str, Any]], 
-        executed_orders: List[Dict[str, Any]]
-    ) -> Dict[str, float]:
-        """Calculate comprehensive backtest performance metrics"""
+        failed_criteria: List[str],
+        slippage_p50: float,
+        slippage_p90: float,
+        fill_rate: float,
+        latency_p95_ms: float
+    ) -> List[str]:
+        """Generate execution improvement recommendations"""
         
-        if not portfolio_history:
-            return {}
+        recommendations = []
         
-        values = [p['portfolio_value'] for p in portfolio_history]
-        returns = [(values[i] - values[i-1]) / values[i-1] for i in range(1, len(values))]
+        if "slippage_p50" in failed_criteria:
+            recommendations.append(f"Median slippage {slippage_p50:.1f} bps > target {self.config.target_slippage_p50:.1f} bps - optimize order routing")
         
-        metrics = {
-            'total_return': (values[-1] - values[0]) / values[0] if values[0] > 0 else 0.0,
-            'volatility': np.std(returns) if returns else 0.0,
-            'sharpe_ratio': (np.mean(returns) / np.std(returns)) if returns and np.std(returns) > 0 else 0.0,
-            'max_drawdown': self._calculate_max_drawdown(values),
-            'win_rate': len([r for r in returns if r > 0]) / len(returns) if returns else 0.0
-        }
+        if "slippage_p90" in failed_criteria:
+            recommendations.append(f"90th percentile slippage {slippage_p90:.1f} bps > target {self.config.target_slippage_p90:.1f} bps - implement dynamic sizing")
         
-        return metrics
-    
-    def _calculate_max_drawdown(self, values: List[float]) -> float:
-        """Calculate maximum drawdown"""
-        if not values:
-            return 0.0
+        if "fill_rate" in failed_criteria:
+            recommendations.append(f"Fill rate {fill_rate:.1%} < target {self.config.target_fill_rate:.1%} - review order types and TIF")
         
-        peak = values[0]
-        max_dd = 0.0
+        if "latency_p95" in failed_criteria:
+            recommendations.append(f"95th percentile latency {latency_p95_ms:.0f}ms > target {self.config.target_latency_p95*1000:.0f}ms - optimize signal processing")
         
-        for value in values:
-            if value > peak:
-                peak = value
-            else:
-                drawdown = (peak - value) / peak
-                max_dd = max(max_dd, drawdown)
+        if not recommendations:
+            recommendations.append("All execution targets met - maintain current configuration")
         
-        return max_dd
-    
-    def _calculate_execution_statistics(self) -> Dict[str, Any]:
-        """Calculate execution quality statistics"""
-        
-        if not self.execution_history:
-            return {}
-        
-        slippages = [h['slippage_bps'] for h in self.execution_history]
-        fees = [h['total_fees'] for h in self.execution_history]
-        latencies = [h['latency_ms'] for h in self.execution_history]
-        
-        return {
-            'average_slippage_bps': np.mean(slippages) if slippages else 0.0,
-            'median_slippage_bps': np.median(slippages) if slippages else 0.0,
-            'max_slippage_bps': np.max(slippages) if slippages else 0.0,
-            'total_fees': sum(fees),
-            'average_fees': np.mean(fees) if fees else 0.0,
-            'average_latency_ms': np.mean(latencies) if latencies else 0.0,
-            'p95_latency_ms': np.percentile(latencies, 95) if latencies else 0.0,
-            'partial_fill_rate': self.partial_fill_count / len(self.execution_history) if self.execution_history else 0.0,
-            'rejection_rate': self.rejected_orders / len(self.execution_history) if self.execution_history else 0.0
-        }
-    
-    def get_execution_summary(self) -> Dict[str, Any]:
-        """Get comprehensive execution summary"""
-        
-        return {
-            'timestamp': datetime.now().isoformat(),
-            'total_orders_executed': len(self.executed_orders),
-            'execution_statistics': self._calculate_execution_statistics(),
-            'supported_exchanges': list(self.exchange_simulator.exchange_profiles.keys()),
-            'recent_executions': self.execution_history[-10:] if self.execution_history else []
-        }
+        return recommendations
 
 # Global instance
 _execution_simulator = None
 
-def get_execution_simulator() -> ExecutionSimulator:
+def get_execution_simulator(config: Optional[ExecutionConfig] = None) -> ExecutionSimulator:
     """Get global execution simulator instance"""
     global _execution_simulator
     if _execution_simulator is None:
-        _execution_simulator = ExecutionSimulator()
+        _execution_simulator = ExecutionSimulator(config)
     return _execution_simulator
