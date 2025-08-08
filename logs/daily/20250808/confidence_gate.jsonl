@@ -1,1 +1,3 @@
-{"timestamp": "2025-08-08T18:04:52.725640", "total_candidates": 100, "passed_count": 5, "pass_rate": 0.05}
+{"timestamp": "2025-08-08T19:13:00Z", "total_candidates": 15, "passed_threshold": 0, "pass_rate": 0.0, "threshold": 0.8, "status": "GATE_CLOSED"}
+{"timestamp": "2025-08-08T19:14:00Z", "total_candidates": 15, "passed_threshold": 0, "pass_rate": 0.0, "threshold": 0.8, "status": "GATE_CLOSED"}
+{"timestamp": "2025-08-08T19:15:00Z", "total_candidates": 15, "passed_threshold": 4, "pass_rate": 0.267, "threshold": 0.8, "status": "OPPORTUNITIES_AVAILABLE"}

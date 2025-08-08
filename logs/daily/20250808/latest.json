@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-08-08T19:15:00Z",
+  "date": "20250808",
+  "system_health_score": 92.5,
+  "go_nogo_decision": "GO",
+  "trading_mode": "PAPER",
+  "next_evaluation": "2025-08-09T02:00:00Z",
+  "health_breakdown": {
+    "data_quality": 98.7,
+    "model_performance": 89.3,
+    "system_stability": 96.2,
+    "risk_management": 94.8,
+    "operational_status": 92.1
+  },
+  "alerts": {
+    "critical": 0,
+    "warning": 2,
+    "info": 5
+  },
+  "trading_authorization": "PAPER_ONLY",
+  "live_trading_eligibility": false,
+  "paper_trading_weeks_remaining": 3.2,
+  "recommendations": [
+    "Continue paper trading validation",
+    "Monitor confidence gate effectiveness",
+    "Prepare for live trading transition"
+  ]
+}

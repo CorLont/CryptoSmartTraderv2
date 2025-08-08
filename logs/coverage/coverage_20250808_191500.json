@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-08-08T19:15:00Z",
+  "exchange": "kraken",
+  "total_available_symbols": 457,
+  "processed_symbols": 453,
+  "coverage_pct": 99.1,
+  "missing": [
+    "SCRT/USD",
+    "MANA/USD", 
+    "SAND/USD",
+    "AXS/USD"
+  ],
+  "processing_time_seconds": 342.5,
+  "data_quality": {
+    "complete_data_symbols": 449,
+    "partial_data_symbols": 4,
+    "failed_symbols": 4
+  },
+  "coverage_details": {
+    "price_data": 99.3,
+    "volume_data": 99.1,
+    "technical_indicators": 98.9,
+    "sentiment_data": 97.8,
+    "whale_activity": 96.5
+  }
+}

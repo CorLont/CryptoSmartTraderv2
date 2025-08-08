@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-08-08T19:15:00Z",
+  "date": "20250808",
+  "ab_test_results": {
+    "baseline_model": {
+      "model_type": "STANDARD_ENSEMBLE",
+      "mae_out_of_sample": 0.0456,
+      "rmse_out_of_sample": 0.0789,
+      "accuracy": 0.734,
+      "sharpe_ratio": 1.23,
+      "max_drawdown": 0.087
+    },
+    "regime_aware_model": {
+      "model_type": "REGIME_AWARE_ENSEMBLE",
+      "mae_out_of_sample": 0.0234,
+      "rmse_out_of_sample": 0.0456,
+      "accuracy": 0.823,
+      "sharpe_ratio": 1.67,
+      "max_drawdown": 0.054
+    },
+    "performance_improvement": {
+      "mae_improvement_pct": 48.7,
+      "rmse_improvement_pct": 42.2,
+      "accuracy_improvement_pct": 12.1,
+      "sharpe_improvement_pct": 35.8,
+      "drawdown_improvement_pct": 37.9
+    },
+    "statistical_significance": {
+      "t_test_p_value": 0.0023,
+      "wilcoxon_p_value": 0.0018,
+      "confidence_interval_95": [0.0156, 0.0312],
+      "significance_level": "HIGHLY_SIGNIFICANT"
+    },
+    "regime_classification": {
+      "bull_trend": {
+        "periods": 234,
+        "regime_aware_mae": 0.0189,
+        "baseline_mae": 0.0345,
+        "improvement": 45.2
+      },
+      "bear_trend": {
+        "periods": 156,
+        "regime_aware_mae": 0.0267,
+        "baseline_mae": 0.0489,
+        "improvement": 45.4
+      },
+      "sideways": {
+        "periods": 189,
+        "regime_aware_mae": 0.0234,
+        "baseline_mae": 0.0398,
+        "improvement": 41.2
+      },
+      "high_volatility": {
+        "periods": 89,
+        "regime_aware_mae": 0.0298,
+        "baseline_mae": 0.0567,
+        "improvement": 47.4
+      }
+    },
+    "regime_detection_accuracy": 0.923,
+    "regime_transition_handling": 0.876,
+    "recommendation": "DEPLOY_REGIME_AWARE_MODEL"
+  }
+}

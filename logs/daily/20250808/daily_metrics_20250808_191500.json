@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-08-08T19:15:00Z",
+  "date": "20250808",
+  "system_health_score": 92.5,
+  "go_nogo_status": "GO",
+  "trading_mode": "PAPER",
+  "confidence_gate_stats": {
+    "total_candidates": 15,
+    "passed_80_threshold": 4,
+    "pass_rate": 26.7,
+    "average_confidence": 0.734
+  },
+  "ml_performance": {
+    "prediction_accuracy_24h": 78.5,
+    "calibration_score": 0.847,
+    "uncertainty_coverage": 0.923
+  },
+  "data_quality": {
+    "completeness_score": 98.7,
+    "coverage_percentage": 99.1,
+    "fallback_usage": 0.0
+  },
+  "system_metrics": {
+    "cpu_usage_avg": 45.2,
+    "memory_usage_avg": 67.8,
+    "disk_usage": 34.5,
+    "api_success_rate": 98.9
+  },
+  "trading_performance": {
+    "opportunities_identified": 4,
+    "paper_trades_executed": 2,
+    "simulated_pnl_24h": 2.34,
+    "win_rate": 75.0
+  },
+  "risk_assessment": {
+    "market_volatility": "MEDIUM",
+    "regime_classification": "BULL_TREND",
+    "risk_score": 3.2
+  },
+  "alerts_generated": 2,
+  "errors_count": 0,
+  "uptime_percentage": 99.8
+}

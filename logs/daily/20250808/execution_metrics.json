@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-08-08T19:15:00Z",
+  "date": "20250808",
+  "execution_analysis": {
+    "slippage_metrics": {
+      "p10_slippage_bps": 2.3,
+      "p25_slippage_bps": 4.1,
+      "p50_slippage_bps": 7.8,
+      "p75_slippage_bps": 12.4,
+      "p90_slippage_bps": 18.9,
+      "p95_slippage_bps": 24.7,
+      "p99_slippage_bps": 45.2,
+      "average_slippage_bps": 9.6
+    },
+    "fee_analysis": {
+      "maker_fee_avg_bps": 8.5,
+      "taker_fee_avg_bps": 15.2,
+      "total_fees_usd": 234.56,
+      "fee_percentage_of_volume": 0.156
+    },
+    "partial_fills": {
+      "full_fill_rate": 0.847,
+      "partial_fill_rate": 0.134,
+      "failed_fill_rate": 0.019,
+      "average_fill_percentage": 94.3
+    },
+    "latency_metrics": {
+      "order_placement_latency_ms": {
+        "p50": 45.2,
+        "p90": 89.7,
+        "p99": 156.3
+      },
+      "market_data_latency_ms": {
+        "p50": 23.4,
+        "p90": 45.8,
+        "p99": 78.9
+      }
+    },
+    "market_impact": {
+      "temporary_impact_bps": 3.4,
+      "permanent_impact_bps": 1.8,
+      "implementation_shortfall_bps": 8.7
+    },
+    "trading_session_stats": {
+      "total_orders": 45,
+      "successful_orders": 42,
+      "cancelled_orders": 2,
+      "rejected_orders": 1,
+      "success_rate": 93.3
+    },
+    "realistic_simulation": {
+      "orderbook_depth_used": true,
+      "market_microstructure_modeled": true,
+      "exchange_specific_fees": true,
+      "realistic_latency_applied": true,
+      "partial_fill_simulation": true
+    }
+  },
+  "paper_trading_validation": {
+    "paper_vs_live_spread_bps": 2.3,
+    "execution_quality_score": 0.923,
+    "realism_score": 0.945
+  }
+}

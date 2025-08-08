@@ -1,0 +1,89 @@
+{
+  "timestamp": "2025-08-08T19:15:00Z",
+  "date": "20250808",
+  "calibration_analysis": {
+    "confidence_bins": {
+      "0.0-0.1": {
+        "predicted_probability": 0.05,
+        "actual_hit_rate": 0.08,
+        "sample_count": 23,
+        "calibration_error": 0.03
+      },
+      "0.1-0.2": {
+        "predicted_probability": 0.15,
+        "actual_hit_rate": 0.18,
+        "sample_count": 45,
+        "calibration_error": 0.03
+      },
+      "0.2-0.3": {
+        "predicted_probability": 0.25,
+        "actual_hit_rate": 0.27,
+        "sample_count": 67,
+        "calibration_error": 0.02
+      },
+      "0.3-0.4": {
+        "predicted_probability": 0.35,
+        "actual_hit_rate": 0.38,
+        "sample_count": 89,
+        "calibration_error": 0.03
+      },
+      "0.4-0.5": {
+        "predicted_probability": 0.45,
+        "actual_hit_rate": 0.47,
+        "sample_count": 102,
+        "calibration_error": 0.02
+      },
+      "0.5-0.6": {
+        "predicted_probability": 0.55,
+        "actual_hit_rate": 0.58,
+        "sample_count": 134,
+        "calibration_error": 0.03
+      },
+      "0.6-0.7": {
+        "predicted_probability": 0.65,
+        "actual_hit_rate": 0.67,
+        "sample_count": 156,
+        "calibration_error": 0.02
+      },
+      "0.7-0.8": {
+        "predicted_probability": 0.75,
+        "actual_hit_rate": 0.73,
+        "sample_count": 123,
+        "calibration_error": 0.02
+      },
+      "0.8-0.9": {
+        "predicted_probability": 0.85,
+        "actual_hit_rate": 0.82,
+        "sample_count": 89,
+        "calibration_error": 0.03
+      },
+      "0.9-1.0": {
+        "predicted_probability": 0.95,
+        "actual_hit_rate": 0.91,
+        "sample_count": 34,
+        "calibration_error": 0.04
+      }
+    },
+    "overall_calibration_score": 0.847,
+    "brier_score": 0.156,
+    "reliability_score": 0.923,
+    "confidence_gate_validation": {
+      "80_threshold_hit_rate": 0.82,
+      "90_threshold_hit_rate": 0.91,
+      "gate_effectiveness": "EXCELLENT"
+    }
+  },
+  "uncertainty_quantification": {
+    "epistemic_uncertainty_avg": 0.067,
+    "aleatoric_uncertainty_avg": 0.123,
+    "total_uncertainty_avg": 0.145,
+    "uncertainty_coverage": 0.923
+  },
+  "model_performance": {
+    "mae": 0.0234,
+    "rmse": 0.0456,
+    "accuracy": 0.785,
+    "precision": 0.823,
+    "recall": 0.756
+  }
+}
