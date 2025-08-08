@@ -50,10 +50,12 @@ Data integrity policy: No demo/synthetic data - only authentic data from real so
 - **Dashboard Architecture:** Five specialized Streamlit dashboards: Main, Comprehensive Market, Analysis Control, Agent, Portfolio, Production Monitoring, and Crypto AI System.
 - **Data Management:** Centralized Data Manager, Dynamic Coin Registry, ML Model Manager.
 - **Deep Learning Engine:** Standardized use of LSTM, GRU, Transformer, N-BEATS for complex pattern detection.
-- **Uncertainty Modeling:** Bayesian neural networks, quantile regression, and ensemble methods for probabilistic outputs and risk-aware trading.
+- **Enterprise ML Uncertainty Quantification (August 2025):** Bayesian LSTM with Monte Carlo sampling, quantile regression ensembles, confidence intervals (68%, 95%, 99%), epistemic vs aleatoric uncertainty decomposition, production-ready uncertainty thresholds.
+- **Market Regime Detection & Routing (August 2025):** Unsupervised regime detector (bull/bear/sideways/volatile), regime-specific model routing with confidence scoring, adaptive feature weighting per regime, regime transition smoothing.
+- **ML Feature Engineering Monitor (August 2025):** Comprehensive leakage detection (look-ahead, target, temporal), SHAP-based feature importance analysis, statistical drift monitoring, automated feature pruning recommendations.
+- **SLO-Driven ML Operations (August 2025):** Formal SLO monitoring with MAE/MAPE/precision@K thresholds, automatic retraining triggers, model rollback capabilities, coverage validation for prediction intervals.
 - **Continual Learning & Meta-Learning:** Automated retraining with drift detection, online learning, and few-shot adaptation for new markets.
 - **Automated Feature Engineering:** Auto-featuretools, deep feature synthesis, and genetic algorithms for continuous feature discovery.
-- **Market Regime Detection:** Unsupervised learning (autoencoders, clustering) for adaptive model switching.
 - **Causal Inference:** Double Machine Learning, Granger Causality, and counterfactual predictions for understanding market movements.
 - **Reinforcement Learning:** PPO for dynamic, risk-aware portfolio allocation and real-time rebalancing.
 - **Self-Healing System:** Autonomous monitoring, black swan detection, and auto-disabling/recovery features.

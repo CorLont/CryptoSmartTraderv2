@@ -19,6 +19,8 @@ from asyncio_throttle.throttler import Throttler
 import ccxt.async_support as ccxt_async
 from dataclasses import dataclass
 from core.logging_manager import get_logger
+from core.data_quality_manager import get_data_quality_manager
+from core.data_integrity_validator import get_data_integrity_validator
 from core.secrets_manager import get_secrets_manager, secure_function, SecretRedactor
 
 @dataclass
@@ -35,6 +37,10 @@ class AsyncDataManager:
         self.exchanges: Dict[str, Any] = {}
         self.logger = logging.getLogger(__name__)
         self.structured_logger = get_logger()
+        
+        # Initialize data quality components
+        self.data_quality_manager = get_data_quality_manager()
+        self.integrity_validator = get_data_integrity_validator()
         
         # Global rate limiter for all API calls
         self.api_semaphore = asyncio.Semaphore(self.rate_limit_config.burst_size)
