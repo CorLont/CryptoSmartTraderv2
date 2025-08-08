@@ -181,4 +181,13 @@ echo 3. Run 3_start_dashboard.bat to launch the main application
 echo.
 echo For GPU acceleration, ensure CUDA is installed on your system.
 echo.
+echo =====================================================
+echo Running comprehensive health check...
+echo =====================================================
+python workstation_health_check.py
+
+echo.
+echo Installation completed successfully!
+echo Run the health check anytime with: python workstation_health_check.py
+echo.
 pause

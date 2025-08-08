@@ -60,7 +60,7 @@ if not exist ".env" (
 )
 
 :: System Health Check
-echo [1/4] Running system health check...
+echo [1/4] Running quick system health check...
 python -c "
 import sys
 import os

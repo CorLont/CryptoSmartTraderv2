@@ -19,17 +19,21 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Minimal application entry point"""
-    st.set_page_config(
-        page_title="CryptoSmartTrader V2",
-        page_icon="📈",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-    
-    # Initialize session state
-    if 'initialized' not in st.session_state:
-        st.session_state.initialized = True
-        logger.info("Application initialized")
+    try:
+        st.set_page_config(
+            page_title="CryptoSmartTrader V2",
+            page_icon="📈",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
+        
+        # Initialize session state
+        if 'initialized' not in st.session_state:
+            st.session_state.initialized = True
+            logger.info("Application initialized")
+    except Exception as e:
+        st.error(f"Application initialization failed: {e}")
+        st.stop()
     
     # Main navigation
     st.sidebar.title("🚀 CryptoSmartTrader V2")
@@ -82,6 +86,16 @@ def main():
             render_shadow_trading_dashboard()
         else:
             render_placeholder_dashboard(page)
+    except Exception as e:
+        st.error(f"Dashboard rendering error: {e}")
+        st.info("Please check system status and try refreshing the page.")
+        
+        # Show error details in expandable section
+        with st.expander("🔍 Error Details"):
+            st.code(str(e))
+            st.info("If this error persists, please run the health check script.")
+            if st.button("🔄 Reload Page"):
+                st.rerun()
             
     except Exception as e:
         st.error(f"Dashboard error: {e}")
