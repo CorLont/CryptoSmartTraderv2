@@ -125,6 +125,21 @@ class SecuritySettings(BaseSettings):
     api_rate_limit_per_hour: int = Field(1000, ge=100, le=10000)
     max_concurrent_connections: int = Field(100, ge=10, le=1000)
     ssl_verify: bool = Field(True, env="SSL_VERIFY")
+    
+    # Vault integration
+    vault_url: Optional[str] = Field(None, env="VAULT_URL")
+    vault_token: Optional[str] = Field(None, env="VAULT_TOKEN")
+    vault_mount_point: str = Field("cryptotrader", env="VAULT_MOUNT_POINT")
+    
+    # Secrets management
+    enable_secret_redaction: bool = Field(True, env="ENABLE_SECRET_REDACTION")
+    secret_rotation_days: int = Field(90, ge=30, le=365, env="SECRET_ROTATION_DAYS")
+    require_vault_for_production: bool = Field(True, env="REQUIRE_VAULT_FOR_PRODUCTION")
+    
+    # Security headers and policies
+    enable_security_headers: bool = Field(True, env="ENABLE_SECURITY_HEADERS")
+    cors_allowed_origins: List[str] = Field(["localhost", "127.0.0.1"], env="CORS_ALLOWED_ORIGINS")
+    max_request_size_mb: int = Field(10, ge=1, le=100, env="MAX_REQUEST_SIZE_MB")
 
 class AppSettings(BaseSettings):
     """Main application configuration aggregating all settings"""

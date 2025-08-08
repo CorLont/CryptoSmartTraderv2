@@ -28,6 +28,7 @@ Data integrity policy: No demo/synthetic data - only authentic data from real so
 - **Storage:** Local file system with JSON/CSV and caching.
 
 ### Key Architectural Decisions
+- **Enterprise Security Framework (August 2025):** Secrets management with Vault integration, log redaction, and principled error handling to prevent API key leakage. All credentials secured via .env/Vault with automatic redaction in logs and tracebacks.
 - **Production-Grade Logging & Monitoring (August 2025):** Enterprise structured JSON logging with correlation IDs, Prometheus metrics (latency/completeness/error-ratio), intelligent alerting with configurable thresholds, full observability stack.
 - **Dependency Injection Container (August 2025):** Full dependency-injector implementation with constructor injection, eliminates global singletons, enables comprehensive testing and mocking.
 - **Pydantic Configuration Management (August 2025):** Type-safe settings with BaseSettings, environment variable support, automatic validation, and centralized .env configuration.

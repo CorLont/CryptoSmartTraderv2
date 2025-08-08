@@ -19,6 +19,7 @@ from asyncio_throttle.throttler import Throttler
 import ccxt.async_support as ccxt_async
 from dataclasses import dataclass
 from core.logging_manager import get_logger
+from core.secrets_manager import get_secrets_manager, secure_function, SecretRedactor
 
 @dataclass
 class RateLimitConfig:
@@ -75,14 +76,15 @@ class AsyncDataManager:
         
         self.logger.info("Async Data Manager initialized")
     
+    @secure_function(redact_kwargs=['apiKey', 'secret'])
     async def setup_async_exchanges(self):
-        """Setup async exchange connections"""
-        import os
+        """Setup async exchange connections with secure credential handling"""
+        secrets_manager = get_secrets_manager()
         
         try:
-            # Kraken async with API credentials
-            kraken_key = os.getenv('KRAKEN_API_KEY')
-            kraken_secret = os.getenv('KRAKEN_SECRET')
+            # Kraken async with secure credentials
+            kraken_key = secrets_manager.get_secret('KRAKEN_API_KEY')
+            kraken_secret = secrets_manager.get_secret('KRAKEN_SECRET')
             
             if kraken_key and kraken_secret:
                 self.exchanges['kraken'] = ccxt_async.kraken({
@@ -92,24 +94,52 @@ class AsyncDataManager:
                     'timeout': 30000,
                     'session': self.session
                 })
+                self.structured_logger.info("Kraken exchange initialized with authenticated API")
             else:
                 self.exchanges['kraken'] = ccxt_async.kraken({
                     'enableRateLimit': True,
                     'timeout': 30000,
                     'session': self.session
                 })
+                self.structured_logger.warning("Kraken exchange initialized in public mode - no API credentials")
             
-            # Additional async exchanges
-            self.exchanges['binance'] = ccxt_async.binance({
-                'enableRateLimit': True,
-                'timeout': 30000,
-                'session': self.session
-            })
+            # Binance with secure credentials
+            binance_key = secrets_manager.get_secret('BINANCE_API_KEY')
+            binance_secret = secrets_manager.get_secret('BINANCE_SECRET')
             
-            self.logger.info(f"Initialized {len(self.exchanges)} async exchanges")
+            if binance_key and binance_secret:
+                self.exchanges['binance'] = ccxt_async.binance({
+                    'apiKey': binance_key,
+                    'secret': binance_secret,
+                    'enableRateLimit': True,
+                    'timeout': 30000,
+                    'session': self.session
+                })
+                self.structured_logger.info("Binance exchange initialized with authenticated API")
+            else:
+                self.exchanges['binance'] = ccxt_async.binance({
+                    'enableRateLimit': True,
+                    'timeout': 30000,
+                    'session': self.session
+                })
+                self.structured_logger.warning("Binance exchange initialized in public mode - no API credentials")
+            
+            self.structured_logger.info(
+                f"Async exchange initialization completed",
+                extra={
+                    'total_exchanges': len(self.exchanges),
+                    'authenticated_exchanges': sum(1 for name in self.exchanges.keys() 
+                                                 if secrets_manager.get_secret(f'{name.upper()}_API_KEY'))
+                }
+            )
             
         except Exception as e:
-            self.logger.error(f"Failed to setup async exchanges: {e}")
+            # Use SecretRedactor to ensure no credentials leak in error logs
+            sanitized_error = SecretRedactor.sanitize_exception(e)
+            self.structured_logger.error(
+                f"Failed to setup async exchanges: {sanitized_error}",
+                extra={'error_type': type(e).__name__}
+            )
     
     async def global_rate_limit(self):
         """Global rate limiter with burst control"""

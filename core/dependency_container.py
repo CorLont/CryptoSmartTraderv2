@@ -12,6 +12,7 @@ from pathlib import Path
 
 from config.settings import AppSettings, get_settings
 from core.async_data_manager import AsyncDataManager, RateLimitConfig
+from core.secrets_manager import SecretsManager, get_secrets_manager
 
 
 class Container(containers.DeclarativeContainer):
@@ -19,6 +20,12 @@ class Container(containers.DeclarativeContainer):
     
     # Configuration
     config = providers.Singleton(get_settings)
+    
+    # Secrets management
+    secrets_manager = providers.Singleton(
+        get_secrets_manager,
+        config=config.provided.dict()
+    )
     
     # Logging
     logger_factory = providers.Factory(
@@ -40,15 +47,25 @@ class Container(containers.DeclarativeContainer):
         rate_limit_config=rate_limit_config
     )
     
-    # Exchange configurations
+    # Secure exchange configurations
     kraken_config = providers.Factory(
-        lambda settings: settings.get_exchange_config('kraken'),
-        settings=config
+        lambda settings, secrets: {
+            **settings.get_exchange_config('kraken'),
+            'apiKey': secrets.get_secret('KRAKEN_API_KEY'),
+            'secret': secrets.get_secret('KRAKEN_SECRET')
+        },
+        settings=config,
+        secrets=secrets_manager
     )
     
     binance_config = providers.Factory(
-        lambda settings: settings.get_exchange_config('binance'),
-        settings=config
+        lambda settings, secrets: {
+            **settings.get_exchange_config('binance'),
+            'apiKey': secrets.get_secret('BINANCE_API_KEY'),
+            'secret': secrets.get_secret('BINANCE_SECRET')
+        },
+        settings=config,
+        secrets=secrets_manager
     )
 
 class AgentContainer(containers.DeclarativeContainer):

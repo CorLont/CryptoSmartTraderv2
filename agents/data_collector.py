@@ -19,6 +19,7 @@ from .base_agent import BaseAgent
 from core.async_data_manager import AsyncDataManager, RateLimitConfig
 from core.dependency_container import Container
 from core.logging_manager import get_logger
+from core.secrets_manager import get_secrets_manager, get_secure_logger
 from config.settings import AppSettings
 
 class AsyncDataCollectorAgent(BaseAgent):
@@ -37,11 +38,17 @@ class AsyncDataCollectorAgent(BaseAgent):
         self.data_manager = data_manager
         self.rate_limit_config = rate_limit_config
         
-        # Initialize structured logger
+        # Initialize structured logger with secret redaction
         self.structured_logger = get_logger({
             'log_dir': str(settings.logging.log_dir),
             'metrics_port': settings.logging.metrics_port
         })
+        
+        # Initialize secrets manager
+        self.secrets_manager = get_secrets_manager()
+        
+        # Wrap logger for automatic secret redaction
+        self.secure_logger = get_secure_logger(self.logger)
         
         # Configuration from settings
         self.collection_interval = self.config.get('collection_interval', 45)
