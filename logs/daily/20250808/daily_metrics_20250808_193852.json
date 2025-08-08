@@ -1,0 +1,44 @@
+{
+  "date": "20250808",
+  "timestamp": "2025-08-08T19:38:52.047664",
+  "metrics_status": "complete",
+  "coverage_audit": {
+    "timestamp": "2025-08-08T19:38:52.048102",
+    "exchange": "kraken",
+    "total_symbols": 457,
+    "processed_symbols": 448,
+    "coverage_percentage": 98.03063457330416,
+    "missing_symbols": [
+      "MISSING_0",
+      "MISSING_1",
+      "MISSING_2",
+      "MISSING_3",
+      "MISSING_4",
+      "MISSING_5",
+      "MISSING_6",
+      "MISSING_7",
+      "MISSING_8"
+    ],
+    "status": "FAIL",
+    "mandatory_check": true
+  },
+  "system_health": {
+    "timestamp": "2025-08-08T19:38:52.049694",
+    "health_score": 75.88336499675646,
+    "individual_metrics": {
+      "cpu_usage": 48.89929102369997,
+      "memory_usage": 72.44668590781589,
+      "disk_usage": 43.505428109829595,
+      "gpu_usage": 89.52295261963249,
+      "api_success_rate": 95.95908365450747,
+      "error_rate": 1.9491425180449093,
+      "uptime_hours": 23.686085773856
+    },
+    "status": "DEGRADED",
+    "mandatory_check": true
+  },
+  "confidence_gate_stats": {
+    "timestamp": "2025-08-08T19:38:52.050020",
+    "confidence_threshold": 0.8,
+    "total_candidates": 41,
+    "passed_gate": 

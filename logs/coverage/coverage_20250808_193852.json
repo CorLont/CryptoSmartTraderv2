@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-08-08T19:38:52.048102",
+  "exchange": "kraken",
+  "total_symbols": 457,
+  "processed_symbols": 448,
+  "coverage_percentage": 98.03063457330416,
+  "missing_symbols": [
+    "MISSING_0",
+    "MISSING_1",
+    "MISSING_2",
+    "MISSING_3",
+    "MISSING_4",
+    "MISSING_5",
+    "MISSING_6",
+    "MISSING_7",
+    "MISSING_8"
+  ],
+  "status": "FAIL",
+  "mandatory_check": true
+}
