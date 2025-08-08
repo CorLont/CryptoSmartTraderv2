@@ -53,6 +53,7 @@ def main():
             "🌍 Market Regime Detection",
             "🧠 Causal Inference",
             "🤖 RL Portfolio Allocation",
+            "🔧 Self-Healing System",
             "⚙️ System Configuration",
             "📈 Health Monitor"
         ]
@@ -68,6 +69,8 @@ def main():
             render_causal_dashboard()
         elif page == "🤖 RL Portfolio Allocation":
             render_rl_dashboard()
+        elif page == "🔧 Self-Healing System":
+            render_self_healing_dashboard()
         else:
             render_placeholder_dashboard(page)
             
@@ -203,6 +206,65 @@ def render_rl_dashboard():
         
         if st.button("🚀 Test Portfolio Optimization"):
             st.success("RL portfolio system would optimize allocations here!")
+
+def render_self_healing_dashboard():
+    """Render self-healing dashboard"""
+    st.title("🔧 Self-Healing & Auto-Disabling System")
+    st.markdown("Autonomous system protection against performance degradation and anomalies")
+    
+    # Import check
+    try:
+        from dashboards.self_healing_dashboard import SelfHealingDashboard
+        healing_dashboard = SelfHealingDashboard()
+        healing_dashboard.render()
+    except Exception as e:
+        st.error(f"Self-healing dashboard unavailable: {e}")
+        
+        # Fallback content
+        st.header("🔧 Self-Healing Features")
+        st.info("""**Capabilities:**
+
+- **Black Swan Detection:** Automatic detection of extreme market events
+- **Performance Monitoring:** Continuous monitoring of all system components  
+- **Auto-Disabling:** Automatic component shutdown during anomalies
+- **Data Gap Detection:** Identification and response to data interruptions
+- **Security Alerts:** Real-time security threat monitoring
+- **Auto-Recovery:** Intelligent system recovery after incidents
+- **Component Control:** Manual override and control capabilities""")
+        
+        # Demo metrics
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("System Health", "98.5%", delta="🟢")
+        
+        with col2:
+            st.metric("Active Components", "12/12", delta="✅")
+        
+        with col3:
+            st.metric("Recent Alerts", "0", delta="✅")
+        
+        with col4:
+            st.metric("Auto-Recoveries", "3", delta="+1")
+        
+        # Simulated status
+        st.header("📊 Component Status")
+        
+        components = [
+            ("Trading Engine", "🟢", "99.2%"),
+            ("ML Predictions", "🟢", "97.8%"),
+            ("Causal Inference", "🟢", "96.5%"),
+            ("RL Portfolio", "🟢", "98.1%"),
+            ("Market Scanner", "🟢", "99.7%"),
+            ("Data Pipeline", "🟢", "98.9%")
+        ]
+        
+        status_data = pd.DataFrame(components, columns=["Component", "Status", "Performance"])
+        st.dataframe(status_data, use_container_width=True)
+        
+        if st.button("🧪 Test Self-Healing"):
+            st.warning("Self-healing system would automatically protect against anomalies here!")
+            st.info("Features include black swan detection, auto-disabling faulty components, and intelligent recovery.")
 
 def render_placeholder_dashboard(page_name):
     """Render placeholder for other dashboards"""
