@@ -69,6 +69,7 @@ Data integrity policy: ZERO-TOLERANCE for incomplete data - coins with missing s
 - **Multi-Horizon Batch Inference Engine (August 2025):** Unified batch processing system for all coins across all horizons (1H/4H/24H/7D/30D) with atomic operations, uniform feature engineering, parallel processing, and comprehensive SLO monitoring for systematic ML predictions.
 - **Strict Confidence Gate Manager (August 2025):** Hard confidence threshold enforcement in orchestration and dashboard - shows NOTHING when no candidates meet 80% confidence threshold, with comprehensive empty state handling and gate status monitoring.
 - **Shadow Trading Engine with Mandatory Soak Period (August 2025):** Comprehensive paper trading system with 4-8 week mandatory soak period, P&L verification, false positive ratio monitoring, and automated live trading authorization only after passing all validation criteria.
+- **Multi-Horizon Signal Quality Validator (August 2025):** Enterprise signal validation system with Precision@K ≥60%, hit-rates ≥55%, MAE calibration ≤0.25×median(|pred|), Sharpe ≥1.0, max drawdown ≤15%, and calibration testing across 1H/24H/7D/30D horizons using 4-8 weeks out-of-sample data.
 
 ## External Dependencies
 
