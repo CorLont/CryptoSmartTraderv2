@@ -1,7 +1,6 @@
 # orchestration/strict_gate_standalone.py
 # Standalone strict backend gate implementation - geen dependencies op andere agents
 import pandas as pd
-import numpy as np
 from pathlib import Path
 
 def apply_strict_gate_orchestration(pred_df: pd.DataFrame, pred_col="pred_720h", conf_col="conf_720h", threshold=0.80):
@@ -25,7 +24,7 @@ def apply_strict_gate_orchestration(pred_df: pd.DataFrame, pred_col="pred_720h",
     
     # Sort by prediction strength
     if not filtered.empty:
-        filtered = filtered.sort_values(pred_col, ascending=False).reset_index(drop=True)
+        filtered = filtered.sort_values(by=pred_col, ascending=False).reset_index(drop=True)
     
     return filtered
 

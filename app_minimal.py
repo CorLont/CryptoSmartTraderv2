@@ -31,10 +31,6 @@ try:
     from core.data_completeness_gate import DataCompletenessGate
     from core.secure_logging import get_secure_logger
     from ml.enhanced_calibration import EnhancedCalibratorV2
-    from utils.timestamp_validator import normalize_timestamp, validate_timestamp_sequence
-    from ml.temporal_integrity_validator import validate_temporal_integrity
-    # Import statements that might fail silently
-    pass
     CONFIDENCE_GATE_AVAILABLE = True
     ENTERPRISE_FIXES_AVAILABLE = True
     TEMPORAL_VALIDATION_AVAILABLE = True
@@ -43,6 +39,14 @@ except ImportError as e:
     ENTERPRISE_FIXES_AVAILABLE = False
     TEMPORAL_VALIDATION_AVAILABLE = False
     logger.warning(f"Enterprise features not available: {e}")
+
+# Import strict gate for backend enforcement
+try:
+    from orchestration.strict_gate_standalone import apply_strict_gate_orchestration
+    from utils.authentic_opportunities import get_authentic_opportunities_count
+    STRICT_GATE_AVAILABLE = True
+except ImportError:
+    STRICT_GATE_AVAILABLE = False
 
 def main():
     """Minimal application entry point"""
