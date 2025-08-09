@@ -359,10 +359,14 @@ def main():
     # Save results
     save_test_results()  # FIXED: Remove await
     
+    # FIXED: Assertive result control with clear exit status
+    all_tests_passed = (passed_tests == total_tests)
+    
     print(f"\n{'='*60}")
     print("🏁 TEST SUMMARY")
     print(f"Passed: {passed_tests}/{total_tests}")
     print(f"Success rate: {passed_tests/total_tests*100:.1f}%")
+    print(f"Exit status: {'SUCCESS' if all_tests_passed else 'FAILURE'}")
     
     print("\n🎯 IMPLEMENTATION VALIDATIE:")
     print("✅ Great Expectations integration voor schema validatie")
@@ -374,19 +378,38 @@ def main():
     print("✅ Coverage validation ≥99% Kraken symbols")
     print("✅ Success threshold ≥98% Great Expectations suite")
     
-    # FIXED: Only show success if all tests pass
-    if passed_tests == total_tests:
+    # FIXED: Consistent logging and exit status alignment
+    if all_tests_passed:
         print("\n✅ FEATURE PIPELINE VOLLEDIG GEÏMPLEMENTEERD!")
         print("📂 Output locatie: exports/features.parquet")
         print("📊 Logs locatie: logs/daily/[YYYYMMDD]/feature_pipeline_test_*.json")
+        print("🚀 READY FOR DEPLOYMENT")
     else:
         print("\n❌ FEATURE PIPELINE NIET VOLLEDIG GEÏMPLEMENTEERD")
         print(f"   {total_tests - passed_tests} van {total_tests} tests gefaald")
         print("   Fix problemen voordat deployment")
+        print("🛑 DEPLOYMENT BLOCKED")
     
-    return passed_tests == total_tests
+    return all_tests_passed
 
 if __name__ == "__main__":
     import sys
-    success = main()  # FIXED: Remove asyncio.run()
-    sys.exit(0 if success else 1)
+    
+    # FIXED: Assertive result control with clear logging
+    try:
+        success = main()
+        exit_code = 0 if success else 1
+        
+        print(f"\n{'='*60}")
+        print("🎯 FINAL EXIT STATUS")
+        print(f"Success: {success}")
+        print(f"Exit code: {exit_code}")
+        print(f"Status: {'✅ PASS' if success else '❌ FAIL'}")
+        print("="*60)
+        
+        sys.exit(exit_code)
+        
+    except Exception as e:
+        print(f"\n❌ CRITICAL TEST SUITE ERROR: {e}")
+        print("Exit code: 2 (critical failure)")
+        sys.exit(2)
