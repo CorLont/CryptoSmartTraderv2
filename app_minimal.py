@@ -66,13 +66,30 @@ def main():
     st.sidebar.title("🚀 CryptoSmartTrader V2")
     st.sidebar.markdown("---")
     
-    # Simple health check based on model files
+    # Enhanced health check (implementing review feedback)
     import os
+    from pathlib import Path
+    
     models_present = all(os.path.exists(f"models/saved/rf_{h}.pkl") for h in ["1h","24h","168h","720h"])
     features_exist = os.path.exists("exports/features.parquet")
+    predictions_exist = os.path.exists("exports/production/predictions.csv")
     
-    if models_present and features_exist:
-        st.sidebar.success("🟢 System Ready")
+    # Calculate readiness score (per review requirements)
+    checks = [models_present, features_exist, predictions_exist]
+    readiness_score = sum(checks) / len(checks) * 100
+    
+    if readiness_score >= 90:
+        st.sidebar.success(f"🟢 System Ready ({readiness_score:.0f}/100)")
+    elif readiness_score >= 70:
+        st.sidebar.warning(f"🟠 System Degraded ({readiness_score:.0f}/100)")
+    else:
+        st.sidebar.error(f"🔴 System Not Ready ({readiness_score:.0f}/100)")
+        
+    # Block AI tabs if models not present (hard gate per review)
+    if not models_present:
+        st.error("⚠️ Geen getrainde modellen. AI-tabs uitgeschakeld.")
+        st.info("Train eerst modellen via: python ml/train_baseline.py")
+        st.stop()  # Hard abort
         st.sidebar.info("Alle modellen getraind")
     else:
         st.sidebar.error("🔴 System Not Ready")

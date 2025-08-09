@@ -1,157 +1,111 @@
-#!/usr/bin/env python3
-"""
-Standalone Strict Gate - Isolated version zonder dependencies
-Voor direct testen van strict filtering functionaliteit
-"""
-
+# orchestration/strict_gate_standalone.py
+# Standalone strict backend gate implementation - geen dependencies op andere agents
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Any, Optional
-from datetime import datetime
+from pathlib import Path
 
-def strict_filter_single(pred_df: pd.DataFrame, pred_col: str = "pred_720h", conf_col: str = "conf_720h", thr: float = 0.80) -> pd.DataFrame:
+def apply_strict_gate_orchestration(pred_df: pd.DataFrame, pred_col="pred_720h", conf_col="conf_720h", threshold=0.80):
     """
-    Single horizon strict filter (standalone version)
+    Strict backend enforcement van confidence gate
+    Returnt lege DataFrame als geen data voldoet aan threshold
     
-    Args:
-        pred_df: DataFrame with predictions
-        pred_col: prediction column name
-        conf_col: confidence column name  
-        thr: confidence threshold
-    
-    Returns:
-        Filtered DataFrame
+    Deze functie mag NOOIT fallback data of placeholders gebruiken
     """
-    
     if pred_df is None or pred_df.empty:
         return pd.DataFrame()
     
-    # Clean and filter
+    # Drop NaN values - geen fallbacks toegestaan
     clean_df = pred_df.dropna(subset=[pred_col, conf_col])
-    filtered_df = clean_df[clean_df[conf_col] >= thr].copy()
     
-    # Sort by prediction value (highest first)
-    if not filtered_df.empty:
-        filtered_df = filtered_df.sort_values(pred_col, ascending=False).reset_index(drop=True)
+    if clean_df.empty:
+        return pd.DataFrame()
     
-    return filtered_df
+    # Strict filtering - alleen >= threshold
+    filtered = clean_df[clean_df[conf_col] >= threshold]
+    
+    # Sort by prediction strength
+    if not filtered.empty:
+        filtered = filtered.sort_values(pred_col, ascending=False).reset_index(drop=True)
+    
+    return filtered
 
-def apply_strict_gate_orchestration(predictions_by_horizon: Dict[str, pd.DataFrame], thr: float = 0.80) -> Dict[str, Any]:
+def strict_toplist_multi_horizon(pred_df: pd.DataFrame, threshold=0.80):
     """
-    Apply strict confidence gate across all horizons
-    
-    Args:
-        predictions_by_horizon: {horizon: df with coin, timestamp, pred_{horizon}, conf_{horizon}}
-        thr: confidence threshold (default 0.80)
-    
-    Returns:
-        Gate results with filtered predictions per horizon
+    Multi-horizon strict filtering voor alle timeframes
     """
+    if pred_df is None or pred_df.empty:
+        return {}
     
-    print(f"🚪 Applying strict {thr:.0%} confidence gate...")
+    results = {}
+    horizons = ['1h', '24h', '168h', '720h']
     
-    gate_results = {
-        "gate_status": "EMPTY",
-        "total_candidates": 0,
-        "total_passed": 0,
-        "per_horizon": {},
-        "threshold": thr,
-        "applied_at": datetime.now().isoformat()
-    }
+    for h in horizons:
+        pred_col = f'pred_{h}'
+        conf_col = f'conf_{h}'
+        
+        if pred_col in pred_df.columns and conf_col in pred_df.columns:
+            filtered = apply_strict_gate_orchestration(
+                pred_df, pred_col, conf_col, threshold
+            )
+            results[h] = filtered
+        else:
+            results[h] = pd.DataFrame()
     
-    for horizon, df in predictions_by_horizon.items():
-        if df.empty:
-            gate_results["per_horizon"][horizon] = pd.DataFrame()
-            continue
-        
-        # Expected column names
-        pred_col = f"pred_{horizon}"
-        conf_col = f"conf_{horizon}"
-        
-        # Validate required columns
-        required_cols = ["coin", "timestamp", pred_col, conf_col]
-        missing_cols = [col for col in required_cols if col not in df.columns]
-        
-        if missing_cols:
-            print(f"  ❌ {horizon}: Missing columns {missing_cols}")
-            gate_results["per_horizon"][horizon] = pd.DataFrame()
-            continue
-        
-        # Clean data (remove NaN)
-        clean_df = df[required_cols].dropna()
-        candidates = len(clean_df)
-        
-        if candidates == 0:
-            print(f"  ❌ {horizon}: No valid candidates after cleaning")
-            gate_results["per_horizon"][horizon] = pd.DataFrame()
-            continue
-        
-        # Apply strict confidence filter
-        passed_df = clean_df[clean_df[conf_col] >= thr].copy()
-        passed_count = len(passed_df)
-        
-        # Sort by confidence descending
-        if not passed_df.empty:
-            passed_df = passed_df.sort_values(conf_col, ascending=False)
-        
-        gate_results["total_candidates"] += candidates
-        gate_results["total_passed"] += passed_count
-        gate_results["per_horizon"][horizon] = passed_df
-        
-        pass_rate = passed_count / candidates if candidates > 0 else 0
-        print(f"  {horizon}: {passed_count}/{candidates} passed ({pass_rate:.1%})")
-    
-    # Overall gate status
-    if gate_results["total_passed"] > 0:
-        gate_results["gate_status"] = "OK"
-    else:
-        gate_results["gate_status"] = "BLOCKED"
-    
-    overall_pass_rate = (gate_results["total_passed"] / max(gate_results["total_candidates"], 1)) * 100
-    print(f"🚪 Gate result: {gate_results['gate_status']} - {gate_results['total_passed']}/{gate_results['total_candidates']} passed ({overall_pass_rate:.1f}%)")
-    
-    return gate_results
+    return results
 
-if __name__ == "__main__":
-    print("Testing Standalone Strict Confidence Gate")
-    print("=" * 40)
+def get_strict_opportunities_count(pred_df: pd.DataFrame, threshold=0.80):
+    """
+    Authentic count van opportunities - geen fake numbers
+    """
+    if pred_df is None or pred_df.empty:
+        return 0
     
-    # Create test data
-    np.random.seed(42)
-    n_samples = 100
+    # Check alle horizons
+    horizons = ['1h', '24h', '168h', '720h'] 
+    total_opportunities = 0
     
-    test_data = {
-        "1h": pd.DataFrame({
-            "coin": [f"COIN_{i:03d}" for i in range(n_samples)],
-            "timestamp": pd.date_range("2024-01-01", periods=n_samples, freq="H"),
-            "pred_1h": np.random.normal(0, 0.02, n_samples),
-            "conf_1h": np.random.beta(8, 2, n_samples)  # Skewed toward high confidence
-        }),
-        "24h": pd.DataFrame({
-            "coin": [f"COIN_{i:03d}" for i in range(n_samples)],
-            "timestamp": pd.date_range("2024-01-01", periods=n_samples, freq="H"),
-            "pred_24h": np.random.normal(0, 0.05, n_samples),
-            "conf_24h": np.random.beta(5, 3, n_samples)  # More spread
-        })
-    }
+    for h in horizons:
+        pred_col = f'pred_{h}'
+        conf_col = f'conf_{h}'
+        
+        if pred_col in pred_df.columns and conf_col in pred_df.columns:
+            clean = pred_df.dropna(subset=[pred_col, conf_col])
+            high_conf = clean[clean[conf_col] >= threshold]
+            total_opportunities += len(high_conf)
     
-    print("Test data created:")
-    for horizon, df in test_data.items():
-        high_conf = (df[f"conf_{horizon}"] >= 0.80).sum()
-        print(f"  {horizon}: {len(df)} samples, {high_conf} with ≥80% confidence")
+    return total_opportunities
+
+def validate_predictions_authentic(pred_df: pd.DataFrame):
+    """
+    Valideer dat predictions authentiek zijn (geen fake confidence values)
+    """
+    if pred_df is None or pred_df.empty:
+        return False, "No predictions available"
     
-    # Test strict gate
-    print("\nApplying strict 80% gate...")
-    gate_results = apply_strict_gate_orchestration(test_data, thr=0.80)
+    horizons = ['1h', '24h', '168h', '720h']
+    required_cols = []
     
-    print(f"\nGate Results:")
-    print(f"  Status: {gate_results['gate_status']}")
-    print(f"  Total passed: {gate_results['total_passed']}/{gate_results['total_candidates']}")
+    for h in horizons:
+        required_cols.extend([f'pred_{h}', f'conf_{h}'])
     
-    for horizon, passed_df in gate_results["per_horizon"].items():
-        if not passed_df.empty:
-            mean_conf = passed_df[f"conf_{horizon}"].mean()
-            mean_pred = passed_df[f"pred_{horizon}"].mean()
-            print(f"  {horizon}: {len(passed_df)} passed, μ_conf={mean_conf:.3f}, μ_pred={mean_pred:+.4f}")
+    missing_cols = [col for col in required_cols if col not in pred_df.columns]
+    if missing_cols:
+        return False, f"Missing columns: {missing_cols}"
     
-    print("\n✅ Standalone strict gate test complete!")
+    # Check for authentic confidence values (ensemble-based should vary)
+    for h in horizons:
+        conf_col = f'conf_{h}'
+        conf_values = pred_df[conf_col].dropna()
+        
+        if len(conf_values) == 0:
+            continue
+            
+        # Authentic confidence should have variance (not all same value)
+        if conf_values.std() < 0.001:  # Too uniform = likely fake
+            return False, f"Suspicious uniform confidence in {conf_col}"
+        
+        # Should be in reasonable range
+        if conf_values.min() < 0 or conf_values.max() > 1:
+            return False, f"Invalid confidence range in {conf_col}"
+    
+    return True, "Predictions appear authentic"
