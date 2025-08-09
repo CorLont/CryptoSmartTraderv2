@@ -7,7 +7,7 @@ The enterprise architecture goals include higher prediction accuracy, zero dummy
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
-Data integrity policy: ZERO-TOLERANCE for incomplete data - coins with missing sentiment/on-chain/technical data are HARD BLOCKED from training and display. Only authentic data from real sources with 80%+ completeness allowed. No fallback, no synthetic data, no incomplete coins passed through.
+Data integrity policy: ABSOLUTE ZERO-TOLERANCE for synthetic/fallback data - Complete elimination of all non-authentic data sources in production mode. Only 100% authentic data from direct exchange APIs allowed. Production automatically blocks any violations. No fallback, no synthetic data, no interpolated values, no NaN values allowed in production. Strict data integrity enforcement with real-time validation and automatic production blocking.
 Enterprise code quality: Complete enterprise-grade code audit system implemented based on critical failure mode checklist. All 11 categories audited with 7 critical fixes applied achieving 100% success rate (August 2025).
 
 ## System Architecture

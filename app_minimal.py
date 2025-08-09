@@ -959,12 +959,31 @@ def render_market_dashboard():
     prices = np.random.uniform(100, 50000, len(coins))
     changes = np.random.uniform(-5, 5, len(coins))
     
+    # DEMO: Show strict data integrity enforcement
+    from core.strict_data_integrity import DataSource, StrictDataIntegrityEnforcer
+    
     market_data = pd.DataFrame({
         "Coin": coins,
         "Price (EUR)": [f"€{p:.2f}" for p in prices],
         "24h Change": [f"{c:.2f}%" for c in changes],
         "Status": ["🟢 Active" for _ in coins]
     })
+    
+    # Mark demo data as synthetic (for integrity validation)
+    data_sources = {
+        'Price (EUR)': DataSource.SYNTHETIC,     # VIOLATION: Not authentic
+        '24h Change': DataSource.SYNTHETIC,      # VIOLATION: Not authentic  
+        'Status': DataSource.SYNTHETIC           # VIOLATION: Not authentic
+    }
+    
+    # Validate data integrity (demo mode)
+    enforcer = StrictDataIntegrityEnforcer(production_mode=False)
+    integrity_report = enforcer.validate_data_integrity(market_data, data_sources)
+    
+    # Show integrity status
+    if not integrity_report.is_production_ready:
+        st.warning("🚨 DEMO DATA - In productie wordt dit geblokkeerd")
+        st.error(f"Data integrity: {integrity_report.critical_violations} kritieke violations")
     
     st.dataframe(market_data, use_container_width=True)
     
