@@ -793,33 +793,34 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
     # Models are ready - generate real predictions
     st.success("✅ Modellen beschikbaar - generating predictions...")
     
-    # Load features and generate predictions
+    # Load actual predictions from production output
     try:
-        features_df = pd.read_parquet("exports/features.parquet")
-        sample_features = features_df.tail(20)  # Latest 20 samples
+        predictions_file = Path("exports/production/predictions.csv")
         
-        from ml.models.predict import predict_all
-        predictions_df = predict_all(sample_features)
-        
-        if not predictions_df.empty:
-            # Convert to format expected by dashboard
+        if predictions_file.exists():
+            pred_df = pd.read_csv(predictions_file)
+            
+            # Convert to dashboard format
             predictions = []
-            for _, row in predictions_df.iterrows():
-                for h in ["1h", "24h", "168h", "720h"]:
-                    pred_col = f"pred_{h}"
-                    conf_col = f"conf_{h}"
-                    if pred_col in row and conf_col in row:
-                        predictions.append({
-                            'coin': row['coin'],
-                            'horizon': h,
-                            'prediction': row[pred_col],
-                            'confidence': row[conf_col]
-                        })
+            for _, row in pred_df.iterrows():
+                predictions.append({
+                    'coin': row['coin'],
+                    'horizon': row['horizon'],
+                    'prediction': row.get('expected_return_pct', 0) / 100,  # Convert back to decimal
+                    'confidence': row.get(f"conf_{row['horizon']}", 0.8),
+                    'expected_return_pct': row.get('expected_return_pct', 0),
+                    'risk_score': row.get('risk_score', 0.2),
+                    'regime': row.get('regime', 'UNKNOWN'),
+                    'actionable': row.get('actionable', False)
+                })
+            
+            st.success(f"Loaded {len(predictions)} real predictions from production output")
         else:
+            st.error("No predictions.csv found - run predictions generator first")
             predictions = []
             
     except Exception as e:
-        st.error(f"Prediction generation failed: {e}")
+        st.error(f"Failed to load predictions: {e}")
         predictions = []
     
     if not predictions:

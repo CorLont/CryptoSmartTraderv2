@@ -1,0 +1,66 @@
+{
+  "generation_timestamp": "2025-08-09T10:15:45.116633+00:00",
+  "model_info": {
+    "available_models": [
+      "1h",
+      "24h",
+      "168h",
+      "720h"
+    ],
+    "total_ensemble_members": 12
+  },
+  "prediction_stats": {
+    "total_predictions": 800,
+    "unique_coins": 20,
+    "horizons": [
+      "1h",
+      "24h",
+      "168h",
+      "720h"
+    ],
+    "actionable_signals": 168
+  },
+  "confidence_stats": {
+    "mean_confidence": 0.9993746724224721,
+    "min_confidence": 0.9970807103333015,
+    "max_confidence": 0.9999671673030756
+  },
+  "return_stats": {
+    "mean_expected_return": -0.0339377052663935,
+    "positive_predictions": 367,
+    "negative_predictions": 433
+  },
+  "regime_distribution": {
+    "SIDEWAYS": 746,
+    "BEAR": 25,
+    "BULL": 24,
+    "VOLATILE": 5
+  },
+  "gate_statistics": {
+    "total_candidates": 800,
+    "total_passed": 800,
+    "per_horizon": {
+      "1h": {
+        "candidates": 200,
+        "passed": 200,
+        "pass_rate": 1.0
+      },
+      "24h": {
+        "candidates": 200,
+        "passed": 200,
+        "pass_rate": 1.0
+      },
+      "168h": {
+        "candidates": 200,
+        "passed": 200,
+        "pass_rate": 1.0
+      },
+      "720h": {
+        "candidates": 200,
+        "passed": 200,
+        "pass_rate": 1.0
+      }
+    },
+    "gate_status": "OK"
+  }
+}

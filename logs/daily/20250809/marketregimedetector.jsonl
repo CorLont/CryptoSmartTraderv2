@@ -1,0 +1,10 @@
+{"asctime": "2025-08-09 10:10:07", "name": "MarketRegimeDetector", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Engineered regime features: 20000 samples"}
+{"asctime": "2025-08-09 10:10:10", "name": "MarketRegimeDetector", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Regime model fitted with 4 regimes"}
+{"asctime": "2025-08-09 10:12:08", "name": "MarketRegimeDetector", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Engineered regime features: 20000 samples"}
+{"asctime": "2025-08-09 10:12:11", "name": "MarketRegimeDetector", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Regime model fitted with 4 regimes"}
+{"asctime": "2025-08-09 10:12:11", "name": "MarketRegimeDetector", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Regime model saved to models/regime_detector.pkl"}
+{"asctime": "2025-08-09 10:12:11", "name": "MarketRegimeDetector", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Insufficient data for 1h calibration: 50 samples"}
+{"asctime": "2025-08-09 10:12:11", "name": "MarketRegimeDetector", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Insufficient data for 24h calibration: 50 samples"}
+{"asctime": "2025-08-09 10:12:11", "name": "MarketRegimeDetector", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Insufficient data for 168h calibration: 50 samples"}
+{"asctime": "2025-08-09 10:12:11", "name": "MarketRegimeDetector", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "Insufficient data for 720h calibration: 50 samples"}
+{"asctime": "2025-08-09 10:12:11", "name": "MarketRegimeDetector", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "Calibration fitting failed - no horizons calibrated"}

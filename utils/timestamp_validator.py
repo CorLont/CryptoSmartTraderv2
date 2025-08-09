@@ -1,88 +1,67 @@
 #!/usr/bin/env python3
 """
-Timestamp Validation Utility
-Ensures proper timezone handling and candle alignment
+Timestamp Validator - UTC normalization and temporal integrity
 """
 
 import pandas as pd
 from datetime import datetime, timezone
-from typing import Union, Dict, Any
+from typing import Dict, Any, List, Union
 
-def normalize_timestamp(ts: Union[str, pd.Timestamp, datetime], target_tz: str = 'UTC') -> pd.Timestamp:
-    """Normalize timestamp to UTC with proper timezone handling"""
+def normalize_timestamp(timestamp: Union[str, datetime, pd.Timestamp], target_timezone: str = "UTC") -> pd.Timestamp:
+    """Normalize timestamp to UTC"""
     
-    if isinstance(ts, str):
-        ts = pd.to_datetime(ts)
+    if pd.isna(timestamp):
+        return pd.NaT
     
-    if isinstance(ts, datetime):
-        ts = pd.Timestamp(ts)
+    # Convert to pandas timestamp
+    if isinstance(timestamp, str):
+        ts = pd.to_datetime(timestamp)
+    elif isinstance(timestamp, datetime):
+        ts = pd.Timestamp(timestamp)
+    else:
+        ts = pd.Timestamp(timestamp)
     
-    # Add timezone if missing
+    # Convert to UTC if not already
     if ts.tz is None:
         ts = ts.tz_localize('UTC')
-    
-    # Convert to target timezone
-    if target_tz != 'UTC':
-        ts = ts.tz_convert(target_tz)
+    else:
+        ts = ts.tz_convert('UTC')
     
     return ts
 
-def align_to_candle_boundary(ts: pd.Timestamp, freq: str = '1H') -> pd.Timestamp:
-    """Align timestamp to candle boundary (e.g., hourly)"""
-    return ts.floor(freq)
-
-def validate_timestamp_sequence(df: pd.DataFrame, ts_col: str = 'ts') -> Dict[str, Any]:
-    """Validate timestamp sequence in DataFrame"""
+def validate_timestamp_sequence(timestamps: pd.Series) -> Dict[str, Any]:
+    """Validate timestamp sequence for temporal integrity"""
+    
+    if timestamps.empty:
+        return {"valid": False, "issues": ["Empty timestamp series"]}
     
     issues = []
     
-    if ts_col not in df.columns:
-        return {"valid": False, "issues": [f"Timestamp column '{ts_col}' not found"]}
-    
-    ts_series = df[ts_col]
-    
-    # Check timezone
-    if hasattr(ts_series.dtype, 'tz') and ts_series.dt.tz is None:
-        issues.append("Missing timezone information")
-    
-    # Check sorting
-    if not ts_series.is_monotonic_increasing:
-        issues.append("Timestamps not in ascending order")
+    # Check for missing timestamps
+    missing_count = timestamps.isna().sum()
+    if missing_count > 0:
+        issues.append(f"{missing_count} missing timestamps")
     
     # Check for duplicates
-    duplicates = ts_series.duplicated().sum()
-    if duplicates > 0:
-        issues.append(f"{duplicates} duplicate timestamps")
+    duplicate_count = timestamps.duplicated().sum()
+    if duplicate_count > 0:
+        issues.append(f"{duplicate_count} duplicate timestamps")
     
-    # Check alignment (hourly candles)
-    if not ts_series.empty:
-        misaligned = (ts_series != ts_series.dt.floor('1H')).sum()
-        if misaligned > 0:
-            issues.append(f"{misaligned} timestamps not aligned to hourly candles")
+    # Check for chronological order
+    sorted_timestamps = timestamps.dropna().sort_values()
+    if not timestamps.dropna().equals(sorted_timestamps):
+        issues.append("Timestamps not in chronological order")
+    
+    # Check for reasonable time gaps
+    if len(timestamps.dropna()) > 1:
+        time_diffs = timestamps.dropna().diff().dropna()
+        if time_diffs.max() > pd.Timedelta(days=7):
+            issues.append("Large time gaps detected (>7 days)")
     
     return {
         "valid": len(issues) == 0,
         "issues": issues,
-        "total_timestamps": len(ts_series),
-        "duplicates": duplicates
+        "total_timestamps": len(timestamps),
+        "missing_timestamps": missing_count,
+        "duplicate_timestamps": duplicate_count
     }
-
-def fix_dataframe_timestamps(df: pd.DataFrame, ts_col: str = 'ts') -> pd.DataFrame:
-    """Fix common timestamp issues in DataFrame"""
-    
-    df_fixed = df.copy()
-    
-    if ts_col in df_fixed.columns:
-        # Normalize timestamps
-        df_fixed[ts_col] = df_fixed[ts_col].apply(normalize_timestamp)
-        
-        # Align to candle boundaries
-        df_fixed[ts_col] = df_fixed[ts_col].apply(align_to_candle_boundary)
-        
-        # Remove duplicates (keep last)
-        df_fixed = df_fixed.drop_duplicates(subset=[ts_col], keep='last')
-        
-        # Sort by timestamp
-        df_fixed = df_fixed.sort_values(ts_col)
-    
-    return df_fixed
