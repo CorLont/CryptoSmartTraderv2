@@ -9,6 +9,7 @@ import time
 import json
 import pandas as pd
 import numpy as np  # FIXED: Add missing numpy import
+import random  # FIXED: Add for deterministic tests
 from datetime import datetime
 from pathlib import Path
 
@@ -21,6 +22,10 @@ async def test_feature_building():
     print()
     
     try:
+        # FIXED: Set seeds for deterministic results
+        random.seed(42)
+        np.random.seed(42)
+        
         # Import feature builder
         from ml.features.build_features import build_crypto_features, FeatureMerger
         
@@ -109,8 +114,9 @@ async def test_great_expectations_mock():
     print("=" * 60)
     
     try:
-        # Create mock feature data
-        import numpy as np
+        # FIXED: Set seeds for deterministic results
+        random.seed(42)
+        np.random.seed(42)
         
         print("📊 Creating mock feature data...")
         
@@ -204,6 +210,10 @@ async def test_atomic_export():
     print("=" * 40)
     
     try:
+        # FIXED: Set seeds for deterministic results
+        random.seed(42)
+        np.random.seed(42)
+        
         # Create test data
         test_data = {
             "symbol": ["BTC", "ETH"] * 50,
