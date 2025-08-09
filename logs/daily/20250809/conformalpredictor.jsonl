@@ -1,0 +1,13 @@
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Calibrating conformal predictor with 200 samples"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Conformal calibration complete"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Target coverage: 80.0%"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Actual coverage: 80.5%"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Quantile threshold: 1.7495"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generated conformal intervals for 50 predictions"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Mean interval width: 3.4991"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Calculating funding rate features"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Funding features calculated - current rate: -0.000431"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Analyzing order book imbalance"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Order book analysis complete - imbalance: 0.039"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Optimizing position sizes for 3 assets"}
+{"asctime": "2025-08-09 09:47:09", "name": "ConformalPredictor", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Portfolio optimization complete - 3 positions"}
