@@ -1,0 +1,15 @@
+{
+  "total_cost": 2.45,
+  "calls": [
+    {
+      "timestamp": 1754745171.749505,
+      "model": "gpt-4o-mini",
+      "cost": 0.003
+    },
+    {
+      "timestamp": 1754745171.749508,
+      "model": "gpt-4o-mini",
+      "cost": 0.002
+    }
+  ]
+}

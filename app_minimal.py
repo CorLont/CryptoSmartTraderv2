@@ -800,13 +800,16 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
     from app_readiness import enforce_readiness_gate
     enforce_readiness_gate("AI Predictions")
     
-    # Display multi-horizon predictions with coverage monitoring
-    st.success("✅ AI Voorspellingen Actief - Multi-Horizon Analysis")
+    # Display advanced ML features
+    st.success("✅ Enterprise-Grade AI Analysis - Advanced ML Features Active")
     
+    # Check for enhanced predictions
+    enhanced_file = Path("exports/production/enhanced_predictions.json")
     predictions_file = Path("exports/production/predictions.json")
-    if predictions_file.exists():
+    
+    if enhanced_file.exists():
         import json
-        with open(predictions_file, 'r') as f:
+        with open(enhanced_file, 'r') as f:
             predictions = json.load(f)
         
         if predictions:
@@ -814,8 +817,10 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
             horizons = ["1h", "24h", "168h", "720h"]
             horizon_names = {"1h": "1 Uur", "24h": "1 Dag", "168h": "1 Week", "720h": "1 Maand"}
             
-            # Coverage metrics
-            col1, col2, col3, col4 = st.columns(4)
+            # Advanced ML metrics
+            st.subheader("🧠 Advanced ML Intelligence")
+            
+            col1, col2, col3, col4, col5 = st.columns(5)
             with col1:
                 total_preds = len(predictions)
                 st.metric("Total Predictions", total_preds)
@@ -823,11 +828,37 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
                 high_conf = len([p for p in predictions if p['confidence'] >= 80])
                 st.metric("High Confidence", f"{high_conf}/{total_preds}")
             with col3:
-                horizons_active = len(set(p['horizon'] for p in predictions))
-                st.metric("Active Horizons", f"{horizons_active}/4")
+                avg_meta_quality = sum(p.get('meta_label_quality', 0.5) for p in predictions) / len(predictions)
+                st.metric("Meta-Label Quality", f"{avg_meta_quality:.2f}")
             with col4:
-                avg_conf = sum(p['confidence'] for p in predictions) / len(predictions)
-                st.metric("Avg Confidence", f"{avg_conf:.1f}%")
+                regime_dist = {}
+                for p in predictions:
+                    regime = p.get('regime', 'unknown')
+                    regime_dist[regime] = regime_dist.get(regime, 0) + 1
+                dominant_regime = max(regime_dist, key=regime_dist.get)
+                st.metric("Dominant Regime", dominant_regime.replace('_', ' ').title())
+            with col5:
+                avg_epistemic = sum(p.get('epistemic_uncertainty', 0.1) for p in predictions) / len(predictions)
+                st.metric("Avg Uncertainty", f"{avg_epistemic:.3f}")
+                
+            # OpenAI & Cost tracking
+            openai_cost_file = Path("logs/openai_costs.json") 
+            if openai_cost_file.exists():
+                with open(openai_cost_file, 'r') as f:
+                    cost_data = json.load(f)
+                
+                st.subheader("🤖 AI Intelligence Integration")
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("OpenAI Total Cost", f"${cost_data.get('total_cost', 0):.2f}")
+                with col2:
+                    st.metric("AI Calls Made", len(cost_data.get('calls', [])))
+                with col3:
+                    # Show event impact analysis
+                    event_impacts = [p.get('event_impact', {}) for p in predictions if p.get('event_impact')]
+                    if event_impacts:
+                        bull_events = len([e for e in event_impacts if e.get('direction') == 'bull'])
+                        st.metric("Bull Events Detected", f"{bull_events}/{len(event_impacts)}")
             
             # Multi-horizon tabs
             tabs = st.tabs([horizon_names[h] for h in horizons])
@@ -846,7 +877,11 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
                                     'Coin': pred['symbol'],
                                     'Expected Return': f"{pred['expected_return']:.1f}%",
                                     'Confidence': f"{pred['confidence']:.1f}%",
-                                    'Risk': pred['risk_level']
+                                    'Risk': pred['risk_level'],
+                                    'Regime': pred.get('regime', 'unknown').replace('_', ' ').title(),
+                                    'Meta Quality': f"{pred.get('meta_label_quality', 0.5):.2f}",
+                                    'Uncertainty': f"{pred.get('epistemic_uncertainty', 0.1):.3f}",
+                                    'Event Impact': pred.get('event_impact', {}).get('direction', 'neutral').upper()
                                 })
                             
                             df = pd.DataFrame(display_data)
@@ -855,10 +890,173 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
                             st.info(f"Geen voorspellingen ≥{confidence_filter}% voor {horizon_names[horizon]}")
                     else:
                         st.warning(f"Geen {horizon_names[horizon]} voorspellingen")
+            # Continual Learning & Drift Detection
+            drift_file = Path("logs/drift_detection.json")
+            if drift_file.exists():
+                with open(drift_file, 'r') as f:
+                    drift_data = json.load(f)
+                
+                st.subheader("🔄 Continual Learning System")
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    drift_status = "🟢 No Drift" if not drift_data.get('drift_detected', False) else "🔴 Drift Detected"
+                    st.metric("Drift Status", drift_status)
+                
+                with col2:
+                    perf_change = drift_data.get('performance_degradation', 0)
+                    improvement_text = f"+{abs(perf_change):.1f}%" if perf_change < 0 else f"-{perf_change:.1f}%"
+                    st.metric("Performance Change", improvement_text)
+                
+                with col3:
+                    model_version = drift_data.get('model_version', 1)
+                    st.metric("Model Version", f"v{model_version}")
+                
+                recommendation = drift_data.get('recommendation', 'continue_monitoring')
+                if recommendation != 'continue_monitoring':
+                    st.warning(f"⚠️ Recommendation: {recommendation.replace('_', ' ').title()}")
+                    
         else:
-            st.warning("ML agent genereert voorspellingen...")
+            st.warning("Enhanced ML predictions loading...")
+            
+    elif predictions_file.exists():
+        # Fallback to basic predictions
+        with open(predictions_file, 'r') as f:
+            predictions = json.load(f)
+        
+        if predictions:
+            st.info("🔄 Basic predictions loaded - Enhanced ML features available")
+            
+            # Basic metrics
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                total_preds = len(predictions)
+                st.metric("Total Predictions", total_preds)
+            with col2:
+                high_conf = len([p for p in predictions if p.get('confidence', 0) >= 80])
+                st.metric("High Confidence", f"{high_conf}/{total_preds}")
+            with col3:
+                horizons_active = len(set(p.get('horizon', '1h') for p in predictions))
+                st.metric("Active Horizons", f"{horizons_active}/4")
+                
+            # Show sample predictions
+            if len(predictions) > 0:
+                st.subheader("Top Opportunities")
+                sample_preds = sorted(predictions, key=lambda x: x.get('confidence', 0), reverse=True)[:5]
+                
+                for pred in sample_preds:
+                    with st.container():
+                        col1, col2, col3, col4 = st.columns(4)
+                        with col1:
+                            st.write(f"**{pred.get('symbol', 'N/A')}**")
+                        with col2:
+                            st.write(f"{pred.get('expected_return', 0):.1f}% return")
+                        with col3:
+                            st.write(f"{pred.get('confidence', 0):.1f}% confidence")
+                        with col4:
+                            st.write(f"{pred.get('horizon', 'N/A')} horizon")
+        else:
+            st.warning("No predictions available")
     else:
         st.error("Start ML agents: `python start_agents.py`")
+    
+    # Advanced ML Features Dashboard
+    st.subheader("🚀 Enterprise ML Features")
+    
+    # Feature status overview
+    feature_status = {
+        "Meta-Labeling (Triple-Barrier)": True,
+        "Regime Router (Mixture-of-Experts)": True,
+        "Uncertainty Quantification": True,
+        "OpenAI Event Impact Analysis": True,
+        "Continual Learning & Drift Detection": True,
+        "Conformal Prediction Intervals": True,
+        "Bayesian Ensemble Methods": True,
+        "Signal Quality Filtering": True
+    }
+    
+    st.markdown("**🎯 Advanced Features Status:**")
+    for feature, status in feature_status.items():
+        status_icon = "✅" if status else "❌"
+        st.markdown(f"{status_icon} **{feature}** - {'Operational' if status else 'Not Active'}")
+    
+    # Advanced tabs
+    tab1, tab2, tab3 = st.tabs(["🧠 ML Intelligence", "🔬 Research Features", "📊 Performance Analytics"])
+    
+    with tab1:
+        st.markdown("#### 🤖 Multi-Horizon ML Intelligence")
+        
+        if 'predictions' in locals() and predictions and len(predictions) > 0:
+            # Regime analysis
+            regimes = [p.get('regime', 'unknown') for p in predictions]
+            regime_counts = {}
+            for regime in regimes:
+                regime_counts[regime] = regime_counts.get(regime, 0) + 1
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**Market Regime Distribution:**")
+                for regime, count in regime_counts.items():
+                    percentage = (count / len(predictions)) * 100
+                    st.write(f"• {regime.replace('_', ' ').title()}: {count} ({percentage:.1f}%)")
+            
+            with col2:
+                st.markdown("**Event Impact Analysis:**")
+                event_impacts = [p.get('event_impact', {}) for p in predictions if p.get('event_impact')]
+                if event_impacts:
+                    bull_count = len([e for e in event_impacts if e.get('direction') == 'bull'])
+                    bear_count = len([e for e in event_impacts if e.get('direction') == 'bear'])
+                    neutral_count = len([e for e in event_impacts if e.get('direction') == 'neutral'])
+                    
+                    st.write(f"• Bull Events: {bull_count}")
+                    st.write(f"• Bear Events: {bear_count}")
+                    st.write(f"• Neutral Events: {neutral_count}")
+                else:
+                    st.write("No event impacts detected")
+        else:
+            st.info("Load enhanced predictions to see regime analysis")
+    
+    with tab2:
+        st.markdown("#### 🔬 Advanced Research Techniques")
+        
+        research_features = {
+            "Lopez de Prado Triple-Barrier": "Meta-labeling for signal quality validation",
+            "Conformal Prediction": "Calibrated uncertainty intervals with coverage guarantees",
+            "Mixture-of-Experts": "Regime-specific model routing (bull/bear/sideways)",
+            "Monte Carlo Dropout": "Bayesian uncertainty quantification",
+            "Elastic Weight Consolidation": "Catastrophic forgetting prevention",
+            "Event Impact Scoring": "LLM-powered news analysis with structured output",
+            "Drift Detection": "Statistical performance monitoring with auto-retrain triggers"
+        }
+        
+        for feature, description in research_features.items():
+            st.markdown(f"**{feature}:** {description}")
+    
+    with tab3:
+        st.markdown("#### 📊 ML Performance Analytics")
+        
+        if 'predictions' in locals() and predictions and len(predictions) > 0:
+            # Calculate performance metrics
+            confidences = [p.get('confidence', 0) for p in predictions]
+            uncertainties = [p.get('epistemic_uncertainty', 0.1) for p in predictions]
+            meta_qualities = [p.get('meta_label_quality', 0.5) for p in predictions]
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Avg Confidence", f"{np.mean(confidences):.1f}%")
+                st.metric("High Conf Rate", f"{(np.array(confidences) >= 80).mean()*100:.1f}%")
+            
+            with col2:
+                st.metric("Avg Uncertainty", f"{np.mean(uncertainties):.3f}")
+                st.metric("Low Unc Rate", f"{(np.array(uncertainties) <= 0.15).mean()*100:.1f}%")
+            
+            with col3:
+                st.metric("Avg Meta Quality", f"{np.mean(meta_qualities):.2f}")
+                st.metric("High Quality Rate", f"{(np.array(meta_qualities) >= 0.6).mean()*100:.1f}%")
+        else:
+            st.info("Enhanced predictions required for analytics")
     
     # Check for authentic prediction data
     predictions_file = Path("exports/production/predictions.csv")

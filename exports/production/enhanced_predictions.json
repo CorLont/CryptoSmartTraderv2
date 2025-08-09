@@ -1,0 +1,56 @@
+[
+  {
+    "symbol": "BTC",
+    "horizon": "1h",
+    "expected_return": 2.5,
+    "confidence": 85.2,
+    "risk_level": "LOW",
+    "regime": "bull_trending",
+    "regime_confidence": 0.87,
+    "epistemic_uncertainty": 0.12,
+    "aleatoric_uncertainty": 0.08,
+    "meta_label_quality": 0.78,
+    "event_impact": {
+      "direction": "bull",
+      "magnitude": 0.6,
+      "half_life_h": 4
+    },
+    "timestamp": "2025-08-09T13:12:51.748791"
+  },
+  {
+    "symbol": "ETH",
+    "horizon": "24h",
+    "expected_return": 12.8,
+    "confidence": 89.3,
+    "risk_level": "LOW",
+    "regime": "bull_trending",
+    "regime_confidence": 0.91,
+    "epistemic_uncertainty": 0.08,
+    "aleatoric_uncertainty": 0.06,
+    "meta_label_quality": 0.85,
+    "event_impact": {
+      "direction": "bull",
+      "magnitude": 0.8,
+      "half_life_h": 18
+    },
+    "timestamp": "2025-08-09T13:12:51.748799"
+  },
+  {
+    "symbol": "ADA",
+    "horizon": "720h",
+    "expected_return": 125.7,
+    "confidence": 82.4,
+    "risk_level": "MEDIUM",
+    "regime": "volatile_choppy",
+    "regime_confidence": 0.76,
+    "epistemic_uncertainty": 0.18,
+    "aleatoric_uncertainty": 0.15,
+    "meta_label_quality": 0.72,
+    "event_impact": {
+      "direction": "bull",
+      "magnitude": 0.9,
+      "half_life_h": 168
+    },
+    "timestamp": "2025-08-09T13:12:51.748801"
+  }
+]

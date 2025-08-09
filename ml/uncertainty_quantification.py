@@ -1,249 +1,283 @@
-#!/usr/bin/env python3
-"""
-Uncertainty Quantification for ML Models
-Implements Monte Carlo Dropout and Ensemble Uncertainty
-"""
-
-import numpy as np
+# ml/uncertainty_quantification.py - Advanced uncertainty with conformal prediction
 import pandas as pd
-import torch
-import torch.nn as nn
-from typing import Dict, Any, List, Tuple, Optional
-from sklearn.ensemble import RandomForestRegressor
-import warnings
-warnings.filterwarnings('ignore')
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.base import BaseEstimator, RegressorMixin
+from typing import Tuple, Dict, List
+import logging
 
-class MonteCarloDropoutModel(nn.Module):
-    """Neural network with Monte Carlo Dropout for uncertainty"""
+logger = logging.getLogger(__name__)
+
+class BayesianEnsemble(BaseEstimator, RegressorMixin):
+    """Bayesian ensemble with Monte Carlo Dropout for uncertainty estimation"""
     
-    def __init__(self, input_size: int, hidden_size: int = 64, dropout_rate: float = 0.1):
-        super().__init__()
+    def __init__(self, base_models: List, dropout_rate: float = 0.1, n_samples: int = 100):
+        self.base_models = base_models
         self.dropout_rate = dropout_rate
-        
-        self.layers = nn.Sequential(
-            nn.Linear(input_size, hidden_size),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(hidden_size, hidden_size),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(hidden_size, 1)
-        )
-    
-    def forward(self, x):
-        return self.layers(x)
-    
-    def predict_with_uncertainty(self, x: torch.Tensor, n_samples: int = 50) -> Tuple[np.ndarray, np.ndarray]:
-        """Predict with uncertainty using MC Dropout"""
-        
-        self.train()  # Keep dropout active
-        predictions = []
-        
-        with torch.no_grad():
-            for _ in range(n_samples):
-                pred = self.forward(x)
-                predictions.append(pred.cpu().numpy())
-        
-        predictions = np.array(predictions)
-        
-        # Calculate mean and uncertainty
-        mean_pred = np.mean(predictions, axis=0)
-        uncertainty = np.std(predictions, axis=0)
-        
-        return mean_pred.flatten(), uncertainty.flatten()
-
-class EnsembleUncertaintyEstimator:
-    """Ensemble-based uncertainty estimation"""
-    
-    def __init__(self, n_estimators: int = 10):
-        self.n_estimators = n_estimators
-        self.models = []
+        self.n_samples = n_samples
         self.is_fitted = False
     
-    def fit(self, X: np.ndarray, y: np.ndarray) -> Dict[str, Any]:
-        """Fit ensemble of models"""
-        
-        self.models = []
-        
-        for i in range(self.n_estimators):
-            # Create bootstrapped dataset
-            n_samples = len(X)
-            indices = np.random.choice(n_samples, size=n_samples, replace=True)
-            X_boot = X[indices]
-            y_boot = y[indices]
-            
-            # Train model
-            model = RandomForestRegressor(n_estimators=50, random_state=i)
-            model.fit(X_boot, y_boot)
-            self.models.append(model)
-        
+    def fit(self, X, y):
+        """Fit all base models"""
+        for model in self.base_models:
+            model.fit(X, y)
         self.is_fitted = True
-        
-        # Validate ensemble
-        ensemble_predictions = self.predict_with_uncertainty(X)
-        
-        return {
-            "success": True,
-            "models_trained": len(self.models),
-            "ensemble_variance": np.mean(ensemble_predictions[1]),
-            "prediction_range": {
-                "min": np.min(ensemble_predictions[0]),
-                "max": np.max(ensemble_predictions[0])
-            }
-        }
+        return self
     
-    def predict_with_uncertainty(self, X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """Predict with ensemble uncertainty"""
+    def predict_with_uncertainty(self, X) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Predict with uncertainty estimation
         
+        Returns:
+            means: Point predictions
+            epistemic_uncertainty: Model uncertainty (what we don't know)
+            aleatoric_uncertainty: Data uncertainty (inherent randomness)
+        """
         if not self.is_fitted:
-            raise ValueError("Ensemble must be fitted first")
+            raise ValueError("Model not fitted")
         
         predictions = []
         
-        for model in self.models:
-            pred = model.predict(X)
-            predictions.append(pred)
+        # Get predictions from all models
+        for model in self.base_models:
+            model_preds = []
+            
+            # Monte Carlo sampling for each model
+            for _ in range(self.n_samples):
+                # Simulate dropout by randomly masking features
+                X_dropped = self._apply_dropout(X)
+                pred = model.predict(X_dropped)
+                model_preds.append(pred)
+            
+            predictions.append(np.array(model_preds))
         
+        # Convert to numpy array: (n_models, n_samples, n_observations)
         predictions = np.array(predictions)
         
-        # Calculate ensemble statistics
-        mean_pred = np.mean(predictions, axis=0)
-        uncertainty = np.std(predictions, axis=0)
+        # Calculate epistemic uncertainty (across models)
+        model_means = np.mean(predictions, axis=1)  # Mean across MC samples for each model
+        epistemic_uncertainty = np.std(model_means, axis=0)  # Std across models
         
-        return mean_pred, uncertainty
+        # Calculate aleatoric uncertainty (within models)
+        aleatoric_uncertainty = np.mean(np.std(predictions, axis=1), axis=0)  # Mean of std within models
+        
+        # Final predictions (mean across all)
+        means = np.mean(model_means, axis=0)
+        
+        return means, epistemic_uncertainty, aleatoric_uncertainty
+    
+    def _apply_dropout(self, X: np.ndarray) -> np.ndarray:
+        """Apply dropout to input features"""
+        dropout_mask = np.random.random(X.shape) > self.dropout_rate
+        return X * dropout_mask
 
-class ConfidenceIntervalEstimator:
-    """Confidence interval estimation for predictions"""
+class ConformalPredictor:
+    """Conformal prediction for calibrated uncertainty intervals"""
     
-    def __init__(self, method: str = "bootstrap"):
-        self.method = method
-        self.percentiles = [5, 25, 50, 75, 95]
+    def __init__(self, base_model, alpha: float = 0.2):
+        """
+        Args:
+            base_model: Base prediction model
+            alpha: Miscoverage level (1-alpha = coverage probability)
+        """
+        self.base_model = base_model
+        self.alpha = alpha
+        self.calibration_scores = None
+        self.is_calibrated = False
     
-    def estimate_intervals(self, 
-                          predictions: np.ndarray, 
-                          uncertainties: np.ndarray,
-                          confidence_levels: List[float] = [0.8, 0.9, 0.95]) -> Dict[str, np.ndarray]:
-        """Estimate confidence intervals"""
+    def calibrate(self, X_cal: np.ndarray, y_cal: np.ndarray):
+        """Calibrate the predictor using calibration set"""
         
-        intervals = {}
+        # Get predictions for calibration set
+        if hasattr(self.base_model, 'predict_with_uncertainty'):
+            predictions, _, _ = self.base_model.predict_with_uncertainty(X_cal)
+        else:
+            predictions = self.base_model.predict(X_cal)
         
-        for conf_level in confidence_levels:
-            # Calculate z-score for confidence level
-            from scipy.stats import norm
-            z_score = norm.ppf((1 + conf_level) / 2)
-            
-            # Calculate intervals
-            lower_bound = predictions - z_score * uncertainties
-            upper_bound = predictions + z_score * uncertainties
-            
-            intervals[f"CI_{int(conf_level*100)}"] = {
-                "lower": lower_bound,
-                "upper": upper_bound,
-                "width": upper_bound - lower_bound
-            }
+        # Calculate non-conformity scores (absolute residuals)
+        self.calibration_scores = np.abs(y_cal - predictions)
         
-        return intervals
+        self.is_calibrated = True
+        logger.info(f"Calibrated conformal predictor with {len(self.calibration_scores)} samples")
     
-    def validate_calibration(self, 
-                           predictions: np.ndarray,
-                           uncertainties: np.ndarray, 
-                           actual_values: np.ndarray) -> Dict[str, float]:
-        """Validate uncertainty calibration"""
+    def predict_with_intervals(self, X: np.ndarray) -> Dict:
+        """
+        Generate predictions with conformal prediction intervals
         
-        calibration_metrics = {}
+        Returns:
+            Dictionary with predictions, lower/upper bounds, and interval width
+        """
+        if not self.is_calibrated:
+            raise ValueError("Predictor not calibrated. Call calibrate() first.")
         
-        # Calculate prediction intervals
-        intervals = self.estimate_intervals(predictions, uncertainties)
+        # Get base predictions
+        if hasattr(self.base_model, 'predict_with_uncertainty'):
+            predictions, epistemic_unc, aleatoric_unc = self.base_model.predict_with_uncertainty(X)
+            total_uncertainty = np.sqrt(epistemic_unc**2 + aleatoric_unc**2)
+        else:
+            predictions = self.base_model.predict(X)
+            epistemic_unc = np.zeros_like(predictions)
+            aleatoric_unc = np.zeros_like(predictions)
+            total_uncertainty = np.zeros_like(predictions)
         
-        for interval_name, interval_data in intervals.items():
-            # Check coverage
-            within_interval = (
-                (actual_values >= interval_data["lower"]) & 
-                (actual_values <= interval_data["upper"])
-            )
-            
-            coverage = within_interval.mean()
-            expected_coverage = float(interval_name.split("_")[1]) / 100
-            
-            calibration_metrics[f"{interval_name}_coverage"] = coverage
-            calibration_metrics[f"{interval_name}_calibration_error"] = abs(coverage - expected_coverage)
+        # Calculate conformal quantile
+        n = len(self.calibration_scores)
+        quantile_level = np.ceil((n + 1) * (1 - self.alpha)) / n
+        quantile = np.quantile(self.calibration_scores, quantile_level)
         
-        return calibration_metrics
-
-class UncertaintyAwarePredictionSystem:
-    """Complete uncertainty-aware prediction system"""
-    
-    def __init__(self):
-        self.ensemble = EnsembleUncertaintyEstimator()
-        self.confidence_estimator = ConfidenceIntervalEstimator()
-        self.uncertainty_threshold = 0.1  # Maximum acceptable uncertainty
-    
-    def train_uncertainty_model(self, 
-                               features: pd.DataFrame, 
-                               targets: pd.Series) -> Dict[str, Any]:
-        """Train uncertainty-aware model"""
-        
-        # Prepare data
-        X = features.select_dtypes(include=[np.number]).fillna(0).values
-        y = targets.fillna(0).values
-        
-        # Train ensemble
-        ensemble_result = self.ensemble.fit(X, y)
-        
-        if not ensemble_result.get("success", False):
-            return ensemble_result
-        
-        # Test uncertainty estimation
-        test_predictions, test_uncertainties = self.ensemble.predict_with_uncertainty(X)
-        
-        # Calculate confidence intervals
-        intervals = self.confidence_estimator.estimate_intervals(test_predictions, test_uncertainties)
+        # Create prediction intervals
+        lower_bound = predictions - quantile
+        upper_bound = predictions + quantile
+        interval_width = 2 * quantile
         
         return {
-            "success": True,
-            "ensemble_result": ensemble_result,
-            "uncertainty_stats": {
-                "mean_uncertainty": np.mean(test_uncertainties),
-                "uncertainty_range": {
-                    "min": np.min(test_uncertainties),
-                    "max": np.max(test_uncertainties)
-                }
+            'predictions': predictions,
+            'lower_bound': lower_bound,
+            'upper_bound': upper_bound,
+            'interval_width': interval_width,
+            'epistemic_uncertainty': epistemic_unc,
+            'aleatoric_uncertainty': aleatoric_unc,
+            'total_uncertainty': total_uncertainty,
+            'coverage_probability': 1 - self.alpha
+        }
+
+class EnhancedUncertaintyQuantifier:
+    """Enhanced uncertainty quantification combining multiple methods"""
+    
+    def __init__(self, models: List, calibration_split: float = 0.2):
+        self.models = models
+        self.calibration_split = calibration_split
+        self.bayesian_ensemble = None
+        self.conformal_predictor = None
+        self.is_trained = False
+    
+    def fit(self, X: np.ndarray, y: np.ndarray):
+        """Fit uncertainty quantification models"""
+        
+        # Split data for calibration
+        X_train, X_cal, y_train, y_cal = train_test_split(
+            X, y, test_size=self.calibration_split, random_state=42
+        )
+        
+        # Create Bayesian ensemble
+        self.bayesian_ensemble = BayesianEnsemble(self.models)
+        self.bayesian_ensemble.fit(X_train, y_train)
+        
+        # Create and calibrate conformal predictor
+        self.conformal_predictor = ConformalPredictor(self.bayesian_ensemble)
+        self.conformal_predictor.calibrate(X_cal, y_cal)
+        
+        self.is_trained = True
+        logger.info("Enhanced uncertainty quantification model trained")
+    
+    def predict_with_full_uncertainty(self, X: np.ndarray) -> Dict:
+        """Generate predictions with comprehensive uncertainty estimates"""
+        
+        if not self.is_trained:
+            raise ValueError("Model not trained. Call fit() first.")
+        
+        # Get conformal predictions (includes Bayesian uncertainty)
+        conformal_results = self.conformal_predictor.predict_with_intervals(X)
+        
+        # Calculate confidence scores based on uncertainty
+        total_unc = conformal_results['total_uncertainty']
+        interval_widths = conformal_results['interval_width']
+        
+        # Normalize uncertainties to get confidence (higher uncertainty = lower confidence)
+        max_unc = np.percentile(total_unc, 95)  # Use 95th percentile for normalization
+        max_width = np.percentile(interval_widths, 95)
+        
+        # Combine multiple uncertainty measures for confidence
+        unc_confidence = 1 - np.clip(total_unc / max_unc, 0, 1)
+        interval_confidence = 1 - np.clip(interval_widths / max_width, 0, 1)
+        
+        # Geometric mean of confidences
+        combined_confidence = np.sqrt(unc_confidence * interval_confidence)
+        
+        # Calibrate confidence to be more conservative
+        calibrated_confidence = self._calibrate_confidence(combined_confidence)
+        
+        return {
+            'predictions': conformal_results['predictions'],
+            'confidence': calibrated_confidence,
+            'epistemic_uncertainty': conformal_results['epistemic_uncertainty'],
+            'aleatoric_uncertainty': conformal_results['aleatoric_uncertainty'],
+            'prediction_intervals': {
+                'lower': conformal_results['lower_bound'],
+                'upper': conformal_results['upper_bound'],
+                'width': conformal_results['interval_width']
             },
-            "confidence_intervals": {name: {
-                "mean_width": np.mean(data["width"])
-            } for name, data in intervals.items()}
+            'coverage_probability': conformal_results['coverage_probability']
         }
     
-    def predict_with_confidence_gate(self, 
-                                   features: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-        """Make predictions with uncertainty-based confidence gate"""
+    def _calibrate_confidence(self, raw_confidence: np.ndarray) -> np.ndarray:
+        """Calibrate confidence scores to be more realistic"""
         
-        X = features.select_dtypes(include=[np.number]).fillna(0).values
+        # Apply sigmoid-like transformation to push confidence towards middle values
+        # This makes the 80% gate more meaningful
+        calibrated = 1 / (1 + np.exp(-5 * (raw_confidence - 0.6)))
         
-        # Get predictions with uncertainty
-        predictions, uncertainties = self.ensemble.predict_with_uncertainty(X)
+        # Ensure minimum/maximum bounds
+        calibrated = np.clip(calibrated, 0.1, 0.95)
         
-        # Calculate confidence scores (inverse of uncertainty)
-        max_uncertainty = np.max(uncertainties) if len(uncertainties) > 0 else 1.0
-        confidence_scores = 1 - (uncertainties / max_uncertainty)
+        return calibrated
+    
+    def get_uncertainty_summary(self, X: np.ndarray) -> Dict:
+        """Get summary statistics of uncertainty estimates"""
         
-        # Apply uncertainty gate
-        high_confidence_mask = uncertainties <= self.uncertainty_threshold
+        results = self.predict_with_full_uncertainty(X)
         
-        # Create results DataFrame
-        results_df = pd.DataFrame({
-            'prediction': predictions,
-            'uncertainty': uncertainties,
-            'confidence': confidence_scores,
-            'high_confidence': high_confidence_mask
-        })
-        
-        gate_report = {
-            "total_predictions": len(predictions),
-            "high_confidence_count": high_confidence_mask.sum(),
-            "high_confidence_rate": high_confidence_mask.mean(),
-            "mean_uncertainty": np.mean(uncertainties),
-            "uncertainty_threshold": self.uncertainty_threshold
+        return {
+            'mean_confidence': np.mean(results['confidence']),
+            'confidence_std': np.std(results['confidence']),
+            'high_confidence_fraction': np.mean(results['confidence'] > 0.8),
+            'mean_interval_width': np.mean(results['prediction_intervals']['width']),
+            'mean_epistemic_uncertainty': np.mean(results['epistemic_uncertainty']),
+            'mean_aleatoric_uncertainty': np.mean(results['aleatoric_uncertainty']),
+            'coverage_probability': results['coverage_probability']
         }
+
+def create_uncertainty_aware_predictions(features: pd.DataFrame, targets: pd.DataFrame, models: List) -> pd.DataFrame:
+    """
+    Create uncertainty-aware predictions using advanced quantification methods
+    
+    Args:
+        features: Input features
+        targets: Target values
+        models: List of base models to use in ensemble
         
-        return results_df, gate_report
+    Returns:
+        DataFrame with predictions and uncertainty estimates
+    """
+    
+    quantifier = EnhancedUncertaintyQuantifier(models)
+    
+    # Fit uncertainty quantification
+    X = features.values
+    y = targets.values.ravel() if len(targets.shape) > 1 else targets.values
+    
+    quantifier.fit(X, y)
+    
+    # Generate predictions with uncertainty
+    uncertainty_results = quantifier.predict_with_full_uncertainty(X)
+    
+    # Create results DataFrame
+    results_df = pd.DataFrame({
+        'predictions': uncertainty_results['predictions'],
+        'confidence': uncertainty_results['confidence'],
+        'epistemic_uncertainty': uncertainty_results['epistemic_uncertainty'],
+        'aleatoric_uncertainty': uncertainty_results['aleatoric_uncertainty'],
+        'interval_lower': uncertainty_results['prediction_intervals']['lower'],
+        'interval_upper': uncertainty_results['prediction_intervals']['upper'],
+        'interval_width': uncertainty_results['prediction_intervals']['width']
+    })
+    
+    # Add feature information if available
+    if hasattr(features, 'index'):
+        results_df.index = features.index
+    
+    # Get uncertainty summary
+    uncertainty_summary = quantifier.get_uncertainty_summary(X)
+    logger.info(f"Uncertainty summary: {uncertainty_summary}")
+    
+    return results_df
