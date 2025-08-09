@@ -1,5 +1,5 @@
 {
-  "generation_timestamp": "2025-08-09T10:15:45.116633+00:00",
+  "generation_timestamp": "2025-08-09T10:46:21.837818+00:00",
   "model_info": {
     "available_models": [
       "1h",
@@ -18,23 +18,22 @@
       "168h",
       "720h"
     ],
-    "actionable_signals": 168
+    "actionable_signals": 111
   },
   "confidence_stats": {
-    "mean_confidence": 0.9993746724224721,
-    "min_confidence": 0.9970807103333015,
-    "max_confidence": 0.9999671673030756
+    "mean_confidence": 0.9997162053022344,
+    "min_confidence": 0.9991507778125883,
+    "max_confidence": 0.9999829335689719
   },
   "return_stats": {
-    "mean_expected_return": -0.0339377052663935,
-    "positive_predictions": 367,
-    "negative_predictions": 433
+    "mean_expected_return": -0.034122738694225906,
+    "positive_predictions": 376,
+    "negative_predictions": 424
   },
   "regime_distribution": {
-    "SIDEWAYS": 746,
-    "BEAR": 25,
-    "BULL": 24,
-    "VOLATILE": 5
+    "SIDEWAYS": 786,
+    "BEAR": 8,
+    "BULL": 6
   },
   "gate_statistics": {
     "total_candidates": 800,

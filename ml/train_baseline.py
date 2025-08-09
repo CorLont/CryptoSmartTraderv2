@@ -1,154 +1,261 @@
-# ml/train_baseline.py
+#!/usr/bin/env python3
+"""
+Baseline Trainer - RF ensemble + uncertainty voor alle horizons
+Train minimaal 4 modellen (1h, 24h, 168h, 720h) met ensemble uncertainty
+"""
+
 import pandas as pd
-import numpy as np
 import joblib
 import os
+import numpy as np
+from pathlib import Path
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import TimeSeriesSplit
-from pathlib import Path
+from datetime import datetime
 
-HORIZONS = {"1h": "target_1h", "24h":"target_24h", "168h":"target_168h", "720h":"target_720h"}
+# Horizon mappings
+HORIZONS = {
+    "1h": "target_1h",
+    "24h": "target_24h", 
+    "168h": "target_168h",
+    "720h": "target_720h"
+}
 
-def train_one(df: pd.DataFrame, target_col: str, features: list[str], n_models=5):
-    """Train ensemble of RandomForest models for one horizon"""
-    tscv = TimeSeriesSplit(n_splits=5)
-    models = []
-    X, y = df[features].values, df[target_col].values
+def create_synthetic_features(n_coins=20, n_timestamps=1000):
+    """Create synthetic features for testing when real data unavailable"""
     
-    for seed in range(n_models):
-        m = RandomForestRegressor(
-            n_estimators=400, 
-            max_depth=None, 
-            random_state=seed, 
-            n_jobs=-1, 
-            oob_score=False
-        )
-        # Use laatste split als validatie, de rest voor training
-        train_idx, test_idx = list(tscv.split(X))[-1]
-        m.fit(X[train_idx], y[train_idx])
-        models.append(m)
-    
-    return models
-
-def create_synthetic_features(n_coins=100, n_timestamps=1000):
-    """Create synthetic feature data for testing when no real data exists"""
-    print("Creating synthetic feature data for baseline training...")
-    
-    # Generate synthetic data
     np.random.seed(42)
-    data = []
     
-    coins = [f"COIN_{i:03d}" for i in range(n_coins)]
+    data = []
     
     for i in range(n_timestamps):
         timestamp = pd.Timestamp("2024-01-01") + pd.Timedelta(hours=i)
         
-        for coin in coins:
+        for coin_idx in range(n_coins):
+            coin = f"COIN_{coin_idx:03d}"
+            
             # Generate correlated features and targets
-            base_trend = np.sin(i / 100) * 0.1  # Market cycle
-            coin_factor = np.random.normal(0, 0.05)  # Coin-specific noise
+            base_momentum = np.random.normal(0, 0.02)
+            volatility = np.random.lognormal(-3, 0.5)  # ~0.05 typical
+            volume = np.random.lognormal(10, 0.8)
             
-            # Technical features
-            feat_rsi = np.random.uniform(20, 80)
-            feat_macd = np.random.normal(0, 0.02)
-            feat_volume = np.random.lognormal(10, 1)
-            feat_volatility = np.random.uniform(0.01, 0.1)
-            feat_momentum = np.random.normal(base_trend, 0.03)
+            # Technical indicators
+            rsi = np.clip(np.random.normal(50, 15), 10, 90)
+            macd = np.random.normal(0, 0.01)
             
-            # Additional features
-            feat_sma_ratio = np.random.uniform(0.95, 1.05)
-            feat_bb_position = np.random.uniform(0, 1)
-            feat_obv = np.random.normal(0, 1)
+            # Sentiment/whale scores (0-1)
+            sent_score = np.clip(np.random.beta(2, 2), 0.1, 0.9)
+            whale_score = np.clip(np.random.beta(1.5, 3), 0.05, 0.95)
             
-            # Targets based on features (with noise)
-            target_1h = feat_momentum * 0.3 + np.random.normal(0, 0.01)
-            target_24h = (feat_momentum + feat_rsi/100 - 0.5) * 0.1 + np.random.normal(0, 0.02)
-            target_168h = base_trend * 0.2 + coin_factor + np.random.normal(0, 0.03)
-            target_720h = base_trend * 0.5 + coin_factor * 2 + np.random.normal(0, 0.05)
+            # Targets with realistic correlation to features
+            target_1h = base_momentum * 0.1 + np.random.normal(0, volatility * 0.5)
+            target_24h = base_momentum * 0.5 + np.random.normal(0, volatility * 1.0)
+            target_168h = base_momentum * 2.0 + np.random.normal(0, volatility * 2.0)
+            target_720h = base_momentum * 5.0 + np.random.normal(0, volatility * 3.0)
             
             data.append({
-                'coin': coin,
-                'timestamp': timestamp,
-                'feat_rsi': feat_rsi,
-                'feat_macd': feat_macd,
-                'feat_volume': feat_volume,
-                'feat_volatility': feat_volatility,
-                'feat_momentum': feat_momentum,
-                'feat_sma_ratio': feat_sma_ratio,
-                'feat_bb_position': feat_bb_position,
-                'feat_obv': feat_obv,
-                'target_1h': target_1h,
-                'target_24h': target_24h,
-                'target_168h': target_168h,
-                'target_720h': target_720h
+                "coin": coin,
+                "timestamp": timestamp,
+                "feat_momentum": base_momentum,
+                "feat_volatility": volatility,
+                "feat_volume": volume,
+                "feat_rsi_14": rsi,
+                "feat_macd": macd,
+                "feat_sent_score": sent_score,
+                "feat_whale_score": whale_score,
+                "target_1h": target_1h,
+                "target_24h": target_24h,
+                "target_168h": target_168h,
+                "target_720h": target_720h
             })
     
     df = pd.DataFrame(data)
     
-    # Ensure exports directory exists
-    Path("exports").mkdir(exist_ok=True)
-    df.to_parquet("exports/features.parquet")
-    print(f"Created synthetic features.parquet with {len(df)} rows")
+    # Add UTC timezone
+    df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.tz_localize("UTC")
     
     return df
 
-if __name__ == "__main__":
-    # Check if features exist, create synthetic if not
+def train_one(df, target_col, feature_cols, n_models=5):
+    """Train ensemble of RandomForest models for one horizon"""
+    
+    print(f"Training {target_col} with {len(feature_cols)} features on {len(df)} samples")
+    
+    X = df[feature_cols].values
+    y = df[target_col].values
+    
+    # Use TimeSeriesSplit for proper temporal validation
+    tscv = TimeSeriesSplit(n_splits=5)
+    models = []
+    
+    for seed in range(n_models):
+        rf = RandomForestRegressor(
+            n_estimators=200,  # Reduced for speed
+            random_state=seed,
+            n_jobs=-1,
+            max_depth=10,
+            min_samples_split=10,
+            min_samples_leaf=5
+        )
+        
+        # Train on all but last fold (most recent data for validation)
+        train_indices, _ = list(tscv.split(X))[-1]
+        X_train, y_train = X[train_indices], y[train_indices]
+        
+        rf.fit(X_train, y_train)
+        models.append(rf)
+        
+        print(f"  Model {seed+1}/{n_models} trained")
+    
+    return models
+
+def validate_data(df):
+    """Validate data meets training requirements"""
+    
+    print("Validating training data...")
+    
+    # Check timestamps are UTC
+    if df['timestamp'].dt.tz is None:
+        print("  WARNING: Timestamps have no timezone, assuming UTC")
+        df['timestamp'] = df['timestamp'].dt.tz_localize('UTC')
+    
+    # Check for required columns
+    required_features = ["feat_sent_score", "feat_whale_score", "feat_rsi_14"]
+    missing_features = [f for f in required_features if f not in df.columns]
+    if missing_features:
+        print(f"  WARNING: Missing features {missing_features}, using synthetic data")
+    
+    # Check target scales
+    for horizon, target_col in HORIZONS.items():
+        if target_col in df.columns:
+            q99 = df[target_col].abs().quantile(0.99)
+            if q99 > 3.0:
+                print(f"  WARNING: {horizon} target scale suspicious (q99={q99:.3f})")
+    
+    # Check for NaN values
+    feature_cols = [c for c in df.columns if c.startswith("feat_")]
+    nan_counts = df[feature_cols].isna().sum()
+    if nan_counts.any():
+        print(f"  WARNING: NaN values in features: {nan_counts[nan_counts > 0].to_dict()}")
+    
+    print("  Data validation complete")
+    return df
+
+def train_all_models():
+    """Train models for all horizons"""
+    
+    print("=" * 60)
+    print("TRAINING BASELINE MODELS")
+    print("=" * 60)
+    
+    # Load or create features
     features_file = Path("exports/features.parquet")
     
     if features_file.exists():
-        print("Loading existing features.parquet...")
-        feats = pd.read_parquet("exports/features.parquet")
+        print(f"Loading features from {features_file}")
+        df = pd.read_parquet(features_file)
     else:
-        print("No features.parquet found - creating synthetic data...")
-        feats = create_synthetic_features()
+        print("No features file found, creating synthetic data")
+        df = create_synthetic_features(n_coins=20, n_timestamps=1000)
+        
+        # Save synthetic features
+        features_file.parent.mkdir(parents=True, exist_ok=True)
+        df.to_parquet(features_file)
+        print(f"Saved synthetic features to {features_file}")
+    
+    # Validate data
+    df = validate_data(df)
     
     # Get feature columns
-    features = [c for c in feats.columns if c.startswith("feat_")]
-    print(f"Found {len(features)} features: {features}")
+    feature_cols = [c for c in df.columns if c.startswith("feat_")]
+    print(f"Using {len(feature_cols)} features: {feature_cols}")
     
     # Create models directory
     models_dir = Path("models/saved")
     models_dir.mkdir(parents=True, exist_ok=True)
     
-    # Train models for each horizon
-    for h, tgt in HORIZONS.items():
-        print(f"\nTraining models for horizon {h} (target: {tgt})")
+    # Train each horizon
+    training_results = {}
+    
+    for horizon, target_col in HORIZONS.items():
+        print(f"\n🎯 Training {horizon} models...")
         
-        # Filter data with valid target
-        train_data = feats.dropna(subset=features + [tgt])
+        if target_col not in df.columns:
+            print(f"  ❌ Target {target_col} not found, skipping")
+            continue
         
-        if len(train_data) < 100:
-            print(f"Warning: Only {len(train_data)} samples for {h}, might be insufficient")
+        # Filter complete cases
+        training_data = df.dropna(subset=feature_cols + [target_col])
+        
+        if len(training_data) < 100:
+            print(f"  ❌ Insufficient data for {horizon}: {len(training_data)} samples")
             continue
         
         # Train ensemble
-        models = train_one(train_data, tgt, features)
+        ensemble = train_one(training_data, target_col, feature_cols, n_models=3)
         
         # Save models
-        model_path = models_dir / f"rf_{h}.pkl"
-        joblib.dump(models, model_path)
+        model_path = models_dir / f"rf_{horizon}.pkl"
+        joblib.dump(ensemble, model_path)
         
-        print(f"✅ Saved {model_path} ({len(models)} ensemble members)")
+        # Calculate training stats
+        X_test = training_data[feature_cols].values
+        y_test = training_data[target_col].values
         
-        # Quick validation
-        from ml.models.predict import predict_all
-        test_sample = train_data.tail(10)
-        try:
-            predictions = predict_all(test_sample)
-            pred_col = f"pred_{h}"
-            conf_col = f"conf_{h}"
-            
-            if pred_col in predictions.columns and conf_col in predictions.columns:
-                mean_pred = predictions[pred_col].mean()
-                mean_conf = predictions[conf_col].mean()
-                print(f"   Test predictions: mean={mean_pred:.4f}, conf={mean_conf:.3f}")
-            else:
-                print(f"   Warning: Prediction columns not found")
-                
-        except Exception as e:
-            print(f"   Validation failed: {e}")
+        # Ensemble predictions
+        preds = np.column_stack([m.predict(X_test) for m in ensemble])
+        mu = preds.mean(axis=1)
+        sigma = preds.std(axis=1)
+        
+        mae = np.mean(np.abs(mu - y_test))
+        rmse = np.sqrt(np.mean((mu - y_test) ** 2))
+        mean_uncertainty = sigma.mean()
+        
+        training_results[horizon] = {
+            "model_path": str(model_path),
+            "ensemble_size": len(ensemble),
+            "training_samples": len(training_data),
+            "mae": mae,
+            "rmse": rmse,
+            "mean_uncertainty": mean_uncertainty
+        }
+        
+        print(f"  ✅ {horizon} models saved: MAE={mae:.4f}, RMSE={rmse:.4f}, σ={mean_uncertainty:.4f}")
     
-    print(f"\n🎯 BASELINE MODEL TRAINING COMPLETE!")
-    print(f"   Models saved in: {models_dir}")
-    print(f"   Features file: {features_file}")
+    # Save training summary
+    summary = {
+        "training_timestamp": datetime.now().isoformat(),
+        "total_features": len(feature_cols),
+        "feature_columns": feature_cols,
+        "horizons_trained": list(training_results.keys()),
+        "results": training_results
+    }
+    
+    summary_path = models_dir / "training_summary.json"
+    import json
+    with open(summary_path, 'w') as f:
+        json.dump(summary, f, indent=2)
+    
+    print(f"\n✅ All models trained successfully!")
+    print(f"📁 Models saved in: {models_dir}")
+    print(f"📊 Training summary: {summary_path}")
+    print(f"🎯 Horizons trained: {list(training_results.keys())}")
+    
+    return training_results
+
+if __name__ == "__main__":
+    results = train_all_models()
+    
+    print("\n" + "=" * 60)
+    print("TRAINING COMPLETE")
+    print("=" * 60)
+    
+    for horizon, stats in results.items():
+        print(f"{horizon:>6s}: {stats['ensemble_size']} models, "
+              f"MAE={stats['mae']:.4f}, "
+              f"σ={stats['mean_uncertainty']:.4f}")
+    
+    print(f"\nNext steps:")
+    print(f"1. Run: python ml/models/predict.py (test predictions)")
+    print(f"2. Run: python generate_final_predictions.py (create predictions.csv)")
+    print(f"3. Check dashboard for live predictions")

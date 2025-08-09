@@ -1,0 +1,90 @@
+{
+  "timestamp": "2025-08-09T10:46:23.115709+00:00",
+  "overall_ready": true,
+  "overall_score": 85.0,
+  "readiness_threshold": 85.0,
+  "components": {
+    "models": {
+      "ready": true,
+      "all_exist": true,
+      "all_fresh": true,
+      "models": {
+        "1h": {
+          "exists": true,
+          "path": "models/saved/rf_1h.pkl",
+          "fresh": true,
+          "size_mb": 4.85,
+          "modified": "2025-08-09T10:45:51.713758"
+        },
+        "24h": {
+          "exists": true,
+          "path": "models/saved/rf_24h.pkl",
+          "fresh": true,
+          "size_mb": 4.89,
+          "modified": "2025-08-09T10:45:55.822750"
+        },
+        "168h": {
+          "exists": true,
+          "path": "models/saved/rf_168h.pkl",
+          "fresh": true,
+          "size_mb": 4.46,
+          "modified": "2025-08-09T10:45:59.084743"
+        },
+        "720h": {
+          "exists": true,
+          "path": "models/saved/rf_720h.pkl",
+          "fresh": true,
+          "size_mb": 5.07,
+          "modified": "2025-08-09T10:46:02.540736"
+        }
+      },
+      "missing_models": [],
+      "stale_models": []
+    },
+    "features": {
+      "ready": true,
+      "exists": true,
+      "fresh": true,
+      "file_info": {
+        "size_mb": 0.09,
+        "modified": "2025-08-09T10:04:03.987866",
+        "age_hours": 0.7
+      },
+      "reason": "OK"
+    },
+    "health": {
+      "ready": true,
+      "score": 100,
+      "source": "exports/production/predictions_summary.json",
+      "threshold": 85,
+      "reason": "OK"
+    },
+    "calibration": {
+      "ready": false,
+      "exists": false,
+      "source": null,
+      "reason": "No calibration found"
+    },
+    "predictions": {
+      "ready": true,
+      "exists": true,
+      "fresh": true,
+      "prediction_count": 800,
+      "reason": "OK"
+    }
+  },
+  "component_scores": {
+    "models": 100,
+    "features": 100,
+    "health": 100,
+    "calibration": 0,
+    "predictions": 100
+  },
+  "blocking_issues": [
+    {
+      "component": "calibration",
+      "reason": "No calibration found",
+      "critical": false
+    }
+  ]
+}

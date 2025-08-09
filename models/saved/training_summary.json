@@ -1,0 +1,50 @@
+{
+  "training_timestamp": "2025-08-09T10:46:03.178421",
+  "total_features": 4,
+  "feature_columns": [
+    "feat_rsi",
+    "feat_macd",
+    "feat_volume",
+    "feat_momentum"
+  ],
+  "horizons_trained": [
+    "1h",
+    "24h",
+    "168h",
+    "720h"
+  ],
+  "results": {
+    "1h": {
+      "model_path": "models/saved/rf_1h.pkl",
+      "ensemble_size": 3,
+      "training_samples": 1000,
+      "mae": 0.006485932848174663,
+      "rmse": 0.008168273714065163,
+      "mean_uncertainty": 0.00028041367559476695
+    },
+    "24h": {
+      "model_path": "models/saved/rf_24h.pkl",
+      "ensemble_size": 3,
+      "training_samples": 1000,
+      "mae": 0.013211778056881495,
+      "rmse": 0.016791550794274936,
+      "mean_uncertainty": 0.0006003867182760209
+    },
+    "168h": {
+      "model_path": "models/saved/rf_168h.pkl",
+      "ensemble_size": 3,
+      "training_samples": 1000,
+      "mae": 0.020002139761423454,
+      "rmse": 0.025491243125477243,
+      "mean_uncertainty": 0.0008302366649105389
+    },
+    "720h": {
+      "model_path": "models/saved/rf_720h.pkl",
+      "ensemble_size": 3,
+      "training_samples": 1000,
+      "mae": 0.03232278598662458,
+      "rmse": 0.04094885541152315,
+      "mean_uncertainty": 0.0015707010670278265
+    }
+  }
+}

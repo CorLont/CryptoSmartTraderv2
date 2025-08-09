@@ -1,208 +1,265 @@
-# ml/models/predict.py
+#!/usr/bin/env python3
+"""
+Predictor + Confidence - Load ensembles and generate predictions with uncertainty
+"""
+
 import pandas as pd
 import numpy as np
 import joblib
 import glob
 from pathlib import Path
+import time
+from typing import Dict, List, Optional
 
-HORIZONS = ["1h","24h","168h","720h"]
+HORIZONS = ["1h", "24h", "168h", "720h"]
 
-def load_models():
-    """Load trained RandomForest ensemble models for all horizons"""
+def get_model_status() -> Dict[str, Dict]:
+    """Get status of all trained models"""
+    
+    status = {}
+    
+    for horizon in HORIZONS:
+        model_path = Path(f"models/saved/rf_{horizon}.pkl")
+        
+        if model_path.exists():
+            stat = model_path.stat()
+            status[horizon] = {
+                "exists": True,
+                "path": str(model_path),
+                "size_mb": stat.st_size / 1024 / 1024,
+                "modified": stat.st_mtime,
+                "age_hours": (time.time() - stat.st_mtime) / 3600
+            }
+        else:
+            status[horizon] = {
+                "exists": False,
+                "path": str(model_path),
+                "size_mb": 0,
+                "modified": 0,
+                "age_hours": float('inf')
+            }
+    
+    return status
+
+def load_models() -> Dict[str, List]:
+    """Load all available trained models"""
+    
     models = {}
-    for h in HORIZONS:
-        model_path = f"models/saved/rf_{h}.pkl"
+    
+    for horizon in HORIZONS:
+        model_path = f"models/saved/rf_{horizon}.pkl"
+        
         if Path(model_path).exists():
             try:
-                models[h] = joblib.load(model_path)
-                print(f"Loaded {len(models[h])} models for horizon {h}")
+                ensemble = joblib.load(model_path)
+                models[horizon] = ensemble
+                print(f"✅ Loaded {horizon} ensemble: {len(ensemble)} models")
             except Exception as e:
-                print(f"Failed to load models for {h}: {e}")
+                print(f"❌ Failed to load {horizon} models: {e}")
         else:
-            print(f"Model file not found: {model_path}")
+            print(f"❌ Model not found: {model_path}")
     
     return models
 
 def predict_all(features_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Generate predictions for all horizons with uncertainty estimates
+    """Generate predictions with confidence for all horizons"""
     
-    Returns DataFrame with columns:
-    - coin, timestamp (from input)
-    - pred_{horizon}: mean prediction across ensemble
-    - conf_{horizon}: confidence = 1/(1+std), higher = more certain
-    """
     if features_df.empty:
+        print("❌ Empty features DataFrame")
         return pd.DataFrame()
+    
+    print(f"🔮 Generating predictions for {len(features_df)} samples")
     
     # Load models
     models = load_models()
     
     if not models:
-        print("Warning: No models loaded - returning empty predictions")
+        print("❌ No trained models available")
         return pd.DataFrame()
     
-    # Start with coin and timestamp
-    out = features_df[["coin","timestamp"]].copy()
+    # Start with base columns
+    result = features_df[["coin", "timestamp"]].copy()
     
     # Get feature columns
     feature_cols = [c for c in features_df.columns if c.startswith("feat_")]
     
     if not feature_cols:
-        print("Warning: No feature columns found (expected feat_*)")
-        return out
-    
-    print(f"Making predictions using {len(feature_cols)} features for {len(features_df)} samples")
+        print("❌ No feature columns found")
+        return pd.DataFrame()
     
     # Prepare feature matrix
     X = features_df[feature_cols].values
+    X = np.nan_to_num(X, nan=0.0)  # Replace NaN with 0
     
-    # Handle missing values
-    if np.isnan(X).any():
-        print("Warning: NaN values found in features, filling with 0")
-        X = np.nan_to_num(X, nan=0.0)
+    print(f"Using {len(feature_cols)} features: {feature_cols}")
     
     # Generate predictions for each horizon
-    for h, ensemble in models.items():
+    for horizon, ensemble in models.items():
         try:
-            # Get predictions from all ensemble members
-            ensemble_preds = []
-            for model in ensemble:
-                pred = model.predict(X)
-                ensemble_preds.append(pred)
+            print(f"  Predicting {horizon}...")
             
-            # Stack predictions (n_samples x n_models)
-            preds = np.column_stack(ensemble_preds)
+            # Get predictions from all ensemble members
+            ensemble_predictions = []
+            for i, model in enumerate(ensemble):
+                pred = model.predict(X)
+                ensemble_predictions.append(pred)
+            
+            # Stack predictions (samples x models)
+            preds = np.column_stack(ensemble_predictions)
             
             # Calculate ensemble statistics
             mu = preds.mean(axis=1)  # Mean prediction
             sigma = preds.std(axis=1) + 1e-9  # Standard deviation + small epsilon
             
-            # Store predictions and confidence
-            out[f"pred_{h}"] = mu
-            out[f"conf_{h}"] = 1.0 / (1.0 + sigma)  # 0..1, higher = more certain
+            # Convert uncertainty to confidence (0-1, higher = more confident)
+            confidence = 1.0 / (1.0 + sigma)
             
-            print(f"Generated predictions for {h}: mean={mu.mean():.4f}, conf={out[f'conf_{h}'].mean():.3f}")
+            # Store results
+            result[f"pred_{horizon}"] = mu
+            result[f"conf_{horizon}"] = confidence
+            
+            print(f"    {horizon}: μ={mu.mean():.4f}, σ={sigma.mean():.4f}, conf={confidence.mean():.3f}")
             
         except Exception as e:
-            print(f"Failed to generate predictions for horizon {h}: {e}")
-            # Fill with default values
-            out[f"pred_{h}"] = 0.0
-            out[f"conf_{h}"] = 0.5
+            print(f"❌ Failed to predict {horizon}: {e}")
     
-    return out
+    print(f"✅ Generated predictions for {len(result)} samples")
+    return result
 
-def predict_single_horizon(features_df: pd.DataFrame, horizon: str) -> pd.DataFrame:
-    """Generate predictions for a single horizon"""
+def test_predictions():
+    """Test prediction pipeline with sample data"""
     
-    if horizon not in HORIZONS:
-        raise ValueError(f"Invalid horizon {horizon}, must be one of {HORIZONS}")
+    print("🧪 Testing prediction pipeline...")
     
-    model_path = f"models/saved/rf_{horizon}.pkl"
+    # Load features
+    features_file = Path("exports/features.parquet")
     
-    if not Path(model_path).exists():
-        print(f"Model not found: {model_path}")
-        return pd.DataFrame()
+    if not features_file.exists():
+        print("❌ No features file found for testing")
+        return False
     
-    try:
-        ensemble = joblib.load(model_path)
+    features_df = pd.read_parquet(features_file)
+    print(f"Loaded {len(features_df)} feature samples")
+    
+    # Take sample for testing
+    sample_size = min(50, len(features_df))
+    sample_features = features_df.tail(sample_size).copy()
+    
+    # Generate predictions
+    predictions_df = predict_all(sample_features)
+    
+    if predictions_df.empty:
+        print("❌ No predictions generated")
+        return False
+    
+    # Analyze predictions
+    print("\n📊 Prediction Analysis:")
+    
+    pred_cols = [c for c in predictions_df.columns if c.startswith("pred_")]
+    conf_cols = [c for c in predictions_df.columns if c.startswith("conf_")]
+    
+    for pred_col, conf_col in zip(pred_cols, conf_cols):
+        horizon = pred_col.split("_")[1]
         
-        # Prepare features
-        feature_cols = [c for c in features_df.columns if c.startswith("feat_")]
-        X = features_df[feature_cols].values
-        X = np.nan_to_num(X, nan=0.0)
+        pred_values = predictions_df[pred_col]
+        conf_values = predictions_df[conf_col]
         
-        # Ensemble predictions
-        preds = np.column_stack([model.predict(X) for model in ensemble])
-        mu = preds.mean(axis=1)
-        sigma = preds.std(axis=1) + 1e-9
-        
-        # Create result
-        result = features_df[["coin", "timestamp"]].copy()
-        result[f"pred_{horizon}"] = mu
-        result[f"conf_{horizon}"] = 1.0 / (1.0 + sigma)
-        
-        return result
-        
-    except Exception as e:
-        print(f"Prediction failed for {horizon}: {e}")
-        return pd.DataFrame()
+        print(f"  {horizon:>6s}: pred μ={pred_values.mean():+.4f} ± {pred_values.std():.4f}, "
+              f"conf μ={conf_values.mean():.3f} [{conf_values.min():.3f}, {conf_values.max():.3f}]")
+    
+    # Check high confidence predictions
+    print(f"\n🎯 High Confidence Predictions (>80%):")
+    
+    high_conf_count = 0
+    for _, row in predictions_df.iterrows():
+        for horizon in HORIZONS:
+            conf_col = f"conf_{horizon}"
+            pred_col = f"pred_{horizon}"
+            
+            if conf_col in row and pred_col in row:
+                if row[conf_col] >= 0.80:
+                    expected_return = row[pred_col] * 100
+                    print(f"    {row['coin']} ({horizon}): {expected_return:+.2f}% (conf: {row[conf_col]:.1%})")
+                    high_conf_count += 1
+    
+    print(f"Total high-confidence predictions: {high_conf_count}")
+    
+    # Save test predictions
+    test_output = Path("exports/test_predictions.csv")
+    predictions_df.to_csv(test_output, index=False)
+    print(f"✅ Test predictions saved to: {test_output}")
+    
+    return True
 
-def get_model_status():
-    """Get status of all trained models"""
-    status = {}
+def predict_latest():
+    """Generate predictions for latest features and save"""
     
-    for h in HORIZONS:
-        model_path = Path(f"models/saved/rf_{h}.pkl")
-        
-        if model_path.exists():
-            try:
-                # Get file info
-                stat = model_path.stat()
-                
-                # Try to load model info
-                models = joblib.load(model_path)
-                
-                status[h] = {
-                    "exists": True,
-                    "path": str(model_path),
-                    "size_mb": stat.st_size / 1024 / 1024,
-                    "ensemble_size": len(models) if isinstance(models, list) else 1,
-                    "modified": stat.st_mtime
-                }
-            except Exception as e:
-                status[h] = {
-                    "exists": True,
-                    "error": str(e)
-                }
-        else:
-            status[h] = {
-                "exists": False,
-                "path": str(model_path)
-            }
+    print("🎯 Generating latest predictions...")
     
-    return status
+    features_file = Path("exports/features.parquet")
+    
+    if not features_file.exists():
+        print("❌ No features file found")
+        return False
+    
+    # Load features
+    features_df = pd.read_parquet(features_file)
+    
+    # Take latest samples
+    latest_features = features_df.tail(200).copy()
+    print(f"Using latest {len(latest_features)} samples")
+    
+    # Generate predictions
+    predictions_df = predict_all(latest_features)
+    
+    if predictions_df.empty:
+        return False
+    
+    # Save predictions
+    output_dir = Path("exports/production")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    output_file = output_dir / "latest_predictions.csv"
+    predictions_df.to_csv(output_file, index=False)
+    
+    print(f"✅ Latest predictions saved to: {output_file}")
+    return True
 
 if __name__ == "__main__":
-    # Test predictions with sample data
-    print("Testing prediction system...")
+    print("ML Predictor - Testing and Validation")
+    print("=" * 50)
     
     # Check model status
+    print("1️⃣ Checking model status...")
     status = get_model_status()
-    print("\nModel Status:")
-    for h, info in status.items():
-        if info.get("exists"):
-            if "error" in info:
-                print(f"  {h}: ERROR - {info['error']}")
-            else:
-                print(f"  {h}: OK - {info['ensemble_size']} models, {info['size_mb']:.1f}MB")
-        else:
-            print(f"  {h}: MISSING - {info['path']}")
     
-    # Test with sample features if available
-    features_file = Path("exports/features.parquet")
-    if features_file.exists():
-        print(f"\nTesting with features from {features_file}")
-        
-        # Load sample data
-        features = pd.read_parquet(features_file)
-        sample = features.head(10)
-        
-        print(f"Sample features shape: {sample.shape}")
-        print(f"Feature columns: {[c for c in sample.columns if c.startswith('feat_')]}")
-        
-        # Generate predictions
-        predictions = predict_all(sample)
-        
-        print(f"\nPrediction results:")
-        print(f"Shape: {predictions.shape}")
-        print(f"Columns: {list(predictions.columns)}")
-        
-        # Show sample predictions
-        pred_cols = [c for c in predictions.columns if c.startswith(('pred_', 'conf_'))]
-        if pred_cols:
-            print(f"\nSample predictions:")
-            print(predictions[['coin'] + pred_cols].head())
+    available_models = [h for h, s in status.items() if s["exists"]]
+    missing_models = [h for h, s in status.items() if not s["exists"]]
+    
+    print(f"   Available models: {available_models}")
+    print(f"   Missing models: {missing_models}")
+    
+    if not available_models:
+        print("❌ No trained models found. Run: python ml/train_baseline.py")
+        exit(1)
+    
+    # Test predictions
+    print("\n2️⃣ Testing predictions...")
+    if test_predictions():
+        print("✅ Prediction test successful")
     else:
-        print(f"\nNo features file found at {features_file}")
-        print("Run ml/train_baseline.py first to create models and test data")
+        print("❌ Prediction test failed")
+        exit(1)
+    
+    # Generate latest predictions
+    print("\n3️⃣ Generating latest predictions...")
+    if predict_latest():
+        print("✅ Latest predictions generated")
+    else:
+        print("❌ Latest prediction generation failed")
+    
+    print("\n🎉 Prediction pipeline test complete!")
+    print("\nNext steps:")
+    print("• Run: python generate_final_predictions.py")
+    print("• Check dashboard for live predictions")
+    print("• Verify predictions.csv in exports/production/")
