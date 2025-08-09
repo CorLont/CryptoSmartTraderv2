@@ -1,0 +1,97 @@
+Top! Ik focus alleen op de code die je hebt gedeeld en geef een strakke, kritische review per bestand (bugs, anti‑patterns, logica‑gaten, productierisico’s). Geen nieuwe features of architectuurvoorstellen—puur codekwaliteit.
+
+app.py
+	•	Zware imports aan top-level + side effects in main()
+Je importeert vrijwel alle dashboards bovenaan én start market_scanner.start_comprehensive_scanning() en monitoring_system.start_monitoring() zodra de app draait. Dit creëert onnodige init‑kosten, moeilijk te testen side effects en fragile opstartvolgorde in Streamlit sessions. Doe (als policy) lazy imports per pagina en vermijd side effects vóór gebruikersactie.  ￼
+	•	Fragiele foutafhandeling tijdens init
+Slechts één try/except rond de container-init. Als een subprovider ontbreekt (bv. config.daily_logging_config of een dashboard), krijg je generieke “Failed to initialize core systems”. Beter: granulariser de try/except per dependency en toon gerichte error‑UI.  ￼
+	•	State‑sleutel wisselt van type
+Je schrijft st.session_state.container = container (object), en elders gebruik je losse objecten. Consistentie is nodig om key‑errors te vermijden bij reruns.  ￼
+
+app_clean.py
+	•	Hard gate + st.stop() maakt code daarna onbereikbaar
+In “System Status” is de flow correct (stoppen zonder modellen), maar check of alle UI‑paden vóór st.stop() zijn afgehandeld; anders schiet je jezelf in de voet met niet‑bereikte cleanup. Verder goed dat er geen nepdata getoond wordt bij missende modellen—consistent houden in alle pagina’s.  ￼
+	•	Pandas SettingWithCopy‑risico
+In render_ai_predictions() pas je direct kolommen aan op een slice (display_df[pred_col] = ...). Dat kan een SettingWithCopyWarning veroorzaken en tot stille fouten leiden afhankelijk van upstream filters. Gebruik .assign() of werk op .copy().  ￼
+
+app_minimal.py
+	•	Dode code/contradicties na st.stop()
+Je doet st.stop() wanneer modellen ontbreken en hebt daarna nog een else:‑tak die “🔴 System Not Ready” in de sidebar zet—die code is onbereikbaar. Dit is misleidend tijdens onderhoud.  ￼
+	•	Dubbele except‑blokken voor dezelfde try
+In main() staan twee opeenvolgende except Exception as e:‑blokken, waarvan de tweede nooit bereikt wordt. Dit verbergt andere fouten.  ￼
+	•	Nepdata in “MARKT STATUS” en andere schermen
+render_market_status() en “Top movers” gebruiken random/statics. Inconsistent met je andere strikte varianten (clean) die juist dat vermijden. Als dit per design is, label het expliciet in de UI (nu is het niet traceerbaar in code).  ￼
+	•	Confidence‑gate en normalisatie
+Je mapping in apply_strict_confidence_gate_filter() forceert confidence naar ~0.65–0.95 op basis van score i.p.v. echte modelonzekerheid. Dat maakt drempels arbitrair en lastig te auditen; bovendien wijkt dit af van je generator die sigma‑gebaseerde confidence gebruikt (zie generate_final_predictions.py). Inconsistentie vergroot false‑accept/false‑reject risico.  ￼ ￼
+	•	Harde aannames over bestandslocaties
+Meerdere paden (models, exports) worden direct gecheckt zonder error context of fallback; goed voor gate, maar code is her en der gedupliceerd en staat niet centraal (risico op drift).  ￼
+
+app_simple_trading.py
+	•	Volledig mock‑gedreven
+Alle cijfers (AI “accuracy”, “zekerheid”, rendementspercentages) zijn hardcoded/random. Dat is prima voor demo, maar in code ontbreekt duidelijke labeling/afbakening (zoals een DEMO_MODE flag). Dit creëert productierisico als iemand dit per ongeluk inzet naast echte dashboards.  ￼
+	•	Geen invoervalidatie
+Filters kunnen logische inconsistenties opleveren (bv. 500% min return + hoog confidence → vaak lege set) en er is geen fallback pad voor UX behalve een waarschuwing. Code is simpel, maar dit is een bewuste productiekeuze.  ￼
+
+containers.py
+	•	Provider‑naam collisions / overschrijven
+performance_optimizer wordt twee keer gedefinieerd: eerst providers.Singleton(PerformanceOptimizer) en later opnieuw als providers.Factory(PerformanceOptimizer). De tweede overschrijft de eerste in de container—zéér verwarrend en foutgevoelig (lifecycle verandert zonder waarschuwing). Kies één.  ￼
+	•	Dubbele GPU‑providers
+Je hebt zowel gpu_accelerator_provider = providers.Object(gpu_accelerator) als gpu_accelerator = providers.Factory(GPUAccelerator, ...). De naamgeving is te dicht op elkaar en semantisch verwarrend (object vs. instance factory). Groot risico op het aanroepen van de verkeerde dependency.  ￼
+	•	Dynamische imports via lambda container: __import__(...)
+Voor crypto_ai_system en ml_ai_differentiators gebruik je __import__ in providers. Dit maakt typechecking en refactors moeilijk en gaat stil falen bij padwijzigingen. Bovendien is de lambda‑signatuur inconsistent met de rest en krijgt providers.Self() doorgegeven, wat niet altijd is wat je denkt.  ￼
+	•	Massale top‑imports
+De container importeert veel modules die mogelijk optioneel zijn (“deep_learning_engine”, “automl_engine”, enz.). Bij missing modules faalt de containerconstructie in z’n geheel. Beter: faal lui (lazy) in factories, niet bij containerdefinitie.  ￼
+
+debug_confidence_gate.py
+	•	Analyse klopt, maar hardcoded aannames
+Het script wijst terecht op de fout “score/100 → <0.8” waardoor niemand de 80% gate haalt. Het stelt fixes voor in tekst, maar past niets aan in de applicatiecode. Goed voor diagnose, niet voor remediatie; bovendien blijven er twee concurrerende confidence‑definities in de codebase (hier vs. generate_final_predictions.py).  ￼ ￼
+
+fix_all_errors.py
+	•	Gevaarlijk auto‑install‑pad
+In fix_import_errors() installeer je het pakket met de naam uit de ImportError (bv. dashboards.shadow_trading_dashboard) via pip—dat pakket bestaat niet in PyPI. Dit kan eindeloos falen of, erger, “typo‑squatting” risico opleveren. Nooit module‑namen blind pip‑installen.  ￼
+	•	Hardcoded poortcheck 5000
+Er wordt alleen op 5000 gekeken, terwijl Streamlit zelf standaard 8501 gebruikt en jij 5000 forceert in .streamlit/config.toml. Zorg dat code/infra consistent is; nu kan je denken dat 5000 vrij is terwijl Streamlit elders draait.  ￼
+	•	“All systems ready” zonder asserts
+test_system_functionality() importeert modules die mogelijk niet bestaan en vangt alles in één except; het eindresultaat kan “✅ passed” suggereren zonder echte dekking. Misleidend voor deploy‑beslissingen.  ￼
+
+fix_dependencies.py
+	•	Te smalle dependencyset + zelfde valkuil
+Installeert alleen torch/optuna/pytest* maar test imports van eigen core.* modules die niet via pip bestaan. De import‑tests geven “✗ … error”, maar het script claimt “🎉 All systems ready”. Zelfde misleidingsrisico.  ￼
+
+generate_final_predictions.py
+	•	Confidence‑definitie is goed, maar inconsistent gebruikt
+Hier is confidence gebaseerd op ensemble‑sigma: conf = 1/(1+σ) (goed). Maar elders (minimal app) gebruik je score‑normalisaties. Eén bron‑waarheid ontbreekt → inconsistent gategedrag tussen UI’s en batch.  ￼ ￼
+	•	Gemiddelde confidence berekening is foutief bij gemixte horizons
+In de summary:
+
+"mean_confidence": float(final_df[f"conf_{final_df.iloc[0]['horizon']}"].mean())
+
+Dit pakt alléén de conf‑kolom van de eerste horizon voor het hele dataframe. Bij meerdere horizons is dit betekenisloos. Bereken horizon‑specifiek of stack unificeren.  ￼
+
+	•	Gate statistieken juist, maar geen logging bij empty pass in CSV
+Bij “no predictions passed” return je False; er is wel console‑output maar geen persistente log of artefact voor dashboards. Dit maakt UI “leeg” zonder diagnose. (Dit is code‑observatie, geen feature‑verzoek.)  ￼
+
+preinstall_check.py
+	•	Bruikbaar, maar fluctuerende netwerkgates
+check_api_endpoints() en DNS kunnen lokaal of in CI willekeurig mislukken → “warning” is oké, maar hou er rekening mee dat dit de overall “system_ready” perceptie beïnvloedt. Code‑matig oké, maar output kan schommelen.  ￼
+	•	Dubbele performance/logging configuratie
+logging.basicConfig(...) in module scope kan botsen met je andere logger setups (bv. config.logging_config). Ontkoppel basale config hier om dubbele handlers te voorkomen.  ￼
+
+tests (orchestrator/evaluator/features)
+	•	Sterk afhankelijk van niet‑aangeleverde modules
+test_complete_distributed_system importeert o.a. core.process_isolation, core.async_queue_system, core.prometheus_metrics, core.distributed_orchestrator. Als die ontbreken, vangen jullie except en printen “failed”, maar zonder asserts/log artefact. Daardoor geen harde signaalfunctie in CI.  ￼
+	•	Feature‑pipeline test heeft “expected ImportError” pad
+In test_feature_building() is een pad waarin het ontbreken van Great Expectations als geslaagd wordt geïnterpreteerd (“framework structure is correct”). Dit kan echte regressies maskeren. Separeren in “skipped” i.p.v. “passed”.  ￼
+	•	Evaluator tests vertrouwen op helper‑fabrieken
+create_mock_evaluation_data() verbergt aannames; mislukking is moeilijk te herleiden. Minimale sanity‑asserts op shapes/waarden ontbreken (netjes toevoegen voor determinisme).  ￼
+
+⸻
+
+Samenvatting: grootste code‑risico’s
+	1.	DI‑container fouten en provider‑shadowing (dubbele performance_optimizer, GPU‑providers, dynamische import‑providers met __import__) — hoge kans op runtime‑fouten en onvoorspelbare lifecycles.  ￼
+	2.	Inconsistent confidence‑model tussen batch (σ‑gebaseerd) en UI (score‑normalisatie) — leidt tot tegenstrijdige gates en lege dashboards terwijl batch wel signalen heeft (of omgekeerd).  ￼ ￼
+	3.	Auto‑fix scripts die “spook‑pip‑install” proberen en valse groensignalen produceren — misleidend en onveilig.  ￼ ￼
+	4.	Mock/nepdata in productieschermen zonder harde labeling — risico op verkeerde beslissingen door gebruikers die echte cijfers verwachten.  ￼ ￼
+	5.	Test‑suite die failures dempt i.p.v. harde asserts/artefacten — echte problemen kunnen door de mazen glippen.  ￼ ￼ ￼
+
+Als je wilt, kan ik in een volgende stap per punt kort aangeven welke concrete codewijziging nodig is (zonder nieuwe features)—maar voor nu heb ik me strak gehouden aan “alleen kritisch beoordelen”.
