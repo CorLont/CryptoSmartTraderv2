@@ -1,19 +1,19 @@
 # replit.md
 
 ## Overview
-CryptoSmartTrader V2 is a sophisticated multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies using a coordinated ensemble of specialized AI agents, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies.
+CryptoSmartTrader V2 is a multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies.
 
-The enterprise architecture goals include higher prediction accuracy, zero dummy-data tolerance, strict confidence gating, robust async scraping, modern ML/AI techniques (uncertainty, regime, ensembles), and daily evaluation with GO/NOGO decisions. Key capabilities include zero synthetic data tolerance, mandatory deep learning, cross-coin feature fusion, true async processing, enterprise security, Bayesian uncertainty quantification, dynamic coin discovery, advanced AI/ML, multi-agent cooperation, model monitoring, black swan simulation, and real-time order book data integration.
+The enterprise architecture goals include higher prediction accuracy, zero dummy-data tolerance, strict confidence gating, robust async scraping, modern ML/AI techniques (uncertainty, regime, ensembles), and daily evaluation with GO/NOGO decisions. Key capabilities include enterprise security, Bayesian uncertainty quantification, dynamic coin discovery, advanced AI/ML, multi-agent cooperation, model monitoring, black swan simulation, and real-time order book data integration.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 Data integrity policy: ABSOLUTE ZERO-TOLERANCE for synthetic/fallback data - Complete elimination of all non-authentic data sources in production mode. Only 100% authentic data from direct exchange APIs allowed. Production automatically blocks any violations. No fallback, no synthetic data, no interpolated values, no NaN values allowed in production. Strict data integrity enforcement with real-time validation and automatic production blocking.
-Enterprise code quality: Complete enterprise-grade code audit system implemented based on critical failure mode checklist. All 11 categories audited with 7 critical fixes applied achieving 100% success rate (August 2025).
+Enterprise code quality: Complete enterprise-grade code audit system implemented based on critical failure mode checklist. All 11 categories audited with 7 critical fixes applied achieving 100% success rate.
 
 ## System Architecture
 
 ### Core Architecture Pattern
-The system employs a Distributed Multi-Process Architecture, managing 8 isolated agent processes (Data Collector, Sentiment Analyzer, Technical Analyzer, ML Predictor, Whale Detector, Risk Manager, Portfolio Optimizer, and Health Monitor) with circuit breakers, exponential backoff, health monitoring, and automatic restart capabilities. Each agent runs in complete process isolation to eliminate single points of failure.
+The system employs a Distributed Multi-Process Architecture, managing 8 isolated agent processes (Data Collector, Sentiment Analyzer, Technical Analyzer, ML Predictor, Whale Detector, Risk Manager, Portfolio Optimizer, and Health Monitor) with circuit breakers, exponential backoff, health monitoring, and automatic restart capabilities. Each agent runs in complete process isolation.
 
 ### Technology Stack
 - **Frontend:** Streamlit.
@@ -26,11 +26,11 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 
 ### Key Architectural Decisions
 - **Comprehensive Testing Framework:** Enterprise pytest suite with 80%+ coverage.
-- **Enterprise Security Framework:** Secrets management with Vault integration, log redaction.
-- **Production-Grade Logging & Monitoring:** Structured JSON logging with correlation IDs, Prometheus metrics.
+- **Enterprise Security Framework:** Secrets management, log redaction.
+- **Production-Grade Logging & Monitoring:** Structured JSON logging, Prometheus metrics.
 - **Dependency Injection Container:** Full dependency-injector implementation.
 - **Pydantic Configuration Management:** Type-safe settings with environment variable support.
-- **Async I/O Architecture:** Complete async/await implementation with aiohttp, global rate limiting.
+- **Async I/O Architecture:** Complete async/await implementation, global rate limiting.
 - **Universal Configuration Management:** Centralized with validation and backup.
 - **Intelligent Cache Manager:** Memory-aware caching with TTL and cleanup.
 - **Health Monitoring System:** Continuous checks with alerts and GO/NO-GO gates.
@@ -54,68 +54,58 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Shadow Trading:** Full paper trading engine with realistic market simulation for pre-production model validation.
 - **Advanced Execution Simulation:** Level-2 order book simulation with market impact, partial fills, exchange-specific latency/fees.
 - **Enterprise Portfolio Risk Management:** Per-coin hard caps, correlation limits, automated position kill-switch.
-- **Coverage Audit System:** Daily automated audits ensuring 99%+ exchange coverage with alerts.
+- **Coverage Audit System:** Daily automated audits ensuring 99%+ exchange coverage.
 - **Hard Data Integrity Filter:** Zero-tolerance policy for incomplete data; coins with missing data are hard blocked.
 - **Multi-Horizon Batch Inference Engine:** Unified batch processing for all coins across all horizons with atomic operations.
 - **Multi-Horizon Signal Quality Validator:** Enterprise signal validation system with defined metrics.
 - **System Health Monitor with GO/NO-GO Gates:** Enterprise health scoring system determining live trading authorization.
-- **Enterprise Meetscripts Suite:** Operational measurement toolkit (`strict_filter.py`, `coverage_audit.py`, `evaluator.py`, `calibration.py`, `health_score.py`).
-- **Complete Operational Playbook:** Full enterprise workflow automation (`nightly_batch.py`, `post_batch_validation.py`, `dashboard_gate_checker.py`, `shadow_to_live_validator.py`).
+- **Enterprise Meetscripts Suite:** Operational measurement toolkit.
+- **Complete Operational Playbook:** Full enterprise workflow automation.
 - **Drift Detection System:** Complete drift detection with error trending analysis and distribution monitoring.
 - **Fine-Tune Scheduler with EWC:** Automated fine-tuning system with replay buffer and Elastic Weight Consolidation.
 - **Auto-Disable System:** Trading safety system that automatically disables live trading based on health scores.
-- **Drift-Fine-Tune-Auto-Disable Integration:** Complete integration system for drift monitoring, fine-tuning, and trading mode management.
-- **L2 Orderbook Simulator:** Complete Level-2 order book simulation with realistic market microstructure.
-- **Slippage Estimator:** Real-time slippage estimation system with percentile calculations.
-- **Paper Trading Engine:** Mandatory 4-week paper trading validation system with complete execution logging.
+- **L2 Orderbook Simulator:** Complete Level-2 order book simulation.
+- **Slippage Estimator:** Real-time slippage estimation system.
+- **Paper Trading Engine:** Mandatory 4-week paper trading validation.
 - **MLflow Manager:** Complete MLflow integration for model tracking, versioning, and registry.
-- **Backup/Restore System:** Complete backup and restore scripts for models, configs, logs, and data.
-- **Windows Deployment Automation:** Full Windows deployment with antivirus/firewall exception configuration.
-- **One-Click Pipeline:** Complete automated pipeline runner executing scrape → features → predict → strict gate → export → eval → logs/daily workflow.
-- **Monte Carlo Dropout Inference:** Bayesian uncertainty quantification for neural networks using MC Dropout.
+- **Backup/Restore System:** Complete backup and restore scripts.
+- **One-Click Pipeline:** Complete automated pipeline runner.
+- **Monte Carlo Dropout Inference:** Bayesian uncertainty quantification for neural networks.
 - **Regime Detection HMM:** Hidden Markov Model-based market regime classification.
-- **Daily Logging Bundler:** Ultra-compact daily metrics logging system with automatic bundling and compression.
+- **Daily Logging Bundler:** Ultra-compact daily metrics logging system.
 - **Enterprise Risk Mitigation:** Comprehensive risk mitigation system covering data gaps, overfitting, GPU bottlenecks, and complexity management.
-- **Data Completeness Gate:** Zero-tolerance data quality gate that hard-blocks coins with insufficient data completeness.
-- **Workstation Optimizer:** Complete workstation optimization for i9-32GB-RTX2000 setup with hardware detection and performance tuning.
-- **Daily Health Dashboard:** Centralized daily health monitoring with comprehensive reports and actionable recommendations.
-- **Improved Logging Manager:** Fixed correlation_id issues with simplified logging configuration for production stability.
-- **Final System Integrator:** Complete production deployment automation with workstation-specific configurations and validation.
-- **Production Optimizer:** Advanced performance optimizations with CPU, memory, GPU, I/O, threading, and process priority tuning.
-- **Real-Time Monitor:** Intelligent real-time monitoring with threshold-based alerting and automatic corrective actions.
-- **Advanced Analytics:** Comprehensive analytics engine generating actionable insights from system performance and trading data.
-- **Comprehensive System Manager:** Ultimate system integration managing all advanced features with enterprise-grade initialization and reporting.
-- **Enterprise Risk Mitigation:** Ultra-advanced risk mitigation with circuit breakers, emergency protocols, and automatic corrective actions.
-- **Ultra Performance Optimizer:** AI-driven adaptive performance optimization with hardware-specific tuning and predictive scaling.
-- **Code Audit System:** Complete code quality audit based on enterprise checklist covering all critical failure modes.
+- **Data Completeness Gate:** Zero-tolerance data quality gate.
+- **Workstation Optimizer:** Complete workstation optimization for i9-32GB-RTX2000 setup.
+- **Daily Health Dashboard:** Centralized daily health monitoring.
+- **Improved Logging Manager:** Fixed correlation_id issues with simplified logging configuration.
+- **Final System Integrator:** Complete production deployment automation.
+- **Production Optimizer:** Advanced performance optimizations.
+- **Real-Time Monitor:** Intelligent real-time monitoring with threshold-based alerting.
+- **Advanced Analytics:** Comprehensive analytics engine generating actionable insights.
+- **Comprehensive System Manager:** Ultimate system integration managing all advanced features.
 - **Critical Fixes Applier:** Automatic application of fixes for timestamp validation, calibration, slippage modeling, and security issues.
-- **Meta-Labeling System:** Lopez de Prado triple-barrier method for signal quality filtering and false signal elimination.
-- **Event Impact Scoring:** LLM-powered news analysis with impact scoring and half-life decay modeling for event-driven alpha.
-- **Futures Data Features:** Funding rates, open interest, and basis features for leverage squeeze detection and crowding signals.
+- **Meta-Labeling System:** Lopez de Prado triple-barrier method for signal quality filtering.
+- **Event Impact Scoring:** LLM-powered news analysis with impact scoring.
+- **Futures Data Features:** Funding rates, open interest, and basis features.
 - **Advanced Transformers:** Temporal Fusion Transformer (TFT) and N-BEATS ensemble for superior multi-horizon forecasting.
-- **Conformal Prediction:** Formal uncertainty quantification with adaptive confidence intervals for better risk gating.
+- **Conformal Prediction:** Formal uncertainty quantification with adaptive confidence intervals.
 - **Advanced Portfolio Optimization:** Kelly-lite position sizing with uncertainty awareness, correlation caps, and hard risk overlays.
-- **Meta-Labeling System:** Lopez de Prado triple-barrier method for trade quality filtering and false signal elimination.
-- **Futures Signal Integration:** Funding rates, open interest, and basis features for leverage squeeze detection and crowding signals.
-- **Order Book Imbalance Detection:** L2 depth analysis with bid/ask imbalance and spoof detection for better timing.
-- **Event Impact Scoring:** LLM-powered news analysis with impact scoring and half-life decay modeling for event-driven alpha.
-- **Regime Router (Mixture-of-Experts):** Best model per regime routing to prevent collapse during market stress periods.
-- **Conformal Prediction:** Formal uncertainty quantification with adaptive confidence intervals for superior risk gating.
+- **Order Book Imbalance Detection:** L2 depth analysis with bid/ask imbalance and spoof detection.
+- **Regime Router (Mixture-of-Experts):** Best model per regime routing.
 - **Uncertainty-Aware Sizing:** Kelly-lite position sizing with uncertainty awareness, correlation caps, and liquidity constraints.
-- **Temporal Integrity Validation:** Complete protection against look-ahead bias and data leakage in time series ML.
-- **Timestamp Synchronization System:** UTC candle boundary alignment across all agents preventing timestamp mismatches.
-- **Temporal Validation System:** Complete multi-agent timestamp validation with look-ahead bias prevention and candle alignment enforcement.
-- **Temporal Safe Splits:** Time-series aware train/test splitting with gap enforcement preventing future data leakage.
-- **Temporal Feature Engineering:** Safe temporal feature creation with comprehensive look-ahead bias validation and leak detection.
-- **Async Scraping Framework:** High-performance concurrent scraping with intelligent rate limiting, retries, and timeout management.
-- **Concurrent Data Collector:** Multi-source data collection with async/await, thread pools, and comprehensive error handling.
-- **Probability Calibrator:** Advanced calibration methods (Platt scaling, isotonic regression, temperature scaling) for reliable confidence scores.
-- **Calibrated Confidence Gate:** Enterprise confidence gating with properly calibrated probabilities ensuring 80% means real 80% chance.
-- **Bayesian Uncertainty Quantification:** Monte Carlo Dropout, ensemble modeling, and epistemic/aleatoric uncertainty decomposition for true confidence estimation.
-- **Monte Carlo Dropout Inference:** Lightweight MC Dropout implementation for fast uncertainty estimation with proper confidence intervals.
-- **Market Regime Detection:** Hidden Markov Model and rule-based classification for dynamic market regime identification with regime transition tracking.
-- **Regime-Aware Models:** Specialized models for bull/bear/high-volatility/consolidation regimes with intelligent routing based on current market conditions.
-- **Integrated Regime-Aware Confidence System:** Complete integration of regime detection, calibrated confidence gates, and Bayesian uncertainty quantification with regime-specific adjustments.
+- **Temporal Integrity Validation:** Complete protection against look-ahead bias and data leakage.
+- **Timestamp Synchronization System:** UTC candle boundary alignment across all agents.
+- **Temporal Validation System:** Complete multi-agent timestamp validation.
+- **Temporal Safe Splits:** Time-series aware train/test splitting.
+- **Temporal Feature Engineering:** Safe temporal feature creation.
+- **Async Scraping Framework:** High-performance concurrent scraping.
+- **Concurrent Data Collector:** Multi-source data collection with async/await.
+- **Probability Calibrator:** Advanced calibration methods.
+- **Calibrated Confidence Gate:** Enterprise confidence gating with properly calibrated probabilities.
+- **Bayesian Uncertainty Quantification:** Monte Carlo Dropout, ensemble modeling, and epistemic/aleatoric uncertainty decomposition.
+- **Market Regime Detection:** Hidden Markov Model and rule-based classification.
+- **Regime-Aware Models:** Specialized models for various regimes.
+- **Integrated Regime-Aware Confidence System:** Complete integration of regime detection, calibrated confidence gates, and Bayesian uncertainty quantification.
 
 ## External Dependencies
 
