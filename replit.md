@@ -108,6 +108,7 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Integrated Regime-Aware Confidence System:** Complete integration of regime detection, calibrated confidence gates, and Bayesian uncertainty quantification.
 - **Realistic Orderbook Simulator:** Level-2 orderbook simulation with market impact, slippage estimation, partial fills, and exchange-specific latency modeling.
 - **Advanced Backtesting Engine:** Comprehensive backtester with fees, slippage, partial fills, latency, and liquidity constraints eliminating optimistic bias.
+- **OpenAI Enhanced Intelligence:** GPT-4o integration for advanced sentiment analysis, news impact assessment, intelligent feature engineering, and anomaly detection.
 
 ## External Dependencies
 
