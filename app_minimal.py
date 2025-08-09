@@ -33,6 +33,7 @@ try:
     from ml.enhanced_calibration import EnhancedCalibratorV2
     from utils.timestamp_validator import normalize_timestamp, validate_timestamp_sequence
     from ml.temporal_integrity_validator import validate_temporal_integrity
+    from core.system_readiness_checker import get_system_readiness
     CONFIDENCE_GATE_AVAILABLE = True
     ENTERPRISE_FIXES_AVAILABLE = True
     TEMPORAL_VALIDATION_AVAILABLE = True
@@ -64,31 +65,70 @@ def main():
     st.sidebar.title("🚀 CryptoSmartTrader V2")
     st.sidebar.markdown("---")
     
-    # Health indicator
-    st.sidebar.success("🟢 System Online")
+    # Real system readiness check
+    system_status = get_system_readiness()
     
-    # Simplified navigation - direct trading focus
-    page = st.sidebar.radio(
-        "💰 Trading Dashboard",
-        [
-            "🎯 TOP KOOP KANSEN",
-            "📊 Markt Status", 
-            "🧠 AI Voorspellingen"
-        ]
-    )
-    
-    # Filters in sidebar with STRICT confidence gate
-    st.sidebar.markdown("### ⚙️ Filters")
-    min_return = st.sidebar.selectbox("Min. rendement 30d", ["25%", "50%", "100%", "200%"], index=1)
-    confidence_filter = st.sidebar.slider("Min. vertrouwen (%)", 60, 95, 80)  # Default to 80%
-    
-    # Strict gate configuration
-    st.sidebar.markdown("### 🛡️ Confidence Gate")
-    strict_mode = st.sidebar.checkbox("Strict mode (toon niets < threshold)", value=True)
-    if strict_mode:
-        st.sidebar.warning("⚠️ Alleen ≥80% confidence wordt getoond")
+    # Health indicator based on actual readiness
+    if system_status['system_ready']:
+        st.sidebar.success(f"🟢 {system_status['status_message']}")
     else:
-        st.sidebar.info("ℹ️ Soft filtering actief")
+        st.sidebar.error(f"🔴 {system_status['status_message']}")
+        
+        # Show blocking issues
+        if system_status.get('blocking_issues'):
+            with st.sidebar.expander("⚠️ System Issues"):
+                for issue in system_status['blocking_issues'][:3]:  # Show top 3
+                    if issue.strip():
+                        st.sidebar.text(f"• {issue}")
+                        
+        st.sidebar.info(f"Readiness: {system_status['readiness_score']}/100")
+    
+    # Navigation with readiness-based enabling/disabling
+    system_status = get_system_readiness()
+    ui_states = system_status.get('ui_component_states', {})
+    
+    # Tab options with conditional availability
+    available_tabs = ["📊 Markt Status"]  # Always available
+    
+    if ui_states.get('ai_predictions_tab') == 'enabled':
+        available_tabs.append("🧠 AI Voorspellingen")
+    
+    if ui_states.get('top_opportunities_tab') == 'enabled':
+        available_tabs.append("🎯 TOP KOOP KANSEN")
+    
+    page = st.sidebar.radio("💰 Trading Dashboard", available_tabs)
+    
+    # Show disabled features
+    if ui_states.get('ai_predictions_tab') == 'disabled':
+        st.sidebar.text("🚫 AI Voorspellingen (modellen niet gereed)")
+    if ui_states.get('top_opportunities_tab') == 'disabled':
+        st.sidebar.text("🚫 Top Koop Kansen (systeem niet gereed)")
+    
+    # Filters - only show if models are ready
+    if ui_states.get('filtering_controls') == 'enabled':
+        st.sidebar.markdown("### ⚙️ Filters")
+        min_return = st.sidebar.selectbox("Min. rendement 30d", ["25%", "50%", "100%", "200%"], index=1)
+        confidence_filter = st.sidebar.slider("Min. vertrouwen (%)", 60, 95, 80)
+        
+        # Confidence gate - only available if models ready
+        if ui_states.get('confidence_gate_controls') == 'enabled':
+            st.sidebar.markdown("### 🛡️ Confidence Gate")
+            strict_mode = st.sidebar.checkbox("Strict mode (toon niets < threshold)", value=True)
+            if strict_mode:
+                st.sidebar.warning("⚠️ Alleen ≥80% confidence wordt getoond")
+            else:
+                st.sidebar.info("ℹ️ Soft filtering actief")
+        else:
+            strict_mode = True  # Default to strict when no models
+            st.sidebar.markdown("### 🛡️ Confidence Gate")
+            st.sidebar.text("⏳ Beschikbaar na model training")
+    else:
+        # Default values when controls disabled
+        min_return = "50%"
+        confidence_filter = 80
+        strict_mode = True
+        st.sidebar.markdown("### ⚙️ Filters")
+        st.sidebar.text("⏳ Beschikbaar na model training")
     
     # Route to appropriate dashboard
     try:
@@ -119,6 +159,30 @@ def render_trading_opportunities(min_return, confidence_filter, strict_mode=True
     """Render trading opportunities with confidence gate filtering"""
     st.title("💰 TOP KOOP KANSEN")
     st.markdown("### 🎯 De beste coins om NU te kopen met verwachte rendementen")
+    
+    # Check system readiness first
+    system_status = get_system_readiness()
+    
+    if not system_status['system_ready']:
+        st.error("🚫 TOP KOOP KANSEN NIET BESCHIKBAAR")
+        st.warning("⚠️ Systeem niet gereed voor trading signals")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info("**Vereisten voor koop kansen:**")
+            st.text("• ML modellen getraind en recent")
+            st.text("• Data coverage ≥80%")
+            st.text("• Confidence calibratie recent")
+            st.text("• System health score ≥70")
+            
+        with col2:
+            st.error("**Huidige status:**")
+            for issue in system_status.get('blocking_issues', [])[:5]:
+                if issue.strip():
+                    st.text(f"• {issue}")
+        
+        st.info("💡 **Oplossing:** Run het model training script en system health check")
+        return
     
     # Check data availability
     data_status = check_data_availability()
@@ -720,36 +784,64 @@ def render_strict_confidence_empty_state(gate_report, total_opportunities):
         """)
 
 def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
-    """Render AI predictions dashboard with confidence gate"""
+    """Render AI predictions dashboard with proper model readiness check"""
     st.title("🧠 AI Voorspellingen")
     st.markdown("### 🤖 Machine Learning prijs voorspellingen")
     
-    # Check model status
-    data_status = check_data_availability()
+    # Check if models are ready using proper system check
+    system_status = get_system_readiness()
+    model_status = system_status.get('component_status', {}).get('models', {})
     
-    if not data_status['models_trained']:
-        st.error("❌ GEEN GETRAINDE MODELLEN")
+    if not model_status.get('models_ready', False):
+        st.error("🚫 GEEN GETRAINDE MODELLEN")
+        st.warning("⚠️ AI voorspellingen niet beschikbaar - modellen niet gevonden of verouderd")
         
-        st.markdown("### 🧠 Model Status:")
-        for model in data_status['missing_models']:
-            st.markdown(f"- **{model}**: Niet gevonden")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info("**Model status:**")
+            st.text(f"• Gevonden modellen: {model_status.get('total_models', 0)}")
+            st.text(f"• Recente modellen: {model_status.get('recent_models', 0)}")
+            st.text(f"• Horizon coverage: {model_status.get('horizon_coverage_percent', 0):.0f}%")
+            st.text(f"• Oudste model: {model_status.get('oldest_model_age_hours', 0):.0f}h")
+            
+        with col2:
+            st.error("**Blocking issues:**")
+            for issue in model_status.get('readiness_issues', [])[:4]:
+                if issue.strip():
+                    st.text(f"• {issue}")
         
-        st.markdown("### ⚠️ Vereisten voor betrouwbare voorspellingen:")
-        st.markdown("""
-        - Minimaal 90 dagen trainingsdata
-        - Gevalideerde model accuracy >80%
-        - Out-of-sample backtesting uitgevoerd
-        - Model performance monitoring actief
-        """)
+        st.info("💡 **Oplossing:** Run `python scripts/train_production_models.py`")
         return
     
-    # Only show if models are properly trained and validated
+    # Models are ready - proceed with predictions dashboard
+    st.success("✅ Modellen beschikbaar - generating predictions...")
     predictions = get_validated_predictions()
     
     if not predictions:
-        st.warning("⚠️ MODELLEN HERTRAINING NODIG")
-        st.markdown("**Reden**: Model performance onder acceptabel niveau")
+        st.warning("⚠️ VOORSPELLINGEN GENERATIE MISLUKT")
+        st.markdown("**Mogelijke oorzaken**: Model performance issues of data problemen")
         return
+    
+    # Show prediction results with proper confidence filtering
+    st.markdown("### 📈 AI Voorspellingen")
+    
+    # Apply confidence filtering based on readiness
+    filtered_predictions = []
+    for pred in predictions:
+        pred_confidence = pred.get('confidence', 0)
+        if strict_mode and pred_confidence >= (confidence_filter / 100):
+            filtered_predictions.append(pred)
+        elif not strict_mode:
+            filtered_predictions.append(pred)
+    
+    if not filtered_predictions:
+        st.warning(f"🚫 Geen voorspellingen met ≥{confidence_filter}% confidence")
+        st.info("Verlaag confidence threshold of wacht op betere model performance")
+        return
+    
+    # Display predictions table
+    pred_df = pd.DataFrame(filtered_predictions)
+    st.dataframe(pred_df, use_container_width=True)
     
 def get_live_market_data():
     """Get real market data using async data manager with fallback to sync"""
