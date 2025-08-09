@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-09T13:08:43.839679",
+  "risk_score": 25.3,
+  "false_positives": [],
+  "recommendations": [
+    "System operating within normal parameters",
+    "Continue monitoring whale activity on BTC and ADA"
+  ]
+}

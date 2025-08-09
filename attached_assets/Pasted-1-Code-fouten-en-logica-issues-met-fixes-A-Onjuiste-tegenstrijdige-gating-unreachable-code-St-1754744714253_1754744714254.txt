@@ -1,0 +1,165 @@
+1) Code‑fouten en logica‑issues (met fixes)
+A. Onjuiste/tegenstrijdige gating & unreachable code (Streamlit “minimal” app)
+
+In main() bereken je een readiness score, maar daarna zet je in de else‑tak tóch een rood “Not Ready”, óók als modellen wél bestaan. Bovendien staat er st.stop() en direct daarna nog UI‑calls ⇒ onbereikbaar. Ook staan er twee identieke except Exception na elkaar (de tweede is dode code). app_minimal
+
+Fix (compact):
+
+python
+Kopiëren
+Bewerken
+# --- einde van de readiness check ---
+if readiness_score >= 90:
+    st.sidebar.success(f"🟢 System Ready ({readiness_score:.0f}/100)")
+elif readiness_score >= 70:
+    st.sidebar.warning(f"🟠 System Degraded ({readiness_score:.0f}/100)")
+else:
+    st.sidebar.error(f"🔴 System Not Ready ({readiness_score:.0f}/100)")
+
+# Hard gate correct en zonder unreachable UI
+if not models_present:
+    st.error("⚠️ Geen getrainde modellen. AI-tabs uitgeschakeld.")
+    st.info("Train eerst modellen via: python ml/train_baseline.py")
+    st.stop()
+
+# ... GEEN extra sidebar.error hier als modellen aanwezig zijn
+
+# Eén except‑blok volstaat
+try:
+    # route dashboards...
+except Exception as e:
+    st.error(f"Dashboard rendering error: {e}")
+    logger.exception("Dashboard error", exc_info=True)
+(Replace in app_minimal.py.) app_minimal
+
+B. “Live data” check is vals‑positief
+check_data_availability() retourneert has_live_data=True ongeacht API‑sleutels (en missing_keys blijft leeg). Dat maskeert echte verbindingsproblemen. app_minimal
+
+Fix:
+
+python
+Kopiëren
+Bewerken
+def check_data_availability():
+    import os
+    keys = {
+        "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
+        "KRAKEN_API_KEY": os.getenv("KRAKEN_API_KEY"),
+        "KRAKEN_SECRET": os.getenv("KRAKEN_SECRET"),
+    }
+    missing = [k for k,v in keys.items() if not v]
+
+    # Probeer lokale async file, anders sync CCXT
+    live = False
+    try:
+        live = bool(get_live_market_data())  # returns list/None
+    except Exception:
+        live = False
+
+    model_files = ['models/lstm_model.pkl','models/transformer_model.pkl','models/ensemble_model.pkl']
+    missing_models = [f for f in model_files if not os.path.exists(f)]
+
+    return {
+        "has_live_data": live,
+        "has_openai": bool(keys["OPENAI_API_KEY"]),
+        "has_kraken": bool(keys["KRAKEN_API_KEY"] and keys["KRAKEN_SECRET"]),
+        "missing_keys": missing,
+        "models_trained": len(missing_models)==0,
+        "missing_models": missing_models,
+        "can_get_authenticated_data": bool(keys["KRAKEN_API_KEY"] and keys["KRAKEN_SECRET"]),
+    }
+(Replace in app_minimal.py.) app_minimal
+
+C. Je scant niet “alle Kraken‑coins”
+get_sync_market_data() filtert op /USD en cap’t tot top 25 op volume ⇒ je mist small/micro caps (en dus “snelle groeiers”). app_minimal
+
+Fix (haal alles op, sorteer daarna, en laat de UI filteren in plaats van te cappen):
+
+python
+Kopiëren
+Bewerken
+usd_pairs = {k: v for k, v in tickers.items() if k.endswith('/USD')}
+sorted_pairs = sorted(usd_pairs.items(), key=lambda x: (x[1].get('quoteVolume') or 0), reverse=True)
+# verwijder [:25] – verwerk ALLE paren; limitering doe je later in UI (bijv. paginate)
+(Adjust in app_minimal.py.) app_minimal
+
+D. Confidence‑gate normalisatie
+Je had eerder de 0‑pass bug (score/100 tegen 0.80) — in app_minimal.py is dat inmiddels hersteld met een 0.65‑0.95 mapping. Goed! Houd dat zo. (Zie ook je debug tool met root‑cause & fixvoorstellen.) debug_confidence_gateapp_minimal
+
+Als je elders nog score/100 gebruikt: pas gelijk de proposed_fix toe (uit debug_confidence_gate.py). debug_confidence_gate
+
+E. Dummy/gesimuleerde data lekt nog naar dashboards
+
+render_market_status() toont een echte BTC‑lijn maar ook hard‑gecodeerde “Grootste Stijgers” (NEAR/FTM/AVAX/ALGO) ⇒ niet‑authentiek. app_minimal
+
+Het “simplified dashboard” (app_simple_trading) bevat synthetische voorspellingen en koopsignalen. Dat is prima als DEMO, maar niet voor productie. app_simple_trading
+
+Fix (vervang dummy movers door live data):
+
+python
+Kopiëren
+Bewerken
+# Na market_data = get_live_market_data()
+top = sorted(
+    [c for c in market_data if c.get('change_24h') is not None],
+    key=lambda x: x['change_24h'],
+    reverse=True
+)[:10]
+movers_df = pd.DataFrame([{
+    "Coin": m["symbol"], 
+    "Prijs": f"${m['price']:.4f}",
+    "24h": f"{m['change_24h']:+.2f}%",
+    "Volume (24h)": f"${(m['volume_24h'] or 0):,.0f}"
+} for m in top])
+st.dataframe(movers_df, use_container_width=True)
+(Replace de hardcoded lijst in app_minimal.py én gebruik deze aanpak i.p.v. demo in app_simple_trading.py.) app_minimalapp_simple_trading
+
+F. Voorwaarden op modellen inconsistent
+
+Readiness check kijkt naar models/saved/rf_*.pkl voor 1h/24h/7d/30d, maar verderop controleer je óók models/lstm_model.pkl, models/transformer_model.pkl, models/ensemble_model.pkl. Zorg voor één bron van waarheid. app_minimal
+
+Fix (uniformeer op RF‑ensemble óf op LSTM/Transformer, niet beide):
+
+Als je je productie laat sturen door generate_final_predictions.py (RF‑ensemble), baseer ALLE gates/UI op models/saved/rf_{1h,24h,168h,720h}.pkl én op exports/production/predictions.csv. generate_final_predicti…app_minimal
+
+G. Containers & DI: dubbele providers en breekbare imports
+
+In containers.py definieer je performance_optimizer twee keer (Singleton én Factory) en GPU‑accelerator dubbel (gpu_accelerator_provider én gpu_accelerator) ⇒ naamconflict/verwarring.
+
+Veel imports naar modules die mogelijk niet bestaan (risico op ImportError bij boot). containers
+
+Fix (kern):
+
+python
+Kopiëren
+Bewerken
+# Verwijder de dubbele performance_optimizer; kies één:
+performance_optimizer = providers.Singleton(PerformanceOptimizer)
+
+# Verwijder gpu_accelerator_provider of hernoem:
+gpu_accelerator = providers.Singleton(GPUAccelerator, container=providers.Self)
+
+# Maak dynamische imports robuuster:
+def _lazy(cls_path):
+    mod, cls = cls_path.rsplit(".", 1)
+    return getattr(__import__(mod, fromlist=[cls]), cls)
+
+openai_analyzer = providers.Singleton(_lazy("core.openai_enhanced_analyzer.OpenAIEnhancedAnalyzer"), config_manager=config)
+(Apply in containers.py.) containers
+
+H. “Fix scripts” installeren/testen dingen die niet bestaan
+
+fix_all_errors.py en fix_dependencies.py proberen dashboards en core‑modules te importeren die in jouw snapshot ontbreken, en verwijzen naar .bat‑files die niet meegeleverd zijn ⇒ resulteert in valse fails/noise. fix_all_errorsfix_dependencies
+
+Fix (beperk ambitie & faal vriendelijk):
+
+python
+Kopiëren
+Bewerken
+modules_to_test = ["app_minimal", "ccxt"]  # houd klein & echt
+# … en toon alleen suggesties; installeer niet blind third-party imports uit ImportError strings
+(Adjust in beide scripts.) fix_all_errorsfix_dependencies
+
+I. Productie‑pipeline voor voorspellingen
+Goed dat je een zelfstandige voorspellingengenerator hebt die predictions.csv onder exports/production/ wegschrijft met conf_* en gate op 0.80 — precies wat je UI nodig heeft. Borg dat de UI uitsluitend hierop leunt (en niet op ad‑hoc “opportunities”). generate_final_predicti…app_minimal
+

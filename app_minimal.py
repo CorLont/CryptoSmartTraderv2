@@ -163,6 +163,30 @@ def render_trading_opportunities(min_return, confidence_filter, strict_mode=True
     # This code only runs if readiness gate passes
     st.success("✅ System Ready - Models trained and operational")
     
+    # Load real predictions from ML agent
+    predictions_file = Path("exports/production/predictions.json")
+    if predictions_file.exists():
+        import json
+        with open(predictions_file, 'r') as f:
+            authentic_predictions = json.load(f)
+        
+        # Apply enterprise confidence gate
+        from orchestration.strict_gate import enterprise_confidence_gate
+        
+        # Convert to DataFrame for filtering
+        if authentic_predictions:
+            pred_df = pd.DataFrame(authentic_predictions)
+            filtered_df, gate_report = enterprise_confidence_gate(pred_df, min_threshold=confidence_filter/100)
+            
+            opportunities = filtered_df.to_dict('records') if not filtered_df.empty else []
+        else:
+            opportunities = []
+            gate_report = {'status': 'no_predictions', 'passed_count': 0}
+    else:
+        # Fallback to demo data only if no authentic predictions
+        opportunities = get_authentic_trading_opportunities()
+        gate_report = {'status': 'demo_data', 'passed_count': len(opportunities)}
+    
     # Check data availability
     data_status = check_data_availability()
     
@@ -772,10 +796,69 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
     st.title("🧠 AI Voorspellingen")
     st.markdown("### 🤖 Machine Learning prijs voorspellingen")
     
-    # Hard readiness gate - enforce actual system readiness
+    # Hard readiness gate
     from app_readiness import enforce_readiness_gate
-    enforce_readiness_gate("Trading Opportunities")
-    # This line will only be reached if readiness gate passes
+    enforce_readiness_gate("AI Predictions")
+    
+    # Display multi-horizon predictions with coverage monitoring
+    st.success("✅ AI Voorspellingen Actief - Multi-Horizon Analysis")
+    
+    predictions_file = Path("exports/production/predictions.json")
+    if predictions_file.exists():
+        import json
+        with open(predictions_file, 'r') as f:
+            predictions = json.load(f)
+        
+        if predictions:
+            # Group by horizon
+            horizons = ["1h", "24h", "168h", "720h"]
+            horizon_names = {"1h": "1 Uur", "24h": "1 Dag", "168h": "1 Week", "720h": "1 Maand"}
+            
+            # Coverage metrics
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                total_preds = len(predictions)
+                st.metric("Total Predictions", total_preds)
+            with col2:
+                high_conf = len([p for p in predictions if p['confidence'] >= 80])
+                st.metric("High Confidence", f"{high_conf}/{total_preds}")
+            with col3:
+                horizons_active = len(set(p['horizon'] for p in predictions))
+                st.metric("Active Horizons", f"{horizons_active}/4")
+            with col4:
+                avg_conf = sum(p['confidence'] for p in predictions) / len(predictions)
+                st.metric("Avg Confidence", f"{avg_conf:.1f}%")
+            
+            # Multi-horizon tabs
+            tabs = st.tabs([horizon_names[h] for h in horizons])
+            
+            for i, horizon in enumerate(horizons):
+                with tabs[i]:
+                    horizon_preds = [p for p in predictions if p['horizon'] == horizon]
+                    
+                    if horizon_preds:
+                        filtered_preds = [p for p in horizon_preds if p['confidence'] >= confidence_filter]
+                        
+                        if filtered_preds:
+                            display_data = []
+                            for pred in filtered_preds[:10]:
+                                display_data.append({
+                                    'Coin': pred['symbol'],
+                                    'Expected Return': f"{pred['expected_return']:.1f}%",
+                                    'Confidence': f"{pred['confidence']:.1f}%",
+                                    'Risk': pred['risk_level']
+                                })
+                            
+                            df = pd.DataFrame(display_data)
+                            st.dataframe(df, use_container_width=True)
+                        else:
+                            st.info(f"Geen voorspellingen ≥{confidence_filter}% voor {horizon_names[horizon]}")
+                    else:
+                        st.warning(f"Geen {horizon_names[horizon]} voorspellingen")
+        else:
+            st.warning("ML agent genereert voorspellingen...")
+    else:
+        st.error("Start ML agents: `python start_agents.py`")
     
     # Check for authentic prediction data
     predictions_file = Path("exports/production/predictions.csv")

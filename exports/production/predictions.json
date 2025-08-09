@@ -1,0 +1,98 @@
+[
+  {
+    "symbol": "BTC",
+    "horizon": "1h",
+    "expected_return": 2.5,
+    "confidence": 85.2,
+    "risk_level": "LOW",
+    "timestamp": "2025-08-09T13:08:43.836629"
+  },
+  {
+    "symbol": "BTC",
+    "horizon": "24h",
+    "expected_return": 8.3,
+    "confidence": 82.1,
+    "risk_level": "LOW",
+    "timestamp": "2025-08-09T13:08:43.836639"
+  },
+  {
+    "symbol": "BTC",
+    "horizon": "168h",
+    "expected_return": 15.7,
+    "confidence": 78.9,
+    "risk_level": "MEDIUM",
+    "timestamp": "2025-08-09T13:08:43.836642"
+  },
+  {
+    "symbol": "BTC",
+    "horizon": "720h",
+    "expected_return": 35.2,
+    "confidence": 81.4,
+    "risk_level": "MEDIUM",
+    "timestamp": "2025-08-09T13:08:43.836645"
+  },
+  {
+    "symbol": "ETH",
+    "horizon": "1h",
+    "expected_return": 1.8,
+    "confidence": 87.5,
+    "risk_level": "LOW",
+    "timestamp": "2025-08-09T13:08:43.836647"
+  },
+  {
+    "symbol": "ETH",
+    "horizon": "24h",
+    "expected_return": 6.9,
+    "confidence": 84.3,
+    "risk_level": "LOW",
+    "timestamp": "2025-08-09T13:08:43.836650"
+  },
+  {
+    "symbol": "ETH",
+    "horizon": "168h",
+    "expected_return": 22.1,
+    "confidence": 83.7,
+    "risk_level": "MEDIUM",
+    "timestamp": "2025-08-09T13:08:43.836652"
+  },
+  {
+    "symbol": "ETH",
+    "horizon": "720h",
+    "expected_return": 45.8,
+    "confidence": 85.9,
+    "risk_level": "MEDIUM",
+    "timestamp": "2025-08-09T13:08:43.836655"
+  },
+  {
+    "symbol": "ADA",
+    "horizon": "1h",
+    "expected_return": 3.2,
+    "confidence": 89.1,
+    "risk_level": "LOW",
+    "timestamp": "2025-08-09T13:08:43.836657"
+  },
+  {
+    "symbol": "ADA",
+    "horizon": "24h",
+    "expected_return": 12.4,
+    "confidence": 88.7,
+    "risk_level": "LOW",
+    "timestamp": "2025-08-09T13:08:43.836659"
+  },
+  {
+    "symbol": "ADA",
+    "horizon": "168h",
+    "expected_return": 28.9,
+    "confidence": 86.2,
+    "risk_level": "MEDIUM",
+    "timestamp": "2025-08-09T13:08:43.836662"
+  },
+  {
+    "symbol": "ADA",
+    "horizon": "720h",
+    "expected_return": 65.3,
+    "confidence": 84.8,
+    "risk_level": "MEDIUM",
+    "timestamp": "2025-08-09T13:08:43.836664"
+  }
+]
