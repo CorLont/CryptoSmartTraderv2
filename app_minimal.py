@@ -710,7 +710,7 @@ def apply_strict_confidence_gate_filter(opportunities, confidence_threshold=0.80
                 'change_24h': row.get('change_24h', 0.0),
                 'expected_7d': row['pred_7d'] * 100,
                 'expected_30d': row['pred_30d'] * 100,
-                'score': max(row['conf_7d'], row['conf_30d']) * 100,
+                'score': max(row.get('conf_7d', 0.8), row.get('conf_30d', 0.8)) * 100,
                 'risk_level': row.get('risk_level', 'Medium'),
                 'volume_24h': row.get('volume_24h', 1000000),
                 'regime': row.get('regime', 'unknown'),
@@ -776,13 +776,16 @@ def render_strict_confidence_empty_state(gate_report, total_opportunities):
         st.info("💡 Log: 'no reliable opportunities' - zie logs/daily/ voor details")
         # Show confidence distribution if available
         if CONFIDENCE_GATE_AVAILABLE:
-            gate_manager = get_confidence_gate_manager()
-            if gate_manager.last_gate_result:
-                st.markdown("### 📊 Confidence Verdeling")
-                dist = gate_manager.last_gate_result.confidence_distribution
-                for bucket, count in dist.items():
-                    if count > 0:
-                        st.markdown(f"- {bucket}: {count} coins")
+            try:
+                gate_manager = get_confidence_gate_manager()
+                if gate_manager and gate_manager.last_gate_result:
+                    st.markdown("### 📊 Confidence Verdeling")
+                    dist = gate_manager.last_gate_result.confidence_distribution
+                    for bucket, count in dist.items():
+                        if count > 0:
+                            st.markdown(f"- {bucket}: {count} coins")
+            except NameError:
+                pass  # get_confidence_gate_manager not available
     
     # Disable strict mode option
     st.markdown("---")
@@ -836,7 +839,7 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
                 predictions.append({
                     'coin': row['coin'],
                     'horizon': row['horizon'],
-                    'prediction': row.get('expected_return_pct', 0) / 100,  # Convert back to decimal
+                    'prediction': (row.get('expected_return_pct', 0) or 0) / 100,  # Convert back to decimal
                     'confidence': row.get(f"conf_{row['horizon']}", 0.8),
                     'expected_return_pct': row.get('expected_return_pct', 0),
                     'risk_score': row.get('risk_score', 0.2),
@@ -1016,8 +1019,8 @@ def show_coin_analysis(coin):
         st.markdown(f"- Market cap: ${coin['market_cap']/1000000:.0f}M")
 
 def render_main_dashboard():
-    """Redirect to top opportunities"""
-    render_top_opportunities_dashboard()
+    """Main dashboard - redirect to market status"""
+    render_market_status()
 
 def render_market_overview_dashboard():
     """Render market overview dashboard"""
@@ -1122,6 +1125,7 @@ def render_market_dashboard():
     st.header("📈 Price Trends")
     chart_data = pd.DataFrame(
         np.random.randn(30, len(coins)),
+        index=pd.date_range('2024-01-01', periods=30),
         columns=coins
     ).cumsum()
     
