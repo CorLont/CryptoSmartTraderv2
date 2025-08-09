@@ -78,7 +78,7 @@ def get_strict_filtered_predictions(threshold=0.80):
                     # Add horizon info en sort by prediction strength
                     filtered = filtered.copy()
                     filtered['horizon'] = h
-                    filtered = filtered.sort_values(by=pred_col, ascending=False)
+                    filtered = filtered.sort_values(pred_col, ascending=False)
                     results.append(filtered)
         
         if results:

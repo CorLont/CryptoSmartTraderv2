@@ -24,7 +24,7 @@ def apply_strict_gate_orchestration(pred_df: pd.DataFrame, pred_col="pred_720h",
     
     # Sort by prediction strength
     if not filtered.empty:
-        filtered = filtered.sort_values(by=pred_col, ascending=False).reset_index(drop=True)
+        filtered = filtered.sort_values(pred_col, ascending=False).reset_index(drop=True)
     
     return filtered
 
