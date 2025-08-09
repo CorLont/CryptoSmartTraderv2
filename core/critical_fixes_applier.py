@@ -44,6 +44,7 @@ class CriticalFixesApplier:
         ]
         
         for fix_func in fixes:
+            fix_name = "Unknown Fix"
             try:
                 fix_name = fix_func.__name__.replace('_fix_', '').replace('_', ' ').title()
                 self.logger.info(f"Applying {fix_name}...")

@@ -18,10 +18,10 @@ class SecureLogFilter(logging.Filter):
         super().__init__()
         # Patterns to redact
         self.secret_patterns = [
-            re.compile(r'(api_key\s*[:=]\s*)([^\s]+)', re.IGNORECASE),
-            re.compile(r'(secret\s*[:=]\s*)([^\s]+)', re.IGNORECASE),
-            re.compile(r'(password\s*[:=]\s*)([^\s]+)', re.IGNORECASE),
-            re.compile(r'(token\s*[:=]\s*)([^\s]+)', re.IGNORECASE),
+            re.compile(r'(api[_-]?key["']?\s*[:=]\s*["']?)([^"'\s]+)', re.IGNORECASE),
+            re.compile(r'(secret["']?\s*[:=]\s*["']?)([^"'\s]+)', re.IGNORECASE),
+            re.compile(r'(password["']?\s*[:=]\s*["']?)([^"'\s]+)', re.IGNORECASE),
+            re.compile(r'(token["']?\s*[:=]\s*["']?)([^"'\s]+)', re.IGNORECASE),
             re.compile(r'Bearer\s+([A-Za-z0-9\-_=]+)', re.IGNORECASE)
         ]
     
@@ -86,6 +86,43 @@ class CorrelatedLogger:
     def debug(self, msg: str, extra: Optional[Dict[str, Any]] = None):
         """Log debug with correlation ID"""
         self.logger.debug(msg, extra=self._add_correlation(extra))
+
+def setup_secure_logging():
+    """Setup secure logging configuration"""
+    
+    # JSON formatter for structured logging
+    formatter = logging.Formatter(
+        '{"timestamp": "%(asctime)s", "level": "%(levelname)s", '
+        '"logger": "%(name)s", "correlation_id": "%(correlation_id)s", '
+        '"message": "%(message)s"}'
+    )
+    
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    console_handler.addFilter(SecureLogFilter())
+    
+    # File handler (if needed)
+    try:
+        import pathlib
+        log_dir = pathlib.Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        
+        file_handler = logging.FileHandler(log_dir / "secure_app.log")
+        file_handler.setFormatter(formatter)
+        file_handler.addFilter(SecureLogFilter())
+        
+        # Configure root logger
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.addHandler(console_handler)
+        root_logger.addHandler(file_handler)
+        
+    except Exception:
+        # Fallback to console only
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.addHandler(console_handler)
 
 def get_secure_logger(name: str) -> CorrelatedLogger:
     """Get secure logger instance"""

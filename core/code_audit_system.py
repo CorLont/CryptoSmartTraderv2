@@ -208,7 +208,7 @@ class CriticalCodeAuditor:
                     available_req = [col for col in required_features if col in df.columns]
                     
                     if available_req:
-                        incomplete_rows = df[available_req].isna().any(axis=1).mean()
+                        incomplete_rows = df[available_req].isna().any(axis=1).sum() / len(df)
                         
                         if incomplete_rows > 0.0:
                             issues.append(f"CRITICAL: {incomplete_rows*100:.2f}% incomplete rows in {file_path.name}")

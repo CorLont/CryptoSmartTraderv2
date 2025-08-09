@@ -23,15 +23,21 @@ sys.path.append(str(project_root))
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Import confidence gate manager
+# Import confidence gate manager and enterprise fixes
 try:
     from core.confidence_gate_manager import (
         get_confidence_gate_manager, CandidateResult, ConfidenceGateConfig
     )
+    from core.data_completeness_gate import DataCompletenessGate
+    from core.secure_logging import get_secure_logger
+    from ml.enhanced_calibration import EnhancedCalibratorV2
+    from utils.timestamp_validator import normalize_timestamp, validate_timestamp_sequence
     CONFIDENCE_GATE_AVAILABLE = True
-except ImportError:
+    ENTERPRISE_FIXES_AVAILABLE = True
+except ImportError as e:
     CONFIDENCE_GATE_AVAILABLE = False
-    logger.warning("Confidence gate manager not available")
+    ENTERPRISE_FIXES_AVAILABLE = False
+    logger.warning(f"Enterprise features not available: {e}")
 
 def main():
     """Minimal application entry point"""
