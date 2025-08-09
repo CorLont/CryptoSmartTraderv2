@@ -32,11 +32,14 @@ try:
     from core.secure_logging import get_secure_logger
     from ml.enhanced_calibration import EnhancedCalibratorV2
     from utils.timestamp_validator import normalize_timestamp, validate_timestamp_sequence
+    from ml.temporal_integrity_validator import validate_temporal_integrity
     CONFIDENCE_GATE_AVAILABLE = True
     ENTERPRISE_FIXES_AVAILABLE = True
+    TEMPORAL_VALIDATION_AVAILABLE = True
 except ImportError as e:
     CONFIDENCE_GATE_AVAILABLE = False
     ENTERPRISE_FIXES_AVAILABLE = False
+    TEMPORAL_VALIDATION_AVAILABLE = False
     logger.warning(f"Enterprise features not available: {e}")
 
 def main():

@@ -103,6 +103,8 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Conformal Prediction:** Formal uncertainty quantification with adaptive confidence intervals for superior risk gating.
 - **Uncertainty-Aware Sizing:** Kelly-lite position sizing with uncertainty awareness, correlation caps, and liquidity constraints.
 - **Temporal Integrity Validation:** Complete protection against look-ahead bias and data leakage in time series ML.
+- **Timestamp Synchronization System:** UTC candle boundary alignment across all agents preventing timestamp mismatches.
+- **Temporal Validation System:** Complete multi-agent timestamp validation with look-ahead bias prevention and candle alignment enforcement.
 
 ## External Dependencies
 
