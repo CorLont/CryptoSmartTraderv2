@@ -9,7 +9,6 @@ import json
 import time
 import hashlib
 import requests
-import backoff
 from typing import Dict, Any, Optional
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -154,12 +153,6 @@ class OpenAIAdapter:
         
         return True
     
-    @backoff.on_exception(
-        backoff.expo,
-        (requests.RequestException, requests.HTTPError),
-        max_time=60,
-        max_tries=3
-    )
     def call_llm(self, prompt: str, schema: Dict, model: str = "gpt-4o-mini") -> Dict[str, Any]:
         """
         Call OpenAI API with robust error handling and validation
@@ -191,28 +184,37 @@ class OpenAIAdapter:
         estimated_cost = self._estimate_cost(prompt, model)
         print(f"📊 OpenAI call: ~${estimated_cost:.4f} estimated cost")
         
-        # Make API call
-        headers = {
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "response_format": {"type": "json_object"},
-            "temperature": 0.1,  # Lower temperature for more consistent results
-            "max_tokens": 500
-        }
-        
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        
-        response.raise_for_status()
+        # Make API call with simple retry
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                headers = {
+                    "Authorization": f"Bearer {OPENAI_API_KEY}",
+                    "Content-Type": "application/json"
+                }
+                
+                payload = {
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0.1,  # Lower temperature for more consistent results
+                    "max_tokens": 500
+                }
+                
+                response = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=30
+                )
+                
+                response.raise_for_status()
+                break
+                
+            except (requests.RequestException, requests.HTTPError) as e:
+                if attempt == max_retries - 1:
+                    raise e
+                time.sleep(2 ** attempt)  # Exponential backoff
         
         # Parse response
         response_data = response.json()

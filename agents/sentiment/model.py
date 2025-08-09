@@ -144,6 +144,10 @@ class SentimentModel:
         
         return results
 
+def get_sentiment_model():
+    """Factory function to get sentiment model"""
+    return SentimentModel()
+
     def get_model_info(self) -> Dict[str, any]:
         """Get information about the sentiment model"""
         return {
