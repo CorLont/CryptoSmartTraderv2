@@ -149,3 +149,8 @@
 {"asctime": "2025-08-08 19:50:33", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generating explanations for 10 predictions"}
 {"asctime": "2025-08-08 19:50:33", "name": "StrictConfidenceGate", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "No explainer found for model ensemble"}
 {"asctime": "2025-08-08 19:50:33", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No explanations generated, using fallback"}
+{"asctime": "2025-08-08 20:05:44", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250808_200544"}
+{"asctime": "2025-08-08 20:05:44", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "STRICT GATE PASSED: dashboard_20250808_200544 - 10/15 candidates passed"}
+{"asctime": "2025-08-08 20:05:44", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generating explanations for 10 predictions"}
+{"asctime": "2025-08-08 20:05:44", "name": "StrictConfidenceGate", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "No explainer found for model ensemble"}
+{"asctime": "2025-08-08 20:05:44", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No explanations generated, using fallback"}

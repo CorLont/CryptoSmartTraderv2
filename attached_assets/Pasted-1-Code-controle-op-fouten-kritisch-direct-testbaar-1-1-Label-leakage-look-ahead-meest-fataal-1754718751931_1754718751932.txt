@@ -1,0 +1,97 @@
+1) Code‑controle op fouten (kritisch + direct testbaar)
+1.1 Label‑leakage / look‑ahead (meest fataal)
+Waar het misgaat: labels met shift(+h) of features die per ongeluk na de label‑timestamp berekend zijn.
+Snelle check (run op je feature/label builder):
+
+python
+Kopiëren
+Bewerken
+# test_no_lookahead.py
+import pandas as pd
+df = pd.read_parquet("exports/features.parquet")  # of je build_features output
+assert (df['label_ts'] > df['ts']).all(), "Label-ts moet NA feature-ts liggen"
+future_cols = [c for c in df if c.startswith('feat_') and c.endswith('_t+')]
+assert len(future_cols) == 0, f"Future features gevonden: {future_cols}"
+Red flag sweep (zoek in repo): shift(+, .ffill(, .bfill(, train_test_split(, KFold(.
+
+1.2 Timestamps & timezones
+Symptoom: 1–2 bar mis‑alignment → valse “accuracy”.
+Check:
+
+python
+Kopiëren
+Bewerken
+import pandas as pd
+x = pd.read_parquet("exports/features.parquet")
+assert x['ts'].dt.tz is not None, "Gebruik UTC timezones"
+assert (x['ts'] == x['ts'].dt.floor('1H')).all(), "Niet op exact candle‑grenzen"
+Fix: Eén util normalize_ts(ts, tz='UTC') en overal afdwingen.
+
+1.3 NaN’s & stiekeme fallback
+Symptoom: model traint/voorspelt op ingevulde rommel.
+Check (verplichte features):
+
+python
+Kopiëren
+Bewerken
+req = ["sent_score","sent_prob","whale_score","rsi_14","vol_24h"]
+bad = x[req].isna().any(axis=1).mean()
+assert bad == 0.0, f"Incomplete rows: {bad*100:.2f}% (no-fallback in prod!)"
+1.4 Verkeerde splits (data leakage)
+Symptoom: knettergoede cross‑val, live kapot.
+Check codebase: geen train_test_split, wel TimeSeriesSplit of rolling window.
+
+python
+Kopiëren
+Bewerken
+from sklearn.model_selection import TimeSeriesSplit
+1.5 Targetschaal & sanity
+Symptoom: 30d return als “5” i.p.v. “0.05”.
+Check:
+
+python
+Kopiëren
+Bewerken
+q99 = x['target_720h'].abs().quantile(0.99)
+assert q99 < 3.0, f"Targetschaal verdacht (q99={q99})"
+1.6 Concurrency/IO: blocking & file corruptie
+Symptomen: runs duren te lang; af en toe kapotte CSV/parquet.
+Red flags: requests.get(... zonder timeout=, synchronische loops, direct schrijven naar definitief pad.
+Fix: aiohttp + semaforen + tenacity (retries) + atomic writes (eerst naar .tmp, dan os.replace).
+
+1.7 ML: ongekalibreerde “confidence”
+Symptoom: 80%‑gate maar probabiliteiten zijn fabels.
+Check calibration:
+
+python
+Kopiëren
+Bewerken
+# neem preds vs realized en bin conf in 0.8–0.9–1.0
+# succes-rate in 0.8–0.9 moet ~0.7+ zijn; anders calibrate
+Fix: CalibratedClassifierCV (isotonic) of conformal intervals voor regressie.
+
+1.8 Geen uncertainty (alleen point estimate)
+Symptoom: conf_* constant of ontbreekt.
+Fix kort: MC‑Dropout (NN) of ensemble‑spread (GBM).
+
+python
+Kopiëren
+Bewerken
+# mc_dropout skelet
+model.train(); preds=[]
+with torch.no_grad():
+  for _ in range(30): preds.append(model(x).cpu().numpy())
+mu, sigma = np.mean(preds,0), np.std(preds,0)
+1.9 Regime‑blind
+Symptoom: fout explodeert bij hoge volatiliteit.
+Check: groepeer MAE per ATR‑deciel; top‑deciel >> rest? → regime‑feature of modelrouter toevoegen.
+
+1.10 Backtest sprookjes
+Symptoom: paper P&L >> realistisch.
+Check: zit er L2 depth / slippage / partial fills / latency in je sim? Zo niet → cijfers negeren.
+Fix: simpele L2 simulator + p50/p90 slippage in evaluator.
+
+1.11 Logging/Security
+Red flags: secrets in logs, geen correlation‑id, geen auth op dashboard.
+Fix: logfilter voor keys, run_id overal, basic auth/JWT op UI.
+

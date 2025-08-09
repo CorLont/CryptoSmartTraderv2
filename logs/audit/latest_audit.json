@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "audit_timestamp": "2025-08-09T05:59:29.008398",
+    "audit_duration_seconds": 94.988509,
+    "overall_status": "WARNING",
+    "critical_issues": 0,
+    "warnings": 3,
+    "total_categories": 11,
+    "categories_audited": 11
+  },
+  "detailed_results": {
+    "label_leakage": {
+      "status": "warning",
+      "issues": [
+        "No feature files found - cannot check label leakage"
+      ]
+    },
+    "timestamps": {
+      "status": "pass",
+      "issues": []
+    },
+    "data_completeness": {
+      "status": "pass",
+      "issues": []
+    },
+    "data_splits": {
+      "status": "pass",
+      "issues": [],
+      "dangerous_splits": [],
+      "proper_splits": []
+    },
+    "target_scaling": {
+      "status": "pass",
+      "issues": []
+    },
+    "concurrency": {
+      "status": "pass",
+      "issues": [],
+      "blocking_patterns": 0,
+      "async_patterns": 1
+    },
+    "ml_calibration": {
+      "status": "pass",
+      "issues": []
+    },
+    "uncertainty": {
+      "status": "pass",
+      "issues": []
+    },
+    "regime_awareness": {
+      "status": "warning",
+      "issues": [
+        "REGIME: High volatility errors 2.6x larger than low volatility"
+      ]
+    },
+    "backtest_realism": {
+      "status": "pass",
+      "issues": []
+    },
+    "security_logging": {
+      "status": "warning",
+      "issues": [
+        "WARNING: Potential secrets in logging code - verify redaction",
+        "WARNING: No correlation IDs for request tracing",
+        "WARNING: Dashboard without authentication"
+      ]
+    }
+  },
+  "category_descriptions": {
+    "label_leakage": "Label Leakage / Look-ahead (FATAL)",
+    "timestamps": "Timestamp & Timezone Alignment",
+    "data_completeness": "NaN & Fallback Detection",
+    "data_splits": "Proper Time Series Splitting",
+    "target_scaling": "Target Scale Validation",
+    "concurrency": "Concurrency & IO Issues",
+    "ml_calibration": "ML Probability Calibration",
+    "uncertainty": "Uncertainty Quantification",
+    "regime_awareness": "Regime-blind Detection",
+    "backtest_realism": "Backtest Reality Check",
+    "security_logging": "Security & Logging"
+  }
+}

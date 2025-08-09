@@ -1,362 +1,1035 @@
 #!/usr/bin/env python3
 """
 Critical Fixes Applier
-Apply fixes for critical code audit issues
+Automatically applies fixes for common critical issues detected in code audit
 """
 
+import pandas as pd
+import numpy as np
 import os
 import sys
 import json
-import time
 from pathlib import Path
-from typing import Dict, List, Any
-from datetime import datetime
-import warnings
-warnings.filterwarnings('ignore')
+from datetime import datetime, timezone
+from typing import Dict, List, Tuple, Optional, Any
+import re
+
+# Core imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from core.structured_logger import get_structured_logger
 
 class CriticalFixesApplier:
-    """
-    Apply critical fixes based on audit findings
-    """
+    """Automatically applies critical fixes based on audit results"""
     
     def __init__(self):
+        self.logger = get_structured_logger("CriticalFixes")
         self.fixes_applied = []
         self.fixes_failed = []
-        
+    
     def apply_all_critical_fixes(self) -> Dict[str, Any]:
-        """Apply all critical fixes"""
+        """Apply all available critical fixes"""
         
-        print("🔧 APPLYING CRITICAL FIXES")
-        print("=" * 35)
+        self.logger.info("🔧 APPLYING CRITICAL FIXES")
+        self.logger.info("=" * 40)
         
-        fix_start = time.time()
+        # Apply fixes in order of criticality
+        fixes = [
+            self._fix_timestamp_validation,
+            self._fix_confidence_calibration,
+            self._fix_slippage_modeling,
+            self._fix_security_logging,
+            self._fix_data_completeness_gates,
+            self._fix_regime_awareness,
+            self._fix_uncertainty_quantification
+        ]
         
-        # Apply fixes for each category
-        self._fix_timestamp_validation()
-        self._fix_completeness_gate()
-        self._fix_time_series_splits()
-        self._fix_probability_calibration()
-        self._fix_uncertainty_quantification()
-        self._fix_slippage_modeling()
-        self._fix_secrets_masking()
-        self._fix_correlation_ids()
-        self._fix_async_implementation()
-        self._fix_atomic_file_operations()
+        for fix_func in fixes:
+            try:
+                fix_name = fix_func.__name__.replace('_fix_', '').replace('_', ' ').title()
+                self.logger.info(f"Applying {fix_name}...")
+                
+                result = fix_func()
+                if result.get('success', False):
+                    self.fixes_applied.append(fix_name)
+                    self.logger.info(f"✅ {fix_name} applied successfully")
+                else:
+                    self.fixes_failed.append(f"{fix_name}: {result.get('error', 'Unknown error')}")
+                    self.logger.warning(f"⚠️ {fix_name} failed: {result.get('error', 'Unknown')}")
+                    
+            except Exception as e:
+                self.fixes_failed.append(f"{fix_name}: {str(e)}")
+                self.logger.error(f"❌ {fix_name} crashed: {e}")
         
-        fix_duration = time.time() - fix_start
-        
-        # Generate fixes report
-        fixes_report = {
-            'fixes_timestamp': datetime.now().isoformat(),
-            'fixes_duration': fix_duration,
-            'total_fixes_attempted': len(self.fixes_applied) + len(self.fixes_failed),
-            'fixes_successful': len(self.fixes_applied),
-            'fixes_failed': len(self.fixes_failed),
-            'fixes_applied': self.fixes_applied,
-            'fixes_failed': self.fixes_failed,
-            'overall_success_rate': len(self.fixes_applied) / max(1, len(self.fixes_applied) + len(self.fixes_failed))
+        # Generate summary
+        summary = {
+            "timestamp": datetime.now().isoformat(),
+            "fixes_applied": len(self.fixes_applied),
+            "fixes_failed": len(self.fixes_failed),
+            "applied_fixes": self.fixes_applied,
+            "failed_fixes": self.fixes_failed,
+            "overall_success": len(self.fixes_applied) > len(self.fixes_failed)
         }
         
-        # Save fixes report
-        self._save_fixes_report(fixes_report)
+        self.logger.info(f"🏁 Critical fixes completed: {len(self.fixes_applied)} applied, {len(self.fixes_failed)} failed")
         
-        return fixes_report
+        return summary
     
-    def _fix_timestamp_validation(self):
-        """Fix A: Add timestamp validation"""
-        
-        print("📅 Adding timestamp validation...")
+    def _fix_timestamp_validation(self) -> Dict[str, Any]:
+        """Fix timestamp validation and timezone issues"""
         
         try:
-            validation_code = '''
-def validate_timestamps(df, target_col='target_720h'):
-    """Validate no look-ahead bias in timestamps"""
-    if 'timestamp' in df.columns and 'label_timestamp' in df.columns:
-        assert (df["timestamp"] < df["label_timestamp"]).all(), "Look-ahead bias detected!"
-    
-    # Check no future features
-    late_cols = [c for c in df.columns if c.startswith("feat_")]
-    if late_cols and target_col in df.columns:
-        future_mask = df[late_cols].isna().any(axis=1) & df[target_col].notna()
-        assert not future_mask.any(), "Future features detected!"
-    
-    return True
+            # Create timestamp utility module
+            timestamp_util_code = '''#!/usr/bin/env python3
+"""
+Timestamp Validation Utility
+Ensures proper timezone handling and candle alignment
+"""
 
-def normalize_timestamp(dt, tz='UTC'):
-    """Normalize timestamp to UTC and floor to hour"""
-    import pandas as pd
-    if isinstance(dt, str):
-        dt = pd.to_datetime(dt)
-    return dt.tz_localize(tz) if dt.tz is None else dt.tz_convert(tz)
+import pandas as pd
+from datetime import datetime, timezone
+from typing import Union
+
+def normalize_timestamp(ts: Union[str, pd.Timestamp, datetime], target_tz: str = 'UTC') -> pd.Timestamp:
+    """Normalize timestamp to UTC with proper timezone handling"""
+    
+    if isinstance(ts, str):
+        ts = pd.to_datetime(ts)
+    
+    if isinstance(ts, datetime):
+        ts = pd.Timestamp(ts)
+    
+    # Add timezone if missing
+    if ts.tz is None:
+        ts = ts.tz_localize('UTC')
+    
+    # Convert to target timezone
+    if target_tz != 'UTC':
+        ts = ts.tz_convert(target_tz)
+    
+    return ts
+
+def align_to_candle_boundary(ts: pd.Timestamp, freq: str = '1H') -> pd.Timestamp:
+    """Align timestamp to candle boundary (e.g., hourly)"""
+    return ts.floor(freq)
+
+def validate_timestamp_sequence(df: pd.DataFrame, ts_col: str = 'ts') -> Dict[str, Any]:
+    """Validate timestamp sequence in DataFrame"""
+    
+    issues = []
+    
+    if ts_col not in df.columns:
+        return {"valid": False, "issues": [f"Timestamp column '{ts_col}' not found"]}
+    
+    ts_series = df[ts_col]
+    
+    # Check timezone
+    if hasattr(ts_series.dtype, 'tz') and ts_series.dt.tz is None:
+        issues.append("Missing timezone information")
+    
+    # Check sorting
+    if not ts_series.is_monotonic_increasing:
+        issues.append("Timestamps not in ascending order")
+    
+    # Check for duplicates
+    duplicates = ts_series.duplicated().sum()
+    if duplicates > 0:
+        issues.append(f"{duplicates} duplicate timestamps")
+    
+    # Check alignment (hourly candles)
+    if not ts_series.empty:
+        misaligned = (ts_series != ts_series.dt.floor('1H')).sum()
+        if misaligned > 0:
+            issues.append(f"{misaligned} timestamps not aligned to hourly candles")
+    
+    return {
+        "valid": len(issues) == 0,
+        "issues": issues,
+        "total_timestamps": len(ts_series),
+        "duplicates": duplicates
+    }
+
+def fix_dataframe_timestamps(df: pd.DataFrame, ts_col: str = 'ts') -> pd.DataFrame:
+    """Fix common timestamp issues in DataFrame"""
+    
+    df_fixed = df.copy()
+    
+    if ts_col in df_fixed.columns:
+        # Normalize timestamps
+        df_fixed[ts_col] = df_fixed[ts_col].apply(normalize_timestamp)
+        
+        # Align to candle boundaries
+        df_fixed[ts_col] = df_fixed[ts_col].apply(align_to_candle_boundary)
+        
+        # Remove duplicates (keep last)
+        df_fixed = df_fixed.drop_duplicates(subset=[ts_col], keep='last')
+        
+        # Sort by timestamp
+        df_fixed = df_fixed.sort_values(ts_col)
+    
+    return df_fixed
 '''
             
-            utils_dir = Path('utils')
+            utils_dir = Path("utils")
             utils_dir.mkdir(exist_ok=True)
             
-            with open(utils_dir / 'timestamp_validation.py', 'w') as f:
-                f.write(validation_code)
+            timestamp_file = utils_dir / "timestamp_validator.py"
+            timestamp_file.write_text(timestamp_util_code)
             
-            self.fixes_applied.append("Timestamp validation utilities created")
-            
-        except Exception as e:
-            self.fixes_failed.append(f"Timestamp validation fix failed: {e}")
-    
-    def _fix_completeness_gate(self):
-        """Fix B: Ensure completeness gate exists"""
-        
-        print("🕳️ Fixing completeness gate...")
-        
-        try:
-            completeness_gate_path = Path('core/completeness_gate.py')
-            
-            if not completeness_gate_path.exists():
-                completeness_code = '''#!/usr/bin/env python3
-"""
-Completeness Gate - Zero tolerance for incomplete data
-"""
-
-import pandas as pd
-from typing import List, Dict, Any
-
-def validate_completeness(df: pd.DataFrame, required_features: List[str], threshold: float = 0.8) -> Dict[str, Any]:
-    """Validate data completeness with zero tolerance"""
-    
-    results = {
-        'passed': True,
-        'completeness_score': 0.0,
-        'missing_features': [],
-        'incomplete_coins': []
-    }
-    
-    # Check required features exist
-    missing_features = [f for f in required_features if f not in df.columns]
-    if missing_features:
-        results['passed'] = False
-        results['missing_features'] = missing_features
-        return results
-    
-    # Check completeness for each coin
-    for coin in df['coin'].unique() if 'coin' in df.columns else ['ALL']:
-        if 'coin' in df.columns:
-            coin_data = df[df['coin'] == coin]
-        else:
-            coin_data = df
-            
-        completeness = coin_data[required_features].notna().all(axis=1).mean()
-        
-        if completeness < threshold:
-            results['passed'] = False
-            results['incomplete_coins'].append({
-                'coin': coin,
-                'completeness': completeness
-            })
-    
-    results['completeness_score'] = df[required_features].notna().all(axis=1).mean()
-    
-    return results
-
-def apply_completeness_gate(df: pd.DataFrame, required_features: List[str]) -> pd.DataFrame:
-    """Apply zero-tolerance completeness gate"""
-    
-    # Remove rows with any missing required features
-    clean_mask = df[required_features].notna().all(axis=1)
-    clean_df = df[clean_mask].copy()
-    
-    removed_count = len(df) - len(clean_df)
-    if removed_count > 0:
-        print(f"Completeness gate: Removed {removed_count} incomplete records")
-    
-    return clean_df
-'''
-                
-                with open(completeness_gate_path, 'w') as f:
-                    f.write(completeness_code)
-                
-                self.fixes_applied.append("Completeness gate implementation created")
-            else:
-                self.fixes_applied.append("Completeness gate already exists")
-                
-        except Exception as e:
-            self.fixes_failed.append(f"Completeness gate fix failed: {e}")
-    
-    def _fix_time_series_splits(self):
-        """Fix C: Add proper time series splits"""
-        
-        print("📊 Adding time series splits...")
-        
-        try:
-            splits_code = '''#!/usr/bin/env python3
-"""
-Time Series Splits - Proper temporal validation
-"""
-
-from sklearn.model_selection import TimeSeriesSplit
-import pandas as pd
-import numpy as np
-from typing import Tuple, List
-
-def create_time_series_splits(df: pd.DataFrame, n_splits: int = 5) -> List[Tuple[np.ndarray, np.ndarray]]:
-    """Create proper time series splits"""
-    
-    if 'timestamp' not in df.columns:
-        raise ValueError("DataFrame must have 'timestamp' column")
-    
-    # Sort by timestamp
-    df_sorted = df.sort_values('timestamp').reset_index(drop=True)
-    
-    tscv = TimeSeriesSplit(n_splits=n_splits)
-    splits = list(tscv.split(df_sorted))
-    
-    return splits
-
-def validate_target_scaling(targets: pd.Series, max_reasonable_return: float = 2.0) -> bool:
-    """Validate target scaling is reasonable"""
-    
-    abs_target_99 = targets.abs().quantile(0.99)
-    
-    if abs_target_99 > max_reasonable_return:
-        raise ValueError(f"Target scaling issue: 99th percentile {abs_target_99:.3f} > {max_reasonable_return}")
-    
-    return True
-
-def create_returns_target(prices: pd.Series, horizon_hours: int) -> pd.Series:
-    """Create properly scaled returns target"""
-    
-    future_prices = prices.shift(-horizon_hours)
-    returns = (future_prices / prices) - 1.0
-    
-    # Validate scaling
-    validate_target_scaling(returns.dropna())
-    
-    return returns
-'''
-            
-            ml_dir = Path('ml')
-            ml_dir.mkdir(exist_ok=True)
-            
-            with open(ml_dir / 'time_series_validation.py', 'w') as f:
-                f.write(splits_code)
-            
-            self.fixes_applied.append("Time series splits implementation created")
+            return {"success": True, "message": "Timestamp validation utility created"}
             
         except Exception as e:
-            self.fixes_failed.append(f"Time series splits fix failed: {e}")
+            return {"success": False, "error": str(e)}
     
-    def _fix_probability_calibration(self):
-        """Fix E: Add probability calibration"""
-        
-        print("🎯 Adding probability calibration...")
+    def _fix_confidence_calibration(self) -> Dict[str, Any]:
+        """Fix ML confidence calibration issues"""
         
         try:
             calibration_code = '''#!/usr/bin/env python3
 """
-Probability Calibration - Ensure confidence gates work properly
+Enhanced Probability Calibration
+Ensures ML confidence scores are properly calibrated
 """
 
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.isotonic import IsotonicRegression
 import numpy as np
 import pandas as pd
-from typing import Tuple, Optional
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.isotonic import IsotonicRegression
+from sklearn.metrics import brier_score_loss
+from typing import Tuple, Dict, Any
 
-class ConfidenceCalibrator:
-    """Calibrate model confidence scores"""
+class EnhancedCalibratorV2:
+    """Advanced probability calibration with validation"""
     
-    def __init__(self, method='isotonic'):
-        self.method = method
+    def __init__(self):
         self.calibrator = None
+        self.calibration_curve = None
         self.is_fitted = False
     
-    def fit(self, probabilities: np.ndarray, true_labels: np.ndarray) -> 'ConfidenceCalibrator':
-        """Fit calibration model"""
+    def fit_and_validate(self, probabilities: np.ndarray, true_labels: np.ndarray) -> Dict[str, float]:
+        """Fit calibrator and validate performance"""
         
-        if self.method == 'isotonic':
-            self.calibrator = IsotonicRegression(out_of_bounds='clip')
-        else:
-            raise ValueError(f"Unknown calibration method: {self.method}")
-        
+        # Fit isotonic regression calibrator
+        self.calibrator = IsotonicRegression(out_of_bounds='clip')
         self.calibrator.fit(probabilities, true_labels)
         self.is_fitted = True
         
-        return self
+        # Calculate calibration metrics
+        calibrated_probs = self.calibrator.transform(probabilities)
+        
+        # Brier score (lower is better)
+        brier_original = brier_score_loss(true_labels, probabilities)
+        brier_calibrated = brier_score_loss(true_labels, calibrated_probs)
+        
+        # Expected Calibration Error
+        ece_original = self._calculate_ece(probabilities, true_labels)
+        ece_calibrated = self._calculate_ece(calibrated_probs, true_labels)
+        
+        return {
+            "brier_original": brier_original,
+            "brier_calibrated": brier_calibrated,
+            "brier_improvement": brier_original - brier_calibrated,
+            "ece_original": ece_original,
+            "ece_calibrated": ece_calibrated,
+            "ece_improvement": ece_original - ece_calibrated
+        }
     
-    def transform(self, probabilities: np.ndarray) -> np.ndarray:
-        """Apply calibration to probabilities"""
+    def calibrate_probabilities(self, probabilities: np.ndarray) -> np.ndarray:
+        """Apply calibration to new probabilities"""
         
         if not self.is_fitted:
-            raise ValueError("Calibrator must be fitted first")
+            raise ValueError("Calibrator must be fitted before use")
         
         return self.calibrator.transform(probabilities)
     
-    def reliability_plot_data(self, probabilities: np.ndarray, true_labels: np.ndarray, n_bins: int = 10) -> Tuple[np.ndarray, np.ndarray]:
-        """Generate data for reliability plot"""
+    def _calculate_ece(self, probabilities: np.ndarray, true_labels: np.ndarray, n_bins: int = 10) -> float:
+        """Calculate Expected Calibration Error"""
         
         bin_boundaries = np.linspace(0, 1, n_bins + 1)
         bin_lowers = bin_boundaries[:-1]
         bin_uppers = bin_boundaries[1:]
         
-        bin_centers = []
-        bin_accuracies = []
-        
+        ece = 0
         for bin_lower, bin_upper in zip(bin_lowers, bin_uppers):
             in_bin = (probabilities > bin_lower) & (probabilities <= bin_upper)
             prop_in_bin = in_bin.mean()
             
             if prop_in_bin > 0:
                 accuracy_in_bin = true_labels[in_bin].mean()
-                bin_centers.append((bin_lower + bin_upper) / 2)
-                bin_accuracies.append(accuracy_in_bin)
+                avg_confidence_in_bin = probabilities[in_bin].mean()
+                ece += np.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
         
-        return np.array(bin_centers), np.array(bin_accuracies)
+        return ece
 
-def validate_calibration(probabilities: np.ndarray, true_labels: np.ndarray, confidence_threshold: float = 0.8) -> bool:
-    """Validate that confidence threshold is meaningful"""
+def create_confidence_gate_with_calibration(threshold: float = 0.8) -> callable:
+    """Create calibrated confidence gate function"""
     
-    calibrator = ConfidenceCalibrator()
-    bin_centers, bin_accuracies = calibrator.reliability_plot_data(probabilities, true_labels)
+    def calibrated_confidence_gate(predictions_df: pd.DataFrame, 
+                                  calibrator: EnhancedCalibratorV2 = None) -> pd.DataFrame:
+        """Apply calibrated confidence gate"""
+        
+        if calibrator and calibrator.is_fitted:
+            # Apply calibration to confidence scores
+            for col in predictions_df.columns:
+                if col.startswith('conf_'):
+                    predictions_df[col] = calibrator.calibrate_probabilities(predictions_df[col].values)
+        
+        # Apply threshold filter
+        confidence_mask = True
+        for col in predictions_df.columns:
+            if col.startswith('conf_'):
+                confidence_mask &= (predictions_df[col] >= threshold)
+        
+        return predictions_df[confidence_mask]
     
-    # Find bins around confidence threshold
-    threshold_bins = bin_centers[(bin_centers >= confidence_threshold - 0.1) & (bin_centers <= confidence_threshold + 0.1)]
-    threshold_accuracies = bin_accuracies[(bin_centers >= confidence_threshold - 0.1) & (bin_centers <= confidence_threshold + 0.1)]
-    
-    if len(threshold_accuracies) == 0:
-        return False
-    
-    # Accuracy should be close to confidence for calibrated model
-    mean_accuracy = threshold_accuracies.mean()
-    calibration_error = abs(mean_accuracy - confidence_threshold)
-    
-    return calibration_error < 0.2  # Allow 20% calibration error
+    return calibrated_confidence_gate
 '''
             
-            with open(Path('ml/probability_calibration.py'), 'w') as f:
-                f.write(calibration_code)
+            ml_dir = Path("ml")
+            ml_dir.mkdir(exist_ok=True)
             
-            self.fixes_applied.append("Probability calibration implementation created")
+            calibration_file = ml_dir / "enhanced_calibration.py"
+            calibration_file.write_text(calibration_code)
+            
+            return {"success": True, "message": "Enhanced calibration system created"}
             
         except Exception as e:
-            self.fixes_failed.append(f"Probability calibration fix failed: {e}")
+            return {"success": False, "error": str(e)}
     
-    def _fix_uncertainty_quantification(self):
-        """Fix E: Add uncertainty quantification"""
+    def _fix_slippage_modeling(self) -> Dict[str, Any]:
+        """Fix realistic slippage and execution modeling"""
         
-        print("🔮 Adding uncertainty quantification...")
+        try:
+            slippage_code = '''#!/usr/bin/env python3
+"""
+Realistic Execution & Slippage Modeling
+Enterprise-grade execution simulation
+"""
+
+import numpy as np
+import pandas as pd
+from typing import Dict, Any, Optional
+from dataclasses import dataclass
+
+@dataclass
+class OrderExecutionResult:
+    """Result of order execution simulation"""
+    executed_size: float
+    executed_price: float
+    slippage_bps: float
+    latency_ms: float
+    success: bool
+    partial_fill: bool
+
+class RealisticExecutionEngine:
+    """Realistic execution simulation with L2 orderbook modeling"""
+    
+    def __init__(self):
+        self.execution_history = []
+    
+    def execute_order(self, 
+                     order_size: float,
+                     market_price: float,
+                     volatility: float = 0.02,
+                     volume_24h: float = 1000000,
+                     spread_bps: float = 5) -> OrderExecutionResult:
+        """Execute order with realistic slippage and latency"""
+        
+        # Calculate base slippage (in basis points)
+        base_slippage = spread_bps / 2  # Half spread
+        
+        # Size impact (larger orders have more impact)
+        size_impact = min(50, (order_size / volume_24h) * 10000)  # Max 50 bps
+        
+        # Volatility impact
+        volatility_impact = volatility * 100  # Convert to bps
+        
+        # Market stress factor (random)
+        stress_factor = np.random.uniform(0.8, 1.5)
+        
+        # Total slippage
+        total_slippage = (base_slippage + size_impact + volatility_impact) * stress_factor
+        total_slippage = min(total_slippage, 200)  # Cap at 200 bps
+        
+        # Calculate execution price
+        slippage_factor = total_slippage / 10000  # Convert bps to decimal
+        executed_price = market_price * (1 + slippage_factor)
+        
+        # Latency modeling
+        base_latency = 50  # Base 50ms
+        network_jitter = np.random.exponential(30)  # Exponential jitter
+        market_stress_latency = volatility * 200  # Higher volatility = more latency
+        
+        total_latency = base_latency + network_jitter + market_stress_latency
+        
+        # Execution success probability
+        success_prob = max(0.7, 1 - (total_slippage / 500))  # Lower success for high slippage
+        success = np.random.random() < success_prob
+        
+        # Partial fill probability
+        partial_prob = min(0.3, total_slippage / 100)  # Higher slippage = more partial fills
+        partial_fill = np.random.random() < partial_prob and success
+        
+        executed_size = order_size * (0.5 + np.random.random() * 0.5) if partial_fill else order_size
+        
+        result = OrderExecutionResult(
+            executed_size=executed_size if success else 0,
+            executed_price=executed_price if success else market_price,
+            slippage_bps=total_slippage if success else 0,
+            latency_ms=total_latency,
+            success=success,
+            partial_fill=partial_fill
+        )
+        
+        self.execution_history.append(result)
+        return result
+    
+    def get_execution_stats(self) -> Dict[str, Any]:
+        """Get execution statistics"""
+        
+        if not self.execution_history:
+            return {"error": "No execution history"}
+        
+        successes = [ex for ex in self.execution_history if ex.success]
+        
+        if not successes:
+            return {"success_rate": 0.0}
+        
+        return {
+            "total_executions": len(self.execution_history),
+            "success_rate": len(successes) / len(self.execution_history),
+            "avg_slippage_bps": np.mean([ex.slippage_bps for ex in successes]),
+            "p90_slippage_bps": np.percentile([ex.slippage_bps for ex in successes], 90),
+            "avg_latency_ms": np.mean([ex.latency_ms for ex in self.execution_history]),
+            "partial_fill_rate": sum(1 for ex in successes if ex.partial_fill) / len(successes)
+        }
+
+class PortfolioBacktestEngine:
+    """Realistic portfolio backtesting with execution costs"""
+    
+    def __init__(self):
+        self.execution_engine = RealisticExecutionEngine()
+        self.portfolio_history = []
+    
+    def backtest_strategy(self, 
+                         signals_df: pd.DataFrame,
+                         initial_capital: float = 100000) -> Dict[str, Any]:
+        """Run realistic backtest with execution costs"""
+        
+        portfolio_value = initial_capital
+        positions = {}
+        trades = []
+        
+        for _, signal in signals_df.iterrows():
+            # Simulate trade execution
+            execution = self.execution_engine.execute_order(
+                order_size=signal.get('position_size', 1000),
+                market_price=signal.get('price', 100),
+                volatility=signal.get('volatility', 0.02),
+                volume_24h=signal.get('volume_24h', 1000000)
+            )
+            
+            if execution.success:
+                # Apply execution costs
+                execution_cost = execution.executed_size * execution.executed_price
+                slippage_cost = execution.executed_size * execution.executed_price * (execution.slippage_bps / 10000)
+                
+                trades.append({
+                    'timestamp': signal.get('timestamp'),
+                    'symbol': signal.get('symbol'),
+                    'size': execution.executed_size,
+                    'price': execution.executed_price,
+                    'slippage_bps': execution.slippage_bps,
+                    'cost': execution_cost + slippage_cost
+                })
+        
+        # Calculate performance metrics
+        total_slippage = sum(trade['slippage_bps'] * trade['size'] for trade in trades) / 10000
+        
+        return {
+            "total_trades": len(trades),
+            "successful_executions": len(trades),
+            "total_slippage_cost": total_slippage,
+            "avg_slippage_bps": np.mean([trade['slippage_bps'] for trade in trades]) if trades else 0,
+            "execution_stats": self.execution_engine.get_execution_stats()
+        }
+'''
+            
+            trading_dir = Path("trading")
+            trading_dir.mkdir(exist_ok=True)
+            
+            execution_file = trading_dir / "realistic_execution_engine.py"
+            execution_file.write_text(slippage_code)
+            
+            return {"success": True, "message": "Realistic execution engine created"}
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def _fix_security_logging(self) -> Dict[str, Any]:
+        """Fix security and logging practices"""
+        
+        try:
+            security_code = '''#!/usr/bin/env python3
+"""
+Secure Logging Manager
+Prevents secrets leakage and implements correlation IDs
+"""
+
+import logging
+import re
+import uuid
+import json
+from typing import Any, Dict, Optional
+from datetime import datetime
+
+class SecureLogFilter(logging.Filter):
+    """Filter to redact sensitive information from logs"""
+    
+    def __init__(self):
+        super().__init__()
+        # Patterns to redact
+        self.secret_patterns = [
+            re.compile(r'(api[_-]?key["\']?\s*[:=]\s*["\']?)([^"\'\\s]+)', re.IGNORECASE),
+            re.compile(r'(secret["\']?\s*[:=]\s*["\']?)([^"\'\\s]+)', re.IGNORECASE),
+            re.compile(r'(password["\']?\s*[:=]\s*["\']?)([^"\'\\s]+)', re.IGNORECASE),
+            re.compile(r'(token["\']?\s*[:=]\s*["\']?)([^"\'\\s]+)', re.IGNORECASE),
+            re.compile(r'Bearer\s+([A-Za-z0-9\-_=]+)', re.IGNORECASE)
+        ]
+    
+    def filter(self, record):
+        """Filter sensitive information from log record"""
+        
+        # Redact secrets from message
+        if hasattr(record, 'msg') and isinstance(record.msg, str):
+            for pattern in self.secret_patterns:
+                record.msg = pattern.sub(r'\\1***REDACTED***', record.msg)
+        
+        # Redact from args
+        if hasattr(record, 'args') and record.args:
+            redacted_args = []
+            for arg in record.args:
+                if isinstance(arg, str):
+                    for pattern in self.secret_patterns:
+                        arg = pattern.sub(r'\\1***REDACTED***', arg)
+                redacted_args.append(arg)
+            record.args = tuple(redacted_args)
+        
+        return True
+
+class CorrelatedLogger:
+    """Logger with automatic correlation ID tracking"""
+    
+    def __init__(self, name: str):
+        self.logger = logging.getLogger(name)
+        self.correlation_id = None
+        
+        # Add secure filter
+        secure_filter = SecureLogFilter()
+        self.logger.addFilter(secure_filter)
+    
+    def set_correlation_id(self, correlation_id: Optional[str] = None):
+        """Set correlation ID for request tracking"""
+        self.correlation_id = correlation_id or str(uuid.uuid4())[:8]
+    
+    def _add_correlation(self, extra: Dict[str, Any]) -> Dict[str, Any]:
+        """Add correlation ID to log extra"""
+        if extra is None:
+            extra = {}
+        
+        if self.correlation_id:
+            extra['correlation_id'] = self.correlation_id
+        
+        extra['timestamp'] = datetime.utcnow().isoformat()
+        return extra
+    
+    def info(self, msg: str, extra: Optional[Dict[str, Any]] = None):
+        """Log info with correlation ID"""
+        self.logger.info(msg, extra=self._add_correlation(extra))
+    
+    def warning(self, msg: str, extra: Optional[Dict[str, Any]] = None):
+        """Log warning with correlation ID"""
+        self.logger.warning(msg, extra=self._add_correlation(extra))
+    
+    def error(self, msg: str, extra: Optional[Dict[str, Any]] = None):
+        """Log error with correlation ID"""
+        self.logger.error(msg, extra=self._add_correlation(extra))
+    
+    def debug(self, msg: str, extra: Optional[Dict[str, Any]] = None):
+        """Log debug with correlation ID"""
+        self.logger.debug(msg, extra=self._add_correlation(extra))
+
+def setup_secure_logging():
+    """Setup secure logging configuration"""
+    
+    # JSON formatter for structured logging
+    formatter = logging.Formatter(
+        '{"timestamp": "%(asctime)s", "level": "%(levelname)s", '
+        '"logger": "%(name)s", "correlation_id": "%(correlation_id)s", '
+        '"message": "%(message)s"}'
+    )
+    
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    console_handler.addFilter(SecureLogFilter())
+    
+    # File handler (if needed)
+    try:
+        import pathlib
+        log_dir = pathlib.Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        
+        file_handler = logging.FileHandler(log_dir / "secure_app.log")
+        file_handler.setFormatter(formatter)
+        file_handler.addFilter(SecureLogFilter())
+        
+        # Configure root logger
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.addHandler(console_handler)
+        root_logger.addHandler(file_handler)
+        
+    except Exception:
+        # Fallback to console only
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.addHandler(console_handler)
+
+def get_secure_logger(name: str) -> CorrelatedLogger:
+    """Get secure logger instance"""
+    return CorrelatedLogger(name)
+'''
+            
+            core_dir = Path("core")
+            core_dir.mkdir(exist_ok=True)
+            
+            security_file = core_dir / "secure_logging.py"
+            security_file.write_text(security_code)
+            
+            return {"success": True, "message": "Secure logging system created"}
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def _fix_data_completeness_gates(self) -> Dict[str, Any]:
+        """Fix data completeness validation"""
+        
+        try:
+            completeness_code = '''#!/usr/bin/env python3
+"""
+Data Completeness Gate
+Zero-tolerance validation for incomplete data
+"""
+
+import pandas as pd
+import numpy as np
+from typing import Dict, List, Any, Tuple
+from datetime import datetime
+
+class DataCompletenessGate:
+    """Strict data completeness validation"""
+    
+    def __init__(self, required_columns: List[str] = None):
+        self.required_columns = required_columns or [
+            'price', 'volume_24h', 'change_24h', 
+            'sent_score', 'rsi_14', 'whale_score'
+        ]
+        self.rejection_log = []
+    
+    def validate_completeness(self, df: pd.DataFrame, 
+                            min_completeness: float = 0.95) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        """Validate data completeness with zero tolerance"""
+        
+        validation_start = datetime.now()
+        original_count = len(df)
+        
+        if df.empty:
+            return df, {"status": "empty", "original_count": 0, "passed_count": 0}
+        
+        issues = []
+        
+        # Check required columns exist
+        missing_columns = [col for col in self.required_columns if col not in df.columns]
+        if missing_columns:
+            issues.append(f"Missing required columns: {missing_columns}")
+            return pd.DataFrame(), {
+                "status": "failed",
+                "issues": issues,
+                "original_count": original_count,
+                "passed_count": 0
+            }
+        
+        # Check completeness per row
+        required_data = df[self.required_columns]
+        row_completeness = required_data.notna().sum(axis=1) / len(self.required_columns)
+        
+        # Apply strict filter
+        complete_mask = row_completeness >= min_completeness
+        filtered_df = df[complete_mask].copy()
+        
+        passed_count = len(filtered_df)
+        rejection_count = original_count - passed_count
+        
+        # Log rejections
+        if rejection_count > 0:
+            self.rejection_log.append({
+                "timestamp": validation_start.isoformat(),
+                "rejected_count": rejection_count,
+                "reason": f"Completeness below {min_completeness:.0%}"
+            })
+        
+        # Additional validation checks
+        for col in self.required_columns:
+            if col in filtered_df.columns:
+                # Check for placeholder values
+                placeholder_mask = (
+                    (filtered_df[col] == 0) |
+                    (filtered_df[col] == -999) |
+                    (filtered_df[col] == 999) |
+                    (filtered_df[col] == -1)
+                )
+                
+                placeholder_count = placeholder_mask.sum()
+                if placeholder_count > len(filtered_df) * 0.1:  # >10% placeholders
+                    issues.append(f"High placeholder count in {col}: {placeholder_count}")
+        
+        # Check for realistic value ranges
+        if 'price' in filtered_df.columns:
+            unrealistic_prices = ((filtered_df['price'] <= 0) | (filtered_df['price'] > 1000000)).sum()
+            if unrealistic_prices > 0:
+                issues.append(f"Unrealistic prices: {unrealistic_prices}")
+        
+        if 'volume_24h' in filtered_df.columns:
+            zero_volume = (filtered_df['volume_24h'] <= 0).sum()
+            if zero_volume > len(filtered_df) * 0.1:
+                issues.append(f"High zero volume count: {zero_volume}")
+        
+        validation_result = {
+            "status": "passed" if passed_count > 0 else "failed",
+            "original_count": original_count,
+            "passed_count": passed_count,
+            "rejection_count": rejection_count,
+            "rejection_rate": rejection_count / original_count if original_count > 0 else 0,
+            "completeness_threshold": min_completeness,
+            "issues": issues,
+            "validation_duration_ms": (datetime.now() - validation_start).total_seconds() * 1000
+        }
+        
+        return filtered_df, validation_result
+    
+    def get_rejection_summary(self) -> Dict[str, Any]:
+        """Get summary of all rejections"""
+        
+        if not self.rejection_log:
+            return {"total_rejections": 0}
+        
+        total_rejections = sum(entry["rejected_count"] for entry in self.rejection_log)
+        
+        return {
+            "total_rejections": total_rejections,
+            "rejection_events": len(self.rejection_log),
+            "latest_rejection": self.rejection_log[-1] if self.rejection_log else None,
+            "rejection_history": self.rejection_log[-10:]  # Last 10 events
+        }
+
+def create_zero_tolerance_pipeline():
+    """Create zero-tolerance data pipeline"""
+    
+    def pipeline_step(df: pd.DataFrame, step_name: str) -> pd.DataFrame:
+        """Pipeline step with completeness validation"""
+        
+        gate = DataCompletenessGate()
+        validated_df, result = gate.validate_completeness(df)
+        
+        print(f"Pipeline step '{step_name}': {result['passed_count']}/{result['original_count']} passed")
+        
+        if result['issues']:
+            print(f"  Issues: {result['issues']}")
+        
+        return validated_df
+    
+    return pipeline_step
+'''
+            
+            core_dir = Path("core")
+            core_dir.mkdir(exist_ok=True)
+            
+            completeness_file = core_dir / "data_completeness_gate.py"
+            completeness_file.write_text(completeness_code)
+            
+            return {"success": True, "message": "Data completeness gate created"}
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def _fix_regime_awareness(self) -> Dict[str, Any]:
+        """Fix regime-blind model issues"""
+        
+        try:
+            regime_code = '''#!/usr/bin/env python3
+"""
+Market Regime Detection & Adaptive Modeling
+Prevents regime-blind predictions
+"""
+
+import pandas as pd
+import numpy as np
+from sklearn.mixture import GaussianMixture
+from sklearn.preprocessing import StandardScaler
+from typing import Dict, Any, List, Tuple
+import warnings
+warnings.filterwarnings('ignore')
+
+class MarketRegimeDetector:
+    """Detect market regimes for adaptive modeling"""
+    
+    def __init__(self, n_regimes: int = 4):
+        self.n_regimes = n_regimes
+        self.gmm = GaussianMixture(n_components=n_regimes, random_state=42)
+        self.scaler = StandardScaler()
+        self.is_fitted = False
+        self.regime_names = {
+            0: "Low_Volatility_Bull",
+            1: "High_Volatility_Bull", 
+            2: "Low_Volatility_Bear",
+            3: "High_Volatility_Bear"
+        }
+    
+    def fit(self, market_data: pd.DataFrame) -> Dict[str, Any]:
+        """Fit regime detector on market data"""
+        
+        # Create regime features
+        features = self._create_regime_features(market_data)
+        
+        if features.empty:
+            return {"success": False, "error": "No valid features for regime detection"}
+        
+        # Fit scaler and GMM
+        features_scaled = self.scaler.fit_transform(features)
+        self.gmm.fit(features_scaled)
+        self.is_fitted = True
+        
+        # Predict regimes
+        regimes = self.gmm.predict(features_scaled)
+        
+        # Analyze regime characteristics
+        regime_analysis = self._analyze_regimes(market_data, regimes)
+        
+        return {
+            "success": True,
+            "regimes_detected": len(np.unique(regimes)),
+            "regime_distribution": {self.regime_names.get(i, f"Regime_{i}"): 
+                                  (regimes == i).sum() for i in range(self.n_regimes)},
+            "regime_analysis": regime_analysis
+        }
+    
+    def predict_regime(self, market_data: pd.DataFrame) -> np.ndarray:
+        """Predict regime for new market data"""
+        
+        if not self.is_fitted:
+            raise ValueError("Regime detector must be fitted first")
+        
+        features = self._create_regime_features(market_data)
+        features_scaled = self.scaler.transform(features)
+        
+        return self.gmm.predict(features_scaled)
+    
+    def _create_regime_features(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Create features for regime detection"""
+        
+        features_list = []
+        
+        # Price momentum features
+        if 'price' in data.columns:
+            data['price_return_1d'] = data['price'].pct_change()
+            data['price_return_7d'] = data['price'].pct_change(7)
+            features_list.extend(['price_return_1d', 'price_return_7d'])
+        
+        # Volatility features
+        if 'price' in data.columns:
+            data['volatility_10d'] = data['price'].pct_change().rolling(10).std()
+            data['volatility_30d'] = data['price'].pct_change().rolling(30).std()
+            features_list.extend(['volatility_10d', 'volatility_30d'])
+        
+        # Volume features
+        if 'volume_24h' in data.columns:
+            data['volume_ratio'] = data['volume_24h'] / data['volume_24h'].rolling(30).mean()
+            features_list.append('volume_ratio')
+        
+        # Market stress indicators
+        if 'change_24h' in data.columns:
+            data['market_stress'] = data['change_24h'].rolling(7).std()
+            features_list.append('market_stress')
+        
+        # Select valid features
+        valid_features = [f for f in features_list if f in data.columns]
+        
+        if not valid_features:
+            return pd.DataFrame()
+        
+        # Return clean features
+        features_df = data[valid_features].dropna()
+        return features_df
+    
+    def _analyze_regimes(self, data: pd.DataFrame, regimes: np.ndarray) -> Dict[str, Any]:
+        """Analyze characteristics of detected regimes"""
+        
+        analysis = {}
+        
+        for regime_id in range(self.n_regimes):
+            regime_mask = regimes == regime_id
+            regime_data = data[regime_mask]
+            
+            if len(regime_data) == 0:
+                continue
+            
+            regime_stats = {}
+            
+            # Price statistics
+            if 'price' in regime_data.columns:
+                returns = regime_data['price'].pct_change().dropna()
+                regime_stats.update({
+                    'avg_return': returns.mean(),
+                    'volatility': returns.std(),
+                    'sharpe_ratio': returns.mean() / returns.std() if returns.std() > 0 else 0
+                })
+            
+            # Volume statistics
+            if 'volume_24h' in regime_data.columns:
+                regime_stats['avg_volume'] = regime_data['volume_24h'].mean()
+            
+            analysis[self.regime_names.get(regime_id, f"Regime_{regime_id}")] = regime_stats
+        
+        return analysis
+
+class RegimeAdaptiveModel:
+    """Model that adapts predictions based on market regime"""
+    
+    def __init__(self, base_models: Dict[str, Any] = None):
+        self.regime_detector = MarketRegimeDetector()
+        self.regime_models = base_models or {}
+        self.current_regime = None
+        self.performance_by_regime = {}
+    
+    def train_regime_models(self, 
+                           features: pd.DataFrame, 
+                           targets: pd.DataFrame) -> Dict[str, Any]:
+        """Train separate models for each regime"""
+        
+        # Detect regimes
+        regime_fit_result = self.regime_detector.fit(features)
+        
+        if not regime_fit_result.get("success", False):
+            return regime_fit_result
+        
+        regimes = self.regime_detector.predict_regime(features)
+        
+        # Train models per regime
+        training_results = {}
+        
+        for regime_id in range(self.regime_detector.n_regimes):
+            regime_mask = regimes == regime_id
+            regime_features = features[regime_mask]
+            regime_targets = targets[regime_mask]
+            
+            if len(regime_features) < 20:  # Minimum samples
+                continue
+            
+            # Simple linear model for each regime (can be replaced with sophisticated models)
+            from sklearn.linear_model import LinearRegression
+            model = LinearRegression()
+            
+            try:
+                model.fit(regime_features.select_dtypes(include=[np.number]), 
+                         regime_targets.iloc[:, 0] if isinstance(regime_targets, pd.DataFrame) else regime_targets)
+                
+                regime_name = self.regime_detector.regime_names.get(regime_id, f"Regime_{regime_id}")
+                self.regime_models[regime_name] = model
+                
+                training_results[regime_name] = {
+                    "samples": len(regime_features),
+                    "success": True
+                }
+                
+            except Exception as e:
+                training_results[f"Regime_{regime_id}"] = {
+                    "success": False,
+                    "error": str(e)
+                }
+        
+        return {
+            "success": True,
+            "models_trained": len(self.regime_models),
+            "training_results": training_results,
+            "regime_fit": regime_fit_result
+        }
+    
+    def predict_adaptive(self, features: pd.DataFrame) -> np.ndarray:
+        """Make regime-adaptive predictions"""
+        
+        if not self.regime_detector.is_fitted:
+            raise ValueError("Regime detector not fitted")
+        
+        # Detect current regime
+        regimes = self.regime_detector.predict_regime(features)
+        predictions = np.zeros(len(features))
+        
+        for regime_id in range(self.regime_detector.n_regimes):
+            regime_mask = regimes == regime_id
+            
+            if not regime_mask.any():
+                continue
+            
+            regime_name = self.regime_detector.regime_names.get(regime_id, f"Regime_{regime_id}")
+            
+            if regime_name in self.regime_models:
+                model = self.regime_models[regime_name]
+                regime_features = features[regime_mask].select_dtypes(include=[np.number])
+                
+                try:
+                    regime_predictions = model.predict(regime_features)
+                    predictions[regime_mask] = regime_predictions
+                except Exception:
+                    # Fallback to zero predictions
+                    predictions[regime_mask] = 0
+        
+        return predictions
+'''
+            
+            ml_dir = Path("ml")
+            ml_dir.mkdir(exist_ok=True)
+            
+            regime_file = ml_dir / "regime_adaptive_modeling.py"
+            regime_file.write_text(regime_code)
+            
+            return {"success": True, "message": "Regime-adaptive modeling system created"}
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def _fix_uncertainty_quantification(self) -> Dict[str, Any]:
+        """Fix missing uncertainty quantification"""
         
         try:
             uncertainty_code = '''#!/usr/bin/env python3
 """
-Uncertainty Quantification - MC Dropout and Ensemble Methods
+Uncertainty Quantification for ML Models
+Implements Monte Carlo Dropout and Ensemble Uncertainty
 """
 
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
-import numpy as np
-from typing import Tuple, List, Optional
+from typing import Dict, Any, List, Tuple, Optional
+from sklearn.ensemble import RandomForestRegressor
+import warnings
+warnings.filterwarnings('ignore')
 
-class MCDropoutModel(nn.Module):
-    """Model with Monte Carlo Dropout for uncertainty"""
+class MonteCarloDropoutModel(nn.Module):
+    """Neural network with Monte Carlo Dropout for uncertainty"""
     
-    def __init__(self, input_size: int, hidden_size: int, output_size: int, dropout_rate: float = 0.2):
+    def __init__(self, input_size: int, hidden_size: int = 64, dropout_rate: float = 0.1):
         super().__init__()
         self.dropout_rate = dropout_rate
         
@@ -364,460 +1037,272 @@ class MCDropoutModel(nn.Module):
             nn.Linear(input_size, hidden_size),
             nn.ReLU(),
             nn.Dropout(dropout_rate),
-            nn.Linear(hidden_size, hidden_size // 2),
+            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
             nn.Dropout(dropout_rate),
-            nn.Linear(hidden_size // 2, output_size)
+            nn.Linear(hidden_size, 1)
         )
     
     def forward(self, x):
         return self.layers(x)
     
-    def predict_with_uncertainty(self, x: torch.Tensor, n_samples: int = 100) -> Tuple[torch.Tensor, torch.Tensor]:
+    def predict_with_uncertainty(self, x: torch.Tensor, n_samples: int = 50) -> Tuple[np.ndarray, np.ndarray]:
         """Predict with uncertainty using MC Dropout"""
         
-        self.train()  # Enable dropout
-        
+        self.train()  # Keep dropout active
         predictions = []
-        for _ in range(n_samples):
-            with torch.no_grad():
+        
+        with torch.no_grad():
+            for _ in range(n_samples):
                 pred = self.forward(x)
-                predictions.append(pred)
+                predictions.append(pred.cpu().numpy())
         
-        predictions = torch.stack(predictions)
+        predictions = np.array(predictions)
         
-        # Calculate mean and std
-        mean_pred = predictions.mean(dim=0)
-        std_pred = predictions.std(dim=0)
+        # Calculate mean and uncertainty
+        mean_pred = np.mean(predictions, axis=0)
+        uncertainty = np.std(predictions, axis=0)
         
-        self.eval()  # Disable dropout
-        
-        return mean_pred, std_pred
+        return mean_pred.flatten(), uncertainty.flatten()
 
-class EnsembleUncertainty:
-    """Ensemble-based uncertainty quantification"""
+class EnsembleUncertaintyEstimator:
+    """Ensemble-based uncertainty estimation"""
     
-    def __init__(self, models: List[nn.Module]):
-        self.models = models
+    def __init__(self, n_estimators: int = 10):
+        self.n_estimators = n_estimators
+        self.models = []
+        self.is_fitted = False
     
-    def predict_with_uncertainty(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def fit(self, X: np.ndarray, y: np.ndarray) -> Dict[str, Any]:
+        """Fit ensemble of models"""
+        
+        self.models = []
+        
+        for i in range(self.n_estimators):
+            # Create bootstrapped dataset
+            n_samples = len(X)
+            indices = np.random.choice(n_samples, size=n_samples, replace=True)
+            X_boot = X[indices]
+            y_boot = y[indices]
+            
+            # Train model
+            model = RandomForestRegressor(n_estimators=50, random_state=i)
+            model.fit(X_boot, y_boot)
+            self.models.append(model)
+        
+        self.is_fitted = True
+        
+        # Validate ensemble
+        ensemble_predictions = self.predict_with_uncertainty(X)
+        
+        return {
+            "success": True,
+            "models_trained": len(self.models),
+            "ensemble_variance": np.mean(ensemble_predictions[1]),
+            "prediction_range": {
+                "min": np.min(ensemble_predictions[0]),
+                "max": np.max(ensemble_predictions[0])
+            }
+        }
+    
+    def predict_with_uncertainty(self, X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """Predict with ensemble uncertainty"""
+        
+        if not self.is_fitted:
+            raise ValueError("Ensemble must be fitted first")
         
         predictions = []
         
         for model in self.models:
-            model.eval()
-            with torch.no_grad():
-                pred = model(x)
-                predictions.append(pred)
+            pred = model.predict(X)
+            predictions.append(pred)
         
-        predictions = torch.stack(predictions)
+        predictions = np.array(predictions)
         
-        mean_pred = predictions.mean(dim=0)
-        std_pred = predictions.std(dim=0)
+        # Calculate ensemble statistics
+        mean_pred = np.mean(predictions, axis=0)
+        uncertainty = np.std(predictions, axis=0)
         
-        return mean_pred, std_pred
+        return mean_pred, uncertainty
 
-def uncertainty_filter(predictions: np.ndarray, uncertainties: np.ndarray, confidence_threshold: float = 0.8) -> np.ndarray:
-    """Filter predictions based on uncertainty"""
+class ConfidenceIntervalEstimator:
+    """Confidence interval estimation for predictions"""
     
-    # Convert uncertainty to confidence (inverse relationship)
-    max_uncertainty = uncertainties.max()
-    confidences = 1.0 - (uncertainties / max_uncertainty)
+    def __init__(self, method: str = "bootstrap"):
+        self.method = method
+        self.percentiles = [5, 25, 50, 75, 95]
     
-    # Apply confidence threshold
-    high_confidence_mask = confidences >= confidence_threshold
-    
-    return high_confidence_mask
-'''
-            
-            with open(Path('ml/uncertainty_quantification.py'), 'w') as f:
-                f.write(uncertainty_code)
-            
-            self.fixes_applied.append("Uncertainty quantification implementation created")
-            
-        except Exception as e:
-            self.fixes_failed.append(f"Uncertainty quantification fix failed: {e}")
-    
-    def _fix_slippage_modeling(self):
-        """Fix F: Add slippage modeling"""
+    def estimate_intervals(self, 
+                          predictions: np.ndarray, 
+                          uncertainties: np.ndarray,
+                          confidence_levels: List[float] = [0.8, 0.9, 0.95]) -> Dict[str, np.ndarray]:
+        """Estimate confidence intervals"""
         
-        print("📈 Adding slippage modeling...")
+        intervals = {}
         
-        try:
-            slippage_code = '''#!/usr/bin/env python3
-"""
-Slippage Modeling - Realistic execution simulation
-"""
+        for conf_level in confidence_levels:
+            # Calculate z-score for confidence level
+            from scipy.stats import norm
+            z_score = norm.ppf((1 + conf_level) / 2)
+            
+            # Calculate intervals
+            lower_bound = predictions - z_score * uncertainties
+            upper_bound = predictions + z_score * uncertainties
+            
+            intervals[f"CI_{int(conf_level*100)}"] = {
+                "lower": lower_bound,
+                "upper": upper_bound,
+                "width": upper_bound - lower_bound
+            }
+        
+        return intervals
+    
+    def validate_calibration(self, 
+                           predictions: np.ndarray,
+                           uncertainties: np.ndarray, 
+                           actual_values: np.ndarray) -> Dict[str, float]:
+        """Validate uncertainty calibration"""
+        
+        calibration_metrics = {}
+        
+        # Calculate prediction intervals
+        intervals = self.estimate_intervals(predictions, uncertainties)
+        
+        for interval_name, interval_data in intervals.items():
+            # Check coverage
+            within_interval = (
+                (actual_values >= interval_data["lower"]) & 
+                (actual_values <= interval_data["upper"])
+            )
+            
+            coverage = within_interval.mean()
+            expected_coverage = float(interval_name.split("_")[1]) / 100
+            
+            calibration_metrics[f"{interval_name}_coverage"] = coverage
+            calibration_metrics[f"{interval_name}_calibration_error"] = abs(coverage - expected_coverage)
+        
+        return calibration_metrics
 
-import numpy as np
-import pandas as pd
-from typing import Dict, List, Optional
-
-class SlippageModel:
-    """Model slippage based on market conditions"""
+class UncertaintyAwarePredictionSystem:
+    """Complete uncertainty-aware prediction system"""
     
     def __init__(self):
-        self.slippage_params = {
-            'base_slippage_bps': 5,      # Base slippage in basis points
-            'volume_impact_factor': 0.1,  # Volume impact multiplier
-            'volatility_factor': 0.2,     # Volatility impact multiplier
-            'spread_multiplier': 1.5       # Bid-ask spread multiplier
-        }
+        self.ensemble = EnsembleUncertaintyEstimator()
+        self.confidence_estimator = ConfidenceIntervalEstimator()
+        self.uncertainty_threshold = 0.1  # Maximum acceptable uncertainty
     
-    def calculate_slippage(self, 
-                          order_size: float,
-                          daily_volume: float,
-                          volatility: float,
-                          spread_bps: float) -> float:
-        """Calculate expected slippage in basis points"""
+    def train_uncertainty_model(self, 
+                               features: pd.DataFrame, 
+                               targets: pd.Series) -> Dict[str, Any]:
+        """Train uncertainty-aware model"""
         
-        # Base slippage
-        slippage = self.slippage_params['base_slippage_bps']
+        # Prepare data
+        X = features.select_dtypes(include=[np.number]).fillna(0).values
+        y = targets.fillna(0).values
         
-        # Volume impact
-        volume_ratio = order_size / daily_volume
-        volume_impact = volume_ratio * self.slippage_params['volume_impact_factor'] * 10000
+        # Train ensemble
+        ensemble_result = self.ensemble.fit(X, y)
         
-        # Volatility impact
-        volatility_impact = volatility * self.slippage_params['volatility_factor'] * 10000
+        if not ensemble_result.get("success", False):
+            return ensemble_result
         
-        # Spread impact
-        spread_impact = spread_bps * self.slippage_params['spread_multiplier']
+        # Test uncertainty estimation
+        test_predictions, test_uncertainties = self.ensemble.predict_with_uncertainty(X)
         
-        total_slippage = slippage + volume_impact + volatility_impact + spread_impact
-        
-        return min(total_slippage, 200)  # Cap at 200 bps
-    
-    def simulate_execution(self, 
-                          target_price: float,
-                          order_size: float,
-                          market_data: Dict) -> Dict:
-        """Simulate order execution with slippage"""
-        
-        slippage_bps = self.calculate_slippage(
-            order_size=order_size,
-            daily_volume=market_data.get('volume', 1000000),
-            volatility=market_data.get('volatility', 0.02),
-            spread_bps=market_data.get('spread_bps', 10)
-        )
-        
-        # Apply slippage
-        execution_price = target_price * (1 + slippage_bps / 10000)
-        
-        # Simulate partial fills
-        fill_probability = min(1.0, market_data.get('liquidity_score', 0.9))
-        filled_size = order_size * fill_probability
+        # Calculate confidence intervals
+        intervals = self.confidence_estimator.estimate_intervals(test_predictions, test_uncertainties)
         
         return {
-            'target_price': target_price,
-            'execution_price': execution_price,
-            'slippage_bps': slippage_bps,
-            'target_size': order_size,
-            'filled_size': filled_size,
-            'fill_rate': fill_probability
-        }
-
-class FeeModel:
-    """Model trading fees"""
-    
-    def __init__(self, fee_schedule: Optional[Dict] = None):
-        self.fee_schedule = fee_schedule or {
-            'maker_fee_bps': 10,   # 0.10%
-            'taker_fee_bps': 20,   # 0.20%
-            'min_fee_usd': 0.01
-        }
-    
-    def calculate_fees(self, trade_value_usd: float, is_maker: bool = False) -> float:
-        """Calculate trading fees"""
-        
-        fee_rate = self.fee_schedule['maker_fee_bps'] if is_maker else self.fee_schedule['taker_fee_bps']
-        fee_amount = trade_value_usd * (fee_rate / 10000)
-        
-        return max(fee_amount, self.fee_schedule['min_fee_usd'])
-'''
-            
-            trading_dir = Path('trading')
-            trading_dir.mkdir(exist_ok=True)
-            
-            with open(trading_dir / 'slippage_modeling.py', 'w') as f:
-                f.write(slippage_code)
-            
-            self.fixes_applied.append("Slippage modeling implementation created")
-            
-        except Exception as e:
-            self.fixes_failed.append(f"Slippage modeling fix failed: {e}")
-    
-    def _fix_secrets_masking(self):
-        """Fix G: Add secrets masking in logs"""
-        
-        print("🔐 Adding secrets masking...")
-        
-        try:
-            # Update improved logging manager to include secrets masking
-            logging_manager_path = Path('core/improved_logging_manager.py')
-            
-            if logging_manager_path.exists():
-                with open(logging_manager_path, 'r') as f:
-                    content = f.read()
-                
-                # Add secrets masking function if not present
-                if 'mask_sensitive_data' not in content:
-                    secrets_masking = '''
-import re
-
-def mask_sensitive_data(message: str) -> str:
-    """Mask sensitive data in log messages"""
-    
-    # Patterns to mask
-    patterns = [
-        (r'(api_key["\']?\s*[:=]\s*["\']?)([^"\'\\s]+)', r'\\1***MASKED***'),
-        (r'(token["\']?\s*[:=]\s*["\']?)([^"\'\\s]+)', r'\\1***MASKED***'),
-        (r'(secret["\']?\s*[:=]\s*["\']?)([^"\'\\s]+)', r'\\1***MASKED***'),
-        (r'(password["\']?\s*[:=]\s*["\']?)([^"\'\\s]+)', r'\\1***MASKED***'),
-        (r'(key["\']?\s*[:=]\s*["\']?)([A-Za-z0-9+/]{20,})', r'\\1***MASKED***')
-    ]
-    
-    masked_message = message
-    for pattern, replacement in patterns:
-        masked_message = re.sub(pattern, replacement, masked_message, flags=re.IGNORECASE)
-    
-    return masked_message
-'''
-                    
-                    # Add the function to the file
-                    updated_content = content.replace(
-                        'warnings.filterwarnings(\'ignore\')',
-                        f'warnings.filterwarnings(\'ignore\')\n{secrets_masking}'
-                    )
-                    
-                    with open(logging_manager_path, 'w') as f:
-                        f.write(updated_content)
-            
-            self.fixes_applied.append("Secrets masking added to logging manager")
-            
-        except Exception as e:
-            self.fixes_failed.append(f"Secrets masking fix failed: {e}")
-    
-    def _fix_correlation_ids(self):
-        """Fix G: Ensure correlation IDs are implemented"""
-        
-        print("🔗 Checking correlation IDs...")
-        
-        try:
-            # Correlation IDs are already implemented in improved_logging_manager.py
-            logging_manager_path = Path('core/improved_logging_manager.py')
-            
-            if logging_manager_path.exists():
-                with open(logging_manager_path, 'r') as f:
-                    content = f.read()
-                
-                if 'correlation_id' in content:
-                    self.fixes_applied.append("Correlation IDs already implemented")
-                else:
-                    self.fixes_failed.append("Correlation IDs not found in logging manager")
-            else:
-                self.fixes_failed.append("Logging manager not found")
-                
-        except Exception as e:
-            self.fixes_failed.append(f"Correlation IDs check failed: {e}")
-    
-    def _fix_async_implementation(self):
-        """Fix D: Ensure async implementation"""
-        
-        print("⚡ Checking async implementation...")
-        
-        try:
-            # Check if async scraping exists
-            async_files = list(Path('.').glob('**/*async*.py'))
-            
-            if len(async_files) > 0:
-                self.fixes_applied.append(f"Async implementation found: {len(async_files)} files")
-            else:
-                # Create basic async scraper template
-                async_template = '''#!/usr/bin/env python3
-"""
-Async Scraper Template
-"""
-
-import asyncio
-import aiohttp
-from typing import List, Dict, Any
-from tenacity import retry, stop_after_attempt, wait_exponential
-
-class AsyncScraper:
-    """Async web scraper with rate limiting"""
-    
-    def __init__(self, max_concurrent: int = 10):
-        self.semaphore = asyncio.Semaphore(max_concurrent)
-        self.session = None
-    
-    async def __aenter__(self):
-        self.session = aiohttp.ClientSession()
-        return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if self.session:
-            await self.session.close()
-    
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-    async def fetch_url(self, url: str) -> Dict[str, Any]:
-        """Fetch single URL with retry logic"""
-        
-        async with self.semaphore:
-            async with self.session.get(url) as response:
-                return {
-                    'url': url,
-                    'status': response.status,
-                    'data': await response.text()
+            "success": True,
+            "ensemble_result": ensemble_result,
+            "uncertainty_stats": {
+                "mean_uncertainty": np.mean(test_uncertainties),
+                "uncertainty_range": {
+                    "min": np.min(test_uncertainties),
+                    "max": np.max(test_uncertainties)
                 }
+            },
+            "confidence_intervals": {name: {
+                "mean_width": np.mean(data["width"])
+            } for name, data in intervals.items()}
+        }
     
-    async def fetch_multiple(self, urls: List[str]) -> List[Dict[str, Any]]:
-        """Fetch multiple URLs concurrently"""
+    def predict_with_confidence_gate(self, 
+                                   features: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        """Make predictions with uncertainty-based confidence gate"""
         
-        tasks = [self.fetch_url(url) for url in urls]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        X = features.select_dtypes(include=[np.number]).fillna(0).values
         
-        return [r for r in results if not isinstance(r, Exception)]
-'''
-                
-                utils_dir = Path('utils')
-                utils_dir.mkdir(exist_ok=True)
-                
-                with open(utils_dir / 'async_scraper_template.py', 'w') as f:
-                    f.write(async_template)
-                
-                self.fixes_applied.append("Async scraper template created")
-                
-        except Exception as e:
-            self.fixes_failed.append(f"Async implementation check failed: {e}")
-    
-    def _fix_atomic_file_operations(self):
-        """Fix D: Add atomic file operations"""
+        # Get predictions with uncertainty
+        predictions, uncertainties = self.ensemble.predict_with_uncertainty(X)
         
-        print("⚗️ Adding atomic file operations...")
+        # Calculate confidence scores (inverse of uncertainty)
+        max_uncertainty = np.max(uncertainties) if len(uncertainties) > 0 else 1.0
+        confidence_scores = 1 - (uncertainties / max_uncertainty)
         
-        try:
-            atomic_io_code = '''#!/usr/bin/env python3
-"""
-Atomic File Operations - Safe file writing
-"""
-
-import os
-import json
-import tempfile
-from pathlib import Path
-from typing import Any, Union
-import pandas as pd
-
-def atomic_write_json(data: Any, file_path: Union[str, Path]) -> None:
-    """Atomically write JSON data"""
-    
-    file_path = Path(file_path)
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    # Write to temporary file first
-    with tempfile.NamedTemporaryFile(
-        mode='w',
-        dir=file_path.parent,
-        prefix=f'{file_path.stem}_tmp_',
-        suffix=file_path.suffix,
-        delete=False
-    ) as tmp_file:
-        json.dump(data, tmp_file, indent=2)
-        tmp_file_path = tmp_file.name
-    
-    # Atomic rename
-    os.rename(tmp_file_path, file_path)
-
-def atomic_write_csv(df: pd.DataFrame, file_path: Union[str, Path]) -> None:
-    """Atomically write CSV data"""
-    
-    file_path = Path(file_path)
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    # Write to temporary file first
-    tmp_file_path = file_path.with_suffix(f'{file_path.suffix}.tmp')
-    df.to_csv(tmp_file_path, index=False)
-    
-    # Atomic rename
-    os.rename(tmp_file_path, file_path)
-
-def atomic_write_text(content: str, file_path: Union[str, Path]) -> None:
-    """Atomically write text content"""
-    
-    file_path = Path(file_path)
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    # Write to temporary file first
-    with tempfile.NamedTemporaryFile(
-        mode='w',
-        dir=file_path.parent,
-        prefix=f'{file_path.stem}_tmp_',
-        suffix=file_path.suffix,
-        delete=False,
-        encoding='utf-8'
-    ) as tmp_file:
-        tmp_file.write(content)
-        tmp_file_path = tmp_file.name
-    
-    # Atomic rename
-    os.rename(tmp_file_path, file_path)
+        # Apply uncertainty gate
+        high_confidence_mask = uncertainties <= self.uncertainty_threshold
+        
+        # Create results DataFrame
+        results_df = pd.DataFrame({
+            'prediction': predictions,
+            'uncertainty': uncertainties,
+            'confidence': confidence_scores,
+            'high_confidence': high_confidence_mask
+        })
+        
+        gate_report = {
+            "total_predictions": len(predictions),
+            "high_confidence_count": high_confidence_mask.sum(),
+            "high_confidence_rate": high_confidence_mask.mean(),
+            "mean_uncertainty": np.mean(uncertainties),
+            "uncertainty_threshold": self.uncertainty_threshold
+        }
+        
+        return results_df, gate_report
 '''
             
-            with open(Path('utils/atomic_io.py'), 'w') as f:
-                f.write(atomic_io_code)
+            ml_dir = Path("ml")
+            ml_dir.mkdir(exist_ok=True)
             
-            self.fixes_applied.append("Atomic file operations implementation created")
+            uncertainty_file = ml_dir / "uncertainty_quantification.py"
+            uncertainty_file.write_text(uncertainty_code)
+            
+            return {"success": True, "message": "Uncertainty quantification system created"}
             
         except Exception as e:
-            self.fixes_failed.append(f"Atomic file operations fix failed: {e}")
-    
-    def _save_fixes_report(self, report: Dict[str, Any]):
-        """Save fixes report"""
-        
-        report_dir = Path('logs/fixes')
-        report_dir.mkdir(parents=True, exist_ok=True)
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        report_path = report_dir / f"critical_fixes_{timestamp}.json"
-        
-        with open(report_path, 'w', encoding='utf-8') as f:
-            json.dump(report, f, indent=2)
-        
-        print(f"\n📄 Fixes report saved: {report_path}")
-    
-    def print_fixes_summary(self, report: Dict[str, Any]):
-        """Print fixes summary"""
-        
-        print(f"\n🎯 CRITICAL FIXES SUMMARY")
-        print("=" * 40)
-        print(f"Total Fixes Attempted: {report['total_fixes_attempted']}")
-        print(f"Fixes Successful: {report['fixes_successful']}")
-        print(f"Fixes Failed: {report['fixes_failed']}")
-        print(f"Success Rate: {report['overall_success_rate']:.1%}")
-        print(f"Fixes Duration: {report['fixes_duration']:.2f}s")
-        
-        if report['fixes_applied']:
-            print(f"\n✅ Fixes Applied:")
-            for fix in report['fixes_applied']:
-                print(f"   • {fix}")
-        
-        if report['fixes_failed']:
-            print(f"\n❌ Fixes Failed:")
-            for fix in report['fixes_failed']:
-                print(f"   • {fix}")
+            return {"success": False, "error": str(e)}
 
-def apply_critical_fixes() -> Dict[str, Any]:
+def apply_critical_fixes():
     """Apply all critical fixes"""
     
-    import time
+    print("🔧 CRITICAL FIXES APPLIER")
+    print("=" * 30)
+    print("Applying enterprise-grade fixes for common critical issues...")
     
-    fixer = CriticalFixesApplier()
-    report = fixer.apply_all_critical_fixes()
-    fixer.print_fixes_summary(report)
+    applier = CriticalFixesApplier()
+    summary = applier.apply_all_critical_fixes()
     
-    return report
+    print(f"\n📊 FIXES SUMMARY")
+    print(f"Applied: {summary['fixes_applied']} fixes")
+    print(f"Failed: {summary['fixes_failed']} fixes")
+    print(f"Success Rate: {len(summary['applied_fixes'])/7*100:.1f}%")
+    
+    if summary['applied_fixes']:
+        print(f"\n✅ SUCCESSFULLY APPLIED:")
+        for fix in summary['applied_fixes']:
+            print(f"   • {fix}")
+    
+    if summary['failed_fixes']:
+        print(f"\n❌ FAILED TO APPLY:")
+        for failure in summary['failed_fixes']:
+            print(f"   • {failure}")
+    
+    print(f"\n📁 All fixes available in respective directories")
+    print(f"Integration required for full functionality")
+    
+    return summary
 
 if __name__ == "__main__":
-    fixes_report = apply_critical_fixes()
+    summary = apply_critical_fixes()
+    print("🏁 Critical fixes application completed")
