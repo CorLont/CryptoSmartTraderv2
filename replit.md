@@ -95,6 +95,10 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Advanced Transformers:** Temporal Fusion Transformer (TFT) and N-BEATS ensemble for superior multi-horizon forecasting.
 - **Conformal Prediction:** Formal uncertainty quantification with adaptive confidence intervals for better risk gating.
 - **Advanced Portfolio Optimization:** Kelly-lite position sizing with uncertainty awareness, correlation caps, and hard risk overlays.
+- **Meta-Labeling System:** Lopez de Prado triple-barrier method for trade quality filtering and false signal elimination.
+- **Futures Signal Integration:** Funding rates, open interest, and basis features for leverage squeeze detection and crowding signals.
+- **Order Book Imbalance Detection:** L2 depth analysis with bid/ask imbalance and spoof detection for better timing.
+- **Event Impact Scoring:** LLM-powered news analysis with impact scoring and half-life decay modeling for event-driven alpha.
 
 ## External Dependencies
 
