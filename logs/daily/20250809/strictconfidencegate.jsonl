@@ -183,3 +183,31 @@
 {"asctime": "2025-08-09 09:31:31", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generating explanations for 10 predictions"}
 {"asctime": "2025-08-09 09:31:31", "name": "StrictConfidenceGate", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "No explainer found for model ensemble"}
 {"asctime": "2025-08-09 09:31:31", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No explanations generated, using fallback"}
+{"asctime": "2025-08-09 09:36:47", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: gate_20250809_093647"}
+{"asctime": "2025-08-09 09:36:47", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "STRICT GATE PASSED: gate_20250809_093647 - 3/5 candidates passed"}
+{"asctime": "2025-08-09 09:36:47", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generating explanations for 3 predictions"}
+{"asctime": "2025-08-09 09:37:40", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250809_093740"}
+{"asctime": "2025-08-09 09:37:40", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "STRICT GATE PASSED: dashboard_20250809_093740 - 10/15 candidates passed"}
+{"asctime": "2025-08-09 09:37:40", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generating explanations for 10 predictions"}
+{"asctime": "2025-08-09 09:37:40", "name": "StrictConfidenceGate", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "No explainer found for model ensemble"}
+{"asctime": "2025-08-09 09:37:40", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No explanations generated, using fallback"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250809_093832"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250809_093832"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250809_093832"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Applying strict confidence gate: dashboard_20250809_093832"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "STRICT GATE PASSED: dashboard_20250809_093832 - 10/15 candidates passed"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "STRICT GATE PASSED: dashboard_20250809_093832 - 10/15 candidates passed"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "STRICT GATE PASSED: dashboard_20250809_093832 - 10/15 candidates passed"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generating explanations for 10 predictions"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "STRICT GATE PASSED: dashboard_20250809_093832 - 10/15 candidates passed"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generating explanations for 10 predictions"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generating explanations for 10 predictions"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "INFO", "funcName": "log", "lineno": 90, "message": "Generating explanations for 10 predictions"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "No explainer found for model ensemble"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "No explainer found for model ensemble"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No explanations generated, using fallback"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No explanations generated, using fallback"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "No explainer found for model ensemble"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "ERROR", "funcName": "log", "lineno": 90, "message": "No explainer found for model ensemble"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No explanations generated, using fallback"}
+{"asctime": "2025-08-09 09:38:32", "name": "StrictConfidenceGate", "levelname": "WARNING", "funcName": "log", "lineno": 90, "message": "No explanations generated, using fallback"}

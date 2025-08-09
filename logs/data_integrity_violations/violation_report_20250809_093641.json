@@ -1,0 +1,43 @@
+{
+  "validation_timestamp": "2025-08-09T09:36:41.674572",
+  "production_mode": true,
+  "data_shape": [
+    5,
+    4
+  ],
+  "source_metadata": {
+    "sources": [
+      {
+        "type": "synthetic",
+        "generator": "mock"
+      }
+    ]
+  },
+  "violations": [
+    {
+      "type": "FORBIDDEN_SOURCE",
+      "severity": "CRITICAL",
+      "message": "Forbidden data source detected: synthetic",
+      "source": {
+        "type": "synthetic",
+        "generator": "mock"
+      }
+    },
+    {
+      "type": "NON_AUTHENTIC_SOURCE",
+      "severity": "CRITICAL",
+      "message": "Non-authentic data source: synthetic",
+      "source": {
+        "type": "synthetic",
+        "generator": "mock"
+      }
+    }
+  ],
+  "passed_checks": [
+    "data_completeness",
+    "data_freshness",
+    "synthetic_detection",
+    "no_nan_values"
+  ],
+  "overall_status": "FAILED"
+}

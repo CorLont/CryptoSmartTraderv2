@@ -159,7 +159,7 @@ class MultiHorizonPredictor:
             exclude_columns = ['symbol', 'timestamp']
             feature_columns = [col for col in feature_columns if col not in exclude_columns]
             
-            # Handle missing values
+            # Handle missing values with forward fill then zero fill
             feature_df = df[feature_columns].fillna(method='ffill').fillna(0)
             
             self.logger.info(f"Prepared {len(feature_columns)} features for {len(df)} samples")
@@ -423,7 +423,7 @@ class MultiHorizonPredictor:
             training_time = time.time() - start_time
             
             # Save models
-            await self.save_models()
+            self.save_models()
             
             summary = {
                 'success': True,
@@ -608,7 +608,7 @@ class MultiHorizonPredictor:
             
             return pd.DataFrame(columns=columns)
     
-    async def save_models(self):
+    def save_models(self):
         """Save trained models to disk"""
         
         try:

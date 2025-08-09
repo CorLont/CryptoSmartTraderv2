@@ -1,316 +1,326 @@
 #!/usr/bin/env python3
 """
-CryptoSmartTrader V2 - Daily Logging Configuration
-Centralized daily logging system that organizes all logs by date for comprehensive monitoring
+Daily Logging Configuration - Enterprise daily evaluation system
+GO/NO-GO decision making based on system health
 """
 
-import logging
-import logging.handlers
-import os
-import sys
-import traceback
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, Optional, List
 import json
+import logging
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+from dataclasses import dataclass, asdict
 
-class DailyLogManager:
-    """Manages daily organized logging for CryptoSmartTrader system"""
+@dataclass
+class DailyMetrics:
+    """Daily system metrics for GO/NO-GO decisions"""
+    date: str
+    system_health_score: float
+    data_integrity_score: float
+    model_performance_score: float
+    coverage_compliance_score: float
+    overall_score: float
+    go_nogo_decision: str
+    critical_issues: List[str]
+    warnings: List[str]
+    recommendations: List[str]
+
+class DailyLogger:
+    """Enterprise daily logging and evaluation system"""
     
-    def __init__(self, base_log_dir: str = "logs"):
-        self.base_log_dir = Path(base_log_dir)
-        self.current_date = datetime.now().strftime('%Y-%m-%d')
-        self.daily_log_dir = self.base_log_dir / self.current_date
+    def __init__(self):
+        self.log_dir = Path("logs/daily_evaluations")
+        self.log_dir.mkdir(parents=True, exist_ok=True)
         
-        # Create daily log directory
-        self.daily_log_dir.mkdir(parents=True, exist_ok=True)
+        # Initialize daily log file
+        today = datetime.utcnow().strftime("%Y%m%d")
+        self.daily_log_file = self.log_dir / f"daily_eval_{today}.json"
         
-        # Log categories for organized monitoring
-        self.log_categories = {
-            'system': 'system_health.log',
-            'market_scanner': 'market_scanner.log', 
-            'ml_predictor': 'ml_predictor.log',
-            'sentiment_agent': 'sentiment_agent.log',
-            'whale_detector': 'whale_detector.log',
-            'trade_executor': 'trade_executor.log',
-            'orchestrator': 'orchestrator.log',
-            'errors': 'errors.log',
-            'performance': 'performance.log',
-            'api_calls': 'api_calls.log',
-            'security': 'security.log'
+        # Current day metrics
+        self.daily_metrics = {
+            "date": today,
+            "system_checks": [],
+            "performance_metrics": [],
+            "errors": [],
+            "warnings": [],
+            "security_events": []
         }
         
-        # Setup loggers
-        self.loggers = {}
-        self._setup_daily_loggers()
-        
-        print(f"📊 Daily logging system initialized")
-        print(f"📁 Log location: {self.daily_log_dir}")
-        
-    def _setup_daily_loggers(self):
-        """Setup specialized loggers for each category"""
-        
-        # Custom formatter with timestamp and detailed info
-        detailed_formatter = logging.Formatter(
-            '%(asctime)s | %(levelname)-8s | %(name)-20s | %(funcName)-15s | %(lineno)-4d | %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        
-        # JSON formatter for structured logging
-        json_formatter = logging.Formatter(
-            '%(asctime)s | %(levelname)s | %(name)s | %(message)s'
-        )
-        
-        for category, filename in self.log_categories.items():
-            logger = logging.getLogger(f'cryptotrader.{category}')
-            logger.setLevel(logging.DEBUG)
-            
-            # Clear existing handlers
-            logger.handlers.clear()
-            
-            # File handler for this category
-            file_handler = logging.handlers.RotatingFileHandler(
-                self.daily_log_dir / filename,
-                maxBytes=50 * 1024 * 1024,  # 50MB per file
-                backupCount=5,
-                encoding='utf-8'
-            )
-            file_handler.setFormatter(detailed_formatter)
-            file_handler.setLevel(logging.DEBUG)
-            
-            # Console handler for critical messages
-            if category in ['system', 'errors', 'orchestrator']:
-                console_handler = logging.StreamHandler(sys.stdout)
-                console_handler.setFormatter(logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-                ))
-                console_handler.setLevel(logging.WARNING)
-                logger.addHandler(console_handler)
-            
-            logger.addHandler(file_handler)
-            self.loggers[category] = logger
-            
-        # Setup master daily summary logger
-        self._setup_summary_logger()
-        
-    def _setup_summary_logger(self):
-        """Setup master summary logger for daily overview"""
-        summary_logger = logging.getLogger('cryptotrader.daily_summary')
-        summary_logger.setLevel(logging.INFO)
-        summary_logger.handlers.clear()
-        
-        # Daily summary file
-        summary_handler = logging.FileHandler(
-            self.daily_log_dir / 'daily_summary.log',
-            encoding='utf-8'
-        )
-        summary_handler.setFormatter(logging.Formatter(
-            '%(asctime)s | %(levelname)s | %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        ))
-        
-        summary_logger.addHandler(summary_handler)
-        self.loggers['daily_summary'] = summary_logger
-        
-    def get_logger(self, category: str) -> logging.Logger:
-        """Get logger for specific category"""
-        if category not in self.loggers:
-            raise ValueError(f"Unknown log category: {category}. Available: {list(self.log_categories.keys())}")
-        return self.loggers[category]
+        # GO/NO-GO thresholds
+        self.go_threshold = 0.8  # 80% overall score required for GO
+        self.critical_thresholds = {
+            "data_integrity": 0.95,  # 95% minimum for data integrity
+            "system_health": 0.7,    # 70% minimum for system health
+            "model_performance": 0.6, # 60% minimum for model performance
+            "coverage_compliance": 0.99  # 99% minimum for coverage
+        }
     
-    def log_system_check(self, check_name: str, success: bool, details: str, error: Optional[Exception] = None):
-        """Log system health check results with full details"""
-        logger = self.get_logger('system')
+    def log_system_check(self, check_name: str, passed: bool, details: str = ""):
+        """Log system check result"""
         
-        status = "SUCCESS" if success else "FAILED"
-        message = f"System Check [{check_name}] {status}: {details}"
-        
-        if success:
-            logger.info(message)
-        else:
-            logger.error(message)
-            if error:
-                logger.error(f"Error details: {error}")
-                logger.error(f"Traceback: {traceback.format_exc()}")
-                
-    def log_trading_opportunity(self, coin: str, timeframe: str, score: int, details: Dict):
-        """Log detected trading opportunities"""
-        logger = self.get_logger('market_scanner')
-        logger.info(f"Trading opportunity: {coin} {timeframe} (score: {score}) - {json.dumps(details)}")
-        
-    def log_ml_prediction(self, coin: str, prediction: Dict, confidence: float, model_info: Dict):
-        """Log ML predictions with confidence and model details"""
-        logger = self.get_logger('ml_predictor')
-        logger.info(f"ML Prediction [{coin}] Confidence: {confidence:.3f} - {json.dumps(prediction)} - Model: {json.dumps(model_info)}")
-        
-    def log_sentiment_analysis(self, source: str, sentiment_score: float, volume: int, details: Dict):
-        """Log sentiment analysis results"""
-        logger = self.get_logger('sentiment_agent')
-        logger.info(f"Sentiment [{source}] Score: {sentiment_score:.3f} Volume: {volume} - {json.dumps(details)}")
-        
-    def log_whale_activity(self, transaction_hash: str, amount: float, coin: str, exchange: str, details: Dict):
-        """Log whale detection events"""
-        logger = self.get_logger('whale_detector')
-        logger.warning(f"Whale Activity [{coin}] {amount:,.2f} on {exchange} - TX: {transaction_hash} - {json.dumps(details)}")
-        
-    def log_trade_execution(self, action: str, coin: str, amount: float, price: float, success: bool, details: Dict):
-        """Log trade execution results"""
-        logger = self.get_logger('trade_executor')
-        level = logger.info if success else logger.error
-        status = "SUCCESS" if success else "FAILED"
-        level(f"Trade {action} [{coin}] {amount} @ {price} {status} - {json.dumps(details)}")
-        
-    def log_orchestrator_event(self, event_type: str, agent: str, status: str, details: str):
-        """Log orchestrator coordination events"""
-        logger = self.get_logger('orchestrator')
-        logger.info(f"Orchestrator [{event_type}] Agent: {agent} Status: {status} - {details}")
-        
-    def log_api_call(self, endpoint: str, method: str, status_code: int, response_time: float, error: Optional[str] = None):
-        """Log API call performance and status"""
-        logger = self.get_logger('api_calls')
-        message = f"API {method} {endpoint} - Status: {status_code} - Time: {response_time:.3f}s"
-        
-        if error:
-            message += f" - Error: {error}"
-            logger.error(message)
-        elif status_code >= 400:
-            logger.warning(message)
-        else:
-            logger.info(message)
-            
-    def log_performance_metric(self, metric_name: str, value: float, unit: str, context: Dict):
-        """Log performance metrics"""
-        logger = self.get_logger('performance')
-        logger.info(f"Performance [{metric_name}] {value:.3f}{unit} - Context: {json.dumps(context)}")
-        
-    def log_security_event(self, event_type: str, severity: str, details: str, source_ip: Optional[str] = None):
-        """Log security-related events"""
-        logger = self.get_logger('security')
-        message = f"Security [{event_type}] Severity: {severity} - {details}"
-        if source_ip:
-            message += f" - Source IP: {source_ip}"
-            
-        if severity.upper() in ['HIGH', 'CRITICAL']:
-            logger.error(message)
-        elif severity.upper() == 'MEDIUM':
-            logger.warning(message)
-        else:
-            logger.info(message)
-            
-    def log_error_with_context(self, error: Exception, context: Dict, category: str = 'errors'):
-        """Log errors with full context and traceback"""
-        logger = self.get_logger(category)
-        logger.error(f"Error: {str(error)}")
-        logger.error(f"Context: {json.dumps(context)}")
-        logger.error(f"Traceback:\n{traceback.format_exc()}")
-        
-    def create_daily_summary(self) -> Dict:
-        """Create comprehensive daily summary report"""
-        summary = {
-            'date': self.current_date,
-            'log_files': [],
-            'file_sizes': {},
-            'log_counts': {},
-            'generated_at': datetime.now().isoformat()
+        check_result = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "check_name": check_name,
+            "passed": passed,
+            "details": details,
+            "severity": "INFO" if passed else "ERROR"
         }
         
-        # Analyze each log file
-        for category, filename in self.log_categories.items():
-            file_path = self.daily_log_dir / filename
+        self.daily_metrics["system_checks"].append(check_result)
+        self._update_daily_log()
+    
+    def log_performance_metric(self, metric_name: str, value: float, target: float = None):
+        """Log performance metric"""
+        
+        metric = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "metric_name": metric_name,
+            "value": value,
+            "target": target,
+            "meets_target": value >= target if target is not None else True
+        }
+        
+        self.daily_metrics["performance_metrics"].append(metric)
+        self._update_daily_log()
+    
+    def log_error_with_context(self, error: Exception, context: Dict[str, Any]):
+        """Log error with detailed context"""
+        
+        error_entry = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "error_type": type(error).__name__,
+            "error_message": str(error),
+            "context": context,
+            "severity": "ERROR"
+        }
+        
+        self.daily_metrics["errors"].append(error_entry)
+        self._update_daily_log()
+    
+    def log_warning(self, warning_message: str, context: Dict[str, Any] = None):
+        """Log warning message"""
+        
+        warning_entry = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "message": warning_message,
+            "context": context or {},
+            "severity": "WARNING"
+        }
+        
+        self.daily_metrics["warnings"].append(warning_entry)
+        self._update_daily_log()
+    
+    def log_security_event(self, event_type: str, severity: str, description: str):
+        """Log security event"""
+        
+        security_event = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "event_type": event_type,
+            "severity": severity,
+            "description": description
+        }
+        
+        self.daily_metrics["security_events"].append(security_event)
+        self._update_daily_log()
+    
+    def generate_daily_evaluation(self) -> DailyMetrics:
+        """Generate comprehensive daily evaluation with GO/NO-GO decision"""
+        
+        evaluation_time = datetime.utcnow()
+        
+        # Calculate component scores
+        system_health_score = self._calculate_system_health_score()
+        data_integrity_score = self._calculate_data_integrity_score()
+        model_performance_score = self._calculate_model_performance_score()
+        coverage_compliance_score = self._calculate_coverage_compliance_score()
+        
+        # Calculate overall score
+        weights = {
+            "system_health": 0.25,
+            "data_integrity": 0.35,  # Highest weight for data integrity
+            "model_performance": 0.25,
+            "coverage_compliance": 0.15
+        }
+        
+        overall_score = (
+            system_health_score * weights["system_health"] +
+            data_integrity_score * weights["data_integrity"] +
+            model_performance_score * weights["model_performance"] +
+            coverage_compliance_score * weights["coverage_compliance"]
+        )
+        
+        # Make GO/NO-GO decision
+        go_nogo_decision, critical_issues, warnings, recommendations = self._make_go_nogo_decision(
+            overall_score, system_health_score, data_integrity_score, 
+            model_performance_score, coverage_compliance_score
+        )
+        
+        # Create daily metrics
+        daily_eval = DailyMetrics(
+            date=evaluation_time.strftime("%Y-%m-%d"),
+            system_health_score=system_health_score,
+            data_integrity_score=data_integrity_score,
+            model_performance_score=model_performance_score,
+            coverage_compliance_score=coverage_compliance_score,
+            overall_score=overall_score,
+            go_nogo_decision=go_nogo_decision,
+            critical_issues=critical_issues,
+            warnings=warnings,
+            recommendations=recommendations
+        )
+        
+        # Save evaluation
+        self._save_daily_evaluation(daily_eval)
+        
+        return daily_eval
+    
+    def _calculate_system_health_score(self) -> float:
+        """Calculate system health score"""
+        
+        system_checks = self.daily_metrics["system_checks"]
+        
+        if not system_checks:
+            return 0.5  # Neutral score if no checks
+        
+        # Count passed checks
+        passed_checks = sum(1 for check in system_checks if check["passed"])
+        total_checks = len(system_checks)
+        
+        return passed_checks / total_checks if total_checks > 0 else 0.5
+    
+    def _calculate_data_integrity_score(self) -> float:
+        """Calculate data integrity score"""
+        
+        # Check for data integrity violations
+        integrity_violations = [
+            error for error in self.daily_metrics["errors"]
+            if "integrity" in error.get("error_message", "").lower()
+        ]
+        
+        # Perfect score if no violations, severe penalty if violations exist
+        if integrity_violations:
+            return 0.0  # Zero tolerance for data integrity violations
+        
+        # Check for data quality checks
+        data_checks = [
+            check for check in self.daily_metrics["system_checks"]
+            if "data" in check["check_name"].lower()
+        ]
+        
+        if data_checks:
+            passed_data_checks = sum(1 for check in data_checks if check["passed"])
+            return passed_data_checks / len(data_checks)
+        
+        return 0.8  # Default good score if no specific data checks
+    
+    def _calculate_model_performance_score(self) -> float:
+        """Calculate model performance score"""
+        
+        performance_metrics = self.daily_metrics["performance_metrics"]
+        
+        if not performance_metrics:
+            return 0.6  # Default score if no metrics
+        
+        # Calculate average performance
+        target_met_count = sum(1 for metric in performance_metrics if metric["meets_target"])
+        total_metrics = len(performance_metrics)
+        
+        return target_met_count / total_metrics if total_metrics > 0 else 0.6
+    
+    def _calculate_coverage_compliance_score(self) -> float:
+        """Calculate coverage compliance score"""
+        
+        # Check for coverage audits
+        coverage_checks = [
+            check for check in self.daily_metrics["system_checks"]
+            if "coverage" in check["check_name"].lower()
+        ]
+        
+        if coverage_checks:
+            # Use latest coverage check
+            latest_coverage = coverage_checks[-1]
+            return 1.0 if latest_coverage["passed"] else 0.0
+        
+        return 0.8  # Default score if no coverage checks
+    
+    def _make_go_nogo_decision(self, overall_score: float, system_health: float, 
+                             data_integrity: float, model_performance: float, 
+                             coverage_compliance: float) -> tuple:
+        """Make GO/NO-GO decision based on scores"""
+        
+        critical_issues = []
+        warnings = []
+        recommendations = []
+        
+        # Check critical thresholds
+        if data_integrity < self.critical_thresholds["data_integrity"]:
+            critical_issues.append(f"Data integrity below critical threshold: {data_integrity:.1%}")
+        
+        if system_health < self.critical_thresholds["system_health"]:
+            critical_issues.append(f"System health below critical threshold: {system_health:.1%}")
+        
+        if model_performance < self.critical_thresholds["model_performance"]:
+            critical_issues.append(f"Model performance below critical threshold: {model_performance:.1%}")
+        
+        if coverage_compliance < self.critical_thresholds["coverage_compliance"]:
+            critical_issues.append(f"Coverage compliance below critical threshold: {coverage_compliance:.1%}")
+        
+        # Add warnings for scores below optimal
+        if system_health < 0.9:
+            warnings.append("System health could be improved")
+            recommendations.append("Review system resources and performance")
+        
+        if model_performance < 0.8:
+            warnings.append("Model performance could be improved")
+            recommendations.append("Consider model retraining or hyperparameter tuning")
+        
+        # Make decision
+        if critical_issues or overall_score < self.go_threshold:
+            decision = "NO-GO"
+            if overall_score < self.go_threshold:
+                critical_issues.append(f"Overall score below threshold: {overall_score:.1%} < {self.go_threshold:.1%}")
+        else:
+            decision = "GO"
+        
+        return decision, critical_issues, warnings, recommendations
+    
+    def _save_daily_evaluation(self, daily_eval: DailyMetrics):
+        """Save daily evaluation to file"""
+        
+        try:
+            # Save detailed evaluation
+            eval_file = self.log_dir / f"daily_evaluation_{daily_eval.date}.json"
+            with open(eval_file, 'w') as f:
+                json.dump(asdict(daily_eval), f, indent=2)
             
-            if file_path.exists():
-                # File size
-                size_bytes = file_path.stat().st_size
-                summary['file_sizes'][category] = size_bytes
-                summary['log_files'].append(filename)
+            # Update current status
+            status_file = self.log_dir / "current_go_nogo_status.json"
+            with open(status_file, 'w') as f:
+                json.dump({
+                    "last_evaluation": daily_eval.date,
+                    "decision": daily_eval.go_nogo_decision,
+                    "overall_score": daily_eval.overall_score,
+                    "timestamp": datetime.utcnow().isoformat()
+                }, f, indent=2)
                 
-                # Count log entries
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        line_count = sum(1 for _ in f)
-                    summary['log_counts'][category] = line_count
-                except Exception as e:
-                    summary['log_counts'][category] = f"Error reading: {e}"
-                    
-        # Write summary to file
-        summary_file = self.daily_log_dir / 'daily_log_summary.json'
-        with open(summary_file, 'w', encoding='utf-8') as f:
-            json.dump(summary, f, indent=2)
-            
-        # Log summary to daily summary logger
-        summary_logger = self.get_logger('daily_summary')
-        summary_logger.info(f"Daily log summary generated - {len(summary['log_files'])} active log files")
-        summary_logger.info(f"Total log entries: {sum(c for c in summary['log_counts'].values() if isinstance(c, int))}")
-        summary_logger.info(f"Total log size: {sum(summary['file_sizes'].values()) / 1024 / 1024:.2f} MB")
+        except Exception as e:
+            logging.error(f"Failed to save daily evaluation: {e}")
+    
+    def _update_daily_log(self):
+        """Update daily log file"""
         
-        return summary
-    
-    def cleanup_old_logs(self, days_to_keep: int = 30):
-        """Clean up log directories older than specified days"""
-        cutoff_date = datetime.now()
-        cutoff_date = cutoff_date.replace(day=cutoff_date.day - days_to_keep)
-        
-        cleaned_dirs = []
-        for log_dir in self.base_log_dir.iterdir():
-            if log_dir.is_dir() and log_dir.name < cutoff_date.strftime('%Y-%m-%d'):
-                try:
-                    import shutil
-                    shutil.rmtree(log_dir)
-                    cleaned_dirs.append(log_dir.name)
-                except Exception as e:
-                    self.log_error_with_context(e, {'action': 'cleanup_old_logs', 'dir': str(log_dir)})
-                    
-        if cleaned_dirs:
-            self.log_system_check('log_cleanup', True, f"Cleaned {len(cleaned_dirs)} old log directories: {cleaned_dirs}")
-            
-    def get_log_file_paths(self) -> Dict[str, Path]:
-        """Get all current log file paths organized by category"""
-        return {category: self.daily_log_dir / filename for category, filename in self.log_categories.items()}
+        try:
+            with open(self.daily_log_file, 'w') as f:
+                json.dump(self.daily_metrics, f, indent=2)
+        except Exception as e:
+            logging.error(f"Failed to update daily log: {e}")
 
-# Global daily log manager instance
-daily_logger = None
+# Global daily logger instance
+_daily_logger = None
 
-def get_daily_logger() -> DailyLogManager:
-    """Get or create the global daily logger instance"""
-    global daily_logger
-    if daily_logger is None:
-        daily_logger = DailyLogManager()
-    return daily_logger
-
-def setup_daily_logging():
-    """Initialize the daily logging system"""
-    return get_daily_logger()
-
-# Convenience functions for easy logging
-def log_system(check_name: str, success: bool, details: str, error: Optional[Exception] = None):
-    """Convenience function for system logging"""
-    get_daily_logger().log_system_check(check_name, success, details, error)
-
-def log_trading(coin: str, timeframe: str, score: int, details: Dict):
-    """Convenience function for trading opportunity logging"""
-    get_daily_logger().log_trading_opportunity(coin, timeframe, score, details)
-
-def log_ml(coin: str, prediction: Dict, confidence: float, model_info: Dict):
-    """Convenience function for ML prediction logging"""
-    get_daily_logger().log_ml_prediction(coin, prediction, confidence, model_info)
-
-def log_error(error: Exception, context: Dict, category: str = 'errors'):
-    """Convenience function for error logging"""
-    get_daily_logger().log_error_with_context(error, context, category)
-
-def log_performance(metric_name: str, value: float, unit: str, context: Dict):
-    """Convenience function for performance logging"""
-    get_daily_logger().log_performance_metric(metric_name, value, unit, context)
-
-if __name__ == "__main__":
-    # Test the daily logging system
-    logger_manager = setup_daily_logging()
-    
-    # Test various log types
-    log_system("test_check", True, "System test completed successfully")
-    log_trading("BTC/USD", "15m", 4, {"rsi": 65, "volume": 1000000})
-    log_ml("ETH/USD", {"direction": "up", "target": 2500}, 0.85, {"model": "LSTM", "version": "v1.0"})
-    
-    # Create daily summary
-    summary = logger_manager.create_daily_summary()
-    print(f"Daily summary created: {summary}")
+def get_daily_logger() -> DailyLogger:
+    """Get global daily logger instance"""
+    global _daily_logger
+    if _daily_logger is None:
+        _daily_logger = DailyLogger()
+    return _daily_logger
