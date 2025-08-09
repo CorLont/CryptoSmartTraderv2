@@ -28,7 +28,8 @@ def test_feature_building():
         np.random.seed(42)
         
         # Import feature builder
-        from ml.features.build_features import build_crypto_features, FeatureMerger
+        from ml.features.build_features import build_crypto_features
+        # FIXED: Removed unused FeatureMerger import
         
         print("✅ Feature building modules imported successfully")
         
@@ -98,12 +99,13 @@ def test_feature_building():
             print(f"   File: {output_file}")
             print(f"   Size: {file_size:,} bytes")
             
-            # Verify file content
+            # Verify file content with proper error handling
             try:
                 df = pd.read_parquet(output_file)
                 print(f"   Verified: {len(df)} rows, {len(df.columns)} columns")
             except Exception as e:
-                print(f"   Verification failed: {e}")
+                print(f"   Verification failed (pyarrow/fastparquet?): {e}")
+                return False
         else:
             print("📁 OUTPUT FILE: Not created (validation/coverage failed)")
         
@@ -244,22 +246,36 @@ def test_atomic_export():
             
             print(f"📁 Testing atomic write to {output_file}")
             
-            # Simulate atomic write
-            df.to_parquet(temp_file, index=False)
-            temp_file.rename(output_file)
+            # Simulate atomic write with proper error handling
+            try:
+                df.to_parquet(temp_file, index=False)
+            except Exception as e:
+                print(f"❌ Parquet export failed (pyarrow/fastparquet?): {e}")
+                return False
             
-            # Verify file
+            # FIXED: Use replace() for true atomic operation on Windows
+            try:
+                temp_file.replace(output_file)
+            except Exception as e:
+                print(f"❌ Atomic rename failed: {e}")
+                return False
+            
+            # Verify file with proper error handling
             if output_file.exists():
-                file_size = output_file.stat().st_size
-                verification_df = pd.read_parquet(output_file)
-                
-                print(f"✅ Atomic export successful")
-                print(f"   File size: {file_size:,} bytes")
-                print(f"   Rows: {len(verification_df)}")
-                print(f"   Columns: {len(verification_df.columns)}")
-                
-                # No manual cleanup needed - tempfile handles it
-                return True
+                try:
+                    file_size = output_file.stat().st_size
+                    verification_df = pd.read_parquet(output_file)
+                    
+                    print(f"✅ Atomic export successful")
+                    print(f"   File size: {file_size:,} bytes")
+                    print(f"   Rows: {len(verification_df)}")
+                    print(f"   Columns: {len(verification_df.columns)}")
+                    
+                    # No manual cleanup needed - tempfile handles it
+                    return True
+                except Exception as e:
+                    print(f"❌ File verification failed (pyarrow/fastparquet?): {e}")
+                    return False
             else:
                 print("❌ Export file not created")
                 return False
