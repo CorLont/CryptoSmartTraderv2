@@ -148,10 +148,7 @@ def main():
             st.info("If this error persists, please run the health check script.")
             if st.button("🔄 Reload Page"):
                 st.rerun()
-            
-    except Exception as e:
-        st.error(f"Dashboard error: {e}")
-        logger.error(f"Dashboard error for {page}: {e}")
+
 
 def render_trading_opportunities(min_return, confidence_filter, strict_mode=True):
     """Render trading opportunities with confidence gate filtering"""
