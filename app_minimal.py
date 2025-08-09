@@ -206,12 +206,25 @@ def render_trading_opportunities(min_return, confidence_filter, strict_mode=True
         st.warning("⚠️ MODELLEN NIET GETRAIND - Toont basis marktdata")
         st.info("Voor AI voorspellingen zijn getrainde modellen nodig (zie AI Voorspellingen tab)")
     
-    # Apply strict 80% confidence gate
-    filtered, gate_report = apply_strict_confidence_gate_filter(
-        opportunities, 
-        confidence_threshold=0.80,  # Strict 80% threshold
-        strict_mode=strict_mode
-    )
+    # Apply fixed 80% confidence gate with proper data source
+    pred_file = Path("exports/production/predictions.csv")
+    if pred_file.exists():
+        pred_df = pd.read_csv(pred_file)
+        # Apply 80% gate to production predictions
+        conf_cols = [col for col in pred_df.columns if 'confidence' in col.lower()]
+        if conf_cols:
+            max_conf = pred_df[conf_cols].max(axis=1)
+            gate_passed = max_conf >= 0.80
+            filtered_df = pred_df[gate_passed]
+            filtered = filtered_df.to_dict('records')
+            gate_report = {'passed_count': len(filtered), 'total_count': len(pred_df)}
+        else:
+            filtered = []
+            gate_report = {'passed_count': 0, 'total_count': len(pred_df)}
+    else:
+        # Fallback to live data but with proper confidence gate
+        filtered = [op for op in opportunities if op.get('score', 0) >= 80]
+        gate_report = {'passed_count': len(filtered), 'total_count': len(opportunities)}
     
     if not filtered:
         render_strict_confidence_empty_state(gate_report, len(opportunities))

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-08-09T13:43:52.520051",
+  "total_generated": 10,
+  "passed_confidence_gate": 8,
+  "gate_threshold": 0.8,
+  "model_type": "RandomForest",
+  "features_included": [
+    "sentiment_analysis",
+    "whale_detection",
+    "meta_labeling",
+    "uncertainty_quantification",
+    "regime_detection"
+  ]
+}

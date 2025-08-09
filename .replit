@@ -18,20 +18,11 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "TestApp"
+args = "ProductionApp"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "ProductionApp"
-
-[[workflows.workflow]]
-name = "TestApp"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "streamlit run test_app_simple.py --server.port 5001"
-waitForPort = 5001
+args = "TestApp"
 
 [[workflows.workflow]]
 name = "ProductionApp"
@@ -41,6 +32,18 @@ author = "agent"
 task = "shell.exec"
 args = "streamlit run production_ready_system.py --server.port 5000"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow]]
+name = "TestApp"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run test_app_simple.py --server.port 5001"
+waitForPort = 5001
 
 [workflows.workflow.metadata]
 outputType = "webview"

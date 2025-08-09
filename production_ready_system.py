@@ -323,7 +323,7 @@ def render_production_market_overview():
             'Sentiment': sentiment['sentiment_label'].title(),
             'Sentiment Score': f"{sentiment['sentiment_score']:.2f}",
             'Whale Activity': whale['price_impact_risk'].title(),
-            'News Impact': f"{sentiment['news_impact']:+.2f}"
+            'News Impact': f"{float(sentiment.get('news_impact', 0) if isinstance(sentiment.get('news_impact', 0), (int, float)) else 0):+.2f}"
         })
     
     if performance_data:
