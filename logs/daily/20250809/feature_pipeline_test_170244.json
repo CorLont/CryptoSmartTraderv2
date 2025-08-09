@@ -1,0 +1,25 @@
+{
+  "test_type": "feature_pipeline_validation",
+  "timestamp": "2025-08-09T17:02:44.281832",
+  "components_tested": [
+    "Great Expectations schema validation",
+    "Feature merging pipeline",
+    "Data quality validation",
+    "Coverage validation against Kraken symbols",
+    "Atomic parquet export",
+    "Quarantine mechanism"
+  ],
+  "validation_framework": {
+    "great_expectations_suite": "crypto_features_suite",
+    "success_threshold": "98%",
+    "coverage_threshold": "99%",
+    "quarantine_enabled": true,
+    "atomic_writes": true
+  },
+  "acceptatie_criteria": {
+    "great_expectations_pass_rate": "\u226598%",
+    "failing_rows_quarantined": true,
+    "kraken_coverage": "\u226599% or missing alert",
+    "atomic_parquet_export": "exports/features.parquet"
+  }
+}

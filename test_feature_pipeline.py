@@ -95,9 +95,9 @@ async def test_feature_building():
         return results.get('success', False)
         
     except ImportError as e:
-        print(f"⚠️  Import failed (expected - Great Expectations not installed): {e}")
-        print("✅ Framework structure is correct, missing dependencies are expected")
-        return True
+        print(f"⚠️ Import failed: {e}")
+        print("❌ Missing dependencies - test cannot proceed")
+        return False  # FIXED: Fail when dependencies missing
     except Exception as e:
         print(f"❌ Test failed: {e}")
         return False
@@ -157,6 +157,11 @@ async def test_great_expectations_mock():
         print(f"   Threshold (98%): {'✅ PASS' if success_rate >= 0.98 else '❌ FAIL'}")
         print(f"   Failed expectations: {len(validation_results['failed_expectations'])}")
         
+        # FIXED: Hard check for validation threshold
+        if success_rate < 0.98:
+            print("❌ Validation success rate below 98% threshold")
+            return False
+        
         # Test quarantine logic
         print("\n🏥 QUARANTINE TESTING:")
         
@@ -180,6 +185,11 @@ async def test_great_expectations_mock():
         print(f"   Available symbols: {len(available_symbols)}")
         print(f"   Coverage: {coverage_percentage:.1%}")
         print(f"   Threshold (99%): {'✅ PASS' if coverage_percentage >= 0.99 else '❌ FAIL'}")
+        
+        # FIXED: Hard check for coverage threshold
+        if coverage_percentage < 0.99:
+            print("❌ Coverage below 99% threshold")
+            return False
         
         return True
         
@@ -312,6 +322,7 @@ async def main():
                 print(f"❌ {test_name} test FAILED")
         except Exception as e:
             print(f"❌ {test_name} test ERROR: {e}")
+            # Don't increment passed_tests on exception
     
     # Save results
     await save_test_results()
