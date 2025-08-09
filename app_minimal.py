@@ -823,42 +823,75 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
         st.info("💡 **Oplossing:** `python ml/train_baseline.py`")
         return
     
-    # Models are ready - generate real predictions
-    st.success("✅ Modellen beschikbaar - generating predictions...")
+    # Check for authentic prediction data
+    predictions_file = Path("exports/production/predictions.csv")
     
-    # Load actual predictions from production output
+    if not predictions_file.exists():
+        st.error("❌ GEEN VOORSPELLINGEN BESCHIKBAAR")
+        st.warning("**Status**: Productie voorspellingen nog niet gegenereerd")
+        st.info("**Vereist**: Run eerst de ML pipeline om echte voorspellingen te genereren")
+        st.code("python generate_final_predictions.py")
+        return
+    
     try:
-        predictions_file = Path("exports/production/predictions.csv")
+        pred_df = pd.read_csv(predictions_file)
         
-        if predictions_file.exists():
-            pred_df = pd.read_csv(predictions_file)
+        # Validate data authenticity - check for placeholder data
+        placeholder_patterns = ['COIN_', 'TEST_', 'SAMPLE_', 'DEMO_']
+        has_placeholders = any(
+            pred_df['coin'].str.contains(pattern, na=False).any() 
+            for pattern in placeholder_patterns
+        )
+        
+        if has_placeholders:
+            st.error("❌ PLACEHOLDER DATA GEDETECTEERD")
+            st.warning("**Probleem**: Het systeem toont nep data in plaats van echte cryptocurrency voorspellingen")
+            st.info("**Oplossing**: Configureer exchange API's en genereer authentieke voorspellingen")
             
-            # Convert to dashboard format
-            predictions = []
-            for _, row in pred_df.iterrows():
-                predictions.append({
-                    'coin': row['coin'],
-                    'horizon': row['horizon'],
-                    'prediction': (row.get('expected_return_pct', 0) or 0) / 100,  # Convert back to decimal
-                    'confidence': row.get(f"conf_{row['horizon']}", 0.8),
-                    'expected_return_pct': row.get('expected_return_pct', 0),
-                    'risk_score': row.get('risk_score', 0.2),
-                    'regime': row.get('regime', 'UNKNOWN'),
-                    'actionable': row.get('actionable', False)
-                })
+            # Show what we found
+            placeholder_coins = pred_df[
+                pred_df['coin'].str.contains('|'.join(placeholder_patterns), na=False)
+            ]['coin'].unique()
             
-            st.success(f"Loaded {len(predictions)} real predictions from production output")
-        else:
-            st.error("No predictions.csv found - run predictions generator first")
-            predictions = []
+            st.markdown("**Gedetecteerde placeholder coins:**")
+            for coin in placeholder_coins[:10]:
+                st.text(f"• {coin} (dit is geen echte cryptocurrency)")
+            
+            st.error("🚫 DASHBOARD GEBLOKKEERD - Geen placeholder data toegestaan in productie")
+            return
+        
+        # Check for real cryptocurrency names
+        real_crypto_patterns = ['BTC', 'ETH', 'ADA', 'DOT', 'SOL', 'AVAX', 'NEAR', 'FTM']
+        has_real_cryptos = any(
+            pred_df['coin'].str.contains(pattern, na=False).any() 
+            for pattern in real_crypto_patterns
+        )
+        
+        if not has_real_cryptos:
+            st.warning("⚠️ GEEN BEKENDE CRYPTOCURRENCIES GEVONDEN")
+            st.info("**Verwacht**: BTC, ETH, ADA, DOT, SOL, AVAX, NEAR, FTM, etc.")
+            st.info("**Gevonden**: Onbekende coin symbolen - verifieer data bron")
+            return
+        
+        # Data looks authentic - proceed
+        st.success("✅ Authentieke voorspellingen geladen")
+        
+        # Convert to dashboard format
+        predictions = []
+        for _, row in pred_df.iterrows():
+            predictions.append({
+                'coin': row['coin'],
+                'horizon': row['horizon'], 
+                'prediction': (row.get('expected_return_pct', 0) or 0) / 100,
+                'confidence': row.get(f"conf_{row['horizon']}", 0.8),
+                'expected_return_pct': row.get('expected_return_pct', 0),
+                'risk_score': row.get('risk_score', 0.2),
+                'regime': row.get('regime', 'UNKNOWN'),
+                'actionable': row.get('actionable', False)
+            })
             
     except Exception as e:
-        st.error(f"Failed to load predictions: {e}")
-        predictions = []
-    
-    if not predictions:
-        st.warning("⚠️ VOORSPELLINGEN GENERATIE MISLUKT")
-        st.markdown("**Mogelijke oorzaken**: Model performance issues of data problemen")
+        st.error(f"❌ Fout bij laden voorspellingen: {e}")
         return
     
     # Show prediction results with proper confidence filtering
