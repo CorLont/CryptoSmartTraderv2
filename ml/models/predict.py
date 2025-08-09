@@ -41,6 +41,48 @@ def get_model_status() -> Dict[str, Dict]:
     
     return status
 
+def predict_all(features: pd.DataFrame) -> pd.DataFrame:
+    """Generate predictions for all horizons using trained ensemble models"""
+    # Start with basic info
+    out = features[["coin", "timestamp"]].copy() if "timestamp" in features.columns else features[["coin"]].copy()
+    
+    # Get feature columns
+    feature_cols = [c for c in features.columns if c.startswith("feat_")]
+    
+    if not feature_cols:
+        return out
+    
+    X = features[feature_cols].values
+    
+    for horizon in HORIZONS:
+        model_path = f"models/saved/rf_{horizon}.pkl"
+        
+        if not Path(model_path).exists():
+            continue
+        
+        try:
+            # Load ensemble models
+            ensemble = joblib.load(model_path)
+            
+            # Get predictions from all models in ensemble
+            predictions = np.column_stack([model.predict(X) for model in ensemble])
+            
+            # Calculate mean and uncertainty
+            mu = predictions.mean(axis=1)
+            sigma = predictions.std(axis=1) + 1e-9
+            
+            # Convert uncertainty to confidence
+            confidence = 1.0 / (1.0 + sigma)
+            
+            # Store results
+            out[f"pred_{horizon}"] = mu
+            out[f"conf_{horizon}"] = confidence
+            
+        except Exception as e:
+            continue
+    
+    return out
+
 def load_models() -> Dict[str, List]:
     """Load all available trained models"""
     

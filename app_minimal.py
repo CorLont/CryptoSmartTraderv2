@@ -74,21 +74,23 @@ def main():
     import os
     from pathlib import Path
     
-    models_present = all(os.path.exists(f"models/saved/rf_{h}.pkl") for h in ["1h","24h","168h","720h"])
-    features_exist = os.path.exists("exports/features.parquet")
-    predictions_exist = os.path.exists("exports/production/predictions.csv")
+    # Real system status with hard readiness check (replaces fake "System Online")
+    from app_readiness import get_system_status
+    status_text, status_detail = get_system_status()
     
-    # Calculate readiness score (per review requirements)
-    checks = [models_present, features_exist, predictions_exist]
-    readiness_score = sum(checks) / len(checks) * 100
-    
-    if readiness_score >= 90:
-        st.sidebar.success(f"🟢 System Ready ({readiness_score:.0f}/100)")
-    elif readiness_score >= 70:
-        st.sidebar.warning(f"🟠 System Degraded ({readiness_score:.0f}/100)")
+    if "🟢" in status_text:
+        st.sidebar.success(status_text)
+        st.sidebar.info(status_detail)
+    elif "🟡" in status_text:
+        st.sidebar.warning(status_text)
+        st.sidebar.warning(status_detail)
     else:
-        st.sidebar.error(f"🔴 System Not Ready ({readiness_score:.0f}/100)")
+        st.sidebar.error(status_text)
+        st.sidebar.error(status_detail)
         
+    # Check model presence for tab blocking
+    models_present = all(os.path.exists(f"models/saved/rf_{h}.pkl") for h in ["1h","24h","168h","720h"])
+    
     # Block AI tabs if models not present (hard gate per review)
     if not models_present:
         st.error("⚠️ Geen getrainde modellen. AI-tabs uitgeschakeld.")
@@ -155,31 +157,11 @@ def render_trading_opportunities(min_return, confidence_filter, strict_mode=True
     st.title("💰 TOP KOOP KANSEN")
     st.markdown("### 🎯 De beste coins om NU te kopen met verwachte rendementen")
     
-    # Check if models are present (concrete implementation)
-    import os
-    models_present = all(os.path.exists(f"models/saved/rf_{h}.pkl") for h in ["1h","24h","168h","720h"])
-    features_fresh = os.path.exists("exports/features.parquet") and (
-        (datetime.utcnow().timestamp() - os.path.getmtime("exports/features.parquet")) < 24*3600
-    )
-    
-    if not models_present or not features_fresh:
-        st.error("🚫 TOP KOOP KANSEN NIET BESCHIKBAAR")
-        st.warning("⚠️ Modellen niet getraind of features verouderd")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info("**Model Status:**")
-            for h in ["1h","24h","168h","720h"]:
-                exists = os.path.exists(f"models/saved/rf_{h}.pkl")
-                st.text(f"• {h} model: {'✅' if exists else '❌'}")
-            
-        with col2:
-            st.info("**Data Status:**")
-            st.text(f"• Features file: {'✅' if os.path.exists('exports/features.parquet') else '❌'}")
-            st.text(f"• Features fresh: {'✅' if features_fresh else '❌'}")
-        
-        st.info("💡 **Oplossing:** `python ml/train_baseline.py`")
-        return
+    # Hard readiness gate - enforce actual system readiness
+    from app_readiness import enforce_readiness_gate
+    enforce_readiness_gate("Trading Opportunities")
+    # This code only runs if readiness gate passes
+    st.success("✅ System Ready - Models trained and operational")
     
     # Check data availability
     data_status = check_data_availability()
@@ -790,21 +772,10 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
     st.title("🧠 AI Voorspellingen")
     st.markdown("### 🤖 Machine Learning prijs voorspellingen")
     
-    # Check if models are present (concrete check)
-    import os
-    models_present = all(os.path.exists(f"models/saved/rf_{h}.pkl") for h in ["1h","24h","168h","720h"])
-    
-    if not models_present:
-        st.error("🚫 GEEN GETRAINDE MODELLEN")
-        st.warning("⚠️ AI voorspellingen niet beschikbaar - modellen niet gevonden of verouderd")
-        
-        st.info("**Model Status:**")
-        for h in ["1h","24h","168h","720h"]:
-            exists = os.path.exists(f"models/saved/rf_{h}.pkl")
-            st.text(f"• {h} horizon: {'✅ Getraind' if exists else '❌ Ontbreekt'}")
-        
-        st.info("💡 **Oplossing:** `python ml/train_baseline.py`")
-        return
+    # Hard readiness gate - enforce actual system readiness
+    from app_readiness import enforce_readiness_gate
+    enforce_readiness_gate("Trading Opportunities")
+    # This line will only be reached if readiness gate passes
     
     # Check for authentic prediction data
     predictions_file = Path("exports/production/predictions.csv")
