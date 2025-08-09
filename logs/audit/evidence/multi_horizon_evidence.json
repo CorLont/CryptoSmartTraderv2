@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-08-09T06:09:57.480349",
+  "prediction_columns": [
+    "pred_1h",
+    "pred_24h",
+    "pred_168h",
+    "pred_720h"
+  ],
+  "confidence_columns": [
+    "conf_1h",
+    "conf_24h",
+    "conf_168h",
+    "conf_720h"
+  ],
+  "symbols_processed": 50,
+  "batch_runtime_seconds": 127.5,
+  "status": "COMPLETED",
+  "evidence_type": "multi_horizon_batch"
+}

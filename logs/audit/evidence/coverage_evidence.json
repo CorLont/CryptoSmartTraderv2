@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-08-09T06:09:57.477385",
+  "total_exchange_coins": 147,
+  "processed_coins": 146,
+  "coverage_percentage": 99.3,
+  "missing_coins": [
+    "OBSCURE_TEST_COIN"
+  ],
+  "status": "PASS",
+  "evidence_type": "coverage_audit"
+}

@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-08-09T06:09:57.478619",
+  "original_count": 100,
+  "passed_count": 23,
+  "dropped_count": 77,
+  "rejection_rate": 77.0,
+  "completeness_threshold": 95.0,
+  "status": "ENFORCED",
+  "evidence_type": "data_completeness"
+}

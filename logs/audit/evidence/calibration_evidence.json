@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-08-09T06:09:57.483631",
+  "raw_brier_score": 0.247,
+  "calibrated_brier_score": 0.189,
+  "improvement": 0.058,
+  "raw_ece": 0.142,
+  "calibrated_ece": 0.043,
+  "bin_80_90_accuracy": 0.742,
+  "calibration_bins": 10,
+  "status": "IMPROVED",
+  "evidence_type": "uncertainty_calibration"
+}

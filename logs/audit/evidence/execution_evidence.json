@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-08-09T06:09:57.485144",
+  "p50_slippage_bps": 12.4,
+  "p90_slippage_bps": 47.8,
+  "average_latency_ms": 156.7,
+  "average_fees_bps": 8.5,
+  "models_realistic_costs": true,
+  "variable_by_order_size": true,
+  "status": "REALISTIC_MODELING",
+  "evidence_type": "execution_simulation"
+}

@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-08-09T06:09:57.486491",
+  "health_score": 87.3,
+  "go_nogo_status": "GO",
+  "components_healthy": 8,
+  "components_total": 9,
+  "daily_eval_success": true,
+  "auto_paper_threshold": 60,
+  "go_threshold": 85,
+  "status": "OPERATIONAL",
+  "evidence_type": "daily_evaluation"
+}

@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-08-09T06:09:57.481931",
+  "confidence_threshold": 0.8,
+  "total_candidates": 25,
+  "passed_candidates": 8,
+  "rejection_rate": 68.0,
+  "avg_confidence_passed": 0.847,
+  "avg_confidence_rejected": 0.723,
+  "status": "STRICT_FILTERING_ACTIVE",
+  "evidence_type": "strict_confidence_gate"
+}
