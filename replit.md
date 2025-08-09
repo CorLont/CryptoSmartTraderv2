@@ -113,6 +113,8 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Calibrated Confidence Gate:** Enterprise confidence gating with properly calibrated probabilities ensuring 80% means real 80% chance.
 - **Bayesian Uncertainty Quantification:** Monte Carlo Dropout, ensemble modeling, and epistemic/aleatoric uncertainty decomposition for true confidence estimation.
 - **Monte Carlo Dropout Inference:** Lightweight MC Dropout implementation for fast uncertainty estimation with proper confidence intervals.
+- **Market Regime Detection:** Hidden Markov Model and rule-based classification for dynamic market regime identification with regime transition tracking.
+- **Regime-Aware Models:** Specialized models for bull/bear/high-volatility/consolidation regimes with intelligent routing based on current market conditions.
 
 ## External Dependencies
 
