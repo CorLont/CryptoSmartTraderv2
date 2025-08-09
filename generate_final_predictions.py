@@ -185,6 +185,23 @@ class ProductionPredictionGenerator:
                     filtered_predictions.append(pred)
         
         logger.info(f"80% confidence gate: {len(filtered_predictions)}/{len(predictions)} predictions passed")
+        
+        # FIXED: Log empty results for dashboard diagnostics
+        if len(filtered_predictions) == 0:
+            logger.warning("No predictions passed 80% confidence gate - check model calibration")
+            # Save empty gate log for UI diagnostics
+            empty_gate_log = {
+                'timestamp': datetime.now().isoformat(),
+                'total_predictions': len(predictions),
+                'passed_gate': 0,
+                'reason': 'no_predictions_above_threshold',
+                'max_confidence_seen': max([max([pred.get(f'confidence_{h}', 0) for h in self.horizons]) for pred in predictions]) if predictions else 0.0
+            }
+            
+            gate_log_file = self.output_path / "empty_gate_log.json"
+            with open(gate_log_file, 'w') as f:
+                json.dump(empty_gate_log, f, indent=2)
+        
         return filtered_predictions
     
     def generate_and_save_predictions(self):
@@ -223,6 +240,16 @@ class ProductionPredictionGenerator:
         with open(json_file, 'w') as f:
             json.dump(filtered_predictions, f, indent=2, default=str)
         
+        # Fixed: Calculate proper mean confidence across all horizons
+        if filtered_predictions:
+            all_confidences = []
+            for pred in filtered_predictions:
+                conf_values = [pred.get(f'confidence_{h}', 0) for h in self.horizons]
+                all_confidences.extend(conf_values)
+            mean_confidence = np.mean(all_confidences) if all_confidences else 0.0
+        else:
+            mean_confidence = 0.0
+        
         # Save metadata
         metadata = {
             'timestamp': datetime.now().isoformat(),
@@ -230,12 +257,14 @@ class ProductionPredictionGenerator:
             'predictions_generated': len(predictions),
             'predictions_passed_gate': len(filtered_predictions),
             'gate_threshold': 0.80,
+            'mean_confidence_all_horizons': float(mean_confidence),  # FIXED
             'model_type': 'RandomForest',
             'horizons': self.horizons,
             'features_included': [
                 'sentiment_analysis', 'whale_detection', 'meta_labeling',
                 'uncertainty_quantification', 'regime_detection', 'event_impact'
-            ]
+            ],
+            'confidence_calculation_method': 'ensemble_sigma_based'  # For consistency tracking
         }
         
         metadata_file = self.output_path / "predictions_metadata.json"
