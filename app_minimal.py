@@ -94,13 +94,6 @@ def main():
         st.error("⚠️ Geen getrainde modellen. AI-tabs uitgeschakeld.")
         st.info("Train eerst modellen via: python ml/train_baseline.py")
         st.stop()  # Hard abort
-        st.sidebar.info("Alle modellen getraind")
-    else:
-        st.sidebar.error("🔴 System Not Ready")
-        if not models_present:
-            st.sidebar.text("❌ ML modellen ontbreken")
-        if not features_exist:
-            st.sidebar.text("❌ Features data ontbreekt")
     
     # Navigation based on model availability
     available_tabs = ["📊 Markt Status"]  # Always available
@@ -605,13 +598,29 @@ def render_market_status():
     # Market trends
     st.subheader("📈 Markt Trends")
     
-    # Sample market data
-    dates = pd.date_range(start="2025-01-01", periods=30, freq="D")
-    btc_prices = 45000 + np.cumsum(np.random.randn(30) * 1000)
-    
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=dates, y=btc_prices, name="Bitcoin", line=dict(color="orange", width=3)))
-    fig.update_layout(title="Bitcoin Prijs Ontwikkeling", height=400)
+    # Real Bitcoin price data (from Kraken API)
+    try:
+        import ccxt
+        exchange = ccxt.kraken()
+        
+        # Get real recent Bitcoin data
+        from datetime import datetime, timedelta
+        since = exchange.parse8601((datetime.now() - timedelta(days=30)).isoformat())
+        ohlcv = exchange.fetch_ohlcv('BTC/USD', '1d', since=since, limit=30)
+        
+        # Convert to proper data
+        dates = [datetime.fromtimestamp(candle[0]/1000) for candle in ohlcv]
+        btc_prices = [candle[4] for candle in ohlcv]  # Close prices
+        
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=dates, y=btc_prices, name="Bitcoin", line=dict(color="orange", width=3)))
+        fig.update_layout(title="Bitcoin Prijs Ontwikkeling (Real Data)", height=400)
+        
+    except Exception as e:
+        # Fallback to error message instead of fake data
+        st.error("❌ Kan geen echte Bitcoin data ophalen")
+        st.info("Configureer Kraken API keys voor live Bitcoin prijzen")
+        return
     
     st.plotly_chart(fig, use_container_width=True)
     
