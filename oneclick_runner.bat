@@ -11,12 +11,13 @@ python core/workstation_optimizer.py
 echo Generating daily health report...
 python core/daily_health_dashboard.py
 
-echo Starting complete pipeline...
-echo 1. Data collection and validation
-echo 2. ML prediction generation
-echo 3. Strict confidence filtering
-echo 4. Risk assessment
-echo 5. Trading opportunity export
+echo Starting complete AI-enhanced pipeline...
+echo 1. OpenAI intelligence integration check
+echo 2. Data collection and validation
+echo 3. ML prediction generation with AI insights
+echo 4. Strict confidence filtering
+echo 5. Risk assessment with AI sentiment
+echo 6. Trading opportunity export
 
 python -c "
 import sys, os

@@ -6,7 +6,7 @@ Ensures proper timezone handling and candle alignment
 
 import pandas as pd
 from datetime import datetime, timezone
-from typing import Union
+from typing import Union, Dict, Any
 
 def normalize_timestamp(ts: Union[str, pd.Timestamp, datetime], target_tz: str = 'UTC') -> pd.Timestamp:
     """Normalize timestamp to UTC with proper timezone handling"""

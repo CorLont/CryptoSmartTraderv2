@@ -45,7 +45,7 @@ class OpenAISimpleAnalyzer:
             raise ValueError("OPENAI_API_KEY environment variable not found")
         
         self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-4o"  # the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        self.model = "gpt-4o"  # Using GPT-4o as the latest available model - GPT-5 not yet publicly available
         
         self.logger.info("OpenAI Simple Analyzer initialized with GPT-4o")
     
