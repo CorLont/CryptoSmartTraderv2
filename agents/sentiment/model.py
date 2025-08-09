@@ -173,6 +173,7 @@ class SentimentModel:
             self.model.eval()
             
             # Create pipeline
+            from transformers import pipeline
             self.pipeline = pipeline(
                 "sentiment-analysis",
                 model=self.model,

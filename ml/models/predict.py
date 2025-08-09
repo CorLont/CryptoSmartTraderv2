@@ -423,7 +423,7 @@ class MultiHorizonPredictor:
             training_time = time.time() - start_time
             
             # Save models
-            self.save_models()
+            await self.save_models()
             
             summary = {
                 'success': True,
@@ -608,7 +608,7 @@ class MultiHorizonPredictor:
             
             return pd.DataFrame(columns=columns)
     
-    def save_models(self):
+    async def save_models(self):
         """Save trained models to disk"""
         
         try:
