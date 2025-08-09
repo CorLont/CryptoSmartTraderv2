@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-08-09T13:27:38.523289",
+  "feature_columns": [
+    "price",
+    "volume_24h",
+    "price_change_24h",
+    "high_24h",
+    "low_24h",
+    "spread",
+    "volatility_7d",
+    "momentum_3d",
+    "momentum_7d",
+    "volume_trend_7d",
+    "price_vs_sma20",
+    "market_activity",
+    "price_volatility",
+    "liquidity_score"
+  ],
+  "models_trained": [
+    "return_1h",
+    "return_24h",
+    "direction_24h",
+    "return_168h",
+    "direction_168h",
+    "return_720h",
+    "direction_720h"
+  ],
+  "performance_metrics": {
+    "return_1h": {
+      "rmse": 0.007677399803436514,
+      "samples": 12
+    },
+    "return_24h": {
+      "rmse": 0.04206901027018191,
+      "samples": 12
+    },
+    "direction_24h": {
+      "accuracy": 0.5833333333333334,
+      "samples": 12
+    },
+    "return_168h": {
+      "rmse": 0.09149305783713721,
+      "samples": 12
+    },
+    "direction_168h": {
+      "accuracy": 0.3333333333333333,
+      "samples": 12
+    },
+    "return_720h": {
+      "rmse": 0.2612223296782752,
+      "samples": 12
+    },
+    "direction_720h": {
+      "accuracy": 0.6666666666666666,
+      "samples": 12
+    }
+  },
+  "model_type": "RandomForest"
+}

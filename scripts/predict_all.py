@@ -160,10 +160,49 @@ def apply_confidence_gate(predictions_df: pd.DataFrame, min_confidence: float = 
         
         return filtered_df
 
+def enhance_predictions_with_ml(predictions_df: pd.DataFrame) -> pd.DataFrame:
+    """Apply all advanced ML enhancements"""
+    
+    logger.info("Applying advanced ML enhancements...")
+    
+    # Apply meta-labeling
+    try:
+        from ml.meta_labeling_active import apply_meta_labeling
+        predictions_df = apply_meta_labeling(predictions_df)
+        logger.info("✓ Applied meta-labeling")
+    except Exception as e:
+        logger.warning(f"Meta-labeling failed: {e}")
+    
+    # Apply uncertainty quantification  
+    try:
+        from ml.uncertainty_active import apply_uncertainty_quantification
+        predictions_df = apply_uncertainty_quantification(predictions_df)
+        logger.info("✓ Applied uncertainty quantification")
+    except Exception as e:
+        logger.warning(f"Uncertainty quantification failed: {e}")
+    
+    # Apply regime detection
+    try:
+        from ml.regime_detection_active import apply_regime_detection
+        predictions_df = apply_regime_detection(predictions_df)
+        logger.info("✓ Applied regime detection")
+    except Exception as e:
+        logger.warning(f"Regime detection failed: {e}")
+    
+    return predictions_df
+
 def save_predictions(predictions_df: pd.DataFrame):
     """Save predictions in multiple formats"""
     exports_dir = Path("exports/production")
     exports_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Save enhanced predictions
+    enhanced_file = exports_dir / "enhanced_predictions.json"
+    predictions_dict = predictions_df.to_dict('records')
+    
+    with open(enhanced_file, 'w') as f:
+        json.dump(predictions_dict, f, indent=2, default=str)
+    logger.info(f"Saved enhanced predictions to {enhanced_file}")
     
     # Save as parquet (main format)
     parquet_file = exports_dir / "predictions.parquet"
@@ -183,7 +222,12 @@ def save_predictions(predictions_df: pd.DataFrame):
             predictions_df[[col for col in predictions_df.columns if col.startswith('confidence_')]].max(axis=1) >= 80
         ]),
         'horizons': ['1h', '24h', '168h', '720h'],
-        'confidence_threshold': 80.0
+        'confidence_threshold': 80.0,
+        'enhanced_features': {
+            'meta_labeling': 'meta_label_quality' in predictions_df.columns,
+            'uncertainty_quantification': 'epistemic_uncertainty' in predictions_df.columns,
+            'regime_detection': 'regime' in predictions_df.columns
+        }
     }
     
     metadata_file = exports_dir / "predictions_metadata.json"
@@ -213,8 +257,11 @@ def main():
         logger.error("No predictions generated")
         sys.exit(1)
     
+    # Enhance predictions with advanced ML
+    enhanced_predictions = enhance_predictions_with_ml(predictions_df)
+    
     # Apply confidence gate
-    filtered_predictions = apply_confidence_gate(predictions_df)
+    filtered_predictions = apply_confidence_gate(enhanced_predictions)
     
     # Save predictions
     output_file = save_predictions(filtered_predictions)

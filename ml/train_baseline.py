@@ -47,6 +47,14 @@ def prepare_training_data(df):
     
     X = df[feature_cols].fillna(0)
     
+    # Check if we have targets, if not create synthetic ones
+    has_targets = any(f'target_return_{h}' in df.columns for h in ['1h', '24h', '168h', '720h'])
+    
+    if not has_targets:
+        logger.warning("No target columns found - creating synthetic targets for initial training")
+        from ml.synthetic_targets import create_synthetic_targets
+        df = create_synthetic_targets(df.copy())
+    
     # Create targets for multi-horizon prediction
     targets = {}
     

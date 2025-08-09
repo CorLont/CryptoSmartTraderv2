@@ -1,1 +1,49 @@
-{"health_score": 90, "timestamp": "2025-08-09T13:02:38+00:00", "status": "operational"}
+{
+  "timestamp": "2025-08-09T13:28:14.257375",
+  "calibration_report": {
+    "reliability_bins": {
+      "80-90%": {
+        "avg_confidence": 85.2,
+        "count": 8
+      },
+      "90-100%": {
+        "avg_confidence": 95.1,
+        "count": 6
+      }
+    },
+    "overall_calibration": {
+      "mean_confidence": 90.53846153846153,
+      "samples": 26
+    }
+  },
+  "coverage_audit": {
+    "kraken_coverage": {
+      "total_symbols": 26,
+      "status": "available"
+    },
+    "processed_coverage": {
+      "total_coins": 26,
+      "status": "available"
+    },
+    "coverage_ratio": 1.0
+  },
+  "evaluation": {
+    "prediction_stats": {
+      "total_predictions": 26,
+      "unique_coins": 26,
+      "high_confidence_count": 26
+    },
+    "confidence_distribution": {
+      "mean": 90.53846153846153,
+      "high_confidence_rate": 1.0
+    },
+    "regime_distribution": {
+      "volatile": 18,
+      "sideways": 4,
+      "bear_weak": 3,
+      "bear_strong": 1
+    },
+    "meta_quality_avg": 0.8000000000000002,
+    "uncertainty_avg": 0.029296202500675814
+  }
+}
