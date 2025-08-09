@@ -8,6 +8,7 @@ import asyncio
 import time
 import json
 import pandas as pd
+import numpy as np  # FIXED: Add missing numpy import
 from datetime import datetime
 from pathlib import Path
 
@@ -330,7 +331,15 @@ async def main():
     print("✅ Coverage validation ≥99% Kraken symbols")
     print("✅ Success threshold ≥98% Great Expectations suite")
     
-    print("\n✅ FEATURE PIPELINE VOLLEDIG GEÏMPLEMENTEERD!")
+    # FIXED: Only show success if all tests pass
+    if passed_tests == total_tests:
+        print("\n✅ FEATURE PIPELINE VOLLEDIG GEÏMPLEMENTEERD!")
+        print("📂 Output locatie: exports/features.parquet")
+        print("📊 Logs locatie: logs/daily/[YYYYMMDD]/feature_pipeline_test_*.json")
+    else:
+        print("\n❌ FEATURE PIPELINE NIET VOLLEDIG GEÏMPLEMENTEERD")
+        print(f"   {total_tests - passed_tests} van {total_tests} tests gefaald")
+        print("   Fix problemen voordat deployment")
     
     return passed_tests == total_tests
 
