@@ -109,6 +109,8 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Temporal Feature Engineering:** Safe temporal feature creation with comprehensive look-ahead bias validation and leak detection.
 - **Async Scraping Framework:** High-performance concurrent scraping with intelligent rate limiting, retries, and timeout management.
 - **Concurrent Data Collector:** Multi-source data collection with async/await, thread pools, and comprehensive error handling.
+- **Probability Calibrator:** Advanced calibration methods (Platt scaling, isotonic regression, temperature scaling) for reliable confidence scores.
+- **Calibrated Confidence Gate:** Enterprise confidence gating with properly calibrated probabilities ensuring 80% means real 80% chance.
 
 ## External Dependencies
 
