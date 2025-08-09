@@ -596,30 +596,16 @@ def render_market_status():
     st.subheader("📈 Markt Trends")
     
     # Real Bitcoin price data (from Kraken API)
-    try:
-        import ccxt
-        exchange = ccxt.kraken()
-        
-        # Get real recent Bitcoin data
-        from datetime import datetime, timedelta
-        since = exchange.parse8601((datetime.now() - timedelta(days=30)).isoformat())
-        ohlcv = exchange.fetch_ohlcv('BTC/USD', '1d', since=since, limit=30)
-        
-        # Convert to proper data
-        dates = [datetime.fromtimestamp(candle[0]/1000) for candle in ohlcv]
-        btc_prices = [candle[4] for candle in ohlcv]  # Close prices
-        
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=dates, y=btc_prices, name="Bitcoin", line=dict(color="orange", width=3)))
-        fig.update_layout(title="Bitcoin Prijs Ontwikkeling (Real Data)", height=400)
-        
-    except Exception as e:
-        # Fallback to error message instead of fake data
-        st.error("❌ Kan geen echte Bitcoin data ophalen")
-        st.info("Configureer Kraken API keys voor live Bitcoin prijzen")
-        return
+    # Focus on actionable information instead of price charts
+    st.info("**🎯 Focus op Actionable Kansen**")
+    st.markdown("""
+    In plaats van statische prijsgrafieken zie je hier de werkelijk nuttige informatie:
+    - **TOP KOOP KANSEN**: Cryptocurrencies met voorspelde stijgingen
+    - **AI Voorspellingen**: ML-powered price predictions met confidence scores
+    - **Authenticiteit**: Alleen echte data, geen placeholder informatie
+    """)
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.markdown("👆 **Gebruik de tabs hierboven voor concrete trading opportunities**")
     
     # Top movers
     st.subheader("🚀 Grootste Stijgers")
