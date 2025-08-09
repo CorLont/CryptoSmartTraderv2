@@ -1,171 +1,211 @@
-# ml/train_baseline.py - Baseline trainer to create actual models
+#!/usr/bin/env python3
+"""
+Baseline RF-ensemble training for production deployment
+"""
 import pandas as pd
-import joblib
-import os
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import TimeSeriesSplit
 from pathlib import Path
+import json
 import logging
+from datetime import datetime
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, mean_squared_error, classification_report
+import joblib
+import sys
 
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Horizon mappings
-H = {
-    "1h": "target_1h",
-    "24h": "target_24h", 
-    "168h": "target_168h",
-    "720h": "target_720h"
-}
+def load_features():
+    """Load processed features from data pipeline"""
+    features_file = Path("data/processed/features.csv")
+    
+    if not features_file.exists():
+        logger.error("Features file not found - run scrape_all.py first")
+        sys.exit(1)
+    
+    df = pd.read_csv(features_file)
+    logger.info(f"Loaded {len(df)} samples with {len(df.columns)} features")
+    
+    # Validate required columns
+    required_cols = ['coin', 'timestamp', 'price_change_24h', 'volume_24h']
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    
+    if missing_cols:
+        logger.error(f"Missing required columns: {missing_cols}")
+        sys.exit(1)
+    
+    return df
 
-def train_one_horizon(df, target_col, feature_cols, n_models=5):
-    """Train ensemble of models for one horizon"""
+def prepare_training_data(df):
+    """Prepare features and targets for training"""
+    # Feature columns (exclude metadata)
+    feature_cols = [col for col in df.columns if not col.startswith(('coin', 'timestamp', 'target_'))]
     
-    # Prepare data
-    X = df[feature_cols].values
-    y = df[target_col].values
+    X = df[feature_cols].fillna(0)
     
-    logger.info(f"Training {target_col}: {len(df)} samples, {len(feature_cols)} features")
+    # Create targets for multi-horizon prediction
+    targets = {}
     
-    # Time series cross-validation
-    tscv = TimeSeriesSplit(n_splits=5)
-    splits = list(tscv.split(X))
-    train_idx, test_idx = splits[-1]  # Use last split for training (most recent data)
+    # Price return targets (regression)
+    for horizon in ['1h', '24h', '168h', '720h']:
+        target_col = f'target_return_{horizon}'
+        if target_col in df.columns:
+            targets[f'return_{horizon}'] = df[target_col].fillna(0)
     
-    models = []
-    for seed in range(n_models):
-        model = RandomForestRegressor(
-            n_estimators=400,
-            random_state=seed,
-            n_jobs=-1,
-            max_depth=10,
-            min_samples_split=10,
-            min_samples_leaf=5
-        )
-        
-        # Fit on training portion
-        model.fit(X[train_idx], y[train_idx])
-        models.append(model)
-        
-        # Log performance on test set
-        test_pred = model.predict(X[test_idx])
-        test_mse = np.mean((y[test_idx] - test_pred) ** 2)
-        logger.info(f"  Model {seed}: Test MSE = {test_mse:.6f}")
+    # Direction targets (classification) 
+    for horizon in ['1h', '24h', '168h', '720h']:
+        direction_col = f'target_direction_{horizon}'
+        if direction_col in df.columns:
+            targets[f'direction_{horizon}'] = (df[direction_col] > 0).astype(int)
     
-    return models
+    logger.info(f"Prepared {X.shape[1]} features and {len(targets)} targets")
+    return X, targets, feature_cols
 
-def create_synthetic_features_if_missing():
-    """Create synthetic features if features.parquet doesn't exist"""
+def train_baseline_models(X, targets, feature_cols):
+    """Train RF ensemble for each target"""
+    models = {}
+    performance_metrics = {}
     
-    features_path = Path("exports/features.parquet")
+    # Split data
+    X_train, X_test, indices_train, indices_test = train_test_split(
+        X, X.index, test_size=0.2, random_state=42, shuffle=True
+    )
     
-    if features_path.exists():
-        logger.info("Using existing features.parquet")
-        return
-    
-    logger.warning("features.parquet missing - creating synthetic training data")
-    
-    # Create realistic synthetic data for training
-    np.random.seed(42)
-    n_samples = 1000
-    n_coins = 50
-    
-    # Generate time series data
-    timestamps = pd.date_range('2024-01-01', periods=n_samples, freq='1H', tz='UTC')
-    coins = [f"COIN_{i:03d}" for i in range(n_coins)]
-    
-    data = []
-    for ts in timestamps[:100]:  # Limit for faster training
-        for coin in coins[:20]:  # Limit coins
-            # Generate realistic features
-            base_price = np.random.uniform(0.1, 100)
+    for target_name, y in targets.items():
+        logger.info(f"Training model for {target_name}")
+        
+        y_train = y.iloc[indices_train]
+        y_test = y.iloc[indices_test]
+        
+        # Skip if insufficient positive samples
+        if target_name.startswith('direction_'):
+            if y_train.sum() < 10:
+                logger.warning(f"Insufficient positive samples for {target_name}, skipping")
+                continue
+        
+        try:
+            # Choose model type based on target
+            if target_name.startswith('direction_'):
+                # Classification
+                model = RandomForestClassifier(
+                    n_estimators=200,
+                    max_depth=15,
+                    min_samples_split=10,
+                    min_samples_leaf=5,
+                    random_state=42,
+                    n_jobs=-1
+                )
+            else:
+                # Regression
+                model = RandomForestRegressor(
+                    n_estimators=200,
+                    max_depth=15,
+                    min_samples_split=10,
+                    min_samples_leaf=5,
+                    random_state=42,
+                    n_jobs=-1
+                )
             
-            row = {
-                'coin': coin,
-                'timestamp': ts,
-                # Technical features
-                'feat_rsi_14': np.random.uniform(20, 80),
-                'feat_macd': np.random.normal(0, 0.01),
-                'feat_bb_position': np.random.uniform(0, 1),
-                'feat_vol_24h': np.random.lognormal(15, 2),
-                'feat_price_change_1h': np.random.normal(0, 0.02),
-                'feat_price_change_24h': np.random.normal(0, 0.05),
-                
-                # Sentiment features  
-                'feat_sent_score': np.random.uniform(0.3, 0.8),
-                'feat_news_count': np.random.poisson(5),
-                
-                # Whale features
-                'feat_whale_score': np.random.uniform(0, 1),
-                'feat_large_transfers': np.random.poisson(2),
-                
-                # Targets (correlated with features for realistic training)
-                'target_1h': np.random.normal(0, 0.01),
-                'target_24h': np.random.normal(0, 0.03), 
-                'target_168h': np.random.normal(0, 0.08),
-                'target_720h': np.random.normal(0, 0.15)
-            }
+            # Train model
+            model.fit(X_train, y_train)
             
-            data.append(row)
+            # Evaluate
+            y_pred = model.predict(X_test)
+            
+            if target_name.startswith('direction_'):
+                accuracy = accuracy_score(y_test, y_pred)
+                performance_metrics[target_name] = {
+                    'accuracy': accuracy,
+                    'samples': len(y_test),
+                    'positive_rate': y_test.mean()
+                }
+                logger.info(f"{target_name}: Accuracy = {accuracy:.3f}")
+            else:
+                mse = mean_squared_error(y_test, y_pred)
+                performance_metrics[target_name] = {
+                    'mse': mse,
+                    'rmse': np.sqrt(mse),
+                    'samples': len(y_test)
+                }
+                logger.info(f"{target_name}: RMSE = {np.sqrt(mse):.4f}")
+            
+            # Store model
+            models[target_name] = model
+            
+        except Exception as e:
+            logger.error(f"Failed to train {target_name}: {e}")
+            continue
     
-    df = pd.DataFrame(data)
+    return models, performance_metrics
+
+def save_models(models, performance_metrics, feature_cols):
+    """Save trained models and metadata"""
+    models_dir = Path("models/baseline")
+    models_dir.mkdir(parents=True, exist_ok=True)
     
-    # Ensure exports directory exists
-    Path("exports").mkdir(exist_ok=True)
-    df.to_parquet(features_path)
+    # Save individual models
+    for name, model in models.items():
+        model_file = models_dir / f"{name}.joblib"
+        joblib.dump(model, model_file)
+        logger.info(f"Saved {name} model to {model_file}")
     
-    logger.info(f"Created synthetic features: {len(df)} samples, saved to {features_path}")
+    # Save metadata
+    metadata = {
+        'timestamp': datetime.now().isoformat(),
+        'feature_columns': feature_cols,
+        'models_trained': list(models.keys()),
+        'performance_metrics': performance_metrics,
+        'model_type': 'RandomForest',
+        'n_estimators': 200
+    }
+    
+    metadata_file = models_dir / "metadata.json"
+    with open(metadata_file, 'w') as f:
+        json.dump(metadata, f, indent=2)
+    
+    logger.info(f"Saved metadata to {metadata_file}")
+    return metadata
 
 def main():
-    """Main training function"""
+    """Main training pipeline"""
+    logger.info("Starting baseline RF-ensemble training")
     
-    logger.info("Starting baseline model training...")
+    # Load data
+    df = load_features()
     
-    # Ensure features exist
-    create_synthetic_features_if_missing()
+    # Prepare training data
+    X, targets, feature_cols = prepare_training_data(df)
     
-    # Load features
-    fx = pd.read_parquet("exports/features.parquet")
-    logger.info(f"Loaded features: {len(fx)} samples")
+    if len(targets) == 0:
+        logger.error("No valid targets found")
+        sys.exit(1)
     
-    # Get feature columns
-    feature_cols = [c for c in fx.columns if c.startswith("feat_")]
-    logger.info(f"Found {len(feature_cols)} feature columns")
+    # Train models
+    models, performance_metrics = train_baseline_models(X, targets, feature_cols)
     
-    if not feature_cols:
-        logger.error("No feature columns found! Expected columns starting with 'feat_'")
-        return
+    if len(models) == 0:
+        logger.error("No models successfully trained")
+        sys.exit(1)
     
-    # Ensure models directory exists
-    os.makedirs("models/saved", exist_ok=True)
+    # Save models
+    metadata = save_models(models, performance_metrics, feature_cols)
     
-    # Train models for each horizon
-    for horizon, target_col in H.items():
-        logger.info(f"\n=== Training {horizon} horizon ===")
-        
-        if target_col not in fx.columns:
-            logger.error(f"Target column {target_col} not found!")
-            continue
-        
-        # Filter data for this target
-        subset = fx.dropna(subset=feature_cols + [target_col])
-        
-        if len(subset) < 100:
-            logger.warning(f"Insufficient data for {horizon}: {len(subset)} samples")
-            continue
-        
-        # Train ensemble
-        models = train_one_horizon(subset, target_col, feature_cols)
-        
-        # Save models
-        model_path = f"models/saved/rf_{horizon}.pkl"
-        joblib.dump(models, model_path)
-        
-        logger.info(f"✅ Saved {len(models)} models to {model_path}")
+    # Print summary
+    logger.info("=== Training Summary ===")
+    logger.info(f"Successfully trained {len(models)} models")
     
-    logger.info("\n🎯 Training completed! Models are now available for predictions.")
-    logger.info("Run the app to see working AI predictions.")
+    for name, metrics in performance_metrics.items():
+        if 'accuracy' in metrics:
+            logger.info(f"{name}: {metrics['accuracy']:.3f} accuracy")
+        else:
+            logger.info(f"{name}: {metrics['rmse']:.4f} RMSE")
+    
+    logger.info("Baseline RF-ensemble training completed successfully")
+    return 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

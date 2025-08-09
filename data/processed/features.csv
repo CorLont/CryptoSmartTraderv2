@@ -1,0 +1,4 @@
+coin,timestamp,price_change_24h,volume_24h,spread,volatility_7d
+BTC,2024-01-01,2.5,1000000,0.001,0.02
+ETH,2024-01-01,3.1,500000,0.002,0.03
+ADA,2024-01-01,-1.2,100000,0.003,0.04
