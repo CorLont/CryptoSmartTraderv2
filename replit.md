@@ -115,6 +115,7 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Monte Carlo Dropout Inference:** Lightweight MC Dropout implementation for fast uncertainty estimation with proper confidence intervals.
 - **Market Regime Detection:** Hidden Markov Model and rule-based classification for dynamic market regime identification with regime transition tracking.
 - **Regime-Aware Models:** Specialized models for bull/bear/high-volatility/consolidation regimes with intelligent routing based on current market conditions.
+- **Integrated Regime-Aware Confidence System:** Complete integration of regime detection, calibrated confidence gates, and Bayesian uncertainty quantification with regime-specific adjustments.
 
 ## External Dependencies
 
