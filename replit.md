@@ -99,6 +99,10 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Futures Signal Integration:** Funding rates, open interest, and basis features for leverage squeeze detection and crowding signals.
 - **Order Book Imbalance Detection:** L2 depth analysis with bid/ask imbalance and spoof detection for better timing.
 - **Event Impact Scoring:** LLM-powered news analysis with impact scoring and half-life decay modeling for event-driven alpha.
+- **Regime Router (Mixture-of-Experts):** Best model per regime routing to prevent collapse during market stress periods.
+- **Conformal Prediction:** Formal uncertainty quantification with adaptive confidence intervals for superior risk gating.
+- **Uncertainty-Aware Sizing:** Kelly-lite position sizing with uncertainty awareness, correlation caps, and liquidity constraints.
+- **Temporal Integrity Validation:** Complete protection against look-ahead bias and data leakage in time series ML.
 
 ## External Dependencies
 
