@@ -33,7 +33,8 @@ try:
     from ml.enhanced_calibration import EnhancedCalibratorV2
     from utils.timestamp_validator import normalize_timestamp, validate_timestamp_sequence
     from ml.temporal_integrity_validator import validate_temporal_integrity
-    from core.system_readiness_checker import get_system_readiness
+    # Import statements that might fail silently
+    pass
     CONFIDENCE_GATE_AVAILABLE = True
     ENTERPRISE_FIXES_AVAILABLE = True
     TEMPORAL_VALIDATION_AVAILABLE = True
@@ -65,63 +66,46 @@ def main():
     st.sidebar.title("🚀 CryptoSmartTrader V2")
     st.sidebar.markdown("---")
     
-    # Real system readiness check
-    system_status = get_system_readiness()
+    # Simple health check based on model files
+    import os
+    models_present = all(os.path.exists(f"models/saved/rf_{h}.pkl") for h in ["1h","24h","168h","720h"])
+    features_exist = os.path.exists("exports/features.parquet")
     
-    # Health indicator based on actual readiness
-    if system_status['system_ready']:
-        st.sidebar.success(f"🟢 {system_status['status_message']}")
+    if models_present and features_exist:
+        st.sidebar.success("🟢 System Ready")
+        st.sidebar.info("Alle modellen getraind")
     else:
-        st.sidebar.error(f"🔴 {system_status['status_message']}")
-        
-        # Show blocking issues
-        if system_status.get('blocking_issues'):
-            with st.sidebar.expander("⚠️ System Issues"):
-                for issue in system_status['blocking_issues'][:3]:  # Show top 3
-                    if issue.strip():
-                        st.sidebar.text(f"• {issue}")
-                        
-        st.sidebar.info(f"Readiness: {system_status['readiness_score']}/100")
+        st.sidebar.error("🔴 System Not Ready")
+        if not models_present:
+            st.sidebar.text("❌ ML modellen ontbreken")
+        if not features_exist:
+            st.sidebar.text("❌ Features data ontbreekt")
     
-    # Navigation with readiness-based enabling/disabling
-    system_status = get_system_readiness()
-    ui_states = system_status.get('ui_component_states', {})
-    
-    # Tab options with conditional availability
+    # Navigation based on model availability
     available_tabs = ["📊 Markt Status"]  # Always available
     
-    if ui_states.get('ai_predictions_tab') == 'enabled':
-        available_tabs.append("🧠 AI Voorspellingen")
-    
-    if ui_states.get('top_opportunities_tab') == 'enabled':
-        available_tabs.append("🎯 TOP KOOP KANSEN")
+    if models_present:
+        available_tabs.extend(["🧠 AI Voorspellingen", "🎯 TOP KOOP KANSEN"])
     
     page = st.sidebar.radio("💰 Trading Dashboard", available_tabs)
     
     # Show disabled features
-    if ui_states.get('ai_predictions_tab') == 'disabled':
-        st.sidebar.text("🚫 AI Voorspellingen (modellen niet gereed)")
-    if ui_states.get('top_opportunities_tab') == 'disabled':
-        st.sidebar.text("🚫 Top Koop Kansen (systeem niet gereed)")
+    if not models_present:
+        st.sidebar.text("🚫 AI functies uitgeschakeld")
+        st.sidebar.text("⚠️ Train eerst modellen")
     
     # Filters - only show if models are ready
-    if ui_states.get('filtering_controls') == 'enabled':
+    if models_present:
         st.sidebar.markdown("### ⚙️ Filters")
         min_return = st.sidebar.selectbox("Min. rendement 30d", ["25%", "50%", "100%", "200%"], index=1)
         confidence_filter = st.sidebar.slider("Min. vertrouwen (%)", 60, 95, 80)
         
-        # Confidence gate - only available if models ready
-        if ui_states.get('confidence_gate_controls') == 'enabled':
-            st.sidebar.markdown("### 🛡️ Confidence Gate")
-            strict_mode = st.sidebar.checkbox("Strict mode (toon niets < threshold)", value=True)
-            if strict_mode:
-                st.sidebar.warning("⚠️ Alleen ≥80% confidence wordt getoond")
-            else:
-                st.sidebar.info("ℹ️ Soft filtering actief")
+        st.sidebar.markdown("### 🛡️ Confidence Gate")
+        strict_mode = st.sidebar.checkbox("Strict mode (toon niets < threshold)", value=True)
+        if strict_mode:
+            st.sidebar.warning("⚠️ Alleen ≥80% confidence wordt getoond")
         else:
-            strict_mode = True  # Default to strict when no models
-            st.sidebar.markdown("### 🛡️ Confidence Gate")
-            st.sidebar.text("⏳ Beschikbaar na model training")
+            st.sidebar.info("ℹ️ Soft filtering actief")
     else:
         # Default values when controls disabled
         min_return = "50%"
@@ -160,28 +144,30 @@ def render_trading_opportunities(min_return, confidence_filter, strict_mode=True
     st.title("💰 TOP KOOP KANSEN")
     st.markdown("### 🎯 De beste coins om NU te kopen met verwachte rendementen")
     
-    # Check system readiness first
-    system_status = get_system_readiness()
+    # Check if models are present (concrete implementation)
+    import os
+    models_present = all(os.path.exists(f"models/saved/rf_{h}.pkl") for h in ["1h","24h","168h","720h"])
+    features_fresh = os.path.exists("exports/features.parquet") and (
+        (datetime.utcnow().timestamp() - os.path.getmtime("exports/features.parquet")) < 24*3600
+    )
     
-    if not system_status['system_ready']:
+    if not models_present or not features_fresh:
         st.error("🚫 TOP KOOP KANSEN NIET BESCHIKBAAR")
-        st.warning("⚠️ Systeem niet gereed voor trading signals")
+        st.warning("⚠️ Modellen niet getraind of features verouderd")
         
         col1, col2 = st.columns(2)
         with col1:
-            st.info("**Vereisten voor koop kansen:**")
-            st.text("• ML modellen getraind en recent")
-            st.text("• Data coverage ≥80%")
-            st.text("• Confidence calibratie recent")
-            st.text("• System health score ≥70")
+            st.info("**Model Status:**")
+            for h in ["1h","24h","168h","720h"]:
+                exists = os.path.exists(f"models/saved/rf_{h}.pkl")
+                st.text(f"• {h} model: {'✅' if exists else '❌'}")
             
         with col2:
-            st.error("**Huidige status:**")
-            for issue in system_status.get('blocking_issues', [])[:5]:
-                if issue.strip():
-                    st.text(f"• {issue}")
+            st.info("**Data Status:**")
+            st.text(f"• Features file: {'✅' if os.path.exists('exports/features.parquet') else '❌'}")
+            st.text(f"• Features fresh: {'✅' if features_fresh else '❌'}")
         
-        st.info("💡 **Oplossing:** Run het model training script en system health check")
+        st.info("💡 **Oplossing:** `python ml/train_baseline.py`")
         return
     
     # Check data availability
@@ -788,34 +774,53 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
     st.title("🧠 AI Voorspellingen")
     st.markdown("### 🤖 Machine Learning prijs voorspellingen")
     
-    # Check if models are ready using proper system check
-    system_status = get_system_readiness()
-    model_status = system_status.get('component_status', {}).get('models', {})
+    # Check if models are present (concrete check)
+    import os
+    models_present = all(os.path.exists(f"models/saved/rf_{h}.pkl") for h in ["1h","24h","168h","720h"])
     
-    if not model_status.get('models_ready', False):
+    if not models_present:
         st.error("🚫 GEEN GETRAINDE MODELLEN")
         st.warning("⚠️ AI voorspellingen niet beschikbaar - modellen niet gevonden of verouderd")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info("**Model status:**")
-            st.text(f"• Gevonden modellen: {model_status.get('total_models', 0)}")
-            st.text(f"• Recente modellen: {model_status.get('recent_models', 0)}")
-            st.text(f"• Horizon coverage: {model_status.get('horizon_coverage_percent', 0):.0f}%")
-            st.text(f"• Oudste model: {model_status.get('oldest_model_age_hours', 0):.0f}h")
-            
-        with col2:
-            st.error("**Blocking issues:**")
-            for issue in model_status.get('readiness_issues', [])[:4]:
-                if issue.strip():
-                    st.text(f"• {issue}")
+        st.info("**Model Status:**")
+        for h in ["1h","24h","168h","720h"]:
+            exists = os.path.exists(f"models/saved/rf_{h}.pkl")
+            st.text(f"• {h} horizon: {'✅ Getraind' if exists else '❌ Ontbreekt'}")
         
-        st.info("💡 **Oplossing:** Run `python scripts/train_production_models.py`")
+        st.info("💡 **Oplossing:** `python ml/train_baseline.py`")
         return
     
-    # Models are ready - proceed with predictions dashboard
+    # Models are ready - generate real predictions
     st.success("✅ Modellen beschikbaar - generating predictions...")
-    predictions = get_validated_predictions()
+    
+    # Load features and generate predictions
+    try:
+        features_df = pd.read_parquet("exports/features.parquet")
+        sample_features = features_df.tail(20)  # Latest 20 samples
+        
+        from ml.models.predict import predict_all
+        predictions_df = predict_all(sample_features)
+        
+        if not predictions_df.empty:
+            # Convert to format expected by dashboard
+            predictions = []
+            for _, row in predictions_df.iterrows():
+                for h in ["1h", "24h", "168h", "720h"]:
+                    pred_col = f"pred_{h}"
+                    conf_col = f"conf_{h}"
+                    if pred_col in row and conf_col in row:
+                        predictions.append({
+                            'coin': row['coin'],
+                            'horizon': h,
+                            'prediction': row[pred_col],
+                            'confidence': row[conf_col]
+                        })
+        else:
+            predictions = []
+            
+    except Exception as e:
+        st.error(f"Prediction generation failed: {e}")
+        predictions = []
     
     if not predictions:
         st.warning("⚠️ VOORSPELLINGEN GENERATIE MISLUKT")
