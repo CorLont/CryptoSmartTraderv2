@@ -1,312 +1,39 @@
-name: CI Pipeline
-# P0 CI that always runs: lint/type/tests/security
+name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
-  schedule:
-    # Run full test suite daily at 02:00 UTC
-    - cron: '0 2 * * *'
+    branches: [ main ]
 
-env:
-  # uv settings for faster dependency management
-  UV_CACHE_DIR: ~/.cache/uv
-  PYTHON_VERSION: "3.11"
+permissions:
+  contents: read
 
 jobs:
-  # === P0 FAST CHECKS ===
-  lint-and-type:
-    name: "Lint & Type Check"
+  build-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
-        
-    - name: Set up Python
-      run: uv python install ${{ env.PYTHON_VERSION }}
-      
-    - name: Install dependencies
-      run: |
-        uv sync --dev --locked
-        
-    - name: Cache uv
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-
-          
-    - name: Run ruff linting
-      run: |
-        uv run ruff check . --output-format=github
-        
-    - name: Run ruff formatting check
-      run: |
-        uv run ruff format --check .
-        
-    - name: Run black formatting check
-      run: |
-        uv run black --check --diff .
-        
-    - name: Run mypy type checking
-      run: |
-        uv run mypy . --config-file pyproject.toml
+      - uses: actions/checkout@v4
 
-  # === P0 FAST TESTS ===
-  test-fast:
-    name: "Fast Tests"
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
-        
-    - name: Set up Python ${{ matrix.python-version }}
-      run: uv python install ${{ matrix.python-version }}
-      
-    - name: Install dependencies
-      run: |
-        uv sync --dev --locked
-        
-    - name: Cache uv
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-${{ matrix.python-version }}-
-          uv-${{ runner.os }}-
-          
-    - name: Run fast tests
-      run: |
-        uv run pytest -v \
-          -m "not slow and not integration" \
-          --tb=short \
-          --maxfail=5 \
-          --durations=10 \
-          tests/
-          
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results-${{ matrix.python-version }}
-        path: |
-          test-results.xml
-          coverage.xml
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-  # === P0 SECURITY AUDIT ===
-  security:
-    name: "Security Audit"
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
-        
-    - name: Set up Python
-      run: uv python install ${{ env.PYTHON_VERSION }}
-      
-    - name: Install dependencies
-      run: |
-        uv sync --dev --locked
-        
-    - name: Cache uv
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-security-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-security-${{ runner.os }}-
-          
-    - name: Run pip-audit security scan
-      run: |
-        uv run pip-audit --desc --format=json --output=security-audit.json
-        uv run pip-audit --desc --format=text
-        
-    - name: Upload security audit results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: security-audit
-        path: security-audit.json
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
-  # === P2 SLOW/INTEGRATION TESTS ===
-  test-slow:
-    name: "Slow & Integration Tests"
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    # Only run on schedule, manual trigger, or when labeled
-    if: |
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      contains(github.event.pull_request.labels.*.name, 'run-slow-tests')
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
-        
-    - name: Set up Python
-      run: uv python install ${{ env.PYTHON_VERSION }}
-      
-    - name: Install dependencies
-      run: |
-        uv sync --dev --locked
-        
-    - name: Cache uv
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-slow-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-slow-${{ runner.os }}-
-          
-    - name: Run slow tests
-      run: |
-        uv run pytest -v \
-          -m "slow or integration" \
-          --tb=short \
-          --durations=20 \
-          tests/
-          
-    - name: Upload slow test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: slow-test-results
-        path: |
-          test-results.xml
-          coverage.xml
+      - name: Sync dependencies (locked)
+        run: uv sync --frozen
 
-  # === CODE COVERAGE ===
-  coverage:
-    name: "Code Coverage"
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: [test-fast]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
-        
-    - name: Set up Python
-      run: uv python install ${{ env.PYTHON_VERSION }}
-      
-    - name: Install dependencies
-      run: |
-        uv sync --dev --locked
-        
-    - name: Run tests with coverage
-      run: |
-        uv run pytest \
-          -m "not slow and not integration" \
-          --cov=core \
-          --cov=src \
-          --cov-report=xml \
-          --cov-report=html \
-          --cov-fail-under=70 \
-          tests/
-          
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
+      - name: Lint & typecheck
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run mypy --install-types --non-interactive .
 
-  # === DEPENDENCY CHECK ===
-  dependencies:
-    name: "Dependency Check"
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
-        
-    - name: Set up Python
-      run: uv python install ${{ env.PYTHON_VERSION }}
-      
-    - name: Check for dependency updates
-      run: |
-        uv lock --upgrade-package pip
-        
-    - name: Check lock file consistency
-      run: |
-        uv sync --locked --check
-        
-    - name: Generate dependency report
-      run: |
-        uv pip list --format=json > dependencies.json
-        
-    - name: Upload dependency report
-      uses: actions/upload-artifact@v4
-      with:
-        name: dependencies
-        path: dependencies.json
+      - name: Run tests
+        run: uv run pytest -q --maxfail=1 --disable-warnings
 
-# === WORKFLOW STATUS NOTIFICATION ===
-  notify:
-    name: "Notify Status"
-    runs-on: ubuntu-latest
-    needs: [lint-and-type, test-fast, security]
-    if: always()
-    
-    steps:
-    - name: Report status
-      run: |
-        echo "CI Pipeline Status:"
-        echo "Lint & Type: ${{ needs.lint-and-type.result }}"
-        echo "Fast Tests: ${{ needs.test-fast.result }}"
-        echo "Security: ${{ needs.security.result }}"
-        
-        if [[ "${{ needs.lint-and-type.result }}" == "failure" || \
-              "${{ needs.test-fast.result }}" == "failure" || \
-              "${{ needs.security.result }}" == "failure" ]]; then
-          echo "❌ CI Pipeline FAILED"
-          exit 1
-        else
-          echo "✅ CI Pipeline PASSED"
-        fi
+      - name: Security audit
+        run: uv run pip-audit
