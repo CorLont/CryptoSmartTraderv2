@@ -1,16 +1,69 @@
 @echo off
+echo ===================================================
 echo CryptoSmartTrader V2 - Starting Background Services
-echo ================================================
+echo ===================================================
 
-echo Starting Prometheus metrics server...
-start /B python -c "from prometheus_client import start_http_server; start_http_server(8090); import time; time.sleep(3600)"
+REM Activate virtual environment
+echo [1/6] Activating virtual environment...
+call .venv\Scripts\activate 2>nul
+if errorlevel 1 (
+    echo ⚠️ Virtual environment not found. Run 1_install_all_dependencies.bat first
+    pause
+    exit /b 1
+)
 
-echo Starting health monitoring...
-start /B python core/daily_health_dashboard.py
+REM Stop existing services first
+echo.
+echo [2/6] Stopping existing background services...
+taskkill /F /IM python.exe /FI "WINDOWTITLE eq Metrics Server*" 2>nul
+taskkill /F /IM python.exe /FI "WINDOWTITLE eq Health Monitor*" 2>nul
+taskkill /F /IM python.exe /FI "WINDOWTITLE eq MLflow Server*" 2>nul
+taskkill /F /IM python.exe /FI "WINDOWTITLE eq Production Orchestrator*" 2>nul
+timeout /t 2 /nobreak >nul
 
-echo Starting MLflow tracking server...
-start /B mlflow server --host 0.0.0.0 --port 5555 --backend-store-uri sqlite:///mlflow.db
+REM Set environment variables
+echo.
+echo [3/6] Setting environment variables...
+set PYTHONPATH=%CD%
+set CRYPTOSMARTTRADER_ENV=production
 
-echo Background services started!
-echo Check ports: 8090 (metrics), 5555 (MLflow)
+REM Start Prometheus metrics server
+echo.
+echo [4/6] Starting Prometheus metrics server on port 8090...
+start "Metrics Server" /MIN python -c "from prometheus_client import start_http_server; import time; start_http_server(8090); print('Prometheus metrics server started on port 8090'); time.sleep(86400)"
+
+REM Start health monitoring system
+echo.
+echo [5/6] Starting health monitoring system...
+start "Health Monitor" /MIN python core/system_health_monitor.py
+
+REM Start production orchestrator in background
+echo.
+echo [6/6] Starting production orchestrator...
+start "Production Orchestrator" /MIN python core/production_orchestrator.py
+
+REM Verify services
+echo.
+echo Waiting for services to initialize...
+timeout /t 5 /nobreak >nul
+
+echo.
+echo ===================================================
+echo ✅ BACKGROUND SERVICES STARTED!
+echo ===================================================
+echo.
+echo Active Services:
+echo   • Prometheus Metrics      - http://localhost:8090
+echo   • Health Monitor          - Running in background
+echo   • Production Orchestrator - Running in background
+echo.
+echo Service Status:
+netstat -an | findstr :8090 >nul && echo "  ✓ Metrics server (port 8090)" || echo "  ⚠️ Metrics server not responding"
+echo.
+echo Log files available in: logs\
+echo.
+echo To stop services, run:
+echo   taskkill /F /IM python.exe
+echo.
+echo Next step: Run 3_start_dashboard.bat
 pause
