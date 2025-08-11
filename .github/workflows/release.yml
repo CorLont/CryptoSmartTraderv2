@@ -1,0 +1,332 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Extract version
+      id: version
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION=${GITHUB_REF#refs/tags/}
+        fi
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Release version: ${VERSION}"
+        
+    - name: Validate version format
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        if [[ ! $VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid version format: $VERSION"
+          echo "Expected format: vX.Y.Z (e.g., v1.0.0)"
+          exit 1
+        fi
+
+  run-full-tests:
+    name: Full Test Suite
+    needs: validate-release
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  build-release:
+    name: Build Release Assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [validate-release, run-full-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      
+    - name: Set up Python
+      run: uv python install 3.11
+      
+    - name: Install dependencies
+      run: uv sync --all-extras --dev
+      
+    - name: Create release directory
+      run: mkdir -p release-assets
+      
+    - name: Generate deployment scripts
+      run: |
+        # Copy deployment scripts
+        cp 1_install_all_dependencies.bat release-assets/
+        cp 2_start_background_services.bat release-assets/
+        cp 3_start_dashboard.bat release-assets/
+        
+        # Create release info
+        cat > release-assets/RELEASE_INFO.txt << EOF
+        CryptoSmartTrader V2 Release ${{ needs.validate-release.outputs.version }}
+        
+        Build Date: $(date)
+        Git Commit: ${{ github.sha }}
+        Python Version: 3.11+
+        
+        Installation:
+        1. Run 1_install_all_dependencies.bat
+        2. Run 2_start_background_services.bat
+        3. Run 3_start_dashboard.bat
+        
+        Requirements:
+        - Windows 10/11 or Linux
+        - Python 3.11 or higher
+        - 8GB RAM minimum
+        - API keys for exchanges (Kraken, Binance)
+        EOF
+        
+    - name: Create configuration templates
+      run: |
+        cp .env.template release-assets/
+        cp config.json release-assets/config.example.json
+        
+    - name: Generate documentation
+      run: |
+        mkdir -p release-assets/docs
+        cp README.md release-assets/docs/
+        cp README_DEPLOYMENT.md release-assets/docs/
+        cp README_INSTALLATION.md release-assets/docs/
+        
+    - name: Upload release assets
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-assets-${{ needs.validate-release.outputs.version }}
+        path: release-assets/
+        retention-days: 90
+
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [validate-release, run-full-tests]
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=tag
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha,prefix={{date 'YYYYMMDD'}}-
+          
+    - name: Create optimized Dockerfile
+      run: |
+        cat > Dockerfile << 'EOF'
+        FROM python:3.11-slim as builder
+        
+        # Install uv
+        COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+        
+        # Set working directory
+        WORKDIR /app
+        
+        # Copy dependency files
+        COPY pyproject.toml uv.lock ./
+        
+        # Install dependencies
+        RUN uv sync --frozen --no-dev
+        
+        FROM python:3.11-slim as runtime
+        
+        # Copy uv
+        COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+        
+        # Set working directory
+        WORKDIR /app
+        
+        # Copy virtual environment from builder
+        COPY --from=builder /app/.venv /app/.venv
+        
+        # Copy application code
+        COPY core/ ./core/
+        COPY ml/ ./ml/
+        COPY dashboards/ ./dashboards/
+        COPY pyproject.toml uv.lock ./
+        COPY .env.template ./
+        
+        # Create non-root user
+        RUN useradd --create-home --shell /bin/bash --uid 1001 trader
+        RUN chown -R trader:trader /app
+        USER trader
+        
+        # Health check
+        HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+          CMD curl -f http://localhost:5000/_stcore/health || exit 1
+        
+        # Labels
+        LABEL org.opencontainers.image.title="CryptoSmartTrader V2"
+        LABEL org.opencontainers.image.description="Enterprise Cryptocurrency Trading Intelligence Platform"
+        LABEL org.opencontainers.image.version="${{ needs.validate-release.outputs.version }}"
+        LABEL org.opencontainers.image.source="https://github.com/${{ github.repository }}"
+        
+        # Expose port
+        EXPOSE 5000
+        
+        # Start application
+        CMD ["uv", "run", "streamlit", "run", "dashboards/main_dashboard.py", "--server.port", "5000", "--server.address", "0.0.0.0"]
+        EOF
+        
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        platforms: linux/amd64,linux/arm64
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [validate-release, build-release, build-docker]
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Download release assets
+      uses: actions/download-artifact@v4
+      with:
+        name: release-assets-${{ needs.validate-release.outputs.version }}
+        path: release-assets/
+        
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get the previous tag
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        
+        if [[ -n "$PREVIOUS_TAG" ]]; then
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" ${PREVIOUS_TAG}..HEAD)
+        else
+          CHANGELOG="Initial release"
+        fi
+        
+        # Save changelog to file
+        cat > CHANGELOG.md << EOF
+        ## What's Changed
+        
+        ${CHANGELOG}
+        
+        ## Installation
+        
+        ### Windows
+        1. Download and extract the release assets
+        2. Run \`1_install_all_dependencies.bat\`
+        3. Configure your API keys in \`.env\`
+        4. Run \`2_start_background_services.bat\`
+        5. Run \`3_start_dashboard.bat\`
+        
+        ### Docker
+        \`\`\`bash
+        docker run -p 5000:5000 ghcr.io/${{ github.repository }}:${{ needs.validate-release.outputs.version }}
+        \`\`\`
+        
+        ## Requirements
+        - Python 3.11+
+        - 8GB RAM minimum
+        - Exchange API keys (Kraken, Binance)
+        
+        ## Documentation
+        See the \`docs/\` folder in the release assets for complete documentation.
+        EOF
+        
+    - name: Create release archive
+      run: |
+        cd release-assets
+        zip -r ../cryptosmarttrader-${{ needs.validate-release.outputs.version }}.zip *
+        cd ..
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.validate-release.outputs.version }}
+        name: CryptoSmartTrader V2 ${{ needs.validate-release.outputs.version }}
+        body_path: CHANGELOG.md
+        draft: false
+        prerelease: false
+        files: |
+          cryptosmarttrader-${{ needs.validate-release.outputs.version }}.zip
+        generate_release_notes: true
+        
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [validate-release, create-release]
+    if: always()
+    
+    steps:
+    - name: Generate release summary
+      run: |
+        echo "## 🚀 Release ${{ needs.validate-release.outputs.version }} Published!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Release Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version:** ${{ needs.validate-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Release Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Assets Published" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Release archive with deployment scripts" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Docker image: \`ghcr.io/${{ github.repository }}:${{ needs.validate-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ GitHub Release with changelog" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Quick Start" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "docker run -p 5000:5000 ghcr.io/${{ github.repository }}:${{ needs.validate-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

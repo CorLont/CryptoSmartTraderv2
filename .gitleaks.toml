@@ -1,0 +1,93 @@
+# Gitleaks configuration for secret detection
+
+title = "CryptoSmartTrader V2 Secret Detection"
+
+[extend]
+# Extend default rules
+useDefault = true
+
+# Custom rules for cryptocurrency trading platform
+[[rules]]
+id = "kraken-api-key"
+description = "Kraken API Key"
+regex = '''(?i)kraken[_-]?api[_-]?key['"\\s:=]*[a-zA-Z0-9+/]{56}'''
+tags = ["key", "kraken", "api"]
+
+[[rules]]
+id = "binance-api-key"
+description = "Binance API Key"
+regex = '''(?i)binance[_-]?api[_-]?key['"\\s:=]*[a-zA-Z0-9]{64}'''
+tags = ["key", "binance", "api"]
+
+[[rules]]
+id = "coinbase-api-key"
+description = "Coinbase API Key"
+regex = '''(?i)coinbase[_-]?api[_-]?key['"\\s:=]*[a-f0-9]{32}'''
+tags = ["key", "coinbase", "api"]
+
+[[rules]]
+id = "exchange-secret"
+description = "Exchange API Secret"
+regex = '''(?i)(api[_-]?secret|secret[_-]?key)['"\\s:=]*[a-zA-Z0-9+/]{40,}'''
+tags = ["secret", "exchange", "api"]
+
+[[rules]]
+id = "private-key"
+description = "Cryptocurrency Private Key"
+regex = '''(?i)(private[_-]?key|priv[_-]?key)['"\\s:=]*[a-fA-F0-9]{64}'''
+tags = ["key", "private", "crypto"]
+
+[[rules]]
+id = "webhook-url"
+description = "Webhook URL with potential secrets"
+regex = '''https://hooks\.slack\.com/services/[A-Z0-9]{9}/[A-Z0-9]{11}/[a-zA-Z0-9]{24}'''
+tags = ["webhook", "slack"]
+
+# Allow list for test files and examples
+[allowlist]
+description = "Allowlist for false positives"
+paths = [
+    '''\.env\.template$''',
+    '''\.env\.example$''',
+    '''test[s]?/.*\.py$''',
+    '''.*test.*\.py$''',
+    '''example[s]?/.*$''',
+    '''docs?/.*$''',
+    '''README.*$''',
+]
+
+# Files to ignore completely
+files = [
+    '''(.*)?\.lock$''',
+    '''(.*)?\.log$''',
+    '''(.*)?\.cache$''',
+    '''.*\.min\.js$''',
+    '''.*\.map$''',
+]
+
+# Regex patterns to ignore
+regexes = [
+    '''example[_-]?key''',
+    '''dummy[_-]?secret''',
+    '''test[_-]?api[_-]?key''',
+    '''fake[_-]?token''',
+    '''placeholder''',
+    '''your[_-]?api[_-]?key[_-]?here''',
+    '''insert[_-]?key[_-]?here''',
+]
+
+# Stop words that indicate non-secrets
+stopwords = [
+    "example",
+    "test",
+    "dummy",
+    "fake",
+    "placeholder",
+    "sample",
+    "template",
+    "insert",
+    "your",
+    "api",
+    "key",
+    "here",
+]

@@ -1,0 +1,65 @@
+# Bandit configuration for security linting
+
+[bandit]
+# Directories to scan
+include = ['core', 'ml', 'dashboards', 'tests']
+
+# Directories to exclude
+exclude_dirs = [
+    '/venv',
+    '/.venv', 
+    '/env',
+    '/.env',
+    '/node_modules',
+    '/__pycache__',
+    '/.pytest_cache',
+    '/htmlcov',
+    '/.mypy_cache'
+]
+
+# Tests to skip
+skips = [
+    'B101',  # Skip assert_used_test - we use asserts in tests
+    'B601',  # Skip shell injection for subprocess with shell=True in controlled cases
+    'B603',  # Skip subprocess without shell equals true check
+    'B104',  # Skip hardcoded_bind_all_interfaces for development servers
+]
+
+# Test severity levels to include
+tests = ['B', 'HIGH', 'MEDIUM']
+
+# Report format
+format = 'txt'
+
+# Confidence levels to report
+confidence = ['HIGH', 'MEDIUM']
+
+# Custom rules for financial applications
+[bandit.plugins]
+
+# Skip certain files from specific checks
+[bandit.assert_used]
+skips = ['**/test_*.py', '**/tests/*.py']
+
+[bandit.hardcoded_password_string]
+# Allow certain patterns that are not actual passwords
+word_list = [
+    'password',
+    'secret',
+    'token',
+    'key',
+    'api_key',
+    'private_key'
+]
+
+[bandit.hardcoded_password_funcarg]
+# Skip hardcoded password detection for test functions
+skips = ['**/test_*.py', '**/tests/*.py']
+
+[bandit.try_except_pass]
+# Allow pass in except blocks for specific cases
+skips = ['**/tests/*.py']
+
+[bandit.subprocess_popen_with_shell_equals_true]
+# Allow shell=True in specific controlled cases
+skips = ['scripts/*.py']
