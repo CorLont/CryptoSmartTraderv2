@@ -1,78 +1,106 @@
 # CryptoSmartTrader V2
 
-A sophisticated multi-agent cryptocurrency trading intelligence system with institutional-grade analysis capabilities.
+Een geavanceerd multi-agent cryptocurrency trading intelligence systeem met institutionele analysecapaciteiten.
 
-## 🚀 Quick Start
+## 🚀 Quick Start (60 seconden)
 
-### 1. Environment Setup
-Copy the example environment file and configure your settings:
+### Replit Deployment (Aanbevolen)
 ```bash
+# Automatische multi-service startup met UV
+uv sync && (uv run python api/health_endpoint.py & uv run python metrics/metrics_server.py & uv run streamlit run app_fixed_all_issues.py --server.port 5000 --server.headless true --server.address 0.0.0.0 & wait)
+```
+
+### Lokale Development
+```bash
+# 1. Environment configuratie
 cp .env.example .env
-# Edit .env with your actual configuration
+# Voeg je API keys toe: KRAKEN_API_KEY, OPENAI_API_KEY
+
+# 2. Start alle services
+python start_multi_service.py
+
+# 3. Toegang tot het systeem
+# Dashboard: http://localhost:5000
+# API: http://localhost:8001/api/docs  
+# Metrics: http://localhost:8000/metrics
 ```
 
-### 2. OpenAI API Key (Optional)
-For advanced sentiment analysis, add your OpenAI API key:
-- Get your API key from https://platform.openai.com
-- Add it to your `.env` file: `OPENAI_API_KEY=your_key_here`
-- The system works without this but has limited sentiment analysis
-
-### 3. Start the Application
-The system automatically starts when you open this project. Access it at:
-- **Main Dashboard:** http://localhost:5000
-- **API Documentation:** http://localhost:8001/docs (when API server is running)
-- **Metrics:** http://localhost:8000 (when Prometheus is enabled)
-
-## 📊 Features
-
-### Multi-Agent Intelligence System
-- **Sentiment Agent:** Analyzes cryptocurrency news and social media
-- **Technical Agent:** Calculates 50+ technical indicators
-- **ML Predictor:** Machine learning price predictions (1h, 4h, 1d, 7d, 30d)
-- **Backtest Agent:** Historical strategy validation  
-- **Trade Executor:** Risk-managed signal generation
-- **Whale Detector:** Large transaction monitoring
-
-### Advanced Performance Features (Nieuwe Verbeteringen)
-- **Performance Optimizer:** Real-time system monitoring with automatic optimization
-- **Smart Error Handling:** Advanced error recovery with registered strategies  
-- **Rate Limiting:** Intelligent API rate limiting with priority handling
-- **Config Optimization:** Automatic configuration tuning based on performance
-- **System Monitoring:** Complete performance dashboard met Nederlandse interface
-
-### Professional Architecture
-- **Dependency Injection:** Clean, testable architecture
-- **Type Safety:** Full type hints and validation
-- **Async Processing:** High-performance concurrent operations
-- **Structured Logging:** JSON logs with rotation
-- **Metrics Monitoring:** Prometheus integration
-- **Input Validation:** Secure request processing
-
-## 🎯 How to Use
-
-### Web Dashboard
-1. Navigate to the **Main Dashboard** for market overview
-2. Check **Agent Dashboard** for individual agent performance  
-3. Use **Portfolio Dashboard** for position tracking
-4. Monitor system health in the sidebar
-
-### REST API
-Start the API server:
+### Service Status Controle
 ```bash
-python api/main.py
+# Snelle health check
+python test_replit_services.py
+
+# Uitgebreide dagelijkse controle
+python scripts/operations/daily_health_check.py
 ```
 
-Key endpoints:
-- `GET /health` - System health status
-- `POST /api/v1/market-data` - Get market data
-- `POST /api/v1/predictions` - ML price predictions
-- `POST /api/v1/signals` - Trading signals
-- `GET /docs` - Interactive API documentation
+## 🎯 Enterprise Features
 
-### Configuration
-The system uses environment variables for configuration:
-- `LOG_LEVEL` - Logging level (INFO, DEBUG, ERROR)
-- `ENABLE_PROMETHEUS` - Enable metrics collection
+### Multi-Agent Intelligence Platform (8 Agents)
+- **📊 Data Collector:** Real-time marktdata van 471+ cryptocurrencies
+- **💭 Sentiment Agent:** AI-powered news en social media analyse  
+- **📈 Technical Agent:** 50+ technische indicatoren met TA-Lib
+- **🤖 ML Predictor:** Deep learning voorspellingen (5 tijdhorizonten)
+- **🐋 Whale Detector:** Detectie van grote transacties en market movers
+- **⚖️ Risk Manager:** Enterprise risicobeheer met 80% confidence gates
+- **💼 Portfolio Optimizer:** Kelly criterion + uncertainty-aware allocatie
+- **🏥 Health Monitor:** Real-time systeemmonitoring met GO/NO-GO gates
+
+### Enterprise Architecture & Operations
+- **Zero-Tolerance Data Integrity:** Alleen authentieke data, geen fallbacks
+- **Process Isolation:** Complete agent scheiding voor fault tolerance  
+- **UV-based Deployment:** 10x snellere dependency management
+- **Prometheus Metrics:** Enterprise monitoring met SLOs en alerting
+- **Comprehensive Runbooks:** Incident response, backup/recovery procedures
+- **Architecture Decision Records:** Gedocumenteerde technische beslissingen
+
+### Production Ready Features
+- **🔄 Multi-Service Architecture:** Dashboard (5000), API (8001), Metrics (8000)
+- **📋 Operational Excellence:** Dagelijkse health checks, log cleanup, backup systeem
+- **🚨 Incident Response:** P0/P1/P2 procedures met escalatie protocols
+- **📊 SLO Monitoring:** 99.5% beschikbaarheid, <2s response times
+- **🛡️ Security:** API key management, secure logging, audit trails
+
+## 📋 Operations Manual
+
+### Daily Operations
+```bash
+# Dagelijkse health check (automatisch rapport)
+python scripts/operations/daily_health_check.py
+
+# Log cleanup (behoudt 30 dagen)
+python scripts/operations/cleanup_logs.py --days 30
+
+# System backup
+python scripts/operations/backup_system.py
+
+# Service restart (indien nodig)
+python start_multi_service.py
+```
+
+### Incident Response (Zie: docs/runbooks/INCIDENT_RESPONSE.md)
+```bash
+# P0 Critical: System down
+pkill -f streamlit && python start_multi_service.py
+
+# P1 High: Service degraded  
+python scripts/diagnose_errors.py --last-hour
+
+# P2 Medium: Performance issues
+python scripts/performance_profile.py --optimize
+```
+
+### Monitoring & Metrics
+- **Health Status:** http://localhost:8001/health/detailed
+- **Prometheus Metrics:** http://localhost:8000/metrics  
+- **Service Logs:** logs/app.log (geroteerd dagelijks)
+- **Performance Dashboard:** Streamlit interface met real-time metrics
+
+### Architecture & Documentation
+- **System Architecture:** docs/ARCHITECTURE_DIAGRAMS.md
+- **Decision Records:** docs/ADR_RECORDS.md  
+- **Complete Operations Guide:** README_CONSOLIDATED.md
+- **Multi-Service Config:** REPLIT_MULTI_SERVICE_CONFIG.md
 - `SENTIMENT_ANALYSIS_ENABLED` - Enable sentiment analysis
 - `ML_PREDICTION_ENABLED` - Enable ML predictions
 
