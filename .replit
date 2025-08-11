@@ -28,6 +28,10 @@ args = "FixedApp"
 task = "workflow.run"
 args = "ComprehensiveAnalysis"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "UltimateAnalysis"
+
 [[workflows.workflow]]
 name = "TestApp"
 author = "agent"
@@ -55,6 +59,15 @@ task = "shell.exec"
 args = "streamlit run start_comprehensive_analysis.py --server.port 5002"
 waitForPort = 5002
 
+[[workflows.workflow]]
+name = "UltimateAnalysis"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run ultimate_analysis_dashboard.py --server.port 5003"
+waitForPort = 5003
+
 [workflows.workflow.metadata]
 outputType = "webview"
 
@@ -69,6 +82,10 @@ externalPort = 3000
 [[ports]]
 localPort = 5002
 externalPort = 3001
+
+[[ports]]
+localPort = 5003
+externalPort = 3002
 
 [agent]
 integrations = ["web_scraper==1.0.0"]

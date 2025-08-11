@@ -387,12 +387,41 @@ def render_ai_predictions():
 
 def main():
     """FIXED: Main function with proper error handling and no side effects"""
-    st.title("🚀 CryptoSmartTrader V2 - All Issues Fixed")
-    st.markdown("### Enterprise-Grade Code Quality Implemented")
+    st.title("🚀 CryptoSmartTrader V2 - Complete Analysis System")
+    st.markdown("### Advanced Cryptocurrency Trading Intelligence")
+    
+    # GROTE START ANALYSE SECTIE
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                padding: 2rem; border-radius: 15px; color: white; margin: 2rem 0; text-align: center;">
+        <h2>🎯 START UITGEBREIDE ANALYSE</h2>
+        <p>Comprehensive analysis van alle cryptocurrencies met ML predictions, sentiment en whale activity</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("🚀 START VOLLEDIGE ANALYSE", type="primary", use_container_width=True):
+            st.session_state['analysis_started'] = True
+            
+    with col2:
+        if st.button("⚡ QUICK SCAN (30 sec)", use_container_width=True):
+            st.session_state['quick_scan'] = True
+            
+    with col3:
+        if st.button("🐋 WHALE ANALYSIS", use_container_width=True):
+            st.session_state['whale_focus'] = True
     
     # FIXED: Initialize session state consistently
     if 'system_checked' not in st.session_state:
         st.session_state.system_checked = False
+    if 'analysis_started' not in st.session_state:
+        st.session_state.analysis_started = False
+    if 'quick_scan' not in st.session_state:
+        st.session_state.quick_scan = False
+    if 'whale_focus' not in st.session_state:
+        st.session_state.whale_focus = False
     
     # System status check
     try:
@@ -432,17 +461,27 @@ def main():
             for fix in fixes:
                 st.success(f"✅ {fix}")
         
-        # Main application tabs
-        tab1, tab2, tab3 = st.tabs(["📊 Market", "🤖 Predictions", "⚙️ Status"])
-        
-        with tab1:
-            render_market_overview()
-        
-        with tab2:
-            render_ai_predictions()
-        
-        with tab3:
-            render_system_status()
+        # Check if analysis was started
+        if st.session_state.analysis_started or st.session_state.quick_scan or st.session_state.whale_focus:
+            st.markdown("---")
+            render_comprehensive_analysis()
+        else:
+            # Show quick overview
+            st.markdown("---")
+            st.header("⚡ Quick System Overview")
+            render_quick_overview()
+            
+            # Main application tabs
+            tab1, tab2, tab3 = st.tabs(["📊 Market", "🤖 Predictions", "⚙️ Status"])
+            
+            with tab1:
+                render_market_overview()
+            
+            with tab2:
+                render_ai_predictions()
+            
+            with tab3:
+                render_system_status()
     
     # FIXED: Single except block with proper error context
     except Exception as e:
@@ -452,6 +491,177 @@ def main():
         # Still show basic status on error
         st.subheader("System Status (Error Mode)")
         render_system_status()
+
+def render_quick_overview():
+    """Quick system overview"""
+    pred_data = SystemStatusChecker.check_predictions()
+    
+    if pred_data['available']:
+        try:
+            predictions_file = Path("exports/production/predictions.csv")
+            if predictions_file.exists():
+                df = pd.read_csv(predictions_file)
+                
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    st.metric("Total Coins", len(df))
+                
+                with col2:
+                    gate_passed = len(df[df['gate_passed'] == True])
+                    st.metric("80% Gate Passed", gate_passed)
+                
+                with col3:
+                    avg_conf = df['max_confidence'].mean()
+                    st.metric("Avg Confidence", f"{avg_conf:.3f}")
+                
+                with col4:
+                    whale_count = len(df[df['whale_activity_detected'] == True])
+                    st.metric("Whale Activity", whale_count)
+                
+                # Top 3 opportunities
+                st.subheader("🎯 Top 3 Quick Opportunities")
+                high_conf = df[df['gate_passed'] == True]
+                if len(high_conf) > 0:
+                    top_3 = high_conf.nlargest(3, 'expected_return_pct')
+                    for idx, row in top_3.iterrows():
+                        whale_indicator = "🐋" if row['whale_activity_detected'] else ""
+                        st.write(f"{whale_indicator} **{row['coin']}**: {row['expected_return_pct']:.2f}% expected return")
+        except Exception as e:
+            st.error(f"Error loading quick overview: {e}")
+    else:
+        st.info("No predictions available for quick overview")
+
+def render_comprehensive_analysis():
+    """Comprehensive analysis based on user selection"""
+    
+    # Reset button
+    if st.button("🔄 Back to Dashboard"):
+        st.session_state.analysis_started = False
+        st.session_state.quick_scan = False
+        st.session_state.whale_focus = False
+        st.rerun()
+    
+    try:
+        predictions_file = Path("exports/production/predictions.csv")
+        if not predictions_file.exists():
+            st.error("Predictions data niet beschikbaar - run generate_final_predictions.py")
+            return
+        
+        df = pd.read_csv(predictions_file)
+        high_conf = df[df['gate_passed'] == True]
+        
+        if st.session_state.analysis_started:
+            st.header("🚀 VOLLEDIGE COMPREHENSIVE ANALYSE")
+            
+            # Comprehensive overview
+            st.subheader("📊 Complete System Overview")
+            col1, col2, col3, col4, col5 = st.columns(5)
+            
+            with col1:
+                st.metric("Total Cryptocurrencies", len(df))
+            with col2:
+                gate_pct = (len(high_conf)/len(df)*100) if len(df) > 0 else 0
+                st.metric("80% Confidence Gate", f"{len(high_conf)}", f"{gate_pct:.1f}% passed")
+            with col3:
+                st.metric("Avg Confidence", f"{df['max_confidence'].mean():.3f}")
+            with col4:
+                whale_count = len(df[df['whale_activity_detected'] == True])
+                st.metric("Whale Activity", f"{whale_count}", f"{whale_count/len(df)*100:.1f}% of coins")
+            with col5:
+                positive = len(df[df['expected_return_pct'] > 0])
+                st.metric("Positive Predictions", f"{positive}", f"{positive/len(df)*100:.1f}%")
+            
+            # Top opportunities
+            st.subheader("🎯 Top Trading Opportunities")
+            
+            strong_buys = high_conf[
+                (high_conf['expected_return_pct'] > 5) & 
+                (high_conf['max_confidence'] > 0.85)
+            ].sort_values('expected_return_pct', ascending=False)
+            
+            st.write(f"**{len(strong_buys)} Strong Buy Opportunities:**")
+            
+            for idx, row in strong_buys.head(15).iterrows():
+                whale_indicator = "🐋" if row['whale_activity_detected'] else ""
+                
+                with st.expander(f"{whale_indicator} {row['coin']} - {row['expected_return_pct']:.2f}% Expected Return"):
+                    col_a, col_b, col_c = st.columns(3)
+                    
+                    with col_a:
+                        st.write("**Market Data**")
+                        st.write(f"Price: ${row['price']:.6f}")
+                        st.write(f"24h Change: {row['change_24h']:.2f}%")
+                        st.write(f"Volume: ${row['volume_24h']:,.0f}")
+                    
+                    with col_b:
+                        st.write("**ML Predictions**")
+                        st.write(f"1h: {row['expected_return_1h']:.2f}%")
+                        st.write(f"24h: {row['expected_return_24h']:.2f}%")
+                        st.write(f"7d: {row['expected_return_168h']:.2f}%")
+                        st.write(f"30d: {row['expected_return_720h']:.2f}%")
+                    
+                    with col_c:
+                        st.write("**Intelligence**")
+                        st.write(f"Confidence: {row['max_confidence']:.3f}")
+                        st.write(f"Sentiment: {row['sentiment_label']}")
+                        st.write(f"Whale: {'YES' if row['whale_activity_detected'] else 'NO'}")
+            
+            # Whale analysis
+            whale_coins = df[df['whale_activity_detected'] == True]
+            if len(whale_coins) > 0:
+                st.subheader(f"🐋 Whale Activity Analysis ({len(whale_coins)} coins)")
+                
+                whale_sorted = whale_coins.sort_values('whale_score', ascending=False)
+                st.write("**Top Whale Opportunities:**")
+                for idx, row in whale_sorted.head(10).iterrows():
+                    st.write(f"🐋 **{row['coin']}**: {row['expected_return_pct']:.2f}% return (Whale Score: {row['whale_score']:.2f})")
+        
+        elif st.session_state.quick_scan:
+            st.header("⚡ QUICK SCAN RESULTS")
+            
+            # Quick metrics
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Analyzed", len(df))
+            with col2:
+                st.metric("High Confidence", len(high_conf))
+            with col3:
+                whale_count = len(df[df['whale_activity_detected'] == True])
+                st.metric("Whale Activity", whale_count)
+            
+            # Quick top picks
+            if len(high_conf) > 0:
+                strong_buys = high_conf[
+                    (high_conf['expected_return_pct'] > 5) & 
+                    (high_conf['max_confidence'] > 0.85)
+                ].sort_values('expected_return_pct', ascending=False)
+                
+                st.subheader(f"🎯 Top {min(10, len(strong_buys))} Quick Picks")
+                
+                for idx, row in strong_buys.head(10).iterrows():
+                    whale_indicator = "🐋" if row['whale_activity_detected'] else ""
+                    st.write(f"{whale_indicator} **{row['coin']}**: {row['expected_return_pct']:.2f}% return (confidence: {row['max_confidence']:.3f})")
+        
+        elif st.session_state.whale_focus:
+            st.header("🐋 WHALE FOCUS ANALYSIS")
+            
+            whale_coins = df[df['whale_activity_detected'] == True]
+            
+            if len(whale_coins) > 0:
+                st.metric("Coins with Whale Activity", len(whale_coins))
+                st.metric("Average Whale Return", f"{whale_coins['expected_return_pct'].mean():.2f}%")
+                
+                st.subheader("Top Whale Opportunities")
+                whale_sorted = whale_coins.sort_values(['whale_score', 'expected_return_pct'], ascending=False)
+                
+                for idx, row in whale_sorted.head(15).iterrows():
+                    st.write(f"🐋 **{row['coin']}**: {row['expected_return_pct']:.2f}% return | Whale Score: {row['whale_score']:.2f} | Confidence: {row['max_confidence']:.3f}")
+            else:
+                st.info("Geen significante whale activity gedetecteerd in current dataset")
+        
+    except Exception as e:
+        st.error(f"Error in comprehensive analysis: {e}")
 
 if __name__ == "__main__":
     main()
