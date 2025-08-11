@@ -73,6 +73,22 @@ class CorrelationFilter(logging.Filter):
         return True
 
 
+def setup_simple_logging(level: str = "INFO") -> None:
+    """Eenvoudige, consistente logging-setup (stdout, niveau en format) - PR2 Style"""
+    root = logging.getLogger()
+    # verwijder bestaande handlers
+    for h in list(root.handlers):
+        root.removeHandler(h)
+
+    handler = logging.StreamHandler(sys.stdout)
+    fmt = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+    datefmt = "%Y-%m-%dT%H:%M:%S"
+    handler.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
+
+    root.addHandler(handler)
+    root.setLevel(level.upper())
+
+
 def setup_logging(
     level: str = "INFO",
     log_dir: Path = Path("logs"),

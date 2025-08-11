@@ -7,8 +7,8 @@ import os
 import sys
 from typing import Optional, List, Dict, Any
 from pathlib import Path
-from pydantic import BaseSettings, Field, validator, ValidationError
-from pydantic.env_settings import SettingsSourceCallable
+from pydantic_settings import BaseSettings
+from pydantic import Field, validator, ValidationError
 import logging
 
 
@@ -21,9 +21,11 @@ class Settings(BaseSettings):
     PERFORMANCE_MODE: bool = Field(default=True, description="Enable performance optimizations")
     
     # === Service Configuration ===
+    API_HOST: str = Field(default="0.0.0.0", description="Bind host voor API")
     DASHBOARD_PORT: int = Field(default=5000, description="Streamlit dashboard port")
     API_PORT: int = Field(default=8001, description="FastAPI service port") 
     METRICS_PORT: int = Field(default=8000, description="Prometheus metrics port")
+    DASH_PORT: int = Field(default=5000, description="Poort voor dashboard (alias)")  # PR2 compatibility
     
     # === API Keys (Required for Production) ===
     KRAKEN_API_KEY: Optional[str] = Field(default=None, description="Kraken exchange API key")
@@ -58,21 +60,13 @@ class Settings(BaseSettings):
     HEALTH_CHECK_INTERVAL: int = Field(default=30, description="Health check interval (seconds)")
     LOG_ROTATION_DAYS: int = Field(default=30, description="Log retention days")
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        validate_assignment = True
-        
-        @classmethod
-        def customise_sources(
-            cls,
-            init_settings: SettingsSourceCallable,
-            env_settings: SettingsSourceCallable,
-            file_secret_settings: SettingsSourceCallable,
-        ) -> tuple[SettingsSourceCallable, ...]:
-            """Customize settings loading order: env vars > .env file > defaults"""
-            return env_settings, init_settings
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "validate_assignment": True,
+        "extra": "ignore"
+    }
     
     # === Validators ===
     

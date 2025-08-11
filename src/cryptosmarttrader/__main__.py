@@ -11,8 +11,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.cryptosmarttrader.config import load_and_validate_settings
-from src.cryptosmarttrader.logging import setup_logging, get_logger, LogContext
+from src.cryptosmarttrader.config import load_and_validate_settings, Settings
+from src.cryptosmarttrader.logging import setup_logging, setup_simple_logging, get_logger, LogContext
 import logging
 
 
@@ -135,5 +135,22 @@ def main():
         sys.exit(1)
 
 
+def main_simple() -> None:
+    """PR2 Style Main Entry Point - Simple and Clean"""
+    settings = Settings()
+    setup_simple_logging(settings.LOG_LEVEL)
+    
+    # Hier kun je start-logica plaatsen (API, dashboard, agents) obv toggles
+    # Voor nu alleen een startmelding:
+    import logging
+    log = logging.getLogger(__name__)
+    log.info("CryptoSmartTrader gestart met API op %s:%s (dashboard %s)", 
+             settings.API_HOST, settings.API_PORT, settings.DASH_PORT)
+
+
 if __name__ == "__main__":
-    main()
+    # Use simple main for PR2 testing
+    if "--simple" in sys.argv:
+        main_simple()
+    else:
+        main()
