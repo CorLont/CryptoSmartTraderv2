@@ -125,10 +125,39 @@ def render_dashboard():
             
             if not filtered_df.empty:
                 st.subheader("🎯 Top Opportunities")
-                display_df = filtered_df[['coin', 'pred_720h', 'conf_720h']].head(10)
+                
+                # FIXED: Add sentiment and whale detection to display
+                display_cols = ['coin', 'pred_720h', 'conf_720h']
+                
+                # Add sentiment columns if available
+                if 'sentiment_score' in filtered_df.columns:
+                    display_cols.append('sentiment_score')
+                if 'sentiment_label' in filtered_df.columns:
+                    display_cols.append('sentiment_label')
+                    
+                # Add whale detection columns if available  
+                if 'whale_activity_detected' in filtered_df.columns:
+                    display_cols.append('whale_activity_detected')
+                if 'whale_score' in filtered_df.columns:
+                    display_cols.append('whale_score')
+                
+                display_df = filtered_df[display_cols].head(10)
                 display_df['pred_720h'] = display_df['pred_720h'].apply(lambda x: f"{x:.2%}")
                 display_df['conf_720h'] = display_df['conf_720h'].apply(lambda x: f"{x:.1%}")
+                
+                # Format additional columns
+                if 'sentiment_score' in display_df.columns:
+                    display_df['sentiment_score'] = display_df['sentiment_score'].apply(lambda x: f"{x:.2f}")
+                if 'whale_score' in display_df.columns:
+                    display_df['whale_score'] = display_df['whale_score'].apply(lambda x: f"{x:.1f}")
+                
                 st.dataframe(display_df, use_container_width=True)
+                
+                # FIXED: Add whale detection alerts
+                if 'whale_activity_detected' in filtered_df.columns:
+                    whale_alerts = filtered_df[filtered_df['whale_activity_detected'] == True]
+                    if not whale_alerts.empty:
+                        st.warning(f"🐋 Whale Activity Detected: {len(whale_alerts)} coins with large transaction risk")
             else:
                 st.info("Geen opportunities >= 80% confidence")
         
@@ -157,13 +186,38 @@ def render_ai_predictions():
             st.metric(f"Predictions ≥{threshold:.0%}", len(filtered))
             
             if not filtered.empty:
-                # Display top predictions
+                # FIXED: Enhanced display with sentiment and whale data
                 display_cols = ['coin', pred_col, conf_col]
+                
+                # Add sentiment and whale columns if available
+                additional_cols = ['sentiment_score', 'sentiment_label', 'whale_activity_detected', 'whale_score']
+                for col in additional_cols:
+                    if col in filtered.columns:
+                        display_cols.append(col)
+                
                 display_df = filtered[display_cols].head(20)
                 display_df[pred_col] = display_df[pred_col].apply(lambda x: f"{x:.2%}")  
                 display_df[conf_col] = display_df[conf_col].apply(lambda x: f"{x:.1%}")
                 
+                # Format additional columns
+                if 'sentiment_score' in display_df.columns:
+                    display_df['sentiment_score'] = display_df['sentiment_score'].apply(lambda x: f"{x:.2f}")
+                if 'whale_score' in display_df.columns:
+                    display_df['whale_score'] = display_df['whale_score'].apply(lambda x: f"{x:.1f}")
+                
                 st.dataframe(display_df, use_container_width=True)
+                
+                # FIXED: Sentiment analysis summary
+                if 'sentiment_label' in filtered.columns:
+                    sentiment_counts = filtered['sentiment_label'].value_counts()
+                    st.subheader("📊 Sentiment Analysis")
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Bullish", sentiment_counts.get('bullish', 0))
+                    with col2:
+                        st.metric("Neutral", sentiment_counts.get('neutral', 0))
+                    with col3:
+                        st.metric("Bearish", sentiment_counts.get('bearish', 0))
                 
                 # Chart
                 chart_df = filtered.head(10)

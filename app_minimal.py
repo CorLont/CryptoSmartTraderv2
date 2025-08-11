@@ -305,16 +305,34 @@ def render_trading_opportunities(min_return, confidence_filter, strict_mode=True
         table_data = []
         
         for coin in filtered:
-            table_data.append({
+            # FIXED: Add sentiment and whale detection to trading opportunities
+            row_data = {
                 'Coin': coin['symbol'],
                 'Pred 7d': f"{coin['expected_7d']:+.1f}%",
                 'Pred 30d': f"{coin['expected_30d']:+.1f}%", 
                 'Conf': f"{coin['score']:.0f}%",
                 'Regime': coin.get('regime', 'unknown'),
-                'Top Drivers (SHAP)': coin.get('top_drivers', 'Technical momentum, Market conditions'),
                 'Prijs': f"${coin['current_price']:.4f}",
                 'Volume': f"${coin.get('volume_24h', 0):,.0f}"
-            })
+            }
+            
+            # Add sentiment if available
+            if 'sentiment_score' in coin:
+                row_data['Sentiment'] = f"{coin['sentiment_score']:.2f}"
+            if 'sentiment_label' in coin:
+                sentiment_emoji = {'bullish': '🐂', 'bearish': '🐻', 'neutral': '➖'}
+                row_data['📊'] = sentiment_emoji.get(coin['sentiment_label'], '❓')
+            
+            # Add whale detection if available
+            if 'whale_activity_detected' in coin:
+                row_data['🐋'] = '⚠️' if coin['whale_activity_detected'] else '✅'
+            if 'whale_score' in coin:
+                row_data['Whale Risk'] = f"{coin['whale_score']:.1f}"
+            
+            # Keep SHAP drivers at end for width
+            row_data['Top Drivers (SHAP)'] = coin.get('top_drivers', 'Technical momentum, Market conditions')
+            
+            table_data.append(row_data)
         
         # Sort by pred_30d (descending) as specified
         table_data = sorted(table_data, key=lambda x: float(x['Pred 30d'].replace('%', '').replace('+', '')), reverse=True)
