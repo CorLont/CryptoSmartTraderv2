@@ -1,326 +1,247 @@
-#!/usr/bin/env python3
 """
-Enterprise Configuration Management - Pydantic Settings
-Centralized configuration with type validation, defaults, and startup logging
+Enterprise Configuration Management with Fail-Fast Validation
+Centralized Pydantic Settings with type validation and startup checks
 """
 
 import os
-import logging
-from typing import Optional, List, Literal
+import sys
+from typing import Optional, List, Dict, Any
 from pathlib import Path
-
-try:
-    from pydantic_settings import BaseSettings
-    from pydantic import Field, SecretStr, validator
-    PYDANTIC_V2 = True
-except ImportError:
-    try:
-        from pydantic import BaseSettings, Field, SecretStr, validator
-        PYDANTIC_V2 = False
-    except ImportError:
-        raise ImportError("Pydantic is required for configuration management")
+from pydantic import BaseSettings, Field, validator, ValidationError
+from pydantic.env_settings import SettingsSourceCallable
+import logging
 
 
 class Settings(BaseSettings):
-    """
-    Enterprise Configuration Settings
-    Single source of truth for all environment variables with type validation
-    """
+    """Enterprise Configuration with Fail-Fast Validation"""
     
-    # === CORE APPLICATION ===
-    APP_NAME: str = "CryptoSmartTrader V2"
-    APP_VERSION: str = "2.0.0"
-    ENVIRONMENT: Literal["development", "staging", "production"] = Field(default="development")
-    DEBUG: bool = True
-    LOG_LEVEL: str = "INFO"
+    # === Core System Settings ===
+    LOG_LEVEL: str = Field(default="INFO", description="Logging level")
+    DEBUG_MODE: bool = Field(default=False, description="Enable debug mode")
+    PERFORMANCE_MODE: bool = Field(default=True, description="Enable performance optimizations")
     
-    # === API CONFIGURATION ===
-    API_HOST: str = "0.0.0.0"
-    API_PORT: int = 8001
-    DASHBOARD_PORT: int = 5000
-    METRICS_PORT: int = 8000
+    # === Service Configuration ===
+    DASHBOARD_PORT: int = Field(default=5000, description="Streamlit dashboard port")
+    API_PORT: int = Field(default=8001, description="FastAPI service port") 
+    METRICS_PORT: int = Field(default=8000, description="Prometheus metrics port")
     
-    # === EXCHANGE API KEYS ===
-    KRAKEN_API_KEY: Optional[SecretStr] = None
-    KRAKEN_API_SECRET: Optional[SecretStr] = None
-    BINANCE_API_KEY: Optional[SecretStr] = None
-    BINANCE_API_SECRET: Optional[SecretStr] = None
+    # === API Keys (Required for Production) ===
+    KRAKEN_API_KEY: Optional[str] = Field(default=None, description="Kraken exchange API key")
+    KRAKEN_SECRET: Optional[str] = Field(default=None, description="Kraken exchange secret")
+    OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API key for sentiment analysis")
     
-    # === AI/ML SERVICES ===
-    OPENAI_API_KEY: Optional[SecretStr] = None
+    # === Data & Storage ===
+    DATA_DIR: Path = Field(default=Path("data"), description="Data storage directory")
+    CACHE_DIR: Path = Field(default=Path("cache"), description="Cache storage directory")
+    MODELS_DIR: Path = Field(default=Path("models"), description="ML models directory")
+    LOGS_DIR: Path = Field(default=Path("logs"), description="Logs directory")
     
-    # === DATABASE ===
-    DATABASE_URL: str = "sqlite:///cryptotrader.db"
-    REDIS_URL: Optional[str] = None
+    # === Trading Configuration ===
+    CONFIDENCE_THRESHOLD: float = Field(default=0.8, description="Minimum confidence threshold (80%)")
+    MAX_POSITIONS: int = Field(default=10, description="Maximum concurrent positions")
+    RISK_LIMIT_PERCENT: float = Field(default=2.0, description="Maximum risk per trade (%)")
     
-    # === MONITORING & METRICS ===
-    ENABLE_PROMETHEUS: bool = True
-    PROMETHEUS_PORT: int = 8000
-    PROMETHEUS_HOST: str = "0.0.0.0"
+    # === Performance Settings ===
+    CACHE_SIZE_MB: int = Field(default=500, description="Cache size limit in MB")
+    UPDATE_INTERVAL_SECONDS: int = Field(default=5, description="Data update interval")
+    MAX_WORKERS: int = Field(default=4, description="Maximum worker threads")
     
-    # === LOGGING ===
-    LOG_FORMAT: Literal["json", "text"] = "json"
-    LOG_FILE: Optional[str] = None
-    ENABLE_FILE_LOGGING: bool = False
+    # === Feature Toggles ===
+    ENABLE_PROMETHEUS: bool = Field(default=True, description="Enable Prometheus metrics")
+    ENABLE_SENTIMENT: bool = Field(default=True, description="Enable sentiment analysis")
+    ENABLE_WHALE_DETECTION: bool = Field(default=True, description="Enable whale detection")
+    ENABLE_ML_PREDICTIONS: bool = Field(default=True, description="Enable ML predictions")
+    ENABLE_PAPER_TRADING: bool = Field(default=True, description="Enable paper trading mode")
     
-    # === TRADING ===
-    PAPER_TRADING: bool = True
-    TRADING_ENABLED: bool = False
-    MAX_POSITION_SIZE: int = 1000
-    RISK_PERCENTAGE: float = 0.02
+    # === Security & Monitoring ===
+    RATE_LIMIT_REQUESTS: int = Field(default=100, description="API rate limit per minute")
+    HEALTH_CHECK_INTERVAL: int = Field(default=30, description="Health check interval (seconds)")
+    LOG_ROTATION_DAYS: int = Field(default=30, description="Log retention days")
     
-    # === ML/AI ===
-    MODEL_PATH: str = "./models"
-    TORCH_DEVICE: str = "auto"
-    ENABLE_GPU: bool = True
-    MODEL_TRAINING_ENABLED: bool = True
-    AUTO_RETRAIN_ENABLED: bool = True
-    RETRAIN_INTERVAL_HOURS: int = 24
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = True
+        validate_assignment = True
+        
+        @classmethod
+        def customise_sources(
+            cls,
+            init_settings: SettingsSourceCallable,
+            env_settings: SettingsSourceCallable,
+            file_secret_settings: SettingsSourceCallable,
+        ) -> tuple[SettingsSourceCallable, ...]:
+            """Customize settings loading order: env vars > .env file > defaults"""
+            return env_settings, init_settings
     
-    # === RATE LIMITING ===
-    RATE_LIMIT_ENABLED: bool = True
-    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 100
-    
-    # === SECURITY ===
-    SECRET_KEY: SecretStr = Field(default="dev-secret-key-change-in-production")
-    JWT_SECRET_KEY: Optional[SecretStr] = None
-    ENCRYPTION_ENABLED: bool = True
-    
-    # === EMAIL NOTIFICATIONS ===
-    EMAIL_ENABLED: bool = False
-    SMTP_HOST: Optional[str] = None
-    SMTP_PORT: int = 587
-    SMTP_USERNAME: Optional[str] = None
-    SMTP_PASSWORD: Optional[SecretStr] = None
-    
-    # === DEVELOPMENT ===
-    MOCK_EXCHANGES: bool = False
-    DEMO_MODE: bool = False
-    ENABLE_CORS: bool = True
-    
-    # === DATA RETENTION ===
-    DATA_RETENTION_DAYS: int = 30
-    BACKUP_ENABLED: bool = True
-    BACKUP_RETENTION_DAYS: int = 365
-    
-    # === FEATURE FLAGS ===
-    ENABLE_SENTIMENT_ANALYSIS: bool = True
-    ENABLE_WHALE_DETECTION: bool = True
-    ENABLE_TECHNICAL_ANALYSIS: bool = True
-    ENABLE_NEWS_ANALYSIS: bool = True
-    
-    if PYDANTIC_V2:
-        model_config = {
-            "env_file": ".env",
-            "env_file_encoding": "utf-8",
-            "case_sensitive": True,
-            "extra": "ignore",
-            "validate_assignment": True
-        }
-    else:
-        class Config:
-            env_file = ".env"
-            env_file_encoding = "utf-8"
-            case_sensitive = True
-            extra = "ignore"
-            validate_assignment = True
-    
-    @validator("ENVIRONMENT")
-    def validate_environment(cls, v):
-        """Validate environment setting"""
-        if v not in ["development", "staging", "production"]:
-            raise ValueError("ENVIRONMENT must be development, staging, or production")
-        return v
+    # === Validators ===
     
     @validator("LOG_LEVEL")
     def validate_log_level(cls, v):
-        """Validate log level"""
+        """Validate logging level"""
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if v.upper() not in valid_levels:
             raise ValueError(f"LOG_LEVEL must be one of {valid_levels}")
         return v.upper()
     
-    @validator("API_PORT", "DASHBOARD_PORT", "METRICS_PORT", "PROMETHEUS_PORT")
+    @validator("DASHBOARD_PORT", "API_PORT", "METRICS_PORT")
     def validate_ports(cls, v):
         """Validate port numbers"""
-        if not (1024 <= v <= 65535):
+        if not 1024 <= v <= 65535:
             raise ValueError("Port must be between 1024 and 65535")
         return v
     
-    @validator("RISK_PERCENTAGE")
-    def validate_risk_percentage(cls, v):
-        """Validate risk percentage"""
-        if not (0.0 < v <= 1.0):
-            raise ValueError("RISK_PERCENTAGE must be between 0.0 and 1.0")
+    @validator("CONFIDENCE_THRESHOLD")
+    def validate_confidence_threshold(cls, v):
+        """Validate confidence threshold"""
+        if not 0.5 <= v <= 1.0:
+            raise ValueError("CONFIDENCE_THRESHOLD must be between 0.5 and 1.0")
         return v
     
-    @validator("TRADING_ENABLED")
-    def validate_trading_safety(cls, v, values):
-        """Ensure trading safety in development"""
-        if v and values.get("ENVIRONMENT") == "development":
-            raise ValueError("TRADING_ENABLED cannot be True in development environment")
+    @validator("RISK_LIMIT_PERCENT")
+    def validate_risk_limit(cls, v):
+        """Validate risk limit percentage"""
+        if not 0.1 <= v <= 10.0:
+            raise ValueError("RISK_LIMIT_PERCENT must be between 0.1 and 10.0")
         return v
     
-    @validator("DATABASE_URL")
-    def validate_database_url(cls, v):
-        """Validate database URL format"""
-        if not v.startswith(("sqlite://", "postgresql://", "mysql://", "redis://")):
-            raise ValueError("DATABASE_URL must start with sqlite://, postgresql://, mysql://, or redis://")
-        return v
+    @validator("DATA_DIR", "CACHE_DIR", "MODELS_DIR", "LOGS_DIR")
+    def validate_directories(cls, v):
+        """Validate and create directories if needed"""
+        path = Path(v)
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+            return path
+        except Exception as e:
+            raise ValueError(f"Cannot create directory {path}: {e}")
     
-    def get_secret_value(self, secret: Optional[SecretStr]) -> Optional[str]:
-        """Safely get secret value"""
-        return secret.get_secret_value() if secret else None
-    
-    def is_production(self) -> bool:
-        """Check if running in production"""
-        return self.ENVIRONMENT == "production"
-    
-    def is_development(self) -> bool:
-        """Check if running in development"""
-        return self.ENVIRONMENT == "development"
-    
-    def validate_required_secrets(self) -> List[str]:
-        """Validate required secrets for the current environment"""
-        missing_secrets = []
+    def validate_startup_requirements(self) -> Dict[str, Any]:
+        """Validate critical startup requirements"""
+        issues = []
+        warnings = []
         
-        # Always required
-        if not self.get_secret_value(self.OPENAI_API_KEY):
-            missing_secrets.append("OPENAI_API_KEY")
+        # Check API keys for production features
+        if self.ENABLE_SENTIMENT and not self.OPENAI_API_KEY:
+            warnings.append("OPENAI_API_KEY missing - sentiment analysis will be limited")
         
-        # Required for production
-        if self.is_production():
-            if not self.get_secret_value(self.KRAKEN_API_KEY):
-                missing_secrets.append("KRAKEN_API_KEY")
-            if not self.get_secret_value(self.KRAKEN_API_SECRET):
-                missing_secrets.append("KRAKEN_API_SECRET")
-            if not self.get_secret_value(self.JWT_SECRET_KEY):
-                missing_secrets.append("JWT_SECRET_KEY")
+        if not self.KRAKEN_API_KEY or not self.KRAKEN_SECRET:
+            issues.append("KRAKEN_API_KEY and KRAKEN_SECRET required for live trading")
         
-        return missing_secrets
-    
-    def get_startup_config_summary(self) -> dict:
-        """Get non-sensitive configuration summary for startup logging"""
+        # Check directory permissions
+        for dir_name, dir_path in [
+            ("DATA_DIR", self.DATA_DIR),
+            ("CACHE_DIR", self.CACHE_DIR), 
+            ("MODELS_DIR", self.MODELS_DIR),
+            ("LOGS_DIR", self.LOGS_DIR)
+        ]:
+            if not dir_path.exists():
+                issues.append(f"{dir_name} does not exist: {dir_path}")
+            elif not os.access(dir_path, os.W_OK):
+                issues.append(f"{dir_name} is not writable: {dir_path}")
+        
+        # Check port availability
+        import socket
+        for port_name, port in [
+            ("DASHBOARD_PORT", self.DASHBOARD_PORT),
+            ("API_PORT", self.API_PORT),
+            ("METRICS_PORT", self.METRICS_PORT)
+        ]:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                if sock.connect_ex(('localhost', port)) == 0:
+                    warnings.append(f"{port_name} {port} is already in use")
+        
+        # Check system resources
+        import psutil
+        memory_gb = psutil.virtual_memory().total / (1024**3)
+        if memory_gb < 4:
+            warnings.append(f"Low system memory: {memory_gb:.1f}GB (recommended: 8GB+)")
+        
+        disk_gb = psutil.disk_usage('.').free / (1024**3)
+        if disk_gb < 10:
+            warnings.append(f"Low disk space: {disk_gb:.1f}GB (recommended: 50GB+)")
+        
         return {
-            "app": {
-                "name": self.APP_NAME,
-                "version": self.APP_VERSION,
-                "environment": self.ENVIRONMENT,
-                "debug": self.DEBUG
-            },
+            "critical_issues": issues,
+            "warnings": warnings,
+            "startup_ready": len(issues) == 0
+        }
+    
+    def get_summary(self) -> Dict[str, Any]:
+        """Get configuration summary for logging"""
+        return {
+            "version": "2.0.0",
+            "environment": "development" if self.DEBUG_MODE else "production",
             "services": {
-                "api_host": self.API_HOST,
-                "api_port": self.API_PORT,
-                "dashboard_port": self.DASHBOARD_PORT,
-                "metrics_port": self.METRICS_PORT
+                "dashboard": self.DASHBOARD_PORT,
+                "api": self.API_PORT, 
+                "metrics": self.METRICS_PORT
             },
             "features": {
                 "prometheus": self.ENABLE_PROMETHEUS,
-                "paper_trading": self.PAPER_TRADING,
-                "trading_enabled": self.TRADING_ENABLED,
-                "gpu_enabled": self.ENABLE_GPU,
-                "cors": self.ENABLE_CORS
-            },
-            "ml_features": {
-                "sentiment_analysis": self.ENABLE_SENTIMENT_ANALYSIS,
+                "sentiment": self.ENABLE_SENTIMENT,
                 "whale_detection": self.ENABLE_WHALE_DETECTION,
-                "technical_analysis": self.ENABLE_TECHNICAL_ANALYSIS,
-                "news_analysis": self.ENABLE_NEWS_ANALYSIS
+                "ml_predictions": self.ENABLE_ML_PREDICTIONS,
+                "paper_trading": self.ENABLE_PAPER_TRADING
             },
-            "integrations": {
-                "kraken_configured": bool(self.KRAKEN_API_KEY),
-                "binance_configured": bool(self.BINANCE_API_KEY),
-                "openai_configured": bool(self.OPENAI_API_KEY),
-                "redis_configured": bool(self.REDIS_URL),
-                "email_configured": self.EMAIL_ENABLED
+            "thresholds": {
+                "confidence": self.CONFIDENCE_THRESHOLD,
+                "risk_limit": self.RISK_LIMIT_PERCENT,
+                "max_positions": self.MAX_POSITIONS
             }
         }
 
 
-# Global settings instance with startup validation
-def create_settings() -> Settings:
-    """Create and validate settings instance"""
+def load_and_validate_settings() -> Settings:
+    """Load and validate settings with fail-fast behavior"""
     try:
+        # Load settings with Pydantic validation
         settings = Settings()
         
-        # Validate required secrets
-        missing_secrets = settings.validate_required_secrets()
-        if missing_secrets:
-            if settings.is_production():
-                raise ValueError(f"Missing required secrets in production: {missing_secrets}")
-            else:
-                logging.warning(f"Missing optional secrets in {settings.ENVIRONMENT}: {missing_secrets}")
+        # Perform startup validation
+        validation_result = settings.validate_startup_requirements()
         
+        # Log configuration summary
+        logger = logging.getLogger(__name__)
+        logger.info("Configuration loaded successfully")
+        logger.info(f"Settings summary: {settings.get_summary()}")
+        
+        # Handle validation results
+        if validation_result["warnings"]:
+            for warning in validation_result["warnings"]:
+                logger.warning(f"Configuration warning: {warning}")
+        
+        if validation_result["critical_issues"]:
+            for issue in validation_result["critical_issues"]:
+                logger.error(f"Configuration error: {issue}")
+            
+            logger.critical("Critical configuration issues detected - system cannot start")
+            sys.exit(1)
+        
+        logger.info("✅ Configuration validation passed - system ready to start")
         return settings
+        
+    except ValidationError as e:
+        print(f"❌ Configuration validation failed:")
+        for error in e.errors():
+            field = error.get("loc", ["unknown"])[0]
+            message = error.get("msg", "validation error")
+            print(f"  - {field}: {message}")
+        
+        print("\n💡 Check your .env file and ensure all required settings are properly configured")
+        sys.exit(1)
+        
     except Exception as e:
-        logging.error(f"Configuration validation failed: {e}")
-        raise
+        print(f"❌ Failed to load configuration: {e}")
+        sys.exit(1)
 
 
-def log_startup_config(settings: Settings):
-    """Log startup configuration (non-sensitive data only)"""
-    config_summary = settings.get_startup_config_summary()
-    
-    logger = logging.getLogger(__name__)
-    logger.info("=== CryptoSmartTrader V2 Configuration ===")
-    logger.info(f"Environment: {config_summary['app']['environment']}")
-    logger.info(f"Debug Mode: {config_summary['app']['debug']}")
-    logger.info(f"API Server: {config_summary['services']['api_host']}:{config_summary['services']['api_port']}")
-    logger.info(f"Dashboard: Port {config_summary['services']['dashboard_port']}")
-    logger.info(f"Metrics: Port {config_summary['services']['metrics_port']}")
-    
-    logger.info("=== Features Enabled ===")
-    for feature, enabled in config_summary['features'].items():
-        status = "✓" if enabled else "✗"
-        logger.info(f"{status} {feature.replace('_', ' ').title()}: {enabled}")
-    
-    logger.info("=== ML Features ===")
-    for feature, enabled in config_summary['ml_features'].items():
-        status = "✓" if enabled else "✗"
-        logger.info(f"{status} {feature.replace('_', ' ').title()}: {enabled}")
-    
-    logger.info("=== Integrations ===")
-    for integration, configured in config_summary['integrations'].items():
-        status = "✓" if configured else "✗"
-        logger.info(f"{status} {integration.replace('_', ' ').title()}: {configured}")
-    
-    logger.info("=== Configuration Complete ===")
+# Global settings instance (lazy loaded)
+_settings: Optional[Settings] = None
 
 
-# Global settings instance
-settings = create_settings()
-
-# Backward compatibility functions
-def get_env(key: str, default: str = "") -> str:
-    """Backward compatibility for os.environ.get()"""
-    return getattr(settings, key, default)
-
-def require_env(key: str) -> str:
-    """Backward compatibility for required env vars"""
-    value = getattr(settings, key, None)
-    if value is None:
-        raise ValueError(f"Required environment variable {key} is not set")
-    return value if not isinstance(value, SecretStr) else value.get_secret_value()
-
-
-if __name__ == "__main__":
-    # Test configuration
-    import json
-    
-    print("=== Testing Configuration ===")
-    test_settings = create_settings()
-    
-    print(f"Environment: {test_settings.ENVIRONMENT}")
-    print(f"Debug: {test_settings.DEBUG}")
-    print(f"API Port: {test_settings.API_PORT}")
-    print(f"Features enabled: {sum(1 for f in [test_settings.ENABLE_PROMETHEUS, test_settings.ENABLE_SENTIMENT_ANALYSIS, test_settings.ENABLE_WHALE_DETECTION])}")
-    
-    missing = test_settings.validate_required_secrets()
-    if missing:
-        print(f"Missing secrets: {missing}")
-    else:
-        print("All required secrets configured")
-    
-    print("\n=== Startup Config Summary ===")
-    summary = test_settings.get_startup_config_summary()
-    print(json.dumps(summary, indent=2))
+def get_settings() -> Settings:
+    """Get validated settings instance (singleton pattern)"""
+    global _settings
+    if _settings is None:
+        _settings = load_and_validate_settings()
+    return _settings
