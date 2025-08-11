@@ -1,6 +1,12 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
 
 [project]
 name = "cryptosmarttrader"
@@ -98,7 +104,7 @@ cryptotrader = "app:main"
 
 # Tool configurations
 [tool.setuptools]
-packages = ["core", "agents", "dashboards", "utils", "api", "config", "models", "data", "scripts", "tests"]
+
 
 [tool.black]
 line-length = 127

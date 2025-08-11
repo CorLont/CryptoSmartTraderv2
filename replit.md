@@ -22,6 +22,7 @@ Production deployment: LEAN 3-SCRIPT INSTALLATION SYSTEM - Consolidated all inst
 Production requirements: Full Kraken coverage (no demo limits), consistent RF model architecture, sentiment+whale fully integrated in UI, OpenAI intelligence actively used in predictions, backtesting/realized tracking visible for 500% goal validation, automatic retraining/drift monitoring operational, no dummy sections in dashboard.
 Code quality standards: DUPLICATE-FREE LEAN ARCHITECTURE - Systematically consolidated 32+ duplicate files into clean core structure. 5 core managers, 5 enhanced agents, zero conflicts. All critical code quality issues resolved with enterprise-grade validation and honest reporting.
 Architecture preference: Lean, focused, production-ready structure with consolidated dependencies and no duplicate code paths.
+Clean Architecture: Enterprise src/ layout implemented with domain interfaces (ports) and swappable adapters. Package structure prevents import shadowing and enables dependency inversion for testable, maintainable code.
 
 ## System Architecture
 
