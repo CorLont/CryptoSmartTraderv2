@@ -1,57 +1,194 @@
-# Replit Multi-Service Configuration Guide
-## CryptoSmartTrader V2 - Enterprise Setup
+# Replit Multi-Service Configuration
 
-### Recommended .replit Configuration
-**Note:** Direct editing of .replit file is restricted. This is the recommended configuration for multi-service deployment:
+CryptoSmartTrader V2 runs multiple services simultaneously on different ports for optimal performance and separation of concerns.
 
-```ini
-# Multi-service run command voor CryptoSmartTrader V2
-run = "uv sync && (uv run streamlit run app_fixed_all_issues.py --server.port 5000 --server.headless true & wait)"
+## Service Architecture
 
-# Alternative full multi-service (indien API en metrics modules beschikbaar):
-# run = "uv sync && (uv run python api/main.py --port 8001 & uv run streamlit run app_fixed_all_issues.py --server.port 5000 --server.headless true & uv run python -m orchestration.metrics & wait)"
-```
+| Service | Port | Purpose | Health Endpoint |
+|---------|------|---------|----------------|
+| **Dashboard** | 5000 | Main Streamlit trading interface | `/_stcore/health` |
+| **API** | 8001 | Health checks and status API | `/health` |
+| **Metrics** | 8000 | Prometheus metrics collection | `/health` |
 
-### Port Configuration
-Current port mapping in .replit:
+## Current .replit Configuration
+
 ```toml
+# Primary workflow configuration
+[[workflows.workflow]]
+name = "FixedApp"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python start_multi_service.py"
+waitForPort = 5000
+
+# Port mappings for Replit
 [[ports]]
-localPort = 5000    # Streamlit Dashboard
+localPort = 5000    # Dashboard (Streamlit)
 externalPort = 80   # Public access
 
 [[ports]]
-localPort = 5001    # Available for API
-externalPort = 3000
+localPort = 8001    # API service
+externalPort = 3000 # Internal/monitoring access
 
 [[ports]]
-localPort = 5002    # Available for Metrics
-externalPort = 3001
-
-[[ports]]
-localPort = 5003    # Available for additional services
-externalPort = 3002
+localPort = 8000    # Metrics service  
+externalPort = 3001 # Prometheus/monitoring access
 ```
 
-### Service Overview
-- **Dashboard (Port 5000):** Main Streamlit interface - `app_fixed_all_issues.py`
-- **API (Port 8001):** FastAPI service (when available) - `api/main.py`
-- **Metrics (Port 8000):** Prometheus metrics endpoint
-- **Public Access:** Primary service accessible via external port 80
+## Service URLs
 
-### Multi-Service Benefits
-- **Concurrent execution:** Multiple services running simultaneously
-- **Service isolation:** Each service on dedicated port
-- **Public endpoint:** Single main access point for users
-- **Additional ports:** Managed via Replit Ports panel
-- **Automatic sync:** Dependencies installed before startup
+### External Access (via Replit)
+- **Main Dashboard**: `https://{repl-name}.{username}.repl.co/` (port 80 → 5000)
+- **API Service**: `https://{repl-name}.{username}.repl.co:3000/` (port 3000 → 8001)
+- **Metrics Service**: `https://{repl-name}.{username}.repl.co:3001/` (port 3001 → 8000)
 
-### Manual Configuration Steps
-1. Navigate to Replit project settings
-2. Update run command in .replit file (if editing allowed)
-3. Configure additional ports via Ports panel
-4. Verify service startup via console logs
+### Internal Access (within Replit)
+- **Dashboard**: `http://localhost:5000`
+- **API**: `http://localhost:8001`
+- **Metrics**: `http://localhost:8000`
 
-### Current Limitations
-- .replit file editing restricted in current environment
-- Multi-service configuration requires manual setup
-- Port management through Replit Ports panel interface
+## Service Details
+
+### 🎯 Dashboard Service (Port 5000)
+- **File**: `app_fixed_all_issues.py`
+- **Framework**: Streamlit
+- **Purpose**: Main trading interface with real-time data
+- **Health Check**: Streamlit built-in `/_stcore/health`
+- **Features**: Portfolio management, trading signals, market analysis
+
+### 🏥 API Service (Port 8001)
+- **File**: `api/health_endpoint.py`
+- **Framework**: FastAPI
+- **Purpose**: Health monitoring and system status
+- **Health Check**: `/health` (returns 200 OK)
+- **Features**: 
+  - Basic health check for Replit
+  - Detailed system metrics
+  - Service status monitoring
+  - API documentation at `/api/docs`
+
+### 📊 Metrics Service (Port 8000)
+- **File**: `metrics/metrics_server.py`
+- **Framework**: FastAPI + Prometheus
+- **Purpose**: Metrics collection and monitoring
+- **Health Check**: `/health`
+- **Features**:
+  - Prometheus metrics at `/metrics`
+  - Trading performance metrics
+  - System resource monitoring
+  - Custom business metrics
+
+## Multi-Service Startup
+
+### Automatic Startup
+The system automatically starts all services using `start_multi_service.py`:
+
+```bash
+python start_multi_service.py
+```
+
+This script:
+1. Starts API service (port 8001)
+2. Starts Metrics service (port 8000) 
+3. Starts Dashboard service (port 5000)
+4. Monitors all services for health
+5. Provides coordinated logging
+6. Handles graceful shutdown
+
+### Manual Service Control
+
+Start individual services for development:
+
+```bash
+# Start API service
+python api/health_endpoint.py
+
+# Start Metrics service  
+python metrics/metrics_server.py
+
+# Start Dashboard
+streamlit run app_fixed_all_issues.py --server.port 5000
+```
+
+## Health Monitoring
+
+### Service Health Checks
+All services expose health endpoints compatible with Replit's monitoring:
+
+- **API**: `GET /health` → `{"status": "healthy", "timestamp": "..."}`
+- **Metrics**: `GET /health` → `{"status": "healthy", "service": "metrics", ...}`
+- **Dashboard**: `GET /_stcore/health` → Streamlit built-in health check
+
+### Detailed Health Information
+Extended health information available at:
+- **API**: `GET /health/detailed` → Complete system metrics
+- **Dashboard**: Real-time health widget in sidebar
+
+## Development & Debugging
+
+### Logs
+Multi-service startup provides labeled logs:
+```
+[API] Starting Health & Status API on port 8001...
+[METRICS] Starting Metrics Server on port 8000...
+[DASHBOARD] Starting Main Trading Dashboard on port 5000...
+```
+
+### Port Management
+Replit automatically manages port forwarding. The `start_multi_service.py` script:
+- Binds all services to `0.0.0.0` for external access
+- Implements proper startup sequencing
+- Provides health check coordination
+- Monitors service status
+
+### Error Handling
+- Services restart automatically on failure
+- Health checks prevent cascading failures
+- Graceful shutdown on interruption
+- Process isolation prevents cross-service issues
+
+## Production Considerations
+
+### Performance
+- Each service runs in separate process
+- No shared state between services
+- Independent scaling and monitoring
+- Resource isolation
+
+### Security
+- Health endpoints provide minimal information
+- API documentation restricted to development
+- Metrics access can be limited to monitoring tools
+- Services communicate via localhost only
+
+### Monitoring
+- Prometheus metrics for system monitoring
+- Health checks for uptime monitoring
+- Application logs for debugging
+- Performance metrics for optimization
+
+## Troubleshooting
+
+### Port Conflicts
+If ports are in use:
+1. Check Replit's Ports panel
+2. Kill existing processes: `pkill -f "streamlit\|uvicorn"`
+3. Restart services: `python start_multi_service.py`
+
+### Service Failures
+1. Check service logs in console
+2. Verify health endpoints
+3. Review Replit Ports panel
+4. Check system resources
+
+### Connectivity Issues
+1. Ensure services bind to `0.0.0.0` not `localhost`
+2. Verify port mappings in Replit
+3. Check firewall/security settings
+4. Test internal connectivity first
+
+---
+
+**Note**: This configuration provides enterprise-grade service orchestration within Replit's infrastructure while maintaining development flexibility.

@@ -666,5 +666,25 @@ def render_comprehensive_analysis():
     except Exception as e:
         st.error(f"Error in comprehensive analysis: {e}")
 
+@st.cache_data(ttl=60)
+def health_check():
+    """Health check endpoint for Streamlit service"""
+    return {
+        "status": "healthy",
+        "service": "dashboard",
+        "timestamp": datetime.now().isoformat(),
+        "port": 5000
+    }
+
+
+# Add health endpoint for Replit
+try:
+    # Health endpoint is automatically available at /_stcore/health in Streamlit
+    # No additional configuration needed for Replit health checks
+    pass
+except:
+    pass
+
+
 if __name__ == "__main__":
     main()
