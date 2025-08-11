@@ -73,7 +73,7 @@ class BlackSwanGenerator(ScenarioGenerator):
         
         for col in synthetic_data.columns:
             if 'price' in col.lower():
-                # Copy-safe writes using .loc with index masks
+                # Copy-safe writes using .loc with index masks  
                 idx = synthetic_data.index[:n_points]
                 
                 # Exponential decay crash

@@ -193,6 +193,9 @@ class SystemHealthChecker:
             print(f"   {result}")
         
         # Proper evaluation considering warnings
+        print(f"\n📊 Summary: {self.failed_tests} failed tests, {self.warnings} warnings")
+        
+        # Realistic end status evaluation  
         ready = (self.failed_tests == 0)
         
         print(f"\n📊 Summary:")

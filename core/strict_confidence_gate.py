@@ -111,11 +111,15 @@ class StrictConfidenceGate:
             if not filtered_df.empty and 'pred_30d' in filtered_df.columns:
                 filtered_df = filtered_df.sort_values('pred_30d', ascending=False)
             
-            # Create gate report - remove inconsistent explanations
+            # Generate explanations for passed candidates
+            explanations = self._generate_explanations(filtered_df) if passed_count > 0 else []
+            
+            # Create gate report with explanations
             gate_report = self._create_gate_report(
                 gate_id, original_count, passed_count, 
                 "success" if passed_count > 0 else "no_candidates"
             )
+            gate_report["explanations"] = explanations
             
             gate_report.update({
                 'low_confidence_rejected': low_confidence_count,
