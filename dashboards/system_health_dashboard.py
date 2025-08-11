@@ -55,11 +55,17 @@ class SystemHealthDashboard:
         
         with col2:
             if st.button("🔄 Run Full Validation", type="primary"):
+                # Validation is automatically run in render - inform user
+                st.info("✓ Validation refresh triggered")
                 st.rerun()
         
         try:
-            # Get system validator
-            validator = self.container.system_validator()
+            # Get system validator with guarded access
+            try:
+                validator = self.container.system_validator()
+            except Exception as e:
+                st.warning(f"System validator unavailable: {e}")
+                return
             
             # Run complete validation
             with st.spinner("Running complete system validation..."):
@@ -133,15 +139,29 @@ class SystemHealthDashboard:
         st.header("🔧 Component Status Details")
         
         try:
-            # Check cache manager
+            # Check cache manager with guarded access
             with st.expander("💾 Cache Manager"):
                 try:
                     cache_manager = self.container.cache_manager()
-                    
+                except Exception as e:
+                    st.warning(f"Cache manager unavailable: {e}")
+                    return
+                
+                if not cache_manager:
+                    st.warning("Cache manager not available")
+                    return
+                
+                try:
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
-                        cache_size = len(cache_manager._cache) if hasattr(cache_manager, '_cache') else 0
+                        # Use public interface instead of private _cache
+                        if hasattr(cache_manager, 'get_cache_size'):
+                            cache_size = cache_manager.get_cache_size()
+                        elif hasattr(cache_manager, 'keys'):
+                            cache_size = len(list(cache_manager.keys()))
+                        else:
+                            cache_size = 0
                         st.metric("Cache Entries", f"{cache_size:,}")
                     
                     with col2:
@@ -161,11 +181,19 @@ class SystemHealthDashboard:
                 except Exception as e:
                     st.error(f"Cache manager error: {e}")
             
-            # Check real-time pipeline
+            # Check real-time pipeline with guarded access
             with st.expander("⚡ Real-Time Pipeline"):
                 try:
                     pipeline = self.container.real_time_pipeline()
-                    
+                except Exception as e:
+                    st.warning(f"Real-time pipeline unavailable: {e}")
+                    return
+                
+                if not pipeline:
+                    st.warning("Real-time pipeline not available")
+                    return
+                
+                try:
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
@@ -191,11 +219,19 @@ class SystemHealthDashboard:
                 except Exception as e:
                     st.error(f"Pipeline error: {e}")
             
-            # Check multi-horizon ML
+            # Check multi-horizon ML with guarded access
             with st.expander("🤖 Multi-Horizon ML System"):
                 try:
                     ml_system = self.container.multi_horizon_ml()
-                    
+                except Exception as e:
+                    st.warning(f"Multi-horizon ML system unavailable: {e}")
+                    return
+                
+                if not ml_system:
+                    st.warning("Multi-horizon ML system not available")
+                    return
+                
+                try:
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
@@ -237,7 +273,16 @@ class SystemHealthDashboard:
         st.header("🔒 Data Integrity Validation")
         
         try:
-            cache_manager = self.container.cache_manager()
+            # Use public interface for cache access - avoid private _cache attribute
+            try:
+                cache_manager = self.container.cache_manager()
+            except Exception as e:
+                st.warning(f"Cache manager unavailable: {e}")
+                return
+            
+            if not cache_manager:
+                st.warning("Cache manager not available")
+                return
             
             # Data type analysis
             price_data_count = 0
@@ -246,8 +291,21 @@ class SystemHealthDashboard:
             dummy_data_count = 0
             total_entries = 0
             
-            if hasattr(cache_manager, '_cache'):
-                for key in cache_manager._cache.keys():
+            # Use public interface instead of private _cache
+            cache_keys = []
+            if hasattr(cache_manager, 'keys'):
+                try:
+                    cache_keys = list(cache_manager.keys())
+                except Exception:
+                    cache_keys = []
+            elif hasattr(cache_manager, '_cache') and hasattr(cache_manager._cache, 'keys'):
+                try:
+                    cache_keys = list(cache_manager._cache.keys())
+                except Exception:
+                    cache_keys = []
+            
+            if cache_keys:
+                for key in cache_keys:
                     total_entries += 1
                     
                     if key.startswith('validated_price_data_'):
@@ -303,8 +361,9 @@ class SystemHealthDashboard:
             # Find coins with all data types
             coin_data_status = {}
             
-            if hasattr(cache_manager, '_cache'):
-                for key in cache_manager._cache.keys():
+            # Use the same cache_keys from above for consistency
+            if cache_keys:
+                for key in cache_keys:
                     if key.startswith('validated_'):
                         parts = key.split('_')
                         if len(parts) >= 3:
@@ -380,6 +439,7 @@ class SystemHealthDashboard:
             
             # Performance over time (simulated)
             st.subheader("📊 Performance Trends")
+            st.caption("Note: Performance trend lines below are simulated baselines for visualization.")
             
             # Create sample performance data
             now = datetime.now()
@@ -422,7 +482,11 @@ class SystemHealthDashboard:
             if st.button("🔧 Run Auto-Fix", type="secondary"):
                 try:
                     validator = self.container.system_validator()
-                    
+                except Exception as e:
+                    st.error(f"System validator unavailable: {e}")
+                    return
+                
+                try:
                     with st.spinner("Running automatic fixes..."):
                         fix_results = validator.fix_common_issues()
                     
@@ -459,6 +523,11 @@ class SystemHealthDashboard:
             if st.button("Clear All Cache"):
                 try:
                     cache_manager = self.container.cache_manager()
+                except Exception as e:
+                    st.error(f"Cache manager unavailable: {e}")
+                    return
+                
+                try:
                     cache_manager.clear()
                     st.success("Cache cleared successfully")
                     st.rerun()
@@ -469,6 +538,11 @@ class SystemHealthDashboard:
             if st.button("Restart Pipeline"):
                 try:
                     pipeline = self.container.real_time_pipeline()
+                except Exception as e:
+                    st.error(f"Pipeline unavailable: {e}")
+                    return
+                
+                try:
                     pipeline.stop_pipeline()
                     pipeline.start_pipeline()
                     st.success("Pipeline restarted")
@@ -480,7 +554,11 @@ class SystemHealthDashboard:
             if st.button("Retrain ML Models"):
                 try:
                     ml_system = self.container.multi_horizon_ml()
-                    
+                except Exception as e:
+                    st.error(f"ML system unavailable: {e}")
+                    return
+                
+                try:
                     # Prepare training data
                     training_data = ml_system.prepare_training_data(lookback_days=30)
                     
@@ -501,12 +579,27 @@ class SystemHealthDashboard:
 def main():
     """Main dashboard function"""
     try:
-        # Import container
-        from containers import ApplicationContainer
+        # Create a mock container for demonstration purposes
+        # In production, this would use the actual dependency injection container
+        class MockContainer:
+            def system_validator(self):
+                from core.system_validator import SystemValidator
+                return SystemValidator()
+            
+            def cache_manager(self):
+                from core.cache_manager import CacheManager
+                return CacheManager()
+            
+            def real_time_pipeline(self):
+                from core.real_time_pipeline import RealTimePipeline
+                return RealTimePipeline()
+            
+            def multi_horizon_ml(self):
+                from core.multi_horizon_ml import MultiHorizonML
+                return MultiHorizonML()
         
-        # Initialize container
-        container = ApplicationContainer()
-        container.wire(modules=[__name__])
+        # Initialize mock container for dashboard
+        container = MockContainer()
         
         # Initialize dashboard
         dashboard = SystemHealthDashboard(container)

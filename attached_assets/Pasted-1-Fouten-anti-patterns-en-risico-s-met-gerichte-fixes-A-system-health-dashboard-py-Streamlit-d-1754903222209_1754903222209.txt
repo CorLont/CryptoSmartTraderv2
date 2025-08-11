@@ -1,0 +1,34 @@
+1) Fouten, anti-patterns en risico’s (met gerichte fixes)
+A. system_health_dashboard.py (Streamlit dashboard)
+Problemen
+
+Fragiele afhankelijkheden op container-injecties. Je gebruikt container.system_validator(), container.cache_manager(), container.real_time_pipeline(), container.multi_horizon_ml() zonder guards; één missende provider → hele dashboard breekt. Voeg gerichte except-blokken en “unavailable” states toe per sectie (je hebt deels try/except, maar niet overal zijn fallback-paden aanwezig). system_health_dashboard
+
+Privé-attribuut _cache gepeild. In “Data Integrity Validation” lees je rechtstreeks cache_manager._cache. Dat is internals leak; bij refactor breekt het dashboard zonder de interface te schenden. Introduceer een publieke accessor of check op methode-aanwezigheid (je doet deels hasattr, maar gebruikt daarna alsnog _cache). system_health_dashboard
+
+Knop “Run Full Validation” doet alleen st.rerun(). Je roept validatie sowieso al in dezelfde render aan; de knop voegt functioneel niets toe. Niet fout, wel misleidend UX. system_health_dashboard
+
+Simulatie-plots voor performance. De “Performance Trends” zijn synthetisch (op basis van één meting en kunstmatige reeksen). Dat is prima als demo, maar het lijkt “real-time” en kan verkeerd geïnterpreteerd worden. Label expliciet als “simulated”. system_health_dashboard
+
+Kleine patch (guarded access + expliciete labeling)
+
+python
+Kopiëren
+Bewerken
+# Voor elke section die container.* gebruikt:
+try:
+    validator = self.container.system_validator()
+except Exception as e:
+    st.warning(f"Validator unavailable: {e}")
+    return
+
+# In _render_data_integrity: gebruik publieke getters en check eerst
+cache_manager = getattr(self.container, "cache_manager", lambda: None)()
+if not cache_manager or not hasattr(cache_manager, "keys"):
+    st.warning("Cache manager not available or lacks interface")
+    return
+
+# In _render_performance_metrics: label simulatie
+st.caption("Note: performance trend lines below are simulated baselines for visualization.")
+system_health_dashboard
+
