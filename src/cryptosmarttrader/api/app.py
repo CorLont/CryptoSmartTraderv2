@@ -30,6 +30,14 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down CryptoSmartTrader API server")
 
 
+def get_app() -> FastAPI:
+    """PR3 Style App Factory"""
+    app = FastAPI(title="CryptoSmartTrader API", version="0.1.0")
+    from .routers.health import router as health_router
+    app.include_router(health_router)
+    return app
+
+
 def create_app() -> FastAPI:
     """Create and configure FastAPI application"""
     settings = get_settings()

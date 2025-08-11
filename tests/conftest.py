@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
 
-from config.settings import AppSettings, get_settings
+from src.cryptosmarttrader.config import Settings, get_settings
 from core.dependency_container import Container, wire_container
 from core.secrets_manager import SecretsManager, get_secrets_manager
 from core.logging_manager import get_logger, configure_logging
