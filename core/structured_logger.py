@@ -28,6 +28,7 @@ class StructuredLogger:
             
             if STRUCTURED_FORMATTER_AVAILABLE:
                 # Use the better StructuredFormatter from config
+                from config.structured_logging import StructuredFormatter
                 formatter = StructuredFormatter()
                 handler.setFormatter(formatter)
             else:

@@ -15,7 +15,6 @@ import json
 from pathlib import Path
 
 # ML imports
-from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 import warnings
 warnings.filterwarnings('ignore')
@@ -42,17 +41,23 @@ class ScenarioGenerator(ABC):
 class BlackSwanGenerator(ScenarioGenerator):
     """Generates black swan event scenarios"""
     
-    def __init__(self):
+    def __init__(self, random_seed: Optional[int] = None):
         self.logger = logging.getLogger(__name__)
+        self.random_seed = random_seed
     
     def generate_scenario(self, base_data: pd.DataFrame, **kwargs) -> SyntheticScenario:
         """Generate black swan market crash scenario"""
         
         severity = kwargs.get('severity', 'moderate')  # mild, moderate, severe
         duration_days = kwargs.get('duration_days', 7)
+        seed = kwargs.get('seed', self.random_seed)
         
-        # Copy base data
-        synthetic_data = base_data.copy()
+        # Set deterministic seed if provided
+        if seed is not None:
+            np.random.seed(seed)
+        
+        # Deep copy base data to prevent SettingWithCopy warnings
+        synthetic_data = base_data.copy(deep=True)
         
         # Define crash parameters
         crash_params = {
@@ -68,19 +73,23 @@ class BlackSwanGenerator(ScenarioGenerator):
         
         for col in synthetic_data.columns:
             if 'price' in col.lower():
+                # Copy-safe writes using .loc with index masks
+                idx = synthetic_data.index[:n_points]
+                
                 # Exponential decay crash
                 crash_factor = np.exp(np.linspace(0, np.log(1 + params['drop_pct']), n_points))
-                synthetic_data[col].iloc[:n_points] *= crash_factor
+                synthetic_data.loc[idx, col] = synthetic_data.loc[idx, col].to_numpy() * crash_factor
                 
                 # Increased volatility
                 volatility = synthetic_data[col].pct_change().std()
                 noise = np.random.normal(0, volatility * params['volatility_mult'], n_points)
-                synthetic_data[col].iloc[:n_points] *= (1 + noise)
+                synthetic_data.loc[idx, col] = synthetic_data.loc[idx, col].to_numpy() * (1 + noise)
             
             elif 'volume' in col.lower():
-                # Volume spike during crash
+                # Volume spike during crash - copy-safe
+                idx = synthetic_data.index[:n_points]
                 volume_spike = np.random.lognormal(1.5, 0.5, n_points)
-                synthetic_data[col].iloc[:n_points] *= volume_spike
+                synthetic_data.loc[idx, col] = synthetic_data.loc[idx, col].to_numpy() * volume_spike
         
         scenario = SyntheticScenario(
             scenario_type="black_swan",
@@ -102,8 +111,9 @@ class BlackSwanGenerator(ScenarioGenerator):
 class RegimeShiftGenerator(ScenarioGenerator):
     """Generates market regime shift scenarios"""
     
-    def __init__(self):
+    def __init__(self, random_seed: Optional[int] = None):
         self.logger = logging.getLogger(__name__)
+        self.random_seed = random_seed
     
     def generate_scenario(self, base_data: pd.DataFrame, **kwargs) -> SyntheticScenario:
         """Generate market regime shift scenario"""
@@ -111,8 +121,13 @@ class RegimeShiftGenerator(ScenarioGenerator):
         from_regime = kwargs.get('from_regime', 'bull')  # bull, bear, sideways
         to_regime = kwargs.get('to_regime', 'bear')
         transition_days = kwargs.get('transition_days', 14)
+        seed = kwargs.get('seed', self.random_seed)
         
-        synthetic_data = base_data.copy()
+        # Set deterministic seed if provided
+        if seed is not None:
+            np.random.seed(seed)
+        
+        synthetic_data = base_data.copy(deep=True)
         
         # Define regime characteristics
         regime_params = {
@@ -128,14 +143,32 @@ class RegimeShiftGenerator(ScenarioGenerator):
         
         for col in synthetic_data.columns:
             if 'price' in col.lower():
-                # Gradual trend change
+                # Gradual trend change - copy-safe approach
                 trend_change = np.linspace(from_params['trend'], to_params['trend'], n_transition)
                 volatility_change = np.linspace(from_params['volatility'], to_params['volatility'], n_transition)
+                
+                # Work on a copy of the column values to avoid chained indexing
+                price_values = synthetic_data[col].values.copy()
                 
                 for i in range(n_transition):
                     if i > 0:
                         daily_return = trend_change[i] + np.random.normal(0, volatility_change[i])
-                        synthetic_data[col].iloc[i] = synthetic_data[col].iloc[i-1] * (1 + daily_return)
+                        price_values[i] = price_values[i-1] * (1 + daily_return)
+                
+                # Apply all changes at once using .loc
+                synthetic_data.loc[:n_transition-1, col] = price_values[:n_transition]
+                
+                # Make the rest of the series consistent with new regime (not just transition)
+                if n_transition < len(synthetic_data):
+                    remaining_points = len(synthetic_data) - n_transition
+                    for i in range(remaining_points):
+                        idx = n_transition + i
+                        if idx < len(synthetic_data):
+                            daily_return = to_params['trend'] + np.random.normal(0, to_params['volatility'])
+                            price_values[idx] = price_values[idx-1] * (1 + daily_return)
+                    
+                    # Update the remaining part
+                    synthetic_data.loc[n_transition:, col] = price_values[n_transition:]
         
         scenario = SyntheticScenario(
             scenario_type="regime_shift",
