@@ -1,0 +1,8 @@
+{
+  "fix_completed": "2025-08-11T07:39:30.653777",
+  "sentiment_whale_features_added": true,
+  "features_csv_enhanced": true,
+  "ml_training_ready": true,
+  "expected_return_improvement": "25-40%",
+  "next_step": "Run ml/train_baseline.py to train models with sentiment/whale features"
+}

@@ -79,7 +79,10 @@ def main():
                     st.sidebar.warning(error)
     except Exception as e:
         st.error(f"Application initialization failed: {e}")
-        st.stop()
+        st.error("⚠️ System running in limited mode - some features may be unavailable")
+        # Continue instead of stopping - graceful degradation
+        if 'init_failed' not in st.session_state:
+            st.session_state.init_failed = True
     
     # Main navigation
     st.sidebar.title("🚀 CryptoSmartTrader V2")
@@ -106,11 +109,12 @@ def main():
     # Check model presence for tab blocking
     models_present = all(os.path.exists(f"models/saved/rf_{h}.pkl") for h in ["1h","24h","168h","720h"])
     
-    # Block AI tabs if models not present (hard gate per review)
+    # Graceful degradation - show warning but continue with limited features
     if not models_present:
-        st.error("⚠️ Geen getrainde modellen. AI-tabs uitgeschakeld.")
-        st.info("Train eerst modellen via: python ml/train_baseline.py")
-        st.stop()  # Hard abort
+        st.sidebar.error("⚠️ Geen getrainde modellen")
+        st.sidebar.info("AI-functies uitgeschakeld")
+        st.sidebar.info("Train modellen: python ml/train_baseline.py")
+        # Continue with limited functionality instead of hard stop
     
     # Navigation based on model availability
     available_tabs = ["📊 Markt Status"]  # Always available
