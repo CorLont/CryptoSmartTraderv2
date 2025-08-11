@@ -1,0 +1,196 @@
+# ===== Python / Tooling =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+.uv/
+.mypy_cache/
+.pytest_cache/
+.cache/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Environments
+.env
+.env.local
+.env.production
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Package manager files
+pip-log.txt
+pip-delete-this-directory.txt
+Pipfile.lock
+poetry.lock
+uv.lock
+
+# ===== Project Artifacts =====
+logs/
+data/
+exports/
+cache/
+models/
+model_backup/
+runs/
+backups/
+attached_assets/
+*.log
+
+# MLflow artifacts
+mlruns/
+mlartifacts/
+
+# Model files
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+*.onnx
+*.model
+
+# Data files (keep test data)
+*.csv
+*.parquet
+*.feather
+*.pickle
+!tests/data/
+!data/README.md
+!data/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+*~
+*.swp
+*.swo
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite3-journal
+
+# Configuration with secrets
+.env.local
+.env.production
+.env.staging
+config.local.json
+config.production.json
+secrets.json
+api_keys.json
+keys.json
+credentials.json
+
+# Trading and financial data
+positions.json
+trades.json
+portfolio_state.json
+trading_history/
+order_history/
+execution_logs/
+trade_logs/
+
+# ===== OS/IDE =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Visual Studio Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Windows
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# ===== Security =====
+*.key
+*.pem
+*.p12
+secrets/
+.secrets/
+
+# ===== Streamlit =====
+.streamlit/secrets.toml
+
+# ===== Archives =====
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
+!release-*.zip
+
+# ===== Media Files =====
+*.mp4
+*.avi
+*.mov
+*.mp3
+*.wav
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.ico
+
+# ===== Keep Important Files =====
+!.env.template
+!.env.example
+!config.example.json
+!README*.md
+!CHANGELOG.md
+!LICENSE
+!requirements.txt
+!pyproject.toml
