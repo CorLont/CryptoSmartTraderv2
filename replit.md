@@ -41,12 +41,13 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 
 ### Technology Stack
 - **Frontend:** Streamlit.
-- **Backend:** Python.
+- **Backend:** Python, FastAPI (enterprise API layer).
 - **Machine Learning:** PyTorch (LSTM, GRU, Transformer, N-BEATS), scikit-learn, XGBoost.
 - **Data Processing:** pandas, numpy, CuPy, Numba.
 - **Exchange Integration:** CCXT.
 - **Visualization:** Plotly.
 - **Storage:** Local file system with JSON/CSV and caching.
+- **API:** FastAPI with rate limiting, CORS hardening, Prometheus metrics.
 
 ### Key Architectural Decisions
 - **Deployment & Structure:** LEAN 3-SCRIPT DEPLOYMENT SYSTEM for installation automation; DUPLICATE-FREE CORE STRUCTURE with 5 core managers and 5 enhanced agents; CONSOLIDATED DEPENDENCY MANAGEMENT via `pyproject.toml`; CLEAN ARCHIVE SYSTEM for legacy files.

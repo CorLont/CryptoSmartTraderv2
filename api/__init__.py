@@ -1,5 +1,5 @@
-# api/__init__.py
 """
-REST API package for CryptoSmartTrader V2.
-Provides FastAPI endpoints with type hints and documentation.
+CryptoSmartTrader V2 - Enterprise API Layer
 """
+
+__version__ = "2.0.0"
