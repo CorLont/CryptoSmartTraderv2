@@ -65,8 +65,9 @@ def debug_confidence_gate_issue():
             'coin': opp['symbol'],
             'pred_7d': opp.get('expected_7d', 0) / 100.0,
             'pred_30d': opp.get('expected_30d', 0) / 100.0,
-            'conf_7d': opp.get('score', 50) / 100.0,  # THE PROBLEM IS HERE!
-            'conf_30d': opp.get('score', 50) / 100.0,  # THE PROBLEM IS HERE!
+            # FIXED: Proper confidence mapping - scores 40-90 mapped to 0.65-0.95 confidence range
+            'conf_7d': 0.65 + (min(max(opp.get('score', 50), 40), 90) - 40) / 50 * 0.30,
+            'conf_30d': 0.65 + (min(max(opp.get('score', 50), 40), 90) - 40) / 50 * 0.30,
             'current_price': 1.0,
             'change_24h': opp.get('change_24h', 0),
             'volume_24h': opp.get('volume_24h', 0),

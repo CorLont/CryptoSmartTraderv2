@@ -27,8 +27,12 @@ try:
     from utils.authentic_opportunities import get_authentic_opportunities_count
     STRICT_GATE_AVAILABLE = True
 except ImportError as e:
-    logger.warning(f"Strict gate not available: {e}")
+    logger.error(f"CRITICAL: Strict gate not available: {e}")
     STRICT_GATE_AVAILABLE = False
+    # Store error for UI display (will be shown in main() after st init)
+    if 'import_errors' not in globals():
+        globals()['import_errors'] = []
+    globals()['import_errors'].append(f"Strict gate disabled: {e}")
 
 def main():
     """Clean application entry point"""
@@ -38,6 +42,12 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
+    
+    # Display any import errors from module loading
+    if 'import_errors' in globals() and globals()['import_errors']:
+        st.sidebar.error("⚠️ System Warnings:")
+        for error in globals()['import_errors']:
+            st.sidebar.warning(error)
     
     st.sidebar.title("🚀 CryptoSmartTrader V2")
     st.sidebar.markdown("---")
@@ -58,14 +68,19 @@ def main():
     else:
         st.sidebar.error(f"🔴 System Not Ready ({readiness_score:.0f}/100)")
         
-    # Hard model gate (per review feedback)
+    # FIXED: Graceful degradation instead of hard stop
     if not models_present:
-        st.error("⚠️ Geen getrainde modellen. AI-tabs uitgeschakeld.")
-        st.info("Train eerst modellen via: python ml/train_baseline.py")
-        st.stop()
+        st.sidebar.error("⚠️ Geen getrainde modellen")
+        st.sidebar.info("AI-functies uitgeschakeld")
+        ai_features_disabled = True
+    else:
+        ai_features_disabled = False
     
-    # Navigation
-    pages = ["📊 Dashboard", "🤖 AI Predictions", "📈 Market Analysis", "⚙️ System Status"]
+    # Navigation with conditional AI features
+    pages = ["📊 Dashboard", "📈 Market Analysis", "⚙️ System Status"]
+    if not ai_features_disabled:
+        pages.insert(1, "🤖 AI Predictions")
+    
     selected_page = st.sidebar.selectbox("Selecteer pagina", pages)
     
     if selected_page == "📊 Dashboard":

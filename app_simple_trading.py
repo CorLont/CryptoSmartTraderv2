@@ -10,7 +10,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
-import random
+# Removed unused import: random
 import logging
 
 # Set up minimal logging

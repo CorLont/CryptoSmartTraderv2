@@ -38,15 +38,24 @@ except ImportError as e:
     CONFIDENCE_GATE_AVAILABLE = False
     ENTERPRISE_FIXES_AVAILABLE = False
     TEMPORAL_VALIDATION_AVAILABLE = False
-    logger.warning(f"Enterprise features not available: {e}")
+    logger.error(f"CRITICAL: Enterprise features not available: {e}")
+    # Store error for UI display (will be shown in main() after st init)
+    if 'import_errors' not in globals():
+        globals()['import_errors'] = []
+    globals()['import_errors'].append(f"Enterprise features disabled: {e}")
 
 # Import strict gate for backend enforcement
 try:
     from orchestration.strict_gate_standalone import apply_strict_gate_orchestration
     from utils.authentic_opportunities import get_authentic_opportunities_count
     STRICT_GATE_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     STRICT_GATE_AVAILABLE = False
+    logger.error(f"CRITICAL: Strict gate not available: {e}")
+    # Store error for UI display (will be shown in main() after st init)
+    if 'import_errors' not in globals():
+        globals()['import_errors'] = []
+    globals()['import_errors'].append(f"Strict gate disabled: {e}")
 
 def main():
     """Minimal application entry point"""
@@ -58,10 +67,16 @@ def main():
             initial_sidebar_state="expanded"
         )
         
-        # Initialize session state
+        # Initialize session state and display import errors
         if 'initialized' not in st.session_state:
             st.session_state.initialized = True
             logger.info("Application initialized")
+            
+            # Display any import errors from module loading
+            if 'import_errors' in globals() and globals()['import_errors']:
+                st.sidebar.error("⚠️ System Warnings:")
+                for error in globals()['import_errors']:
+                    st.sidebar.warning(error)
     except Exception as e:
         st.error(f"Application initialization failed: {e}")
         st.stop()
