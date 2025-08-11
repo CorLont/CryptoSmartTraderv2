@@ -98,7 +98,7 @@ def validate_synthetic_targets(df: pd.DataFrame) -> bool:
     
     # Check for NaN values
     for target in expected_targets:
-        if df[target].isna().any():
+        if target in df.columns and df[target].isna().any():
             logger.warning(f"NaN values found in {target}")
     
     logger.info("Synthetic targets validation passed")
