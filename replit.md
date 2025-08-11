@@ -48,6 +48,7 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Visualization:** Plotly.
 - **Storage:** Local file system with JSON/CSV and caching.
 - **API:** FastAPI with rate limiting, CORS hardening, Prometheus metrics.
+- **HTTP Layer:** Enterprise async client with circuit breakers, exponential backoff, response caching with TTL, stale-while-revalidate.
 
 ### Key Architectural Decisions
 - **Deployment & Structure:** LEAN 3-SCRIPT DEPLOYMENT SYSTEM for installation automation; DUPLICATE-FREE CORE STRUCTURE with 5 core managers and 5 enhanced agents; CONSOLIDATED DEPENDENCY MANAGEMENT via `pyproject.toml`; CLEAN ARCHIVE SYSTEM for legacy files.
