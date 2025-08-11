@@ -55,8 +55,12 @@ class OpenAIEnhancedIntelligence:
         if OPENAI_AVAILABLE:
             api_key = os.getenv("OPENAI_API_KEY")
             if api_key:
-                self.client = OpenAI(api_key=api_key)
-                self.logger.info("OpenAI client initialized successfully")
+                try:
+                    self.client = OpenAI(api_key=api_key)
+                    self.logger.info("OpenAI client initialized successfully")
+                except Exception as e:
+                    self.logger.error(f"Failed to initialize OpenAI client: {e}")
+                    self.client = None
             else:
                 self.logger.warning("OPENAI_API_KEY not found in environment")
         else:

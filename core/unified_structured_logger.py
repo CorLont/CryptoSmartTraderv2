@@ -32,7 +32,7 @@ class JSONFormatter(logging.Formatter):
         
         # Add correlation ID if available
         if hasattr(record, 'correlation_id'):
-            log_entry['correlation_id'] = record.correlation_id
+            log_entry['correlation_id'] = getattr(record, 'correlation_id', None)
         
         # Add extra fields if present
         if hasattr(record, '__dict__'):

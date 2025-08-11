@@ -13,31 +13,30 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 import logging
 
+# Use import path resolver to fix path mismatches
 try:
-    from core.synthetic_data_augmentation import (
-        BlackSwanGenerator,
-        SyntheticScenario
-    )
-    # Try additional imports with fallbacks
-    try:
-        from core.synthetic_data_augmentation import RegimeShiftGenerator
-    except (ImportError, AttributeError):
-        RegimeShiftGenerator = None
+    from core.import_path_resolver import get_synthetic_classes
     
-    try:
-        from core.synthetic_data_augmentation import FlashCrashGenerator
-    except (ImportError, AttributeError):
-        FlashCrashGenerator = None
-        
-    try:
-        from core.synthetic_data_augmentation import WhaleManipulationGenerator
-    except (ImportError, AttributeError):
-        WhaleManipulationGenerator = None
-        
-    SYNTH_OK = True
-except ImportError as e:
+    # Get available classes with path resolution
+    synth_classes = get_synthetic_classes()
+    
+    BlackSwanGenerator = synth_classes.get('BlackSwanGenerator')
+    SyntheticScenario = synth_classes.get('SyntheticScenario')
+    RegimeShiftGenerator = synth_classes.get('RegimeShiftGenerator')
+    FlashCrashGenerator = synth_classes.get('FlashCrashGenerator', None)
+    WhaleManipulationGenerator = synth_classes.get('WhaleManipulationGenerator', None)
+    
+    SYNTH_OK = BlackSwanGenerator is not None
+    import_error = "Module resolved successfully" if SYNTH_OK else "Required classes not found"
+    
+except Exception as e:
     SYNTH_OK = False
     import_error = str(e)
+    BlackSwanGenerator = None
+    SyntheticScenario = None
+    RegimeShiftGenerator = None
+    FlashCrashGenerator = None
+    WhaleManipulationGenerator = None
 
 class SyntheticDataDashboard:
     """Dashboard for synthetic data augmentation and stress testing"""
@@ -127,6 +126,12 @@ class SyntheticDataDashboard:
         
         if st.button("🎲 Generate Scenarios", type="primary"):
             with st.spinner("Generating synthetic scenarios..."):
+                # Only proceed if synthetic classes are available
+                if not BlackSwanGenerator:
+                    st.error("❌ Synthetic data generators not available")
+                    st.info(f"Import error: {import_error}")
+                    return
+                
                 try:
                     # Generate demo base data
                     np.random.seed(42)
