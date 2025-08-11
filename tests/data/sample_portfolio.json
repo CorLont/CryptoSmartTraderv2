@@ -1,0 +1,48 @@
+{
+  "account_id": "test_account_123",
+  "total_value": 142750.0,
+  "cash_balance": 25000.0,
+  "invested_value": 117750.0,
+  "total_unrealized_pnl": 9250.0,
+  "total_realized_pnl": 1800.0,
+  "daily_pnl": 1250.0,
+  "positions": [
+    {
+      "symbol": "BTC/USD",
+      "quantity": 2.5,
+      "avg_price": 45000,
+      "current_price": 47500,
+      "unrealized_pnl": 6250,
+      "realized_pnl": 1200,
+      "entry_time": "2024-01-15T10:30:00Z",
+      "last_update": "2024-01-20T14:25:00Z"
+    },
+    {
+      "symbol": "ETH/USD",
+      "quantity": 15.0,
+      "avg_price": 3200,
+      "current_price": 3350,
+      "unrealized_pnl": 2250,
+      "realized_pnl": 800,
+      "entry_time": "2024-01-16T09:15:00Z",
+      "last_update": "2024-01-20T14:25:00Z"
+    },
+    {
+      "symbol": "BNB/USD",
+      "quantity": 50.0,
+      "avg_price": 380,
+      "current_price": 395,
+      "unrealized_pnl": 750,
+      "realized_pnl": -200,
+      "entry_time": "2024-01-18T11:45:00Z",
+      "last_update": "2024-01-20T14:25:00Z"
+    }
+  ],
+  "last_update": "2024-01-20T14:25:00Z",
+  "risk_metrics": {
+    "total_exposure": 0.78,
+    "max_position_size": 0.35,
+    "correlation_risk": 0.45,
+    "var_95": -5200.0
+  }
+}

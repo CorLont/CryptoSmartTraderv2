@@ -1,29 +1,372 @@
-# Python
+# ===== Python =====
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-*.so
-*.egg-info/
-*.dist-info/
-.venv/
-.uv/
-.mypy_cache/
-.pytest_cache/
-.cache/
-.ipynb_checkpoints/
-.coverage*
+*$py.class
 
-# Project artefacts
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+__pypackages__/
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# ===== CryptoSmartTrader V2 Specific =====
+
+# Logs and temporary files
 logs/
-data/
-exports/
-cache/
+*.log
+*.log.*
+log_*.txt
+log_*.json
+trading_events.jsonl
+audit_*.log
+error_*.log
+debug_*.log
+
+# Model artifacts and ML outputs
 models/
 model_backup/
-backups/
-attached_assets/
-*.log
+mlartifacts/
+mlruns/
+.mlflow/
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+*.onnx
+*.model
+checkpoints/
+saved_models/
+trained_models/
 
-# OS/IDE
+# Data directories (keep structure docs)
+data/raw/
+data/processed/
+data/cache/
+data/temp/
+data/*.csv
+data/*.parquet
+data/*.json
+data/*.feather
+data/*.pickle
+!data/README.md
+!data/.gitkeep
+!tests/data/
+
+# Cache directories
+cache/
+.cache/
+__cache__/
+*.cache
+.streamlit_cache/
+.uv_cache/
+
+# Exports and reports
+exports/
+reports/
+outputs/
+results/
+analysis_output/
+trading_reports/
+performance_reports/
+
+# Backups
+backups/
+backup_*/
+*.backup
+*.bak
+config_backup/
+db_backup/
+
+# Attached assets and temp files
+attached_assets/
+assets/temp/
+temp_files/
+temporary/
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Configuration files with secrets
+.env.local
+.env.production
+.env.staging
+config.local.json
+config.production.json
+secrets.json
+api_keys.json
+keys.json
+credentials.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+database.json
+trading.db
+portfolio.db
+
+# Streamlit specific
+.streamlit/secrets.toml
+.streamlit/config.toml
+
+# Trading specific data
+positions.json
+trades.json
+portfolio_state.json
+trading_history/
+order_history/
+execution_logs/
+trade_logs/
+
+# Analysis and research
+notebooks/outputs/
+*.ipynb_checkpoints/
+analysis_results/
+research/temp/
+experiments/
+
+# Security and monitoring
+security_logs/
+monitoring_data/
+metrics_data/
+alerts/
+
+# ===== IDE and OS =====
+
+# Visual Studio Code
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/extensions.json
+
+# PyCharm
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/vcs.xml
+.idea/jsLibraryMappings.xml
+.idea/datasources.xml
+.idea/dataSources.ids
+.idea/sqlDataSources.xml
+.idea/dynamic.xml
+.idea/uiDesigner.xml
+.idea/gradle.xml
+.idea/libraries
+.idea/modules.xml
+.idea/misc.xml
+
+# Vim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# macOS
 .DS_Store
-.vscode/
-.idea/
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===== Development and Testing =====
+
+# Test artifacts
+test_results/
+test_reports/
+test_outputs/
+.tox/
+.nox/
+
+# Profiling
+*.prof
+profile_results/
+profiling/
+
+# Security scan results
+bandit-report.json
+safety-report.json
+security-scan-results/
+vulnerability-reports/
+
+# Documentation builds
+docs/build/
+docs/source/_build/
+site/
+
+# ===== CI/CD and Deployment =====
+
+# Docker
+.dockerignore
+
+# Kubernetes
+*.yaml.bak
+helm-charts/temp/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# ===== Package Managers =====
+
+# uv
+.uv/
+
+# pip
+pip-wheel-metadata/
+
+# conda
+.conda/
+
+# ===== Replit Specific =====
+.replit
+replit.nix
+.upm
+
+# ===== Archive and Compressed Files =====
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+!release-*.zip
+
+# ===== Keep Important Files =====
+# Use ! to negate ignore patterns for important files
+!.env.template
+!.env.example
+!config.example.json
+!README.md
+!CHANGELOG.md
+!LICENSE
+!requirements.txt
+!pyproject.toml
+!uv.lock
