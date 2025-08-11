@@ -13,9 +13,12 @@ CryptoSmartTrader V2 runs multiple services simultaneously on different ports fo
 ## Current .replit Configuration
 
 ```toml
-# Primary workflow configuration
+# Recommended .replit run configuration
+run = "uv sync && (uv run python api/health_endpoint.py & uv run python metrics/metrics_server.py & uv run streamlit run app_fixed_all_issues.py --server.port 5000 --server.headless true --server.address 0.0.0.0 & wait)"
+
+# Alternative workflow configuration
 [[workflows.workflow]]
-name = "FixedApp"
+name = "MultiService"
 author = "agent"
 
 [[workflows.workflow.tasks]]
@@ -82,20 +85,29 @@ externalPort = 3001 # Prometheus/monitoring access
 
 ## Multi-Service Startup
 
-### Automatic Startup
-The system automatically starts all services using `start_multi_service.py`:
+### Automatic Startup Options
 
+#### Option 1: UV-based Startup (Recommended for .replit)
+```bash
+uv sync && (uv run python api/health_endpoint.py & uv run python metrics/metrics_server.py & uv run streamlit run app_fixed_all_issues.py --server.port 5000 --server.headless true --server.address 0.0.0.0 & wait)
+```
+
+#### Option 2: Coordinated Startup Script
 ```bash
 python start_multi_service.py
 ```
 
-This script:
-1. Starts API service (port 8001)
-2. Starts Metrics service (port 8000) 
-3. Starts Dashboard service (port 5000)
-4. Monitors all services for health
-5. Provides coordinated logging
-6. Handles graceful shutdown
+#### Option 3: Shell Script
+```bash
+./start_uv_services.sh
+```
+
+All methods:
+1. Start API service (port 8001)
+2. Start Metrics service (port 8000) 
+3. Start Dashboard service (port 5000)
+4. Handle graceful shutdown
+5. Provide service coordination
 
 ### Manual Service Control
 
