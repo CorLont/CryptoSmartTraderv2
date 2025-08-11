@@ -60,11 +60,14 @@ class SystemHealthDashboard:
                 st.rerun()
         
         try:
-            # Get system validator with guarded access
+            # Get system validator with guarded access and fallback
             try:
                 validator = self.container.system_validator()
             except Exception as e:
                 st.warning(f"System validator unavailable: {e}")
+                # Provide fallback validation using basic checks
+                validation_results = self._fallback_validation()
+                self._render_fallback_results(validation_results)
                 return
             
             # Run complete validation
@@ -267,6 +270,122 @@ class SystemHealthDashboard:
             
         except Exception as e:
             st.error(f"Component status check failed: {e}")
+    
+    def _fallback_validation(self) -> dict:
+        """Fallback validation when container dependencies are unavailable"""
+        
+        validation_results = {
+            'overall_status': 'WARNING',
+            'components': {},
+            'errors': [],
+            'warnings': ['Container dependencies not fully available'],
+            'recommendations': ['Check container configuration']
+        }
+        
+        # Basic file system checks
+        critical_files = [
+            'app_fixed_all_issues.py',
+            'pyproject.toml', 
+            'core/structured_logger.py',
+            'orchestration/orchestrator.py'
+        ]
+        
+        for file_path in critical_files:
+            path = Path(file_path)
+            if path.exists():
+                validation_results['components'][file_path] = {'status': True, 'message': 'File exists'}
+            else:
+                validation_results['components'][file_path] = {'status': False, 'message': 'File missing'}
+                validation_results['errors'].append(f"Critical file missing: {file_path}")
+        
+        # Basic dependency checks
+        try:
+            import pandas
+            validation_results['components']['pandas'] = {'status': True, 'message': 'Available'}
+        except ImportError:
+            validation_results['components']['pandas'] = {'status': False, 'message': 'Not available'}
+            validation_results['errors'].append('Pandas not available')
+        
+        try:
+            import streamlit
+            validation_results['components']['streamlit'] = {'status': True, 'message': 'Available'}
+        except ImportError:
+            validation_results['components']['streamlit'] = {'status': False, 'message': 'Not available'}
+            validation_results['errors'].append('Streamlit not available')
+        
+        # Determine status
+        if validation_results['errors']:
+            validation_results['overall_status'] = 'FAIL'
+        elif validation_results['warnings']:
+            validation_results['overall_status'] = 'WARNING'
+        else:
+            validation_results['overall_status'] = 'PASS'
+        
+        return validation_results
+    
+    def _render_fallback_results(self, validation_results: dict):
+        """Render fallback validation results"""
+        
+        status = validation_results.get('overall_status', 'UNKNOWN')
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            if status == 'PASS':
+                st.success(f"**System Status:** {status}")
+            elif status == 'FAIL':
+                st.error(f"**System Status:** {status}")
+            else:
+                st.warning(f"**System Status:** {status}")
+        
+        with col2:
+            components = validation_results.get('components', {})
+            passed_components = sum(1 for comp in components.values() if comp.get('status', False))
+            total_components = len(components)
+            st.metric("Components OK", f"{passed_components}/{total_components}")
+        
+        with col3:
+            errors = len(validation_results.get('errors', []))
+            st.metric("Critical Errors", errors, delta=-errors if errors > 0 else None)
+        
+        with col4:
+            warnings = len(validation_results.get('warnings', []))
+            st.metric("Warnings", warnings, delta=-warnings if warnings > 0 else None)
+        
+        # Component details
+        st.subheader("📊 Component Validation Details (Fallback Mode)")
+        
+        if components:
+            component_data = []
+            for name, info in components.items():
+                component_data.append({
+                    'Component': name,
+                    'Status': '✅ Pass' if info.get('status', False) else '❌ Fail',
+                    'Message': info.get('message', 'No message')
+                })
+            
+            df_components = pd.DataFrame(component_data)
+            st.dataframe(df_components, use_container_width=True)
+        
+        # Errors and warnings
+        if validation_results.get('errors'):
+            st.subheader("🚨 Critical Errors")
+            for error in validation_results['errors']:
+                st.error(f"• {error}")
+        
+        if validation_results.get('warnings'):
+            st.subheader("⚠️ Warnings")
+            for warning in validation_results['warnings']:
+                st.warning(f"• {warning}")
+        
+        # Recommendations
+        if validation_results.get('recommendations'):
+            st.subheader("💡 Recommendations")
+            for rec in validation_results['recommendations']:
+                st.info(f"• {rec}")
+        
+        except Exception as e:
+            st.error(f"System validation failed: {e}")
     
     def _render_data_integrity(self):
         """Render data integrity validation"""

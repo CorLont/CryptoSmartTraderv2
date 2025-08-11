@@ -111,15 +111,7 @@ class StrictConfidenceGate:
             if not filtered_df.empty and 'pred_30d' in filtered_df.columns:
                 filtered_df = filtered_df.sort_values('pred_30d', ascending=False)
             
-            # Create explanations for passed predictions (avoid dummy data)
-            explanations = {}
-            if not filtered_df.empty:
-                for idx, row in filtered_df.iterrows():
-                    coin = row.get('coin', f'coin_{idx}')
-                    # Instead of generating fake SHAP data, provide transparent explanation
-                    explanations[coin] = f"Passed {self.confidence_threshold:.0%} confidence gate based on authentic model predictions"
-            
-            # Create gate report with explanations included
+            # Create gate report - remove inconsistent explanations
             gate_report = self._create_gate_report(
                 gate_id, original_count, passed_count, 
                 "success" if passed_count > 0 else "no_candidates"
@@ -129,8 +121,7 @@ class StrictConfidenceGate:
                 'low_confidence_rejected': low_confidence_count,
                 'invalid_predictions_rejected': invalid_predictions_count,
                 'confidence_threshold': self.confidence_threshold,
-                'processing_time': time.time() - start_time,
-                'explanations': explanations  # Include explanations in result
+                'processing_time': time.time() - start_time
             })
             
             # Log results

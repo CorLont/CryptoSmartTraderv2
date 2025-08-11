@@ -16,15 +16,28 @@ import logging
 try:
     from core.synthetic_data_augmentation import (
         BlackSwanGenerator,
-        RegimeShiftGenerator, 
-        FlashCrashGenerator,
-        WhaleManipulationGenerator,
         SyntheticScenario
     )
+    # Try additional imports with fallbacks
+    try:
+        from core.synthetic_data_augmentation import RegimeShiftGenerator
+    except (ImportError, AttributeError):
+        RegimeShiftGenerator = None
+    
+    try:
+        from core.synthetic_data_augmentation import FlashCrashGenerator
+    except (ImportError, AttributeError):
+        FlashCrashGenerator = None
+        
+    try:
+        from core.synthetic_data_augmentation import WhaleManipulationGenerator
+    except (ImportError, AttributeError):
+        WhaleManipulationGenerator = None
+        
     SYNTH_OK = True
-except ImportError:
+except ImportError as e:
     SYNTH_OK = False
-    # Don't show error immediately - will be shown in render method
+    import_error = str(e)
 
 class SyntheticDataDashboard:
     """Dashboard for synthetic data augmentation and stress testing"""
@@ -41,7 +54,8 @@ class SyntheticDataDashboard:
         # Early exit if synthetic module not available
         if not SYNTH_OK:
             st.error("❌ Synthetic data augmentation module not available")
-            st.info("The required core.synthetic_data_augmentation module could not be imported.")
+            st.info(f"Import error: {import_error}")
+            st.info("Check that core.synthetic_data_augmentation is properly installed")
             return
         
         # Tabs for different functionalities
