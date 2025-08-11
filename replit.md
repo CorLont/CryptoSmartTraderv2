@@ -49,6 +49,8 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Storage:** Local file system with JSON/CSV and caching.
 - **API:** FastAPI with rate limiting, CORS hardening, Prometheus metrics.
 - **HTTP Layer:** Enterprise async client with circuit breakers, exponential backoff, response caching with TTL, stale-while-revalidate.
+- **ML Pipeline:** Time-series CV with walk-forward validation, feature leakage detection, model registry with versioning, drift detection with automatic inference control.
+- **Backtesting:** Realistic order execution with exchange-specific slippage models, fee structures, risk management, kill-switch based on health/drift scores.
 
 ### Key Architectural Decisions
 - **Deployment & Structure:** LEAN 3-SCRIPT DEPLOYMENT SYSTEM for installation automation; DUPLICATE-FREE CORE STRUCTURE with 5 core managers and 5 enhanced agents; CONSOLIDATED DEPENDENCY MANAGEMENT via `pyproject.toml`; CLEAN ARCHIVE SYSTEM for legacy files.
