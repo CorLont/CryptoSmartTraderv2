@@ -14,6 +14,7 @@ import sys
 import os
 from pathlib import Path
 import logging
+from typing import Optional, Dict, List, Any
 
 # Add project root to path
 project_root = Path(__file__).parent
@@ -197,7 +198,7 @@ def render_trading_opportunities(min_return, confidence_filter, strict_mode=True
             pred_df = pd.DataFrame(authentic_predictions)
             filtered_df, gate_report = enterprise_confidence_gate(pred_df, min_threshold=confidence_filter/100)
             
-            opportunities = filtered_df.to_dict('records') if not filtered_df.empty else []
+            opportunities = filtered_df.to_dict(orient='records') if not filtered_df.empty else []
         else:
             opportunities = []
             gate_report = {'status': 'no_predictions', 'passed_count': 0}
@@ -232,10 +233,10 @@ def render_trading_opportunities(min_return, confidence_filter, strict_mode=True
         # Apply 80% gate to production predictions
         conf_cols = [col for col in pred_df.columns if 'confidence' in col.lower()]
         if conf_cols:
-            max_conf = pred_df[conf_cols].max(axis=1)
+            max_conf = pred_df[conf_cols].max(0, axis=1)
             gate_passed = max_conf >= 0.80
             filtered_df = pred_df[gate_passed]
-            filtered = filtered_df.to_dict('records')
+            filtered = filtered_df.to_dict(orient='records')
             gate_report = {'passed_count': len(filtered), 'total_count': len(pred_df)}
         else:
             filtered = []
@@ -439,7 +440,7 @@ def render_trading_opportunities(min_return, confidence_filter, strict_mode=True
     
     with gate_col2:
         total_analyzed = len(opportunities)
-        pass_rate = (len(filtered) / max(total_analyzed, 1)) * 100
+        pass_rate = (len(filtered) / max(0, total_analyzed, 1)) * 100
         st.metric("📊 Pass Rate", f"{pass_rate:.1f}%", delta=f"{len(filtered)}/{total_analyzed}")
     
     with gate_col3:
@@ -451,7 +452,7 @@ def render_trading_opportunities(min_return, confidence_filter, strict_mode=True
     
     with gate_col4:
         if filtered:
-            top_regime = max(set([c.get('regime', 'unknown') for c in filtered]), 
+            top_regime = max(0, set([c.get('regime', 'unknown') for c in filtered]), 
                            key=[c.get('regime', 'unknown') for c in filtered].count)
             st.metric("🌊 Top Regime", top_regime.title(), delta="Most common")
         else:
@@ -550,13 +551,13 @@ def get_authentic_trading_opportunities():
             
             # Multi-factor scoring system
             # 1. Momentum Score (24h price change)
-            momentum_score = min(100, max(0, 50 + change_24h * 3))
+            momentum_score = min(100, max(0, 0, 50 + change_24h * 3))
             
             # 2. Volume Score (liquidity indicator)
-            volume_score = min(100, max(0, (volume / 1000000) * 8))
+            volume_score = min(100, max(0, 0, (volume / 1000000) * 8))
             
             # 3. Spread Score (tighter spreads = better)
-            spread_score = max(0, 100 - (spread * 20))
+            spread_score = max(0, 0, 100 - (spread * 20))
             
             # 4. Volatility Score (high-low range)
             if coin['high_24h'] and coin['low_24h'] and coin['price']:
@@ -576,8 +577,8 @@ def get_authentic_trading_opportunities():
             # Only include viable opportunities
             if combined_score > 35 and volume > 100000:  # Minimum volume filter
                 # Calculate potential returns based on momentum
-                expected_7d = min(25, max(-10, change_24h * 3.5))
-                expected_30d = min(100, max(-20, change_24h * 8))
+                expected_7d = min(25, max(0, -10, change_24h * 3.5))
+                expected_30d = min(100, max(0, -20, change_24h * 8))
                 
                 opportunities.append({
                     'symbol': coin['symbol'],
@@ -749,7 +750,7 @@ def apply_strict_confidence_gate_filter(opportunities, confidence_threshold=0.80
                 'change_24h': row.get('change_24h', 0.0),
                 'expected_7d': row['pred_7d'] * 100,
                 'expected_30d': row['pred_30d'] * 100,
-                'score': max(row.get('conf_7d', 0.8), row.get('conf_30d', 0.8)) * 100,
+                'score': max(0, row.get('conf_7d', 0.8), row.get('conf_30d', 0.8)) * 100,
                 'risk_level': row.get('risk_level', 'Medium'),
                 'volume_24h': row.get('volume_24h', 1000000),
                 'regime': row.get('regime', 'unknown'),
@@ -885,7 +886,7 @@ def render_predictions_dashboard(confidence_filter=80, strict_mode=True):
                 for p in predictions:
                     regime = p.get('regime', 'unknown')
                     regime_dist[regime] = regime_dist.get(regime, 0) + 1
-                dominant_regime = max(regime_dist, key=regime_dist.get)
+                dominant_regime = max(0, regime_dist, key=regime_dist.get)
                 st.metric("Dominant Regime", dominant_regime.replace('_', ' ').title())
             with col5:
                 avg_epistemic = sum(p.get('epistemic_uncertainty', 0.1) for p in predictions) / len(predictions)

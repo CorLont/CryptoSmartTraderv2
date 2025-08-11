@@ -52,7 +52,7 @@ def prepare_training_data(df):
     
     if not has_targets:
         logger.warning("No target columns found - creating synthetic targets for initial training")
-        from ml.synthetic_targets import create_synthetic_targets
+        from synthetic_targets import create_synthetic_targets
         df = create_synthetic_targets(df.copy())
     
     # Create targets for multi-horizon prediction
