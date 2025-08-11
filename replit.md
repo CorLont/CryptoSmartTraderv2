@@ -1,15 +1,14 @@
 # replit.md
 
 ## Overview
-CryptoSmartTrader V2 is a multi-agent cryptocurrency trading intelligence system designed for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies.
+CryptoSmartTrader V2 is a multi-agent cryptocurrency trading intelligence system for professional institutional-grade analysis. It analyzes over 1457+ cryptocurrencies, providing real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management. The system aims for high returns by combining technical indicators, sentiment analysis, whale detection, and ML predictions, focusing on comprehensive analysis for detecting fast-growing cryptocurrencies.
 
 The enterprise architecture goals include higher prediction accuracy, zero dummy-data tolerance, strict confidence gating, robust async scraping, modern ML/AI techniques (uncertainty, regime, ensembles), and daily evaluation with GO/NOGO decisions. Key capabilities include enterprise security, Bayesian uncertainty quantification, dynamic coin discovery, advanced AI/ML, multi-agent cooperation, model monitoring, black swan simulation, and real-time order book data integration.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 Data integrity policy: ABSOLUTE ZERO-TOLERANCE for synthetic/fallback data - Complete elimination of all non-authentic data sources in production mode. Only 100% authentic data from direct exchange APIs allowed. Production automatically blocks any violations. No fallback, no synthetic data, no interpolated values, no NaN values allowed in production. Strict data integrity enforcement with real-time validation and automatic production blocking.
-
-RENDEMENT-DRUKKENDE FACTOREN ELIMINATED (2025-01-11): All critical decision-reliability issues resolved:
+RENDEMENT-DRUKKENDE FACTOREN ELIMINATED: All critical decision-reliability issues resolved:
 - Unified Confidence Gate: Single source of truth replaces inconsistent class/standalone gates preventing different candidate sets
 - Authentic AI Explanations: Real OpenAI-powered explanations replace random SHAP data, improving trader decision confidence
 - Consolidated Logging System: Single logging framework prevents inconsistent observability and scattered error reporting
@@ -37,14 +36,14 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Storage:** Local file system with JSON/CSV and caching.
 
 ### Key Architectural Decisions
-- **LEAN 3-SCRIPT DEPLOYMENT SYSTEM:** Complete installation automation via 1_install_all_dependencies.bat, 2_start_background_services.bat, 3_start_dashboard.bat with comprehensive dependency management and Windows optimization.
-- **DUPLICATE-FREE CORE STRUCTURE:** Systematically consolidated 32+ duplicate files into 5 core managers (config, orchestrator, data collector, health monitor, logging) and 5 enhanced agents (ML, sentiment, technical, whale, backtest).
-- **CONSOLIDATED DEPENDENCY MANAGEMENT:** All dependencies managed through pyproject.toml with explicit version control and performance packages (CuPy, Numba, LightGBM).
-- **CLEAN ARCHIVE SYSTEM:** All legacy/duplicate files archived in structured directories maintaining project history while achieving lean production architecture.
+- **LEAN 3-SCRIPT DEPLOYMENT SYSTEM:** Complete installation automation via Windows batch scripts.
+- **DUPLICATE-FREE CORE STRUCTURE:** Consolidated duplicate files into 5 core managers and 5 enhanced agents.
+- **CONSOLIDATED DEPENDENCY MANAGEMENT:** All dependencies managed through `pyproject.toml` with explicit version control and performance packages.
+- **CLEAN ARCHIVE SYSTEM:** Legacy/duplicate files archived for historical maintenance while maintaining a lean production architecture.
 - **Comprehensive Testing Framework:** Enterprise pytest suite with 80%+ coverage.
 - **Enterprise Security Framework:** Secrets management, log redaction.
 - **Production-Grade Logging & Monitoring:** Structured JSON logging, Prometheus metrics.
-- **Dependency Injection Container:** Full dependency-injector implementation.
+- **Dependency Injection Container:** Full `dependency-injector` implementation.
 - **Pydantic Configuration Management:** Type-safe settings with environment variable support.
 - **Async I/O Architecture:** Complete async/await implementation, global rate limiting.
 - **Universal Configuration Management:** Centralized with validation and backup.
@@ -75,20 +74,6 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Multi-Horizon Batch Inference Engine:** Unified batch processing for all coins across all horizons with atomic operations.
 - **Multi-Horizon Signal Quality Validator:** Enterprise signal validation system with defined metrics.
 - **System Health Monitor with GO/NO-GO Gates:** Enterprise health scoring system determining live trading authorization.
-- **Enterprise Meetscripts Suite:** Operational measurement toolkit.
-- **Complete Operational Playbook:** Full enterprise workflow automation.
-- **Drift Detection System:** Complete drift detection with error trending analysis and distribution monitoring.
-- **Fine-Tune Scheduler with EWC:** Automated fine-tuning system with replay buffer and Elastic Weight Consolidation.
-- **Auto-Disable System:** Trading safety system that automatically disables live trading based on health scores.
-- **L2 Orderbook Simulator:** Complete Level-2 order book simulation.
-- **Slippage Estimator:** Real-time slippage estimation system.
-- **Paper Trading Engine:** Mandatory 4-week paper trading validation.
-- **MLflow Manager:** Complete MLflow integration for model tracking, versioning, and registry.
-- **Backup/Restore System:** Complete backup and restore scripts.
-- **One-Click Pipeline:** Complete automated pipeline runner.
-- **Monte Carlo Dropout Inference:** Bayesian uncertainty quantification for neural networks.
-- **Regime Detection HMM:** Hidden Markov Model-based market regime classification.
-- **Daily Logging Bundler:** Ultra-compact daily metrics logging system.
 - **Enterprise Risk Mitigation:** Comprehensive risk mitigation system covering data gaps, overfitting, GPU bottlenecks, and complexity management.
 - **Data Completeness Gate:** Zero-tolerance data quality gate.
 - **Workstation Optimizer:** Complete workstation optimization for i9-32GB-RTX2000 setup.
