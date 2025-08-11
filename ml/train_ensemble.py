@@ -44,8 +44,6 @@ class EnsembleTrainer:
         else:
             logger.error("Enhanced features.csv not found - run fix_ml_training_pipeline.py first")
             return False
-            
-        df = pd.read_csv(features_file)
         logger.info(f"Loaded {len(df)} samples with {len(df.columns)} features")
         
         # Verify sentiment/whale features are present

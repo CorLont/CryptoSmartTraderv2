@@ -1,14 +1,24 @@
 {
-  "timestamp": "2025-08-09T13:43:52.520051",
-  "total_generated": 10,
-  "passed_confidence_gate": 8,
+  "timestamp": "2025-08-11T07:56:30.217275",
+  "total_coins_analyzed": 471,
+  "predictions_generated": 471,
+  "predictions_passed_gate": 438,
   "gate_threshold": 0.8,
+  "mean_confidence_all_horizons": 0.8052807587244768,
   "model_type": "RandomForest",
+  "horizons": [
+    "1h",
+    "24h",
+    "168h",
+    "720h"
+  ],
   "features_included": [
     "sentiment_analysis",
     "whale_detection",
     "meta_labeling",
     "uncertainty_quantification",
-    "regime_detection"
-  ]
+    "regime_detection",
+    "event_impact"
+  ],
+  "confidence_calculation_method": "ensemble_sigma_based"
 }
