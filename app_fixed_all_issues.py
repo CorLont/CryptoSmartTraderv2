@@ -523,9 +523,9 @@ def render_quick_overview():
                 st.subheader("🎯 Top 3 Quick Opportunities")
                 high_conf = df[df['gate_passed'] == True]
                 if len(high_conf) > 0:
-                    top_3 = high_conf.nlargest(3, 'expected_return_pct')
+                    top_3 = high_conf.nlargest(3, 'expected_return_pct', keep='first')
                     for idx, row in top_3.iterrows():
-                        whale_indicator = "🐋" if row['whale_activity_detected'] else ""
+                        whale_indicator = "🐋" if bool(row['whale_activity_detected']) else ""
                         st.write(f"{whale_indicator} **{row['coin']}**: {row['expected_return_pct']:.2f}% expected return")
         except Exception as e:
             st.error(f"Error loading quick overview: {e}")
@@ -575,15 +575,17 @@ def render_comprehensive_analysis():
             # Top opportunities
             st.subheader("🎯 Top Trading Opportunities")
             
-            strong_buys = high_conf[
-                (high_conf['expected_return_pct'] > 5) & 
-                (high_conf['max_confidence'] > 0.85)
+            # Ensure we're working with a DataFrame, not array
+            high_conf_df = pd.DataFrame(high_conf) if not isinstance(high_conf, pd.DataFrame) else high_conf
+            strong_buys = high_conf_df[
+                (high_conf_df['expected_return_pct'] > 5) & 
+                (high_conf_df['max_confidence'] > 0.85)
             ].sort_values('expected_return_pct', ascending=False)
             
             st.write(f"**{len(strong_buys)} Strong Buy Opportunities:**")
             
             for idx, row in strong_buys.head(15).iterrows():
-                whale_indicator = "🐋" if row['whale_activity_detected'] else ""
+                whale_indicator = "🐋" if bool(row['whale_activity_detected']) else ""
                 
                 with st.expander(f"{whale_indicator} {row['coin']} - {row['expected_return_pct']:.2f}% Expected Return"):
                     col_a, col_b, col_c = st.columns(3)
@@ -612,7 +614,7 @@ def render_comprehensive_analysis():
             if len(whale_coins) > 0:
                 st.subheader(f"🐋 Whale Activity Analysis ({len(whale_coins)} coins)")
                 
-                whale_sorted = whale_coins.sort_values('whale_score', ascending=False)
+                whale_sorted = pd.DataFrame(whale_coins).sort_values('whale_score', ascending=False)
                 st.write("**Top Whale Opportunities:**")
                 for idx, row in whale_sorted.head(10).iterrows():
                     st.write(f"🐋 **{row['coin']}**: {row['expected_return_pct']:.2f}% return (Whale Score: {row['whale_score']:.2f})")
@@ -632,15 +634,16 @@ def render_comprehensive_analysis():
             
             # Quick top picks
             if len(high_conf) > 0:
-                strong_buys = high_conf[
-                    (high_conf['expected_return_pct'] > 5) & 
-                    (high_conf['max_confidence'] > 0.85)
+                high_conf_df = pd.DataFrame(high_conf) if not isinstance(high_conf, pd.DataFrame) else high_conf
+                strong_buys = high_conf_df[
+                    (high_conf_df['expected_return_pct'] > 5) & 
+                    (high_conf_df['max_confidence'] > 0.85)
                 ].sort_values('expected_return_pct', ascending=False)
                 
                 st.subheader(f"🎯 Top {min(10, len(strong_buys))} Quick Picks")
                 
                 for idx, row in strong_buys.head(10).iterrows():
-                    whale_indicator = "🐋" if row['whale_activity_detected'] else ""
+                    whale_indicator = "🐋" if bool(row['whale_activity_detected']) else ""
                     st.write(f"{whale_indicator} **{row['coin']}**: {row['expected_return_pct']:.2f}% return (confidence: {row['max_confidence']:.3f})")
         
         elif st.session_state.whale_focus:
@@ -653,7 +656,7 @@ def render_comprehensive_analysis():
                 st.metric("Average Whale Return", f"{whale_coins['expected_return_pct'].mean():.2f}%")
                 
                 st.subheader("Top Whale Opportunities")
-                whale_sorted = whale_coins.sort_values(['whale_score', 'expected_return_pct'], ascending=False)
+                whale_sorted = pd.DataFrame(whale_coins).sort_values(['whale_score', 'expected_return_pct'], ascending=False)
                 
                 for idx, row in whale_sorted.head(15).iterrows():
                     st.write(f"🐋 **{row['coin']}**: {row['expected_return_pct']:.2f}% return | Whale Score: {row['whale_score']:.2f} | Confidence: {row['max_confidence']:.3f}")

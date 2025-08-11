@@ -1,0 +1,58 @@
+technical_agent.py
+Kern: threaded TA-agent met eigen indicator-set. technical_agent
+
+Problemen
+
+Thread-lek/geen shutdown: stop() zet alleen self.active=False; er is geen join() op self.agent_thread → kans op zombie-threads. Starten in __init__ maakt dit lastiger te orkestreren. technical_agent
+
+Dummy data in productie-pad: _generate_mock_historical_data() maakt random OHLCV als fallback; _get_analysis_data() gebruikt dit automatisch bij ontbrekende historie → “nep” output stroomt het systeem in. technical_agent
+
+Bias naar SELL: in _generate_overall_signal() wordt bij afwezig macd_bullish (key ontbreekt ⇒ False) altijd ‘sell’ toegevoegd → structurele sell-bias. technical_agent
+
+Div/NaN-risico’s:
+
+Bollinger: bb_width = (bb_upper-bb_lower)/bb_middle → /0 bij bb_middle==0.
+
+ATR/ADX: delingen door atr zonder bescherming; kan inf/NaN opleveren.
+
+Support/Resistance: gebruikt rolling(5) maar guard is len(df) >= 1; bij len<5 krijg je .iloc[-1] op NaN. technical_agent
+
+TA lib niet benut: TA_AVAILABLE wordt alleen in status gerapporteerd; alle indicatoren zijn custom en deels “mock” (Parabolic SAR). technical_agent
+
+Tijdstempels: overal datetime.now() (naief, lokale tijd) i.p.v. UTC; inconsistente tijdzone-semantiek. technical_agent
+
+Gerichte patches
+
+python
+Kopiëren
+Bewerken
+# Stop/shutdown
+def stop(self):
+    self.active = False
+    if hasattr(self, "agent_thread") and self.agent_thread.is_alive():
+        self.agent_thread.join(timeout=5)
+    self.logger.info("Technical Agent stopped")
+python
+Kopiëren
+Bewerken
+# MACD-bias fix
+macd_bull = momentum_data.get('macd_bullish')
+if macd_bull is True:
+    signals.append('buy'); confidence_scores.append(0.3)
+elif macd_bull is False:
+    signals.append('sell'); confidence_scores.append(0.3)
+# (niet toevoegen als key ontbreekt)
+python
+Kopiëren
+Bewerken
+# Bollinger safe
+bbm = bb_middle.iloc[-1]
+volatility['bb_width'] = float(((bb_upper - bb_lower) / max(bbm, 1e-9)).iloc[-1])
+python
+Kopiëren
+Bewerken
+# Support/Resistance guard
+if len(df) >= 5:
+    typical_price = (high + low + close) / 3
+    pivot = typical_price.rolling(window=5).mean().iloc[-1]
+    ...
