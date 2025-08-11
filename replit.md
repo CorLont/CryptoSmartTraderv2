@@ -9,9 +9,10 @@ The enterprise architecture goals include higher prediction accuracy, zero dummy
 Preferred communication style: Simple, everyday language.
 Data integrity policy: ABSOLUTE ZERO-TOLERANCE for synthetic/fallback data - Complete elimination of all non-authentic data sources in production mode. Only 100% authentic data from direct exchange APIs allowed. Production automatically blocks any violations. No fallback, no synthetic data, no interpolated values, no NaN values allowed in production. Strict data integrity enforcement with real-time validation and automatic production blocking.
 Enterprise code quality: Complete enterprise-grade code audit system implemented based on critical failure mode checklist. All 11 categories audited with 7 critical fixes applied achieving 100% success rate.
-Production deployment: Full workstation deployment automation completed with Windows batch scripts, backend enforcement of 80% confidence gate, atomic writes with clear exit codes, calibration reporting, and complete orchestration pipeline.
+Production deployment: LEAN 3-SCRIPT INSTALLATION SYSTEM - Consolidated all installation processes into 3 streamlined Windows batch scripts: 1_install_all_dependencies.bat (complete setup), 2_start_background_services.bat (services), 3_start_dashboard.bat (main app). Full workstation deployment automation with backend enforcement of 80% confidence gate, atomic writes, and clean architecture.
 Production requirements: Full Kraken coverage (no demo limits), consistent RF model architecture, sentiment+whale fully integrated in UI, OpenAI intelligence actively used in predictions, backtesting/realized tracking visible for 500% goal validation, automatic retraining/drift monitoring operational, no dummy sections in dashboard.
-Code quality standards: All critical code quality issues resolved - no provider conflicts, consistent confidence gating, no false success claims, no dummy data risks, proper error handling, no unreachable code, fixed SettingWithCopyWarning issues. Enterprise-grade code quality achieved with comprehensive validation and honest reporting.
+Code quality standards: DUPLICATE-FREE LEAN ARCHITECTURE - Systematically consolidated 32+ duplicate files into clean core structure. 5 core managers, 5 enhanced agents, zero conflicts. All critical code quality issues resolved with enterprise-grade validation and honest reporting.
+Architecture preference: Lean, focused, production-ready structure with consolidated dependencies and no duplicate code paths.
 
 ## System Architecture
 
@@ -28,6 +29,10 @@ The system employs a Distributed Multi-Process Architecture, managing 8 isolated
 - **Storage:** Local file system with JSON/CSV and caching.
 
 ### Key Architectural Decisions
+- **LEAN 3-SCRIPT DEPLOYMENT SYSTEM:** Complete installation automation via 1_install_all_dependencies.bat, 2_start_background_services.bat, 3_start_dashboard.bat with comprehensive dependency management and Windows optimization.
+- **DUPLICATE-FREE CORE STRUCTURE:** Systematically consolidated 32+ duplicate files into 5 core managers (config, orchestrator, data collector, health monitor, logging) and 5 enhanced agents (ML, sentiment, technical, whale, backtest).
+- **CONSOLIDATED DEPENDENCY MANAGEMENT:** All dependencies managed through pyproject.toml with explicit version control and performance packages (CuPy, Numba, LightGBM).
+- **CLEAN ARCHIVE SYSTEM:** All legacy/duplicate files archived in structured directories maintaining project history while achieving lean production architecture.
 - **Comprehensive Testing Framework:** Enterprise pytest suite with 80%+ coverage.
 - **Enterprise Security Framework:** Secrets management, log redaction.
 - **Production-Grade Logging & Monitoring:** Structured JSON logging, Prometheus metrics.
