@@ -49,6 +49,7 @@ dependencies = [
     "tenacity>=8.2.0",
     "textblob>=0.17.0",
     "uvicorn>=0.35.0",
+    "xgboost>=3.0.3",
 ]
 
 [project.optional-dependencies]

@@ -19,6 +19,8 @@ from sklearn.calibration import CalibratedClassifierCV  # type: ignore
 import joblib
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 try:
     import xgboost as xgb  # type: ignore
     XGBOOST_AVAILABLE = True
@@ -124,7 +126,7 @@ class MetaLearner:
             
             self.feature_names = feature_names
             self.model_names = list(set(
-                pred['model_name'] 
+                pred.model_name 
                 for data in training_data 
                 for pred in data['base_predictions'].values()
             ))

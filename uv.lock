@@ -622,6 +622,7 @@ dependencies = [
     { name = "tenacity" },
     { name = "textblob" },
     { name = "uvicorn" },
+    { name = "xgboost" },
 ]
 
 [package.optional-dependencies]
@@ -761,6 +762,7 @@ requires-dist = [
     { name = "torch", marker = "extra == 'ml'", specifier = ">=2.1.0" },
     { name = "transformers", marker = "extra == 'ml'", specifier = ">=4.30.0" },
     { name = "uvicorn", specifier = ">=0.35.0" },
+    { name = "xgboost", specifier = ">=3.0.3" },
     { name = "xgboost", marker = "extra == 'ml'", specifier = ">=2.0.0" },
 ]
 
