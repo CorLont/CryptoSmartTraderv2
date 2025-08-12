@@ -34,8 +34,8 @@ jobs:
         run: |
           uvx ruff check .
           uvx ruff format --check .
-          uvx black --check . || true
-          uvx mypy --install-types --non-interactive . || true
+          uvx black --check .
+          uvx mypy --install-types --non-interactive .
 
       - name: Run tests (pytest)
         run: |
@@ -43,4 +43,4 @@ jobs:
 
       - name: Security audit (pip-audit)
         run: |
-          uvx pip-audit || true
+          uvx pip-audit
