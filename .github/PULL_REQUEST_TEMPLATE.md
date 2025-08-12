@@ -1,51 +1,71 @@
 # Pull Request
 
-## Description
-Brief description of the changes and their purpose.
+## Beschrijving
+<!-- Korte beschrijving van wat deze PR doet -->
 
-## Type of Change
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Performance improvement
-- [ ] Code refactoring
-- [ ] Security fix
-- [ ] CI/CD improvement
+## Type Wijziging
+<!-- Vink aan wat van toepassing is -->
 
-## Testing
-- [ ] Unit tests pass
-- [ ] Integration tests pass
-- [ ] Property-based tests pass (if applicable)
-- [ ] Manual testing completed
-- [ ] Performance testing completed (if applicable)
+- [ ] 🐛 Bug fix (non-breaking change die een issue oplost)
+- [ ] ✨ Nieuwe feature (non-breaking change die functionaliteit toevoegt)
+- [ ] 💥 Breaking change (fix of feature die bestaande functionaliteit beïnvloedt)
+- [ ] 📚 Documentatie update
+- [ ] 🔧 Refactoring (geen nieuwe features of bug fixes)
+- [ ] ⚡ Performance verbetering
+- [ ] 🧪 Tests toevoegen of bijwerken
+- [ ] 🔒 Security fix
 
-## Security Checklist
-- [ ] No secrets or API keys in code
-- [ ] Dependencies scanned for vulnerabilities
-- [ ] Input validation implemented
-- [ ] Error handling doesn't leak sensitive information
+## Checklist
+<!-- Alle items moeten aangevinkt zijn voordat de PR kan worden gemerged -->
 
-## Documentation
-- [ ] Code is well-commented
-- [ ] Documentation updated (if applicable)
-- [ ] README updated (if applicable)
-- [ ] API documentation updated (if applicable)
+### Code Kwaliteit
+- [ ] Code volgt project style guidelines (ruff, black, mypy clean)
+- [ ] Zelf-review uitgevoerd van eigen code
+- [ ] Code is goed gedocumenteerd met docstrings
+- [ ] Geen console.log, print statements of debug code achtergelaten
+- [ ] Import statements zijn clean en georganiseerd
 
-## Performance Impact
-- [ ] No significant performance degradation
-- [ ] Memory usage is acceptable
-- [ ] Database queries are optimized (if applicable)
-- [ ] Caching strategy is appropriate
+### Tests
+- [ ] Tests toegevoegd die de wijziging dekken
+- [ ] Alle nieuwe en bestaande tests slagen
+- [ ] Coverage blijft > 85% (check artifacts)
+- [ ] Edge cases zijn getest
+- [ ] Integration tests bijgewerkt indien nodig
 
-## Breaking Changes
-If this PR contains breaking changes, describe:
-- What breaks
-- Migration path for users
-- Version bump required
+### Documentatie
+- [ ] README.md bijgewerkt indien interface wijzigingen
+- [ ] API documentatie bijgewerkt indien endpoints gewijzigd
+- [ ] CHANGELOG.md entry toegevoegd met juiste versie
+- [ ] Inline commentaar toegevoegd voor complexe logic
+- [ ] replit.md bijgewerkt bij architectuur wijzigingen
 
-## Screenshots/Recordings
-If applicable, add screenshots or recordings to help explain your changes.
+### Security & Performance
+- [ ] Geen hardcoded secrets of API keys
+- [ ] Input validation toegevoegd waar nodig
+- [ ] Geen performance regressies geïntroduceerd
+- [ ] Security implications overwogen
+- [ ] Database migrations safe voor productie (indien van toepassing)
 
-## Additional Notes
-Any additional information that reviewers should know.
+### Trading System Specifiek
+- [ ] Data integrity checks toegevoegd/behouden
+- [ ] Risk management regels niet omzeild
+- [ ] 80% confidence gate respecteerd
+- [ ] Geen synthetic/dummy data geïntroduceerd
+- [ ] ML model changes hebben proper validation
+
+## Screenshots/Demo
+<!-- Voor UI changes, voeg screenshots toe -->
+
+## Related Issues
+<!-- Link naar gerelateerde GitHub issues -->
+Fixes #(issue nummer)
+
+## Deployment Notes
+<!-- Speciale instructies voor deployment indien nodig -->
+
+## Reviewer Checklist
+<!-- Voor reviewers -->
+- [ ] Code review voltooid
+- [ ] Tests draaien lokaal
+- [ ] Documentatie review
+- [ ] Security review indien applicable
