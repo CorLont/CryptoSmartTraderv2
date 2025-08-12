@@ -53,5 +53,9 @@ externalPort = 8000
 localPort = 8001
 externalPort = 3003
 
+[[ports]]
+localPort = 8899
+externalPort = 4200
+
 [agent]
 integrations = ["python_slack==1.0.0", "web_scraper==1.0.0"]

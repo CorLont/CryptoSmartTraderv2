@@ -1,679 +1,691 @@
 """
-Health Checker
+Health Checker with Real Dependency Validation
 
-Comprehensive health monitoring system with dependency checks,
-RTO/RPO tracking, and automated recovery procedures.
+Comprehensive health checking system that validates real dependencies
+including APIs, databases, file systems, and external services.
 """
 
-import asyncio
-import aiohttp
-import psutil
+import os
 import time
-from typing import Dict, List, Optional, Any, Callable, Union
+import requests
+import psutil
+from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 import logging
 import json
-import threading
+import tempfile
 from pathlib import Path
+import socket
+import subprocess
 
 logger = logging.getLogger(__name__)
 
-class HealthStatus(Enum):
-    """Health check status levels"""
+class DependencyType(Enum):
+    """Types of dependencies to check"""
+    API_ENDPOINT = "api_endpoint"
+    DATABASE = "database"
+    FILE_SYSTEM = "file_system"
+    EXTERNAL_SERVICE = "external_service"
+    SYSTEM_RESOURCE = "system_resource"
+    NETWORK_PORT = "network_port"
+
+class HealthLevel(Enum):
+    """Health levels"""
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
     CRITICAL = "critical"
 
-
-class ComponentType(Enum):
-    """Types of components to monitor"""
-    API_ENDPOINT = "api_endpoint"
-    DATABASE = "database"
-    EXCHANGE_API = "exchange_api"
-    CACHE_SYSTEM = "cache_system"
-    MESSAGE_QUEUE = "message_queue"
-    FILE_SYSTEM = "file_system"
-    EXTERNAL_SERVICE = "external_service"
-
-
 @dataclass
-class HealthCheck:
-    """Individual health check configuration"""
-    check_id: str
+class DependencyCheck:
+    """Configuration for a dependency health check"""
     name: str
-    component_type: ComponentType
+    type: DependencyType
+    description: str
+    critical: bool = True
     
     # Check parameters
-    endpoint_url: Optional[str] = None
-    timeout_seconds: int = 10
-    expected_response_time_ms: int = 1000
-    
-    # Dependency information
-    is_critical: bool = True
-    dependencies: List[str] = field(default_factory=list)
+    url: Optional[str] = None
+    host: Optional[str] = None
+    port: Optional[int] = None
+    path: Optional[str] = None
+    command: Optional[str] = None
+    expected_response: Optional[str] = None
     
     # Thresholds
-    max_failures: int = 3
-    failure_window_minutes: int = 5
+    timeout_seconds: float = 10.0
+    retry_count: int = 2
+    warning_threshold: float = 5.0  # Response time warning
+    critical_threshold: float = 10.0  # Response time critical
     
-    # State tracking
-    current_status: HealthStatus = HealthStatus.HEALTHY
-    last_check: Optional[datetime] = None
-    consecutive_failures: int = 0
-    failure_history: List[datetime] = field(default_factory=list)
-    
-    # Performance metrics
-    avg_response_time_ms: float = 0.0
-    last_response_time_ms: float = 0.0
-    
-    @property
-    def is_failing(self) -> bool:
-        """Check if component is currently failing"""
-        return self.current_status in [HealthStatus.UNHEALTHY, HealthStatus.CRITICAL]
-
+    # Resource thresholds
+    max_memory_percent: Optional[float] = None
+    max_cpu_percent: Optional[float] = None
+    max_disk_percent: Optional[float] = None
 
 @dataclass
-class RecoveryProcedure:
-    """Automated recovery procedure"""
-    procedure_id: str
-    name: str
-    component_ids: List[str]
+class HealthCheckResult:
+    """Result of a health check"""
+    dependency_name: str
+    status: HealthLevel
+    response_time_ms: float
+    message: str
+    timestamp: datetime = field(default_factory=datetime.now)
+    details: Dict[str, Any] = field(default_factory=dict)
     
-    # Recovery steps
-    recovery_steps: List[Dict[str, Any]] = field(default_factory=list)
-    max_attempts: int = 3
-    cooldown_minutes: int = 5
-    
-    # State tracking
-    last_executed: Optional[datetime] = None
-    execution_count: int = 0
-    success_count: int = 0
-
+    @property
+    def is_healthy(self) -> bool:
+        return self.status in [HealthLevel.HEALTHY, HealthLevel.DEGRADED]
 
 class HealthChecker:
     """
-    Enterprise health monitoring system
+    Comprehensive health checker for real dependencies
     """
     
-    def __init__(self, check_interval_seconds: int = 30):
-        self.check_interval = check_interval_seconds
+    def __init__(self):
+        self.dependencies: Dict[str, DependencyCheck] = {}
+        self.check_history: List[HealthCheckResult] = []
+        self.last_check_time: Optional[datetime] = None
         
-        # Health checks registry
-        self.health_checks: Dict[str, HealthCheck] = {}
-        self.recovery_procedures: Dict[str, RecoveryProcedure] = {}
+        # Health check results cache
+        self.cached_results: Dict[str, HealthCheckResult] = {}
+        self.cache_ttl: float = 30.0  # Cache results for 30 seconds
         
-        # System health tracking
-        self.system_health = {
-            "overall_status": HealthStatus.HEALTHY,
-            "last_healthy": datetime.now(),
-            "downtime_minutes": 0.0,
-            "mttr_minutes": 0.0,  # Mean Time To Recovery
-            "availability_pct": 100.0
-        }
-        
-        # Callbacks and alerts
-        self.health_change_callbacks: List[Callable] = []
-        self.critical_failure_callbacks: List[Callable] = []
-        
-        # Monitoring control
-        self.monitoring_active = True
-        self.monitor_thread: Optional[threading.Thread] = None
-        
-        # Setup core health checks
-        self._setup_core_health_checks()
-        
-        # Start monitoring
-        self.start_monitoring()
+        # Setup default system checks
+        self._setup_default_checks()
     
-    def _setup_core_health_checks(self):
-        """Setup essential system health checks"""
+    def _setup_default_checks(self):
+        """Setup default system health checks"""
         
-        # System resource checks
-        self.add_health_check(HealthCheck(
-            check_id="cpu_usage",
-            name="CPU Usage",
-            component_type=ComponentType.FILE_SYSTEM,
-            is_critical=True,
-            timeout_seconds=5,
-            max_failures=5,
-            expected_response_time_ms=100
+        # System resources
+        self.add_dependency_check(DependencyCheck(
+            name="system_memory",
+            type=DependencyType.SYSTEM_RESOURCE,
+            description="System memory usage",
+            critical=True,
+            max_memory_percent=90.0
         ))
         
-        self.add_health_check(HealthCheck(
-            check_id="memory_usage",
-            name="Memory Usage",
-            component_type=ComponentType.FILE_SYSTEM,
-            is_critical=True,
-            timeout_seconds=5,
-            max_failures=5,
-            expected_response_time_ms=100
+        self.add_dependency_check(DependencyCheck(
+            name="system_cpu",
+            type=DependencyType.SYSTEM_RESOURCE,
+            description="System CPU usage",
+            critical=False,
+            max_cpu_percent=80.0
         ))
         
-        self.add_health_check(HealthCheck(
-            check_id="disk_space",
-            name="Disk Space",
-            component_type=ComponentType.FILE_SYSTEM,
-            is_critical=True,
-            timeout_seconds=5,
-            max_failures=3,
-            expected_response_time_ms=200
+        self.add_dependency_check(DependencyCheck(
+            name="system_disk",
+            type=DependencyType.SYSTEM_RESOURCE,
+            description="System disk usage",
+            critical=True,
+            max_disk_percent=85.0
         ))
         
-        # API endpoint checks
-        self.add_health_check(HealthCheck(
-            check_id="health_api",
-            name="Health API Endpoint",
-            component_type=ComponentType.API_ENDPOINT,
-            endpoint_url="http://localhost:8001/health",
-            is_critical=True,
-            timeout_seconds=5,
-            expected_response_time_ms=500
-        ))
-        
-        self.add_health_check(HealthCheck(
-            check_id="metrics_api",
-            name="Metrics API Endpoint", 
-            component_type=ComponentType.API_ENDPOINT,
-            endpoint_url="http://localhost:8000/metrics",
-            is_critical=False,
-            timeout_seconds=5,
-            expected_response_time_ms=1000
-        ))
-        
-        # Exchange API checks
-        self.add_health_check(HealthCheck(
-            check_id="kraken_api",
-            name="Kraken API Connectivity",
-            component_type=ComponentType.EXCHANGE_API,
-            endpoint_url="https://api.kraken.com/0/public/SystemStatus",
-            is_critical=True,
-            timeout_seconds=10,
-            expected_response_time_ms=2000,
-            max_failures=2
+        # File system write access
+        self.add_dependency_check(DependencyCheck(
+            name="write_directory",
+            type=DependencyType.FILE_SYSTEM,
+            description="Write directory access",
+            critical=True,
+            path="./data"
         ))
     
-    def add_health_check(self, health_check: HealthCheck):
-        """Add a health check to monitoring"""
-        self.health_checks[health_check.check_id] = health_check
-        logger.info(f"Added health check: {health_check.name}")
+    def add_dependency_check(self, check: DependencyCheck):
+        """Add a dependency check"""
+        self.dependencies[check.name] = check
+        logger.info(f"Added dependency check: {check.name} ({check.type.value})")
     
-    def add_recovery_procedure(self, procedure: RecoveryProcedure):
-        """Add automated recovery procedure"""
-        self.recovery_procedures[procedure.procedure_id] = procedure
-        logger.info(f"Added recovery procedure: {procedure.name}")
+    def add_api_check(self, name: str, url: str, critical: bool = True, timeout: float = 10.0):
+        """Add API endpoint health check"""
+        check = DependencyCheck(
+            name=name,
+            type=DependencyType.API_ENDPOINT,
+            description=f"API endpoint: {url}",
+            critical=critical,
+            url=url,
+            timeout_seconds=timeout
+        )
+        self.add_dependency_check(check)
     
-    def start_monitoring(self):
-        """Start health monitoring thread"""
-        if self.monitor_thread and self.monitor_thread.is_alive():
-            return
-        
-        self.monitoring_active = True
-        self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
-        self.monitor_thread.start()
-        logger.info("Health monitoring started")
+    def add_port_check(self, name: str, host: str, port: int, critical: bool = True):
+        """Add network port health check"""
+        check = DependencyCheck(
+            name=name,
+            type=DependencyType.NETWORK_PORT,
+            description=f"Network port: {host}:{port}",
+            critical=critical,
+            host=host,
+            port=port
+        )
+        self.add_dependency_check(check)
     
-    def stop_monitoring(self):
-        """Stop health monitoring"""
-        self.monitoring_active = False
-        if self.monitor_thread:
-            self.monitor_thread.join(timeout=5)
-        logger.info("Health monitoring stopped")
+    def add_database_check(self, name: str, connection_string: str, critical: bool = True):
+        """Add database connectivity check"""
+        check = DependencyCheck(
+            name=name,
+            type=DependencyType.DATABASE,
+            description=f"Database: {name}",
+            critical=critical,
+            url=connection_string
+        )
+        self.add_dependency_check(check)
     
-    def _monitor_loop(self):
-        """Main monitoring loop"""
-        while self.monitoring_active:
-            try:
-                # Run all health checks
-                asyncio.run(self._run_all_health_checks())
-                
-                # Update overall system health
-                self._update_system_health()
-                
-                # Check for recovery actions
-                self._check_recovery_actions()
-                
-                # Sleep until next check
-                time.sleep(self.check_interval)
-                
-            except Exception as e:
-                logger.error(f"Health monitoring error: {e}")
-                time.sleep(min(self.check_interval, 60))  # Backoff on error
-    
-    async def _run_all_health_checks(self):
-        """Run all registered health checks"""
-        tasks = []
-        
-        for check_id, health_check in self.health_checks.items():
-            task = self._run_health_check(health_check)
-            tasks.append(task)
-        
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
-    
-    async def _run_health_check(self, health_check: HealthCheck):
-        """Run individual health check"""
+    def check_api_endpoint(self, check: DependencyCheck) -> HealthCheckResult:
+        """Check API endpoint health"""
         start_time = time.time()
         
         try:
-            # Execute the appropriate check based on component type
-            if health_check.component_type == ComponentType.API_ENDPOINT:
-                result = await self._check_api_endpoint(health_check)
-            elif health_check.component_type == ComponentType.EXCHANGE_API:
-                result = await self._check_exchange_api(health_check)
-            elif health_check.component_type == ComponentType.FILE_SYSTEM:
-                result = await self._check_system_resources(health_check)
+            response = requests.get(
+                check.url,
+                timeout=check.timeout_seconds,
+                headers={'User-Agent': 'CryptoSmartTrader-HealthCheck/1.0'}
+            )
+            
+            response_time = (time.time() - start_time) * 1000
+            
+            # Determine status based on response
+            if response.status_code == 200:
+                if response_time > check.critical_threshold * 1000:
+                    status = HealthLevel.CRITICAL
+                    message = f"API responsive but slow ({response_time:.0f}ms)"
+                elif response_time > check.warning_threshold * 1000:
+                    status = HealthLevel.DEGRADED
+                    message = f"API responsive but degraded ({response_time:.0f}ms)"
+                else:
+                    status = HealthLevel.HEALTHY
+                    message = f"API healthy ({response_time:.0f}ms)"
+            elif 500 <= response.status_code < 600:
+                status = HealthLevel.UNHEALTHY
+                message = f"API server error: {response.status_code}"
+                response_time = (time.time() - start_time) * 1000
             else:
-                result = {"status": "unknown", "message": "Unsupported check type"}
+                status = HealthLevel.DEGRADED
+                message = f"API unexpected status: {response.status_code}"
+                response_time = (time.time() - start_time) * 1000
             
-            response_time_ms = (time.time() - start_time) * 1000
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=status,
+                response_time_ms=response_time,
+                message=message,
+                details={
+                    'status_code': response.status_code,
+                    'url': check.url,
+                    'headers': dict(response.headers)
+                }
+            )
             
-            # Process check result
-            self._process_check_result(health_check, result, response_time_ms)
-            
+        except requests.Timeout:
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=HealthLevel.UNHEALTHY,
+                response_time_ms=(time.time() - start_time) * 1000,
+                message=f"API timeout after {check.timeout_seconds}s",
+                details={'url': check.url, 'error': 'timeout'}
+            )
+        except requests.ConnectionError as e:
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=HealthLevel.CRITICAL,
+                response_time_ms=(time.time() - start_time) * 1000,
+                message=f"API connection failed: {str(e)}",
+                details={'url': check.url, 'error': 'connection_error'}
+            )
         except Exception as e:
-            response_time_ms = (time.time() - start_time) * 1000
-            result = {"status": "error", "message": str(e)}
-            self._process_check_result(health_check, result, response_time_ms)
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=HealthLevel.CRITICAL,
+                response_time_ms=(time.time() - start_time) * 1000,
+                message=f"API check error: {str(e)}",
+                details={'url': check.url, 'error': str(e)}
+            )
     
-    async def _check_api_endpoint(self, health_check: HealthCheck) -> Dict[str, Any]:
-        """Check API endpoint health"""
-        if not health_check.endpoint_url:
-            return {"status": "error", "message": "No endpoint URL configured"}
+    def check_network_port(self, check: DependencyCheck) -> HealthCheckResult:
+        """Check network port connectivity"""
+        start_time = time.time()
         
         try:
-            timeout = aiohttp.ClientTimeout(total=health_check.timeout_seconds)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(health_check.endpoint_url) as response:
-                    if response.status == 200:
-                        return {"status": "healthy", "http_status": response.status}
-                    else:
-                        return {
-                            "status": "unhealthy",
-                            "message": f"HTTP {response.status}",
-                            "http_status": response.status
-                        }
-                        
-        except asyncio.TimeoutError:
-            return {"status": "unhealthy", "message": "Request timeout"}
-        except aiohttp.ClientError as e:
-            return {"status": "unhealthy", "message": f"Connection error: {e}"}
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(check.timeout_seconds)
+            
+            result = sock.connect_ex((check.host, check.port))
+            response_time = (time.time() - start_time) * 1000
+            
+            sock.close()
+            
+            if result == 0:
+                status = HealthLevel.HEALTHY
+                message = f"Port {check.port} accessible ({response_time:.0f}ms)"
+            else:
+                status = HealthLevel.UNHEALTHY
+                message = f"Port {check.port} not accessible"
+            
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=status,
+                response_time_ms=response_time,
+                message=message,
+                details={'host': check.host, 'port': check.port}
+            )
+            
         except Exception as e:
-            return {"status": "error", "message": str(e)}
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=HealthLevel.CRITICAL,
+                response_time_ms=(time.time() - start_time) * 1000,
+                message=f"Port check error: {str(e)}",
+                details={'host': check.host, 'port': check.port, 'error': str(e)}
+            )
     
-    async def _check_exchange_api(self, health_check: HealthCheck) -> Dict[str, Any]:
-        """Check exchange API connectivity"""
-        if not health_check.endpoint_url:
-            return {"status": "error", "message": "No endpoint URL configured"}
+    def check_file_system(self, check: DependencyCheck) -> HealthCheckResult:
+        """Check file system access and write capabilities"""
+        start_time = time.time()
         
         try:
-            timeout = aiohttp.ClientTimeout(total=health_check.timeout_seconds)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(health_check.endpoint_url) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        
-                        # Check Kraken-specific status
-                        if "result" in data and "status" in data["result"]:
-                            if data["result"]["status"] == "online":
-                                return {"status": "healthy", "exchange_status": "online"}
-                            else:
-                                return {
-                                    "status": "degraded",
-                                    "message": "Exchange not fully online",
-                                    "exchange_status": data["result"]["status"]
-                                }
-                        
-                        return {"status": "healthy", "http_status": response.status}
-                    else:
-                        return {
-                            "status": "unhealthy",
-                            "message": f"HTTP {response.status}",
-                            "http_status": response.status
-                        }
-                        
-        except Exception as e:
-            return {"status": "unhealthy", "message": str(e)}
-    
-    async def _check_system_resources(self, health_check: HealthCheck) -> Dict[str, Any]:
-        """Check system resource health"""
-        try:
-            if health_check.check_id == "cpu_usage":
-                cpu_percent = psutil.cpu_percent(interval=1)
-                if cpu_percent > 90:
-                    return {"status": "critical", "message": f"High CPU usage: {cpu_percent}%", "value": cpu_percent}
-                elif cpu_percent > 80:
-                    return {"status": "degraded", "message": f"Elevated CPU usage: {cpu_percent}%", "value": cpu_percent}
-                else:
-                    return {"status": "healthy", "message": f"CPU usage: {cpu_percent}%", "value": cpu_percent}
+            if not check.path:
+                return HealthCheckResult(
+                    dependency_name=check.name,
+                    status=HealthLevel.CRITICAL,
+                    response_time_ms=0,
+                    message="No path specified for file system check"
+                )
             
-            elif health_check.check_id == "memory_usage":
+            path = Path(check.path)
+            
+            # Check if path exists and is accessible
+            if not path.exists():
+                try:
+                    path.mkdir(parents=True, exist_ok=True)
+                except Exception as e:
+                    return HealthCheckResult(
+                        dependency_name=check.name,
+                        status=HealthLevel.CRITICAL,
+                        response_time_ms=(time.time() - start_time) * 1000,
+                        message=f"Cannot create directory: {str(e)}",
+                        details={'path': str(path)}
+                    )
+            
+            # Test write access
+            test_file = path / f".health_check_{int(time.time())}"
+            try:
+                with open(test_file, 'w') as f:
+                    f.write("health_check_test")
+                
+                # Test read access
+                with open(test_file, 'r') as f:
+                    content = f.read()
+                
+                if content != "health_check_test":
+                    raise Exception("Read/write verification failed")
+                
+                # Cleanup
+                test_file.unlink()
+                
+                response_time = (time.time() - start_time) * 1000
+                
+                return HealthCheckResult(
+                    dependency_name=check.name,
+                    status=HealthLevel.HEALTHY,
+                    response_time_ms=response_time,
+                    message=f"File system accessible ({response_time:.0f}ms)",
+                    details={'path': str(path), 'writable': True}
+                )
+                
+            except Exception as e:
+                return HealthCheckResult(
+                    dependency_name=check.name,
+                    status=HealthLevel.CRITICAL,
+                    response_time_ms=(time.time() - start_time) * 1000,
+                    message=f"File system write test failed: {str(e)}",
+                    details={'path': str(path), 'error': str(e)}
+                )
+            
+        except Exception as e:
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=HealthLevel.CRITICAL,
+                response_time_ms=(time.time() - start_time) * 1000,
+                message=f"File system check error: {str(e)}",
+                details={'error': str(e)}
+            )
+    
+    def check_system_resources(self, check: DependencyCheck) -> HealthCheckResult:
+        """Check system resource usage"""
+        start_time = time.time()
+        
+        try:
+            details = {}
+            messages = []
+            overall_status = HealthLevel.HEALTHY
+            
+            # Memory check
+            if check.max_memory_percent:
                 memory = psutil.virtual_memory()
-                if memory.percent > 95:
-                    return {"status": "critical", "message": f"Critical memory usage: {memory.percent}%", "value": memory.percent}
-                elif memory.percent > 85:
-                    return {"status": "degraded", "message": f"High memory usage: {memory.percent}%", "value": memory.percent}
+                memory_percent = memory.percent
+                details['memory_percent'] = memory_percent
+                details['memory_available_gb'] = memory.available / (1024**3)
+                
+                if memory_percent > check.max_memory_percent:
+                    overall_status = HealthLevel.CRITICAL
+                    messages.append(f"Memory usage critical: {memory_percent:.1f}%")
+                elif memory_percent > check.max_memory_percent * 0.8:
+                    overall_status = max(overall_status, HealthLevel.DEGRADED)
+                    messages.append(f"Memory usage high: {memory_percent:.1f}%")
                 else:
-                    return {"status": "healthy", "message": f"Memory usage: {memory.percent}%", "value": memory.percent}
+                    messages.append(f"Memory usage normal: {memory_percent:.1f}%")
             
-            elif health_check.check_id == "disk_space":
+            # CPU check
+            if check.max_cpu_percent:
+                cpu_percent = psutil.cpu_percent(interval=1)
+                details['cpu_percent'] = cpu_percent
+                details['cpu_count'] = psutil.cpu_count()
+                
+                if cpu_percent > check.max_cpu_percent:
+                    overall_status = max(overall_status, HealthLevel.DEGRADED)
+                    messages.append(f"CPU usage high: {cpu_percent:.1f}%")
+                else:
+                    messages.append(f"CPU usage normal: {cpu_percent:.1f}%")
+            
+            # Disk check
+            if check.max_disk_percent:
                 disk = psutil.disk_usage('/')
                 disk_percent = (disk.used / disk.total) * 100
-                if disk_percent > 95:
-                    return {"status": "critical", "message": f"Critical disk usage: {disk_percent:.1f}%", "value": disk_percent}
-                elif disk_percent > 85:
-                    return {"status": "degraded", "message": f"High disk usage: {disk_percent:.1f}%", "value": disk_percent}
+                details['disk_percent'] = disk_percent
+                details['disk_free_gb'] = disk.free / (1024**3)
+                
+                if disk_percent > check.max_disk_percent:
+                    overall_status = max(overall_status, HealthLevel.CRITICAL)
+                    messages.append(f"Disk usage critical: {disk_percent:.1f}%")
+                elif disk_percent > check.max_disk_percent * 0.8:
+                    overall_status = max(overall_status, HealthLevel.DEGRADED)
+                    messages.append(f"Disk usage high: {disk_percent:.1f}%")
                 else:
-                    return {"status": "healthy", "message": f"Disk usage: {disk_percent:.1f}%", "value": disk_percent}
+                    messages.append(f"Disk usage normal: {disk_percent:.1f}%")
             
-            else:
-                return {"status": "unknown", "message": "Unknown system check"}
-                
+            response_time = (time.time() - start_time) * 1000
+            
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=overall_status,
+                response_time_ms=response_time,
+                message="; ".join(messages),
+                details=details
+            )
+            
         except Exception as e:
-            return {"status": "error", "message": str(e)}
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=HealthLevel.CRITICAL,
+                response_time_ms=(time.time() - start_time) * 1000,
+                message=f"System resource check error: {str(e)}",
+                details={'error': str(e)}
+            )
     
-    def _process_check_result(self, health_check: HealthCheck, result: Dict[str, Any], response_time_ms: float):
-        """Process health check result and update status"""
-        
-        health_check.last_check = datetime.now()
-        health_check.last_response_time_ms = response_time_ms
-        
-        # Update average response time
-        if health_check.avg_response_time_ms == 0:
-            health_check.avg_response_time_ms = response_time_ms
-        else:
-            # Exponential moving average
-            health_check.avg_response_time_ms = (health_check.avg_response_time_ms * 0.8 + response_time_ms * 0.2)
-        
-        # Determine new status
-        result_status = result.get("status", "unknown").lower()
-        
-        if result_status in ["healthy", "ok"]:
-            new_status = HealthStatus.HEALTHY
-            health_check.consecutive_failures = 0
-        elif result_status in ["degraded", "warning"]:
-            new_status = HealthStatus.DEGRADED
-            health_check.consecutive_failures = 0
-        elif result_status in ["unhealthy", "error"]:
-            new_status = HealthStatus.UNHEALTHY
-            health_check.consecutive_failures += 1
-            health_check.failure_history.append(datetime.now())
-        elif result_status == "critical":
-            new_status = HealthStatus.CRITICAL
-            health_check.consecutive_failures += 1
-            health_check.failure_history.append(datetime.now())
-        else:
-            new_status = HealthStatus.UNHEALTHY
-            health_check.consecutive_failures += 1
-        
-        # Clean old failure history
-        cutoff_time = datetime.now() - timedelta(minutes=health_check.failure_window_minutes)
-        health_check.failure_history = [
-            failure_time for failure_time in health_check.failure_history 
-            if failure_time > cutoff_time
-        ]
-        
-        # Check if status changed
-        old_status = health_check.current_status
-        health_check.current_status = new_status
-        
-        # Log status changes
-        if old_status != new_status:
-            logger.info(f"Health check {health_check.name}: {old_status.value} -> {new_status.value}")
-            
-            # Notify callbacks
-            self._notify_health_change(health_check, old_status, new_status, result)
-        
-        # Check for critical failures
-        if new_status == HealthStatus.CRITICAL and health_check.is_critical:
-            self._notify_critical_failure(health_check, result)
-    
-    def _update_system_health(self):
-        """Update overall system health status"""
-        
-        # Determine overall status based on critical components
-        critical_checks = [check for check in self.health_checks.values() if check.is_critical]
-        
-        if not critical_checks:
-            overall_status = HealthStatus.HEALTHY
-        else:
-            critical_statuses = [check.current_status for check in critical_checks]
-            
-            if any(status == HealthStatus.CRITICAL for status in critical_statuses):
-                overall_status = HealthStatus.CRITICAL
-            elif any(status == HealthStatus.UNHEALTHY for status in critical_statuses):
-                overall_status = HealthStatus.UNHEALTHY
-            elif any(status == HealthStatus.DEGRADED for status in critical_statuses):
-                overall_status = HealthStatus.DEGRADED
-            else:
-                overall_status = HealthStatus.HEALTHY
-        
-        # Update system health metrics
-        old_overall_status = self.system_health["overall_status"]
-        self.system_health["overall_status"] = overall_status
-        
-        if overall_status == HealthStatus.HEALTHY:
-            self.system_health["last_healthy"] = datetime.now()
-        
-        # Calculate availability and MTTR
-        self._update_availability_metrics()
-        
-        # Log overall status changes
-        if old_overall_status != overall_status:
-            logger.warning(f"System health: {old_overall_status.value} -> {overall_status.value}")
-    
-    def _update_availability_metrics(self):
-        """Update availability and MTTR metrics"""
-        try:
-            # This is a simplified calculation - would be more sophisticated in production
-            now = datetime.now()
-            total_minutes = (now - (now - timedelta(days=1))).total_seconds() / 60
-            
-            healthy_minutes = total_minutes
-            
-            # Count unhealthy time based on critical component failures
-            for check in self.health_checks.values():
-                if check.is_critical and check.failure_history:
-                    # Estimate downtime from failures
-                    failure_minutes = len(check.failure_history) * (self.check_interval / 60)
-                    healthy_minutes -= failure_minutes
-            
-            healthy_minutes = max(0, healthy_minutes)
-            
-            self.system_health["availability_pct"] = (healthy_minutes / total_minutes) * 100
-            self.system_health["downtime_minutes"] = total_minutes - healthy_minutes
-            
-            # Simple MTTR calculation
-            total_failures = sum(len(check.failure_history) for check in self.health_checks.values() if check.is_critical)
-            if total_failures > 0:
-                self.system_health["mttr_minutes"] = self.system_health["downtime_minutes"] / total_failures
-            else:
-                self.system_health["mttr_minutes"] = 0.0
-                
-        except Exception as e:
-            logger.error(f"Failed to update availability metrics: {e}")
-    
-    def _check_recovery_actions(self):
-        """Check if any recovery actions should be triggered"""
-        
-        for procedure in self.recovery_procedures.values():
-            # Check if any of the procedure's components are failing
-            failing_components = [
-                comp_id for comp_id in procedure.component_ids
-                if comp_id in self.health_checks and self.health_checks[comp_id].is_failing
-            ]
-            
-            if failing_components:
-                # Check cooldown period
-                if procedure.last_executed:
-                    cooldown_end = procedure.last_executed + timedelta(minutes=procedure.cooldown_minutes)
-                    if datetime.now() < cooldown_end:
-                        continue
-                
-                # Execute recovery procedure
-                self._execute_recovery_procedure(procedure, failing_components)
-    
-    def _execute_recovery_procedure(self, procedure: RecoveryProcedure, failing_components: List[str]):
-        """Execute automated recovery procedure"""
-        
-        if procedure.execution_count >= procedure.max_attempts:
-            logger.warning(f"Recovery procedure {procedure.name} max attempts reached")
-            return
-        
-        logger.info(f"Executing recovery procedure: {procedure.name}")
-        
-        procedure.last_executed = datetime.now()
-        procedure.execution_count += 1
+    def check_database(self, check: DependencyCheck) -> HealthCheckResult:
+        """Check database connectivity"""
+        start_time = time.time()
         
         try:
-            # Execute recovery steps
-            success = True
-            for step in procedure.recovery_steps:
-                step_result = self._execute_recovery_step(step)
-                if not step_result:
-                    success = False
-                    break
+            # This is a simplified database check
+            # In practice, you'd use specific database connectors
             
-            if success:
-                procedure.success_count += 1
-                logger.info(f"Recovery procedure {procedure.name} completed successfully")
+            if 'postgresql' in check.url.lower():
+                return self._check_postgresql(check, start_time)
+            elif 'mysql' in check.url.lower():
+                return self._check_mysql(check, start_time)
             else:
-                logger.warning(f"Recovery procedure {procedure.name} failed")
+                # Generic database check via command
+                return self._check_database_generic(check, start_time)
                 
         except Exception as e:
-            logger.error(f"Recovery procedure {procedure.name} error: {e}")
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=HealthLevel.CRITICAL,
+                response_time_ms=(time.time() - start_time) * 1000,
+                message=f"Database check error: {str(e)}",
+                details={'error': str(e)}
+            )
     
-    def _execute_recovery_step(self, step: Dict[str, Any]) -> bool:
-        """Execute individual recovery step"""
+    def _check_postgresql(self, check: DependencyCheck, start_time: float) -> HealthCheckResult:
+        """Check PostgreSQL database"""
+        try:
+            import psycopg2
+            
+            conn = psycopg2.connect(
+                check.url,
+                connect_timeout=int(check.timeout_seconds)
+            )
+            
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            result = cursor.fetchone()
+            
+            conn.close()
+            
+            response_time = (time.time() - start_time) * 1000
+            
+            if result and result[0] == 1:
+                return HealthCheckResult(
+                    dependency_name=check.name,
+                    status=HealthLevel.HEALTHY,
+                    response_time_ms=response_time,
+                    message=f"PostgreSQL healthy ({response_time:.0f}ms)",
+                    details={'database_type': 'postgresql'}
+                )
+            else:
+                return HealthCheckResult(
+                    dependency_name=check.name,
+                    status=HealthLevel.UNHEALTHY,
+                    response_time_ms=response_time,
+                    message="PostgreSQL query failed"
+                )
+                
+        except ImportError:
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=HealthLevel.CRITICAL,
+                response_time_ms=(time.time() - start_time) * 1000,
+                message="psycopg2 not available for PostgreSQL check"
+            )
+        except Exception as e:
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=HealthLevel.UNHEALTHY,
+                response_time_ms=(time.time() - start_time) * 1000,
+                message=f"PostgreSQL connection failed: {str(e)}"
+            )
+    
+    def _check_database_generic(self, check: DependencyCheck, start_time: float) -> HealthCheckResult:
+        """Generic database check using command"""
+        try:
+            if check.command:
+                result = subprocess.run(
+                    check.command.split(),
+                    timeout=check.timeout_seconds,
+                    capture_output=True,
+                    text=True
+                )
+                
+                response_time = (time.time() - start_time) * 1000
+                
+                if result.returncode == 0:
+                    return HealthCheckResult(
+                        dependency_name=check.name,
+                        status=HealthLevel.HEALTHY,
+                        response_time_ms=response_time,
+                        message=f"Database command successful ({response_time:.0f}ms)"
+                    )
+                else:
+                    return HealthCheckResult(
+                        dependency_name=check.name,
+                        status=HealthLevel.UNHEALTHY,
+                        response_time_ms=response_time,
+                        message=f"Database command failed: {result.stderr}"
+                    )
+            else:
+                return HealthCheckResult(
+                    dependency_name=check.name,
+                    status=HealthLevel.CRITICAL,
+                    response_time_ms=(time.time() - start_time) * 1000,
+                    message="No database check command specified"
+                )
+                
+        except Exception as e:
+            return HealthCheckResult(
+                dependency_name=check.name,
+                status=HealthLevel.CRITICAL,
+                response_time_ms=(time.time() - start_time) * 1000,
+                message=f"Database command error: {str(e)}"
+            )
+    
+    def check_dependency(self, name: str, use_cache: bool = True) -> Optional[HealthCheckResult]:
+        """Check a specific dependency"""
+        if name not in self.dependencies:
+            logger.error(f"Dependency {name} not found")
+            return None
         
-        step_type = step.get("type")
+        # Check cache first
+        if use_cache and name in self.cached_results:
+            cached = self.cached_results[name]
+            age = (datetime.now() - cached.timestamp).total_seconds()
+            if age < self.cache_ttl:
+                return cached
         
-        if step_type == "restart_service":
-            # Would restart a service
-            logger.info(f"Recovery step: restart service {step.get('service_name')}")
-            return True
+        check = self.dependencies[name]
         
-        elif step_type == "clear_cache":
-            # Would clear cache
-            logger.info("Recovery step: clear cache")
-            return True
-        
-        elif step_type == "wait":
-            # Wait for specified time
-            wait_seconds = step.get("seconds", 5)
-            logger.info(f"Recovery step: wait {wait_seconds} seconds")
-            time.sleep(wait_seconds)
-            return True
-        
+        # Perform appropriate check based on type
+        if check.type == DependencyType.API_ENDPOINT:
+            result = self.check_api_endpoint(check)
+        elif check.type == DependencyType.NETWORK_PORT:
+            result = self.check_network_port(check)
+        elif check.type == DependencyType.FILE_SYSTEM:
+            result = self.check_file_system(check)
+        elif check.type == DependencyType.SYSTEM_RESOURCE:
+            result = self.check_system_resources(check)
+        elif check.type == DependencyType.DATABASE:
+            result = self.check_database(check)
         else:
-            logger.warning(f"Unknown recovery step type: {step_type}")
-            return False
-    
-    def _notify_health_change(self, health_check: HealthCheck, old_status: HealthStatus, 
-                             new_status: HealthStatus, result: Dict[str, Any]):
-        """Notify callbacks of health status change"""
+            result = HealthCheckResult(
+                dependency_name=name,
+                status=HealthLevel.CRITICAL,
+                response_time_ms=0,
+                message=f"Unknown dependency type: {check.type}"
+            )
         
-        for callback in self.health_change_callbacks:
-            try:
-                callback(health_check, old_status, new_status, result)
-            except Exception as e:
-                logger.error(f"Health change callback failed: {e}")
-    
-    def _notify_critical_failure(self, health_check: HealthCheck, result: Dict[str, Any]):
-        """Notify callbacks of critical failure"""
+        # Cache and store result
+        self.cached_results[name] = result
+        self.check_history.append(result)
         
-        for callback in self.critical_failure_callbacks:
-            try:
-                callback(health_check, result)
-            except Exception as e:
-                logger.error(f"Critical failure callback failed: {e}")
-    
-    def add_health_change_callback(self, callback: Callable):
-        """Add callback for health status changes"""
-        self.health_change_callbacks.append(callback)
-    
-    def add_critical_failure_callback(self, callback: Callable):
-        """Add callback for critical failures"""
-        self.critical_failure_callbacks.append(callback)
-    
-    def get_health_status(self) -> Dict[str, Any]:
-        """Get comprehensive health status"""
+        # Limit history size
+        if len(self.check_history) > 1000:
+            self.check_history = self.check_history[-500:]
         
-        component_status = {}
-        for check_id, health_check in self.health_checks.items():
-            component_status[check_id] = {
-                "name": health_check.name,
-                "status": health_check.current_status.value,
-                "is_critical": health_check.is_critical,
-                "last_check": health_check.last_check.isoformat() if health_check.last_check else None,
-                "consecutive_failures": health_check.consecutive_failures,
-                "response_time_ms": health_check.last_response_time_ms,
-                "avg_response_time_ms": health_check.avg_response_time_ms
+        return result
+    
+    def check_all_dependencies(self, include_non_critical: bool = True) -> Dict[str, HealthCheckResult]:
+        """Check all dependencies"""
+        results = {}
+        
+        for name, check in self.dependencies.items():
+            if not include_non_critical and not check.critical:
+                continue
+            
+            result = self.check_dependency(name, use_cache=False)
+            if result:
+                results[name] = result
+        
+        self.last_check_time = datetime.now()
+        return results
+    
+    def get_overall_health(self) -> HealthLevel:
+        """Get overall system health status"""
+        results = self.check_all_dependencies()
+        
+        if not results:
+            return HealthLevel.UNKNOWN
+        
+        # Check critical dependencies first
+        critical_unhealthy = any(
+            not result.is_healthy for name, result in results.items()
+            if self.dependencies[name].critical
+        )
+        
+        if critical_unhealthy:
+            return HealthLevel.CRITICAL
+        
+        # Check for any unhealthy dependencies
+        any_unhealthy = any(not result.is_healthy for result in results.values())
+        if any_unhealthy:
+            return HealthLevel.DEGRADED
+        
+        return HealthLevel.HEALTHY
+    
+    def get_health_report(self) -> Dict[str, Any]:
+        """Generate comprehensive health report"""
+        results = self.check_all_dependencies()
+        overall_health = self.get_overall_health()
+        
+        report = {
+            'overall_status': overall_health.value,
+            'timestamp': datetime.now().isoformat(),
+            'dependencies': {},
+            'summary': {
+                'total_checks': len(results),
+                'healthy': 0,
+                'degraded': 0,
+                'unhealthy': 0,
+                'critical': 0
             }
+        }
+        
+        for name, result in results.items():
+            report['dependencies'][name] = {
+                'status': result.status.value,
+                'response_time_ms': result.response_time_ms,
+                'message': result.message,
+                'critical': self.dependencies[name].critical,
+                'details': result.details
+            }
+            
+            # Update summary
+            if result.status == HealthLevel.HEALTHY:
+                report['summary']['healthy'] += 1
+            elif result.status == HealthLevel.DEGRADED:
+                report['summary']['degraded'] += 1
+            elif result.status == HealthLevel.UNHEALTHY:
+                report['summary']['unhealthy'] += 1
+            else:
+                report['summary']['critical'] += 1
+        
+        return report
+    
+    def get_rto_rpo_metrics(self) -> Dict[str, Any]:
+        """Get Recovery Time Objective and Recovery Point Objective metrics"""
+        
+        # RTO: Maximum tolerable downtime
+        # RPO: Maximum tolerable data loss
         
         return {
-            "overall_status": self.system_health["overall_status"].value,
-            "last_healthy": self.system_health["last_healthy"].isoformat(),
-            "availability_pct": self.system_health["availability_pct"],
-            "downtime_minutes": self.system_health["downtime_minutes"],
-            "mttr_minutes": self.system_health["mttr_minutes"],
-            "component_count": len(self.health_checks),
-            "critical_component_count": len([c for c in self.health_checks.values() if c.is_critical]),
-            "failing_components": len([c for c in self.health_checks.values() if c.is_failing]),
-            "components": component_status,
-            "recovery_procedures": len(self.recovery_procedures)
+            'rto_target_seconds': 30,  # Target: 0-to-healthy < 30s
+            'rpo_target_seconds': 60,  # Target: < 1 minute data loss
+            'current_uptime_seconds': self._get_current_uptime(),
+            'last_recovery_time_seconds': self._get_last_recovery_time(),
+            'backup_frequency_seconds': 300,  # 5 minutes
+            'checkpoint_frequency_seconds': 60  # 1 minute
         }
     
-    def get_health_summary(self) -> Dict[str, Any]:
-        """Get condensed health summary"""
-        
-        status = self.get_health_status()
-        
-        return {
-            "status": status["overall_status"],
-            "availability": f"{status['availability_pct']:.1f}%",
-            "mttr_minutes": status["mttr_minutes"],
-            "failing_components": status["failing_components"],
-            "total_components": status["component_count"],
-            "last_check": datetime.now().isoformat()
-        }
+    def _get_current_uptime(self) -> float:
+        """Get current system uptime"""
+        try:
+            return time.time() - psutil.boot_time()
+        except:
+            return 0.0
     
-    def force_health_check(self, check_id: Optional[str] = None):
-        """Force immediate health check"""
-        
-        if check_id and check_id in self.health_checks:
-            # Check specific component
-            asyncio.run(self._run_health_check(self.health_checks[check_id]))
-        else:
-            # Check all components
-            asyncio.run(self._run_all_health_checks())
-            self._update_system_health()
-    
-    def simulate_failure(self, check_id: str, duration_seconds: int = 60):
-        """Simulate component failure for testing"""
-        
-        if check_id not in self.health_checks:
-            return False
-        
-        health_check = self.health_checks[check_id]
-        original_status = health_check.current_status
-        
-        # Set to critical status
-        health_check.current_status = HealthStatus.CRITICAL
-        health_check.consecutive_failures = health_check.max_failures
-        
-        logger.warning(f"Simulated failure for {health_check.name} (duration: {duration_seconds}s)")
-        
-        # Schedule recovery
-        def restore_health():
-            time.sleep(duration_seconds)
-            health_check.current_status = original_status
-            health_check.consecutive_failures = 0
-            logger.info(f"Simulated failure for {health_check.name} ended")
-        
-        recovery_thread = threading.Thread(target=restore_health, daemon=True)
-        recovery_thread.start()
-        
-        return True
+    def _get_last_recovery_time(self) -> Optional[float]:
+        """Get last recovery time from logs"""
+        # This would typically read from recovery logs
+        # For now, return None
+        return None
