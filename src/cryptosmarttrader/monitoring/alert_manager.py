@@ -21,6 +21,13 @@ import threading
 import schedule
 
 try:
+    import requests
+    TELEGRAM_AVAILABLE = True
+except ImportError:
+    TELEGRAM_AVAILABLE = False
+
+# Telegram will be primary alerting channel
+try:
     from slack_sdk import WebClient
     from slack_sdk.errors import SlackApiError
     SLACK_AVAILABLE = True
@@ -41,6 +48,7 @@ class AlertSeverity(Enum):
 
 class AlertChannel(Enum):
     """Alert delivery channels"""
+    TELEGRAM = "telegram"  # Primary channel
     SLACK = "slack"
     EMAIL = "email"
     WEBHOOK = "webhook"
@@ -114,6 +122,8 @@ class AlertManager:
     """
     
     def __init__(self, 
+                 telegram_token: Optional[str] = None,
+                 telegram_chat_id: Optional[str] = None,
                  slack_token: Optional[str] = None,
                  slack_channel: Optional[str] = None,
                  smtp_server: Optional[str] = None,
@@ -123,6 +133,8 @@ class AlertManager:
                  email_recipients: Optional[List[str]] = None):
         
         # Configuration
+        self.telegram_token = telegram_token
+        self.telegram_chat_id = telegram_chat_id
         self.slack_token = slack_token
         self.slack_channel = slack_channel
         self.smtp_server = smtp_server
@@ -132,6 +144,10 @@ class AlertManager:
         self.email_recipients = email_recipients or []
         
         # Initialize clients
+        self.telegram_api_url = None
+        if self.telegram_token and TELEGRAM_AVAILABLE:
+            self.telegram_api_url = f"https://api.telegram.org/bot{self.telegram_token}"
+        
         self.slack_client = None
         if self.slack_token and SLACK_AVAILABLE:
             self.slack_client = WebClient(token=self.slack_token)
