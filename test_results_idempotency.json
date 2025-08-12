@@ -1,0 +1,197 @@
+{
+  "suite_name": "order_idempotency_comprehensive",
+  "total_duration_seconds": 7.808130264282227,
+  "total_tests": 5,
+  "passed_tests": 5,
+  "failed_tests": 0,
+  "success_rate_percent": 100.0,
+  "overall_success": true,
+  "test_results": [
+    {
+      "test_name": "basic_deduplication",
+      "duration_seconds": 0.0005290508270263672,
+      "first_order_accepted": true,
+      "duplicate_order_rejected": true,
+      "duplicate_message": "Duplicate order: Identical order within 60 minutes",
+      "success": true,
+      "details": {
+        "first_order_id": "CST1755029407496395a7cba-000-72af9684",
+        "duplicate_order_id": "CST175502940749630337b37-000-6e743db1",
+        "fingerprint_match": true
+      }
+    },
+    {
+      "test_name": "timeout_recovery",
+      "duration_seconds": 0.05128765106201172,
+      "timeouts_occurred": false,
+      "recovery_attempted": false,
+      "final_success": true,
+      "no_duplicate_positions": true,
+      "idempotency_validated": true,
+      "success": true,
+      "details": {
+        "total_attempts": 1,
+        "final_status": "submitted",
+        "exchange_order_id": "EXG17550294075482389",
+        "attempt_details": [
+          {
+            "attempt": 1,
+            "success": true,
+            "error_type": null,
+            "response_time_ms": 50.443410873413086
+          }
+        ]
+      }
+    },
+    {
+      "test_name": "duplicate_fill_prevention",
+      "duration_seconds": 3.383728504180908,
+      "order_executed": true,
+      "single_exchange_order": true,
+      "proper_attempt_tracking": false,
+      "fill_validation_passed": true,
+      "success": true,
+      "details": {
+        "submission_attempts": 1,
+        "execution_attempts": 3,
+        "exchange_order_id": "EXG17550294109328536",
+        "final_status": "submitted",
+        "order_status_in_engine": "submitted"
+      }
+    },
+    {
+      "test_name": "retry_idempotency",
+      "duration_seconds": 3.0766711235046387,
+      "orders_processed": 3,
+      "successful_orders": 3,
+      "all_orders_unique": true,
+      "all_idempotent": true,
+      "no_duplicates_detected": true,
+      "success": true,
+      "details": {
+        "execution_results": [
+          {
+            "order_id": "CST17550294109323a909a07-000-336a1ffc",
+            "attempts": 3,
+            "success": true,
+            "exchange_order_id": "EXG17550294138065300",
+            "idempotent": true
+          },
+          {
+            "order_id": "CST1755029410932610e3aaa-000-d502f553",
+            "attempts": 1,
+            "success": true,
+            "exchange_order_id": "EXG17550294139076982",
+            "idempotent": true
+          },
+          {
+            "order_id": "CST17550294109320246a070-000-190aef92",
+            "attempts": 1,
+            "success": true,
+            "exchange_order_id": "EXG17550294140099244",
+            "idempotent": true
+          }
+        ]
+      }
+    },
+    {
+      "test_name": "concurrent_execution",
+      "duration_seconds": 1.2951505184173584,
+      "total_orders": 10,
+      "successful_executions": 10,
+      "exceptions_occurred": 0,
+      "unique_exchange_ids": 10,
+      "no_id_collisions": true,
+      "no_exceptions": true,
+      "all_orders_tracked": true,
+      "success": true,
+      "details": {
+        "exception_types": [],
+        "successful_order_ids": [
+          "CST17550294140096ec74b1b-000-311cedf7",
+          "CST17550294140092d28dfb8-000-60f80c03",
+          "CST175502941400921fc1365-000-8bba1f79",
+          "CST17550294140091a13bfe2-000-a234dc14",
+          "CST1755029414009a609f2bb-000-f63e4743",
+          "CST17550294140103f86883a-000-f93bc6a0",
+          "CST1755029414010ab02a412-000-240d4c58",
+          "CST17550294140106957d583-000-574b1bf5",
+          "CST175502941401068028486-000-d09dfa49",
+          "CST17550294140101b409f4f-000-11655738"
+        ],
+        "exchange_order_ids": [
+          "EXG17550294140621545",
+          "EXG17550294140626480",
+          "EXG17550294140626755",
+          "EXG17550294140625746",
+          "EXG17550294140622344",
+          "EXG17550294140628610",
+          "EXG17550294152805407",
+          "EXG17550294153048235",
+          "EXG17550294140625710",
+          "EXG17550294140624398"
+        ]
+      }
+    }
+  ],
+  "deduplication_stats": {
+    "timestamp": "2025-08-12T20:10:15.304720",
+    "order_counts": {
+      "active_orders": 14,
+      "total_orders_tracked": 14,
+      "pending_retries": 0
+    },
+    "submission_stats": {
+      "total_orders": 14,
+      "successful_submissions": 0,
+      "failed_submissions": 0,
+      "success_rate_percent": 0.0
+    },
+    "deduplication_stats": {
+      "duplicate_orders": 3,
+      "duplicate_rate_percent": 21.428571428571427,
+      "retries_performed": 0,
+      "fills_tracked": 0
+    },
+    "system_health": {
+      "deduplication_window_minutes": 60,
+      "fingerprint_index_size": 14,
+      "cleanup_interval_hours": 6
+    }
+  },
+  "executor_stats": {
+    "timestamp": "2025-08-12T20:10:15.304759",
+    "execution_mode": "simulation",
+    "overall_stats": {
+      "total_executions": 10,
+      "successful_executions": 10,
+      "failed_executions": 0,
+      "success_rate_percent": 100.0,
+      "duplicate_rejections": 0
+    },
+    "retry_stats": {
+      "timeout_recoveries": 0,
+      "retry_successes": 0,
+      "average_attempts_per_order": 1.2,
+      "recent_timeout_count": 2
+    },
+    "performance_stats": {
+      "average_execution_duration_seconds": 0.29766392707824707,
+      "active_executions": 0,
+      "execution_history_size": 10
+    },
+    "configuration": {
+      "max_retries": 3,
+      "base_timeout_seconds": 2.0,
+      "network_condition": "normal",
+      "simulated_failure_rate": 0.1
+    }
+  },
+  "validation_summary": {
+    "order_deduplication_working": true,
+    "timeout_recovery_working": true,
+    "duplicate_prevention_working": true,
+    "retry_idempotency_working": true,
+    "concurrent_safety_working": true
+  }
+}
