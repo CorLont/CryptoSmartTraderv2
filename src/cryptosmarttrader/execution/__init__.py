@@ -5,7 +5,7 @@ Implements realistic execution simulation and live-backtest parity
 to eliminate performance illusions and ensure accurate backtesting.
 """
 
-from .execution_simulator import ExecutionSimulator, OrderResult, ExecutionMetrics
+from .execution_simulator import ExecutionSimulator, ExecutionResult, Fill
 from .market_microstructure import MarketMicrostructure, OrderBookSimulator, LiquidityProvider
 from .slippage_analyzer import SlippageAnalyzer, SlippageAttribution, SlippageSource
 from .execution_quality_monitor import ExecutionQualityMonitor, ExecutionQuality, QualityGrade
