@@ -1,35 +1,30 @@
 """
-Execution Quality Management Module
+Execution Module
 
-Implements advanced execution strategies to preserve alpha through:
-- Post-only orders where possible (maker rebates)
-- TWAP for thin order books
-- Time-in-force optimization
-- Fee-tier awareness (maker vs taker)
-- Regime-aware execution policies
-- Partial fill handling
-- Price improvement ladders
+Implements realistic execution simulation and live-backtest parity
+to eliminate performance illusions and ensure accurate backtesting.
 """
 
-from .execution_policy import ExecutionPolicy, ExecutionMode, TimeInForce
-from .fee_optimizer import FeeOptimizer, FeeStructure
-from .twap_executor import TWAPExecutor, TWAPConfig
-from .partial_fill_handler import PartialFillHandler, FillStatus
-from .price_improvement import PriceImprovementLadder, ImprovementStrategy
-from .execution_analytics import ExecutionAnalytics, ExecutionMetrics
+from .execution_simulator import ExecutionSimulator, OrderResult, ExecutionMetrics
+from .market_microstructure import MarketMicrostructure, OrderBookSimulator, LiquidityProvider
+from .slippage_analyzer import SlippageAnalyzer, SlippageAttribution, SlippageSource
+from .execution_quality_monitor import ExecutionQualityMonitor, ExecutionQuality, QualityGrade
+from .live_backtest_comparator import LiveBacktestComparator, ParityMetrics, PerformanceGap
 
 __all__ = [
-    "ExecutionPolicy",
-    "ExecutionMode", 
-    "TimeInForce",
-    "FeeOptimizer",
-    "FeeStructure",
-    "TWAPExecutor",
-    "TWAPConfig",
-    "PartialFillHandler",
-    "FillStatus",
-    "PriceImprovementLadder",
-    "ImprovementStrategy",
-    "ExecutionAnalytics",
-    "ExecutionMetrics"
+    "ExecutionSimulator",
+    "OrderResult", 
+    "ExecutionMetrics",
+    "MarketMicrostructure",
+    "OrderBookSimulator",
+    "LiquidityProvider",
+    "SlippageAnalyzer",
+    "SlippageAttribution",
+    "SlippageSource",
+    "ExecutionQualityMonitor",
+    "ExecutionQuality",
+    "QualityGrade",
+    "LiveBacktestComparator",
+    "ParityMetrics",
+    "PerformanceGap"
 ]
