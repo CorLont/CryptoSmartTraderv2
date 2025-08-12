@@ -1,33 +1,26 @@
 """
 Risk Management Module
 
-Implements comprehensive risk management including:
-- Drawdown-adaptive position sizing
-- Kill-switch mechanisms
-- Step-down risk controls
-- Data health monitoring
-- Dynamic risk scaling
+Enterprise-grade risk management system with circuit breakers,
+kill switches, and comprehensive safety mechanisms.
 """
 
-from .drawdown_monitor import DrawdownMonitor, DrawdownLevel, RiskReduction
-from .kill_switch import KillSwitch, KillSwitchTrigger, KillSwitchLevel
-from .data_health_monitor import DataHealthMonitor, DataQuality, HealthGate
-from .adaptive_risk_manager import AdaptiveRiskManager, RiskMode, RiskAdjustment
-from .risk_analytics import RiskAnalytics, RiskMetrics
+from .risk_limits import RiskLimitManager, RiskLimit, LimitType
+from .kill_switch import KillSwitchSystem, KillSwitchTrigger, EmergencyStop
+from .circuit_breaker import CircuitBreakerSystem, CircuitState, BreakReason
+from .order_deduplication import OrderDeduplicator, OrderState, DuplicateCheck
 
 __all__ = [
-    "DrawdownMonitor",
-    "DrawdownLevel",
-    "RiskReduction",
-    "KillSwitch",
-    "KillSwitchTrigger", 
-    "KillSwitchLevel",
-    "DataHealthMonitor",
-    "DataQuality",
-    "HealthGate",
-    "AdaptiveRiskManager",
-    "RiskMode",
-    "RiskAdjustment",
-    "RiskAnalytics",
-    "RiskMetrics"
+    "RiskLimitManager",
+    "RiskLimit", 
+    "LimitType",
+    "KillSwitchSystem",
+    "KillSwitchTrigger",
+    "EmergencyStop",
+    "CircuitBreakerSystem",
+    "CircuitState",
+    "BreakReason",
+    "OrderDeduplicator",
+    "OrderState",
+    "DuplicateCheck"
 ]
