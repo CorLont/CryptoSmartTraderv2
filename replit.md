@@ -1,7 +1,7 @@
 # replit.md
 
 ## Overview
-CryptoSmartTrader V2 is an institutional-grade multi-agent cryptocurrency trading intelligence system. It provides real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution with comprehensive risk management across over 1457+ cryptocurrencies. The system aims for high returns by integrating various analytical methods and ML predictions to identify fast-growing cryptocurrencies, focusing on high prediction accuracy, strict data integrity, robust asynchronous data scraping, and advanced AI/ML techniques.
+CryptoSmartTrader V2 is an institutional-grade multi-agent cryptocurrency trading intelligence system designed for real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution. It provides comprehensive risk management across over 1457+ cryptocurrencies, aiming for high returns by integrating various analytical methods and ML predictions to identify fast-growing cryptocurrencies. The system prioritizes high prediction accuracy, strict data integrity, robust asynchronous data scraping, and advanced AI/ML techniques.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -42,31 +42,30 @@ Documentation & Governance: Enterprise documentation structure with README_QUICK
 ## System Architecture
 
 ### Core Architecture Pattern
-The system uses a Distributed Multi-Process Architecture with 8 isolated agent processes (Data Collector, Sentiment Analyzer, Technical Analyzer, ML Predictor, Whale Detector, Risk Manager, Portfolio Optimizer, Health Monitor), each with circuit breakers, exponential backoff, health monitoring, and automatic restart.
+The system uses a Distributed Multi-Process Architecture with isolated agent processes (e.g., Data Collector, Sentiment Analyzer, ML Predictor), each with circuit breakers, exponential backoff, health monitoring, and automatic restart.
+
+### Key Architectural Decisions
+- **Deployment & Structure:** Lean 3-script deployment, duplicate-free core structure, consolidated dependency management, clean archive system. Multi-service architecture for Replit deployment (Dashboard, API, Metrics services).
+- **Foundational Services:** Comprehensive testing (80%+ coverage), enterprise security, production-grade logging (structured JSON, Prometheus), dependency injection, Pydantic configuration, async I/O with global rate limiting, intelligent caching, health monitoring with GO/NO-GO gates.
+- **Data & Exchange Management:** Multi-exchange architecture (CCXT-based), real-time data pipeline, hard data integrity filter (zero-tolerance), timestamp synchronization, temporal validation/splits/feature engineering.
+- **Regime Detection & Strategy Adaptation:** Advanced market regime classification system with 6 types, Hurst exponent, ADX/volatility/market breadth analysis, ML-powered regime classification, and regime-adaptive trading strategies.
+- **Machine Learning & AI:** GPU optimization, regime detection & market regime routing, multi-horizon ML (1H, 24H, 7D, 30D, ensemble), ML uncertainty quantification (Bayesian LSTM, Monte Carlo), continual learning, automated feature engineering, reinforcement learning (PPO), Human-in-the-Loop & explainability, advanced transformers (TFT, N-BEATS), conformal prediction, probability calibrator, and regime-aware models.
+- **Ensemble & Meta-Learning:** Alpha-stacking architecture combining orthogonal information sources (TA, Sentiment, Regime), meta-learner, sophisticated feature engineering, time series cross-validation, probability calibration, alpha blending, signal decay management, and consensus mechanisms.
+- **Trading & Risk Management:** Strict 80% confidence gate, shadow trading, advanced execution simulation, enterprise portfolio risk management (hard caps, correlation limits, kill-switch), multi-horizon batch inference/signal quality validation, system health monitor, advanced portfolio optimization (Kelly-lite, uncertainty-aware), order book imbalance detection, and uncertainty-aware sizing.
+- **Confidence-Weighted Position Sizing:** Fractional Kelly criterion with probability calibration, ML overconfidence correction, and risk-controlled sizing with regime adjustments.
+- **Execution & Alpha Preservation:** Comprehensive liquidity gating system with spread/depth/volume thresholds, real-time spread monitoring, slippage tracking, integrated execution filter, market microstructure analysis, order book depth analysis, and execution quality scoring.
+- **Execution Quality Management:** Advanced execution policy per pair/regime with adaptive strategies (e.g., TWAP), fee optimization, intelligent partial fill handling, price improvement ladders, and comprehensive execution analytics.
+- **UI/UX & Monitoring:** Enterprise Streamlit dashboard with performance optimization, async data refresh, intelligent caching, modular page architecture, and session state management.
+- **System Automation & Integration:** Final system integrator, production optimizer, critical fixes applier, and production deployment system.
 
 ### Technology Stack
 - **Frontend:** Streamlit.
 - **Backend:** Python, FastAPI.
-- **Machine Learning:** PyTorch (LSTM, GRU, Transformer, N-BEATS), scikit-learn, XGBoost.
+- **Machine Learning:** PyTorch (LSTM, GRU, Transformer, N-BEATS), scikit-learn, XGBoost, LightGBM.
 - **Data Processing:** pandas, numpy, CuPy, Numba.
 - **Exchange Integration:** CCXT.
 - **Visualization:** Plotly.
 - **Storage:** Local file system (JSON/CSV) with caching.
-
-### Key Architectural Decisions
-- **Deployment & Structure:** Lean 3-script deployment, duplicate-free core structure, consolidated dependency management, clean archive system.
-- **Foundational Services:** Comprehensive testing (80%+ coverage), enterprise security (secrets, log redaction), production-grade logging (structured JSON, Prometheus), dependency injection, Pydantic configuration, async I/O with global rate limiting, intelligent caching, health monitoring with GO/NO-GO gates.
-- **Observability:** Enterprise JSON logging with correlation IDs, Prometheus metrics, health grading system with trading policy enforcement.
-- **Data & Exchange Management:** Multi-exchange architecture (CCXT-based), real-time data pipeline, data manager, dynamic coin registry, ML model manager, hard data integrity filter (zero-tolerance), timestamp synchronization, temporal validation/splits/feature engineering.
-- **Regime Detection & Strategy Adaptation:** Advanced market regime classification system with 6 regime types (trend_up/down, mean_reversion, high_vol_chop, low_vol_drift, risk_off), Hurst exponent calculation, ADX/volatility/market breadth analysis, funding/OI impulse detection, ML-powered regime classification (Random Forest), regime-adaptive trading strategies, no-trade regime identification.
-- **Machine Learning & AI:** GPU optimization, regime detection & market regime routing (HMM), multi-horizon ML (1H, 24H, 7D, 30D, ensemble), enterprise ML uncertainty quantification (Bayesian LSTM, Monte Carlo), SLO-driven MLOps, continual learning, automated feature engineering, causal inference, reinforcement learning (PPO), synthetic data augmentation, Human-in-the-Loop & explainability (SHAP), meta-labeling, event impact scoring (LLM-powered), futures data features, advanced transformers (TFT, N-BEATS), conformal prediction, probability calibrator, calibrated confidence gate, Bayesian uncertainty quantification, regime-aware models.
-- **Ensemble & Meta-Learning:** Alpha-stacking architecture combining orthogonal information sources (Technical Analysis, Sentiment, Regime Detection), meta-learner (Logistic/XGBoost/RandomForest), sophisticated feature engineering, time series cross-validation, probability calibration, alpha blending with 6 optimization strategies, signal decay management, consensus mechanisms.
-- **Trading & Risk Management:** Strict 80% confidence gate, shadow trading, advanced execution simulation (Level-2, slippage, fees), enterprise portfolio risk management (hard caps, correlation limits, kill-switch), coverage audit, multi-horizon batch inference/signal quality validation, system health monitor, advanced portfolio optimization (Kelly-lite, uncertainty-aware, correlation caps), order book imbalance detection, regime router (Mixture-of-Experts), uncertainty-aware sizing.
-- **Confidence-Weighted Position Sizing:** Fractional Kelly criterion with probability calibration (Platt scaling/Isotonic regression), ML overconfidence correction, optimal position sizing formula f* = p - (1-p)/R with fractional factors, risk-controlled sizing with regime adjustments, historical optimization for fraction factor selection, confidence thresholds for trade filtering.
-- **Execution & Alpha Preservation:** Comprehensive liquidity gating system with spread/depth/volume thresholds, real-time spread monitoring, slippage tracking, integrated execution filter with slippage budgets, market microstructure analysis, order book depth analysis, size impact modeling, execution quality scoring.
-- **Execution Quality Management:** Advanced execution policy per pair/regime with adaptive strategies (post-only, TWAP, iceberg, adaptive), fee optimization targeting 80% maker ratio and fee-tier awareness, sophisticated TWAP executor with volume/volatility adjustment, intelligent partial fill handling (cancel/retry, size reduction, time priority), price improvement ladders with dynamic pricing strategies, comprehensive execution analytics with A+ to F grading system, funding period avoidance, alpha preservation tracking with 10-30% execution edge preservation.
-- **UI/UX & Monitoring:** Enterprise Streamlit dashboard with performance optimization, async data refresh, intelligent caching, modular page architecture, session state management.
-- **System Automation & Integration:** Final system integrator, production optimizer, critical fixes applier, production deployment system (Windows batch scripts, atomic orchestration, readiness checks).
 
 ## External Dependencies
 
