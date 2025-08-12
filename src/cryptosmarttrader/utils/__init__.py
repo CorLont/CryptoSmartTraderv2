@@ -1,7 +1,8 @@
 """
-Utils module - Utility functions and helpers
+Utils Module - Shared utilities and helper functions
 
-Contains helper functions, utilities, and shared components.
+Common utilities used across the application including
+data processing, logging, and configuration helpers.
 """
 
 __all__ = []

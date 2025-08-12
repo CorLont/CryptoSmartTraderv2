@@ -1,15 +1,9 @@
 """
-Agents module - Multi-agent system components
+Agents Module - Specialized trading and analysis agents
 
-Contains all agent implementations for the distributed cryptocurrency
-trading intelligence system.
+Multi-agent architecture with specialized components for different
+aspects of cryptocurrency trading intelligence.
 """
 
-try:
-    from .technical_agent import TechnicalAgent
-except ImportError:
-    TechnicalAgent = None
-
-__all__ = [
-    "TechnicalAgent"
-]
+# Import specific agents when needed to avoid circular imports
+__all__ = ["sentiment", "ta", "onchain", "scraping_core"]

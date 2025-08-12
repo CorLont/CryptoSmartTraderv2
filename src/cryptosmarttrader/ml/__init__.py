@@ -1,7 +1,8 @@
 """
-ML module - Machine learning components
+ML Module - Machine learning models and prediction pipelines
 
-Contains machine learning models, feature engineering, and prediction systems.
+Advanced machine learning capabilities including model training,
+prediction generation, and uncertainty quantification.
 """
 
 __all__ = []
