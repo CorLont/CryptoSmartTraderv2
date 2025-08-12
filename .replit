@@ -58,4 +58,4 @@ localPort = 8899
 externalPort = 4200
 
 [agent]
-integrations = ["python_slack==1.0.0", "web_scraper==1.0.0"]
+integrations = ["python_sendgrid==1.0.0", "web_scraper==1.0.0", "python_slack==1.0.0"]
