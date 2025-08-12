@@ -1,13 +1,13 @@
 """
-Risk Limits Manager
+Risk Limits System
 
-Comprehensive risk limit system with daily loss limits,
-maximum drawdown guards, and exposure controls.
+Comprehensive risk management with daily loss limits, max-drawdown guards,
+exposure limits per asset/cluster, and real-time enforcement.
 """
 
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Tuple, Any, Union
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, date
 from enum import Enum
@@ -17,471 +17,706 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-class LimitType(Enum):
+class RiskLimitType(Enum):
     """Types of risk limits"""
     DAILY_LOSS = "daily_loss"
     MAX_DRAWDOWN = "max_drawdown"
     POSITION_SIZE = "position_size"
-    EXPOSURE_CONCENTRATION = "exposure_concentration"
-    CORRELATION_LIMIT = "correlation_limit"
-    VOLATILITY_LIMIT = "volatility_limit"
-    LEVERAGE_LIMIT = "leverage_limit"
+    ASSET_EXPOSURE = "asset_exposure"
+    CLUSTER_EXPOSURE = "cluster_exposure"
+    TOTAL_EXPOSURE = "total_exposure"
+    CONCENTRATION = "concentration"
+    CORRELATION = "correlation"
 
-
-class LimitStatus(Enum):
-    """Risk limit status"""
-    SAFE = "safe"
+class RiskStatus(Enum):
+    """Risk status levels"""
+    NORMAL = "normal"
     WARNING = "warning"
-    BREACHED = "breached"
-    EMERGENCY = "emergency"
+    CRITICAL = "critical"
+    BREACH = "breach"
 
+class ActionType(Enum):
+    """Risk management actions"""
+    MONITOR = "monitor"
+    REDUCE_SIZE = "reduce_size"
+    HALT_NEW_POSITIONS = "halt_new_positions"
+    CLOSE_POSITIONS = "close_positions"
+    EMERGENCY_STOP = "emergency_stop"
 
 @dataclass
 class RiskLimit:
-    """Individual risk limit definition"""
-    limit_id: str
-    limit_type: LimitType
+    """Individual risk limit configuration"""
+    name: str
+    limit_type: RiskLimitType
+    threshold_value: float
+    warning_threshold: float
+    critical_threshold: float
     
-    # Limit parameters
-    soft_limit: float           # Warning threshold
-    hard_limit: float           # Absolute limit
-    emergency_limit: float      # Emergency stop threshold
+    # Scope
+    symbol: Optional[str] = None
+    cluster: Optional[str] = None
     
-    # Current values
+    # Actions
+    warning_action: ActionType = ActionType.MONITOR
+    critical_action: ActionType = ActionType.REDUCE_SIZE
+    breach_action: ActionType = ActionType.HALT_NEW_POSITIONS
+    
+    # Timing
+    time_window_hours: float = 24.0
+    cooldown_minutes: int = 15
+    
+    # Status tracking
     current_value: float = 0.0
-    current_status: LimitStatus = LimitStatus.SAFE
-    
-    # Configuration
-    enabled: bool = True
-    auto_action: str = "alert"  # "alert", "reduce_positions", "stop_trading"
-    
-    # Metadata
-    description: str = ""
-    last_check: Optional[datetime] = None
-    breach_count_today: int = 0
-    
-    @property
-    def utilization_pct(self) -> float:
-        """Current limit utilization as percentage"""
-        if self.hard_limit == 0:
-            return 0.0
-        return abs(self.current_value / self.hard_limit) * 100
-    
-    @property
-    def is_breached(self) -> bool:
-        """Check if limit is breached"""
-        return self.current_status in [LimitStatus.BREACHED, LimitStatus.EMERGENCY]
-    
-    def update_status(self, value: float) -> LimitStatus:
-        """Update limit status based on current value"""
-        self.current_value = value
-        self.last_check = datetime.now()
-        
-        # Determine status based on thresholds
-        if abs(value) >= abs(self.emergency_limit):
-            self.current_status = LimitStatus.EMERGENCY
-        elif abs(value) >= abs(self.hard_limit):
-            self.current_status = LimitStatus.BREACHED
-            self.breach_count_today += 1
-        elif abs(value) >= abs(self.soft_limit):
-            self.current_status = LimitStatus.WARNING
-        else:
-            self.current_status = LimitStatus.SAFE
-        
-        return self.current_status
+    last_breach_time: Optional[datetime] = None
+    breach_count: int = 0
 
+@dataclass
+class RiskViolation:
+    """Risk limit violation record"""
+    timestamp: datetime
+    limit_name: str
+    limit_type: RiskLimitType
+    current_value: float
+    threshold_value: float
+    severity: RiskStatus
+    action_taken: ActionType
+    
+    # Context
+    symbol: Optional[str] = None
+    cluster: Optional[str] = None
+    portfolio_value: float = 0.0
+    
+    # Resolution
+    resolved: bool = False
+    resolution_time: Optional[datetime] = None
+    resolution_action: Optional[str] = None
 
 class RiskLimitManager:
     """
-    Enterprise risk limit management system
+    Comprehensive risk limit management and enforcement
     """
     
-    def __init__(self, config_file: Optional[str] = None):
-        self.limits: Dict[str, RiskLimit] = {}
-        self.limit_history = []
-        self.daily_reset_time = "00:00"
+    def __init__(self, initial_portfolio_value: float = 100000.0):
+        self.initial_portfolio_value = initial_portfolio_value
+        self.current_portfolio_value = initial_portfolio_value
         
-        # Default risk limits
+        # Risk limits registry
+        self.risk_limits: Dict[str, RiskLimit] = {}
+        self.violations: List[RiskViolation] = []
+        
+        # Portfolio tracking
+        self.daily_pnl_history: List[Tuple[date, float]] = []
+        self.high_water_mark = initial_portfolio_value
+        self.current_drawdown = 0.0
+        
+        # Position tracking
+        self.current_positions: Dict[str, float] = {}  # symbol -> position value
+        self.cluster_allocations: Dict[str, List[str]] = {}  # cluster -> symbols
+        
+        # Emergency state
+        self.emergency_stop_active = False
+        self.kill_switch_triggered = False
+        self.last_check_time = datetime.now()
+        
+        # Setup default limits
         self._setup_default_limits()
-        
-        # Load custom configuration if provided
-        if config_file:
-            self._load_config(config_file)
-        
-        # Callbacks for limit breaches
-        self.breach_callbacks = []
-        
-        # Daily tracking
-        self.daily_start_equity = 0.0
-        self.daily_peak_equity = 0.0
-        self.last_reset_date = date.today()
     
     def _setup_default_limits(self):
         """Setup default risk limits"""
         
-        # Daily loss limit (5% of starting equity)
-        self.add_limit(RiskLimit(
-            limit_id="daily_loss",
-            limit_type=LimitType.DAILY_LOSS,
-            soft_limit=-3.0,      # 3% warning
-            hard_limit=-5.0,      # 5% stop trading
-            emergency_limit=-7.5, # 7.5% emergency stop
-            description="Daily portfolio loss limit",
-            auto_action="stop_trading"
+        # Daily loss limit (5% of portfolio)
+        self.add_risk_limit(RiskLimit(
+            name="daily_loss_limit",
+            limit_type=RiskLimitType.DAILY_LOSS,
+            threshold_value=0.05,  # 5%
+            warning_threshold=0.03,  # 3%
+            critical_threshold=0.045,  # 4.5%
+            warning_action=ActionType.MONITOR,
+            critical_action=ActionType.REDUCE_SIZE,
+            breach_action=ActionType.HALT_NEW_POSITIONS,
+            time_window_hours=24.0
         ))
         
-        # Maximum drawdown limit (10% from peak)
-        self.add_limit(RiskLimit(
-            limit_id="max_drawdown",
-            limit_type=LimitType.MAX_DRAWDOWN,
-            soft_limit=-8.0,      # 8% warning
-            hard_limit=-10.0,     # 10% reduce positions
-            emergency_limit=-15.0, # 15% emergency stop
-            description="Maximum drawdown from peak equity",
-            auto_action="reduce_positions"
+        # Maximum drawdown limit (10% of high water mark)
+        self.add_risk_limit(RiskLimit(
+            name="max_drawdown_limit",
+            limit_type=RiskLimitType.MAX_DRAWDOWN,
+            threshold_value=0.10,  # 10%
+            warning_threshold=0.07,  # 7%
+            critical_threshold=0.09,  # 9%
+            warning_action=ActionType.MONITOR,
+            critical_action=ActionType.REDUCE_SIZE,
+            breach_action=ActionType.CLOSE_POSITIONS,
+            time_window_hours=24.0 * 30  # 30 days
         ))
         
-        # Position size limit (2% per position)
-        self.add_limit(RiskLimit(
-            limit_id="position_size",
-            limit_type=LimitType.POSITION_SIZE,
-            soft_limit=1.5,       # 1.5% warning
-            hard_limit=2.0,       # 2% hard limit
-            emergency_limit=3.0,  # 3% emergency
-            description="Maximum position size per asset",
-            auto_action="reject_order"
+        # Single position size limit (5% of portfolio)
+        self.add_risk_limit(RiskLimit(
+            name="single_position_limit",
+            limit_type=RiskLimitType.POSITION_SIZE,
+            threshold_value=0.05,  # 5%
+            warning_threshold=0.04,  # 4%
+            critical_threshold=0.045,  # 4.5%
+            warning_action=ActionType.MONITOR,
+            critical_action=ActionType.REDUCE_SIZE,
+            breach_action=ActionType.HALT_NEW_POSITIONS
         ))
         
-        # Exposure concentration (20% per asset cluster)
-        self.add_limit(RiskLimit(
-            limit_id="exposure_concentration",
-            limit_type=LimitType.EXPOSURE_CONCENTRATION,
-            soft_limit=15.0,      # 15% warning
-            hard_limit=20.0,      # 20% hard limit
-            emergency_limit=25.0, # 25% emergency
-            description="Maximum exposure per asset cluster",
-            auto_action="reject_order"
+        # Total crypto exposure limit (25% of portfolio)
+        self.add_risk_limit(RiskLimit(
+            name="total_crypto_exposure",
+            limit_type=RiskLimitType.TOTAL_EXPOSURE,
+            threshold_value=0.25,  # 25%
+            warning_threshold=0.20,  # 20%
+            critical_threshold=0.23,  # 23%
+            warning_action=ActionType.MONITOR,
+            critical_action=ActionType.REDUCE_SIZE,
+            breach_action=ActionType.HALT_NEW_POSITIONS
         ))
         
-        # Correlation limit (max 70% correlated exposure)
-        self.add_limit(RiskLimit(
-            limit_id="correlation",
-            limit_type=LimitType.CORRELATION_LIMIT,
-            soft_limit=60.0,      # 60% warning
-            hard_limit=70.0,      # 70% hard limit
-            emergency_limit=80.0, # 80% emergency
-            description="Maximum correlated exposure",
-            auto_action="reduce_positions"
+        # Large cap cluster limit (15% of portfolio)
+        self.add_risk_limit(RiskLimit(
+            name="large_cap_cluster_limit",
+            limit_type=RiskLimitType.CLUSTER_EXPOSURE,
+            threshold_value=0.15,  # 15%
+            warning_threshold=0.12,  # 12%
+            critical_threshold=0.14,  # 14%
+            cluster="large_cap",
+            warning_action=ActionType.MONITOR,
+            critical_action=ActionType.REDUCE_SIZE,
+            breach_action=ActionType.HALT_NEW_POSITIONS
         ))
         
-        # Volatility limit (max 25% portfolio volatility)
-        self.add_limit(RiskLimit(
-            limit_id="volatility",
-            limit_type=LimitType.VOLATILITY_LIMIT,
-            soft_limit=20.0,      # 20% warning
-            hard_limit=25.0,      # 25% hard limit
-            emergency_limit=30.0, # 30% emergency
-            description="Maximum portfolio volatility",
-            auto_action="reduce_positions"
+        # Meme coin cluster limit (3% of portfolio)
+        self.add_risk_limit(RiskLimit(
+            name="meme_cluster_limit",
+            limit_type=RiskLimitType.CLUSTER_EXPOSURE,
+            threshold_value=0.03,  # 3%
+            warning_threshold=0.02,  # 2%
+            critical_threshold=0.025,  # 2.5%
+            cluster="meme",
+            warning_action=ActionType.MONITOR,
+            critical_action=ActionType.REDUCE_SIZE,
+            breach_action=ActionType.CLOSE_POSITIONS
         ))
     
-    def add_limit(self, limit: RiskLimit):
-        """Add or update a risk limit"""
-        self.limits[limit.limit_id] = limit
-        logger.info(f"Added risk limit: {limit.limit_id} ({limit.limit_type.value})")
+    def add_risk_limit(self, risk_limit: RiskLimit):
+        """Add a risk limit to the system"""
+        self.risk_limits[risk_limit.name] = risk_limit
+        logger.info(f"Added risk limit: {risk_limit.name} ({risk_limit.limit_type.value})")
     
-    def update_daily_metrics(self, current_equity: float, current_positions: Dict[str, float]):
-        """Update daily risk metrics"""
-        try:
-            # Check if we need to reset daily tracking
-            today = date.today()
-            if today != self.last_reset_date:
-                self._reset_daily_tracking(current_equity)
-                self.last_reset_date = today
-            
-            # Update daily peak
-            if current_equity > self.daily_peak_equity:
-                self.daily_peak_equity = current_equity
-            
-            # Calculate daily PnL
-            if self.daily_start_equity > 0:
-                daily_pnl_pct = (current_equity - self.daily_start_equity) / self.daily_start_equity * 100
-            else:
-                daily_pnl_pct = 0.0
-            
-            # Calculate drawdown from peak
-            if self.daily_peak_equity > 0:
-                drawdown_pct = (current_equity - self.daily_peak_equity) / self.daily_peak_equity * 100
-            else:
-                drawdown_pct = 0.0
-            
-            # Update limits
-            self._update_limit("daily_loss", daily_pnl_pct)
-            self._update_limit("max_drawdown", drawdown_pct)
-            
-            # Calculate position and exposure metrics
-            self._update_position_limits(current_positions, current_equity)
-            
-        except Exception as e:
-            logger.error(f"Daily metrics update failed: {e}")
-    
-    def _reset_daily_tracking(self, current_equity: float):
-        """Reset daily tracking metrics"""
-        self.daily_start_equity = current_equity
-        self.daily_peak_equity = current_equity
+    def update_portfolio_value(self, new_value: float):
+        """Update current portfolio value and calculate PnL"""
+        previous_value = self.current_portfolio_value
+        self.current_portfolio_value = new_value
         
-        # Reset daily breach counts
-        for limit in self.limits.values():
-            limit.breach_count_today = 0
+        # Update high water mark
+        if new_value > self.high_water_mark:
+            self.high_water_mark = new_value
+            self.current_drawdown = 0.0
+        else:
+            self.current_drawdown = (self.high_water_mark - new_value) / self.high_water_mark
         
-        logger.info(f"Daily risk tracking reset - starting equity: {current_equity:.2f}")
-    
-    def _update_limit(self, limit_id: str, value: float) -> bool:
-        """Update a specific risk limit and check for breaches"""
-        if limit_id not in self.limits:
-            return False
+        # Record daily PnL
+        today = datetime.now().date()
+        daily_pnl = new_value - previous_value
         
-        limit = self.limits[limit_id]
-        if not limit.enabled:
-            return True
+        # Update or add today's PnL
+        if self.daily_pnl_history and self.daily_pnl_history[-1][0] == today:
+            # Update today's PnL
+            total_daily_pnl = self.daily_pnl_history[-1][1] + daily_pnl
+            self.daily_pnl_history[-1] = (today, total_daily_pnl)
+        else:
+            # New day
+            self.daily_pnl_history.append((today, daily_pnl))
         
-        old_status = limit.current_status
-        new_status = limit.update_status(value)
+        # Keep only last 30 days
+        cutoff_date = today - timedelta(days=30)
+        self.daily_pnl_history = [
+            (d, pnl) for d, pnl in self.daily_pnl_history if d >= cutoff_date
+        ]
         
-        # Check for status changes
-        if new_status != old_status:
-            self._handle_limit_change(limit, old_status, new_status)
+        logger.debug(f"Portfolio value updated: ${new_value:,.2f} (PnL: ${daily_pnl:+,.2f})")
+    
+    def update_position(self, symbol: str, position_value: float):
+        """Update position value for a symbol"""
+        self.current_positions[symbol] = position_value
+        logger.debug(f"Position updated: {symbol} = ${position_value:,.2f}")
+    
+    def set_cluster_allocation(self, cluster: str, symbols: List[str]):
+        """Set which symbols belong to a cluster"""
+        self.cluster_allocations[cluster] = symbols
+        logger.debug(f"Cluster allocation set: {cluster} = {symbols}")
+    
+    def check_daily_loss_limit(self) -> Tuple[RiskStatus, float]:
+        """Check daily loss limit"""
+        if not self.daily_pnl_history:
+            return RiskStatus.NORMAL, 0.0
         
-        # Record in history
-        self.limit_history.append({
-            "timestamp": datetime.now(),
-            "limit_id": limit_id,
-            "value": value,
-            "status": new_status.value,
-            "utilization_pct": limit.utilization_pct
-        })
+        # Get today's PnL
+        today = datetime.now().date()
+        today_pnl = 0.0
         
-        return new_status == LimitStatus.SAFE
-    
-    def _update_position_limits(self, positions: Dict[str, float], total_equity: float):
-        """Update position-based risk limits"""
-        try:
-            if total_equity <= 0:
-                return
-            
-            # Calculate individual position sizes
-            position_sizes = {asset: abs(position) / total_equity * 100 
-                            for asset, position in positions.items()}
-            
-            # Check maximum position size
-            max_position_size = max(position_sizes.values()) if position_sizes else 0
-            self._update_limit("position_size", max_position_size)
-            
-            # Calculate cluster exposure (simplified - would use actual clustering)
-            # For now, group by asset type prefix
-            cluster_exposure = {}
-            for asset, size in position_sizes.items():
-                cluster = asset.split('/')[0] if '/' in asset else asset[:3]  # Simplified clustering
-                cluster_exposure[cluster] = cluster_exposure.get(cluster, 0) + size
-            
-            max_cluster_exposure = max(cluster_exposure.values()) if cluster_exposure else 0
-            self._update_limit("exposure_concentration", max_cluster_exposure)
-            
-            # Calculate total exposure
-            total_exposure = sum(position_sizes.values())
-            
-            # Estimate correlation impact (simplified)
-            # In reality, would use correlation matrix
-            avg_correlation = 0.3  # Assume 30% average correlation
-            correlation_adjusted_exposure = total_exposure * avg_correlation
-            self._update_limit("correlation", correlation_adjusted_exposure)
-            
-        except Exception as e:
-            logger.error(f"Position limit update failed: {e}")
-    
-    def _handle_limit_change(self, limit: RiskLimit, old_status: LimitStatus, new_status: LimitStatus):
-        """Handle risk limit status changes"""
+        for d, pnl in self.daily_pnl_history:
+            if d == today:
+                today_pnl = pnl
+                break
         
-        logger.warning(f"Risk limit {limit.limit_id} status changed: {old_status.value} → {new_status.value}")
+        # Calculate loss percentage
+        if today_pnl >= 0:
+            return RiskStatus.NORMAL, 0.0
         
-        # Execute auto-actions based on new status
-        if new_status == LimitStatus.EMERGENCY:
-            self._execute_emergency_action(limit)
-        elif new_status == LimitStatus.BREACHED:
-            self._execute_breach_action(limit)
-        elif new_status == LimitStatus.WARNING:
-            self._execute_warning_action(limit)
+        loss_pct = abs(today_pnl) / self.current_portfolio_value
         
-        # Notify callbacks
-        for callback in self.breach_callbacks:
-            try:
-                callback(limit, old_status, new_status)
-            except Exception as e:
-                logger.error(f"Risk limit callback failed: {e}")
-    
-    def _execute_emergency_action(self, limit: RiskLimit):
-        """Execute emergency actions for limit breach"""
-        logger.critical(f"EMERGENCY: Risk limit {limit.limit_id} breached - immediate action required")
+        # Update limit current value
+        daily_loss_limit = self.risk_limits.get("daily_loss_limit")
+        if daily_loss_limit:
+            daily_loss_limit.current_value = loss_pct
         
-        if limit.auto_action == "stop_trading":
-            self._trigger_emergency_stop(f"Emergency limit breach: {limit.limit_id}")
-        elif limit.auto_action == "reduce_positions":
-            self._trigger_position_reduction(0.5, f"Emergency reduction: {limit.limit_id}")
-    
-    def _execute_breach_action(self, limit: RiskLimit):
-        """Execute actions for limit breach"""
-        logger.error(f"BREACH: Risk limit {limit.limit_id} exceeded")
+        # Check thresholds
+        if daily_loss_limit:
+            if loss_pct >= daily_loss_limit.threshold_value:
+                return RiskStatus.BREACH, loss_pct
+            elif loss_pct >= daily_loss_limit.critical_threshold:
+                return RiskStatus.CRITICAL, loss_pct
+            elif loss_pct >= daily_loss_limit.warning_threshold:
+                return RiskStatus.WARNING, loss_pct
         
-        if limit.auto_action == "stop_trading":
-            self._trigger_trading_halt(f"Limit breach: {limit.limit_id}")
-        elif limit.auto_action == "reduce_positions":
-            self._trigger_position_reduction(0.25, f"Breach reduction: {limit.limit_id}")
-        elif limit.auto_action == "reject_order":
-            logger.warning(f"New orders will be rejected due to {limit.limit_id} breach")
+        return RiskStatus.NORMAL, loss_pct
     
-    def _execute_warning_action(self, limit: RiskLimit):
-        """Execute warning actions"""
-        logger.warning(f"WARNING: Risk limit {limit.limit_id} approaching threshold")
-        # Warning actions are typically just alerts
+    def check_drawdown_limit(self) -> Tuple[RiskStatus, float]:
+        """Check maximum drawdown limit"""
+        # Update limit current value
+        drawdown_limit = self.risk_limits.get("max_drawdown_limit")
+        if drawdown_limit:
+            drawdown_limit.current_value = self.current_drawdown
+        
+        # Check thresholds
+        if drawdown_limit:
+            if self.current_drawdown >= drawdown_limit.threshold_value:
+                return RiskStatus.BREACH, self.current_drawdown
+            elif self.current_drawdown >= drawdown_limit.critical_threshold:
+                return RiskStatus.CRITICAL, self.current_drawdown
+            elif self.current_drawdown >= drawdown_limit.warning_threshold:
+                return RiskStatus.WARNING, self.current_drawdown
+        
+        return RiskStatus.NORMAL, self.current_drawdown
     
-    def _trigger_emergency_stop(self, reason: str):
-        """Trigger emergency trading stop"""
-        # This would integrate with the kill switch system
-        logger.critical(f"EMERGENCY STOP TRIGGERED: {reason}")
-    
-    def _trigger_trading_halt(self, reason: str):
-        """Trigger trading halt"""
-        # This would integrate with the trading engine
-        logger.error(f"TRADING HALT TRIGGERED: {reason}")
-    
-    def _trigger_position_reduction(self, reduction_factor: float, reason: str):
-        """Trigger position size reduction"""
-        # This would integrate with the portfolio manager
-        logger.warning(f"POSITION REDUCTION TRIGGERED ({reduction_factor*100:.0f}%): {reason}")
-    
-    def add_breach_callback(self, callback):
-        """Add callback function for limit breaches"""
-        self.breach_callbacks.append(callback)
-    
-    def check_order_against_limits(self, asset: str, order_size: float, current_equity: float) -> Tuple[bool, List[str]]:
-        """Check if a new order would violate risk limits"""
+    def check_position_size_limits(self) -> List[Tuple[str, RiskStatus, float]]:
+        """Check individual position size limits"""
         violations = []
         
-        try:
-            # Check position size limit
-            position_size_pct = abs(order_size) / current_equity * 100
-            position_limit = self.limits.get("position_size")
+        position_limit = self.risk_limits.get("single_position_limit")
+        if not position_limit or self.current_portfolio_value <= 0:
+            return violations
+        
+        for symbol, position_value in self.current_positions.items():
+            if position_value <= 0:
+                continue
             
-            if position_limit and position_size_pct > position_limit.hard_limit:
-                violations.append(f"Order size ({position_size_pct:.1f}%) exceeds position limit ({position_limit.hard_limit:.1f}%)")
+            position_pct = position_value / self.current_portfolio_value
             
-            # Check if trading is currently halted
-            daily_loss_limit = self.limits.get("daily_loss")
-            if daily_loss_limit and daily_loss_limit.is_breached:
-                violations.append("Trading halted due to daily loss limit breach")
+            # Check thresholds
+            if position_pct >= position_limit.threshold_value:
+                status = RiskStatus.BREACH
+            elif position_pct >= position_limit.critical_threshold:
+                status = RiskStatus.CRITICAL
+            elif position_pct >= position_limit.warning_threshold:
+                status = RiskStatus.WARNING
+            else:
+                status = RiskStatus.NORMAL
             
-            drawdown_limit = self.limits.get("max_drawdown")
-            if drawdown_limit and drawdown_limit.current_status == LimitStatus.EMERGENCY:
-                violations.append("Trading halted due to emergency drawdown limit")
-            
-            return len(violations) == 0, violations
-            
-        except Exception as e:
-            logger.error(f"Order limit check failed: {e}")
-            return False, [f"Risk check error: {e}"]
+            if status != RiskStatus.NORMAL:
+                violations.append((symbol, status, position_pct))
+        
+        return violations
     
-    def get_limit_status(self) -> Dict[str, Any]:
-        """Get current status of all risk limits"""
-        status = {}
+    def check_cluster_exposure_limits(self) -> List[Tuple[str, RiskStatus, float]]:
+        """Check cluster exposure limits"""
+        violations = []
         
-        for limit_id, limit in self.limits.items():
-            status[limit_id] = {
-                "type": limit.limit_type.value,
-                "current_value": limit.current_value,
-                "status": limit.current_status.value,
-                "utilization_pct": limit.utilization_pct,
-                "soft_limit": limit.soft_limit,
-                "hard_limit": limit.hard_limit,
-                "emergency_limit": limit.emergency_limit,
-                "breach_count_today": limit.breach_count_today,
-                "last_check": limit.last_check.isoformat() if limit.last_check else None
-            }
+        if self.current_portfolio_value <= 0:
+            return violations
         
-        return status
+        # Calculate cluster exposures
+        cluster_exposures = {}
+        for cluster, symbols in self.cluster_allocations.items():
+            total_exposure = sum(
+                self.current_positions.get(symbol, 0) for symbol in symbols
+            )
+            cluster_exposures[cluster] = total_exposure / self.current_portfolio_value
+        
+        # Check each cluster limit
+        for limit_name, risk_limit in self.risk_limits.items():
+            if risk_limit.limit_type != RiskLimitType.CLUSTER_EXPOSURE:
+                continue
+            
+            cluster = risk_limit.cluster
+            if not cluster or cluster not in cluster_exposures:
+                continue
+            
+            exposure_pct = cluster_exposures[cluster]
+            risk_limit.current_value = exposure_pct
+            
+            # Check thresholds
+            if exposure_pct >= risk_limit.threshold_value:
+                status = RiskStatus.BREACH
+            elif exposure_pct >= risk_limit.critical_threshold:
+                status = RiskStatus.CRITICAL
+            elif exposure_pct >= risk_limit.warning_threshold:
+                status = RiskStatus.WARNING
+            else:
+                status = RiskStatus.NORMAL
+            
+            if status != RiskStatus.NORMAL:
+                violations.append((cluster, status, exposure_pct))
+        
+        return violations
+    
+    def check_total_exposure_limit(self) -> Tuple[RiskStatus, float]:
+        """Check total crypto exposure limit"""
+        if self.current_portfolio_value <= 0:
+            return RiskStatus.NORMAL, 0.0
+        
+        total_crypto_value = sum(self.current_positions.values())
+        total_exposure_pct = total_crypto_value / self.current_portfolio_value
+        
+        # Update limit current value
+        exposure_limit = self.risk_limits.get("total_crypto_exposure")
+        if exposure_limit:
+            exposure_limit.current_value = total_exposure_pct
+        
+        # Check thresholds
+        if exposure_limit:
+            if total_exposure_pct >= exposure_limit.threshold_value:
+                return RiskStatus.BREACH, total_exposure_pct
+            elif total_exposure_pct >= exposure_limit.critical_threshold:
+                return RiskStatus.CRITICAL, total_exposure_pct
+            elif total_exposure_pct >= exposure_limit.warning_threshold:
+                return RiskStatus.WARNING, total_exposure_pct
+        
+        return RiskStatus.NORMAL, total_exposure_pct
+    
+    def check_all_limits(self) -> List[RiskViolation]:
+        """Check all risk limits and return violations"""
+        violations = []
+        current_time = datetime.now()
+        
+        # Daily loss limit
+        daily_loss_status, daily_loss_value = self.check_daily_loss_limit()
+        if daily_loss_status != RiskStatus.NORMAL:
+            limit = self.risk_limits["daily_loss_limit"]
+            violation = RiskViolation(
+                timestamp=current_time,
+                limit_name="daily_loss_limit",
+                limit_type=RiskLimitType.DAILY_LOSS,
+                current_value=daily_loss_value,
+                threshold_value=limit.threshold_value,
+                severity=daily_loss_status,
+                action_taken=self._get_action_for_status(limit, daily_loss_status),
+                portfolio_value=self.current_portfolio_value
+            )
+            violations.append(violation)
+        
+        # Drawdown limit
+        drawdown_status, drawdown_value = self.check_drawdown_limit()
+        if drawdown_status != RiskStatus.NORMAL:
+            limit = self.risk_limits["max_drawdown_limit"]
+            violation = RiskViolation(
+                timestamp=current_time,
+                limit_name="max_drawdown_limit",
+                limit_type=RiskLimitType.MAX_DRAWDOWN,
+                current_value=drawdown_value,
+                threshold_value=limit.threshold_value,
+                severity=drawdown_status,
+                action_taken=self._get_action_for_status(limit, drawdown_status),
+                portfolio_value=self.current_portfolio_value
+            )
+            violations.append(violation)
+        
+        # Position size limits
+        position_violations = self.check_position_size_limits()
+        for symbol, status, value in position_violations:
+            limit = self.risk_limits["single_position_limit"]
+            violation = RiskViolation(
+                timestamp=current_time,
+                limit_name="single_position_limit",
+                limit_type=RiskLimitType.POSITION_SIZE,
+                current_value=value,
+                threshold_value=limit.threshold_value,
+                severity=status,
+                action_taken=self._get_action_for_status(limit, status),
+                symbol=symbol,
+                portfolio_value=self.current_portfolio_value
+            )
+            violations.append(violation)
+        
+        # Cluster exposure limits
+        cluster_violations = self.check_cluster_exposure_limits()
+        for cluster, status, value in cluster_violations:
+            # Find the specific cluster limit
+            cluster_limit = None
+            for limit_name, limit in self.risk_limits.items():
+                if (limit.limit_type == RiskLimitType.CLUSTER_EXPOSURE and 
+                    limit.cluster == cluster):
+                    cluster_limit = limit
+                    break
+            
+            if cluster_limit:
+                violation = RiskViolation(
+                    timestamp=current_time,
+                    limit_name=cluster_limit.name,
+                    limit_type=RiskLimitType.CLUSTER_EXPOSURE,
+                    current_value=value,
+                    threshold_value=cluster_limit.threshold_value,
+                    severity=status,
+                    action_taken=self._get_action_for_status(cluster_limit, status),
+                    cluster=cluster,
+                    portfolio_value=self.current_portfolio_value
+                )
+                violations.append(violation)
+        
+        # Total exposure limit
+        exposure_status, exposure_value = self.check_total_exposure_limit()
+        if exposure_status != RiskStatus.NORMAL:
+            limit = self.risk_limits["total_crypto_exposure"]
+            violation = RiskViolation(
+                timestamp=current_time,
+                limit_name="total_crypto_exposure",
+                limit_type=RiskLimitType.TOTAL_EXPOSURE,
+                current_value=exposure_value,
+                threshold_value=limit.threshold_value,
+                severity=exposure_status,
+                action_taken=self._get_action_for_status(limit, exposure_status),
+                portfolio_value=self.current_portfolio_value
+            )
+            violations.append(violation)
+        
+        # Store violations
+        self.violations.extend(violations)
+        
+        # Update last check time
+        self.last_check_time = current_time
+        
+        return violations
+    
+    def _get_action_for_status(self, limit: RiskLimit, status: RiskStatus) -> ActionType:
+        """Get appropriate action for risk status"""
+        if status == RiskStatus.WARNING:
+            return limit.warning_action
+        elif status == RiskStatus.CRITICAL:
+            return limit.critical_action
+        elif status == RiskStatus.BREACH:
+            return limit.breach_action
+        else:
+            return ActionType.MONITOR
+    
+    def trigger_emergency_stop(self, reason: str):
+        """Trigger emergency stop"""
+        self.emergency_stop_active = True
+        self.kill_switch_triggered = True
+        
+        emergency_violation = RiskViolation(
+            timestamp=datetime.now(),
+            limit_name="emergency_stop",
+            limit_type=RiskLimitType.DAILY_LOSS,  # Placeholder
+            current_value=0.0,
+            threshold_value=0.0,
+            severity=RiskStatus.BREACH,
+            action_taken=ActionType.EMERGENCY_STOP,
+            portfolio_value=self.current_portfolio_value
+        )
+        
+        self.violations.append(emergency_violation)
+        
+        logger.critical(f"EMERGENCY STOP TRIGGERED: {reason}")
+    
+    def clear_emergency_stop(self, authorization_code: str = "CLEAR_EMERGENCY"):
+        """Clear emergency stop (requires authorization)"""
+        if authorization_code == "CLEAR_EMERGENCY":
+            self.emergency_stop_active = False
+            self.kill_switch_triggered = False
+            logger.warning("Emergency stop cleared")
+            return True
+        else:
+            logger.error("Invalid authorization code for emergency stop clear")
+            return False
     
     def get_risk_summary(self) -> Dict[str, Any]:
         """Get comprehensive risk summary"""
         
-        breached_limits = [limit for limit in self.limits.values() if limit.is_breached]
-        warning_limits = [limit for limit in self.limits.values() if limit.current_status == LimitStatus.WARNING]
+        # Check all limits
+        current_violations = self.check_all_limits()
         
-        overall_status = "EMERGENCY" if any(l.current_status == LimitStatus.EMERGENCY for l in self.limits.values()) else \
-                        "BREACHED" if breached_limits else \
-                        "WARNING" if warning_limits else \
-                        "SAFE"
+        # Calculate risk metrics
+        daily_loss_status, daily_loss_value = self.check_daily_loss_limit()
+        drawdown_status, drawdown_value = self.check_drawdown_limit()
+        exposure_status, exposure_value = self.check_total_exposure_limit()
+        
+        # Position size violations
+        position_violations = self.check_position_size_limits()
+        cluster_violations = self.check_cluster_exposure_limits()
+        
+        # Overall risk level
+        all_statuses = [daily_loss_status, drawdown_status, exposure_status]
+        all_statuses.extend([status for _, status, _ in position_violations])
+        all_statuses.extend([status for _, status, _ in cluster_violations])
+        
+        if RiskStatus.BREACH in all_statuses:
+            overall_risk = RiskStatus.BREACH
+        elif RiskStatus.CRITICAL in all_statuses:
+            overall_risk = RiskStatus.CRITICAL
+        elif RiskStatus.WARNING in all_statuses:
+            overall_risk = RiskStatus.WARNING
+        else:
+            overall_risk = RiskStatus.NORMAL
         
         return {
-            "overall_status": overall_status,
-            "total_limits": len(self.limits),
-            "breached_limits": len(breached_limits),
-            "warning_limits": len(warning_limits),
-            "daily_pnl_pct": self.limits.get("daily_loss", RiskLimit("", LimitType.DAILY_LOSS, 0, 0, 0)).current_value,
-            "max_drawdown_pct": self.limits.get("max_drawdown", RiskLimit("", LimitType.MAX_DRAWDOWN, 0, 0, 0)).current_value,
-            "trading_allowed": overall_status not in ["EMERGENCY", "BREACHED"],
-            "last_update": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "overall_risk_status": overall_risk.value,
+            "emergency_stop_active": self.emergency_stop_active,
+            "kill_switch_triggered": self.kill_switch_triggered,
+            
+            # Portfolio metrics
+            "portfolio_value": self.current_portfolio_value,
+            "high_water_mark": self.high_water_mark,
+            "current_drawdown_pct": self.current_drawdown * 100,
+            "daily_pnl": self.daily_pnl_history[-1][1] if self.daily_pnl_history else 0.0,
+            
+            # Risk limit status
+            "daily_loss": {
+                "status": daily_loss_status.value,
+                "current_pct": daily_loss_value * 100,
+                "limit_pct": self.risk_limits["daily_loss_limit"].threshold_value * 100
+            },
+            "max_drawdown": {
+                "status": drawdown_status.value,
+                "current_pct": drawdown_value * 100,
+                "limit_pct": self.risk_limits["max_drawdown_limit"].threshold_value * 100
+            },
+            "total_exposure": {
+                "status": exposure_status.value,
+                "current_pct": exposure_value * 100,
+                "limit_pct": self.risk_limits["total_crypto_exposure"].threshold_value * 100
+            },
+            
+            # Violations
+            "active_violations": len(current_violations),
+            "position_violations": len(position_violations),
+            "cluster_violations": len(cluster_violations),
+            
+            # Historical
+            "total_violations_30d": len([
+                v for v in self.violations 
+                if v.timestamp >= datetime.now() - timedelta(days=30)
+            ])
         }
     
-    def _load_config(self, config_file: str):
-        """Load risk limit configuration from file"""
+    def export_risk_report(self, filepath: str, days_back: int = 30):
+        """Export detailed risk report"""
+        
         try:
-            config_path = Path(config_file)
-            if config_path.exists():
-                with open(config_path, 'r') as f:
-                    config = json.load(f)
-                
-                # Update limits from configuration
-                for limit_config in config.get("limits", []):
-                    limit = RiskLimit(
-                        limit_id=limit_config["limit_id"],
-                        limit_type=LimitType(limit_config["limit_type"]),
-                        soft_limit=limit_config["soft_limit"],
-                        hard_limit=limit_config["hard_limit"],
-                        emergency_limit=limit_config["emergency_limit"],
-                        description=limit_config.get("description", ""),
-                        auto_action=limit_config.get("auto_action", "alert"),
-                        enabled=limit_config.get("enabled", True)
-                    )
-                    self.add_limit(limit)
-                
-                logger.info(f"Loaded risk configuration from {config_file}")
+            cutoff_date = datetime.now() - timedelta(days=days_back)
+            recent_violations = [
+                v for v in self.violations if v.timestamp >= cutoff_date
+            ]
             
-        except Exception as e:
-            logger.error(f"Failed to load risk configuration: {e}")
-    
-    def save_config(self, config_file: str):
-        """Save current risk limit configuration to file"""
-        try:
-            config = {
-                "limits": [
-                    {
-                        "limit_id": limit.limit_id,
+            report_data = {
+                "report_timestamp": datetime.now().isoformat(),
+                "period_days": days_back,
+                "risk_summary": self.get_risk_summary(),
+                
+                # Risk limits configuration
+                "risk_limits": {
+                    name: {
                         "limit_type": limit.limit_type.value,
-                        "soft_limit": limit.soft_limit,
-                        "hard_limit": limit.hard_limit,
-                        "emergency_limit": limit.emergency_limit,
-                        "description": limit.description,
-                        "auto_action": limit.auto_action,
-                        "enabled": limit.enabled
+                        "threshold_value": limit.threshold_value,
+                        "warning_threshold": limit.warning_threshold,
+                        "critical_threshold": limit.critical_threshold,
+                        "current_value": limit.current_value,
+                        "symbol": limit.symbol,
+                        "cluster": limit.cluster
                     }
-                    for limit in self.limits.values()
+                    for name, limit in self.risk_limits.items()
+                },
+                
+                # Violation history
+                "violation_history": [
+                    {
+                        "timestamp": v.timestamp.isoformat(),
+                        "limit_name": v.limit_name,
+                        "limit_type": v.limit_type.value,
+                        "current_value": v.current_value,
+                        "threshold_value": v.threshold_value,
+                        "severity": v.severity.value,
+                        "action_taken": v.action_taken.value,
+                        "symbol": v.symbol,
+                        "cluster": v.cluster,
+                        "resolved": v.resolved
+                    }
+                    for v in recent_violations
                 ],
-                "daily_reset_time": self.daily_reset_time
+                
+                # Daily PnL history
+                "daily_pnl_history": [
+                    {"date": d.isoformat(), "pnl": pnl}
+                    for d, pnl in self.daily_pnl_history
+                ],
+                
+                # Current positions
+                "current_positions": {
+                    symbol: {
+                        "value": value,
+                        "percentage": (value / self.current_portfolio_value * 100) 
+                                    if self.current_portfolio_value > 0 else 0
+                    }
+                    for symbol, value in self.current_positions.items()
+                }
             }
             
-            with open(config_file, 'w') as f:
-                json.dump(config, f, indent=2)
+            with open(filepath, 'w') as f:
+                json.dump(report_data, f, indent=2, default=str)
             
-            logger.info(f"Saved risk configuration to {config_file}")
+            logger.info(f"Risk report exported to {filepath}")
             
         except Exception as e:
-            logger.error(f"Failed to save risk configuration: {e}")
+            logger.error(f"Failed to export risk report: {e}")
+    
+    def is_trading_allowed(self, symbol: Optional[str] = None, 
+                          size: float = 0.0) -> Tuple[bool, str]:
+        """Check if trading is allowed given current risk status"""
+        
+        if self.emergency_stop_active or self.kill_switch_triggered:
+            return False, "Emergency stop active"
+        
+        # Check recent violations for halt conditions
+        recent_violations = [
+            v for v in self.violations 
+            if v.timestamp >= datetime.now() - timedelta(minutes=15)
+            and not v.resolved
+        ]
+        
+        for violation in recent_violations:
+            if violation.action_taken in [ActionType.HALT_NEW_POSITIONS, ActionType.EMERGENCY_STOP]:
+                return False, f"Trading halted due to {violation.limit_name}"
+            
+            if (violation.action_taken == ActionType.CLOSE_POSITIONS and 
+                violation.symbol == symbol):
+                return False, f"Position closure required for {symbol}"
+        
+        # Check if new position would violate limits
+        if symbol and size > 0:
+            # Simulate new position
+            current_value = self.current_positions.get(symbol, 0)
+            new_position_value = current_value + size
+            
+            # Check position size limit
+            if self.current_portfolio_value > 0:
+                new_position_pct = new_position_value / self.current_portfolio_value
+                position_limit = self.risk_limits.get("single_position_limit")
+                
+                if (position_limit and 
+                    new_position_pct >= position_limit.threshold_value):
+                    return False, f"Position size limit would be breached for {symbol}"
+        
+        return True, "Trading allowed"

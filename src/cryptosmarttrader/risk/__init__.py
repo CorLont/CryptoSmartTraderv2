@@ -5,7 +5,7 @@ Enterprise-grade risk management system with circuit breakers,
 kill switches, and comprehensive safety mechanisms.
 """
 
-from .risk_limits import RiskLimitManager, RiskLimit, LimitType
+from .risk_limits import RiskLimitManager, RiskLimit, RiskLimitType
 from .kill_switch import KillSwitchSystem, KillSwitchTrigger, EmergencyStop
 from .circuit_breaker import CircuitBreakerSystem, CircuitState, BreakReason
 from .order_deduplication import OrderDeduplicator, OrderState, DuplicateCheck

@@ -1,453 +1,618 @@
 """
 Circuit Breaker System
 
-Advanced circuit breaker implementation for protecting against
-cascading failures and system overload scenarios.
+Automated circuit breakers for data gaps, latency spikes,
+model drift, and other system anomalies.
 """
 
-import threading
 import time
-from typing import Dict, List, Optional, Any, Callable
+import numpy as np
+import pandas as pd
+from typing import Dict, List, Optional, Tuple, Any, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 import logging
-from collections import deque
-import statistics
+import json
+from pathlib import Path
+import threading
 
 logger = logging.getLogger(__name__)
 
-class CircuitState(Enum):
+class CircuitBreakerType(Enum):
+    """Types of circuit breakers"""
+    DATA_GAP = "data_gap"
+    LATENCY_SPIKE = "latency_spike"
+    MODEL_DRIFT = "model_drift"
+    PREDICTION_ANOMALY = "prediction_anomaly"
+    EXECUTION_FAILURE = "execution_failure"
+    MARKET_ANOMALY = "market_anomaly"
+    SYSTEM_RESOURCE = "system_resource"
+
+class BreakerState(Enum):
     """Circuit breaker states"""
     CLOSED = "closed"      # Normal operation
-    OPEN = "open"         # Circuit is open, requests are blocked
-    HALF_OPEN = "half_open"  # Testing if system has recovered
+    OPEN = "open"          # Breaker triggered, blocking operations
+    HALF_OPEN = "half_open"  # Testing if issue is resolved
 
-
-class BreakReason(Enum):
-    """Reasons for circuit breaking"""
-    HIGH_ERROR_RATE = "high_error_rate"
-    HIGH_LATENCY = "high_latency"
-    TIMEOUT_THRESHOLD = "timeout_threshold"
-    DEPENDENCY_FAILURE = "dependency_failure"
-    RESOURCE_EXHAUSTION = "resource_exhaustion"
-    MANUAL_BREAK = "manual_break"
-
+class AlertSeverity(Enum):
+    """Alert severity levels"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 @dataclass
 class CircuitBreakerConfig:
-    """Circuit breaker configuration"""
+    """Configuration for a circuit breaker"""
     name: str
+    breaker_type: CircuitBreakerType
+    description: str
     
-    # Failure thresholds
-    failure_threshold: int = 5          # Number of failures to open circuit
-    timeout_threshold_ms: int = 5000    # Timeout threshold in milliseconds
-    error_rate_threshold: float = 0.5   # Error rate threshold (0.0-1.0)
+    # Thresholds
+    failure_threshold: int = 5      # Number of failures to trigger
+    timeout_seconds: float = 300    # How long to stay open (5 minutes)
+    half_open_max_calls: int = 3    # Max calls in half-open state
     
-    # Time windows
-    rolling_window_seconds: int = 60    # Rolling window for metrics
-    recovery_timeout_seconds: int = 30  # Time to wait before trying half-open
-    half_open_timeout_seconds: int = 10 # Timeout for half-open state
+    # Detection parameters
+    latency_threshold_ms: float = 1000.0
+    data_gap_threshold_minutes: float = 5.0
+    drift_threshold: float = 0.1
+    anomaly_threshold: float = 3.0  # Standard deviations
     
-    # Half-open behavior
-    half_open_max_calls: int = 3        # Max calls to allow in half-open state
-    half_open_success_threshold: int = 2 # Successful calls needed to close circuit
-
+    # Actions
+    block_new_trades: bool = True
+    send_alerts: bool = True
+    log_violations: bool = True
+    alert_severity: AlertSeverity = AlertSeverity.HIGH
 
 @dataclass
-class CallResult:
-    """Result of a protected call"""
-    success: bool
-    duration_ms: float
-    error: Optional[str] = None
-    timestamp: datetime = field(default_factory=datetime.now)
-
-
-class CircuitBreakerSystem:
-    """
-    Enterprise circuit breaker system
-    """
+class BreakerEvent:
+    """Circuit breaker event record"""
+    timestamp: datetime
+    breaker_name: str
+    event_type: str  # "triggered", "reset", "half_open"
+    trigger_reason: str
     
-    def __init__(self, config: CircuitBreakerConfig):
-        self.config = config
-        self.state = CircuitState.CLOSED
-        
-        # Metrics tracking
-        self.call_history: deque = deque(maxlen=1000)  # Keep last 1000 calls
-        self.failure_count = 0
-        self.last_failure_time: Optional[datetime] = None
-        self.last_state_change = datetime.now()
-        
-        # Half-open state tracking
-        self.half_open_calls = 0
-        self.half_open_successes = 0
-        
-        # Callbacks
-        self.state_change_callbacks: List[Callable] = []
-        
-        # Thread safety
-        self._lock = threading.RLock()
-        
-        # Monitoring
-        self._monitoring_active = True
-        self._monitor_thread = threading.Thread(target=self._monitor_circuit, daemon=True)
-        self._monitor_thread.start()
+    # Context data
+    failure_count: int = 0
+    latency_ms: Optional[float] = None
+    data_gap_minutes: Optional[float] = None
+    drift_score: Optional[float] = None
+    anomaly_score: Optional[float] = None
     
-    def call(self, protected_function: Callable, *args, **kwargs) -> Any:
-        """Execute a function with circuit breaker protection"""
-        
-        with self._lock:
-            # Check if call is allowed
-            if not self._is_call_allowed():
-                raise CircuitBreakerOpenException(
-                    f"Circuit breaker '{self.config.name}' is OPEN"
-                )
-            
-            start_time = time.time()
-            
-            try:
-                # Execute the protected function
-                result = protected_function(*args, **kwargs)
-                
-                # Record successful call
-                duration_ms = (time.time() - start_time) * 1000
-                self._record_call(CallResult(
-                    success=True,
-                    duration_ms=duration_ms
-                ))
-                
-                return result
-                
-            except Exception as e:
-                # Record failed call
-                duration_ms = (time.time() - start_time) * 1000
-                self._record_call(CallResult(
-                    success=False,
-                    duration_ms=duration_ms,
-                    error=str(e)
-                ))
-                
-                # Re-raise the original exception
-                raise
-    
-    def _is_call_allowed(self) -> bool:
-        """Check if call is allowed based on circuit state"""
-        
-        if self.state == CircuitState.CLOSED:
-            return True
-        
-        elif self.state == CircuitState.OPEN:
-            # Check if recovery timeout has passed
-            if self.last_state_change + timedelta(seconds=self.config.recovery_timeout_seconds) <= datetime.now():
-                self._transition_to_half_open()
-                return True
-            return False
-        
-        elif self.state == CircuitState.HALF_OPEN:
-            # Allow limited calls in half-open state
-            if self.half_open_calls < self.config.half_open_max_calls:
-                return True
-            return False
-        
-        return False
-    
-    def _record_call(self, result: CallResult):
-        """Record call result and update circuit state"""
-        
-        # Add to call history
-        self.call_history.append(result)
-        
-        # Update metrics based on current state
-        if self.state == CircuitState.CLOSED:
-            self._handle_closed_state_call(result)
-        elif self.state == CircuitState.HALF_OPEN:
-            self._handle_half_open_state_call(result)
-        
-        # Clean old metrics
-        self._cleanup_old_metrics()
-    
-    def _handle_closed_state_call(self, result: CallResult):
-        """Handle call result in closed state"""
-        
-        if not result.success:
-            self.failure_count += 1
-            self.last_failure_time = result.timestamp
-            
-            # Check if we should open the circuit
-            if self._should_open_circuit():
-                self._transition_to_open(BreakReason.HIGH_ERROR_RATE)
-        
-        elif result.duration_ms > self.config.timeout_threshold_ms:
-            # High latency can also trigger circuit break
-            logger.warning(f"High latency detected: {result.duration_ms}ms")
-            if self._should_open_circuit_due_to_latency():
-                self._transition_to_open(BreakReason.HIGH_LATENCY)
-        
-        else:
-            # Successful call - reset failure count
-            if self.failure_count > 0:
-                self.failure_count = max(0, self.failure_count - 1)
-    
-    def _handle_half_open_state_call(self, result: CallResult):
-        """Handle call result in half-open state"""
-        
-        self.half_open_calls += 1
-        
-        if result.success:
-            self.half_open_successes += 1
-            
-            # Check if we can close the circuit
-            if self.half_open_successes >= self.config.half_open_success_threshold:
-                self._transition_to_closed()
-        
-        else:
-            # Failure in half-open state - go back to open
-            self._transition_to_open(BreakReason.HIGH_ERROR_RATE)
-    
-    def _should_open_circuit(self) -> bool:
-        """Check if circuit should be opened"""
-        
-        # Check failure count threshold
-        if self.failure_count >= self.config.failure_threshold:
-            return True
-        
-        # Check error rate over rolling window
-        recent_calls = self._get_recent_calls()
-        if len(recent_calls) >= 5:  # Need minimum calls for meaningful rate
-            error_rate = sum(1 for call in recent_calls if not call.success) / len(recent_calls)
-            if error_rate >= self.config.error_rate_threshold:
-                return True
-        
-        return False
-    
-    def _should_open_circuit_due_to_latency(self) -> bool:
-        """Check if circuit should be opened due to high latency"""
-        
-        recent_calls = self._get_recent_calls()
-        if len(recent_calls) >= 5:
-            # Calculate average latency
-            latencies = [call.duration_ms for call in recent_calls]
-            avg_latency = statistics.mean(latencies)
-            
-            if avg_latency > self.config.timeout_threshold_ms:
-                return True
-        
-        return False
-    
-    def _get_recent_calls(self) -> List[CallResult]:
-        """Get calls within the rolling window"""
-        
-        cutoff_time = datetime.now() - timedelta(seconds=self.config.rolling_window_seconds)
-        return [call for call in self.call_history if call.timestamp >= cutoff_time]
-    
-    def _transition_to_open(self, reason: BreakReason):
-        """Transition circuit to open state"""
-        
-        old_state = self.state
-        self.state = CircuitState.OPEN
-        self.last_state_change = datetime.now()
-        
-        logger.warning(f"Circuit breaker '{self.config.name}' opened due to {reason.value}")
-        
-        # Reset half-open counters
-        self.half_open_calls = 0
-        self.half_open_successes = 0
-        
-        self._notify_state_change(old_state, self.state, reason)
-    
-    def _transition_to_half_open(self):
-        """Transition circuit to half-open state"""
-        
-        old_state = self.state
-        self.state = CircuitState.HALF_OPEN
-        self.last_state_change = datetime.now()
-        
-        # Reset half-open counters
-        self.half_open_calls = 0
-        self.half_open_successes = 0
-        
-        logger.info(f"Circuit breaker '{self.config.name}' entering half-open state")
-        
-        self._notify_state_change(old_state, self.state, None)
-    
-    def _transition_to_closed(self):
-        """Transition circuit to closed state"""
-        
-        old_state = self.state
-        self.state = CircuitState.CLOSED
-        self.last_state_change = datetime.now()
-        
-        # Reset counters
-        self.failure_count = 0
-        self.half_open_calls = 0
-        self.half_open_successes = 0
-        
-        logger.info(f"Circuit breaker '{self.config.name}' closed - normal operation resumed")
-        
-        self._notify_state_change(old_state, self.state, None)
-    
-    def _notify_state_change(self, old_state: CircuitState, new_state: CircuitState, reason: Optional[BreakReason]):
-        """Notify callbacks of state change"""
-        
-        for callback in self.state_change_callbacks:
-            try:
-                callback(self.config.name, old_state, new_state, reason)
-            except Exception as e:
-                logger.error(f"Circuit breaker callback failed: {e}")
-    
-    def _cleanup_old_metrics(self):
-        """Clean up old metrics outside rolling window"""
-        
-        cutoff_time = datetime.now() - timedelta(seconds=self.config.rolling_window_seconds * 2)
-        
-        # Remove old call history
-        while self.call_history and self.call_history[0].timestamp < cutoff_time:
-            self.call_history.popleft()
-    
-    def _monitor_circuit(self):
-        """Background monitoring thread"""
-        
-        while self._monitoring_active:
-            try:
-                with self._lock:
-                    # Check for timeout in half-open state
-                    if (self.state == CircuitState.HALF_OPEN and 
-                        self.last_state_change + timedelta(seconds=self.config.half_open_timeout_seconds) <= datetime.now()):
-                        
-                        # Half-open timeout - go back to open
-                        self._transition_to_open(BreakReason.TIMEOUT_THRESHOLD)
-                
-                # Sleep for monitoring interval
-                time.sleep(5)  # Check every 5 seconds
-                
-            except Exception as e:
-                logger.error(f"Circuit breaker monitoring error: {e}")
-                time.sleep(10)  # Longer sleep on error
-    
-    def manual_open(self, reason: str):
-        """Manually open the circuit breaker"""
-        
-        with self._lock:
-            if self.state != CircuitState.OPEN:
-                logger.warning(f"Manually opening circuit breaker '{self.config.name}': {reason}")
-                self._transition_to_open(BreakReason.MANUAL_BREAK)
-    
-    def manual_close(self):
-        """Manually close the circuit breaker"""
-        
-        with self._lock:
-            if self.state != CircuitState.CLOSED:
-                logger.info(f"Manually closing circuit breaker '{self.config.name}'")
-                self._transition_to_closed()
-    
-    def add_state_change_callback(self, callback: Callable):
-        """Add callback for state changes"""
-        self.state_change_callbacks.append(callback)
-    
-    def get_status(self) -> Dict[str, Any]:
-        """Get current circuit breaker status"""
-        
-        recent_calls = self._get_recent_calls()
-        
-        # Calculate metrics
-        success_rate = 0.0
-        avg_latency = 0.0
-        
-        if recent_calls:
-            success_rate = sum(1 for call in recent_calls if call.success) / len(recent_calls)
-            latencies = [call.duration_ms for call in recent_calls]
-            avg_latency = statistics.mean(latencies)
-        
-        return {
-            "name": self.config.name,
-            "state": self.state.value,
-            "failure_count": self.failure_count,
-            "success_rate": success_rate,
-            "avg_latency_ms": avg_latency,
-            "recent_calls": len(recent_calls),
-            "last_state_change": self.last_state_change.isoformat(),
-            "half_open_calls": self.half_open_calls if self.state == CircuitState.HALF_OPEN else None,
-            "half_open_successes": self.half_open_successes if self.state == CircuitState.HALF_OPEN else None,
-            "config": {
-                "failure_threshold": self.config.failure_threshold,
-                "timeout_threshold_ms": self.config.timeout_threshold_ms,
-                "error_rate_threshold": self.config.error_rate_threshold,
-                "recovery_timeout_seconds": self.config.recovery_timeout_seconds
-            }
-        }
-    
-    def shutdown(self):
-        """Shutdown circuit breaker monitoring"""
-        self._monitoring_active = False
-        logger.info(f"Circuit breaker '{self.config.name}' monitoring shutdown")
-
-
-class CircuitBreakerOpenException(Exception):
-    """Exception raised when circuit breaker is open"""
-    pass
-
+    # System context
+    system_load: Optional[float] = None
+    memory_usage: Optional[float] = None
 
 class CircuitBreakerManager:
     """
-    Manager for multiple circuit breakers
+    Comprehensive circuit breaker system for trading protection
     """
     
     def __init__(self):
-        self.circuit_breakers: Dict[str, CircuitBreakerSystem] = {}
-        self._lock = threading.RLock()
-    
-    def create_circuit_breaker(self, config: CircuitBreakerConfig) -> CircuitBreakerSystem:
-        """Create and register a new circuit breaker"""
+        self.breakers: Dict[str, 'CircuitBreaker'] = {}
+        self.events: List[BreakerEvent] = []
         
-        with self._lock:
-            circuit_breaker = CircuitBreakerSystem(config)
-            self.circuit_breakers[config.name] = circuit_breaker
+        # Global state
+        self.trading_enabled = True
+        self.last_data_timestamp = datetime.now()
+        self.system_monitoring_active = False
+        
+        # Performance tracking
+        self.latency_history: List[Tuple[datetime, float]] = []
+        self.prediction_history: List[Tuple[datetime, float]] = []
+        self.execution_history: List[Tuple[datetime, bool]] = []
+        
+        # Setup default breakers
+        self._setup_default_breakers()
+        
+        # Start monitoring thread
+        self._start_monitoring()
+    
+    def _setup_default_breakers(self):
+        """Setup default circuit breakers"""
+        
+        # Data gap breaker
+        self.add_circuit_breaker(CircuitBreakerConfig(
+            name="data_gap_breaker",
+            breaker_type=CircuitBreakerType.DATA_GAP,
+            description="Triggers when market data is stale",
+            failure_threshold=1,  # Immediate trigger
+            timeout_seconds=300,  # 5 minutes
+            data_gap_threshold_minutes=2.0,  # 2 minutes without data
+            block_new_trades=True,
+            alert_severity=AlertSeverity.CRITICAL
+        ))
+        
+        # Latency spike breaker
+        self.add_circuit_breaker(CircuitBreakerConfig(
+            name="latency_spike_breaker",
+            breaker_type=CircuitBreakerType.LATENCY_SPIKE,
+            description="Triggers on excessive API/execution latency",
+            failure_threshold=3,  # 3 high latency events
+            timeout_seconds=180,  # 3 minutes
+            latency_threshold_ms=2000.0,  # 2 seconds
+            block_new_trades=True,
+            alert_severity=AlertSeverity.HIGH
+        ))
+        
+        # Model drift breaker
+        self.add_circuit_breaker(CircuitBreakerConfig(
+            name="model_drift_breaker",
+            breaker_type=CircuitBreakerType.MODEL_DRIFT,
+            description="Triggers on significant model drift",
+            failure_threshold=5,  # 5 drift events
+            timeout_seconds=600,  # 10 minutes
+            drift_threshold=0.15,  # 15% drift
+            block_new_trades=True,
+            alert_severity=AlertSeverity.HIGH
+        ))
+        
+        # Prediction anomaly breaker
+        self.add_circuit_breaker(CircuitBreakerConfig(
+            name="prediction_anomaly_breaker",
+            breaker_type=CircuitBreakerType.PREDICTION_ANOMALY,
+            description="Triggers on extreme prediction values",
+            failure_threshold=3,  # 3 anomalous predictions
+            timeout_seconds=300,  # 5 minutes
+            anomaly_threshold=4.0,  # 4 standard deviations
+            block_new_trades=True,
+            alert_severity=AlertSeverity.HIGH
+        ))
+        
+        # Execution failure breaker
+        self.add_circuit_breaker(CircuitBreakerConfig(
+            name="execution_failure_breaker",
+            breaker_type=CircuitBreakerType.EXECUTION_FAILURE,
+            description="Triggers on repeated execution failures",
+            failure_threshold=5,  # 5 failed executions
+            timeout_seconds=600,  # 10 minutes
+            block_new_trades=True,
+            alert_severity=AlertSeverity.CRITICAL
+        ))
+        
+        # System resource breaker
+        self.add_circuit_breaker(CircuitBreakerConfig(
+            name="system_resource_breaker",
+            breaker_type=CircuitBreakerType.SYSTEM_RESOURCE,
+            description="Triggers on system resource exhaustion",
+            failure_threshold=2,  # 2 resource alerts
+            timeout_seconds=300,  # 5 minutes
+            block_new_trades=True,
+            alert_severity=AlertSeverity.CRITICAL
+        ))
+    
+    def add_circuit_breaker(self, config: CircuitBreakerConfig):
+        """Add a circuit breaker to the system"""
+        breaker = CircuitBreaker(config, self)
+        self.breakers[config.name] = breaker
+        logger.info(f"Added circuit breaker: {config.name}")
+    
+    def record_data_update(self, timestamp: Optional[datetime] = None):
+        """Record that new market data was received"""
+        if timestamp is None:
+            timestamp = datetime.now()
+        self.last_data_timestamp = timestamp
+    
+    def record_api_latency(self, latency_ms: float):
+        """Record API call latency"""
+        timestamp = datetime.now()
+        self.latency_history.append((timestamp, latency_ms))
+        
+        # Keep only last 100 entries
+        if len(self.latency_history) > 100:
+            self.latency_history = self.latency_history[-100:]
+        
+        # Check latency breaker
+        latency_breaker = self.breakers.get("latency_spike_breaker")
+        if latency_breaker:
+            latency_breaker.check_latency(latency_ms)
+    
+    def record_prediction(self, prediction_value: float):
+        """Record a model prediction"""
+        timestamp = datetime.now()
+        self.prediction_history.append((timestamp, prediction_value))
+        
+        # Keep only last 100 entries
+        if len(self.prediction_history) > 100:
+            self.prediction_history = self.prediction_history[-100:]
+        
+        # Check anomaly breaker
+        anomaly_breaker = self.breakers.get("prediction_anomaly_breaker")
+        if anomaly_breaker:
+            anomaly_breaker.check_prediction_anomaly(prediction_value)
+    
+    def record_execution_result(self, success: bool):
+        """Record execution success/failure"""
+        timestamp = datetime.now()
+        self.execution_history.append((timestamp, success))
+        
+        # Keep only last 100 entries
+        if len(self.execution_history) > 100:
+            self.execution_history = self.execution_history[-100:]
+        
+        # Check execution breaker
+        execution_breaker = self.breakers.get("execution_failure_breaker")
+        if execution_breaker:
+            execution_breaker.check_execution_failure(not success)
+    
+    def record_model_drift(self, drift_score: float):
+        """Record model drift score"""
+        drift_breaker = self.breakers.get("model_drift_breaker")
+        if drift_breaker:
+            drift_breaker.check_model_drift(drift_score)
+    
+    def check_system_resources(self):
+        """Check system resource usage"""
+        try:
+            import psutil
             
-            logger.info(f"Created circuit breaker: {config.name}")
-            return circuit_breaker
-    
-    def get_circuit_breaker(self, name: str) -> Optional[CircuitBreakerSystem]:
-        """Get circuit breaker by name"""
-        return self.circuit_breakers.get(name)
-    
-    def protect_call(self, circuit_name: str, protected_function: Callable, *args, **kwargs) -> Any:
-        """Execute function with circuit breaker protection"""
+            # Memory usage
+            memory = psutil.virtual_memory()
+            memory_pct = memory.percent
+            
+            # CPU usage
+            cpu_pct = psutil.cpu_percent(interval=1)
+            
+            # Disk usage
+            disk = psutil.disk_usage('/')
+            disk_pct = (disk.used / disk.total) * 100
+            
+            # Check thresholds
+            resource_critical = (
+                memory_pct > 90 or
+                cpu_pct > 90 or
+                disk_pct > 95
+            )
+            
+            if resource_critical:
+                resource_breaker = self.breakers.get("system_resource_breaker")
+                if resource_breaker:
+                    resource_breaker.trigger_failure(
+                        f"System resources critical: Memory {memory_pct:.1f}%, "
+                        f"CPU {cpu_pct:.1f}%, Disk {disk_pct:.1f}%"
+                    )
         
-        circuit_breaker = self.circuit_breakers.get(circuit_name)
-        if not circuit_breaker:
-            raise ValueError(f"Circuit breaker '{circuit_name}' not found")
-        
-        return circuit_breaker.call(protected_function, *args, **kwargs)
+        except ImportError:
+            logger.warning("psutil not available for system resource monitoring")
+        except Exception as e:
+            logger.error(f"System resource check failed: {e}")
     
-    def get_all_status(self) -> Dict[str, Dict[str, Any]]:
-        """Get status of all circuit breakers"""
+    def _start_monitoring(self):
+        """Start background monitoring thread"""
         
-        with self._lock:
-            return {
-                name: cb.get_status()
-                for name, cb in self.circuit_breakers.items()
+        def monitoring_loop():
+            while True:
+                try:
+                    # Check data gaps
+                    self._check_data_gaps()
+                    
+                    # Check system resources
+                    self.check_system_resources()
+                    
+                    # Update breaker states
+                    self._update_breaker_states()
+                    
+                    # Sleep for 30 seconds
+                    time.sleep(30)
+                    
+                except Exception as e:
+                    logger.error(f"Monitoring loop error: {e}")
+                    time.sleep(60)  # Longer sleep on error
+        
+        self.system_monitoring_active = True
+        monitor_thread = threading.Thread(target=monitoring_loop, daemon=True)
+        monitor_thread.start()
+        logger.info("Circuit breaker monitoring started")
+    
+    def _check_data_gaps(self):
+        """Check for data gaps"""
+        if not self.last_data_timestamp:
+            return
+        
+        gap_minutes = (datetime.now() - self.last_data_timestamp).total_seconds() / 60
+        
+        data_gap_breaker = self.breakers.get("data_gap_breaker")
+        if data_gap_breaker:
+            data_gap_breaker.check_data_gap(gap_minutes)
+    
+    def _update_breaker_states(self):
+        """Update circuit breaker states (timeouts, half-open, etc.)"""
+        for breaker in self.breakers.values():
+            breaker.update_state()
+    
+    def is_trading_allowed(self) -> Tuple[bool, str]:
+        """Check if trading is allowed based on circuit breaker states"""
+        
+        if not self.trading_enabled:
+            return False, "Trading globally disabled"
+        
+        # Check each breaker
+        for breaker_name, breaker in self.breakers.items():
+            if breaker.state == BreakerState.OPEN and breaker.config.block_new_trades:
+                return False, f"Circuit breaker open: {breaker_name}"
+        
+        return True, "Trading allowed"
+    
+    def get_system_status(self) -> Dict[str, Any]:
+        """Get comprehensive system status"""
+        
+        breaker_status = {}
+        for name, breaker in self.breakers.items():
+            breaker_status[name] = {
+                "state": breaker.state.value,
+                "failure_count": breaker.failure_count,
+                "last_failure": breaker.last_failure_time.isoformat() if breaker.last_failure_time else None,
+                "time_until_half_open": breaker.time_until_half_open(),
+                "description": breaker.config.description
             }
-    
-    def manual_open_all(self, reason: str):
-        """Manually open all circuit breakers"""
         
-        with self._lock:
-            for circuit_breaker in self.circuit_breakers.values():
-                circuit_breaker.manual_open(reason)
-    
-    def manual_close_all(self):
-        """Manually close all circuit breakers"""
+        # Recent events
+        recent_events = [
+            event for event in self.events
+            if event.timestamp >= datetime.now() - timedelta(hours=24)
+        ]
         
-        with self._lock:
-            for circuit_breaker in self.circuit_breakers.values():
-                circuit_breaker.manual_close()
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "trading_enabled": self.trading_enabled,
+            "system_monitoring_active": self.system_monitoring_active,
+            "last_data_update": self.last_data_timestamp.isoformat(),
+            "minutes_since_data": (datetime.now() - self.last_data_timestamp).total_seconds() / 60,
+            "breaker_status": breaker_status,
+            "recent_events_24h": len(recent_events),
+            "open_breakers": [
+                name for name, breaker in self.breakers.items()
+                if breaker.state == BreakerState.OPEN
+            ]
+        }
     
-    def shutdown_all(self):
-        """Shutdown all circuit breakers"""
+    def manually_trigger_breaker(self, breaker_name: str, reason: str) -> bool:
+        """Manually trigger a circuit breaker"""
+        breaker = self.breakers.get(breaker_name)
+        if breaker:
+            breaker.trigger_failure(f"Manual trigger: {reason}")
+            return True
+        return False
+    
+    def manually_reset_breaker(self, breaker_name: str) -> bool:
+        """Manually reset a circuit breaker"""
+        breaker = self.breakers.get(breaker_name)
+        if breaker:
+            breaker.reset()
+            return True
+        return False
+    
+    def export_events_report(self, filepath: str, days_back: int = 7):
+        """Export circuit breaker events report"""
         
-        with self._lock:
-            for circuit_breaker in self.circuit_breakers.values():
-                circuit_breaker.shutdown()
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days_back)
+            recent_events = [
+                event for event in self.events
+                if event.timestamp >= cutoff_date
+            ]
             
-            self.circuit_breakers.clear()
-            logger.info("All circuit breakers shut down")
+            report_data = {
+                "report_timestamp": datetime.now().isoformat(),
+                "period_days": days_back,
+                "system_status": self.get_system_status(),
+                
+                "events": [
+                    {
+                        "timestamp": event.timestamp.isoformat(),
+                        "breaker_name": event.breaker_name,
+                        "event_type": event.event_type,
+                        "trigger_reason": event.trigger_reason,
+                        "failure_count": event.failure_count,
+                        "latency_ms": event.latency_ms,
+                        "data_gap_minutes": event.data_gap_minutes,
+                        "drift_score": event.drift_score,
+                        "anomaly_score": event.anomaly_score
+                    }
+                    for event in recent_events
+                ],
+                
+                "performance_metrics": {
+                    "avg_latency_ms": np.mean([l for _, l in self.latency_history]) if self.latency_history else 0,
+                    "max_latency_ms": np.max([l for _, l in self.latency_history]) if self.latency_history else 0,
+                    "execution_success_rate": np.mean([s for _, s in self.execution_history]) if self.execution_history else 0,
+                    "recent_predictions": len(self.prediction_history)
+                }
+            }
+            
+            with open(filepath, 'w') as f:
+                json.dump(report_data, f, indent=2, default=str)
+            
+            logger.info(f"Circuit breaker events report exported to {filepath}")
+            
+        except Exception as e:
+            logger.error(f"Failed to export events report: {e}")
+
+class CircuitBreaker:
+    """
+    Individual circuit breaker implementation
+    """
+    
+    def __init__(self, config: CircuitBreakerConfig, manager: CircuitBreakerManager):
+        self.config = config
+        self.manager = manager
+        
+        # State
+        self.state = BreakerState.CLOSED
+        self.failure_count = 0
+        self.last_failure_time: Optional[datetime] = None
+        self.state_change_time = datetime.now()
+        self.half_open_call_count = 0
+        
+        # Statistics for anomaly detection
+        self.prediction_stats = {"mean": 0.0, "std": 1.0, "count": 0}
+    
+    def trigger_failure(self, reason: str):
+        """Trigger a failure event"""
+        self.failure_count += 1
+        self.last_failure_time = datetime.now()
+        
+        if self.state == BreakerState.CLOSED and self.failure_count >= self.config.failure_threshold:
+            self._open_breaker(reason)
+        elif self.state == BreakerState.HALF_OPEN:
+            self._open_breaker(f"Half-open failure: {reason}")
+        
+        # Log event
+        event = BreakerEvent(
+            timestamp=datetime.now(),
+            breaker_name=self.config.name,
+            event_type="failure",
+            trigger_reason=reason,
+            failure_count=self.failure_count
+        )
+        self.manager.events.append(event)
+        
+        if self.config.log_violations:
+            logger.warning(f"Circuit breaker failure: {self.config.name} - {reason}")
+    
+    def _open_breaker(self, reason: str):
+        """Open the circuit breaker"""
+        self.state = BreakerState.OPEN
+        self.state_change_time = datetime.now()
+        
+        event = BreakerEvent(
+            timestamp=datetime.now(),
+            breaker_name=self.config.name,
+            event_type="triggered",
+            trigger_reason=reason,
+            failure_count=self.failure_count
+        )
+        self.manager.events.append(event)
+        
+        if self.config.send_alerts:
+            logger.critical(f"CIRCUIT BREAKER OPEN: {self.config.name} - {reason}")
+    
+    def reset(self):
+        """Reset the circuit breaker"""
+        self.state = BreakerState.CLOSED
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.state_change_time = datetime.now()
+        self.half_open_call_count = 0
+        
+        event = BreakerEvent(
+            timestamp=datetime.now(),
+            breaker_name=self.config.name,
+            event_type="reset",
+            trigger_reason="Manual reset",
+            failure_count=0
+        )
+        self.manager.events.append(event)
+        
+        logger.info(f"Circuit breaker reset: {self.config.name}")
+    
+    def update_state(self):
+        """Update breaker state based on timeout"""
+        if self.state == BreakerState.OPEN:
+            time_open = (datetime.now() - self.state_change_time).total_seconds()
+            if time_open >= self.config.timeout_seconds:
+                self._transition_to_half_open()
+    
+    def _transition_to_half_open(self):
+        """Transition from OPEN to HALF_OPEN"""
+        self.state = BreakerState.HALF_OPEN
+        self.state_change_time = datetime.now()
+        self.half_open_call_count = 0
+        
+        event = BreakerEvent(
+            timestamp=datetime.now(),
+            breaker_name=self.config.name,
+            event_type="half_open",
+            trigger_reason="Timeout elapsed",
+            failure_count=self.failure_count
+        )
+        self.manager.events.append(event)
+        
+        logger.info(f"Circuit breaker half-open: {self.config.name}")
+    
+    def time_until_half_open(self) -> Optional[float]:
+        """Get seconds until breaker transitions to half-open"""
+        if self.state == BreakerState.OPEN:
+            elapsed = (datetime.now() - self.state_change_time).total_seconds()
+            remaining = self.config.timeout_seconds - elapsed
+            return max(0, remaining)
+        return None
+    
+    def check_data_gap(self, gap_minutes: float):
+        """Check for data gap violation"""
+        if self.config.breaker_type != CircuitBreakerType.DATA_GAP:
+            return
+        
+        if gap_minutes > self.config.data_gap_threshold_minutes:
+            self.trigger_failure(f"Data gap: {gap_minutes:.1f} minutes > {self.config.data_gap_threshold_minutes:.1f}")
+    
+    def check_latency(self, latency_ms: float):
+        """Check for latency violation"""
+        if self.config.breaker_type != CircuitBreakerType.LATENCY_SPIKE:
+            return
+        
+        if latency_ms > self.config.latency_threshold_ms:
+            self.trigger_failure(f"High latency: {latency_ms:.1f}ms > {self.config.latency_threshold_ms:.1f}ms")
+    
+    def check_model_drift(self, drift_score: float):
+        """Check for model drift violation"""
+        if self.config.breaker_type != CircuitBreakerType.MODEL_DRIFT:
+            return
+        
+        if drift_score > self.config.drift_threshold:
+            self.trigger_failure(f"Model drift: {drift_score:.3f} > {self.config.drift_threshold:.3f}")
+    
+    def check_prediction_anomaly(self, prediction_value: float):
+        """Check for prediction anomaly"""
+        if self.config.breaker_type != CircuitBreakerType.PREDICTION_ANOMALY:
+            return
+        
+        # Update rolling statistics
+        self._update_prediction_stats(prediction_value)
+        
+        # Check if prediction is anomalous
+        if self.prediction_stats["std"] > 0:
+            z_score = abs(prediction_value - self.prediction_stats["mean"]) / self.prediction_stats["std"]
+            
+            if z_score > self.config.anomaly_threshold:
+                self.trigger_failure(f"Prediction anomaly: z-score {z_score:.2f} > {self.config.anomaly_threshold:.2f}")
+    
+    def check_execution_failure(self, failed: bool):
+        """Check execution failure"""
+        if self.config.breaker_type != CircuitBreakerType.EXECUTION_FAILURE:
+            return
+        
+        if failed:
+            self.trigger_failure("Execution failed")
+        else:
+            # Success resets failure count for execution breaker
+            if self.state == BreakerState.HALF_OPEN:
+                self.half_open_call_count += 1
+                if self.half_open_call_count >= self.config.half_open_max_calls:
+                    self.reset()
+    
+    def _update_prediction_stats(self, value: float):
+        """Update rolling statistics for prediction values"""
+        # Simple exponential moving average
+        alpha = 0.1  # Smoothing factor
+        
+        if self.prediction_stats["count"] == 0:
+            self.prediction_stats["mean"] = value
+            self.prediction_stats["std"] = 1.0
+        else:
+            # Update mean
+            old_mean = self.prediction_stats["mean"]
+            self.prediction_stats["mean"] = alpha * value + (1 - alpha) * old_mean
+            
+            # Update std (simplified)
+            squared_diff = (value - self.prediction_stats["mean"]) ** 2
+            if self.prediction_stats["count"] == 1:
+                self.prediction_stats["std"] = max(0.1, squared_diff ** 0.5)
+            else:
+                old_var = self.prediction_stats["std"] ** 2
+                new_var = alpha * squared_diff + (1 - alpha) * old_var
+                self.prediction_stats["std"] = max(0.1, new_var ** 0.5)
+        
+        self.prediction_stats["count"] += 1

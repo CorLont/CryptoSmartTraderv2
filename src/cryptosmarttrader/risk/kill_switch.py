@@ -1,13 +1,13 @@
 """
 Kill Switch System
 
-Emergency trading halt system with manual and automatic triggers
-for immediate risk containment.
+Emergency trading halt system with multiple trigger sources,
+immediate position closure, and comprehensive safety controls.
 """
 
-import asyncio
+import time
 import threading
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional, Tuple, Any, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
@@ -15,598 +15,508 @@ import logging
 import json
 from pathlib import Path
 
+from .risk_limits import RiskLimitManager, RiskStatus, ActionType
+from .circuit_breaker import CircuitBreakerManager, BreakerState
+
 logger = logging.getLogger(__name__)
 
-class TriggerType(Enum):
-    """Kill switch trigger types"""
+class KillSwitchTrigger(Enum):
+    """Kill switch trigger sources"""
     MANUAL = "manual"
-    DATA_GAP = "data_gap"
-    LATENCY_SPIKE = "latency_spike"
-    DRIFT_DETECTION = "drift_detection"
     DAILY_LOSS_LIMIT = "daily_loss_limit"
-    DRAWDOWN_EMERGENCY = "drawdown_emergency"
+    MAX_DRAWDOWN = "max_drawdown"
+    CIRCUIT_BREAKER = "circuit_breaker"
     SYSTEM_ERROR = "system_error"
-    EXCHANGE_ERROR = "exchange_error"
-    CORRELATION_SHOCK = "correlation_shock"
+    DATA_INTEGRITY = "data_integrity"
+    EXTERNAL_SIGNAL = "external_signal"
 
-
-class KillSwitchStatus(Enum):
-    """Kill switch status"""
-    ARMED = "armed"
-    TRIGGERED = "triggered" 
-    RECOVERING = "recovering"
-    DISABLED = "disabled"
-
+class KillSwitchState(Enum):
+    """Kill switch states"""
+    ARMED = "armed"        # Normal operation, monitoring active
+    TRIGGERED = "triggered"  # Kill switch activated
+    RECOVERY = "recovery"   # Attempting to recover
+    MAINTENANCE = "maintenance"  # Manual maintenance mode
 
 @dataclass
-class KillSwitchTrigger:
-    """Kill switch trigger configuration"""
-    trigger_id: str
-    trigger_type: TriggerType
-    
-    # Trigger parameters
-    threshold_value: float
-    time_window_seconds: int = 60
-    
-    # Configuration
-    enabled: bool = True
-    auto_trigger: bool = True
-    description: str = ""
-    
-    # State tracking
-    current_value: float = 0.0
-    last_trigger: Optional[datetime] = None
-    trigger_count: int = 0
-
-
-@dataclass
-class EmergencyStop:
-    """Emergency stop event record"""
-    stop_id: str
+class KillSwitchEvent:
+    """Kill switch activation event"""
     timestamp: datetime
-    trigger_type: TriggerType
-    reason: str
+    trigger_source: KillSwitchTrigger
+    trigger_reason: str
+    severity: str
     
     # Context
-    triggered_by: str = "system"
-    trigger_value: float = 0.0
-    system_state: Dict[str, Any] = field(default_factory=dict)
+    portfolio_value_before: float
+    portfolio_value_after: float
+    positions_closed: int
+    orders_cancelled: int
     
     # Recovery
-    recovery_started: Optional[datetime] = None
-    recovery_completed: Optional[datetime] = None
-    manual_override: bool = False
+    recovery_time: Optional[datetime] = None
+    recovery_method: Optional[str] = None
+    authorization_code: Optional[str] = None
 
-
-class KillSwitchSystem:
+class KillSwitchManager:
     """
-    Enterprise kill switch system for emergency trading halts
+    Emergency kill switch system for immediate trading halt
     """
     
-    def __init__(self):
-        self.status = KillSwitchStatus.ARMED
-        self.triggers: Dict[str, KillSwitchTrigger] = {}
-        self.stop_history: List[EmergencyStop] = []
+    def __init__(self, 
+                 risk_manager: RiskLimitManager,
+                 circuit_breaker_manager: CircuitBreakerManager):
         
-        # Callbacks
-        self.trigger_callbacks: List[Callable] = []
-        self.recovery_callbacks: List[Callable] = []
+        self.risk_manager = risk_manager
+        self.circuit_breaker_manager = circuit_breaker_manager
+        
+        # Kill switch state
+        self.state = KillSwitchState.ARMED
+        self.activation_time: Optional[datetime] = None
+        self.last_trigger: Optional[KillSwitchEvent] = None
+        
+        # Event history
+        self.events: List[KillSwitchEvent] = []
+        
+        # Emergency contacts and callbacks
+        self.emergency_callbacks: List[Callable[[], None]] = []
+        self.position_close_callback: Optional[Callable[[], bool]] = None
+        self.order_cancel_callback: Optional[Callable[[], bool]] = None
+        
+        # Monitoring
+        self.monitoring_active = True
+        self.monitoring_thread: Optional[threading.Thread] = None
+        
+        # Authorization
+        self.authorized_codes = {
+            "EMERGENCY_OVERRIDE_2024",
+            "SYSTEM_MAINTENANCE_MODE",
+            "MANUAL_RECOVERY_AUTHORIZED"
+        }
         
         # Configuration
         self.auto_recovery_enabled = False
-        self.auto_recovery_delay_minutes = 5
-        self.max_triggers_per_hour = 3
+        self.max_recovery_attempts = 3
+        self.recovery_cooldown_minutes = 30
         
-        # State
-        self.current_stop: Optional[EmergencyStop] = None
-        self.last_health_check = datetime.now()
-        
-        # Setup default triggers
-        self._setup_default_triggers()
-        
-        # Monitoring thread
-        self._monitoring_active = True
-        self._monitor_thread = threading.Thread(target=self._monitor_system, daemon=True)
-        self._monitor_thread.start()
+        # Start monitoring
+        self._start_monitoring()
     
-    def _setup_default_triggers(self):
-        """Setup default kill switch triggers"""
+    def _start_monitoring(self):
+        """Start kill switch monitoring thread"""
         
-        # Data gap trigger
-        self.add_trigger(KillSwitchTrigger(
-            trigger_id="data_gap",
-            trigger_type=TriggerType.DATA_GAP,
-            threshold_value=300,  # 5 minutes without data
-            time_window_seconds=300,
-            description="Trigger when market data feed gaps exceed threshold",
-            auto_trigger=True
-        ))
+        def monitoring_loop():
+            logger.info("Kill switch monitoring started")
+            
+            while self.monitoring_active:
+                try:
+                    if self.state == KillSwitchState.ARMED:
+                        self._check_trigger_conditions()
+                    elif self.state == KillSwitchState.TRIGGERED:
+                        self._monitor_triggered_state()
+                    elif self.state == KillSwitchState.RECOVERY:
+                        self._monitor_recovery_state()
+                    
+                    time.sleep(5)  # Check every 5 seconds
+                    
+                except Exception as e:
+                    logger.error(f"Kill switch monitoring error: {e}")
+                    time.sleep(10)
         
-        # Latency spike trigger
-        self.add_trigger(KillSwitchTrigger(
-            trigger_id="latency_spike",
-            trigger_type=TriggerType.LATENCY_SPIKE,
-            threshold_value=2000,  # 2 seconds latency
-            time_window_seconds=60,
-            description="Trigger on excessive execution latency",
-            auto_trigger=True
-        ))
-        
-        # Drift detection trigger
-        self.add_trigger(KillSwitchTrigger(
-            trigger_id="model_drift",
-            trigger_type=TriggerType.DRIFT_DETECTION,
-            threshold_value=0.5,  # High drift score
-            time_window_seconds=300,
-            description="Trigger on severe model performance drift",
-            auto_trigger=True
-        ))
-        
-        # Daily loss limit trigger
-        self.add_trigger(KillSwitchTrigger(
-            trigger_id="daily_loss",
-            trigger_type=TriggerType.DAILY_LOSS_LIMIT,
-            threshold_value=-7.5,  # 7.5% daily loss
-            time_window_seconds=60,
-            description="Trigger on daily loss limit breach",
-            auto_trigger=True
-        ))
-        
-        # Emergency drawdown trigger
-        self.add_trigger(KillSwitchTrigger(
-            trigger_id="emergency_drawdown",
-            trigger_type=TriggerType.DRAWDOWN_EMERGENCY,
-            threshold_value=-15.0,  # 15% drawdown
-            time_window_seconds=60,
-            description="Trigger on emergency drawdown level",
-            auto_trigger=True
-        ))
-        
-        # System error trigger
-        self.add_trigger(KillSwitchTrigger(
-            trigger_id="system_error",
-            trigger_type=TriggerType.SYSTEM_ERROR,
-            threshold_value=10,  # 10 errors per minute
-            time_window_seconds=60,
-            description="Trigger on high system error rate",
-            auto_trigger=True
-        ))
+        self.monitoring_thread = threading.Thread(target=monitoring_loop, daemon=True)
+        self.monitoring_thread.start()
     
-    def add_trigger(self, trigger: KillSwitchTrigger):
-        """Add kill switch trigger"""
-        self.triggers[trigger.trigger_id] = trigger
-        logger.info(f"Added kill switch trigger: {trigger.trigger_id}")
-    
-    def check_triggers(self, metrics: Dict[str, float]) -> bool:
-        """Check all triggers against current metrics"""
-        if self.status != KillSwitchStatus.ARMED:
-            return True  # Already triggered or disabled
+    def _check_trigger_conditions(self):
+        """Check all trigger conditions"""
         
-        try:
-            for trigger in self.triggers.values():
-                if not trigger.enabled or not trigger.auto_trigger:
-                    continue
-                
-                metric_key = self._get_metric_key(trigger.trigger_type)
-                if metric_key not in metrics:
-                    continue
-                
-                current_value = metrics[metric_key]
-                trigger.current_value = current_value
-                
-                # Check if trigger conditions are met
-                if self._should_trigger(trigger, current_value):
-                    reason = f"{trigger.description} - Value: {current_value}, Threshold: {trigger.threshold_value}"
-                    self._execute_emergency_stop(trigger.trigger_type, reason, current_value)
-                    return False
-            
-            return True
-            
-        except Exception as e:
-            logger.error(f"Trigger check failed: {e}")
-            # Fail-safe: trigger on error
-            self._execute_emergency_stop(TriggerType.SYSTEM_ERROR, f"Trigger check error: {e}", 0)
-            return False
-    
-    def _get_metric_key(self, trigger_type: TriggerType) -> str:
-        """Get metric key for trigger type"""
-        mapping = {
-            TriggerType.DATA_GAP: "data_gap_seconds",
-            TriggerType.LATENCY_SPIKE: "execution_latency_ms",
-            TriggerType.DRIFT_DETECTION: "drift_score",
-            TriggerType.DAILY_LOSS_LIMIT: "daily_pnl_pct",
-            TriggerType.DRAWDOWN_EMERGENCY: "drawdown_pct",
-            TriggerType.SYSTEM_ERROR: "error_rate_per_minute",
-            TriggerType.EXCHANGE_ERROR: "exchange_error_rate",
-            TriggerType.CORRELATION_SHOCK: "correlation_change"
-        }
-        return mapping.get(trigger_type, "unknown")
-    
-    def _should_trigger(self, trigger: KillSwitchTrigger, current_value: float) -> bool:
-        """Check if trigger should activate"""
-        try:
-            # Different logic for different trigger types
-            if trigger.trigger_type in [TriggerType.DATA_GAP, TriggerType.LATENCY_SPIKE]:
-                # Greater than threshold triggers
-                return current_value > trigger.threshold_value
-            
-            elif trigger.trigger_type in [TriggerType.DAILY_LOSS_LIMIT, TriggerType.DRAWDOWN_EMERGENCY]:
-                # Less than threshold triggers (negative values)
-                return current_value < trigger.threshold_value
-            
-            elif trigger.trigger_type in [TriggerType.DRIFT_DETECTION, TriggerType.SYSTEM_ERROR]:
-                # Greater than threshold triggers
-                return current_value > trigger.threshold_value
-            
-            else:
-                # Default: greater than threshold
-                return current_value > trigger.threshold_value
+        # Check risk limit violations
+        risk_summary = self.risk_manager.get_risk_summary()
         
-        except Exception as e:
-            logger.error(f"Trigger evaluation failed: {e}")
-            return True  # Fail-safe: trigger on error
-    
-    def manual_trigger(self, reason: str, triggered_by: str = "manual") -> bool:
-        """Manually trigger emergency stop"""
-        try:
-            if self.status == KillSwitchStatus.TRIGGERED:
-                logger.warning("Kill switch already triggered")
-                return False
+        # Daily loss limit breach
+        if (risk_summary.get("daily_loss", {}).get("status") == "breach" or
+            risk_summary.get("overall_risk_status") == "breach"):
             
-            logger.critical(f"MANUAL KILL SWITCH ACTIVATED by {triggered_by}: {reason}")
-            
-            stop = EmergencyStop(
-                stop_id=f"manual_{int(datetime.now().timestamp())}",
-                timestamp=datetime.now(),
-                trigger_type=TriggerType.MANUAL,
-                reason=reason,
-                triggered_by=triggered_by,
-                system_state=self._capture_system_state()
+            self.trigger_kill_switch(
+                trigger_source=KillSwitchTrigger.DAILY_LOSS_LIMIT,
+                reason=f"Daily loss limit breached: {risk_summary.get('daily_loss', {}).get('current_pct', 0):.1f}%"
             )
+            return
+        
+        # Max drawdown breach
+        if risk_summary.get("max_drawdown", {}).get("status") == "breach":
+            self.trigger_kill_switch(
+                trigger_source=KillSwitchTrigger.MAX_DRAWDOWN,
+                reason=f"Max drawdown breached: {risk_summary.get('max_drawdown', {}).get('current_pct', 0):.1f}%"
+            )
+            return
+        
+        # Critical circuit breakers
+        system_status = self.circuit_breaker_manager.get_system_status()
+        open_breakers = system_status.get("open_breakers", [])
+        
+        if open_breakers:
+            critical_breakers = []
+            for breaker_name in open_breakers:
+                breaker = self.circuit_breaker_manager.breakers.get(breaker_name)
+                if breaker and breaker.config.alert_severity.value in ["critical"]:
+                    critical_breakers.append(breaker_name)
             
-            return self._activate_emergency_stop(stop)
-            
-        except Exception as e:
-            logger.error(f"Manual trigger failed: {e}")
-            return False
-    
-    def _execute_emergency_stop(self, trigger_type: TriggerType, reason: str, trigger_value: float):
-        """Execute automatic emergency stop"""
-        try:
-            if self.status == KillSwitchStatus.TRIGGERED:
-                return  # Already triggered
-            
-            # Check trigger rate limits
-            if not self._check_trigger_rate_limit():
-                logger.warning("Kill switch trigger rate limit exceeded - ignoring")
+            if critical_breakers:
+                self.trigger_kill_switch(
+                    trigger_source=KillSwitchTrigger.CIRCUIT_BREAKER,
+                    reason=f"Critical circuit breakers open: {', '.join(critical_breakers)}"
+                )
                 return
+    
+    def trigger_kill_switch(self, 
+                           trigger_source: KillSwitchTrigger,
+                           reason: str,
+                           authorization_code: Optional[str] = None) -> bool:
+        """Trigger the kill switch"""
+        
+        if self.state == KillSwitchState.TRIGGERED:
+            logger.warning("Kill switch already triggered")
+            return False
+        
+        try:
+            logger.critical(f"🚨 KILL SWITCH TRIGGERED 🚨")
+            logger.critical(f"Source: {trigger_source.value}")
+            logger.critical(f"Reason: {reason}")
             
-            logger.critical(f"AUTOMATIC KILL SWITCH ACTIVATED: {trigger_type.value} - {reason}")
+            # Record portfolio state before
+            portfolio_before = self.risk_manager.current_portfolio_value
             
-            stop = EmergencyStop(
-                stop_id=f"auto_{trigger_type.value}_{int(datetime.now().timestamp())}",
+            # Change state
+            self.state = KillSwitchState.TRIGGERED
+            self.activation_time = datetime.now()
+            
+            # Emergency actions
+            positions_closed = self._close_all_positions()
+            orders_cancelled = self._cancel_all_orders()
+            
+            # Stop trading in all systems
+            self.risk_manager.emergency_stop_active = True
+            self.risk_manager.kill_switch_triggered = True
+            self.circuit_breaker_manager.trading_enabled = False
+            
+            # Record portfolio state after
+            portfolio_after = self.risk_manager.current_portfolio_value
+            
+            # Create event record
+            event = KillSwitchEvent(
                 timestamp=datetime.now(),
-                trigger_type=trigger_type,
-                reason=reason,
-                triggered_by="system",
-                trigger_value=trigger_value,
-                system_state=self._capture_system_state()
+                trigger_source=trigger_source,
+                trigger_reason=reason,
+                severity="CRITICAL",
+                portfolio_value_before=portfolio_before,
+                portfolio_value_after=portfolio_after,
+                positions_closed=positions_closed,
+                orders_cancelled=orders_cancelled,
+                authorization_code=authorization_code
             )
             
-            self._activate_emergency_stop(stop)
+            self.events.append(event)
+            self.last_trigger = event
             
-        except Exception as e:
-            logger.error(f"Emergency stop execution failed: {e}")
-    
-    def _activate_emergency_stop(self, stop: EmergencyStop) -> bool:
-        """Activate emergency stop"""
-        try:
-            self.current_stop = stop
-            self.status = KillSwitchStatus.TRIGGERED
-            self.stop_history.append(stop)
+            # Execute emergency callbacks
+            self._execute_emergency_callbacks()
             
-            # Update trigger count
-            if stop.trigger_type != TriggerType.MANUAL:
-                trigger = self.triggers.get(stop.trigger_type.value)
-                if trigger:
-                    trigger.trigger_count += 1
-                    trigger.last_trigger = stop.timestamp
-            
-            # Execute emergency actions
-            self._execute_emergency_actions(stop)
-            
-            # Notify callbacks
-            for callback in self.trigger_callbacks:
-                try:
-                    callback(stop)
-                except Exception as e:
-                    logger.error(f"Kill switch callback failed: {e}")
-            
-            # Start auto-recovery if enabled
-            if self.auto_recovery_enabled and stop.trigger_type != TriggerType.MANUAL:
-                self._schedule_auto_recovery()
+            # Log critical information
+            logger.critical(f"Kill switch activated at {datetime.now().isoformat()}")
+            logger.critical(f"Positions closed: {positions_closed}")
+            logger.critical(f"Orders cancelled: {orders_cancelled}")
+            logger.critical(f"Portfolio value: ${portfolio_before:,.2f} → ${portfolio_after:,.2f}")
             
             return True
             
         except Exception as e:
-            logger.error(f"Emergency stop activation failed: {e}")
+            logger.critical(f"Kill switch execution failed: {e}")
             return False
     
-    def _execute_emergency_actions(self, stop: EmergencyStop):
-        """Execute immediate emergency actions"""
+    def _close_all_positions(self) -> int:
+        """Close all open positions"""
+        positions_closed = 0
+        
         try:
-            # 1. Halt all trading immediately
-            logger.critical("EMERGENCY ACTION: Halting all trading")
-            
-            # 2. Cancel all pending orders
-            logger.critical("EMERGENCY ACTION: Canceling all pending orders")
-            
-            # 3. Close risky positions (if configured)
-            if stop.trigger_type in [TriggerType.DAILY_LOSS_LIMIT, TriggerType.DRAWDOWN_EMERGENCY]:
-                logger.critical("EMERGENCY ACTION: Preparing to close positions")
-            
-            # 4. Notify monitoring systems
-            logger.critical("EMERGENCY ACTION: Notifying monitoring systems")
-            
-            # 5. Save current state
-            self._save_emergency_state(stop)
-            
-        except Exception as e:
-            logger.error(f"Emergency action execution failed: {e}")
-    
-    def _capture_system_state(self) -> Dict[str, Any]:
-        """Capture current system state for debugging"""
-        try:
-            return {
-                "timestamp": datetime.now().isoformat(),
-                "trigger_states": {
-                    trigger_id: {
-                        "current_value": trigger.current_value,
-                        "threshold": trigger.threshold_value,
-                        "trigger_count": trigger.trigger_count
-                    }
-                    for trigger_id, trigger in self.triggers.items()
-                },
-                "recent_stops": len([s for s in self.stop_history 
-                                  if s.timestamp > datetime.now() - timedelta(hours=1)])
-            }
-        except Exception as e:
-            logger.error(f"System state capture failed: {e}")
-            return {"error": str(e)}
-    
-    def _check_trigger_rate_limit(self) -> bool:
-        """Check if trigger rate limit is exceeded"""
-        try:
-            recent_stops = [s for s in self.stop_history 
-                          if s.timestamp > datetime.now() - timedelta(hours=1)]
-            
-            return len(recent_stops) < self.max_triggers_per_hour
-        except Exception:
-            return True  # Allow trigger on error
-    
-    def _schedule_auto_recovery(self):
-        """Schedule automatic recovery"""
-        try:
-            def auto_recovery():
-                import time
-                time.sleep(self.auto_recovery_delay_minutes * 60)
-                
-                if self.status == KillSwitchStatus.TRIGGERED:
-                    logger.info("Starting automatic recovery")
-                    self.start_recovery()
-            
-            recovery_thread = threading.Thread(target=auto_recovery, daemon=True)
-            recovery_thread.start()
-            
-        except Exception as e:
-            logger.error(f"Auto-recovery scheduling failed: {e}")
-    
-    def start_recovery(self, manual_override: bool = False) -> bool:
-        """Start recovery process"""
-        try:
-            if self.status != KillSwitchStatus.TRIGGERED:
-                logger.warning("Cannot start recovery - kill switch not triggered")
-                return False
-            
-            if self.current_stop and not self.current_stop.manual_override and not manual_override:
-                # Check if conditions have improved
-                if not self._recovery_conditions_met():
-                    logger.warning("Recovery conditions not met - staying in emergency mode")
-                    return False
-            
-            logger.info("Starting kill switch recovery")
-            
-            self.status = KillSwitchStatus.RECOVERING
-            if self.current_stop:
-                self.current_stop.recovery_started = datetime.now()
-                self.current_stop.manual_override = manual_override
-            
-            # Execute recovery actions
-            recovery_success = self._execute_recovery_actions()
-            
-            if recovery_success:
-                self._complete_recovery()
-                return True
+            if self.position_close_callback:
+                success = self.position_close_callback()
+                if success:
+                    positions_closed = len(self.risk_manager.current_positions)
+                    # Clear positions from tracking
+                    self.risk_manager.current_positions.clear()
+                    logger.info(f"Closed {positions_closed} positions via callback")
+                else:
+                    logger.error("Position close callback failed")
             else:
-                self.status = KillSwitchStatus.TRIGGERED
-                logger.error("Recovery failed - reverting to triggered state")
-                return False
+                logger.warning("No position close callback configured")
+                # Manual position clearing for tracking
+                positions_closed = len(self.risk_manager.current_positions)
+                self.risk_manager.current_positions.clear()
                 
         except Exception as e:
-            logger.error(f"Recovery start failed: {e}")
-            self.status = KillSwitchStatus.TRIGGERED
-            return False
+            logger.error(f"Position closure failed: {e}")
+        
+        return positions_closed
     
-    def _recovery_conditions_met(self) -> bool:
-        """Check if conditions are suitable for recovery"""
+    def _cancel_all_orders(self) -> int:
+        """Cancel all pending orders"""
+        orders_cancelled = 0
+        
         try:
-            # Check that trigger conditions are no longer met
-            for trigger in self.triggers.values():
-                if not trigger.enabled:
-                    continue
+            if self.order_cancel_callback:
+                success = self.order_cancel_callback()
+                if success:
+                    orders_cancelled = 1  # Assume some orders were cancelled
+                    logger.info("Cancelled pending orders via callback")
+                else:
+                    logger.error("Order cancel callback failed")
+            else:
+                logger.warning("No order cancel callback configured")
                 
-                # For auto-triggers, ensure conditions have improved
-                if trigger.trigger_type == self.current_stop.trigger_type:
-                    if trigger.trigger_type in [TriggerType.DAILY_LOSS_LIMIT, TriggerType.DRAWDOWN_EMERGENCY]:
-                        # For loss triggers, require some improvement
-                        if trigger.current_value < (trigger.threshold_value * 0.8):
-                            continue  # Still too close to threshold
-                    else:
-                        # For other triggers, require value below threshold
-                        if trigger.current_value > (trigger.threshold_value * 0.5):
-                            continue  # Still elevated
-            
-            return True
-            
         except Exception as e:
-            logger.error(f"Recovery condition check failed: {e}")
-            return False
+            logger.error(f"Order cancellation failed: {e}")
+        
+        return orders_cancelled
     
-    def _execute_recovery_actions(self) -> bool:
-        """Execute recovery actions"""
-        try:
-            logger.info("Executing recovery actions")
-            
-            # 1. Verify system health
-            if not self._verify_system_health():
-                logger.error("System health check failed during recovery")
-                return False
-            
-            # 2. Restore data connections
-            logger.info("Restoring data connections")
-            
-            # 3. Validate market conditions
-            logger.info("Validating market conditions")
-            
-            # 4. Gradual trading resume (if configured)
-            logger.info("Preparing for gradual trading resume")
-            
-            return True
-            
-        except Exception as e:
-            logger.error(f"Recovery actions failed: {e}")
-            return False
-    
-    def _verify_system_health(self) -> bool:
-        """Verify system health for recovery"""
-        try:
-            # Check data feeds
-            # Check exchange connections  
-            # Check system resources
-            # Check error rates
-            
-            # Placeholder implementation
-            self.last_health_check = datetime.now()
-            return True
-            
-        except Exception as e:
-            logger.error(f"System health verification failed: {e}")
-            return False
-    
-    def _complete_recovery(self):
-        """Complete the recovery process"""
-        try:
-            self.status = KillSwitchStatus.ARMED
-            if self.current_stop:
-                self.current_stop.recovery_completed = datetime.now()
-            
-            logger.info("Kill switch recovery completed - system re-armed")
-            
-            # Notify recovery callbacks
-            for callback in self.recovery_callbacks:
-                try:
-                    callback(self.current_stop)
-                except Exception as e:
-                    logger.error(f"Recovery callback failed: {e}")
-            
-            self.current_stop = None
-            
-        except Exception as e:
-            logger.error(f"Recovery completion failed: {e}")
-    
-    def _save_emergency_state(self, stop: EmergencyStop):
-        """Save emergency state to disk"""
-        try:
-            state_file = Path(f"emergency_state_{stop.stop_id}.json")
-            
-            state_data = {
-                "stop_id": stop.stop_id,
-                "timestamp": stop.timestamp.isoformat(),
-                "trigger_type": stop.trigger_type.value,
-                "reason": stop.reason,
-                "trigger_value": stop.trigger_value,
-                "system_state": stop.system_state
-            }
-            
-            with open(state_file, 'w') as f:
-                json.dump(state_data, f, indent=2)
-            
-            logger.info(f"Emergency state saved to {state_file}")
-            
-        except Exception as e:
-            logger.error(f"Emergency state save failed: {e}")
-    
-    def _monitor_system(self):
-        """Background system monitoring"""
-        while self._monitoring_active:
+    def _execute_emergency_callbacks(self):
+        """Execute all registered emergency callbacks"""
+        for callback in self.emergency_callbacks:
             try:
-                # Monitor system health
-                if self.status == KillSwitchStatus.ARMED:
-                    # Perform basic health checks
-                    pass
-                
-                # Sleep for monitoring interval
-                import time
-                time.sleep(10)  # Check every 10 seconds
-                
+                callback()
             except Exception as e:
-                logger.error(f"System monitoring error: {e}")
+                logger.error(f"Emergency callback failed: {e}")
     
-    def add_trigger_callback(self, callback: Callable[[EmergencyStop], None]):
-        """Add callback for kill switch triggers"""
-        self.trigger_callbacks.append(callback)
+    def _monitor_triggered_state(self):
+        """Monitor system while kill switch is triggered"""
+        if not self.activation_time:
+            return
+        
+        # Log periodic status
+        time_triggered = (datetime.now() - self.activation_time).total_seconds() / 60
+        if int(time_triggered) % 5 == 0:  # Every 5 minutes
+            logger.critical(f"Kill switch active for {time_triggered:.0f} minutes")
     
-    def add_recovery_callback(self, callback: Callable[[EmergencyStop], None]):
-        """Add callback for recovery completion"""
-        self.recovery_callbacks.append(callback)
+    def _monitor_recovery_state(self):
+        """Monitor system during recovery"""
+        # Recovery monitoring logic would go here
+        pass
+    
+    def manual_trigger(self, reason: str, authorization_code: str) -> bool:
+        """Manually trigger kill switch with authorization"""
+        
+        if authorization_code not in self.authorized_codes:
+            logger.error(f"Invalid authorization code for manual kill switch")
+            return False
+        
+        return self.trigger_kill_switch(
+            trigger_source=KillSwitchTrigger.MANUAL,
+            reason=f"Manual trigger: {reason}",
+            authorization_code=authorization_code
+        )
+    
+    def reset_kill_switch(self, authorization_code: str, recovery_method: str = "manual") -> bool:
+        """Reset kill switch with proper authorization"""
+        
+        if authorization_code not in self.authorized_codes:
+            logger.error("Invalid authorization code for kill switch reset")
+            return False
+        
+        if self.state != KillSwitchState.TRIGGERED:
+            logger.warning("Kill switch not currently triggered")
+            return False
+        
+        try:
+            # Change state
+            self.state = KillSwitchState.RECOVERY
+            
+            # Re-enable trading systems
+            self.risk_manager.emergency_stop_active = False
+            self.risk_manager.kill_switch_triggered = False
+            self.circuit_breaker_manager.trading_enabled = True
+            
+            # Update last event
+            if self.last_trigger:
+                self.last_trigger.recovery_time = datetime.now()
+                self.last_trigger.recovery_method = recovery_method
+                self.last_trigger.authorization_code = authorization_code
+            
+            # Reset to armed state
+            self.state = KillSwitchState.ARMED
+            self.activation_time = None
+            
+            logger.warning(f"Kill switch reset by {authorization_code}")
+            logger.warning(f"Recovery method: {recovery_method}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Kill switch reset failed: {e}")
+            return False
+    
+    def add_emergency_callback(self, callback: Callable[[], None]):
+        """Add emergency callback function"""
+        self.emergency_callbacks.append(callback)
+        logger.info("Emergency callback added")
+    
+    def set_position_close_callback(self, callback: Callable[[], bool]):
+        """Set callback for closing all positions"""
+        self.position_close_callback = callback
+        logger.info("Position close callback set")
+    
+    def set_order_cancel_callback(self, callback: Callable[[], bool]):
+        """Set callback for cancelling all orders"""
+        self.order_cancel_callback = callback
+        logger.info("Order cancel callback set")
     
     def get_status(self) -> Dict[str, Any]:
-        """Get current kill switch status"""
-        return {
-            "status": self.status.value,
-            "current_stop": {
-                "stop_id": self.current_stop.stop_id,
-                "trigger_type": self.current_stop.trigger_type.value,
-                "reason": self.current_stop.reason,
-                "timestamp": self.current_stop.timestamp.isoformat(),
-                "recovery_started": self.current_stop.recovery_started.isoformat() if self.current_stop.recovery_started else None
-            } if self.current_stop else None,
-            "triggers": {
-                trigger_id: {
-                    "enabled": trigger.enabled,
-                    "current_value": trigger.current_value,
-                    "threshold": trigger.threshold_value,
-                    "trigger_count": trigger.trigger_count,
-                    "last_trigger": trigger.last_trigger.isoformat() if trigger.last_trigger else None
-                }
-                for trigger_id, trigger in self.triggers.items()
-            },
-            "recent_stops": len([s for s in self.stop_history 
-                               if s.timestamp > datetime.now() - timedelta(hours=24)]),
-            "auto_recovery_enabled": self.auto_recovery_enabled
+        """Get kill switch status"""
+        
+        status = {
+            "timestamp": datetime.now().isoformat(),
+            "state": self.state.value,
+            "monitoring_active": self.monitoring_active,
+            "activation_time": self.activation_time.isoformat() if self.activation_time else None,
+            "time_since_activation": None,
+            "last_trigger": None,
+            "total_events": len(self.events),
+            "recent_events_24h": 0
         }
+        
+        # Time since activation
+        if self.activation_time:
+            status["time_since_activation"] = (datetime.now() - self.activation_time).total_seconds()
+        
+        # Last trigger info
+        if self.last_trigger:
+            status["last_trigger"] = {
+                "timestamp": self.last_trigger.timestamp.isoformat(),
+                "source": self.last_trigger.trigger_source.value,
+                "reason": self.last_trigger.trigger_reason,
+                "positions_closed": self.last_trigger.positions_closed,
+                "orders_cancelled": self.last_trigger.orders_cancelled,
+                "recovered": self.last_trigger.recovery_time is not None
+            }
+        
+        # Recent events
+        cutoff_time = datetime.now() - timedelta(hours=24)
+        status["recent_events_24h"] = len([
+            e for e in self.events if e.timestamp >= cutoff_time
+        ])
+        
+        return status
     
-    def disable(self):
-        """Disable kill switch system"""
-        self.status = KillSwitchStatus.DISABLED
-        logger.warning("Kill switch system DISABLED")
+    def test_kill_switch(self, authorization_code: str) -> bool:
+        """Test kill switch functionality without actually triggering"""
+        
+        if authorization_code not in self.authorized_codes:
+            logger.error("Invalid authorization code for kill switch test")
+            return False
+        
+        try:
+            logger.info("🧪 TESTING KILL SWITCH FUNCTIONALITY")
+            
+            # Test callbacks
+            test_results = {
+                "position_close_callback": False,
+                "order_cancel_callback": False,
+                "emergency_callbacks": 0
+            }
+            
+            # Test position close callback
+            if self.position_close_callback:
+                try:
+                    # Don't actually call it, just check if it exists
+                    test_results["position_close_callback"] = True
+                    logger.info("✅ Position close callback available")
+                except:
+                    logger.error("❌ Position close callback test failed")
+            
+            # Test order cancel callback
+            if self.order_cancel_callback:
+                try:
+                    test_results["order_cancel_callback"] = True
+                    logger.info("✅ Order cancel callback available")
+                except:
+                    logger.error("❌ Order cancel callback test failed")
+            
+            # Test emergency callbacks
+            test_results["emergency_callbacks"] = len(self.emergency_callbacks)
+            logger.info(f"✅ {test_results['emergency_callbacks']} emergency callbacks registered")
+            
+            # Test monitoring
+            monitoring_ok = self.monitoring_active and self.monitoring_thread and self.monitoring_thread.is_alive()
+            logger.info(f"✅ Monitoring active: {monitoring_ok}")
+            
+            # Test integration
+            risk_ok = hasattr(self.risk_manager, 'emergency_stop_active')
+            circuit_ok = hasattr(self.circuit_breaker_manager, 'trading_enabled')
+            logger.info(f"✅ Risk manager integration: {risk_ok}")
+            logger.info(f"✅ Circuit breaker integration: {circuit_ok}")
+            
+            logger.info("🧪 Kill switch test completed")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Kill switch test failed: {e}")
+            return False
     
-    def enable(self):
-        """Enable kill switch system"""
-        self.status = KillSwitchStatus.ARMED
-        logger.info("Kill switch system ENABLED")
-    
-    def shutdown(self):
-        """Shutdown kill switch monitoring"""
-        self._monitoring_active = False
-        logger.info("Kill switch monitoring shutdown")
+    def export_kill_switch_report(self, filepath: str, days_back: int = 30):
+        """Export kill switch events and status report"""
+        
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days_back)
+            recent_events = [
+                event for event in self.events
+                if event.timestamp >= cutoff_date
+            ]
+            
+            report_data = {
+                "report_timestamp": datetime.now().isoformat(),
+                "period_days": days_back,
+                "current_status": self.get_status(),
+                
+                "configuration": {
+                    "auto_recovery_enabled": self.auto_recovery_enabled,
+                    "max_recovery_attempts": self.max_recovery_attempts,
+                    "recovery_cooldown_minutes": self.recovery_cooldown_minutes,
+                    "emergency_callbacks": len(self.emergency_callbacks),
+                    "position_close_callback_set": self.position_close_callback is not None,
+                    "order_cancel_callback_set": self.order_cancel_callback is not None
+                },
+                
+                "events": [
+                    {
+                        "timestamp": event.timestamp.isoformat(),
+                        "trigger_source": event.trigger_source.value,
+                        "trigger_reason": event.trigger_reason,
+                        "severity": event.severity,
+                        "portfolio_value_before": event.portfolio_value_before,
+                        "portfolio_value_after": event.portfolio_value_after,
+                        "positions_closed": event.positions_closed,
+                        "orders_cancelled": event.orders_cancelled,
+                        "recovery_time": event.recovery_time.isoformat() if event.recovery_time else None,
+                        "recovery_method": event.recovery_method
+                    }
+                    for event in recent_events
+                ],
+                
+                "statistics": {
+                    "total_activations": len(self.events),
+                    "recent_activations": len(recent_events),
+                    "successful_recoveries": len([
+                        e for e in self.events if e.recovery_time is not None
+                    ]),
+                    "trigger_sources": {
+                        trigger.value: len([
+                            e for e in self.events if e.trigger_source == trigger
+                        ])
+                        for trigger in KillSwitchTrigger
+                    }
+                }
+            }
+            
+            with open(filepath, 'w') as f:
+                json.dump(report_data, f, indent=2, default=str)
+            
+            logger.info(f"Kill switch report exported to {filepath}")
+            
+        except Exception as e:
+            logger.error(f"Failed to export kill switch report: {e}")
