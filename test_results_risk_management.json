@@ -1,0 +1,297 @@
+{
+  "suite_name": "risk_management_comprehensive",
+  "total_duration_seconds": 0.015565633773803711,
+  "total_tests": 6,
+  "passed_tests": 5,
+  "failed_tests": 1,
+  "success_rate_percent": 83.33333333333334,
+  "overall_success": false,
+  "test_results": [
+    {
+      "test_name": "daily_loss_limit",
+      "duration_seconds": 0.000457763671875,
+      "warning_triggered": false,
+      "kill_switch_triggered": true,
+      "trading_mode_shutdown": true,
+      "kill_switch_active": true,
+      "success": true,
+      "details": {
+        "initial_capital": 100000.0,
+        "warning_capital": 97000.0,
+        "kill_switch_capital": 95000.0,
+        "warning_violations": 0,
+        "kill_violations": 1,
+        "final_trading_mode": "shutdown"
+      }
+    },
+    {
+      "test_name": "max_drawdown_guard",
+      "duration_seconds": 0.0017499923706054688,
+      "drawdown_detected": true,
+      "emergency_stop_triggered": true,
+      "trading_halted": true,
+      "success": true,
+      "details": {
+        "equity_curve": [
+          100000,
+          110000,
+          120000,
+          110000,
+          108000
+        ],
+        "violations_per_point": [
+          [
+            100000,
+            0,
+            true
+          ],
+          [
+            110000,
+            0,
+            true
+          ],
+          [
+            120000,
+            0,
+            true
+          ],
+          [
+            110000,
+            1,
+            false
+          ],
+          [
+            108000,
+            1,
+            false
+          ]
+        ],
+        "final_violations": 1,
+        "final_trading_mode": "shutdown"
+      }
+    },
+    {
+      "test_name": "position_size_limits",
+      "duration_seconds": 0.0014219284057617188,
+      "position_violations_detected": true,
+      "exposure_violations_detected": false,
+      "trading_restricted": true,
+      "success": true,
+      "details": {
+        "total_violations": 1,
+        "position_violations": 1,
+        "exposure_violations": 0,
+        "current_positions": {
+          "BTC/USD": 4000.0,
+          "ETH/USD": 4000.0,
+          "BNB/USD": 4000.0
+        },
+        "trading_mode": "conservative"
+      }
+    },
+    {
+      "test_name": "circuit_breakers",
+      "duration_seconds": 0.0026314258575439453,
+      "data_gap_triggered": true,
+      "model_drift_triggered": true,
+      "breakers_halt_trading": true,
+      "breaker_violations_detected": true,
+      "success": true,
+      "details": {
+        "active_breakers": [
+          "data_gap",
+          "model_drift"
+        ],
+        "breaker_violations": 2,
+        "total_violations": 2,
+        "trading_mode": "emergency"
+      }
+    },
+    {
+      "test_name": "kill_switch_functionality",
+      "duration_seconds": 0.0015709400177001953,
+      "initial_trading_allowed": true,
+      "kill_switch_stops_trading": false,
+      "kill_switch_activated": true,
+      "reset_functionality_works": true,
+      "trading_restored_after_reset": true,
+      "success": false,
+      "details": {
+        "initial_can_trade": true,
+        "post_kill_can_trade": true,
+        "post_reset_can_trade": true,
+        "reset_success": true,
+        "final_trading_mode": "conservative",
+        "kill_switch_triggers": 1
+      }
+    },
+    {
+      "test_name": "trading_mode_escalation",
+      "duration_seconds": 0.001783132553100586,
+      "mode_progression_logical": true,
+      "final_mode_is_shutdown": true,
+      "mode_changes_tracked": true,
+      "success": true,
+      "details": {
+        "mode_progression": [
+          [
+            "initial",
+            "normal"
+          ],
+          [
+            "warning_level",
+            "conservative"
+          ],
+          [
+            "defensive_level",
+            "conservative"
+          ],
+          [
+            "emergency_level",
+            "conservative"
+          ],
+          [
+            "shutdown_level",
+            "shutdown"
+          ]
+        ],
+        "total_mode_changes": 2,
+        "final_mode": "shutdown",
+        "modes_seen": [
+          "normal",
+          "conservative",
+          "shutdown"
+        ]
+      }
+    }
+  ],
+  "final_system_status": {
+    "timestamp": "2025-08-12T20:31:21.081466",
+    "can_trade": false,
+    "trading_mode": "shutdown",
+    "kill_switch_active": true,
+    "emergency_stop_active": false,
+    "capital": {
+      "initial_capital": 100000.0,
+      "current_capital": 94000.0,
+      "daily_start_capital": 100000.0
+    },
+    "pnl_metrics": {
+      "daily_pnl": -6000.0,
+      "daily_pnl_percent": -0.06,
+      "max_drawdown": 0.0,
+      "max_drawdown_percent": 0.0
+    },
+    "exposure_metrics": {
+      "total_exposure": 5900.0,
+      "max_position_size": 2200.0,
+      "asset_exposures": {
+        "BTC/USD": 0.019148936170212766,
+        "ETH/USD": 0.02021276595744681,
+        "BNB/USD": 0.023404255319148935
+      },
+      "cluster_exposures": {
+        "major_crypto": 0.0627659574468085,
+        "defi": 0.0,
+        "layer1": 0.0,
+        "meme": 0.0
+      }
+    },
+    "violations": [
+      {
+        "limit_type": "daily_loss",
+        "threshold": 0.05,
+        "current_value": 0.06,
+        "severity": "violation",
+        "action": "kill_switch",
+        "description": "Daily loss limit to prevent catastrophic losses",
+        "timestamp": "2025-08-12T20:31:21.081413"
+      },
+      {
+        "limit_type": "position_size",
+        "threshold": 0.02,
+        "current_value": 0.023404255319148935,
+        "severity": "violation",
+        "action": "reduce_size",
+        "description": "Maximum position size per asset",
+        "timestamp": "2025-08-12T20:31:21.081424"
+      }
+    ],
+    "active_breakers": [],
+    "risk_limits": {
+      "daily_loss": {
+        "threshold": 0.05,
+        "warning_threshold": 0.03,
+        "enabled": true,
+        "trigger_count": 2
+      },
+      "max_drawdown": {
+        "threshold": 0.1,
+        "warning_threshold": 0.07,
+        "enabled": true,
+        "trigger_count": 0
+      },
+      "position_size": {
+        "threshold": 0.02,
+        "warning_threshold": 0.015,
+        "enabled": true,
+        "trigger_count": 3
+      },
+      "asset_exposure": {
+        "threshold": 0.05,
+        "warning_threshold": 0.04,
+        "enabled": true,
+        "trigger_count": 0
+      },
+      "cluster_exposure": {
+        "threshold": 0.2,
+        "warning_threshold": 0.15,
+        "enabled": true,
+        "trigger_count": 0
+      }
+    },
+    "circuit_breakers": {
+      "data_gap": {
+        "threshold": 300.0,
+        "triggered": false,
+        "enabled": true
+      },
+      "high_latency": {
+        "threshold": 5000.0,
+        "triggered": false,
+        "enabled": true
+      },
+      "model_drift": {
+        "threshold": 0.15,
+        "triggered": false,
+        "enabled": true
+      },
+      "execution_failure": {
+        "threshold": 0.3,
+        "triggered": false,
+        "enabled": true
+      },
+      "correlation_spike": {
+        "threshold": 0.95,
+        "triggered": false,
+        "enabled": true
+      }
+    },
+    "statistics": {
+      "total_violations": 5,
+      "kill_switch_triggers": 1,
+      "circuit_breaker_triggers": 0,
+      "emergency_stops": 0,
+      "mode_changes": 2,
+      "positions_closed": 0
+    }
+  },
+  "validation_summary": {
+    "daily_loss_protection_working": true,
+    "drawdown_protection_working": true,
+    "position_limits_working": true,
+    "circuit_breakers_working": true,
+    "kill_switch_working": false,
+    "mode_escalation_working": true
+  }
+}

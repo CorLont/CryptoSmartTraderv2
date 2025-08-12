@@ -1,26 +1,29 @@
 """
 Risk Management Module
 
-Enterprise-grade risk management system with circuit breakers,
-kill switches, and comprehensive safety mechanisms.
+Comprehensive risk management with limits, kill switches, and circuit breakers.
 """
 
-from .risk_limits import RiskLimitManager, RiskLimit, RiskLimitType
-from .kill_switch import KillSwitchSystem, KillSwitchTrigger, EmergencyStop
-from .circuit_breaker import CircuitBreakerSystem, CircuitState, BreakReason
-from .order_deduplication import OrderDeduplicator, OrderState, DuplicateCheck
+from .risk_limits import (
+    RiskLimitEngine,
+    RiskLimit,
+    CircuitBreaker,
+    AssetCluster,
+    RiskMetrics,
+    RiskLimitType,
+    CircuitBreakerType,
+    RiskAction,
+    TradingMode
+)
 
 __all__ = [
-    "RiskLimitManager",
-    "RiskLimit", 
-    "LimitType",
-    "KillSwitchSystem",
-    "KillSwitchTrigger",
-    "EmergencyStop",
-    "CircuitBreakerSystem",
-    "CircuitState",
-    "BreakReason",
-    "OrderDeduplicator",
-    "OrderState",
-    "DuplicateCheck"
+    "RiskLimitEngine",
+    "RiskLimit",
+    "CircuitBreaker", 
+    "AssetCluster",
+    "RiskMetrics",
+    "RiskLimitType",
+    "CircuitBreakerType",
+    "RiskAction",
+    "TradingMode"
 ]
