@@ -1,0 +1,31 @@
+# ConfigMap for CryptoSmartTrader V2 configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cryptosmarttrader-config
+  namespace: cryptosmarttrader
+  labels:
+    app: cryptosmarttrader
+    version: v2.0.0
+data:
+  # Application configuration
+  PYTHONPATH: "/app"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  
+  # Service ports
+  DASHBOARD_PORT: "5000"
+  API_PORT: "8001"
+  METRICS_PORT: "8000"
+  
+  # Performance settings
+  WORKERS: "1"
+  MAX_REQUESTS: "1000"
+  TIMEOUT: "300"
+  
+  # Feature flags
+  ENABLE_METRICS: "true"
+  ENABLE_HEALTH_CHECKS: "true"
+  ENABLE_DEBUG: "false"

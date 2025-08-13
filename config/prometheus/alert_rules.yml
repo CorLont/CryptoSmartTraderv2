@@ -1,0 +1,60 @@
+# Alert rules for CryptoSmartTrader V2
+groups:
+  - name: cryptosmarttrader.rules
+    rules:
+      # Service availability alerts
+      - alert: CryptoSmartTraderDown
+        expr: up{job="cryptosmarttrader"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CryptoSmartTrader service is down"
+          description: "CryptoSmartTrader has been down for more than 1 minute"
+
+      - alert: HealthCheckFailing
+        expr: up{job="cryptosmarttrader-health"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Health check endpoint failing"
+          description: "Health check has been failing for more than 2 minutes"
+
+      # Performance alerts
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes{name="cryptosmarttrader"} / container_spec_memory_limit_bytes{name="cryptosmarttrader"}) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 80% for more than 5 minutes"
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name="cryptosmarttrader"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 5 minutes"
+
+      # Trading system alerts
+      - alert: TradingSystemError
+        expr: increase(cryptotrader_errors_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading system errors detected"
+          description: "More than 5 errors in the last 5 minutes"
+
+      - alert: APICallFailures
+        expr: increase(cryptotrader_api_failures_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API call failure rate"
+          description: "More than 10 API failures in the last 5 minutes"

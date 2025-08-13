@@ -1,0 +1,80 @@
+# Kubernetes Services for CryptoSmartTrader V2
+apiVersion: v1
+kind: Service
+metadata:
+  name: cryptosmarttrader-dashboard
+  namespace: cryptosmarttrader
+  labels:
+    app: cryptosmarttrader
+    service: dashboard
+spec:
+  type: ClusterIP
+  ports:
+  - name: dashboard
+    port: 5000
+    targetPort: 5000
+    protocol: TCP
+  selector:
+    app: cryptosmarttrader
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cryptosmarttrader-api
+  namespace: cryptosmarttrader
+  labels:
+    app: cryptosmarttrader
+    service: api
+spec:
+  type: ClusterIP
+  ports:
+  - name: api
+    port: 8001
+    targetPort: 8001
+    protocol: TCP
+  selector:
+    app: cryptosmarttrader
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cryptosmarttrader-metrics
+  namespace: cryptosmarttrader
+  labels:
+    app: cryptosmarttrader
+    service: metrics
+spec:
+  type: ClusterIP
+  ports:
+  - name: metrics
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: cryptosmarttrader
+
+---
+# LoadBalancer service for external access (optional)
+apiVersion: v1
+kind: Service
+metadata:
+  name: cryptosmarttrader-external
+  namespace: cryptosmarttrader
+  labels:
+    app: cryptosmarttrader
+    service: external
+spec:
+  type: LoadBalancer
+  ports:
+  - name: dashboard
+    port: 80
+    targetPort: 5000
+    protocol: TCP
+  - name: api
+    port: 8001
+    targetPort: 8001
+    protocol: TCP
+  selector:
+    app: cryptosmarttrader

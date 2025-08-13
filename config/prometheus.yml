@@ -1,0 +1,36 @@
+# Prometheus configuration for CryptoSmartTrader V2
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Rule files
+rule_files:
+  - "alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # CryptoSmartTrader metrics
+  - job_name: 'cryptosmarttrader'
+    static_configs:
+      - targets: ['cryptosmarttrader:8000']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    
+  # CryptoSmartTrader health API
+  - job_name: 'cryptosmarttrader-health'
+    static_configs:
+      - targets: ['cryptosmarttrader:8001']
+    scrape_interval: 60s
+    metrics_path: /health
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093

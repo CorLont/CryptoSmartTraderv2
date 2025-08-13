@@ -1,0 +1,9 @@
+# Kubernetes namespace for CryptoSmartTrader V2
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cryptosmarttrader
+  labels:
+    name: cryptosmarttrader
+    environment: production
+    version: v2.0.0
