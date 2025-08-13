@@ -481,6 +481,43 @@ def main():
         except Exception as e:
             st.warning(f"Ensemble Voting System: {str(e)[:100]}...")
         
+        # Add Advanced Portfolio Optimization Status
+        try:
+            from agents.portfolio_optimizer_agent import PortfolioOptimizerAgent, OptimizationMethod
+            
+            portfolio_agent = PortfolioOptimizerAgent()
+            
+            st.info("⚙️ **ADVANCED PORTFOLIO OPTIMIZATION MET KELLY CALIBRATIE**")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("📊 Optimization", f"{portfolio_agent.default_method.value.replace('_', ' ').title()}", delta="Active")
+            with col2:
+                st.metric("🎯 Kelly Scaling", f"{portfolio_agent.kelly_scaling_factor:.0%}", delta="Conservative")
+            with col3:
+                st.metric("⚖️ Max Position", f"{portfolio_agent.max_single_position:.0%}", delta="Risk limit")
+            with col4:
+                st.metric("🔄 Rebalancing", f"{portfolio_agent.rebalancing_frequency.value.title()}", delta="Dynamic")
+                
+            # Show portfolio capabilities
+            portfolio_summary = portfolio_agent.get_portfolio_summary()
+            
+            if portfolio_summary.get('optimization_method') != 'None':
+                st.success(f"✅ Portfolio optimized • Sharpe: {portfolio_summary['sharpe_ratio']:.2f} • Expected Return: {portfolio_summary['expected_return']:.2f}% • {portfolio_summary['number_of_positions']} positions")
+                
+                # Show top positions
+                if portfolio_summary.get('top_positions'):
+                    st.success("🏆 **Top Portfolio Positions:**")
+                    for pos in portfolio_summary['top_positions'][:3]:
+                        kelly_display = f"Kelly: {pos['kelly_fraction']:.1%}" if pos['kelly_fraction'] > 0 else ""
+                        st.info(f"📈 {pos['symbol']}: {pos['weight']:.1%} weight • {pos['expected_return']:.2f}% return • {kelly_display}")
+            else:
+                st.info("🔍 Initializing portfolio optimization...")
+            
+        except Exception as e:
+            st.warning(f"Portfolio Optimization System: {str(e)[:100]}...")
+        
         st.divider()
             
     except Exception as e:
