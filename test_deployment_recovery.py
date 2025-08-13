@@ -154,7 +154,6 @@ except KeyboardInterrupt:
                     critical=True,
                     path="./test_data",
                 )
-            )
 
             # 2. Network port check (use a common port that should be closed)
             self.health_checker.add_dependency_check(
@@ -167,7 +166,6 @@ except KeyboardInterrupt:
                     port=9999,  # Should be closed
                     timeout_seconds=2.0,
                 )
-            )
 
             # 3. System resource check
             self.health_checker.add_dependency_check(
@@ -180,7 +178,6 @@ except KeyboardInterrupt:
                     max_cpu_percent=90.0,
                     max_disk_percent=95.0,
                 )
-            )
 
             # Run health checks
             results = self.health_checker.check_all_dependencies()

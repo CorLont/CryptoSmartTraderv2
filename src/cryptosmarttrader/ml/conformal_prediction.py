@@ -389,8 +389,7 @@ class ConformalRiskGate:
                 "conformal_coverage": interval.coverage_probability,
                 "conformal_uncertainty": interval.nonconformity_score,
                 "conformal_asymmetry": abs(
-                    interval.point_prediction - ((interval.lower_bound + interval.upper_bound) / 2)
-                ),
+                    interval.point_prediction - ((interval.lower_bound + interval.upper_bound) / 2),
                 "conformal_normalized_width": interval.interval_width
                 / (abs(interval.point_prediction) + 0.01),
                 "conformal_confidence_score": interval.coverage_probability

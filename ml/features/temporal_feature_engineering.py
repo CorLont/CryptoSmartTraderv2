@@ -172,7 +172,6 @@ class TemporalFeatureEngineer:
             # Basic rolling statistics
             df[f"{col}_rolling_{window}_mean"] = (
                 df[col].rolling(window=window, min_periods=1).mean()
-            )
             df[f"{col}_rolling_{window}_std"] = df[col].rolling(window=window, min_periods=1).std()
             df[f"{col}_rolling_{window}_min"] = df[col].rolling(window=window, min_periods=1).min()
             df[f"{col}_rolling_{window}_max"] = df[col].rolling(window=window, min_periods=1).max()
@@ -180,10 +179,8 @@ class TemporalFeatureEngineer:
             # Percentile features
             df[f"{col}_rolling_{window}_q25"] = (
                 df[col].rolling(window=window, min_periods=1).quantile(0.25)
-            )
             df[f"{col}_rolling_{window}_q75"] = (
                 df[col].rolling(window=window, min_periods=1).quantile(0.75)
-            )
 
             # Position relative to rolling window
             rolling_mean = df[f"{col}_rolling_{window}_mean"]

@@ -100,7 +100,6 @@ class TemporalFusionTransformer(nn.Module):
         # Static context vectors
         self.static_encoder = nn.Sequential(
             nn.Linear(static_size, hidden_size), nn.ReLU(), nn.Dropout(dropout)
-        )
 
         # Gating mechanisms
         self.encoder_gate = nn.Linear(hidden_size, hidden_size)
@@ -156,7 +155,6 @@ class TemporalFusionTransformer(nn.Module):
 
             decoder_output, (hidden, cell) = self.decoder_lstm(
                 decoder_input_with_context, (hidden, cell)
-            )
 
             decoder_outputs.append(decoder_output)
             decoder_input = decoder_output[:, :, : self.input_size]
@@ -396,7 +394,6 @@ class AdvancedTransformerPredictor:
 
             tft_outputs = self.tft_model(
                 train_data["dynamic"], train_data["static"], len(self.output_horizons)
-            )
 
             tft_loss = criterion(tft_outputs["predictions"]["quantile_0.5"], train_data["targets"])
 
@@ -450,7 +447,6 @@ class AdvancedTransformerPredictor:
             # TFT validation
             tft_outputs = self.tft_model(
                 val_data["dynamic"], val_data["static"], len(self.output_horizons)
-            )
 
             tft_loss = F.mse_loss(tft_outputs["predictions"]["quantile_0.5"], val_data["targets"])
 

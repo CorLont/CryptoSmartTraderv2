@@ -285,8 +285,7 @@ class OpenInterestTracker:
                     "negative_flow_exchanges": negative_flow_exchanges,
                     "divergence_strength": abs(
                         np.mean([change for _, change in oi_changes if change > 0])
-                        - np.mean([change for _, change in oi_changes if change < 0])
-                    ),
+                        - np.mean([change for _, change in oi_changes if change < 0]),
                     "interpretation": "Institutional disagreement on direction",
                 }
                 cross_analysis["flow_divergences"].append(divergence)
@@ -473,7 +472,6 @@ class OpenInterestTracker:
                 # Calculate divergence strength
                 strength = min(
                     1.0, abs(current_event.oi_change_pct) + abs(current_event.price_change_pct)
-                )
 
                 if strength > self.divergence_strength_threshold:
                     divergence_id = f"{exchange}_{pair}_{current_event.timestamp.timestamp()}"

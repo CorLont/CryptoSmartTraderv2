@@ -479,7 +479,6 @@ class CryptoAISystem:
                 | set(sentiment_data.keys())
                 | set(technical_data.keys())
                 | set(news_data.keys())
-            )
 
             for coin in all_coins:
                 validation_score = 0
@@ -997,17 +996,14 @@ class CryptoAISystem:
             # Start continuous data collection
             self.background_tasks["data_collection"] = asyncio.create_task(
                 self._continuous_data_collection()
-            )
 
             # Start continuous ML inference
             self.background_tasks["ml_inference"] = asyncio.create_task(
                 self._continuous_ml_inference()
-            )
 
             # Start health monitoring
             self.background_tasks["health_monitoring"] = asyncio.create_task(
                 self._continuous_health_monitoring()
-            )
 
             self.checklist_status["background_tasks"] = True
             self.logger.info(f"Started {len(self.background_tasks)} background tasks")

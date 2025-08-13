@@ -84,7 +84,6 @@ class PortfolioOptimizerAgent:
                     # Apply min/max constraints
                     final_allocation = max(
                         self.min_allocation, min(self.max_allocation, risk_adjusted_allocation)
-                    )
 
                     allocations[symbol] = {
                         "allocation": final_allocation,

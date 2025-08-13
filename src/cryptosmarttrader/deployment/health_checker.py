@@ -117,7 +117,6 @@ class HealthChecker:
                 critical=True,
                 max_memory_percent=90.0,
             )
-        )
 
         self.add_dependency_check(
             DependencyCheck(
@@ -127,7 +126,6 @@ class HealthChecker:
                 critical=False,
                 max_cpu_percent=80.0,
             )
-        )
 
         self.add_dependency_check(
             DependencyCheck(
@@ -137,7 +135,6 @@ class HealthChecker:
                 critical=True,
                 max_disk_percent=85.0,
             )
-        )
 
         # File system write access
         self.add_dependency_check(
@@ -148,7 +145,6 @@ class HealthChecker:
                 critical=True,
                 path="./data",
             )
-        )
 
     def add_dependency_check(self, check: DependencyCheck):
         """Add a dependency check"""

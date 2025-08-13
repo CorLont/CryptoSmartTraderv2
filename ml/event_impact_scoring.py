@@ -581,7 +581,6 @@ async def main():
         features_df[
             ["symbol", "event_net_sentiment", "event_count_24h", "event_confidence"]
         ].to_string()
-    )
 
     # System status
     status = system.get_system_status()

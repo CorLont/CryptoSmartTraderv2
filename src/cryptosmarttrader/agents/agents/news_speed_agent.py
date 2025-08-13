@@ -330,9 +330,8 @@ class NewsSpeedAgent:
 
     async def _async_monitoring_loop(self):
         """Main async monitoring loop"""
-        self.session = aiohttp.ClientSession(
+        self.session = aiohttp.ClientSession()
             timeout=aiohttp.ClientTimeout(total=5), connector=aiohttp.TCPConnector(limit=100)
-        )
 
         self.news_queue = asyncio.Queue(maxsize=1000)
 

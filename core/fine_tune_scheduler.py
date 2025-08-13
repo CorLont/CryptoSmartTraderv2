@@ -493,7 +493,6 @@ class FineTuneScheduler:
                             (torch.abs(outputs.squeeze() - batch_targets.float()) < threshold)
                             .sum()
                             .item()
-                        )
 
                     total_predictions += batch_targets.size(0)
 
@@ -780,7 +779,6 @@ if __name__ == "__main__":
             scheduler.create_fine_tune_job(
                 "sentiment_analyzer", "performance_degradation", "medium"
             )
-        )
         job_ids.append(scheduler.create_fine_tune_job("whale_detector", "scheduled", "low"))
 
         print(f"   Created {len(job_ids)} jobs")

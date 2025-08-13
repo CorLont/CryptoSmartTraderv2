@@ -118,7 +118,6 @@ class FeatureLeakageDetector:
                 self._detect_temporal_leakage(
                     features_df, target, feature_timestamps, target_timestamps
                 )
-            )
 
         # 4. Look-ahead bias detection
         violations.extend(self._detect_lookahead_bias(features_df, target))
@@ -167,7 +166,6 @@ class FeatureLeakageDetector:
                             timestamp=datetime.now(),
                             metadata={"correlation": correlation},
                         )
-                    )
 
             except Exception as e:
                 self.logger.warning(f"Correlation check failed for {column}: {e}")
@@ -214,7 +212,6 @@ class FeatureLeakageDetector:
                             timestamp=datetime.now(),
                             metadata={"mutual_info": mi_score, "normalized_mi": normalized_mi},
                         )
-                    )
 
         except Exception as e:
             self.logger.error(f"Target leakage detection failed: {e}")
@@ -234,8 +231,7 @@ class FeatureLeakageDetector:
         try:
             # Check if any features have timestamps after target timestamps
             for i, (feat_time, target_time) in enumerate(
-                zip(feature_timestamps, target_timestamps)
-            ):
+                zip(feature_timestamps, target_timestamps):
                 if feat_time > target_time:
                     # Find which features have future information
                     for column in features_df.columns:
@@ -257,7 +253,6 @@ class FeatureLeakageDetector:
                                         / 60,
                                     },
                                 )
-                            )
                             break  # Only report once per timestamp
 
         except Exception as e:
@@ -289,7 +284,6 @@ class FeatureLeakageDetector:
                             timestamp=datetime.now(),
                             metadata={"suspicious_pattern": pattern},
                         )
-                    )
 
         return violations
 
@@ -330,7 +324,6 @@ class FeatureLeakageDetector:
                                     "mean": mean_val,
                                 },
                             )
-                        )
 
         except Exception as e:
             self.logger.error(f"Group leakage detection failed: {e}")
@@ -427,7 +420,6 @@ class FeatureDriftMonitor:
                     # Generate baseline samples (approximation)
                     baseline_samples = np.random.normal(
                         baseline["mean"], baseline["std"], len(feature_values)
-                    )
                     ks_stat, p_value = ks_2samp(baseline_samples, feature_values)
 
                     if p_value < self.drift_thresholds["ks_test_p_value"]:
@@ -441,7 +433,6 @@ class FeatureDriftMonitor:
                 try:
                     baseline_samples = np.random.normal(
                         baseline["mean"], baseline["std"], len(feature_values)
-                    )
                     wasserstein_dist = wasserstein_distance(baseline_samples, feature_values)
 
                     # Normalize by baseline standard deviation
@@ -475,7 +466,6 @@ class FeatureDriftMonitor:
                             action_required=drift_magnitude > 0.5,
                             timestamp=datetime.now(),
                         )
-                    )
 
             except Exception as e:
                 self.logger.warning(f"Drift detection failed for {column}: {e}")
@@ -571,7 +561,6 @@ class SHAPFeatureAnalyzer:
                             temporal_consistency=0.8,  # Placeholder
                             recommendation=recommendation,
                         )
-                    )
 
         except Exception as e:
             self.logger.error(f"SHAP analysis failed: {e}")
@@ -703,7 +692,6 @@ class MLFeatureMonitor:
             # 4. Generate recommendations
             analysis_results["recommendations"] = self._generate_feature_recommendations(
                 leakage_violations, drift_alerts, analysis_results.get("feature_importance", [])
-            )
 
             # 5. Calculate quality scores
             analysis_results["quality_scores"] = self._calculate_feature_quality_scores(

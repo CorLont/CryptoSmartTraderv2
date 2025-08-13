@@ -12,8 +12,7 @@ router = APIRouter(tags=["agents"], prefix="/agents")
 
 @router.get("/status", response_model=List[AgentStatus], summary="Get All Agent Status")
 async def get_agents_status(
-    orchestrator=Depends(get_orchestrator), settings: Settings = Depends(get_settings)
-) -> List[AgentStatus]:
+    orchestrator=Depends(get_orchestrator), settings: Settings = Depends(get_settings) -> List[AgentStatus]:
     """
     Get operational status of all agents
 

@@ -467,7 +467,6 @@ class AutomatedBackupSystem:
                         else:
                             size = sum(
                                 f.stat().st_size for f in backup_item.rglob("*") if f.is_file()
-                            )
 
                         category_stats["total_size"] += size
                         stats["total_size_bytes"] += size

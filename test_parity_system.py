@@ -119,7 +119,6 @@ async def test_parity_system():
         # Generate report
         report = await reporter.generate_daily_report(
             backtest_data=backtest_data, live_data=live_data, force_date=datetime.utcnow()
-        )
 
         print(f"   📊 Tracking Error: {report.tracking_error_bps:.1f} bps")
         print(f"   📈 Correlation: {report.correlation:.2f}")

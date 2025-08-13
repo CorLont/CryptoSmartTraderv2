@@ -268,7 +268,6 @@ class TestKrakenDataAdapter:
             if len(request_times) > 1:
                 min_interval = min(
                     request_times[i + 1] - request_times[i] for i in range(len(request_times) - 1)
-                )
                 # Should respect minimum interval (depends on exchange limits)
                 assert min_interval >= 0  # At least no negative intervals
 

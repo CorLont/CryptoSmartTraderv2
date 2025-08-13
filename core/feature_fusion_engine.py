@@ -108,7 +108,6 @@ class AttentionFusionModule(nn.Module):
         # Concatenate heads
         attended_values = (
             attended_values.transpose(1, 2).contiguous().view(batch_size, seq_len, self.hidden_dim)
-        )
 
         # Output projection
         output = self.output_proj(attended_values)
@@ -390,7 +389,6 @@ class FeatureFusionEngine:
                 self.cross_interaction_engine.generate_polynomial_interactions(
                     scaled_features, feature_names
                 )
-            )
 
             ratio_features, ratio_names = self.cross_interaction_engine.generate_ratio_interactions(
                 scaled_features, feature_names
@@ -400,7 +398,6 @@ class FeatureFusionEngine:
                 self.cross_interaction_engine.generate_statistical_interactions(
                     scaled_features, feature_names
                 )
-            )
 
             # Combine all features
             all_features = [scaled_features]

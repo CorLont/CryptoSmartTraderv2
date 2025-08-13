@@ -151,7 +151,6 @@ async def demonstrate_risk_management():
         if i % 3 == 0:
             avg_latency = sum(risk_guard.recent_latencies[-5:]) / min(
                 5, len(risk_guard.recent_latencies)
-            )
             print(
                 f"      Average Latency: {avg_latency:.0f}ms (limit: {risk_guard.limits.max_latency_ms}ms)"
             )

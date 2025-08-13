@@ -380,8 +380,7 @@ class UnifiedMetrics:
         """Record API request metrics"""
         if PROMETHEUS_AVAILABLE:
             self.api_requests_total.labels(
-                endpoint=endpoint, method=method, status_code=str(status_code)
-            ).inc()
+                endpoint=endpoint, method=method, status_code=str(status_code).inc()
             self.api_duration_seconds.labels(endpoint=endpoint, method=method).observe(duration)
 
     def update_exchange_connectivity(self, exchange_name: str, connected: bool):

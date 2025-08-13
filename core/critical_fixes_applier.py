@@ -430,7 +430,6 @@ class PortfolioBacktestEngine:
                 market_price=signal.get('price', 100),
                 volatility=signal.get('volatility', 0.02),
                 volume_24h=signal.get('volume_24h', 1000000)
-            )
             
             if execution.success:
                 # Apply execution costs
@@ -691,7 +690,6 @@ class DataCompletenessGate:
                     (filtered_df[col] == -999) |
                     (filtered_df[col] == 999) |
                     (filtered_df[col] == -1)
-                )
                 
                 placeholder_count = placeholder_mask.sum()
                 if placeholder_count > len(filtered_df) * 0.1:  # >10% placeholders
@@ -1045,7 +1043,6 @@ class MonteCarloDropoutModel(nn.Module):
             nn.ReLU(),
             nn.Dropout(dropout_rate),
             nn.Linear(hidden_size, 1)
-        )
     
     def forward(self, x):
         return self.layers(x)
@@ -1177,7 +1174,6 @@ class ConfidenceIntervalEstimator:
             within_interval = (
                 (actual_values >= interval_data["lower"]) & 
                 (actual_values <= interval_data["upper"])
-            )
             
             coverage = within_interval.mean()
             expected_coverage = float(interval_name.split("_")[1]) / 100

@@ -36,7 +36,6 @@ def aggregate_daily_health():
     for source_pattern, target_name in sources:
         source_path = (
             Path(source_pattern.split("*")[0]) if "*" in source_pattern else Path(source_pattern)
-        )
 
         if source_path.exists():
             try:

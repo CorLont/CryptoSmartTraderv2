@@ -904,7 +904,7 @@ if __name__ == "__main__":
     print(f"  Risk Recommendations: {len(stress_results.get('risk_recommendations', []))}")
 
     # Test custom scenario
-    custom_result = coordinator.# REMOVED: Mock data pattern not allowed in production{
+    custom_result = coordinator.mock_posts.append({
         'event_type': 'flash_crash',
         'severity': 0.8,
         'market_condition': 'bear_market'

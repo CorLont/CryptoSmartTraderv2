@@ -457,7 +457,6 @@ class AsyncScrapingFramework:
                 # Create failed result
                 failed_result = ScrapeResult(
                     request=ScrapeRequest(url="unknown"), status=ScrapeStatus.FAILED, error=str(e)
-                )
                 results.append(failed_result)
                 completed += 1
 

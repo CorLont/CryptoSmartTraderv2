@@ -50,8 +50,7 @@ def get_kraken_symbols() -> List[str]:
                 and "/" in symbol
                 and ":" not in symbol
                 and not symbol.endswith(".d")  # Exclude dark pools
-                and market.get("active", False)
-            ):
+                and market.get("active", False):
                 symbols.append(symbol)
 
         # Sort for consistent ordering

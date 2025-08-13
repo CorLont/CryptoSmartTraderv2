@@ -433,8 +433,7 @@ class GPUAccelerator:
                 if operation == "normalize":
                     numeric_cols = df_gpu.select_dtypes(include=["float64", "int64"]).columns
                     df_gpu[numeric_cols] = (
-                        df_gpu[numeric_cols] - df_gpu[numeric_cols].mean()
-                    ) / df_gpu[numeric_cols].std()
+                        df_gpu[numeric_cols] - df_gpu[numeric_cols].mean() / df_gpu[numeric_cols].std()
 
                 elif operation == "log_transform":
                     numeric_cols = df_gpu.select_dtypes(include=["float64", "int64"]).columns

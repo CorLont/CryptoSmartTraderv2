@@ -604,7 +604,6 @@ class CentralizedRiskGuard:
 
         self.logger.critical(
             "KILL-SWITCH TRIGGERED", reason=reason, timestamp=self.kill_switch_timestamp.isoformat()
-        )
 
     def deactivate_kill_switch(self, authorized_user: str = "system") -> bool:
         """Deactivate kill-switch (manual override)."""

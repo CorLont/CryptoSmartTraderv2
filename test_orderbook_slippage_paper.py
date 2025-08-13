@@ -104,7 +104,6 @@ async def test_orderbook_simulator():
         # Market order
         orders.append(
             simulator.submit_order(side=OrderSide.BUY, order_type=OrderType.MARKET, quantity=0.1)
-        )
 
         # Limit order with GTC
         orders.append(
@@ -115,7 +114,6 @@ async def test_orderbook_simulator():
                 price=51000.0,
                 time_in_force=TimeInForce.GTC,
             )
-        )
 
         # IOC order (immediate or cancel)
         orders.append(
@@ -126,7 +124,6 @@ async def test_orderbook_simulator():
                 price=49500.0,
                 time_in_force=TimeInForce.IOC,
             )
-        )
 
         # FOK order (fill or kill)
         orders.append(
@@ -137,7 +134,6 @@ async def test_orderbook_simulator():
                 price=50100.0,
                 time_in_force=TimeInForce.FOK,
             )
-        )
 
         # Check executions
         executions = 0

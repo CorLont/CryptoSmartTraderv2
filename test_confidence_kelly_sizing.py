@@ -251,7 +251,6 @@ def test_kelly_optimization():
     print("🎯 Optimizing Kelly fraction factor...")
     optimization_results = confidence_weigher.optimize_kelly_parameters(
         historical_signals, data["trade_returns"].tolist()
-    )
 
     if "error" not in optimization_results:
         print("✅ Kelly optimization successful")

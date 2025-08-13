@@ -382,7 +382,6 @@ class SelfHealingDashboard:
                             name=metric_name.replace("_", " ").title(),
                             line=dict(width=2),
                         )
-                    )
 
                     # Add threshold line
                     if len(metric_data) > 0:
@@ -609,7 +608,6 @@ class SelfHealingDashboard:
             with settings_cols[0]:
                 st.metric(
                     "Failure Threshold", auto_settings.get("consecutive_failure_threshold", 3)
-                )
                 st.metric(
                     "Performance Degradation",
                     f"{auto_settings.get('performance_degradation_threshold', 0.3):.1%}",
@@ -667,8 +665,7 @@ class SelfHealingDashboard:
             # Simulate health percentage (enabled components / total)
             np.random.seed(42)
             health_trend = 100 - np.random.exponential(
-                2, len(dates)
-            )  # Mostly high, occasional drops
+                2, len(dates)  # Mostly high, occasional drops
             health_trend = np.clip(health_trend, 0, 100)
 
             # Add some realistic drops
@@ -687,7 +684,6 @@ class SelfHealingDashboard:
                     fill="tonexty",
                     fillcolor="rgba(0,100,200,0.1)",
                 )
-            )
 
             # Add threshold lines
             fig.add_hline(y=90, line_dash="dash", line_color="green", annotation_text="Healthy")

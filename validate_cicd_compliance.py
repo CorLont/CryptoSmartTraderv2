@@ -23,7 +23,6 @@ def validate_cicd_compliance():
             "uv sync --frozen" in str(step.get("run", ""))
             for job in ci_content.get("jobs", {}).values()
             for step in job.get("steps", [])
-        )
         compliance_checks["uv_sync_frozen"] = uv_sync_found
         print(f"   {'✅' if uv_sync_found else '❌'} uv sync --frozen usage")
 
@@ -32,7 +31,6 @@ def validate_cicd_compliance():
             "astral-sh/setup-uv@v4" in step.get("uses", "")
             for job in ci_content.get("jobs", {}).values()
             for step in job.get("steps", [])
-        )
         compliance_checks["uv_setup"] = uv_setup_found
         print(f"   {'✅' if uv_setup_found else '❌'} astral-sh/setup-uv@v4 action")
 

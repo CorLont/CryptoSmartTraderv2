@@ -284,7 +284,6 @@ class TestBacktestParityAnalyzer:
 
         monitoring_result = self.parity_analyzer.process_streaming_data(
             pd.DataFrame(streaming_data)
-        )
 
         assert monitoring_result.current_tracking_error_bps is not None
         assert monitoring_result.trend_direction in ["improving", "degrading", "stable"]

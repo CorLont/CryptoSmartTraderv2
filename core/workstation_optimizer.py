@@ -76,7 +76,6 @@ class WorkstationOptimizer:
             specs["gpu_name"] = torch.cuda.get_device_name(0)
             specs["gpu_memory_gb"] = round(
                 torch.cuda.get_device_properties(0).total_memory / (1024**3)
-            )
 
         elif GPUTIL_AVAILABLE:
             gpus = GPUtil.getGPUs()

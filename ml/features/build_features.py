@@ -152,7 +152,6 @@ class FeatureValidator:
             # Run validation
             validation_result = ge_df.validate(
                 expectation_suite=self.data_context.get_expectation_suite(self.suite_name)
-            )
 
             # Calculate success metrics
             total_expectations = len(validation_result.results)
@@ -510,13 +509,11 @@ class FeatureMerger:
             if not ta_df.empty:
                 merged_df = merged_df.merge(
                     ta_df, on=["symbol", "timestamp"], how="left", suffixes=("", "_ta")
-                )
 
             # Merge sentiment (forward fill for missing timestamps)
             if not sentiment_df.empty:
                 merged_df = merged_df.merge(
                     sentiment_df, on=["symbol", "timestamp"], how="left", suffixes=("", "_sent")
-                )
                 # Forward fill sentiment data
                 sentiment_cols = [
                     "sentiment_score",
@@ -533,7 +530,6 @@ class FeatureMerger:
             if not onchain_df.empty:
                 merged_df = merged_df.merge(
                     onchain_df, on=["symbol", "timestamp"], how="left", suffixes=("", "_chain")
-                )
                 # Forward fill on-chain data
                 onchain_cols = [
                     "active_addresses",
@@ -550,7 +546,6 @@ class FeatureMerger:
             if not orderbook_df.empty:
                 merged_df = merged_df.merge(
                     orderbook_df, on=["symbol", "timestamp"], how="left", suffixes=("", "_ob")
-                )
 
             # Sort by symbol and timestamp
             merged_df = merged_df.sort_values(["symbol", "timestamp"]).reset_index(drop=True)

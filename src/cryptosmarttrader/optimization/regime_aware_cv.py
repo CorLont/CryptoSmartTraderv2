@@ -223,7 +223,6 @@ class RegimeAwareCV:
                 # Calculate regime distributions
                 train_regimes = (
                     valid_data.iloc[train_idx][self.regime_column].value_counts().to_dict()
-                )
                 val_regimes = valid_data.iloc[val_idx][self.regime_column].value_counts().to_dict()
 
                 # Get time boundaries if available
@@ -281,7 +280,6 @@ class RegimeAwareCV:
                 train_indices = (
                     valid_data.iloc[:val_start].index.tolist()
                     + valid_data.iloc[val_end:].index.tolist()
-                )
 
                 # Calculate regime distributions
                 train_data = valid_data.loc[train_indices]
@@ -584,8 +582,7 @@ class RegimeAwareCV:
             },
             "regime_stability": regime_stability,
             "recommendations": self._get_regime_recommendations(
-                all_regime_performance, np.mean(robustness_scores)
-            ),
+                all_regime_performance, np.mean(robustness_scores),
         }
 
     def _get_regime_recommendations(

@@ -182,7 +182,6 @@ class EnterpriseIntegratedPipeline:
             if self.uncertainty_system:
                 uncertainty_results, uncertainty_report = (
                     self.uncertainty_system.predict_with_confidence_gate(predictions_df)
-                )
 
                 # Add uncertainty metrics to predictions
                 predictions_df["uncertainty"] = uncertainty_results.get("uncertainty", 0)

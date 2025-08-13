@@ -108,7 +108,6 @@ class DirectUnifiedReviewGenerator:
                 dest_path = src_dir / source_name
                 shutil.copytree(
                     source_path, dest_path, ignore=shutil.ignore_patterns("__pycache__", "*.pyc")
-                )
                 file_count = len(list(dest_path.rglob("*.py")))
                 logger.info(f"    ✅ {source_name}/ ({file_count} Python files)")
                 count += file_count

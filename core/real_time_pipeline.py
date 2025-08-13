@@ -155,7 +155,6 @@ class RealTimePipeline:
             total_kraken_coins = len(discovered_data["metadata"])
             active_coins = sum(
                 1 for meta in discovered_data["metadata"].values() if meta.get("active", False)
-            )
 
             # Verify against Kraken's official count (if available)
             official_count = self._get_official_kraken_coin_count()

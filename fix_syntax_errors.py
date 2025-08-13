@@ -145,8 +145,7 @@ class SyntaxErrorFixer:
                         "except ",
                         "finally",
                         "with ",
-                    )
-                ) and not stripped.endswith(":"):
+                    ) and not stripped.endswith(":"):
                     lines[i] = line + ":"
             fixed_content = "\n".join(lines)
 

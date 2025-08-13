@@ -177,7 +177,6 @@ class MultiServiceManager:
 
                 status = (
                     "🟢 HEALTHY" if is_healthy else ("🟡 STARTING" if is_running else "🔴 STOPPED")
-                )
                 print(f"{config['description']:25} | Port {config['port']} | {status}")
             else:
                 print(f"{config['description']:25} | Port {config['port']} | 🔴 NOT STARTED")

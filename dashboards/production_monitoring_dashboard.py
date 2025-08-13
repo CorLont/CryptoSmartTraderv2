@@ -217,7 +217,6 @@ def create_system_health_gauge(health_score):
                 "threshold": {"line": {"color": "red", "width": 4}, "thickness": 0.75, "value": 90},
             },
         )
-    )
 
     fig.update_layout(height=300)
     return fig
@@ -307,7 +306,6 @@ def create_agent_status_matrix(metrics):
         data=go.Bar(
             x=agents, y=[1] * len(agents), marker_color=colors, text=statuses, textposition="inside"
         )
-    )
 
     fig.update_layout(
         title="Agent Status Overview",

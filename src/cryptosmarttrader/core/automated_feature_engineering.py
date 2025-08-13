@@ -185,7 +185,6 @@ class AttentionBasedFeaturePruner:
         # Output layers
         self.output_layer = nn.Sequential(
             nn.Linear(input_dim, hidden_dim), nn.ReLU(), nn.Dropout(0.2), nn.Linear(hidden_dim, 1)
-        )
 
     def forward(self, x) -> Tuple[Any, Any]:
         """Forward pass with attention weights"""
@@ -342,7 +341,6 @@ class DeepFeatureSynthesizer:
                 # Select top correlated features with target
                 correlations = (
                     data[numeric_cols].corrwith(data[target_col]).abs().sort_values(ascending=False)
-                )
                 numeric_cols = correlations.head(20).index.tolist()
 
             generated_count = 0
@@ -436,7 +434,6 @@ class DeepFeatureSynthesizer:
             if len(numeric_cols) > 15:
                 correlations = (
                     data[numeric_cols].corrwith(data[target_col]).abs().sort_values(ascending=False)
-                )
                 numeric_cols = correlations.head(15).index.tolist()
 
             for col in numeric_cols:
@@ -889,7 +886,6 @@ class AutomatedFeatureEngineer:
                     try:
                         self.attention_pruner = AttentionBasedFeaturePruner(
                             input_dim=len(features.columns)
-                        )
 
                         if hasattr(self.attention_pruner, "to"):
                             self.attention_pruner = self.attention_pruner.to(self.device)
@@ -940,7 +936,6 @@ class AutomatedFeatureEngineer:
                         n_features=min(
                             self.config.max_total_features, len(engineered_features.columns) - 1
                         )
-                    )
 
                     # Include available top features plus target
                     available_features = [
@@ -1003,7 +998,6 @@ class AutomatedFeatureEngineer:
             # Find highly correlated pairs
             upper_triangle = corr_matrix.where(
                 np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
-            )
 
             # Find features to remove
             to_remove = [
@@ -1153,7 +1147,6 @@ class AutomatedFeatureEngineer:
                         n_features=int(
                             self.config.max_total_features * self.config.regime_feature_ratio
                         )
-                    )
 
                 self.regime_feature_sets[str(regime)] = regime_features
                 self.logger.info(

@@ -124,7 +124,6 @@ class ExchangeManager:
                                 self.exchange_status[exchange_name]["status"] = "connected"
                                 self.exchange_status[exchange_name]["last_check"] = (
                                     datetime.now().isoformat()
-                                )
                                 self.exchange_status[exchange_name]["success_count"] += 1
                         else:
                             with self._lock:

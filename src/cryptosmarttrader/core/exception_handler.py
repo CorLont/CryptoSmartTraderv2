@@ -227,8 +227,7 @@ class ExceptionHandler:
         # Check for fallback data issues
         if (
             "fallback" in error_report.message.lower()
-            or "synthetic" in error_report.message.lower()
-        ):
+            or "synthetic" in error_report.message.lower():
             error_report.level = AlertLevel.CRITICAL
             error_report.health_impact = 1.0
             self.logger.critical(
@@ -250,8 +249,7 @@ class ExceptionHandler:
         # Check for prediction failures
         elif (
             "prediction" in error_report.message.lower()
-            or "inference" in error_report.message.lower()
-        ):
+            or "inference" in error_report.message.lower():
             error_report.level = AlertLevel.WARNING
             error_report.health_impact = 0.6
 
@@ -300,8 +298,7 @@ class ExceptionHandler:
         # Network errors might be transient
         if (
             "timeout" in error_report.message.lower()
-            or "connection" in error_report.message.lower()
-        ):
+            or "connection" in error_report.message.lower():
             error_report.level = AlertLevel.WARNING
             error_report.health_impact = 0.4
 

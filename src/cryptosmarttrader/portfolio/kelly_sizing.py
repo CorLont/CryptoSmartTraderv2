@@ -92,7 +92,6 @@ class KellySizingResult:
             0 <= self.final_size <= 1.0
             and self.recommended_size > 0
             and not np.isnan(self.final_size)
-        )
 
 
 class FractionalKellySizer:
@@ -176,7 +175,6 @@ class FractionalKellySizer:
                 # Scale between 0.8 and 1.0 based on confidence
                 confidence_adjustment = 0.8 + 0.2 * (
                     (confidence - self.confidence_threshold) / (0.9 - self.confidence_threshold)
-                )
 
             adjusted_size = kelly_size * confidence_adjustment
 

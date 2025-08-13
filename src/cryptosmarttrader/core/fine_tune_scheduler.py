@@ -346,7 +346,6 @@ class FineTuneScheduler:
             replay_ratio=job_config['default_replay_ratio'],
             ewc_lambda=job_config['ewc_lambda'],
             created_at=datetime.now()
-        )
 
         with self.job_lock:
             # Insert based on priority

@@ -332,7 +332,6 @@ class DailyAnalysisScheduler:
             daily_data = self.cache_manager.get(cache_key) or {}
             daily_data["technical_analysis"]["indicators"].update(
                 technical_results.get("indicators", {})
-            )
             daily_data["technical_analysis"]["signals"].extend(technical_results.get("signals", []))
             daily_data["technical_analysis"]["last_update"] = datetime.now().isoformat()
             daily_data["technical_analysis"]["status"] = "active"
@@ -580,7 +579,6 @@ class DailyAnalysisScheduler:
 
             enhanced_results = loop.run_until_complete(
                 self.openai_analyzer.process_analysis_batch(batch_data)
-            )
 
             # Store enhanced results
             cache_key = f"daily_analysis_{date}"
@@ -628,7 +626,6 @@ class DailyAnalysisScheduler:
 
             market_insights = loop.run_until_complete(
                 self.openai_analyzer.generate_market_insights(daily_data)
-            )
 
             # Store market insights
             cache_key = f"daily_analysis_{date}"

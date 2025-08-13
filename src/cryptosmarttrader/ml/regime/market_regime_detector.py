@@ -100,11 +100,9 @@ class HMMRegimeDetector:
 
             # Volatility regime features
             features["vol_regime"] = (
-                features["volatility"] / features["volatility"].rolling(100).mean()
-            ) - 1
+                features["volatility"] / features["volatility"].rolling(100).mean() - 1
             features["vol_zscore"] = (
-                features["volatility"] - features["volatility"].rolling(50).mean()
-            ) / features["volatility"].rolling(50).std()
+                features["volatility"] - features["volatility"].rolling(50).mean() / features["volatility"].rolling(50).std()
 
         # Volume features
         if "volume" in data.columns:
@@ -124,7 +122,6 @@ class HMMRegimeDetector:
                 features["returns"]
                 .rolling(20)
                 .apply(lambda x: x.autocorr(lag=1) if len(x.dropna()) > 10 else 0)
-            )
 
         # Clean features
         features = features.dropna()
@@ -434,7 +431,6 @@ class RuleBasedRegimeDetector:
             if len(recent_subset) > 10:
                 temp_regime = self.detect_regime(
                     recent_subset, lookback_days=min(10, len(recent_subset))
-                )
                 if temp_regime.regime == current_regime:
                     consistent_days += 1
                 else:
@@ -545,7 +541,6 @@ class MarketRegimeDetector:
                     recent_regime = regimes[-1]
                     recent_prob = (
                         probs[-1] if len(probs) > 0 else np.array([0.5] * self.hmm_regimes)
-                    )
                     confidence = np.max(recent_prob)
 
                     # Create HMM regime state

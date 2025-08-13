@@ -355,7 +355,6 @@ class ReplayBuffer:
             # Get current task samples (most recent)
             recent_samples = (
                 list(self.buffer)[-1000:] if len(self.buffer) > 1000 else list(self.buffer)
-            )
             current_indices = np.random.choice(
                 len(recent_samples), min(current_task_samples, len(recent_samples)), replace=False
             )
@@ -508,7 +507,6 @@ class ContinualLearningManager:
             # Sample from replay buffer
             X_replay, y_replay = self.replay_buffer.sample_batch(
                 batch_size=min(1000, len(self.replay_buffer.buffer))
-            )
 
             # Combine new data with replay data
             X_combined = np.vstack([X_new, X_replay])
@@ -654,7 +652,6 @@ def example_continual_learning():
             super().__init__()
             self.layers = nn.Sequential(
                 nn.Linear(input_size, 32), nn.ReLU(), nn.Linear(32, 16), nn.ReLU(), nn.Linear(16, 1)
-            )
 
         def forward(self, x):
             return self.layers(x)

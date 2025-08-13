@@ -298,7 +298,6 @@ class PaperTradingEngine:
                     limit_price
                     if limit_price
                     else (simulator.ask_price if side == OrderSide.BUY else simulator.bid_price)
-                )
 
                 # Submit order to simulator
                 order_id = simulator.submit_order(

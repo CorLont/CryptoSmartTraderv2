@@ -143,7 +143,7 @@ class DailyMetricsLogger:
                 }
             else:
                 # REMOVED: Mock data pattern not allowed in production
-                return self._generate_# REMOVED: Mock data pattern not allowed in production)
+                return self._generate_mock_data)
                 
         except Exception as e:
             self.logger.error(f"Coverage metrics collection failed: {e}")
@@ -191,7 +191,7 @@ class DailyMetricsLogger:
                     }
             
             # REMOVED: Mock data pattern not allowed in production
-            return self._generate_# REMOVED: Mock data pattern not allowed in production)
+            return self._generate_mock_data)
             
         except Exception as e:
             self.logger.error(f"Performance metrics collection failed: {e}")
@@ -244,7 +244,7 @@ class DailyMetricsLogger:
                     }
             
             # REMOVED: Mock data pattern not allowed in production
-            return self._generate_# REMOVED: Mock data pattern not allowed in production)
+            return self._generate_mock_data)
             
         except Exception as e:
             self.logger.error(f"Calibration metrics collection failed: {e}")
@@ -292,7 +292,7 @@ class DailyMetricsLogger:
                 }
             
             # REMOVED: Mock data pattern not allowed in production
-            return self._generate_# REMOVED: Mock data pattern not allowed in production)
+            return self._generate_mock_data)
             
         except Exception as e:
             self.logger.error(f"Health metrics collection failed: {e}")
@@ -423,7 +423,7 @@ class DailyMetricsLogger:
             return {"status": "error", "error": str(e)}
     
     # Mock data generation methods
-    def _generate_# REMOVED: Mock data pattern not allowed in productionself) -> Dict[str, Any]:
+    def _generate_mock_data(self) -> Dict[str, Any]:
         """Generate realistic mock coverage metrics"""
         coverage_pct = np.# REMOVED: Mock data pattern not allowed in production(50, 2) * 100  # ~96% average
         total_symbols = np.# REMOVED: Mock data pattern not allowed in production(280, 320)
@@ -438,7 +438,7 @@ class DailyMetricsLogger:
             "quality_status": "excellent" if coverage_pct >= 99 else "good" if coverage_pct >= 95 else "poor"
         }
     
-    def _generate_# REMOVED: Mock data pattern not allowed in productionself) -> Dict[str, Any]:
+    def _generate_mock_data(self) -> Dict[str, Any]:
         """Generate realistic mock performance metrics"""
         return {
             "status": "mock_data",
@@ -449,7 +449,7 @@ class DailyMetricsLogger:
             "sample_size": np.# REMOVED: Mock data pattern not allowed in production(500, 2000)
         }
     
-    def _generate_# REMOVED: Mock data pattern not allowed in productionself) -> Dict[str, Any]:
+    def _generate_mock_data(self) -> Dict[str, Any]:
         """Generate realistic mock calibration metrics"""
         ece = np.random.gamma(2, 0.03)  # ~0.06 average
         
@@ -464,7 +464,7 @@ class DailyMetricsLogger:
             }
         }
     
-    def _generate_# REMOVED: Mock data pattern not allowed in productionself) -> Dict[str, Any]:
+    def _generate_mock_data(self) -> Dict[str, Any]:
         """Generate realistic mock health metrics"""
         health_score = np.# REMOVED: Mock data pattern not allowed in production(8, 2) * 40 + 60  # 60-100 range
         

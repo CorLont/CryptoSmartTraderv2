@@ -486,7 +486,6 @@ class ExecutionSimulator:
                 # Use maker fees (lower)
                 total_fees = (
                     executed_quantity * avg_fill_price * (self.config.maker_fee_bps / 10000)
-                )
 
                 # Minimal slippage for maker orders
                 slippage_bps = 0.0

@@ -372,7 +372,6 @@ class Fase3Demo:
             abs(attribution.fees_impact)
             + abs(attribution.slippage_impact)
             + abs(attribution.timing_impact)
-        )
         alpha_net = attribution.alpha_return - total_costs
 
         print(f"\n🎯 Net Alpha After Costs:")

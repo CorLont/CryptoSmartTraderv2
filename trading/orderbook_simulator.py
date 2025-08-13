@@ -356,7 +356,6 @@ class OrderBookSimulator:
         # Simulate network latency
         latency_ms = max(
             0, np.random.normal(self.config.base_latency_ms, self.config.latency_std_ms)
-        )
 
         # Create order
         order = Order(

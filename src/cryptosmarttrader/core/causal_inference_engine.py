@@ -152,7 +152,6 @@ class DoubleMachineLearning:
                 1.96 * np.sqrt(variance / n_samples)
                 if "variance" in locals()
                 else 0.1 * abs(effect_size)
-            )
             confidence_interval = (effect_size - margin_error, effect_size + margin_error)
 
             return CausalEffect(
@@ -192,8 +191,7 @@ class GrangerCausalityAnalyzer:
         self.logger = logging.getLogger(__name__)
 
     def test_granger_causality(
-        self, cause: pd.Series, effect: pd.Series, variable_names: Tuple[str, str] = ("X", "Y")
-    ) -> GrangerCausalityResult:
+        self, cause: pd.Series, effect: pd.Series, variable_names: Tuple[str, str] = ("X", "Y") -> GrangerCausalityResult:
         """Test Granger causality between two time series"""
         try:
             # Ensure same length and alignment
@@ -412,7 +410,6 @@ class CounterfactualPredictor:
                 # Confidence (simplified based on prediction difference)
                 confidence = min(
                     0.95, max(0.1, 1.0 - abs(effect) / (abs(original_prediction) + 1e-6))
-                )
 
                 # Create explanation
                 direction = "increase" if effect > 0 else "decrease"
@@ -551,7 +548,6 @@ class CausalInferenceEngine:
                         if len(cause_series) > 20 and len(effect_series) > 20:
                             result = self.granger.test_granger_causality(
                                 cause_series, effect_series, (cause_var, effect_var)
-                            )
                             results.append(result)
 
             # Store results

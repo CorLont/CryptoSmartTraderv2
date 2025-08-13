@@ -541,7 +541,6 @@ class PerformanceTracker:
         portfolio_return = sum(
             weight * actual_returns.get(symbol, 0)
             for symbol, weight in allocation.allocations.items()
-        )
 
         performance_record = {
             "timestamp": datetime.now(),

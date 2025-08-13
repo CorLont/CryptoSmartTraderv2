@@ -226,7 +226,6 @@ class ClusterManager:
             # Calculate risk score
             risk_score = self._calculate_asset_risk_score(
                 symbol, metadata, price_returns.get(symbol, pd.Series())
-            )
 
             classification = AssetClassification(
                 symbol=symbol,

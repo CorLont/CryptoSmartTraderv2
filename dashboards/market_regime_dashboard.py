@@ -112,7 +112,6 @@ class MarketRegimeDashboard:
         timeframes = ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"]
         selected_timeframe = st.sidebar.selectbox(
             "Timeframe", options=timeframes, index=timeframes.index("1h")
-        )
         st.session_state.selected_timeframe = selected_timeframe
 
         # Data period
@@ -287,7 +286,6 @@ class MarketRegimeDashboard:
                                                 },
                                             },
                                         )
-                                    )
                                     fig.update_layout(height=300)
                                     st.plotly_chart(fig, use_container_width=True)
 
@@ -830,8 +828,7 @@ class MarketRegimeDashboard:
                 volatility = recent_data["close"].pct_change().rolling(10).std()
                 fig.add_trace(
                     go.Scatter(
-                        x=recent_data.index, y=volatility, name="Volatility", line=dict(color="red")
-                    ),
+                        x=recent_data.index, y=volatility, name="Volatility", line=dict(color="red"),
                     row=2,
                     col=1,
                 )
@@ -922,8 +919,7 @@ class MarketRegimeDashboard:
                 volatility = recent_data["close"].pct_change().rolling(10).std()
                 fig.add_trace(
                     go.Scatter(
-                        x=recent_data.index, y=volatility, name="Volatility", line=dict(color="red")
-                    ),
+                        x=recent_data.index, y=volatility, name="Volatility", line=dict(color="red"),
                     row=2,
                     col=1,
                 )

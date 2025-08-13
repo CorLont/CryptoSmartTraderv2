@@ -576,7 +576,6 @@ class BacktestEngine:
 
             profit_factor = (
                 (sum(winning_trades) / abs(sum(losing_trades))) if losing_trades else float("inf")
-            )
             avg_win = np.mean(winning_trades) if winning_trades else 0
             avg_loss = np.mean(losing_trades) if losing_trades else 0
             win_loss_ratio = abs(avg_win / avg_loss) if avg_loss != 0 else float("inf")

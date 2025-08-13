@@ -438,8 +438,7 @@ class MetricsCollector:
     ):
         """Record API request metrics."""
         self.api_request_duration.labels(
-            endpoint=endpoint, method=method, status_code=str(status_code)
-        ).observe(duration_seconds)
+            endpoint=endpoint, method=method, status_code=str(status_code).observe(duration_seconds)
 
         # Check for high error rate
         if status_code >= 400:

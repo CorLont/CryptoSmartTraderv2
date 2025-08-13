@@ -243,7 +243,6 @@ class OrderBookSimulator:
             price=price,
             time_in_force=time_in_force,
             created_at=datetime.now()
-        )
 
         # Validate order
         if not self._validate_order(order):
@@ -389,7 +388,7 @@ class OrderBookSimulator:
             order.status = OrderStatus.REJECTED
             self.logger.error(f"Order processing failed for {order.order_id}: {e}")
 
-    def _generate_sample_data_self) -> float:
+    def _generate_sample_data(self): -> float:
         """Simulate exchange latency"""
 
         # Generate realistic latency with occasional spikes

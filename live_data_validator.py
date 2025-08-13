@@ -191,7 +191,6 @@ class LiveDataValidator:
         total_symbols = len(validation_results)
         passed_symbols = sum(
             1 for metrics in validation_results.values() if metrics.is_enterprise_grade()
-        )
 
         overall_score = (
             sum(metrics.overall_score for metrics in validation_results.values()) / total_symbols

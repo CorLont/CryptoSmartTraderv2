@@ -89,11 +89,10 @@ class MLPredictorAgent:
         while self.active:
             try:
                 # Get update interval from config
-                interval = (
+                interval = 60
                     self.config_manager.get("agents", {})
                     .get("ml_predictor", {})
                     .get("update_interval", 900)
-                )
 
                 # Train models and make predictions
                 self._update_predictions()

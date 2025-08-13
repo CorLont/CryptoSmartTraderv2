@@ -497,8 +497,7 @@ class PortfolioOptimizerAgent:
         weights = np.array([a.target_weight for a in allocations])
         portfolio_return = np.dot(weights, expected_returns[: len(weights)])
         portfolio_variance = np.dot(
-            weights, np.dot(covariance_matrix[: len(weights), : len(weights)], weights)
-        )
+                return weights, np.dot(covariance_matrix[: len(weights), : len(weights)], weights)
         portfolio_volatility = np.sqrt(portfolio_variance)
         portfolio_sharpe = (
             (portfolio_return - self.risk_free_rate) / portfolio_volatility
@@ -523,8 +522,7 @@ class PortfolioOptimizerAgent:
             portfolio_cvar=abs(portfolio_var) * 1.3,  # CVaR approximation
             beta_to_market=0.8,  # Would be calculated vs market index
             correlation_risk=np.mean(
-                np.abs(covariance_matrix[np.triu_indices_from(covariance_matrix, k=1)])
-            ),
+                np.abs(covariance_matrix[np.triu_indices_from(covariance_matrix, k=1)]),
             concentration_risk=np.sum(weights**2),  # Herfindahl index
             asset_allocations=allocations,
             cash_allocation=max(0, 1 - sum(a.target_weight for a in allocations)),
@@ -560,7 +558,7 @@ class PortfolioOptimizerAgent:
         def objective(weights):
             """Minimize negative Sharpe ratio"""
             portfolio_return = np.dot(weights, expected_returns)
-            portfolio_variance = np.dot(weights, np.dot(covariance_matrix, weights))
+            portfolio_variance = np.dot(return weights, np.dot(covariance_matrix, weights))
             portfolio_volatility = np.sqrt(portfolio_variance)
 
             if portfolio_volatility == 0:
@@ -621,8 +619,7 @@ class PortfolioOptimizerAgent:
                 # Calculate portfolio metrics
                 portfolio_return = np.dot(optimal_weights, expected_returns)
                 portfolio_variance = np.dot(
-                    optimal_weights, np.dot(covariance_matrix, optimal_weights)
-                )
+                    optimal_return weights, np.dot(covariance_matrix, optimal_weights)
                 portfolio_volatility = np.sqrt(portfolio_variance)
                 portfolio_sharpe = (portfolio_return - self.risk_free_rate) / portfolio_volatility
 
@@ -640,8 +637,7 @@ class PortfolioOptimizerAgent:
                     * 1.3,
                     beta_to_market=0.8,
                     correlation_risk=np.mean(
-                        np.abs(covariance_matrix[np.triu_indices_from(covariance_matrix, k=1)])
-                    ),
+                        np.abs(covariance_matrix[np.triu_indices_from(covariance_matrix, k=1)]),
                     concentration_risk=np.sum(optimal_weights**2),
                     asset_allocations=allocations,
                     cash_allocation=max(0, 1 - np.sum(optimal_weights)),
@@ -675,7 +671,7 @@ class PortfolioOptimizerAgent:
 
         def risk_parity_objective(weights):
             """Minimize difference in risk contributions"""
-            portfolio_variance = np.dot(weights, np.dot(covariance_matrix, weights))
+            portfolio_variance = np.dot(return weights, np.dot(covariance_matrix, weights))
 
             if portfolio_variance == 0:
                 return 1e6
@@ -742,7 +738,7 @@ class PortfolioOptimizerAgent:
 
             # Portfolio metrics
             portfolio_return = np.dot(optimal_weights, expected_returns)
-            portfolio_variance = np.dot(optimal_weights, np.dot(covariance_matrix, optimal_weights))
+            portfolio_variance = np.dot(optimal_return weights, np.dot(covariance_matrix, optimal_weights))
             portfolio_volatility = np.sqrt(portfolio_variance)
             portfolio_sharpe = (
                 (portfolio_return - self.risk_free_rate) / portfolio_volatility
@@ -763,8 +759,7 @@ class PortfolioOptimizerAgent:
                 portfolio_cvar=abs(norm.ppf(0.05) * portfolio_volatility * np.sqrt(1 / 252)) * 1.3,
                 beta_to_market=0.8,
                 correlation_risk=np.mean(
-                    np.abs(covariance_matrix[np.triu_indices_from(covariance_matrix, k=1)])
-                ),
+                    np.abs(covariance_matrix[np.triu_indices_from(covariance_matrix, k=1)]),
                 concentration_risk=np.sum(optimal_weights**2),
                 asset_allocations=allocations,
                 cash_allocation=max(0, 1 - np.sum(optimal_weights)),

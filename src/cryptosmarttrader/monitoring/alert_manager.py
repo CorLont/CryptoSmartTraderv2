@@ -217,7 +217,6 @@ class AlertManager:
                     "description": "Error rate has exceeded 10 errors in the last 3 minutes",
                 },
             )
-        )
 
         # High API latency
         self.add_alert_rule(
@@ -236,7 +235,6 @@ class AlertManager:
                     "description": "API requests taking longer than 2 seconds",
                 },
             )
-        )
 
         # High slippage
         self.add_alert_rule(
@@ -255,7 +253,6 @@ class AlertManager:
                     "description": "Trading slippage exceeds 50 basis points",
                 },
             )
-        )
 
         # Large daily loss
         self.add_alert_rule(
@@ -275,7 +272,6 @@ class AlertManager:
                     "description": "Daily P&L loss exceeds $5,000",
                 },
             )
-        )
 
         # High drawdown
         self.add_alert_rule(
@@ -294,7 +290,6 @@ class AlertManager:
                     "description": "Portfolio drawdown exceeds 8%",
                 },
             )
-        )
 
         # System health critical
         self.add_alert_rule(
@@ -313,7 +308,6 @@ class AlertManager:
                     "description": "System health score below 30%",
                 },
             )
-        )
 
         # Circuit breaker triggered
         self.add_alert_rule(
@@ -332,7 +326,6 @@ class AlertManager:
                     "description": "Trading circuit breaker has been triggered",
                 },
             )
-        )
 
         # Kill switch activation
         self.add_alert_rule(
@@ -352,7 +345,6 @@ class AlertManager:
                     "description": "Emergency kill switch has been activated - immediate action required",
                 },
             )
-        )
 
         # Data staleness
         self.add_alert_rule(
@@ -371,7 +363,6 @@ class AlertManager:
                     "description": "Market data is older than 5 minutes",
                 },
             )
-        )
 
         # High memory usage
         self.add_alert_rule(
@@ -390,7 +381,6 @@ class AlertManager:
                     "description": "System memory usage exceeds 85%",
                 },
             )
-        )
 
     def _setup_default_silence_schedules(self):
         """Setup default silence schedules"""
@@ -406,7 +396,6 @@ class AlertManager:
                 severity_filter=[AlertSeverity.INFO, AlertSeverity.WARNING],
                 active=True,
             )
-        )
 
         # Weekend silence (reduce non-critical alerts)
         self.add_silence_schedule(
@@ -419,7 +408,6 @@ class AlertManager:
                 severity_filter=[AlertSeverity.INFO, AlertSeverity.WARNING],
                 active=True,
             )
-        )
 
     def add_alert_rule(self, rule: AlertRule):
         """Add an alert rule"""

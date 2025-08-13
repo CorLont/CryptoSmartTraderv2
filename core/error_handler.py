@@ -372,7 +372,6 @@ class CentralizedErrorHandler:
                 for hour, count in self.error_stats["errors_by_hour"].items()
                 if datetime.fromisoformat(hour.replace(" ", "T") + ":00")
                 > datetime.now() - timedelta(hours=24)
-            )
 
             # Score calculation (0.0 to 1.0)
             base_score = 1.0 - min(recent_errors / 100, 0.8)  # Cap error impact
@@ -473,7 +472,6 @@ def with_retry(category: str = ErrorCategory.NETWORK, max_attempts: int = None):
             # Get retry strategy
             retry_strategy = error_handler.retry_strategies.get(
                 category, RetryStrategy(max_attempts=max_attempts or 3)
-            )
 
             last_exception = None
             for attempt in range(retry_strategy.max_attempts):

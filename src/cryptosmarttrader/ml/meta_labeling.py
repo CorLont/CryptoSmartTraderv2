@@ -67,7 +67,6 @@ class TripleBarrierLabeler:
                 vertical_barrier = signal_time + pd.Timedelta(days=self.max_hold_days)
                 pt_threshold, sl_threshold = self.get_horizontal_barriers(
                     price_data["close"], pd.Series([signal_vol])
-                )
 
                 pt_price = signal_price * (1 + pt_threshold.iloc[0])
                 sl_price = signal_price * (1 + sl_threshold.iloc[0])

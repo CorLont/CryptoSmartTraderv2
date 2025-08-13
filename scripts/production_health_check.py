@@ -236,7 +236,6 @@ class ProductionHealthChecker:
                 )
                 loaded_models = sum(
                     1 for status in model_status.values() if status.get("loaded", False)
-                )
             except Exception:
                 loaded_models = 0
 

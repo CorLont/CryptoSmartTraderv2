@@ -173,8 +173,7 @@ class AutomatedFeatureEngineer:
             # Market session features
             temporal_features["is_weekend"] = (data.index.dayofweek >= 5).astype(int)
             temporal_features["is_market_hours"] = (
-                (data.index.hour >= 9) & (data.index.hour <= 16)
-            ).astype(int)
+                (data.index.hour >= 9) & (data.index.hour <= 16).astype(int)
 
             # Cyclical encoding for time features
             temporal_features["hour_sin"] = np.sin(2 * np.pi * temporal_features["hour"] / 24)
@@ -274,11 +273,9 @@ class AutomatedFeatureEngineer:
                 rolling_vol = returns.rolling(20).std()
 
                 regime_features["high_volatility_regime"] = (
-                    rolling_vol > rolling_vol.quantile(0.8)
-                ).astype(int)
+                    rolling_vol > rolling_vol.quantile(0.8).astype(int)
                 regime_features["low_volatility_regime"] = (
-                    rolling_vol < rolling_vol.quantile(0.2)
-                ).astype(int)
+                    rolling_vol < rolling_vol.quantile(0.2).astype(int)
 
                 # Trend regime features
                 sma_short = data["close"].rolling(10).mean()
@@ -424,7 +421,6 @@ class MetaLearningEngine:
             elif regime == MarketRegime.SIDEWAYS_VOLATILE:
                 mask = (abs(returns.rolling(20).mean()) < returns.rolling(20).std()) & (
                     volatility > volatility.quantile(0.4)
-                )
             elif regime == MarketRegime.CRISIS_MODE:
                 mask = volatility > volatility.quantile(0.9)
             else:  # RECOVERY_MODE
@@ -649,7 +645,6 @@ class AdversarialRobustnessEngine:
                     stressed_returns = returns * scenario["volatility_multiplier"]
                     stressed_data["close"] = (
                         stressed_data["close"].iloc[0] * (1 + stressed_returns).cumprod()
-                    )
 
             if "volume_shock" in scenario:
                 if "volume" in stressed_data.columns:

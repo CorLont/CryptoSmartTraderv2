@@ -482,8 +482,7 @@ class SystemMonitor:
             any(
                 not service.is_accessible
                 for service in services
-                if "dashboard" in service.name.lower()
-            ),
+                if "dashboard" in service.name.lower(),
         ]
 
         if any(critical_conditions):

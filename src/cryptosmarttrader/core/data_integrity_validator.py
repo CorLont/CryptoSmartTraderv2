@@ -136,7 +136,6 @@ class DataIntegrityValidator:
                             description=f"Obvious placeholder value: {value}",
                             timestamp=datetime.now(),
                         )
-                    )
 
                 # Check for common test values
                 if value in self.synthetic_patterns["common_test_values"]:
@@ -149,7 +148,6 @@ class DataIntegrityValidator:
                             description=f"Common test value: {value}",
                             timestamp=datetime.now(),
                         )
-                    )
 
                 # Check for repeated decimal patterns
                 str_value = str(value)
@@ -166,7 +164,6 @@ class DataIntegrityValidator:
                                     description=f"Repeated decimal pattern in {value}",
                                     timestamp=datetime.now(),
                                 )
-                            )
 
             elif isinstance(value, str):
                 # Check for synthetic string indicators
@@ -192,7 +189,6 @@ class DataIntegrityValidator:
                             description=f"Synthetic string indicator: {value}",
                             timestamp=datetime.now(),
                         )
-                    )
 
         return violations
 
@@ -215,7 +211,6 @@ class DataIntegrityValidator:
                             f"[{range_config['min']}, {range_config['max']}]",
                             timestamp=datetime.now(),
                         )
-                    )
 
         # Check logical relationships
         try:
@@ -237,7 +232,6 @@ class DataIntegrityValidator:
                             description=f"High ({high}) less than low ({low})",
                             timestamp=datetime.now(),
                         )
-                    )
 
                 if open_price < low or open_price > high:
                     violations.append(
@@ -249,7 +243,6 @@ class DataIntegrityValidator:
                             description=f"Open ({open_price}) outside high-low range",
                             timestamp=datetime.now(),
                         )
-                    )
 
                 if close < low or close > high:
                     violations.append(
@@ -261,7 +254,6 @@ class DataIntegrityValidator:
                             description=f"Close ({close}) outside high-low range",
                             timestamp=datetime.now(),
                         )
-                    )
 
             if all(k in data for k in ["bid", "ask"]):
                 bid, ask = data["bid"], data["ask"]
@@ -275,7 +267,6 @@ class DataIntegrityValidator:
                             description=f"Bid ({bid}) >= ask ({ask}) - invalid spread",
                             timestamp=datetime.now(),
                         )
-                    )
 
         except (KeyError, TypeError, ValueError):
             # Skip logical checks if data is incomplete or malformed
@@ -330,7 +321,6 @@ class DataIntegrityValidator:
                         description=f"{max_consecutive} consecutive identical values in {field}",
                         timestamp=datetime.now(),
                     )
-                )
 
             # Check for unrealistic low variance (interpolation indicator)
             if len(values) >= 5:
@@ -349,7 +339,6 @@ class DataIntegrityValidator:
                                 description=f"Unrealistically low variance in {field}: {relative_variance:.6f}",
                                 timestamp=datetime.now(),
                             )
-                        )
 
         return violations
 
@@ -375,7 +364,6 @@ class DataIntegrityValidator:
                             description=f"NaN value in {field}",
                             timestamp=datetime.now(),
                         )
-                    )
 
                 if math.isinf(value):
                     violations.append(
@@ -387,7 +375,6 @@ class DataIntegrityValidator:
                             description=f"Infinite value in {field}",
                             timestamp=datetime.now(),
                         )
-                    )
 
             # Check for malformed string data
             if isinstance(value, str):
@@ -402,7 +389,6 @@ class DataIntegrityValidator:
                             description=f"Unreasonably long string in {field} ({len(value)} chars)",
                             timestamp=datetime.now(),
                         )
-                    )
 
                 # Check for control characters or binary data
                 if any(ord(c) < 32 and c not in "\n\r\t" for c in value):
@@ -415,7 +401,6 @@ class DataIntegrityValidator:
                             description=f"Control characters detected in {field}",
                             timestamp=datetime.now(),
                         )
-                    )
 
         return violations
 
@@ -448,7 +433,6 @@ class DataIntegrityValidator:
                                 description=f"Suspiciously round number in {field}: {value}",
                                 timestamp=datetime.now(),
                             )
-                        )
 
             # Check for values that are exact powers of 10
             if value > 0:
@@ -463,7 +447,6 @@ class DataIntegrityValidator:
                             description=f"Value is exact power of 10 in {field}: {value}",
                             timestamp=datetime.now(),
                         )
-                    )
 
         return violations
 
@@ -497,7 +480,6 @@ class DataIntegrityValidator:
                             description=f"{len(duplicates)} duplicate timestamps found",
                             timestamp=datetime.now(),
                         )
-                    )
 
                 # Check for irregular time intervals
                 time_diffs = df["timestamp"].diff().dropna()
@@ -515,7 +497,6 @@ class DataIntegrityValidator:
                                 description=f"Irregular time intervals detected: {len(irregular_diffs)} anomalies",
                                 timestamp=datetime.now(),
                             )
-                        )
 
             # Check for data gaps or suspicious patterns in price data
             for price_field in ["price", "close", "open"]:
@@ -545,7 +526,6 @@ class DataIntegrityValidator:
                                     description=f"{flat_sequences} flat price sequences in {price_field}",
                                     timestamp=datetime.now(),
                                 )
-                            )
 
         except Exception as e:
             violations.append(
@@ -557,7 +537,6 @@ class DataIntegrityValidator:
                     description=f"Error analyzing time series: {e}",
                     timestamp=datetime.now(),
                 )
-            )
 
         # Time series is valid if no high-confidence violations
         critical_violations = [v for v in violations if v.confidence >= 0.8]

@@ -247,7 +247,6 @@ class EnterpriseRiskMitigation:
                     auto_action_taken=False,
                     manual_intervention_required=True,
                 )
-            )
 
         # Model performance risks
         model_perf = metrics["model_performance"]
@@ -267,7 +266,6 @@ class EnterpriseRiskMitigation:
                     auto_action_taken=True,
                     manual_intervention_required=True,
                 )
-            )
 
         # System resource risks
         system_res = metrics["system_resources"]
@@ -284,7 +282,6 @@ class EnterpriseRiskMitigation:
                     auto_action_taken=True,
                     manual_intervention_required=False,
                 )
-            )
 
         # Trading risks
         trading = metrics["trading_risk"]
@@ -302,7 +299,6 @@ class EnterpriseRiskMitigation:
                     auto_action_taken=True,
                     manual_intervention_required=True,
                 )
-            )
 
         return risk_events
 

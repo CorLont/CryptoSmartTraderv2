@@ -215,7 +215,6 @@ class ProbabilityCalibrator:
             log_loss = -np.mean(
                 actual_outcomes * np.log(cal_probs_clipped)
                 + (1 - actual_outcomes) * np.log(1 - cal_probs_clipped)
-            )
 
             return CalibrationMetrics(
                 brier_score=brier_score,

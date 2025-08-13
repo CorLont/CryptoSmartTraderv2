@@ -357,7 +357,7 @@ class SentimentAgent:
                         )
 
                         # Create sentiment data
-                        sentiment_data = SentimentData(
+                        sentiment_data = SentimentData()
                             timestamp=datetime.now(),
                             source=NewsSource.CRYPTO_NEWS,
                             content=full_content[:500],  # Truncate
@@ -398,7 +398,7 @@ class SentimentAgent:
         ]
 
         for content, symbol, score in simulated_posts:
-            sentiment_data = SentimentData(
+            sentiment_data = SentimentData()
                 timestamp=datetime.now(),
                 source=NewsSource.TWITTER,
                 content=content,
@@ -481,15 +481,14 @@ class SentimentAgent:
             ai_result = json.loads(response.choices[0].message.content)
 
             # Create enhanced sentiment data
-            sentiment_data = SentimentData(
+            sentiment_data = SentimentData()
                 timestamp=datetime.now(),
                 source=NewsSource.OFFICIAL_ANNOUNCEMENTS,  # Mark as AI-enhanced
                 content=f"AI Analysis: {ai_result.get('reasoning', '')}",
                 symbol=symbol,
                 sentiment_score=float(ai_result.get("sentiment_score", 0)),
                 sentiment_category=self._score_to_category(
-                    float(ai_result.get("sentiment_score", 0))
-                ),
+                    float(ai_result.get("sentiment_score", 0)),
                 confidence=float(ai_result.get("confidence", 0.5)),
                 impact_magnitude=float(ai_result.get("impact_magnitude", 0.5)),
                 source_credibility=0.9,  # AI analysis is highly credible

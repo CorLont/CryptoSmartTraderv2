@@ -174,8 +174,7 @@ class GPUOptimizer:
             if (
                 self.gpu_available
                 and CUPY_AVAILABLE
-                and self.config_manager.get("enable_gpu", False)
-            ):
+                and self.config_manager.get("enable_gpu", False):
                 # Use GPU computation
                 gpu_data = cp.asarray(data)
 
@@ -248,8 +247,7 @@ class GPUOptimizer:
             if (
                 self.gpu_available
                 and CUPY_AVAILABLE
-                and self.config_manager.get("enable_gpu", False)
-            ):
+                and self.config_manager.get("enable_gpu", False):
                 # Use GPU computation
                 gpu_a = cp.asarray(matrix_a)
 

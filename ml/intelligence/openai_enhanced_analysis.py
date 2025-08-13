@@ -553,8 +553,7 @@ class OpenAIEnhancedAnalyzer:
             if returns.tail(7).std() > 0
             else 0,
             "max_drawdown_7d": float(
-                (prices.tail(7).max() - prices.tail(7).min()) / prices.tail(7).max()
-            ),
+                (prices.tail(7).max() - prices.tail(7).min()) / prices.tail(7).max(),
         }
 
 

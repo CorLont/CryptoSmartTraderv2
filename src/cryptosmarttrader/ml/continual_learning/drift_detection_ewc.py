@@ -323,7 +323,7 @@ class ReplayBuffer:
             batch_size = len(self.buffer)
 
         if self.sampling_strategy == 'random':
-            indices = np.random.normal(0, 1), batch_size, replace=False)
+            indices = np.random.choice(range(1000), batch_size, replace=False)
             samples = [self.buffer[i] for i in indices]
         elif self.sampling_strategy == 'balanced':
             # Balance between current and previous tasks
@@ -349,7 +349,7 @@ class ReplayBuffer:
                 samples = current_samples
         else:
             # Default to random
-            indices = np.random.normal(0, 1), batch_size, replace=False)
+            indices = np.random.choice(range(1000), batch_size, replace=False)
             samples = [self.buffer[i] for i in indices]
 
         # Convert to arrays
@@ -481,7 +481,6 @@ class ContinualLearningManager:
             # Sample from replay buffer
             X_replay, y_replay = self.replay_buffer.sample_batch(
                 batch_size=min(1000, len(self.replay_buffer.buffer))
-            )
 
             # Combine new data with replay data
             X_combined = np.vstack([X_new, X_replay])
@@ -628,7 +627,6 @@ def example_continual_learning():
                 nn.Linear(32, 16),
                 nn.ReLU(),
                 nn.Linear(16, 1)
-            )
 
         def forward(self, x):
             return self.layers(x)

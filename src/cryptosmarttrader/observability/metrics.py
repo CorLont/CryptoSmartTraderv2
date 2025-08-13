@@ -483,13 +483,11 @@ class PrometheusMetricsServer:
 
             elif "cpu_usage" in metric_name:
                 self.prom_metrics["cpu_usage"].labels(
-                    agent=metric_value.labels.get("agent", "system")
-                ).set(metric_value.value)
+                    agent=metric_value.labels.get("agent", "system").set(metric_value.value)
 
             elif "memory_usage" in metric_name:
                 self.prom_metrics["memory_usage"].labels(
-                    agent=metric_value.labels.get("agent", "system")
-                ).set(metric_value.value * 1024 * 1024)  # Convert MB to bytes
+                    agent=metric_value.labels.get("agent", "system").set(metric_value.value * 1024 * 1024)  # Convert MB to bytes
 
             elif "gpu" in metric_name and "usage" in metric_name:
                 self.prom_metrics["gpu_usage"].labels(

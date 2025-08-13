@@ -244,8 +244,7 @@ class OrderIdempotencyTester:
 
         # Validate results
         all_orders_unique = len(
-            set(r.exchange_order_id for r in execution_results if r.exchange_order_id)
-        ) == len([r for r in execution_results if r.exchange_order_id])
+            set(r.exchange_order_id for r in execution_results if r.exchange_order_id) == len([r for r in execution_results if r.exchange_order_id])
         all_idempotent = all(r.idempotency_validated for r in execution_results)
         no_duplicates = not any(r.duplicate_detected for r in execution_results)
 

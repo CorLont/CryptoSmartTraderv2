@@ -63,8 +63,7 @@ class BayesianUncertaintyModel:
                 # Gaussian Process models for uncertainty
                 for horizon in self.uncertainty_models.keys():
                     kernel = 1.0 * RBF(
-                        length_scale=1.0, length_scale_bounds=(1e-2, 1e2)
-                    ) + WhiteKernel(noise_level=1e-5, noise_level_bounds=(1e-10, 1e1))
+                        length_scale=1.0, length_scale_bounds=(1e-2, 1e2) + WhiteKernel(noise_level=1e-5, noise_level_bounds=(1e-10, 1e1))
 
                     self.uncertainty_models[horizon] = GaussianProcessRegressor(
                         kernel=kernel,

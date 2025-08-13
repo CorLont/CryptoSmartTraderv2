@@ -126,9 +126,8 @@ class FeatureEngineer:
             # High/Low ratios
             df[f"hl_ratio_{period}"] = (
                 df["high"].rolling(period).max() / df["low"].rolling(period).min()
-            )
 
-        return df
+            return df
 
     def _add_technical_features(self, df: pd.DataFrame, periods: List[int]) -> pd.DataFrame:
         """Add technical indicator features"""
@@ -151,7 +150,7 @@ class FeatureEngineer:
                 df[f"bb_upper_{period}"] - df[f"bb_lower_{period}"]
             )
 
-        return df
+            return df
 
     def _add_volume_features(self, df: pd.DataFrame, periods: List[int]) -> pd.DataFrame:
         """Add volume-based features"""
@@ -169,7 +168,7 @@ class FeatureEngineer:
         # On-balance volume
         df["obv"] = (np.sign(df["close"].diff()) * df["volume"]).fillna(0).cumsum()
 
-        return df
+            return df
 
     def _add_volatility_features(self, df: pd.DataFrame, periods: List[int]) -> pd.DataFrame:
         """Add volatility features"""
@@ -186,7 +185,7 @@ class FeatureEngineer:
             if period > 5:
                 df[f"vol_ratio_{period}"] = df[f"volatility_{period}"] / df[f"volatility_5"]
 
-        return df
+            return df
 
     def _add_cross_asset_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add cross-asset correlation features"""
@@ -196,7 +195,7 @@ class FeatureEngineer:
         df["btc_correlation_placeholder"] = 0.5
         df["market_beta_placeholder"] = 1.0
 
-        return df
+            return df
 
     def _apply_regime_weights(self, df: pd.DataFrame, regime: str) -> pd.DataFrame:
         """Apply regime-specific feature weights"""
@@ -210,7 +209,7 @@ class FeatureEngineer:
                 if df[col].dtype in ["float64", "int64"]:
                     df[col] = df[col] * weight
 
-        return df
+            return df
 
     def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
         """Calculate RSI"""
@@ -413,7 +412,6 @@ class EnsemblePredictor:
                     pred = model.predict(latest_features_scaled)
                     model_predictions.append(
                         float(pred[0]) if hasattr(pred, "__len__") else float(pred)
-                    )
                     model_names.append(model_name)
             except Exception as e:
                 self.logger.error(f"Model {model_name} prediction failed: {e}")

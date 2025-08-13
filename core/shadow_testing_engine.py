@@ -701,8 +701,7 @@ class ShadowTestingEngine:
             recent_accuracy = sum(
                 1
                 for record in recent_records
-                if record.get("predicted_outcome") == record.get("actual_outcome")
-            ) / len(recent_records)
+                if record.get("predicted_outcome") == record.get("actual_outcome") / len(recent_records)
 
             # Compare with shadow testing performance
             shadow_metrics = self.live_models[model_id]["shadow_performance"]

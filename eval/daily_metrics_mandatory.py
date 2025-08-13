@@ -225,7 +225,6 @@ class MandatoryDailyMetrics:
             2
             * (model_metrics["precision"] * model_metrics["recall"])
             / (model_metrics["precision"] + model_metrics["recall"])
-        )
 
         # Calculate overall performance score
         performance_score = (

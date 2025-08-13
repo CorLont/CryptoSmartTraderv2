@@ -183,8 +183,7 @@ class SystemOptimizer:
             if (
                 self.auto_optimization_enabled
                 and self.optimization_thread
-                and self.optimization_thread.is_alive()
-            ):
+                and self.optimization_thread.is_alive():
                 self.logger.warning("Auto-optimization already running")
                 return False
 

@@ -469,7 +469,6 @@ class OrderBookDataProvider:
                             exchange="kraken",
                             timestamp=datetime.now(),
                         )
-                    )
 
                 asks = []
                 for ask_data in pair_data.get("asks", []):
@@ -481,7 +480,6 @@ class OrderBookDataProvider:
                             exchange="kraken",
                             timestamp=datetime.now(),
                         )
-                    )
 
                 # Calculate spread and mid price
                 if bids and asks:

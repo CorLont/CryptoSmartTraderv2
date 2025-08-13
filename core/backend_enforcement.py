@@ -185,7 +185,6 @@ class BackendEnforcement:
         # Determine overall readiness
         all_ready = all(
             check.get("status") == "ready" for check in readiness_checks["checks"].values()
-        )
 
         readiness_checks["overall_ready"] = all_ready
         readiness_checks["go_no_go"] = "GO" if all_ready else "NO-GO"

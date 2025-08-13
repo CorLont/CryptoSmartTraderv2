@@ -218,8 +218,7 @@ def test_great_expectations_mock():
         available_symbols = df["symbol"].unique()
 
         coverage_percentage = len(
-            set(available_symbols).intersection(set(mock_kraken_symbols))
-        ) / len(mock_kraken_symbols)
+            set(available_symbols).intersection(set(mock_kraken_symbols)) / len(mock_kraken_symbols)
 
         print(f"   Kraken symbols: {len(mock_kraken_symbols)}")
         print(f"   Available symbols: {len(available_symbols)}")

@@ -494,8 +494,7 @@ class SystemReadinessChecker:
             # Calculate score based on calibration quality
             if calibration_found:
                 avg_confidence = sum(
-                    data.get("confidence", 0.0) for data in calibration_data.values()
-                ) / len(calibration_data)
+                    data.get("confidence", 0.0) for data in calibration_data.values() / len(calibration_data)
                 avg_drift = sum(data.get("drift", 1.0) for data in calibration_data.values()) / len(
                     calibration_data
                 )
@@ -607,8 +606,7 @@ class SystemReadinessChecker:
                     score = file_coverage + health_quality
                 else:
                     score = (
-                        files_found / len(required_files)
-                    ) * 50  # Partial credit for file existence
+                        files_found / len(required_files) * 50  # Partial credit for file existence
             else:
                 if fallback_behavior == "strict":
                     score = 0.0

@@ -279,7 +279,6 @@ class SmartExecutionEngine:
                         urgency_score=urgency,
                         expected_impact=50.0,  # Higher impact expected
                     )
-                )
 
             return slices
 
@@ -332,7 +331,6 @@ class SmartExecutionEngine:
                         urgency_score=0.2,  # Low urgency
                         expected_impact=10.0,  # Low impact expected
                     )
-                )
 
             return slices
 
@@ -379,7 +377,6 @@ class SmartExecutionEngine:
                         urgency_score=0.6,
                         expected_impact=25.0,
                     )
-                )
 
             return slices
 
@@ -421,7 +418,6 @@ class SmartExecutionEngine:
                         urgency_score=urgency,
                         expected_impact=20.0,
                     )
-                )
 
             return slices
 

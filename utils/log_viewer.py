@@ -228,8 +228,7 @@ class LogViewer:
                         "Coin": log["data"].get("coin", "N/A"),
                         "Confidence": log["data"].get("confidence", 0),
                         "Expected Returns": str(
-                            log["data"].get("prediction_data", {}).get("expected_returns", {})
-                        ),
+                            log["data"].get("prediction_data", {}).get("expected_returns", {}),
                         "Sentiment": log["data"]
                         .get("prediction_data", {})
                         .get("sentiment_score", 0),

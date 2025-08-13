@@ -268,8 +268,7 @@ class KrakenCoverageAuditor:
                 if (
                     market.get("active", False)
                     and market.get("type") == "spot"
-                    and not market.get("info", {}).get("wsname", "").startswith(".")
-                ):  # Skip .d pairs
+                    and not market.get("info", {}).get("wsname", "").startswith("."):  # Skip .d pairs
                     tradeable_tickers.append(symbol)
 
             # Sort for consistent ordering
@@ -343,7 +342,6 @@ class KrakenCoverageAuditor:
                     market_cap_tier=market_cap_tier,
                     metadata={"first_detected": current_time.isoformat()},
                 )
-            )
 
         # Detect delistings
         delistings = previous_tradeable - current_tradeable
@@ -358,7 +356,6 @@ class KrakenCoverageAuditor:
                     impact_score=0.5,  # Medium impact for delistings
                     metadata={"delisted_at": current_time.isoformat()},
                 )
-            )
 
         # Detect missing coverage
         missing_coverage = current_tradeable - current_covered
@@ -377,7 +374,6 @@ class KrakenCoverageAuditor:
                     market_cap_tier=self._classify_market_cap_tier(volume_24h),
                     metadata={"volume_24h": volume_24h},
                 )
-            )
 
         # Detect restored coverage
         restored_coverage = (current_covered & previous_tradeable) - previous_covered
@@ -392,7 +388,6 @@ class KrakenCoverageAuditor:
                     impact_score=0.3,
                     metadata={"restored_at": current_time.isoformat()},
                 )
-            )
 
         return changes
 

@@ -226,8 +226,7 @@ class SmartExecutionEngine:
                 price_limit=None,
                 timestamp=datetime.now(),
                 urgency_score=urgency,
-                expected_impact=impact_estimate.get('total_impact_bps', 100.0)
-            )]
+                expected_impact=impact_estimate.get('total_impact_bps', 100.0)]
 
     def _plan_aggressive_execution(self, symbol: str, total_quantity: float,
                                  side: str, market_data: Dict[str, Any],
@@ -557,7 +556,7 @@ class MarketImpactCoordinator:
             return {'error': str(e)}
 
     def _generate_sample_data_self, execution_plan: List[OrderSlice],
-                          market_data: Dict[str, Any]) -> ExecutionResult:
+                          market_data: dict[str, Any]) -> ExecutionResult:
         """Simulate execution for cost estimation"""
         try:
             if not execution_plan:
@@ -595,7 +594,6 @@ class MarketImpactCoordinator:
                 execution_time=execution_time,
                 strategy_used="simulated",
                 slices_executed=len(execution_plan)
-            )
 
         except Exception as e:
             self.logger.warning(f"Execution simulation failed: {e}")

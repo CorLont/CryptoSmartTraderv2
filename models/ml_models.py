@@ -228,7 +228,6 @@ class MLModelManager:
                     kernel=hyperparams.get('kernel', 'rbf'),
                     C=hyperparams.get('C', 1.0),
                     gamma=hyperparams.get('gamma', 'scale')
-                )
             
             else:
                 # Fallback to linear regression

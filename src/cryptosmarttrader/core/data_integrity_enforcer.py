@@ -297,8 +297,7 @@ class ProductionDataGuard:
                         data[column]
                         .astype(str)
                         .str.contains(placeholder, case=False, na=False)
-                        .any()
-                    ):
+                        .any():
                         violations.append(
                             {
                                 "type": "PLACEHOLDER_VALUES",

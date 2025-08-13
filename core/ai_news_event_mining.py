@@ -568,8 +568,7 @@ class EventDetector:
     def _generate_event_id(self, news: NewsEvent) -> str:
         """Generate unique event ID"""
         content_hash = hashlib.md5(
-            (news.title + news.url + str(news.timestamp)).encode()
-        ).hexdigest()[:12]
+            (news.title + news.url + str(news.timestamp)).encode().hexdigest()[:12]
 
         return f"event_{content_hash}"
 

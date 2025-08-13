@@ -763,7 +763,6 @@ class MLDifferentiatorsCoordinator:
                 self.confidence_filter.filter_high_confidence(
                     predictions, uncertainties, symbols[: len(predictions)]
                 )
-            )
 
             # 5. Anomaly detection
             X_flat = X_pred.reshape(X_pred.shape[0], -1)
@@ -772,8 +771,7 @@ class MLDifferentiatorsCoordinator:
             # 6. Generate explanations for high-confidence predictions
             explanations = []
             for i, (pred, conf, symbol) in enumerate(
-                zip(filtered_preds, confidences, filtered_symbols)
-            ):
+                zip(filtered_preds, confidences, filtered_symbols):
                 if i < len(X_flat):
                     explanation = self.explainer.explain_prediction(X_flat[i], pred, symbol)
                     explanations.append(explanation)

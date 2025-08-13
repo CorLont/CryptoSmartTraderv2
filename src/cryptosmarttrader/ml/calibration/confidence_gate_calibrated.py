@@ -236,8 +236,7 @@ class CalibratedConfidenceGate:
         if self.probability_calibrator and self.probability_calibrator.fitted:
             try:
                 calibrated_confidence = self.probability_calibrator.predict(
-                    np.array([raw_confidence])
-                )[0]
+                    np.array([raw_confidence])[0]
                 calibration_method = self.probability_calibrator.best_method.value
 
                 # Calculate calibration quality score

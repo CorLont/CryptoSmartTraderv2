@@ -104,7 +104,6 @@ class BlackSwanGenerator(ScenarioGenerator):
             risk_level="high",
             probability=0.01 if severity == 'severe' else 0.05,
             timestamp=datetime.now()
-        )
 
         return scenario
 
@@ -182,7 +181,6 @@ class RegimeShiftGenerator(ScenarioGenerator):
             risk_level="medium",
             probability=0.1,
             timestamp=datetime.now()
-        )
 
         return scenario
 
@@ -201,7 +199,7 @@ class FlashCrashGenerator(ScenarioGenerator):
         synthetic_data = base_data.copy()
 
         # Flash crash at random point
-        crash_start = np.random.normal(0, 1) - recovery_hours - 10)
+        crash_start = random.randint(1, 100) - recovery_hours - 10
         crash_end = crash_start + recovery_hours
 
         for col in synthetic_data.columns:
@@ -236,7 +234,6 @@ class FlashCrashGenerator(ScenarioGenerator):
             risk_level="high",
             probability=0.02,
             timestamp=datetime.now()
-        )
 
         return scenario
 
@@ -295,7 +292,6 @@ class WhaleManipulationGenerator(ScenarioGenerator):
             risk_level="high",
             probability=0.05,
             timestamp=datetime.now()
-        )
 
         return scenario
 
@@ -336,7 +332,6 @@ class AdversarialNoiseGenerator(ScenarioGenerator):
             risk_level="low",
             probability=0.3,
             timestamp=datetime.now()
-        )
 
         return scenario
 
@@ -373,7 +368,6 @@ class SyntheticDataAugmentationEngine:
                         for severity in ['mild', 'moderate', 'severe']:
                             scenario = self.generators[scenario_type].generate_scenario(
                                 base_data, severity=severity, duration_days=np.random.normal(0, 1)
-                            )
                             scenarios.append(scenario)
 
                     elif scenario_type == 'regime_shift':
@@ -390,7 +384,6 @@ class SyntheticDataAugmentationEngine:
                         for magnitude in [0.1, 0.15, 0.25]:
                             scenario = self.generators[scenario_type].generate_scenario(
                                 base_data, crash_magnitude=magnitude, recovery_hours=np.random.normal(0, 1)
-                            )
                             scenarios.append(scenario)
 
                     elif scenario_type == 'whale_manipulation':
@@ -405,7 +398,6 @@ class SyntheticDataAugmentationEngine:
                         for noise_type in ['gaussian', 'uniform', 'laplace']:
                             scenario = self.generators[scenario_type].generate_scenario(
                                 base_data, noise_type=noise_type, noise_intensity=np.random.normal(0, 1)
-                            )
                             scenarios.append(scenario)
 
                 except Exception as e:

@@ -249,8 +249,7 @@ class SignalDecayManager:
             analytics = {
                 "total_symbols": len(self.active_signals),
                 "total_active_signals": sum(
-                    len(signals) for signals in self.active_signals.values()
-                ),
+                    len(signals) for signals in self.active_signals.values(),
                 "config": {
                     "default_ttl_hours": self.config.default_ttl_hours,
                     "decay_function": self.config.decay_function.value,
@@ -375,7 +374,6 @@ class SignalDecayManager:
                     midpoint = ttl_hours * 0.7  # Decay accelerates at 70% of TTL
                     decay_factor = 1.0 / (
                         1.0 + np.exp(steepness * (age_hours - midpoint) / ttl_hours)
-                    )
                 else:
                     decay_factor = 1.0 - time_fraction  # Default to linear
 
@@ -448,13 +446,11 @@ class SignalDecayManager:
             # Weighted average of probabilities
             weighted_prob = sum(
                 w * signal.original_prediction.probability for w, signal in zip(weights, signals)
-            )
 
             # Weighted average of confidences (already decayed)
             weighted_confidence = sum(
                 w * signal.original_prediction.confidence * signal.decay_factor
                 for w, signal in zip(weights, signals)
-            )
 
             # Determine direction from weighted probability
             direction = "up" if weighted_prob > 0.5 else "down"

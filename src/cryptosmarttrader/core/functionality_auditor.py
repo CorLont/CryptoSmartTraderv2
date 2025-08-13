@@ -119,7 +119,7 @@ class FunctionalityAuditor:
 
         print(f"   Coverage: {coverage_percentage:.1f}%, Missing: {len(missing_symbols)}")
 
-    def _audit_no_generate_sample_data_self):
+    def _audit_no_generate_sample_data(self)::
         """Audit 2: No dummy/fallback in production"""
 
         print("🚫 Auditing no dummy/fallback policy...")

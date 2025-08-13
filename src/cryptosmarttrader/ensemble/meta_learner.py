@@ -134,7 +134,6 @@ class MetaLearner:
                     pred.model_name
                     for data in training_data
                     for pred in data["base_predictions"].values()
-                )
             )
 
             # Split data for validation
@@ -372,8 +371,7 @@ class MetaLearner:
                     # Confidence-weighted probability
                     if sum(confidences) > 0:
                         weighted_prob = sum(
-                            p * c for p, c in zip(probabilities, confidences)
-                        ) / sum(confidences)
+                            p * c for p, c in zip(probabilities, confidences) / sum(confidences)
                         feature_vector.append(weighted_prob)
                         if len(feature_names) == len(feature_vector) - 1:
                             feature_names.append("confidence_weighted_probability")

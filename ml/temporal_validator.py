@@ -268,7 +268,6 @@ class TemporalValidator:
             # Validate temporal integrity of engineered features
             validation_result = self.validate_temporal_integrity(
                 df_engineered, timestamp_col=timestamp_col, feature_cols=list(new_cols)
-            )
 
             validation_result.details["new_features"] = list(new_cols)
             return validation_result

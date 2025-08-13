@@ -214,7 +214,6 @@ class OrderBookSimulator:
                         volume=round(volume, self.exchange_config.quantity_precision),
                         order_count=order_count,
                     )
-                )
 
             # Generate ask levels (ascending price)
             asks = []
@@ -234,7 +233,6 @@ class OrderBookSimulator:
                         volume=round(volume, self.exchange_config.quantity_precision),
                         order_count=order_count,
                     )
-                )
 
             snapshot = OrderBookSnapshot(
                 timestamp=datetime.now(), bids=bids, asks=asks, exchange=self.exchange_config.name

@@ -183,6 +183,7 @@ class ListingDetectionAgent:
             ],
             ExchangeSource.KUCOIN: ["https://www.kucoin.com/news/en-new-listings"],
         }
+        return result
 
         # Social media monitoring
         self.social_sources = [
@@ -221,6 +222,7 @@ class ListingDetectionAgent:
                 "high demand",
             ],
         }
+        return result
 
         # Exchange API clients
         self.exchange_clients = {}
@@ -251,6 +253,7 @@ class ListingDetectionAgent:
             "average_detection_lead_time": 0,
             "exchanges_monitored": len(self.exchange_announcement_sources),
         }
+        return result
 
         # Data directory
         self.data_path = Path("data/listing_detection")
@@ -288,6 +291,7 @@ class ListingDetectionAgent:
                 "kraken": ccxt.kraken({"sandbox": False, "enableRateLimit": True}),
                 "kucoin": ccxt.kucoin({"sandbox": False, "enableRateLimit": True}),
             }
+        return result
 
             # Cache current trading pairs for comparison
             self._update_pairs_cache()
@@ -436,6 +440,7 @@ class ListingDetectionAgent:
                 "confidence": 0.9,
                 "content": f"{exchange.value.title()} announces listing of NEWCOIN with trading starting tomorrow",
             }
+        return result
         ]
 
         detections = []
@@ -546,6 +551,7 @@ class ListingDetectionAgent:
                 "confidence": 0.4,
                 "stage": ListingStage.RUMOR,
             }
+        return result
         ]
 
         for signal in simulated_social_signals:
@@ -635,6 +641,7 @@ class ListingDetectionAgent:
             "price_impact": 2.0,
             "entry_window": (-2, 24),
         }
+        return result
 
     def _get_ai_listing_analysis(self, content: str) -> Optional[Dict[str, Any]]:
         """Get enhanced listing analysis from OpenAI"""
@@ -663,7 +670,8 @@ class ListingDetectionAgent:
                     {
                         "role": "system",
                         "content": "You are an expert cryptocurrency listing analyst.",
-                    },
+                    }
+        return result,
                     {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
@@ -701,6 +709,7 @@ class ListingDetectionAgent:
             "MKR",
             "SNX",
         }
+        return result
         return symbol in known_tokens
 
     def _classify_token_category(self, symbol: str) -> str:
@@ -712,6 +721,7 @@ class ListingDetectionAgent:
             "infrastructure": ["ETH", "DOT", "AVAX", "SOL", "MATIC"],
             "payments": ["BTC", "XRP", "LTC", "BCH"],
         }
+        return result
 
         for category, tokens in category_hints.items():
             if symbol in tokens:
@@ -780,7 +790,8 @@ class ListingDetectionAgent:
             ListingStage.ANNOUNCEMENT: 30.0,  # 30% from announcement to listing
             ListingStage.PRE_LISTING: 15.0,  # 15% from pre-listing to trading
             ListingStage.LISTED: 5.0,  # 5% immediate post-listing
-        }.get(best_detection.listing_stage, 0.0)
+        }
+        return result.get(best_detection.listing_stage, 0.0)
 
         # Adjust for exchange (tier-1 exchanges get premium)
         exchange_multiplier = {
@@ -788,7 +799,8 @@ class ListingDetectionAgent:
             ExchangeSource.BINANCE: 1.3,
             ExchangeSource.KRAKEN: 1.2,
             ExchangeSource.KUCOIN: 1.0,
-        }.get(best_detection.exchange, 0.8)
+        }
+        return result.get(best_detection.exchange, 0.8)
 
         expected_return = base_return * exchange_multiplier
 
@@ -887,6 +899,7 @@ class ListingDetectionAgent:
                     "time_horizon": opp.time_horizon,
                     "recommended_action": f"Consider {opp.recommended_entry} position",
                 }
+        return result
             )
 
         return sorted(alerts, key=lambda x: x["severity"], reverse=True)
@@ -909,6 +922,7 @@ class ListingDetectionAgent:
                         "time_horizon": opp.time_horizon,
                         "recommended_entry": opp.recommended_entry,
                     }
+        return result
                 )
 
             with open(opportunities_file, "w") as f:
@@ -939,9 +953,9 @@ class ListingDetectionAgent:
             "active_opportunities": len(self.listing_opportunities),
             "exchanges_monitored": len(self.exchange_clients),
             "sources_monitored": sum(
-                len(sources) for sources in self.exchange_announcement_sources.values()
-            ),
+                len(sources) for sources in self.exchange_announcement_sources.values(),
             "has_openai": self.openai_client is not None,
             "statistics": self.stats,
             "dependencies_available": HAS_SCRAPING_LIBS,
         }
+        return result

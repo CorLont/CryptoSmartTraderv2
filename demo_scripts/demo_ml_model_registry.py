@@ -294,8 +294,7 @@ async def demonstrate_ml_model_registry():
         # Simulate canary completion by updating deployment info
         best_model.deployment_info = best_model.deployment_info or {}
         best_model.deployment_info["canary_start"] = (
-            datetime.utcnow() - timedelta(hours=73)
-        ).isoformat()
+            datetime.utcnow() - timedelta(hours=73).isoformat()
         best_model.status = ModelStatus.CANARY
         model_registry._save_registry()
 
@@ -491,7 +490,6 @@ async def demonstrate_ml_model_registry():
         comparison_df[
             ["version", "status", "accuracy", "sharpe_ratio", "risk_budget_pct"]
         ].to_string(index=False)
-    )
 
     # Demo 8: System Health Summary
     print("\n🏥 DEMO 8: System Health Summary")

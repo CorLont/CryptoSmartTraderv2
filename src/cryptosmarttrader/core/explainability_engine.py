@@ -319,7 +319,7 @@ class ExplainabilityEngine:
             self.logger.error(f"Explanation generation failed: {e}")
             return self._add_# REMOVED: Mock data pattern not allowed in productionpredictions_df)
 
-    def _add_generate_sample_data_self, predictions_df: pd.DataFrame) -> pd.DataFrame:
+    def _add_generate_sample_data(self, predictions_df: pd.DataFrame) -> pd.DataFrame:
         """Add dummy explanations when real explanations fail"""
 
         predictions_with_dummy = predictions_df.copy()

@@ -199,7 +199,6 @@ class DailyDashboardIntegrator:
                 line=dict(color="blue", width=2),
                 marker=dict(size=6),
             )
-        )
 
         # Add threshold lines
         fig.add_hline(
@@ -239,7 +238,6 @@ class DailyDashboardIntegrator:
                     name="Precision@K (%)",
                     line=dict(color="blue"),
                 )
-            )
 
         # Hit Rate
         if "hit_rate_conf80" in df.columns:
@@ -251,7 +249,6 @@ class DailyDashboardIntegrator:
                     name="Hit Rate (%)",
                     line=dict(color="green"),
                 )
-            )
 
         # Add target lines
         fig.add_hline(
@@ -292,7 +289,6 @@ class DailyDashboardIntegrator:
                 marker=dict(size=6),
                 fill="tonexty",
             )
-        )
 
         # Add target lines
         fig.add_hline(y=99, line_dash="dash", line_color="green", annotation_text="Target (99%)")
@@ -348,7 +344,6 @@ class DailyDashboardIntegrator:
                 text=df_plot["operational_status"],
                 textposition="middle center",
             )
-        )
 
         fig.update_layout(
             title="Operational Status Over Time",
@@ -410,7 +405,6 @@ class DailyDashboardIntegrator:
                 zmax=25,  # Max component score
                 colorbar=dict(title="Component Score"),
             )
-        )
 
         fig.update_layout(
             title="Health Component Scores Over Time", xaxis_title="Date", yaxis_title="Component"

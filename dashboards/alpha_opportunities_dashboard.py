@@ -191,7 +191,6 @@ class AlphaOpportunitiesDashboard:
                     opp.get("confidence", 0) >= 0.80
                     and opp.get("expected_return_30d", 0) >= 1.0  # 100%+ return
                     and opp.get("meets_criteria", False)
-                )
             ]
 
             # Show analysis summary

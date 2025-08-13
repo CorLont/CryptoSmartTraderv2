@@ -238,7 +238,6 @@ class TechnicalAnalysisAgent:
         # Check for missing data
         missing_percentage = data[required_columns].isnull().sum().sum() / (
             len(data) * len(required_columns)
-        )
         max_missing = self.config["data_quality"]["max_missing_percentage"]
 
         if missing_percentage > max_missing:
@@ -394,7 +393,6 @@ class TechnicalAnalysisAgent:
 
             current_rsi = (
                 float(rsi_values.iloc[-1]) if hasattr(rsi_values, "iloc") else float(rsi_values[-1])
-            )
 
             return {
                 "rsi": {
@@ -457,17 +455,14 @@ class TechnicalAnalysisAgent:
 
             current_macd = (
                 float(macd_line.iloc[-1]) if hasattr(macd_line, "iloc") else float(macd_line[-1])
-            )
             current_signal = (
                 float(macd_signal.iloc[-1])
                 if hasattr(macd_signal, "iloc")
                 else float(macd_signal[-1])
-            )
             current_histogram = (
                 float(macd_histogram.iloc[-1])
                 if hasattr(macd_histogram, "iloc")
                 else float(macd_histogram[-1])
-            )
 
             return {
                 "macd": {
@@ -526,15 +521,12 @@ class TechnicalAnalysisAgent:
             # Get current values (only if we have valid data)
             current_upper = (
                 float(upper_band.iloc[-1]) if hasattr(upper_band, "iloc") else float(upper_band[-1])
-            )
             current_middle = (
                 float(middle_band.iloc[-1])
                 if hasattr(middle_band, "iloc")
                 else float(middle_band[-1])
-            )
             current_lower = (
                 float(lower_band.iloc[-1]) if hasattr(lower_band, "iloc") else float(lower_band[-1])
-            )
             current_price = float(close_prices.iloc[-1])
 
             # Calculate band width and position

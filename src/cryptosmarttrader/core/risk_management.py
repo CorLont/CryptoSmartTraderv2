@@ -456,10 +456,10 @@ class RiskManagementEngine:
 
         return "; ".join(reasoning_parts)
 
-    async def # REMOVED: Mock data pattern not allowed in productionself,
+    async def mock_taskself,
                                      coin: str,
                                      order_size: float,
-                                     market_data: Dict[str, Any]) -> Dict[str, Any]:
+                                     market_data: dict[str, Any]) -> dict[str, Any]:
         """Simulate order execution with slippage estimation"""
 
         try:
@@ -610,7 +610,6 @@ class RiskManagementEngine:
                 sharpe_ratio_estimate=float(sharpe_ratio),
                 concentration_risk=float(concentration_risk),
                 liquidity_score=float(avg_liquidity)
-            )
 
         except Exception as e:
             self.logger.error(f"Portfolio risk calculation failed: {e}")

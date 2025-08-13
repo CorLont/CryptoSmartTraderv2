@@ -479,7 +479,6 @@ class TimeSeriesProcessor:
             features["bb_lower"] = bb_lower.astype(np.float32)
             features["bb_position"] = (
                 ((prices - bb_lower) / (bb_upper - bb_lower)).fillna(0.5).values.astype(np.float32)
-            )
 
         return features
 
@@ -612,7 +611,6 @@ class TimeSeriesProcessor:
                     .corr(pd.Series(volume))
                     .fillna(0)
                     .values.astype(np.float32)
-                )
 
         return features
 
@@ -638,28 +636,22 @@ class TimeSeriesProcessor:
             # Rolling mean
             features[f"rolling_mean_{window}"] = (
                 prices.rolling(window, min_periods=1).mean().values.astype(np.float32)
-            )
 
             # Rolling std
             features[f"rolling_std_{window}"] = (
                 prices.rolling(window, min_periods=1).std().fillna(0).values.astype(np.float32)
-            )
 
             # Rolling min/max
             features[f"rolling_min_{window}"] = (
                 prices.rolling(window, min_periods=1).min().values.astype(np.float32)
-            )
             features[f"rolling_max_{window}"] = (
                 prices.rolling(window, min_periods=1).max().values.astype(np.float32)
-            )
 
             # Rolling quantiles
             features[f"rolling_q25_{window}"] = (
                 prices.rolling(window, min_periods=1).quantile(0.25).values.astype(np.float32)
-            )
             features[f"rolling_q75_{window}"] = (
                 prices.rolling(window, min_periods=1).quantile(0.75).values.astype(np.float32)
-            )
 
         return features
 

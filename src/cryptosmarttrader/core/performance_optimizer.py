@@ -392,7 +392,6 @@ class PerformanceMonitor:
 
             overall_score = float(
                 np.mean([cpu_score, memory_score, cache_score, api_score, error_score])
-            )
 
             return {
                 "timestamp": metrics.timestamp.isoformat(),
@@ -462,7 +461,6 @@ class PerformanceOptimizer:
                         expected_improvement=15.0,
                         estimated_effort="Low",
                     )
-                )
 
             # CPU optimization
             if metrics.cpu_usage > 75:
@@ -475,7 +473,6 @@ class PerformanceOptimizer:
                         expected_improvement=20.0,
                         estimated_effort="Medium",
                     )
-                )
 
             # Cache optimization
             if metrics.cache_hit_rate < 0.6:
@@ -488,7 +485,6 @@ class PerformanceOptimizer:
                         expected_improvement=25.0,
                         estimated_effort="Low",
                     )
-                )
 
             # API optimization
             avg_api_time = (
@@ -506,7 +502,6 @@ class PerformanceOptimizer:
                         expected_improvement=30.0,
                         estimated_effort="Medium",
                     )
-                )
 
             # ML optimization
             if metrics.ml_inference_time > 2.0:
@@ -519,7 +514,6 @@ class PerformanceOptimizer:
                         expected_improvement=40.0,
                         estimated_effort="High",
                     )
-                )
 
             return recommendations
 

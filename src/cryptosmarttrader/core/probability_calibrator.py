@@ -246,8 +246,7 @@ class ProbabilityCalibrator:
                 calibrated_conf = calibrator_info["isotonic"].predict(original_conf)
             else:  # platt
                 calibrated_conf = calibrator_info["platt"].predict_proba(
-                    original_conf.reshape(-1, 1)
-                )[:, 1]
+                    original_conf.reshape(-1, 1)[:, 1]
 
             # Ensure values stay in [0, 1]
             calibrated_conf = np.clip(calibrated_conf, 0, 1)

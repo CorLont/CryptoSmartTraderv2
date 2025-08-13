@@ -123,7 +123,6 @@ class CoverageAnalyzer:
                                         .replace("def ", "")
                                         .replace("async ", "")
                                         .strip()
-                                    )
                                     untested_funcs.append(line_num)
 
                         if untested_funcs:

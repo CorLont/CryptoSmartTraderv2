@@ -164,7 +164,6 @@ class ReturnAttributor:
         # 1. Calculate fees attribution
         fees_component, fees_confidence = self._calculate_fees_attribution(
             executions, portfolio_data.get("position_size", 0.0)
-        )
         components[ReturnComponent.FEES] = fees_component
         confidence_scores[ReturnComponent.FEES] = fees_confidence
 
@@ -640,7 +639,6 @@ class ReturnAttributor:
         ]
         alpha_consistency = 1.0 - (
             np.std(alpha_returns) / max(0.01, np.mean(np.abs(alpha_returns)))
-        )
 
         return {
             "portfolio_volatility": portfolio_vol,

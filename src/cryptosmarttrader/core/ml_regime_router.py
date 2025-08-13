@@ -469,8 +469,7 @@ class MLRegimeRouter:
             # Weighted average based on confidence
             if sum(recent_confidences) > 0:
                 weighted_pred = sum(
-                    p * c for p, c in zip(recent_predictions, recent_confidences)
-                ) / sum(recent_confidences)
+                    p * c for p, c in zip(recent_predictions, recent_confidences) / sum(recent_confidences)
 
                 # Blend with current prediction based on confidence
                 smoothed = prediction * confidence + weighted_pred * (1 - confidence)

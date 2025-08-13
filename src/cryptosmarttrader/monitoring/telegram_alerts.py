@@ -489,8 +489,7 @@ class TelegramAlertsManager:
             "system_info": {
                 "uptime_hours": uptime.total_seconds() / 3600,
                 "alerts_per_hour": (
-                    self.stats["total_alerts"] / max(uptime.total_seconds() / 3600, 1)
-                ),
+                    self.stats["total_alerts"] / max(uptime.total_seconds() / 3600, 1),
                 "last_alert_time": (
                     self.alert_history[-1].timestamp.isoformat() if self.alert_history else None
                 ),

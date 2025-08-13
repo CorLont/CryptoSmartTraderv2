@@ -142,7 +142,6 @@ class PortfolioBacktestEngine:
                     execution.executed_size
                     * execution.executed_price
                     * (execution.slippage_bps / 10000)
-                )
 
                 trades.append(
                     {

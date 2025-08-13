@@ -100,14 +100,12 @@ class BayesianLinear(nn.Module):
             - 1
             - torch.log(weight_var)
             + 2 * torch.log(torch.tensor(self.prior_std))
-        )
 
         bias_kl = 0.5 * torch.sum(
             (self.bias_mean**2 + bias_var) / (self.prior_std**2)
             - 1
             - torch.log(bias_var)
             + 2 * torch.log(torch.tensor(self.prior_std))
-        )
 
         return weight_kl + bias_kl
 

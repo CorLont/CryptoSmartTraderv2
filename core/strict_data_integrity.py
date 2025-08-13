@@ -167,7 +167,6 @@ class StrictDataIntegrityEnforcer:
                             description=f"Column '{column}' contains {nan_count} NaN values ({nan_percentage:.2f}%)",
                             recommended_action=f"Remove rows with NaN in '{column}' or exclude column from production",
                         )
-                    )
 
         return violations
 
@@ -192,7 +191,6 @@ class StrictDataIntegrityEnforcer:
                         description=f"Column '{column}' is marked as synthetic data",
                         recommended_action=f"Replace synthetic data in '{column}' with authentic API data",
                     )
-                )
 
         # Check for synthetic data patterns
         for column in df.columns:
@@ -215,7 +213,6 @@ class StrictDataIntegrityEnforcer:
                                     description=f"Column '{column}' shows perfect arithmetic sequence (likely synthetic)",
                                     recommended_action=f"Verify data source for '{column}' - replace if synthetic",
                                 )
-                            )
 
                 # Pattern 2: Suspiciously round numbers
                 if df[column].dtype == "float64":
@@ -237,7 +234,6 @@ class StrictDataIntegrityEnforcer:
                                     description=f"Column '{column}' has {round_percentage:.1f}% round numbers (possibly synthetic)",
                                     recommended_action=f"Verify authenticity of '{column}' data",
                                 )
-                            )
 
         return violations
 
@@ -262,7 +258,6 @@ class StrictDataIntegrityEnforcer:
                         description=f"Column '{column}' uses fallback data",
                         recommended_action=f"Obtain authentic data for '{column}' or exclude from production",
                     )
-                )
 
         # Check for common fallback patterns
         for column in df.columns:
@@ -287,7 +282,6 @@ class StrictDataIntegrityEnforcer:
                                 description=f"Column '{column}' has {most_common_percentage:.1f}% identical values (possible fallback)",
                                 recommended_action=f"Verify data diversity for '{column}'",
                             )
-                        )
 
                     # Pattern 2: Common fallback values
                     common_fallbacks = [0, 1, -1, 999, 9999, 0.5]
@@ -308,7 +302,6 @@ class StrictDataIntegrityEnforcer:
                                         description=f"Column '{column}' has {fallback_percentage:.1f}% fallback values ({fallback_val})",
                                         recommended_action=f"Replace fallback values in '{column}' with authentic data",
                                     )
-                                )
 
         return violations
 
@@ -337,7 +330,6 @@ class StrictDataIntegrityEnforcer:
                         description=f"Column '{column}' contains interpolated data",
                         recommended_action=f"Remove interpolated data from '{column}' or exclude from production",
                     )
-                )
 
             # Check for interpolation patterns
             if df[column].dtype in ["float64", "int64"] and len(df) > 5:
@@ -367,7 +359,6 @@ class StrictDataIntegrityEnforcer:
                                         description=f"Column '{column}' shows linear interpolation pattern ({interpolation_percentage:.1f}%)",
                                         recommended_action=f"Verify if '{column}' contains interpolated values",
                                     )
-                                )
 
         return violations
 
@@ -401,7 +392,6 @@ class StrictDataIntegrityEnforcer:
                     description=f"Only {authentic_percentage:.1f}% of data is authentic (requires {self.current_thresholds['min_authentic_percentage']:.1f}%)",
                     recommended_action="Increase authentic data sources or exclude non-authentic columns",
                 )
-            )
 
         # Check for unknown data sources
         unknown_count = source_counts.get(DataSource.UNKNOWN, 0)
@@ -418,7 +408,6 @@ class StrictDataIntegrityEnforcer:
                     description=f"{unknown_percentage:.1f}% of columns have unknown data sources",
                     recommended_action="Verify and document data sources for all columns",
                 )
-            )
 
         return violations
 
@@ -439,7 +428,6 @@ class StrictDataIntegrityEnforcer:
                             # Calculate coefficient of variation
                             cv = (
                                 values.std() / values.mean() if values.mean() != 0 else float("inf")
-                            )
 
                             # Real market data typically has CV between 0.1 and 2.0
                             if cv < 0.05:  # Too little variation
@@ -454,7 +442,6 @@ class StrictDataIntegrityEnforcer:
                                         description=f"Column '{column}' has unrealistically low variation (CV={cv:.3f})",
                                         recommended_action=f"Verify authenticity of '{column}' - real data should have more variation",
                                     )
-                                )
                     except Exception:
                         pass  # Skip if calculation fails
 

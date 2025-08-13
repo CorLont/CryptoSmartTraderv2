@@ -239,8 +239,7 @@ class CompleteSystemEvaluator:
                 "performance_score": overall_performance,
                 "horizon_results": performance_results,
                 "production_ready_count": sum(
-                    1 for r in performance_results.values() if r.get("production_ready", False)
-                ),
+                    1 for r in performance_results.values() if r.get("production_ready", False),
             }
 
         except Exception as e:

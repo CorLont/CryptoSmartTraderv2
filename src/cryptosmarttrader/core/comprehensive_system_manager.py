@@ -294,8 +294,7 @@ class ComprehensiveSystemManager:
                 component_reports["production_optimization"] = {
                     "status": "operational",
                     "optimizations_applied": len(
-                        getattr(self.optimizer, "optimization_history", [])
-                    ),
+                        getattr(self.optimizer, "optimization_history", []),
                 }
             except Exception:
                 component_reports["production_optimization"] = {"status": "error"}

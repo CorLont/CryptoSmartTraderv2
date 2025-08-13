@@ -21,8 +21,7 @@ from core.logging_manager import get_logger
 
 
 def confidence_binning_analysis(
-    df: pd.DataFrame, conf_col: str, bins: Tuple = (0.8, 0.9, 1.01)
-) -> pd.DataFrame:
+    df: pd.DataFrame, conf_col: str, bins: Tuple = (0.8, 0.9, 1.01) -> pd.DataFrame:
     """
     Perform confidence binning analysis
 
@@ -74,7 +73,6 @@ def confidence_binning_analysis(
             }
         )
         .round(4)
-    )
 
     # Flatten column names
     binning_results.columns = ["_".join(col) for col in binning_results.columns]

@@ -178,7 +178,6 @@ class TestAsyncCoordinator(unittest.TestCase):
 
         task_id = self.coordinator.submit_task(
             task_name="cancellable_task", coroutine=long_running_task()
-        )
 
         # Cancel the task
         cancelled = self.coordinator.cancel_task(task_id)
@@ -530,8 +529,7 @@ def run_tests():
             print(f"- {test}: {traceback}")
 
     success_rate = (
-        (result.testsRun - len(result.failures) - len(result.errors)) / max(result.testsRun, 1)
-    ) * 100
+        (result.testsRun - len(result.failures) - len(result.errors)) / max(result.testsRun, 1) * 100
 
     print(f"\nSUCCESS RATE: {success_rate:.1f}%")
 

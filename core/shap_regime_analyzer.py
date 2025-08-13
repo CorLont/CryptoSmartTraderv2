@@ -457,7 +457,6 @@ class SHAPRegimeAnalyzer:
                 # Record regime transition
                 self.regime_transitions.append(
                     (datetime.now(), self._last_adapted_regime, current_regime)
-                )
 
             # Update adaptation cache
             self.feature_adaptation_cache["current_regime"] = current_regime.value
@@ -617,8 +616,7 @@ class SHAPRegimeAnalyzer:
                     list(
                         sorted(
                             self.global_feature_importance.items(), key=lambda x: x[1], reverse=True
-                        )
-                    )[:10]
+                        )[:10]
                 ),
                 "regime_transitions_today": len(
                     [

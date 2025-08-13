@@ -198,7 +198,6 @@ class GeneticFeatureEvolver:
                 )
                 best = max(
                     tournament, key=lambda f: performance_scores.get(f.name, f.performance_score)
-                )
                 return best
 
             return tournament_select(), tournament_select()
@@ -581,8 +580,7 @@ class FeatureDiscoveryEngine:
                     # Performance improvement techniques
                     improvements = [
                         source_data.rolling(window=20).apply(
-                            lambda x: x.mean() + x.std()
-                        ),  # Mean + std
+                            lambda x: x.mean() + x.std(),  # Mean + std
                         source_data.rank(pct=True),  # Rank transformation
                         (source_data - source_data.rolling(50).mean())
                         / source_data.rolling(50).std(),  # Z-score

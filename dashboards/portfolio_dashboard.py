@@ -238,7 +238,6 @@ class PortfolioDashboard:
                         },
                     },
                 )
-            )
 
             fig_gauge.update_layout(height=300)
             st.plotly_chart(fig_gauge, use_container_width=True)
@@ -257,7 +256,6 @@ class PortfolioDashboard:
             fig_radar = go.Figure()
             fig_radar.add_trace(
                 go.Scatterpolar(r=values, theta=categories, fill="toself", name="Risk Profile")
-            )
 
             fig_radar.update_layout(
                 polar=dict(radialaxis=dict(visible=True, range=[0, 10])),

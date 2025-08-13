@@ -114,7 +114,6 @@ class PerformanceDashboard:
                 name="CPU %",
                 line=dict(color="#FF6B6B"),
             )
-        )
 
         fig.add_trace(
             go.Scatter(
@@ -124,7 +123,6 @@ class PerformanceDashboard:
                 name="Memory %",
                 line=dict(color="#4ECDC4"),
             )
-        )
 
         fig.update_layout(
             title="Systeem Prestaties (30 min)",

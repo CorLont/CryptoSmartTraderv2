@@ -82,7 +82,6 @@ class AlertManager:
                 cooldown_seconds=300,
                 escalation_after_minutes=15,
             )
-        )
 
         # Drawdown Too High Alert
         self.add_alert_rule(
@@ -99,7 +98,6 @@ class AlertManager:
                 cooldown_seconds=60,  # Short cooldown for critical alerts
                 escalation_after_minutes=5,
             )
-        )
 
         # No Signals Received Alert
         self.add_alert_rule(
@@ -115,7 +113,6 @@ class AlertManager:
                 cooldown_seconds=600,  # 10 minutes cooldown
                 escalation_after_minutes=30,
             )
-        )
 
         # High Slippage Alert
         self.add_alert_rule(
@@ -132,7 +129,6 @@ class AlertManager:
                 cooldown_seconds=300,
                 escalation_after_minutes=20,
             )
-        )
 
         # Exchange Connectivity Lost Alert
         self.add_alert_rule(
@@ -148,7 +144,6 @@ class AlertManager:
                 cooldown_seconds=60,
                 escalation_after_minutes=2,
             )
-        )
 
         # High API Error Rate Alert
         self.add_alert_rule(
@@ -165,7 +160,6 @@ class AlertManager:
                 cooldown_seconds=180,
                 escalation_after_minutes=10,
             )
-        )
 
         # Low Liquidity Alert
         self.add_alert_rule(
@@ -182,7 +176,6 @@ class AlertManager:
                 cooldown_seconds=300,
                 escalation_after_minutes=30,
             )
-        )
 
         # System Resource Alert
         self.add_alert_rule(
@@ -199,7 +192,6 @@ class AlertManager:
                 cooldown_seconds=300,
                 escalation_after_minutes=20,
             )
-        )
 
     def add_alert_rule(self, rule: AlertRule):
         """Add new alert rule."""
