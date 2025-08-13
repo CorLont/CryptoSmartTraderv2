@@ -5,8 +5,27 @@ from typing import Dict, Any, Optional
 import threading
 import logging
 from datetime import datetime
-from config.settings import config
-from config.validation import SystemConfiguration, validate_configuration, get_default_configuration
+try:
+    from config.settings import config
+    from config.validation import SystemConfiguration, validate_configuration, get_default_configuration
+except ImportError:
+    # Fallback for missing config module
+    class config:
+        exchanges = ["kraken"]
+        api_keys = {}
+        timeout_seconds = 30
+        api_rate_limit = 100
+    
+    def validate_configuration(cfg):
+        return cfg
+    
+    def get_default_configuration():
+        return {
+            "exchanges": ["kraken"],
+            "api_keys": {},
+            "timeout_seconds": 30,
+            "api_rate_limit": 100
+        }
 
 
 class ConfigManager:

@@ -1,1 +1,0 @@
-"""Test package for CryptoSmartTrader V2."""
