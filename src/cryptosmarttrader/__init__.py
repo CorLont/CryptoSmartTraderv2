@@ -16,6 +16,12 @@ from .monitoring.alert_rules import AlertManager, AlertSeverity
 # Testing exports
 from .testing.simulation_tester import SimulationTester, FailureScenario
 
+# Fase 3 exports
+from .core.regime_detector import RegimeDetector, MarketRegime
+from .core.strategy_switcher import StrategySwitcher, StrategyType
+from .analysis.backtest_parity import BacktestParityAnalyzer
+from .deployment.canary_system import CanaryDeploymentSystem, CanaryStage
+
 __all__ = [
     # Core
     "ConfigManager", 
@@ -37,5 +43,14 @@ __all__ = [
     
     # Testing
     "SimulationTester",
-    "FailureScenario"
+    "FailureScenario",
+    
+    # Fase 3 - Alpha & Parity
+    "RegimeDetector",
+    "MarketRegime",
+    "StrategySwitcher",
+    "StrategyType",
+    "BacktestParityAnalyzer",
+    "CanaryDeploymentSystem",
+    "CanaryStage"
 ]

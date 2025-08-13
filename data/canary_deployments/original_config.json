@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-08-13T08:33:19.329918",
+  "original_config": {
+    "max_position_size_percent": 2.0,
+    "max_exposure_percent": 95.0,
+    "max_positions": 50,
+    "trading_enabled": true,
+    "paper_only": false,
+    "risk_level": "normal"
+  },
+  "deployment_version": "v2.1.0-fase3"
+}
