@@ -1,0 +1,6 @@
+{
+  "timestamp": "2025-08-13T14:47:54.859504",
+  "action": "force_enable_trading",
+  "reason": "Manual override for testing",
+  "authorized_by": "manual_override"
+}

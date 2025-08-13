@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-08-13T14:47:54.856830",
+  "action": "emergency",
+  "reason": "parity_drift_detection",
+  "tracking_error_bps": 85.0,
+  "correlation": 0.2561685474078089,
+  "recommendations": [
+    "High tracking error (85.0 bps). Investigate execution costs and timing differences.",
+    "Low correlation (0.26). Check model performance and data quality.",
+    "Significant timing differences. Check latency and order processing delays.",
+    "investigate_execution",
+    "check_market_regime",
+    "retrain_models",
+    "validate_data_sources",
+    "EMERGENCY STOP: Severe parity breakdown detected. Immediate investigation required."
+  ],
+  "expires_at": "2025-08-14T14:47:54.856837"
+}

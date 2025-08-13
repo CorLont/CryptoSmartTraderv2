@@ -280,7 +280,7 @@ class BacktestParityAnalyzer:
             tracking_error_bps = return_diff.std()
 
             # Calculate correlation
-            correlation = bt_returns.corr(live_returns)
+            correlation = np.corrcoef(bt_returns.values, live_returns.values)[0, 1] if len(bt_returns) > 1 else 0.0
 
             # Alpha difference (systematic bias)
             alpha_difference = return_diff.mean()
@@ -308,7 +308,7 @@ class BacktestParityAnalyzer:
 
             return ParityMetrics(
                 tracking_error_bps=tracking_error_bps,
-                correlation=correlation if not np.isnan(correlation) else 0.0,
+                correlation=float(correlation) if not np.isnan(correlation) else 0.0,
                 alpha_difference=alpha_difference,
                 slippage_difference=slippage_difference,
                 fee_difference=fee_difference,
@@ -368,7 +368,7 @@ class BacktestParityAnalyzer:
 
             # Timing impact (estimated from execution latency)
             avg_latency = np.mean([e.latency_ms for e in recent_executions])
-            timing_impact = -min(0.001, avg_latency / 100000)  # Rough estimate
+            timing_impact = -min(0.001, float(avg_latency) / 100000)  # Rough estimate
 
         else:
             fees_impact = -0.0015  # Default 15 bps
@@ -390,8 +390,8 @@ class BacktestParityAnalyzer:
             period_end=period_end,
             total_return=portfolio_period_return,
             alpha_return=alpha_return,
-            fees_impact=fees_impact,
-            slippage_impact=slippage_impact,
+            fees_impact=float(fees_impact),
+            slippage_impact=float(slippage_impact),
             timing_impact=timing_impact,
             sizing_impact=sizing_impact,
             market_impact=market_impact,
