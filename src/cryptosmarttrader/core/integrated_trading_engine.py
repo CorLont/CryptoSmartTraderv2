@@ -18,6 +18,7 @@ from ..core.structured_logger import get_logger
 from ..core.data_flow_orchestrator import DataFlowOrchestrator, DataQualityGate, DataFlowState
 from ..execution.order_pipeline import OrderPipeline, OrderRequest, OrderType, TimeInForce
 from ..risk.centralized_risk_guard import CentralizedRiskGuard, RiskCheckRequest, OperationType
+from ..portfolio.volatility_targeting_kelly import VolatilityTargetingKelly, SizingResult
 # from ..adapters.kraken_data_adapter import KrakenDataAdapter  # Would be imported when available
 from ..observability.unified_metrics import UnifiedMetrics
 
@@ -88,6 +89,16 @@ class IntegratedTradingEngine:
             max_total_exposure_pct=95.0,
             min_data_quality_score=0.7,
             max_data_age_minutes=5.0
+        )
+        
+        # VOLATILITY TARGETING & KELLY SIZING - fractional Kelly × vol-target × correlation caps
+        self.volatility_targeting_kelly = VolatilityTargetingKelly(
+            target_volatility=0.15,      # 15% target volatility
+            kelly_fraction=0.25,         # 25% of Kelly fraction
+            max_asset_exposure_pct=2.0,  # 2% per asset cap
+            max_cluster_exposure_pct=20.0, # 20% per cluster cap
+            correlation_threshold=0.7,   # High correlation threshold
+            max_leverage=3.0             # Max 3x leverage
         )
         
         # Data adapter (placeholder for now)
@@ -256,12 +267,21 @@ class IntegratedTradingEngine:
                     )
                     
                     if risk_check_result.approved:
-                        # Execute order through centralized OrderPipeline
-                        order_result = await self._execute_order_through_pipeline(
+                        # Calculate optimal position size using vol-targeting & Kelly
+                        sizing_result = self._calculate_volatility_kelly_size(
                             symbol=symbol,
                             pipeline_result=pipeline_result,
                             signal_data=signal_data,
                             risk_check_result=risk_check_result
+                        )
+                        
+                        # Execute order through centralized OrderPipeline with optimal sizing
+                        order_result = await self._execute_order_through_pipeline(
+                            symbol=symbol,
+                            pipeline_result=pipeline_result,
+                            signal_data=signal_data,
+                            risk_check_result=risk_check_result,
+                            sizing_result=sizing_result
                         )
                     else:
                         # Order blocked by risk guard
@@ -389,19 +409,87 @@ class IntegratedTradingEngine:
                 check_time_ms=0.0
             )
 
+    def _calculate_volatility_kelly_size(self, symbol: str, pipeline_result: Dict[str, Any], 
+                                               signal_data: Dict[str, Any], risk_check_result: Any) -> SizingResult:
+        """Calculate optimal position size using volatility targeting & Kelly sizing."""
+        
+        try:
+            # Extract signal parameters
+            signal_confidence = signal_data.get('confidence', 0.8)
+            expected_return = signal_data.get('expected_return', 0.02)  # 2% default
+            current_price = 45000.0  # Mock price - would get from market data
+            
+            # Get portfolio value (mock - would get from portfolio manager)
+            portfolio_value = 100000.0
+            
+            # Calculate optimal position size
+            sizing_result = self.volatility_targeting_kelly.calculate_position_size(
+                symbol=symbol,
+                signal_confidence=signal_confidence,
+                expected_return=expected_return,
+                current_price=current_price,
+                portfolio_value=portfolio_value
+            )
+            
+            self.logger.info("Vol-targeting Kelly sizing calculated",
+                           symbol=symbol,
+                           signal_confidence=signal_confidence,
+                           expected_return=expected_return,
+                           kelly_fraction=sizing_result.kelly_fraction,
+                           vol_scaling=sizing_result.vol_scaling_factor,
+                           final_size=sizing_result.final_position_size,
+                           caps_applied=sizing_result.asset_cap_applied or sizing_result.cluster_cap_applied)
+            
+            return sizing_result
+            
+        except Exception as e:
+            self.logger.error("Vol-targeting Kelly sizing failed",
+                            symbol=symbol,
+                            error=str(e))
+            
+            # Return minimal sizing result
+            return SizingResult(
+                symbol=symbol,
+                signal_confidence=signal_data.get('confidence', 0.0),
+                expected_return=signal_data.get('expected_return', 0.0),
+                kelly_fraction=0.0,
+                fractional_kelly=0.0,
+                target_volatility=0.15,
+                realized_volatility=0.0,
+                vol_scaling_factor=0.0,
+                base_size=0.0,
+                vol_adjusted_size=0.0,
+                correlation_adjusted_size=0.0,
+                final_position_size=0.01,  # Minimal position
+                warnings=[f"Sizing calculation error: {str(e)}"]
+            )
+
     async def _execute_order_through_pipeline(self, symbol: str, pipeline_result: Dict[str, Any], 
-                                            signal_data: Dict[str, Any], risk_check_result: Any = None) -> Any:
+                                            signal_data: Dict[str, Any], risk_check_result: Any = None,
+                                            sizing_result: SizingResult = None) -> Any:
         """Execute order through centralized OrderPipeline with ExecutionPolicy gates."""
         
         try:
             # Extract execution parameters from pipeline result
-            position_size = pipeline_result.get('final_position_size', 0)
+            base_position_size = pipeline_result.get('final_position_size', 0)
             execution_params = pipeline_result.get('execution_parameters', {})
+            
+            # Use vol-targeting Kelly size if available
+            if sizing_result:
+                position_size = sizing_result.final_position_size
+                self.logger.info("Using vol-targeting Kelly position size",
+                               symbol=symbol,
+                               base_size=base_position_size,
+                               kelly_size=sizing_result.final_position_size,
+                               kelly_fraction=sizing_result.kelly_fraction,
+                               vol_scaling=sizing_result.vol_scaling_factor)
+            else:
+                position_size = base_position_size
             
             # Apply risk guard limits if provided
             if risk_check_result and hasattr(risk_check_result, 'max_allowed_quantity'):
                 position_size = min(abs(position_size), risk_check_result.max_allowed_quantity)
-                if pipeline_result.get('final_position_size', 0) < 0:
+                if base_position_size < 0:
                     position_size = -position_size
             
             # Determine order side based on signal
@@ -627,6 +715,9 @@ class IntegratedTradingEngine:
         # Get centralized risk guard status
         risk_guard_status = self.centralized_risk_guard.get_risk_status()
         
+        # Get vol-targeting Kelly sizing status
+        sizing_stats = self.volatility_targeting_kelly.get_sizing_statistics()
+        
         status = {
             'engine_state': self.current_state.value,
             'data_flow_state': flow_status['flow_state'],
@@ -647,6 +738,18 @@ class IntegratedTradingEngine:
                 'operations_blocked_today': risk_guard_status['daily_statistics']['operations_blocked'],
                 'recent_violations_count': len(risk_guard_status['recent_violations']),
                 'risk_limits_active': True
+            },
+            'volatility_targeting_kelly_status': {
+                'target_volatility': sizing_stats['target_volatility'],
+                'kelly_fraction': sizing_stats['kelly_fraction'],
+                'total_calculations': sizing_stats['total_calculations'],
+                'avg_kelly_fraction': sizing_stats['avg_kelly_fraction'],
+                'avg_vol_scaling': sizing_stats['avg_vol_scaling'],
+                'caps_applied_pct': sizing_stats['caps_applied_pct'],
+                'assets_tracked': sizing_stats['assets_tracked'],
+                'clusters_tracked': sizing_stats['clusters_tracked'],
+                'max_asset_exposure_pct': sizing_stats['max_asset_exposure_pct'],
+                'max_cluster_exposure_pct': sizing_stats['max_cluster_exposure_pct']
             }
         }
         
