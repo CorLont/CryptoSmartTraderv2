@@ -1,3 +1,24 @@
+
+# Import from new execution discipline system
+from .execution_discipline import (
+    ExecutionPolicy as HardExecutionPolicy,
+    OrderRequest, MarketConditions, ExecutionResult,
+    OrderSide, TimeInForce, ExecutionDecision,
+    get_execution_policy, reset_execution_policy
+)
+
+# Backward compatibility alias
+ExecutionPolicy = HardExecutionPolicy
+
+# Re-export all discipline components
+__all__ = [
+    'ExecutionPolicy', 'HardExecutionPolicy',
+    'OrderRequest', 'MarketConditions', 'ExecutionResult',
+    'OrderSide', 'TimeInForce', 'ExecutionDecision',
+    'get_execution_policy', 'reset_execution_policy'
+]
+
+
 """ExecutionPolicy - Trading execution with guardrails, slippage control, and order idempotency."""
 
 import asyncio
