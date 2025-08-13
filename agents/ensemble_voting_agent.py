@@ -420,9 +420,16 @@ class EnsembleVotingAgent:
                                 self.prediction_cache[ensemble_pred.prediction_id] = ensemble_pred
                                 self.stats['total_predictions'] += 1
                                 
-                                if ensemble_pred.ensemble_confidence > 0.8:
+                                # Enhanced confidence threshold for 500% target
+                                if ensemble_pred.ensemble_confidence > 0.90:
                                     self.stats['high_confidence_predictions'] += 1
                                     
+                                    self.logger.info(
+                                        f"ULTRA HIGH CONFIDENCE ENSEMBLE: {symbol} {horizon.value} - "
+                                        f"{ensemble_pred.ensemble_return:.2f}% expected return, "
+                                        f"{ensemble_pred.ensemble_confidence:.1%} confidence"
+                                    )
+                                elif ensemble_pred.ensemble_confidence > 0.85:
                                     self.logger.info(
                                         f"HIGH CONFIDENCE ENSEMBLE: {symbol} {horizon.value} - "
                                         f"{ensemble_pred.ensemble_return:.2f}% expected return, "
@@ -978,15 +985,23 @@ class EnsembleVotingAgent:
         confidence = ensemble_result['confidence']
         expected_return = abs(ensemble_result['return'])
         
-        # Determine action
-        if confidence > 0.8 and model_agreement > 0.7:
+        # Enhanced action determination for 500% target
+        # Higher thresholds for quality signals
+        if confidence > 0.90 and model_agreement > 0.8:
+            if ensemble_result['return'] > 3.0:  # Higher return threshold
+                action = "buy"
+            elif ensemble_result['return'] < -3.0:
+                action = "sell"
+            else:
+                action = "hold"
+        elif confidence > 0.85 and model_agreement > 0.7:
             if ensemble_result['return'] > 2.0:
                 action = "buy"
             elif ensemble_result['return'] < -2.0:
                 action = "sell"
             else:
                 action = "hold"
-        elif confidence > 0.6 and expected_return > 1.0:
+        elif confidence > 0.75 and expected_return > 1.5:
             if ensemble_result['return'] > 0:
                 action = "buy"
             else:
@@ -994,14 +1009,24 @@ class EnsembleVotingAgent:
         else:
             action = "hold"
         
-        # Position sizing based on Kelly criterion
+        # Enhanced position sizing for 500% target using Kelly criterion
         if action != "hold":
             win_prob = confidence
             loss_prob = 1 - confidence
             odds = abs(expected_return) / 100
             
+            # Enhanced Kelly with volatility adjustment
             kelly_fraction = (odds * win_prob - loss_prob) / odds
-            position_size = max(0, min(0.1, kelly_fraction))  # Max 10%
+            
+            # Apply confidence-based scaling for higher returns
+            if confidence > 0.90:
+                kelly_multiplier = 1.5  # Aggressive sizing for high confidence
+            elif confidence > 0.85:
+                kelly_multiplier = 1.2  # Moderate increase
+            else:
+                kelly_multiplier = 0.8   # Conservative
+            
+            position_size = max(0, min(0.15, kelly_fraction * kelly_multiplier))  # Max 15% for high confidence
         else:
             position_size = 0.0
         
