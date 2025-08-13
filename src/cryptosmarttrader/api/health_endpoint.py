@@ -5,14 +5,24 @@ Health Endpoint API - Simple FastAPI service for health checks
 
 import json
 import time
+import sys
+import os
+sys.path.append('.')
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 import uvicorn
 import psutil
+
+# Import unified metrics system
+try:
+    from src.cryptosmarttrader.observability.unified_metrics import get_metrics
+    METRICS_AVAILABLE = True
+except ImportError:
+    METRICS_AVAILABLE = False
 
 
 app = FastAPI(
@@ -172,9 +182,68 @@ async def root():
     }
 
 
+@app.get("/metrics", response_class=PlainTextResponse)
+async def get_metrics_endpoint():
+    """Prometheus metrics endpoint for observability"""
+    try:
+        if METRICS_AVAILABLE:
+            metrics = get_metrics()
+            prometheus_output = metrics.get_prometheus_metrics()
+            
+            return PlainTextResponse(
+                content=prometheus_output,
+                headers={"Content-Type": "text/plain; version=0.0.4; charset=utf-8"}
+            )
+        else:
+            return PlainTextResponse(
+                content="# Metrics system not available\n",
+                status_code=503
+            )
+            
+    except Exception as e:
+        return PlainTextResponse(
+            content=f"# Error: {str(e)}\n",
+            status_code=500
+        )
+
+@app.get("/metrics/summary")
+async def get_metrics_summary() -> JSONResponse:
+    """Critical alerts summary for 500% target system"""
+    try:
+        summary = {
+            "observability_status": "operational",
+            "timestamp": datetime.now().isoformat(),
+            "critical_alerts": {
+                "order_error_rate": "< 5%",
+                "slippage_bps_p95": "< 50 bps", 
+                "drawdown_pct": "< 8%",
+                "signal_age_minutes": "< 30 min"
+            },
+            "monitoring_targets": [
+                "HighOrderErrorRate",
+                "ExcessiveSlippage", 
+                "HighDrawdown",
+                "NoSignalsReceived"
+            ]
+        }
+        
+        if METRICS_AVAILABLE:
+            metrics = get_metrics()
+            summary.update(metrics.get_metrics_summary())
+            
+        return JSONResponse(content=summary)
+        
+    except Exception as e:
+        return JSONResponse(
+            content={"error": f"Failed to get summary: {str(e)}"},
+            status_code=500
+        )
+
 def main():
     """Main entry point for the health API"""
     print("🏥 Starting CryptoSmartTrader V2 Health API on port 8001")
+    print("📊 Metrics endpoint: http://localhost:8001/metrics")
+    print("📋 Summary endpoint: http://localhost:8001/metrics/summary")
     uvicorn.run(
         app,
         host="0.0.0.0",
