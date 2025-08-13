@@ -216,6 +216,33 @@ class PortfolioOptimizerAgent:
         
         logger.info("Portfolio Optimizer Agent initialized")
     
+    def get_optimization_summary(self) -> Dict[str, Any]:
+        """Get optimization summary for integration"""
+        
+        with self._lock:
+            recent_optimizations = list(self.optimization_history)[-10:]  # Last 10 optimizations
+            
+            if recent_optimizations:
+                return {
+                    'total_optimizations': len(self.optimization_history),
+                    'recent_optimizations': len(recent_optimizations),
+                    'current_method': self.current_optimization_method.value,
+                    'universe_size': len(self.universe),
+                    'average_portfolio_return': sum(opt.get('expected_return', 0) for opt in recent_optimizations) / len(recent_optimizations),
+                    'average_portfolio_risk': sum(opt.get('portfolio_risk', 0) for opt in recent_optimizations) / len(recent_optimizations),
+                    'last_optimization': recent_optimizations[-1] if recent_optimizations else None
+                }
+            else:
+                return {
+                    'total_optimizations': 0,
+                    'message': 'No optimizations performed yet'
+                }
+    
+    @property
+    def universe_symbols(self) -> List[str]:
+        """Get universe symbols for integration compatibility"""
+        return list(self.universe.keys())
+    
     def start(self):
         """Start the portfolio optimization agent"""
         if not self.active:
