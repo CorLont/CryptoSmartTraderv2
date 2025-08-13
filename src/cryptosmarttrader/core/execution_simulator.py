@@ -251,7 +251,7 @@ class ExecutionSimulator:
         self.logger = get_logger()
         self.order_book_simulator = OrderBookSimulator(self.config)
 
-    async def mock_task
+    async def execute_order(
         self,
         symbol: str,
         side: str,
