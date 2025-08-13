@@ -1,8 +1,61 @@
 """
-ML Module - Machine learning models and prediction pipelines
-
-Advanced machine learning capabilities including model training,
-prediction generation, and uncertainty quantification.
+Machine Learning Module for CryptoSmartTrader
+Enterprise ML infrastructure with model registry, walk-forward training, and drift detection.
 """
 
-__all__ = []
+from .model_registry import (
+    ModelRegistry,
+    ModelVersion,
+    ModelMetrics,
+    ModelType,
+    ModelStatus,
+    DatasetInfo,
+    TrainingConfig,
+    create_model_registry
+)
+
+from .walk_forward_trainer import (
+    WalkForwardTrainer,
+    WalkForwardResult,
+    RetrainingConfig,
+    RetrainingTrigger,
+    ValidationMethod,
+    create_walk_forward_trainer
+)
+
+from .drift_detector import (
+    DriftDetector,
+    DriftAlert,
+    DriftType,
+    DriftSeverity,
+    DriftConfig,
+    create_drift_detector
+)
+
+__all__ = [
+    # Model Registry
+    'ModelRegistry',
+    'ModelVersion',
+    'ModelMetrics', 
+    'ModelType',
+    'ModelStatus',
+    'DatasetInfo',
+    'TrainingConfig',
+    'create_model_registry',
+    
+    # Walk-Forward Training
+    'WalkForwardTrainer',
+    'WalkForwardResult',
+    'RetrainingConfig',
+    'RetrainingTrigger',
+    'ValidationMethod',
+    'create_walk_forward_trainer',
+    
+    # Drift Detection
+    'DriftDetector',
+    'DriftAlert',
+    'DriftType',
+    'DriftSeverity',
+    'DriftConfig',
+    'create_drift_detector'
+]
