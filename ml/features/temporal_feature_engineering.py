@@ -358,7 +358,8 @@ class TemporalFeatureEngineer:
                     correlation = aligned_feature.corr(aligned_future)
                     if abs(correlation) > self.validation_settings['max_future_correlation']:
                         return True  # Suspicious forward correlation
-                except:
+                except Exception as e:
+                    logger.warning(f"Error in temporal_feature_engineering.py: {e}")
                     continue
         
         return False
@@ -397,7 +398,8 @@ class TemporalFeatureEngineer:
             if jump_ratio > 0.05:  # More than 5% large jumps
                 return False
             
-        except:
+        except Exception as e:
+            logger.warning(f"Error in temporal_feature_engineering.py: {e}")
             return True  # If calculation fails, assume consistent
         
         return True
@@ -458,7 +460,8 @@ def validate_feature_leakage(
                     if feature_col not in suspicious_features:
                         suspicious_features.append(feature_col)
             
-            except:
+            except Exception as e:
+                logger.warning(f"Error in temporal_feature_engineering.py: {e}")
                 continue
     
     return {

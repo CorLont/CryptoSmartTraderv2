@@ -183,7 +183,8 @@ class AlertsManager:
             last_sent_time = datetime.fromisoformat(last_sent)
             time_diff = (current_time - last_sent_time).total_seconds() / 60
             return time_diff >= cooldown_minutes
-        except:
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
             return True
     
     def _send_alert(self, alert: Dict[str, Any]):
@@ -481,7 +482,8 @@ class AlertsManager:
                         if status and alert.get('status') != status:
                             continue
                         filtered_alerts.append(alert.copy())
-                except:
+                except Exception as e:
+                    logger.warning(f"Error in alerts.py: {e}")
                     continue
             
             return sorted(filtered_alerts, key=lambda x: x.get('created_at', ''), reverse=True)

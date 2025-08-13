@@ -65,7 +65,7 @@ class DataManager:
                     
                     self.logger.info(f"Initialized {exchange_name} exchange")
                     
-            except Exception as e:
+            except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                 self.logger.error(f"Failed to initialize {exchange_name}: {str(e)}")
     
     def start_data_collection(self):
@@ -92,7 +92,7 @@ class DataManager:
                 # Sleep between collections
                 time.sleep(60)  # Collect every minute
                 
-            except Exception as e:
+            except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                 self.logger.error(f"Data collection error: {str(e)}")
                 time.sleep(30)  # Shorter sleep on error
     
@@ -112,7 +112,7 @@ class DataManager:
                 # Update data quality metrics
                 self._update_data_quality(exchange_name, len(processed_data), max_coins)
                 
-            except Exception as e:
+            except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                 self.logger.error(f"Failed to collect data from {exchange_name}: {str(e)}")
                 self._update_data_quality(exchange_name, 0, max_coins)
     
@@ -148,7 +148,7 @@ class DataManager:
                 
                 processed.append(processed_ticker)
                 
-            except Exception as e:
+            except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                 self.logger.error(f"Error processing ticker {symbol}: {str(e)}")
                 continue
         
@@ -179,7 +179,7 @@ class DataManager:
             else:
                 df.to_csv(file_path, index=False)
                 
-        except Exception as e:
+        except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
             self.logger.error(f"Error storing market data: {str(e)}")
     
     def _update_data_quality(self, exchange_name: str, collected_count: int, max_expected: int):
@@ -224,6 +224,9 @@ class DataManager:
                         except Exception:
                             pass
     
+    @retry_with_backoff()
+
+    
     def get_market_data(self, exchange: Optional[str] = None, symbol: Optional[str] = None) -> Optional[pd.DataFrame]:
         """Get current market data"""
         if exchange:
@@ -250,6 +253,9 @@ class DataManager:
             
             return None
     
+    @retry_with_backoff()
+
+    
     def get_historical_data(self, symbol: str, days: int = 30) -> Optional[pd.DataFrame]:
         """Get historical data for a symbol"""
         try:
@@ -271,7 +277,7 @@ class DataManager:
                             symbol_data = df[df['symbol'] == symbol]
                             if not symbol_data.empty:
                                 historical_data.append(symbol_data)
-                        except Exception as e:
+                        except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                             self.logger.error(f"Error reading historical data: {str(e)}")
                 
                 current_date += timedelta(days=1)
@@ -283,9 +289,12 @@ class DataManager:
             
             return None
             
-        except Exception as e:
+        except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
             self.logger.error(f"Error getting historical data: {str(e)}")
             return None
+    
+    @retry_with_backoff()
+
     
     def get_data_status(self) -> Dict[str, Any]:
         """Get comprehensive data status"""
@@ -296,6 +305,9 @@ class DataManager:
                 'exchanges': list(self.exchanges.keys()),
                 'collection_active': self.collection_active
             }
+    
+    @retry_with_backoff()
+
     
     def get_supported_symbols(self, exchange: Optional[str] = None) -> List[str]:
         """Get list of supported trading symbols"""
@@ -336,7 +348,31 @@ class DataManager:
                         self.logger.info(f"Deleted old data file: {file_path}")
                 except ValueError:
                     # Skip files that don't match the expected format
+
+import time
+import random
+from functools import wraps
+
+def retry_with_backoff(max_retries=3, base_delay=1, max_delay=60):
+    """Decorator for exponential backoff retry logic"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (ConnectionError, TimeoutError, OSError) as e:
+                    if attempt == max_retries - 1:
+                        raise e
+                    
+                    delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), max_delay)
+                    logger.warning(f"Attempt {attempt + 1} failed, retrying in {delay:.2f}s: {e}")
+                    time.sleep(delay)
+            return None
+        return wrapper
+    return decorator
+
                     continue
                     
-        except Exception as e:
+        except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
             self.logger.error(f"Error during data cleanup: {str(e)}")

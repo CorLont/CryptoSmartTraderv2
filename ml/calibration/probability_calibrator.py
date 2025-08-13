@@ -299,12 +299,14 @@ class ProbabilityCalibrator:
         
         try:
             log_loss_score = log_loss(val_labels, calibrated_probs)
-        except:
+        except Exception as e:
+            logger.warning(f"Error in probability_calibrator.py: {e}")
             log_loss_score = float('inf')
         
         try:
             auc_score = roc_auc_score(val_labels, calibrated_probs)
-        except:
+        except Exception as e:
+            logger.warning(f"Error in probability_calibrator.py: {e}")
             auc_score = 0.5
         
         # Check if well calibrated (ECE < 0.1)

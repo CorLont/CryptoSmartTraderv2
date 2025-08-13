@@ -251,7 +251,7 @@ class FundingRateMonitor:
                 self.last_update = datetime.now()
                 time.sleep(self.update_interval)
                 
-            except Exception as e:
+            except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                 self.error_count += 1
                 self.logger.error(f"Funding rate monitoring error: {e}")
                 time.sleep(120)  # Sleep 2 minutes on error
@@ -270,7 +270,7 @@ class FundingRateMonitor:
                     
                 self.monitoring_count += 1
                 
-            except Exception as e:
+            except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                 self.logger.error(f"Error updating funding rates for {symbol}: {e}")
     
     def _simulate_funding_data(self, symbol: str) -> FundingRateData:
@@ -344,7 +344,7 @@ class FundingRateMonitor:
                     self.basis_data[symbol] = basis_data
                     self.basis_history[symbol].append(basis_data)
                     
-            except Exception as e:
+            except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                 self.logger.error(f"Error updating basis data for {symbol}: {e}")
     
     def _simulate_basis_data(self, symbol: str) -> BasisData:
@@ -690,6 +690,9 @@ class FundingRateMonitor:
                 returns = [opp.expected_daily_return for opp in self.carry_opportunities]
                 self.stats['highest_opportunity_return'] = max(returns)
     
+    @retry_with_backoff()
+
+    
     def get_top_opportunities(self, limit: int = 5) -> List[CarryOpportunity]:
         """Get top carry opportunities by expected return"""
         
@@ -701,6 +704,9 @@ class FundingRateMonitor:
             )
             
             return sorted_opportunities[:limit]
+    
+    @retry_with_backoff()
+
     
     def get_funding_summary(self) -> Dict[str, Any]:
         """Get summary of funding rate data"""
@@ -735,6 +741,30 @@ class FundingRateMonitor:
         """Save monitoring data to disk"""
         try:
             # Save top opportunities
+
+import time
+import random
+from functools import wraps
+
+def retry_with_backoff(max_retries=3, base_delay=1, max_delay=60):
+    """Decorator for exponential backoff retry logic"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (ConnectionError, TimeoutError, OSError) as e:
+                    if attempt == max_retries - 1:
+                        raise e
+                    
+                    delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), max_delay)
+                    logger.warning(f"Attempt {attempt + 1} failed, retrying in {delay:.2f}s: {e}")
+                    time.sleep(delay)
+            return None
+        return wrapper
+    return decorator
+
             opportunities_file = self.data_path / "carry_opportunities.json"
             top_opportunities = self.get_top_opportunities(20)
             
@@ -753,8 +783,11 @@ class FundingRateMonitor:
             with open(opportunities_file, 'w') as f:
                 json.dump(opportunities_data, f, indent=2)
                 
-        except Exception as e:
+        except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
             self.logger.error(f"Error saving monitoring data: {e}")
+    
+    @retry_with_backoff()
+
     
     def get_agent_status(self) -> Dict[str, Any]:
         """Get comprehensive agent status"""

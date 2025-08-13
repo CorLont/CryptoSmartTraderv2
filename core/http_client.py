@@ -422,7 +422,7 @@ class EnterpriseHTTPClient:
             self.logger.error(f"HTTP error {service}: {url} - {e}")
             raise
         
-        except Exception as e:
+        except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
             # Record failure for circuit breaker
             if service in self.circuit_breakers:
                 self.circuit_breakers[service].record_failure()
@@ -449,7 +449,7 @@ class EnterpriseHTTPClient:
                 **kwargs
             )
             self.logger.debug(f"Background revalidation complete for {cache_key}")
-        except Exception as e:
+        except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
             self.logger.warning(f"Background revalidation failed for {cache_key}: {e}")
     
     async def get(self, service: str, url: str, **kwargs) -> Union[Dict, List, str]:

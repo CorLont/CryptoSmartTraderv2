@@ -887,7 +887,8 @@ try:
     # Health endpoint is automatically available at /_stcore/health in Streamlit
     # No additional configuration needed for Replit health checks
     pass
-except:
+except Exception as e:
+    logger.warning(f"Suppressed error: {e}")
     pass
 
 

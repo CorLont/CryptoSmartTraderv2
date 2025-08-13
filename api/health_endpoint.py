@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import logging
+logger = logging.getLogger(__name__)
 """
 Health Endpoint API - Simple FastAPI service for health checks
 """
@@ -69,7 +71,8 @@ class HealthChecker:
                 import requests
                 response = requests.get(f"{url}/health", timeout=2)
                 status[service] = "healthy" if response.status_code == 200 else "unhealthy"
-            except:
+            except ImportError as e:
+                logger.warning(f"Error in health_endpoint.py: {e}")
                 status[service] = "unavailable"
         
         return status
@@ -82,7 +85,8 @@ class HealthChecker:
             try:
                 with open(health_file) as f:
                     return json.load(f)
-            except:
+            except json.JSONDecodeError as e:
+                logger.warning(f"Error in health_endpoint.py: {e}")
                 return {"error": "Could not read health file"}
         
         return {"status": "no_health_file"}

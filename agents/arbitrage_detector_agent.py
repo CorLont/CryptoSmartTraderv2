@@ -248,7 +248,7 @@ class ArbitrageDetectorAgent:
                 
                 self.logger.info(f"Initialized {exchange_name} for arbitrage monitoring")
                 
-            except Exception as e:
+            except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                 self.logger.error(f"Failed to initialize {exchange_name}: {e}")
         
         self.stats['exchanges_monitored'] = len(self.exchange_clients)
@@ -319,7 +319,7 @@ class ArbitrageDetectorAgent:
                 self.last_update = datetime.now()
                 time.sleep(self.update_interval)
                 
-            except Exception as e:
+            except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                 self.error_count += 1
                 self.logger.error(f"Arbitrage detection error: {e}")
                 time.sleep(60)  # Sleep longer on error
@@ -347,7 +347,7 @@ class ArbitrageDetectorAgent:
                         
                         self.price_cache[symbol][exchange_name] = price_data
                         
-            except Exception as e:
+            except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                 self.logger.error(f"Error updating prices for {exchange_name}: {e}")
     
     def _detect_spot_arbitrage(self) -> List[ArbitrageOpportunity]:
@@ -561,7 +561,7 @@ class ArbitrageDetectorAgent:
                         if opportunity:
                             opportunities.append(opportunity)
                             
-                except Exception as e:
+                except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
                     self.logger.error(f"Triangular arbitrage calculation error: {e}")
         
         return opportunities
@@ -727,6 +727,9 @@ class ArbitrageDetectorAgent:
                 profits = [opp.net_profit_percentage for opp in self.arbitrage_opportunities]
                 self.stats['average_profit'] = np.mean(profits)
     
+    @retry_with_backoff()
+
+    
     def get_best_opportunities(self, limit: int = 10) -> List[ArbitrageOpportunity]:
         """Get best arbitrage opportunities sorted by profit"""
         
@@ -739,11 +742,17 @@ class ArbitrageDetectorAgent:
             
             return sorted_opportunities[:limit]
     
+    @retry_with_backoff()
+
+    
     def get_funding_opportunities(self) -> List[FundingRateOpportunity]:
         """Get active funding rate opportunities"""
         
         with self._lock:
             return list(self.funding_opportunities)
+    
+    @retry_with_backoff()
+
     
     def get_arbitrage_summary(self) -> Dict[str, Any]:
         """Get summary of arbitrage opportunities"""
@@ -780,6 +789,30 @@ class ArbitrageDetectorAgent:
         """Save arbitrage data to disk"""
         try:
             # Save best opportunities
+
+import time
+import random
+from functools import wraps
+
+def retry_with_backoff(max_retries=3, base_delay=1, max_delay=60):
+    """Decorator for exponential backoff retry logic"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (ConnectionError, TimeoutError, OSError) as e:
+                    if attempt == max_retries - 1:
+                        raise e
+                    
+                    delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), max_delay)
+                    logger.warning(f"Attempt {attempt + 1} failed, retrying in {delay:.2f}s: {e}")
+                    time.sleep(delay)
+            return None
+        return wrapper
+    return decorator
+
             opportunities_file = self.data_path / "arbitrage_opportunities.json"
             best_opportunities = self.get_best_opportunities(50)
             
@@ -799,8 +832,11 @@ class ArbitrageDetectorAgent:
             with open(opportunities_file, 'w') as f:
                 json.dump(opportunities_data, f, indent=2)
                 
-        except Exception as e:
+        except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
             self.logger.error(f"Error saving arbitrage data: {e}")
+    
+    @retry_with_backoff()
+
     
     def get_agent_status(self) -> Dict[str, Any]:
         """Get comprehensive agent status"""

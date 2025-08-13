@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 #!/usr/bin/env python3
 """
 Multi-Service Starter for Replit - Start all services with proper coordination
@@ -103,7 +106,8 @@ class MultiServiceManager:
                     if line:
                         print(f"[{name.upper()}:ERR] {line.strip()}")
                         
-            except:
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
                 break
     
     def check_service_health(self, name: str) -> bool:

@@ -117,7 +117,8 @@ class FuturesDataCollector:
                                 futures_symbol, timeframe='1h', limit=168
                             )
                             oi_values = [oi['openInterest'] for oi in oi_history]
-                        except:
+                        except FileNotFoundError as e:
+                            logger.warning(f"Error in futures_signals.py: {e}")
                             oi_values = []
                         
                         oi_data[symbol] = {

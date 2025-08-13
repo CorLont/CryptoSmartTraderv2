@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 #!/usr/bin/env python3
 """
 Start all 5 CryptoSmartTrader agents in background
@@ -76,7 +79,8 @@ def main():
                 proc.terminate()
                 proc.wait(timeout=10)
                 print(f"✅ Stopped {name}")
-            except:
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
                 proc.kill()
                 print(f"🔨 Force killed {name}")
         

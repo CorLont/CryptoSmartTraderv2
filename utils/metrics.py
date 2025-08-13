@@ -68,7 +68,8 @@ class MetricsServer:
             try:
                 health_data = self.health_monitor.get_system_health()
                 return health_data.get("overall_grade_numeric", 0.0)
-            except:
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
                 return 0.0
         return 0.5  # Default health score
     

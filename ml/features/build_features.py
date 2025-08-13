@@ -52,7 +52,8 @@ class FeatureValidator:
             try:
                 suite = self.data_context.get_expectation_suite(self.suite_name)
                 self.logger.info("Loaded existing expectation suite")
-            except:
+            except Exception as e:
+                logger.warning(f"Error in build_features.py: {e}")
                 suite = self.data_context.create_expectation_suite(self.suite_name)
                 self._configure_expectations(suite)
                 self.logger.info("Created new expectation suite")

@@ -160,7 +160,8 @@ class SystemOptimizer:
                 try:
                     current_process.nice(5)  # Lower priority slightly
                     optimizations.append("reduced_process_priority")
-                except:
+                except Exception as e:
+                    logger.warning(f"Error in system_optimizer.py: {e}")
                     pass
             
             # Optimize agent update intervals
