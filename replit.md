@@ -1,5 +1,5 @@
 # Overview
-CryptoSmartTrader V2 is an institutional-grade multi-agent cryptocurrency trading intelligence system. Its purpose is to generate superior financial returns through advanced quantitative strategies, real-time market analysis, deep learning, sentiment analysis, technical analysis, robust backtesting, and automated trade execution across diverse cryptocurrencies. The project aims for market leadership by prioritizing high data integrity, advanced risk management, and comprehensive observability.
+CryptoSmartTrader V2 is an institutional-grade multi-agent cryptocurrency trading intelligence system designed to generate superior financial returns. It achieves this through advanced quantitative strategies, real-time market analysis, deep learning, sentiment analysis, technical analysis, robust backtesting, and automated trade execution across diverse cryptocurrencies. The project aims for market leadership by prioritizing high data integrity, advanced risk management, and comprehensive observability, with a business vision to capture significant market share in the automated trading sector.
 
 # User Preferences
 Preferred communication style: Simple, everyday language.
@@ -40,9 +40,9 @@ Additional systems: Environment separation (dev/staging/prod), Prometheus monito
 The system employs a Distributed Multi-Process Architecture with isolated agent processes, featuring circuit breakers, exponential backoff, health monitoring, and automatic restart.
 
 ## Key Architectural Decisions
-*   **Deployment & Structure:** Lean 3-script deployment, duplicate-free core, consolidated dependencies, multi-service architecture, enterprise package layout, and clean `src/` structure.
-*   **Foundational Services:** Comprehensive testing, enterprise security, production-grade structured JSON logging, Pydantic configuration with fail-fast startup checks, async I/O with global rate limiting, intelligent caching, and health monitoring with GO/NO-GO gates.
-*   **Data & Exchange Management:** Multi-exchange integration, real-time data pipeline, hard data integrity filters (zero-tolerance), timestamp synchronization, and temporal validation/splits/feature engineering.
+*   **Deployment & Structure:** Lean 3-script deployment, duplicate-free core, consolidated dependencies, multi-service architecture with a clean `src/` structure and enterprise package layout.
+*   **Foundational Services:** Comprehensive testing infrastructure, enterprise security, production-grade structured JSON logging, Pydantic configuration with fail-fast startup checks, async I/O with global rate limiting, intelligent caching, and health monitoring with GO/NO-GO gates.
+*   **Data & Exchange Management:** Multi-exchange integration, real-time data pipeline, hard data integrity filters (zero-tolerance for non-authentic data), timestamp synchronization, and temporal validation/splits/feature engineering.
 *   **Regime Detection & Strategy Adaptation:** Advanced market regime classification (6 types) using Hurst exponent, ADX/volatility/market breadth analysis, ML-powered classification, and regime-adaptive trading strategies.
 *   **Machine Learning & AI:** GPU optimization, multi-horizon ML, ML uncertainty quantification, continual learning, automated feature engineering, reinforcement learning, Human-in-the-Loop & explainability, advanced transformers, conformal prediction, probability calibrator, and regime-aware models. Includes a comprehensive model registry with versioning and automated retraining triggers.
 *   **Ensemble & Meta-Learning:** Alpha-stacking architecture combining orthogonal information sources (TA, Sentiment, Regime), a meta-learner, sophisticated feature engineering, time series cross-validation, probability calibration, alpha blending, signal decay management, and consensus mechanisms.
@@ -68,4 +68,3 @@ The system employs a Distributed Multi-Process Architecture with isolated agent 
 *   **AI/ML Services:** OpenAI API
 *   **Cryptocurrency Exchanges:** Kraken, Binance, KuCoin, Huobi
 *   **Monitoring:** Prometheus
-```
