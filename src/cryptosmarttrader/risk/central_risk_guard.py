@@ -16,6 +16,9 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Import os for file operations
+import os
+
 
 class RiskLevel(Enum):
     """Risk severity levels"""
@@ -71,6 +74,61 @@ class RiskLimits:
     # Correlation limits
     max_portfolio_correlation: float = 0.7
     max_single_correlation: float = 0.9
+
+
+@dataclass 
+class RiskMetrics:
+    """Risk assessment metrics"""
+    daily_pnl: float = 0.0
+    drawdown_percent: float = 0.0
+    total_exposure: float = 0.0
+    position_count: int = 0
+    correlation_score: float = 0.0
+    data_quality_score: float = 1.0
+
+
+@dataclass
+class RiskViolation:
+    """Risk limit violation details"""
+    risk_type: RiskType
+    risk_level: RiskLevel
+    current_value: float
+    limit_value: float
+    violation_percent: float
+    description: str
+    timestamp: datetime
+    affected_symbols: List[str] = field(default_factory=list)
+
+
+@dataclass
+class RiskCheckResult:
+    """Result of risk validation check"""
+    is_safe: bool
+    violations: List[RiskViolation]
+    risk_score: float  # 0.0 = safe, 1.0 = maximum risk
+    warnings: List[str] = field(default_factory=list)
+    kill_switch_triggered: bool = False
+    reason: str = ""
+
+
+@dataclass
+class PositionInfo:
+    """Position information for risk tracking"""
+    symbol: str
+    size_usd: float
+    entry_price: float
+    current_price: float
+    unrealized_pnl: float
+    timestamp: datetime
+
+
+@dataclass 
+class DataGap:
+    """Data gap information"""
+    symbol: str
+    gap_start: datetime
+    gap_end: Optional[datetime]
+    gap_duration_minutes: float
 
 
 @dataclass
