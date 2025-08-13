@@ -16,6 +16,8 @@ from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
+import sys
+sys.path.insert(0, '.')
 from src.cryptosmarttrader.observability import (
     get_metrics_collector, create_alert_manager, setup_metrics_collector
 )
