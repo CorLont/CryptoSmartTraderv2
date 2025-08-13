@@ -14,7 +14,7 @@ import json
 import warnings
 warnings.filterwarnings('ignore')
 
-from core.logging_manager import get_logger
+from ..core.logging_manager import get_logger
 
 class GateStatus(str, Enum):
     """Gate status levels"""

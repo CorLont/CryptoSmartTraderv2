@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class TradingMode(Enum):
     """Trading mode enumeration"""
@@ -59,7 +59,7 @@ class AutoDisableSystem:
     """Automatic trading disable system based on health scores"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.logger = get_structured_logger("AutoDisableSystem")
+        self.logger = get_logger("AutoDisableSystem")
 
         # Default configuration
         self.config = {

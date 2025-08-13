@@ -15,7 +15,7 @@ from enum import Enum
 import warnings
 from pathlib import Path
 
-from core.consolidated_logging_manager import get_consolidated_logger
+from ..core.consolidated_logging_manager import get_consolidated_logger
 
 class SplitStrategy(Enum):
     """Time series splitting strategies"""

@@ -35,7 +35,7 @@ class DailyHealthDashboard:
         """Collect comprehensive system health metrics"""
 
         import psutil
-        from core.workstation_optimizer import WorkstationHealthMonitor
+        from ..core.workstation_optimizer import WorkstationHealthMonitor
 
         monitor = WorkstationHealthMonitor()
         current_metrics = monitor.collect_metrics()

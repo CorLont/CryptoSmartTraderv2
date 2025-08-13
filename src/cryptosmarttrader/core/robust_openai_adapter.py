@@ -40,7 +40,7 @@ except ImportError:
     def retry_if_exception_type(exception_types):
         return None
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class LLMTaskType(Enum):
     """Types of LLM tasks with different requirements"""
@@ -172,7 +172,7 @@ class LLMCache:
     def __init__(self, cache_dir: str = "cache/llm_responses"):
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.logger = get_structured_logger("LLMCache")
+        self.logger = get_logger("LLMCache")
 
     def _hash_request(self, prompt: str, config: LLMConfig) -> str:
         """Create hash key for request"""
@@ -296,7 +296,7 @@ class PurePythonFallback:
     """Pure Python fallback for basic analysis when OpenAI fails"""
 
     def __init__(self):
-        self.logger = get_structured_logger("PythonFallback")
+        self.logger = get_logger("PythonFallback")
 
         # Simple sentiment keywords
         self.positive_words = {
@@ -367,7 +367,7 @@ class RobustOpenAIAdapter:
     """Enterprise-grade OpenAI adapter with all safety features"""
 
     def __init__(self, api_key: Optional[str] = None, config: Optional[LLMConfig] = None):
-        self.logger = get_structured_logger("RobustOpenAIAdapter")
+        self.logger = get_logger("RobustOpenAIAdapter")
 
         # Initialize OpenAI client
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')

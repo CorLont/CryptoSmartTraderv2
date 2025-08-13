@@ -162,7 +162,7 @@ def get_unified_logger(name: str) -> UnifiedStructuredLogger:
         return UnifiedStructuredLogger._instances[name]
 
 # Alias for compatibility
-def get_structured_logger(name: str) -> UnifiedStructuredLogger:
+def get_logger(name: str) -> UnifiedStructuredLogger:
     """Compatibility alias for get_unified_logger"""
     return get_unified_logger(name)
 

@@ -25,7 +25,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 # Import core components
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 # Import regime detector
 from .regime_detector import RegimeDetector, get_regime_detector
@@ -41,7 +41,7 @@ class RegimeSpecificModel:
         self.is_fitted = False
         self.performance_metrics = {}
 
-        self.logger = get_structured_logger(f"RegimeModel_{regime_name}")
+        self.logger = get_logger(f"RegimeModel_{regime_name}")
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> Dict[str, Any]:
         """Fit regime-specific model"""
@@ -142,7 +142,7 @@ class RegimeAwarePredictor:
                  routing_strategy: str = "regime_specific",  # or "regime_feature"
                  regimes: List[str] = None):
 
-        self.logger = get_structured_logger("RegimeAwarePredictor")
+        self.logger = get_logger("RegimeAwarePredictor")
         self.routing_strategy = routing_strategy
 
         # Default regimes if not specified

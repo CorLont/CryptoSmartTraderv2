@@ -423,8 +423,8 @@ def main():
     
     # Early Listing Detection Status
     try:
-        from agents.listing_detection_agent import ListingDetectionAgent
-        from agents.early_mover_system import EarlyMoverSystem
+        from src.cryptosmarttrader.agents.listing_detection_agent import ListingDetectionAgent
+        from src.cryptosmarttrader.agents.early_mover_system import EarlyMoverSystem
         
         listing_agent = ListingDetectionAgent()
         mover_system = EarlyMoverSystem()
@@ -448,8 +448,8 @@ def main():
         
         # Add Cross-Exchange Arbitrage Status
         try:
-            from agents.arbitrage_detector_agent import ArbitrageDetectorAgent
-            from agents.funding_rate_monitor import FundingRateMonitor
+            from src.cryptosmarttrader.agents.arbitrage_detector_agent import ArbitrageDetectorAgent
+            from src.cryptosmarttrader.agents.funding_rate_monitor import FundingRateMonitor
             
             arbitrage_agent = ArbitrageDetectorAgent()
             funding_monitor = FundingRateMonitor()
@@ -478,7 +478,7 @@ def main():
         
         # Add Live AI Ensemble Voting Status
         try:
-            from agents.ensemble_voting_agent import EnsembleVotingAgent, ModelType, VotingMethod
+            from src.cryptosmarttrader.agents.ensemble_voting_agent import EnsembleVotingAgent, ModelType, VotingMethod
             
             ensemble_agent = EnsembleVotingAgent()
             
@@ -514,7 +514,7 @@ def main():
         
         # Add Advanced Portfolio Optimization Status
         try:
-            from agents.portfolio_optimizer_agent import PortfolioOptimizerAgent, OptimizationMethod
+            from src.cryptosmarttrader.agents.portfolio_optimizer_agent import PortfolioOptimizerAgent, OptimizationMethod
             
             portfolio_agent = PortfolioOptimizerAgent()
             
@@ -551,7 +551,7 @@ def main():
         
         # Add News Speed Advantage Status
         try:
-            from agents.news_speed_agent import NewsSpeedAgent, NewsImpact, TradingDirection
+            from src.cryptosmarttrader.agents.news_speed_agent import NewsSpeedAgent, NewsImpact, TradingDirection
             
             news_agent = NewsSpeedAgent()
             

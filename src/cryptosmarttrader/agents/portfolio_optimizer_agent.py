@@ -9,13 +9,13 @@ import numpy as np
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class PortfolioOptimizerAgent:
     """Agent for portfolio optimization and allocation"""
 
     def __init__(self):
-        self.logger = get_structured_logger("PortfolioOptimizerAgent")
+        self.logger = get_logger("PortfolioOptimizerAgent")
         self.max_positions = 10
         self.min_allocation = 0.01  # 1% minimum allocation
         self.max_allocation = 0.20  # 20% maximum allocation per position

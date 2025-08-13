@@ -15,12 +15,12 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
 
-from core.logging_manager import get_logger
-from core.execution_simulator import (
+from ..core.logging_manager import get_logger
+from ..core.execution_simulator import (
     get_execution_simulator, Order, OrderSide, OrderType,
     MarketConditions, ExecutionSimulator
 )
-from core.ml_slo_monitor import get_slo_monitor
+from ..core.ml_slo_monitor import get_slo_monitor
 
 class BacktestMode(str, Enum):
     """Backtesting modes"""
@@ -375,7 +375,7 @@ class BacktestEngine:
         fees = trade_value * config.commission_rate
 
         # Simple fill
-        from core.execution_simulator import ExecutionFill, OrderStatus
+        from ..core.execution_simulator import ExecutionFill, OrderStatus
         fill = ExecutionFill(
             price=execution_price,
             size=order.size,

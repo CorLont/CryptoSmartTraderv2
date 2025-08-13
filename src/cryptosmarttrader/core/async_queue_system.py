@@ -19,7 +19,7 @@ warnings.filterwarnings('ignore')
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 try:
     import redis.asyncio as aioredis
@@ -70,7 +70,7 @@ class RateLimiter:
         self.min_interval = 1.0 / requests_per_second
         self.last_request_time = 0.0
         self.request_count = 0
-        self.logger = get_structured_logger("RateLimiter")
+        self.logger = get_logger("RateLimiter")
 
     async def acquire(self, operation_name: str = "unknown") -> None:
         """Acquire rate limit token"""
@@ -118,7 +118,7 @@ class AsyncioQueueBackend(AsyncQueueBackend):
     def __init__(self, max_queue_size: int = 10000):
         self.queues: Dict[str, asyncio.Queue] = {}
         self.max_queue_size = max_queue_size
-        self.logger = get_structured_logger("AsyncioQueueBackend")
+        self.logger = get_logger("AsyncioQueueBackend")
 
     def _get_queue(self, queue_name: str) -> asyncio.Queue:
         """Get or create queue"""
@@ -192,7 +192,7 @@ class RedisQueueBackend(AsyncQueueBackend):
     def __init__(self, redis_url: str = "redis://localhost:6379"):
         self.redis_url = redis_url
         self.redis: Optional[aioredis.Redis] = None
-        self.logger = get_structured_logger("RedisQueueBackend")
+        self.logger = get_logger("RedisQueueBackend")
         self.connected = False
 
     async def connect(self) -> bool:
@@ -302,7 +302,7 @@ class AsyncQueueSystem:
     def __init__(self, backend: AsyncQueueBackend, rate_limiter: RateLimiter):
         self.backend = backend
         self.rate_limiter = rate_limiter
-        self.logger = get_structured_logger("AsyncQueueSystem")
+        self.logger = get_logger("AsyncQueueSystem")
         self.metrics = {
             'messages_sent': 0,
             'messages_received': 0,
@@ -452,12 +452,12 @@ class AsyncQueueSystem:
 # Message handlers for testing
 async def data_collection_handler(message: QueueMessage) -> None:
     """Handler for data collection messages"""
-    logger = get_structured_logger("DataCollectionHandler")
+    logger = get_logger("DataCollectionHandler")
     logger.info(f"Processing data collection: {message.payload.get('symbol', 'unknown')}")
 
 async def ml_prediction_handler(message: QueueMessage) -> None:
     """Handler for ML prediction messages"""
-    logger = get_structured_logger("MLPredictionHandler")
+    logger = get_logger("MLPredictionHandler")
     logger.info(f"Processing ML prediction: {message.payload.get('model', 'unknown')}")
 
 if __name__ == "__main__":

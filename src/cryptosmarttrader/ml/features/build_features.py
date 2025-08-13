@@ -22,13 +22,13 @@ from great_expectations.exceptions import ValidationError
 # Import core components
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class FeatureValidator:
     """Great Expectations based data validation for features"""
 
     def __init__(self):
-        self.logger = get_structured_logger("FeatureValidator")
+        self.logger = get_logger("FeatureValidator")
         self.data_context = None
         self.suite_name = "crypto_features_suite"
         self.quarantine_dir = Path("data/quarantine")
@@ -270,7 +270,7 @@ class FeatureMerger:
     """Merges multiple data sources into unified feature set"""
 
     def __init__(self):
-        self.logger = get_structured_logger("FeatureMerger")
+        self.logger = get_logger("FeatureMerger")
         self.validator = FeatureValidator()
 
         # Data source paths

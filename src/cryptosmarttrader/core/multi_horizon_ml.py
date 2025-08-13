@@ -27,7 +27,7 @@ except ImportError:
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from core.gpu_accelerator import gpu_accelerator
+from ..core.gpu_accelerator import gpu_accelerator
 
 class MultiHorizonMLSystem:
     """Multi-horizon ML system for alpha seeking with self-learning capabilities"""

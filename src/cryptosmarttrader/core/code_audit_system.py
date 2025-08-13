@@ -23,13 +23,13 @@ from sklearn.calibration import CalibratedClassifierCV
 
 # Core imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class CriticalCodeAuditor:
     """Enterprise-grade code audit system for trading infrastructure"""
 
     def __init__(self):
-        self.logger = get_structured_logger("CodeAuditor")
+        self.logger = get_logger("CodeAuditor")
         self.audit_results = {}
         self.critical_issues = []
         self.warnings = []

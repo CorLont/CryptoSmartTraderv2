@@ -10,7 +10,7 @@ from typing import Dict, List, Any, Tuple, Optional
 from scipy.optimize import minimize
 from sklearn.covariance import LedoitWolf
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class UncertaintyAwareKellyOptimizer:
     """Kelly-lite position sizing with uncertainty quantification and risk controls"""
@@ -26,7 +26,7 @@ class UncertaintyAwareKellyOptimizer:
             kelly_fraction: Fraction of Kelly criterion to use (for safety)
             uncertainty_penalty: Penalty factor for high uncertainty predictions
         """
-        self.logger = get_structured_logger("KellyLiteOptimizer")
+        self.logger = get_logger("KellyLiteOptimizer")
         self.max_position_size = max_position_size
         self.max_correlation = max_correlation
         self.kelly_fraction = kelly_fraction
@@ -357,7 +357,7 @@ class CorrelationCapManager:
     """Manages correlation limits and cluster-based position limits"""
 
     def __init__(self, max_cluster_allocation: float = 0.4):
-        self.logger = get_structured_logger("CorrelationCapManager")
+        self.logger = get_logger("CorrelationCapManager")
         self.max_cluster_allocation = max_cluster_allocation
 
     def apply_cluster_caps(self, positions: Dict[str, Any],

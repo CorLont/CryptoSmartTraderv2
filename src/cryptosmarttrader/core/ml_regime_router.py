@@ -15,8 +15,8 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
 
-from core.logging_manager import get_logger
-from core.ml_uncertainty_engine import get_uncertainty_engine, RegimePrediction
+from ..core.logging_manager import get_logger
+from ..core.ml_uncertainty_engine import get_uncertainty_engine, RegimePrediction
 
 class ModelType(str, Enum):
     """Available model types for each regime"""

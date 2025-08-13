@@ -1,12 +1,18 @@
 """
-API Module - FastAPI web services and health monitoring
+CryptoSmartTrader V2 - API Module
 
-This module provides the REST API interface for CryptoSmartTrader V2,
-including health endpoints, market data access, and prediction services.
+FastAPI-based REST API for system integration and monitoring:
+- Health endpoints for service monitoring
+- Trading data and analytics endpoints
+- Risk management status and controls
+- ML model predictions and confidence scores
 """
 
-# Import specific components as needed to avoid circular imports
-# from .main import app
-# from .health_endpoint import health_router
+# API router imports
+from .main import app
+from .health_endpoint import health_router
 
-__all__ = []
+__all__ = [
+    'app',
+    'health_router'
+]

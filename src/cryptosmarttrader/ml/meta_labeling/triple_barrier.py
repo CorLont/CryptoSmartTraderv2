@@ -10,7 +10,7 @@ import numpy as np
 from typing import Dict, List, Any, Tuple, Optional
 from datetime import datetime, timedelta
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class TripleBarrierLabeler:
     """Meta-labeling system using triple barrier method for signal quality"""
@@ -20,7 +20,7 @@ class TripleBarrierLabeler:
                  stop_loss: float = 0.01,      # 1% stop loss
                  max_hold_days: int = 5):      # Max 5 days holding period
 
-        self.logger = get_structured_logger("TripleBarrierLabeler")
+        self.logger = get_logger("TripleBarrierLabeler")
         self.profit_target = profit_target
         self.stop_loss = stop_loss
         self.max_hold_days = max_hold_days

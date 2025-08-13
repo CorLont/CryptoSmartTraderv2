@@ -20,7 +20,7 @@ from scipy.stats import ks_2samp, wasserstein_distance
 import json
 from pathlib import Path
 
-from core.logging_manager import get_logger
+from ..core.logging_manager import get_logger
 
 class LeakageType(str, Enum):
     """Types of feature leakage"""

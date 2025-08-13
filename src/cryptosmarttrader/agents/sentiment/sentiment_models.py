@@ -8,14 +8,14 @@ import numpy as np
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 from .model import SentimentModel
 
 class SentimentEnsemble:
     """Ensemble of sentiment models for robust predictions"""
 
     def __init__(self):
-        self.logger = get_structured_logger("SentimentEnsemble")
+        self.logger = get_logger("SentimentEnsemble")
         self.models = {}
         self.weights = {}
         self.initialized = False

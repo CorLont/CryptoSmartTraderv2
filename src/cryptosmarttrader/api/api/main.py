@@ -25,8 +25,8 @@ from prometheus_fastapi_instrumentator import Instrumentator
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from cryptosmarttrader.config import settings, log_startup_config
-from api.routers import health, data, predictions, signals
-from api.middleware import security_headers_middleware, logging_middleware
+from ..api.routers import health, data, predictions, signals
+from ..api.middleware import security_headers_middleware, logging_middleware
 
 
 # Rate limiter configuration

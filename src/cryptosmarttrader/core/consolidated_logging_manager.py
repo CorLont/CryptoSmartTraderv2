@@ -168,7 +168,7 @@ def get_logger(name: str = "CryptoSmartTrader") -> ConsolidatedLogger:
     """Compatibility alias for get_consolidated_logger"""
     return get_consolidated_logger(name)
 
-def get_structured_logger(name: str) -> ConsolidatedLogger:
+def get_logger(name: str) -> ConsolidatedLogger:
     """Compatibility alias for get_consolidated_logger"""
     return get_consolidated_logger(name)
 

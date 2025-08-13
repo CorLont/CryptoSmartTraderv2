@@ -10,20 +10,20 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from core.robust_openai_adapter import (
+from ..core.robust_openai_adapter import (
     get_openai_adapter,
     NewsImpactSchema,
     SentimentSchema,
     LLMTaskType,
     LLMConfig
 )
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class OpenAIIntegrationManager:
     """Centralized manager for all OpenAI operations in the trading system"""
 
     def __init__(self):
-        self.logger = get_structured_logger("OpenAIIntegrationManager")
+        self.logger = get_logger("OpenAIIntegrationManager")
         self.adapter = get_openai_adapter()
 
         # Feature flags

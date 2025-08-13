@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class OrderSide(Enum):
     """Order side enumeration"""
@@ -117,7 +117,7 @@ class OrderBookSimulator:
 
     def __init__(self, symbol: str, exchange_config: Optional[ExchangeConfig] = None):
         self.symbol = symbol
-        self.logger = get_structured_logger("OrderBookSimulator")
+        self.logger = get_logger("OrderBookSimulator")
 
         # Exchange configuration
         self.exchange_config = exchange_config or ExchangeConfig("simulated")

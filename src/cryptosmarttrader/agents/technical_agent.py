@@ -22,7 +22,7 @@ except ImportError:
     TA_AVAILABLE = False
     talib = None
 
-from core.consolidated_logging_manager import get_consolidated_logger
+from ..core.consolidated_logging_manager import get_consolidated_logger
 
 class TechnicalAgent:
     """Enterprise threaded TA agent with proper lifecycle and authentic indicators"""

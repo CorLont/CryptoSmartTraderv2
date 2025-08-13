@@ -9,7 +9,7 @@ from slowapi.util import get_remote_address
 from typing import List, Optional
 from datetime import datetime
 
-from api.schemas.common import BaseResponse, PaginatedResponse
+from ..api.schemas.common import BaseResponse, PaginatedResponse
 
 # Rate limiter
 limiter = Limiter(key_func=get_remote_address)

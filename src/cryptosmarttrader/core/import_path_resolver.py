@@ -120,7 +120,7 @@ def get_logger_function():
 
     if logging_module:
         # Try different logger function names
-        for func_name in ['get_consolidated_logger', 'get_unified_logger', 'get_structured_logger', 'get_logger']:
+        for func_name in ['get_consolidated_logger', 'get_unified_logger', 'get_logger', 'get_logger']:
             if hasattr(logging_module, func_name):
                 return getattr(logging_module, func_name)
 

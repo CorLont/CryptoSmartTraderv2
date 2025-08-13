@@ -8,7 +8,7 @@ import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 
-from core.http_client import http_client
+from ..core.http_client import http_client
 
 
 class DataSourceManager:

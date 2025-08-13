@@ -16,13 +16,13 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 try:
-    from core.structured_logger import get_structured_logger
+    from ..core.structured_logger import get_logger
 except ImportError:
     try:
-        from config.structured_logging import get_structured_logger
+        from config.structured_logging import get_logger
     except ImportError:
         import logging
-        def get_structured_logger(name):
+        def get_logger(name):
             return logging.getLogger(name)
 
 class StrictConfidenceGate:
@@ -30,7 +30,7 @@ class StrictConfidenceGate:
 
     def __init__(self, confidence_threshold: float = 0.80):
         self.confidence_threshold = confidence_threshold
-        self.logger = get_structured_logger("StrictConfidenceGate")
+        self.logger = get_logger("StrictConfidenceGate")
 
         # Tracking
         self.gate_applications = []

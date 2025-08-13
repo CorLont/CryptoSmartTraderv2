@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional, Tuple
 from pathlib import Path
 
-from core.unified_structured_logger import get_unified_logger
+from ..core.unified_structured_logger import get_unified_logger
 
 # Import OpenAI intelligence with fallback
 try:

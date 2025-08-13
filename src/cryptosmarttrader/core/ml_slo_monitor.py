@@ -15,7 +15,7 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
 
-from core.logging_manager import get_logger
+from ..core.logging_manager import get_logger
 
 class SLOStatus(str, Enum):
     """SLO compliance status"""

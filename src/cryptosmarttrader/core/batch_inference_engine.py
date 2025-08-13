@@ -18,11 +18,11 @@ import pickle
 import warnings
 warnings.filterwarnings('ignore')
 
-from core.logging_manager import get_logger
-from core.data_quality_manager import get_data_quality_manager
-from core.hard_data_filter import get_hard_data_filter
-from core.async_data_manager import get_async_data_manager
-from core.ml_slo_monitor import get_slo_monitor
+from ..core.logging_manager import get_logger
+from ..core.data_quality_manager import get_data_quality_manager
+from ..core.hard_data_filter import get_hard_data_filter
+from ..core.async_data_manager import get_async_data_manager
+from ..core.ml_slo_monitor import get_slo_monitor
 
 class InferenceStatus(str, Enum):
     """Batch inference status"""

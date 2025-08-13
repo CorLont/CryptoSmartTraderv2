@@ -11,8 +11,8 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 
 from config.settings import AppSettings, get_settings
-from core.async_data_manager import AsyncDataManager, RateLimitConfig
-from core.secrets_manager import SecretsManager, get_secrets_manager
+from ..core.async_data_manager import AsyncDataManager, RateLimitConfig
+from ..core.secrets_manager import SecretsManager, get_secrets_manager
 
 
 class Container(containers.DeclarativeContainer):
@@ -177,7 +177,7 @@ def create_data_collector_agent(
     logger: logging.Logger = Provide[Container.logger_factory]
 ):
     """Factory function for data collector agent with DI"""
-    from agents.data_collector import AsyncDataCollectorAgent
+    from ..agents.data_collector import AsyncDataCollectorAgent
 
     agent_config = {
         'collection_interval': 45,
@@ -197,7 +197,7 @@ def create_health_monitor_agent(
     logger: logging.Logger = Provide[Container.logger_factory]
 ):
     """Factory function for health monitor agent with DI"""
-    from agents.health_monitor import HealthMonitorAgent
+    from ..agents.health_monitor import HealthMonitorAgent
 
     agent_config = {
         'monitor_interval': config.agents.health_check_interval,

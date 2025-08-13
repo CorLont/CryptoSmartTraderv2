@@ -17,8 +17,8 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
 
-from core.logging_manager import get_logger
-from core.async_data_manager import get_async_data_manager
+from ..core.logging_manager import get_logger
+from ..core.async_data_manager import get_async_data_manager
 
 class CoverageStatus(str, Enum):
     """Coverage audit status"""

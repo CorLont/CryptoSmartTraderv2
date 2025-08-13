@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 from scipy import stats
 import uuid
 
-from core.logging_manager import get_logger
+from ..core.logging_manager import get_logger
 
 class OrderType(str, Enum):
     """Order types"""

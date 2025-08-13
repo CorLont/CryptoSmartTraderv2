@@ -18,7 +18,7 @@ from enum import Enum
 import logging
 
 try:
-    from core.consolidated_logging_manager import get_consolidated_logger
+    from ..core.consolidated_logging_manager import get_consolidated_logger
 except ImportError:
     def get_consolidated_logger(name: str) -> logging.Logger:
         logger = logging.getLogger(name)
@@ -536,7 +536,7 @@ class SystemValidator:
         try:
             # Try to import logging manager - WARNING not CRITICAL if missing
             try:
-                from core.consolidated_logging_manager import get_consolidated_logger
+                from ..core.consolidated_logging_manager import get_consolidated_logger
                 test_logger = get_consolidated_logger("test")
                 self._add_result("logging_system", ValidationSeverity.SUCCESS, True,
                                "Enterprise logging system available")

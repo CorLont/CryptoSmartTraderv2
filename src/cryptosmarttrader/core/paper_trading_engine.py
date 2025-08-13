@@ -17,12 +17,12 @@ warnings.filterwarnings('ignore')
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
-from core.orderbook_simulator import (
+from ..core.structured_logger import get_logger
+from ..core.orderbook_simulator import (
     OrderBookSimulator, OrderSide, OrderType, TimeInForce,
     OrderStatus, ExchangeConfig
 )
-from core.slippage_estimator import SlippageEstimator
+from ..core.slippage_estimator import SlippageEstimator
 
 class TradingSession(Enum):
     """Trading session status"""
@@ -95,7 +95,7 @@ class PaperTradingEngine:
     """Complete paper trading engine with 4-week validation"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.logger = get_structured_logger("PaperTradingEngine")
+        self.logger = get_logger("PaperTradingEngine")
 
         # Configuration
         self.config = {

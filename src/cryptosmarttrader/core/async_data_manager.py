@@ -18,10 +18,10 @@ from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_i
 from asyncio_throttle.throttler import Throttler
 import ccxt.async_support as ccxt_async
 from dataclasses import dataclass
-from core.logging_manager import get_logger
-from core.data_quality_manager import get_data_quality_manager
-from core.data_integrity_validator import get_data_integrity_validator
-from core.secrets_manager import get_secrets_manager, secure_function, SecretRedactor
+from ..core.logging_manager import get_logger
+from ..core.data_quality_manager import get_data_quality_manager
+from ..core.data_integrity_validator import get_data_integrity_validator
+from ..core.secrets_manager import get_secrets_manager, secure_function, SecretRedactor
 
 @dataclass
 class RateLimitConfig:

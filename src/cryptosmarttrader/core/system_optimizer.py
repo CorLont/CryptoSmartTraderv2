@@ -25,7 +25,7 @@ except ImportError:
     PSUTIL_AVAILABLE = False
 
 try:
-    from core.consolidated_logging_manager import get_consolidated_logger
+    from ..core.consolidated_logging_manager import get_consolidated_logger
 except ImportError:
     def get_consolidated_logger(name: str) -> logging.Logger:
         logger = logging.getLogger(name)

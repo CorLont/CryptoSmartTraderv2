@@ -35,7 +35,7 @@ except ImportError:
 # Import core components
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class OnlineWeightTracker:
     """Track model performance and adjust weights in sliding window"""
@@ -49,7 +49,7 @@ class OnlineWeightTracker:
         self.current_weights = {}      # {model_name: weight}
         self.model_scores = {}         # {model_name: current_score}
 
-        self.logger = get_structured_logger("OnlineWeightTracker")
+        self.logger = get_logger("OnlineWeightTracker")
 
     def update_performance(self, model_predictions: Dict[str, float],
                           actual_value: float,
@@ -205,7 +205,7 @@ class MetaLearnerStacker:
         self.feature_importance = {}
         self.performance_metrics = {}
 
-        self.logger = get_structured_logger("MetaLearnerStacker")
+        self.logger = get_logger("MetaLearnerStacker")
 
     def _prepare_meta_features(self, base_predictions: Dict[str, np.ndarray],
                               uncertainties: Dict[str, np.ndarray],
@@ -441,7 +441,7 @@ class EnsembleMetaLearner:
                  online_window_size: int = 100,
                  enable_failsafe: bool = True):
 
-        self.logger = get_structured_logger("EnsembleMetaLearner")
+        self.logger = get_logger("EnsembleMetaLearner")
 
         # Components
         self.meta_learner = MetaLearnerStacker(meta_model_type)

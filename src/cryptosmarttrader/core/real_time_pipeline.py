@@ -478,7 +478,7 @@ class RealTimePipeline:
         """Run multi-horizon ML batch inference on coins with complete data ONLY"""
         try:
             # Import multi-horizon ML system
-            from core.multi_horizon_ml import MultiHorizonMLSystem
+            from ..core.multi_horizon_ml import MultiHorizonMLSystem
 
             # Initialize ML system
             ml_system = MultiHorizonMLSystem(self.container)

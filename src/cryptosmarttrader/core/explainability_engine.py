@@ -21,13 +21,13 @@ except ImportError:
 # Import core components
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class SHAPExplainer:
     """SHAP-based explainability for ML models"""
 
     def __init__(self):
-        self.logger = get_structured_logger("SHAPExplainer")
+        self.logger = get_logger("SHAPExplainer")
 
         # Explainer cache
         self.explainers = {}
@@ -221,7 +221,7 @@ class ExplainabilityEngine:
     """Main explainability engine for crypto predictions"""
 
     def __init__(self):
-        self.logger = get_structured_logger("ExplainabilityEngine")
+        self.logger = get_logger("ExplainabilityEngine")
 
         self.shap_explainer = SHAPExplainer()
 

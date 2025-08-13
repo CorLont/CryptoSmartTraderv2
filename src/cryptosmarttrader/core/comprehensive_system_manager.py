@@ -17,12 +17,12 @@ warnings.filterwarnings('ignore')
 
 # Import all our advanced modules
 try:
-    from core.production_optimizer import ProductionOptimizer
-    from core.real_time_monitor import RealTimeMonitor
-    from core.advanced_analytics import AdvancedAnalytics
-    from core.workstation_optimizer import WorkstationOptimizer
-    from core.daily_health_dashboard import DailyHealthDashboard
-    from core.improved_logging_manager import get_improved_logger
+    from ..core.production_optimizer import ProductionOptimizer
+    from ..core.real_time_monitor import RealTimeMonitor
+    from ..core.advanced_analytics import AdvancedAnalytics
+    from ..core.workstation_optimizer import WorkstationOptimizer
+    from ..core.daily_health_dashboard import DailyHealthDashboard
+    from ..core.improved_logging_manager import get_improved_logger
 except ImportError as e:
     print(f"Import warning: {e}")
 

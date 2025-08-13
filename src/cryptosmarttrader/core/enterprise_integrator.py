@@ -16,8 +16,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Enterprise fixes imports
 try:
-    from core.data_completeness_gate import DataCompletenessGate
-    from core.secure_logging import get_secure_logger
+    from ..core.data_completeness_gate import DataCompletenessGate
+    from ..core.secure_logging import get_secure_logger
     from ml.enhanced_calibration import EnhancedCalibratorV2, create_confidence_gate_with_calibration
     from utils.timestamp_validator import normalize_timestamp, validate_timestamp_sequence
     from trading.realistic_execution_engine import RealisticExecutionEngine

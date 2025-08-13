@@ -19,7 +19,7 @@ warnings.filterwarnings('ignore')
 # Import core components
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 try:
     import torch
@@ -61,7 +61,7 @@ class ReplayBuffer:
     def __init__(self, max_size: int = 10000, stratified: bool = True):
         self.max_size = max_size
         self.stratified = stratified
-        self.logger = get_structured_logger("ReplayBuffer")
+        self.logger = get_logger("ReplayBuffer")
 
         # Buffer storage
         self.samples: deque = deque(maxlen=max_size)
@@ -194,7 +194,7 @@ class EWCRegularizer:
     def __init__(self, model=None, lambda_reg: float = 1000.0):
         self.model = model
         self.lambda_reg = lambda_reg
-        self.logger = get_structured_logger("EWCRegularizer")
+        self.logger = get_logger("EWCRegularizer")
 
         # Store important weights and Fisher information
         self.important_weights: Dict[str, torch.Tensor] = {}
@@ -287,7 +287,7 @@ class FineTuneScheduler:
     """Complete fine-tuning scheduler with replay buffer and EWC"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.logger = get_structured_logger("FineTuneScheduler")
+        self.logger = get_logger("FineTuneScheduler")
 
         # Default configuration
         self.config = {

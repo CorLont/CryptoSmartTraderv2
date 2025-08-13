@@ -15,13 +15,13 @@ from collections import deque
 import pickle
 import json
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class DataDriftDetector:
     """Detects distribution drift in input features and target variables"""
 
     def __init__(self, window_size: int = 1000, drift_threshold: float = 0.1):
-        self.logger = get_structured_logger("DriftDetector")
+        self.logger = get_logger("DriftDetector")
         self.window_size = window_size
         self.drift_threshold = drift_threshold
 
@@ -162,7 +162,7 @@ class ElasticWeightConsolidation:
     """Elastic Weight Consolidation for continual learning without catastrophic forgetting"""
 
     def __init__(self, model: nn.Module, ewc_lambda: float = 1000.0):
-        self.logger = get_structured_logger("EWC")
+        self.logger = get_logger("EWC")
         self.model = model
         self.ewc_lambda = ewc_lambda
 
@@ -295,7 +295,7 @@ class ReplayBuffer:
     """Experience replay buffer for continual learning"""
 
     def __init__(self, buffer_size: int = 10000, sampling_strategy: str = 'random'):
-        self.logger = get_structured_logger("ReplayBuffer")
+        self.logger = get_logger("ReplayBuffer")
         self.buffer_size = buffer_size
         self.sampling_strategy = sampling_strategy
 
@@ -364,7 +364,7 @@ class ContinualLearningManager:
     def __init__(self, model: nn.Module, drift_threshold: float = 0.1,
                  ewc_lambda: float = 1000.0, replay_buffer_size: int = 10000):
 
-        self.logger = get_structured_logger("ContinualLearningManager")
+        self.logger = get_logger("ContinualLearningManager")
 
         # Initialize components
         self.drift_detector = DataDriftDetector(drift_threshold=drift_threshold)

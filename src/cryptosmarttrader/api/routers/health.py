@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from api.schemas.health import HealthResponse, LivenessResponse, ReadinessResponse, SystemStatus, StatusInfo
+from ..api.schemas.health import HealthResponse, LivenessResponse, ReadinessResponse, SystemStatus, StatusInfo
 
 # Rate limiter
 limiter = Limiter(key_func=get_remote_address)

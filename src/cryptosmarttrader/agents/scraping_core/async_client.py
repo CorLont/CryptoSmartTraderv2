@@ -23,7 +23,7 @@ from tenacity import (
 # Import structured logger
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 @dataclass
 class ProxyConfig:
@@ -68,7 +68,7 @@ class AsyncScrapeClient:
                  timeout: int = 30,
                  enable_metrics: bool = True):
 
-        self.logger = get_structured_logger("ScrapingClient")
+        self.logger = get_logger("ScrapingClient")
         self.max_connections = max_connections
         self.max_connections_per_host = max_connections_per_host
         self.timeout = timeout

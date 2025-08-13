@@ -22,7 +22,7 @@ warnings.filterwarnings('ignore')
 # Import core components
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class AgentState(Enum):
     """Agent process states"""
@@ -78,7 +78,7 @@ class AgentProcess:
 
     def __init__(self, config: AgentConfig):
         self.config = config
-        self.logger = get_structured_logger(f"Agent_{config.name}")
+        self.logger = get_logger(f"Agent_{config.name}")
         self.process: Optional[mp.Process] = None
         self.status = AgentStatus(
             name=config.name,
@@ -268,7 +268,7 @@ class ProcessIsolationManager:
     """Manager for isolated agent processes"""
 
     def __init__(self):
-        self.logger = get_structured_logger("ProcessIsolationManager")
+        self.logger = get_logger("ProcessIsolationManager")
         self.agents: Dict[str, AgentProcess] = {}
         self.running = False
         self.monitor_task: Optional[asyncio.Task] = None
@@ -451,7 +451,7 @@ class ProcessIsolationManager:
 # Mock agent functions for testing
 async def # REMOVED: Mock data pattern not allowed in productionstop_event: mp.Event) -> None:
     """Mock data collector agent"""
-    logger = get_structured_logger("DataCollectorAgent")
+    logger = get_logger("DataCollectorAgent")
     logger.info("Data collector agent started")
 
     while not stop_event.is_set():
@@ -468,7 +468,7 @@ async def # REMOVED: Mock data pattern not allowed in productionstop_event: mp.E
 
 async def # REMOVED: Mock data pattern not allowed in productionstop_event: mp.Event) -> None:
     """Mock ML predictor agent"""
-    logger = get_structured_logger("MLPredictorAgent")
+    logger = get_logger("MLPredictorAgent")
     logger.info("ML predictor agent started")
 
     while not stop_event.is_set():
@@ -485,7 +485,7 @@ async def # REMOVED: Mock data pattern not allowed in productionstop_event: mp.E
 
 def # REMOVED: Mock data pattern not allowed in productionstop_event: mp.Event) -> None:
     """Mock agent that fails for testing restart logic"""
-    logger = get_structured_logger("FailingAgent")
+    logger = get_logger("FailingAgent")
     logger.info("Failing agent started")
 
     time.sleep(2.0)  # Run briefly then fail

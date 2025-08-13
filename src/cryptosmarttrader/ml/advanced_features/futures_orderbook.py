@@ -10,13 +10,13 @@ from typing import Dict, List, Any, Tuple, Optional
 from datetime import datetime, timedelta
 import asyncio
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class FuturesDataAnalyzer:
     """Analyzer for futures-specific features: funding, OI, basis"""
 
     def __init__(self):
-        self.logger = get_structured_logger("FuturesAnalyzer")
+        self.logger = get_logger("FuturesAnalyzer")
 
     def calculate_funding_features(self, funding_data: pd.DataFrame) -> Dict[str, Any]:
         """Calculate funding rate features for predictive modeling"""
@@ -217,7 +217,7 @@ class OrderBookAnalyzer:
     """Advanced order book analysis: imbalance detection and spoof detection"""
 
     def __init__(self):
-        self.logger = get_structured_logger("OrderBookAnalyzer")
+        self.logger = get_logger("OrderBookAnalyzer")
 
     def analyze_orderbook_imbalance(self, orderbook_data: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze order book imbalance for timing signals"""
@@ -422,7 +422,7 @@ class AdvancedTimingSignals:
     """Combines futures and order book analysis for superior timing"""
 
     def __init__(self):
-        self.logger = get_structured_logger("AdvancedTimingSignals")
+        self.logger = get_logger("AdvancedTimingSignals")
         self.futures_analyzer = FuturesDataAnalyzer()
         self.orderbook_analyzer = OrderBookAnalyzer()
 

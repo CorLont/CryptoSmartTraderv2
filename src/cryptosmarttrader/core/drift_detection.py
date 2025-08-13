@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 try:
     from scipy.stats import ks_2samp, chi2_contingency
@@ -64,7 +64,7 @@ class ErrorTrendDetector:
     def __init__(self, window_size: int = 100, trend_threshold: float = 0.1):
         self.window_size = window_size
         self.trend_threshold = trend_threshold  # 10% increase triggers alert
-        self.logger = get_structured_logger("ErrorTrendDetector")
+        self.logger = get_logger("ErrorTrendDetector")
 
         # Error tracking by component
         self.error_history: Dict[str, deque] = {}
@@ -251,7 +251,7 @@ class FeatureDistributionMonitor:
     def __init__(self, reference_window: int = 1000, test_window: int = 100):
         self.reference_window = reference_window
         self.test_window = test_window
-        self.logger = get_structured_logger("FeatureDistributionMonitor")
+        self.logger = get_logger("FeatureDistributionMonitor")
 
         # Feature distribution history
         self.reference_distributions: Dict[str, List[float]] = {}
@@ -420,7 +420,7 @@ class DriftDetectionSystem:
     """Complete drift detection system"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.logger = get_structured_logger("DriftDetectionSystem")
+        self.logger = get_logger("DriftDetectionSystem")
 
         # Default configuration
         self.config = {

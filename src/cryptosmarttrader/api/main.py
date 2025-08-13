@@ -20,9 +20,9 @@ from pydantic import BaseModel, Field
 import uvicorn
 
 # Application imports
-from cryptosmarttrader.core.config import get_settings
-from cryptosmarttrader.core.logging_config import setup_logging
-from cryptosmarttrader.api.routers import health, trading, agents, market, portfolio, security
+# Relative imports for proper package structure
+from ..core.config import get_settings
+from ..core.logging_config import setup_logging
 
 
 # Pydantic models for API documentation

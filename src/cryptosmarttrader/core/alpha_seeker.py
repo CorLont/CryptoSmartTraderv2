@@ -15,7 +15,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.gpu_accelerator import gpu_accelerator
+from ..core.gpu_accelerator import gpu_accelerator
 
 class AlphaSeeker:
     """Advanced alpha-seeking system for identifying high-growth cryptocurrencies"""

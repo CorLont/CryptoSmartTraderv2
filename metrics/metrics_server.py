@@ -18,6 +18,9 @@ import uvicorn
 
 import sys
 sys.path.insert(0, '.')
+import sys
+import os
+sys.path.append('.')
 from src.cryptosmarttrader.observability import (
     get_metrics_collector, create_alert_manager, setup_metrics_collector
 )

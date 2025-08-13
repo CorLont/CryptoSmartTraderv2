@@ -17,8 +17,8 @@ warnings.filterwarnings('ignore')
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
-from core.orderbook_simulator import OrderBookSimulator, OrderSide, OrderType, OrderBookSnapshot
+from ..core.structured_logger import get_logger
+from ..core.orderbook_simulator import OrderBookSimulator, OrderSide, OrderType, OrderBookSnapshot
 
 @dataclass
 class SlippageObservation:
@@ -52,7 +52,7 @@ class SlippageEstimator:
     """Real-time slippage estimation and prediction system"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.logger = get_structured_logger("SlippageEstimator")
+        self.logger = get_logger("SlippageEstimator")
 
         # Configuration
         self.config = {

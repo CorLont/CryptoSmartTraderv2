@@ -9,13 +9,13 @@ import numpy as np
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class RiskManagerAgent:
     """Agent for portfolio risk assessment and management"""
 
     def __init__(self):
-        self.logger = get_structured_logger("RiskManagerAgent")
+        self.logger = get_logger("RiskManagerAgent")
         self.max_portfolio_risk = 0.02  # 2% max portfolio risk
         self.max_position_size = 0.05   # 5% max position size
         self.initialized = False

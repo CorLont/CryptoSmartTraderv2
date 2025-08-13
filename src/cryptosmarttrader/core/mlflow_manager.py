@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 # Import core components
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 # MLflow imports (optional - graceful fallback if not installed)
 try:
@@ -34,7 +34,7 @@ class MLflowManager:
     """MLflow integration for model tracking, versioning, and registry"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.logger = get_structured_logger("MLflowManager")
+        self.logger = get_logger("MLflowManager")
 
         # Configuration
         self.config = {

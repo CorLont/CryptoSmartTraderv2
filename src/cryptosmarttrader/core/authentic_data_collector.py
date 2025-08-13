@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 import logging
 from dataclasses import dataclass
 import ccxt.async_support as ccxt
-from core.strict_data_integrity import DataSource, StrictDataIntegrityEnforcer
+from ..core.strict_data_integrity import DataSource, StrictDataIntegrityEnforcer
 import warnings
 warnings.filterwarnings('ignore')
 

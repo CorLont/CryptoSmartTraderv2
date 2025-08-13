@@ -15,12 +15,12 @@ import json
 import warnings
 warnings.filterwarnings('ignore')
 
-from core.logging_manager import get_logger
-from core.portfolio_risk_manager import (
+from ..core.logging_manager import get_logger
+from ..core.portfolio_risk_manager import (
     get_portfolio_risk_manager, Position, PositionAction, RiskStatus
 )
-from core.data_quality_manager import get_data_quality_manager
-from core.execution_simulator import get_execution_simulator, Order, OrderSide, OrderType
+from ..core.data_quality_manager import get_data_quality_manager
+from ..core.execution_simulator import get_execution_simulator, Order, OrderSide, OrderType
 
 class HealthStatus(str, Enum):
     """System health status levels"""
@@ -493,7 +493,7 @@ class PositionManager:
 
             # Execute via execution simulator
             current_price = current_position.current_price if current_position else 100  # Default price
-            from core.execution_simulator import MarketConditions
+            from ..core.execution_simulator import MarketConditions
 
             market_conditions = MarketConditions(
                 volatility=0.02,

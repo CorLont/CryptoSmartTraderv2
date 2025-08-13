@@ -19,7 +19,7 @@ warnings.filterwarnings('ignore')
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 try:
     from prometheus_client import (
@@ -49,7 +49,7 @@ class MetricsCollector:
     
     def __init__(self, name: str):
         self.name = name
-        self.logger = get_structured_logger(f"MetricsCollector_{name}")
+        self.logger = get_logger(f"MetricsCollector_{name}")
         self.enabled = True
     
     def collect(self) -> Dict[str, MetricValue]:
@@ -287,7 +287,7 @@ class PrometheusMetricsServer:
     
     def __init__(self, port: int = 8090):
         self.port = port
-        self.logger = get_structured_logger("PrometheusMetricsServer")
+        self.logger = get_logger("PrometheusMetricsServer")
         self.collectors: List[MetricsCollector] = []
         self.server_thread: Optional[threading.Thread] = None
         self.running = False
@@ -513,7 +513,7 @@ async def metrics_collection_loop(metrics_server: PrometheusMetricsServer,
                                 interval: float = 10.0) -> None:
     """Background metrics collection loop"""
     
-    logger = get_structured_logger("MetricsCollectionLoop")
+    logger = get_logger("MetricsCollectionLoop")
     logger.info(f"Starting metrics collection loop (interval: {interval}s)")
     
     while metrics_server.running:
@@ -528,6 +528,9 @@ async def metrics_collection_loop(metrics_server: PrometheusMetricsServer,
             await asyncio.sleep(interval)
     
     logger.info("Metrics collection loop stopped")
+
+# Alias for backward compatibility
+PrometheusMetrics = MetricsCollector
 
 if __name__ == "__main__":
     async def test_prometheus_metrics():

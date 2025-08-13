@@ -16,9 +16,9 @@ from typing import Dict, List, Any, Optional
 import pandas as pd
 import numpy as np
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 from utils.timestamp_validator import normalize_timestamp, validate_timestamp_sequence
-from core.data_completeness_gate import DataCompletenessGate
+from ..core.data_completeness_gate import DataCompletenessGate
 try:
     from orchestration.strict_gate import apply_strict_gate_orchestration
 except ImportError:
@@ -36,7 +36,7 @@ class ProductionOrchestrator:
     """Complete production orchestrator with no fallback data tolerance"""
 
     def __init__(self):
-        self.logger = get_structured_logger("ProductionOrchestrator")
+        self.logger = get_logger("ProductionOrchestrator")
         self.run_id = str(uuid.uuid4())[:8]
         self.start_time = datetime.now(timezone.utc)
 

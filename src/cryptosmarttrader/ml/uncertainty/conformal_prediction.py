@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class ConformalPredictor:
     """Conformal prediction for uncertainty quantification with coverage guarantees"""
@@ -24,7 +24,7 @@ class ConformalPredictor:
             alpha: Miscoverage level (e.g., 0.2 for 80% coverage)
             calibration_split: Fraction of data for calibration
         """
-        self.logger = get_structured_logger("ConformalPredictor")
+        self.logger = get_logger("ConformalPredictor")
         self.alpha = alpha
         self.coverage_level = 1 - alpha
         self.calibration_split = calibration_split
@@ -192,7 +192,7 @@ class MonteCarloDropoutUncertainty:
     """Monte Carlo Dropout for epistemic uncertainty estimation"""
 
     def __init__(self, n_samples: int = 100, dropout_rate: float = 0.1):
-        self.logger = get_structured_logger("MCDropoutUncertainty")
+        self.logger = get_logger("MCDropoutUncertainty")
         self.n_samples = n_samples
         self.dropout_rate = dropout_rate
 
@@ -255,7 +255,7 @@ class EnsembleUncertainty:
     """Uncertainty quantification using model ensemble"""
 
     def __init__(self, models: List[Any]):
-        self.logger = get_structured_logger("EnsembleUncertainty")
+        self.logger = get_logger("EnsembleUncertainty")
         self.models = models
 
     def predict_with_uncertainty(self, X: np.ndarray) -> Dict[str, np.ndarray]:

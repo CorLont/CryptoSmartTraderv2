@@ -14,8 +14,8 @@ import json
 import warnings
 warnings.filterwarnings('ignore')
 
-from core.logging_manager import get_logger
-from core.data_quality_manager import get_data_quality_manager, DataCompleteness
+from ..core.logging_manager import get_logger
+from ..core.data_quality_manager import get_data_quality_manager, DataCompleteness
 
 class FilterAction(str, Enum):
     """Filter actions for incomplete data"""

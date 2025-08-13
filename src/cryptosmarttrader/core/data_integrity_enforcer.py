@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import json
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 from config.daily_logging_config import get_daily_logger
 
 class DataIntegrityViolation(Exception):
@@ -22,7 +22,7 @@ class ProductionDataGuard:
     """Production-grade data integrity enforcement"""
 
     def __init__(self, production_mode: bool = True):
-        self.logger = get_structured_logger("DataIntegrityEnforcer")
+        self.logger = get_logger("DataIntegrityEnforcer")
         self.daily_logger = get_daily_logger()
         self.production_mode = production_mode
 

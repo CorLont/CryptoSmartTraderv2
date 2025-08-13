@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 from scipy import stats
 import sklearn.metrics as metrics
 
-from core.logging_manager import get_logger
+from ..core.logging_manager import get_logger
 
 class SignalHorizon(str, Enum):
     """Signal prediction horizons"""

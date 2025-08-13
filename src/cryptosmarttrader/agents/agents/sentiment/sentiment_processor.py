@@ -9,14 +9,14 @@ import numpy as np
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 from .model import SentimentModel
 
 class SentimentProcessor:
     """Core sentiment processing with FinBERT and calibration"""
     
     def __init__(self):
-        self.logger = get_structured_logger("SentimentProcessor")
+        self.logger = get_logger("SentimentProcessor")
         self.model = SentimentModel()
         self.initialized = False
         

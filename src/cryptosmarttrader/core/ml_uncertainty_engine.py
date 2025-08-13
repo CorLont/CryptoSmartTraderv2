@@ -17,7 +17,7 @@ from sklearn.linear_model import QuantileRegressor
 import warnings
 warnings.filterwarnings('ignore')
 
-from core.logging_manager import get_logger
+from ..core.logging_manager import get_logger
 
 @dataclass
 class UncertaintyMetrics:

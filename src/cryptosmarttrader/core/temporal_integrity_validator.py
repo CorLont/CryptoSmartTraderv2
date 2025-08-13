@@ -12,7 +12,7 @@ import warnings
 from pathlib import Path
 import json
 
-from core.consolidated_logging_manager import get_consolidated_logger
+from ..core.consolidated_logging_manager import get_consolidated_logger
 
 class TemporalIntegrityValidator:
     """Enterprise temporal validator with comprehensive integrity checks and efficient alignment"""

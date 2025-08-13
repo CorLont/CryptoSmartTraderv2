@@ -15,13 +15,13 @@ import joblib
 from pathlib import Path
 import json
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class ProbabilityCalibrator:
     """Advanced probability calibration for meaningful confidence scores"""
 
     def __init__(self):
-        self.logger = get_structured_logger("ProbabilityCalibrator")
+        self.logger = get_logger("ProbabilityCalibrator")
         self.calibrators = {}  # One per horizon
         self.calibration_stats = {}
         self.is_fitted = False

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from openai import OpenAI
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 @dataclass
 class NewsImpactAnalysis:
@@ -31,7 +31,7 @@ class LLMNewsImpactScorer:
     """Advanced news impact scoring using GPT-4o with structured output"""
 
     def __init__(self):
-        self.logger = get_structured_logger("LLMNewsImpactScorer")
+        self.logger = get_logger("LLMNewsImpactScorer")
 
         # Initialize OpenAI client
         api_key = os.getenv('OPENAI_API_KEY')

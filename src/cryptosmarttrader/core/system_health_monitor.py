@@ -19,7 +19,7 @@ import warnings
 
 # Robust imports with fallback handling
 try:
-    from core.consolidated_logging_manager import get_consolidated_logger
+    from ..core.consolidated_logging_manager import get_consolidated_logger
 except ImportError:
     # Fallback logging if consolidated logger unavailable
     def get_consolidated_logger(name: str) -> logging.Logger:
@@ -33,13 +33,13 @@ except ImportError:
         return logger
 
 try:
-    from core.config_manager import ConfigManager
+    from ..core.config_manager import ConfigManager
     CONFIG_AVAILABLE = True
 except ImportError:
     CONFIG_AVAILABLE = False
 
 try:
-    from core.data_manager import DataManager
+    from ..core.data_manager import DataManager
     DATA_MANAGER_AVAILABLE = True
 except ImportError:
     DATA_MANAGER_AVAILABLE = False

@@ -13,7 +13,7 @@ from enum import Enum
 from sklearn.cluster import KMeans
 from hmmlearn import hmm
 
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class MarketRegime(Enum):
     BULL = "bull"
@@ -26,7 +26,7 @@ class RegimeDetector:
     """Market regime detection using multiple methods"""
 
     def __init__(self, lookback_window: int = 50):
-        self.logger = get_structured_logger("RegimeDetector")
+        self.logger = get_logger("RegimeDetector")
         self.lookback_window = lookback_window
         self.hmm_model = None
         self.regime_thresholds = {
@@ -239,7 +239,7 @@ class MixtureOfExpertsRegimeRouter:
     """Complete Mixture of Experts system with regime-aware routing"""
 
     def __init__(self, input_size: int, device: str = 'cpu'):
-        self.logger = get_structured_logger("MoE_RegimeRouter")
+        self.logger = get_logger("MoE_RegimeRouter")
         self.device = device
         self.input_size = input_size
 

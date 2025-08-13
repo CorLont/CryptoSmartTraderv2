@@ -26,13 +26,13 @@ from sklearn.cluster import KMeans
 # Import core components
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class RegimeFeatures:
     """Extract regime-relevant features from price data"""
 
     def __init__(self):
-        self.logger = get_structured_logger("RegimeFeatures")
+        self.logger = get_logger("RegimeFeatures")
 
     def calculate_returns(self, prices: pd.Series, windows: List[int] = [1, 5, 20]) -> pd.DataFrame:
         """Calculate returns over multiple windows"""
@@ -179,7 +179,7 @@ class RuleBasedRegimeDetector:
     """Simple rule-based regime classification"""
 
     def __init__(self):
-        self.logger = get_structured_logger("RuleBasedRegimeDetector")
+        self.logger = get_logger("RuleBasedRegimeDetector")
 
     def detect_market_regime(self, features_df: pd.DataFrame) -> pd.DataFrame:
         """Detect bull/bear/sideways regimes using rules"""
@@ -270,7 +270,7 @@ class HMMRegimeDetector:
     """HMM-based regime detection using hmmlearn"""
 
     def __init__(self, n_regimes: int = 3):
-        self.logger = get_structured_logger("HMMRegimeDetector")
+        self.logger = get_logger("HMMRegimeDetector")
         self.n_regimes = n_regimes
         self.model = None
         self.scaler = StandardScaler()
@@ -398,7 +398,7 @@ class RegimeDetector:
     """Main regime detection system combining rule-based and HMM approaches"""
 
     def __init__(self, use_hmm: bool = True, n_hmm_regimes: int = 3):
-        self.logger = get_structured_logger("RegimeDetector")
+        self.logger = get_logger("RegimeDetector")
 
         self.feature_extractor = RegimeFeatures()
         self.rule_detector = RuleBasedRegimeDetector()

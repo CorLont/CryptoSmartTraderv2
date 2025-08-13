@@ -15,16 +15,16 @@ warnings.filterwarnings('ignore')
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
-from core.drift_detection import DriftDetectionSystem, DriftAlert
-from core.fine_tune_scheduler import FineTuneScheduler, FineTuneJob
-from core.auto_disable_system import AutoDisableSystem, DisableReason, TradingStatusChange
+from ..core.structured_logger import get_logger
+from ..core.drift_detection import DriftDetectionSystem, DriftAlert
+from ..core.fine_tune_scheduler import FineTuneScheduler, FineTuneJob
+from ..core.auto_disable_system import AutoDisableSystem, DisableReason, TradingStatusChange
 
 class DriftFineTuneIntegration:
     """Complete integration of drift detection, fine-tuning, and auto-disable systems"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.logger = get_structured_logger("DriftFineTuneIntegration")
+        self.logger = get_logger("DriftFineTuneIntegration")
 
         # Default configuration
         self.config = {

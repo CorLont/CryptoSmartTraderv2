@@ -16,13 +16,13 @@ import re
 
 # Core imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.structured_logger import get_structured_logger
+from ..core.structured_logger import get_logger
 
 class CriticalFixesApplier:
     """Automatically applies critical fixes based on audit results"""
 
     def __init__(self):
-        self.logger = get_structured_logger("CriticalFixes")
+        self.logger = get_logger("CriticalFixes")
         self.fixes_applied = []
         self.fixes_failed = []
 

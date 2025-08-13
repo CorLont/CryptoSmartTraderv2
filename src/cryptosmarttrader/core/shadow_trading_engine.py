@@ -17,8 +17,8 @@ from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
 
-from core.logging_manager import get_logger
-from core.data_quality_manager import get_data_quality_manager
+from ..core.logging_manager import get_logger
+from ..core.data_quality_manager import get_data_quality_manager
 
 class TradingMode(str, Enum):
     """Trading mode types"""

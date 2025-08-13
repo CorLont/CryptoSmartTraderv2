@@ -19,10 +19,10 @@ import schedule
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.cache_manager import CacheManager
-from core.config_manager import ConfigManager
-from core.health_monitor import HealthMonitor
-from core.openai_enhanced_analyzer import OpenAIEnhancedAnalyzer
+from ..core.cache_manager import CacheManager
+from ..core.config_manager import ConfigManager
+from ..core.health_monitor import HealthMonitor
+from ..core.openai_enhanced_analyzer import OpenAIEnhancedAnalyzer
 
 
 class DailyAnalysisScheduler:
