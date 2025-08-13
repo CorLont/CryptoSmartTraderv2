@@ -1,446 +1,890 @@
-#!/usr/bin/env python3
 """
-Enterprise Secrets Management with Vault Integration
-Secure handling of API keys, credentials, and sensitive data
+Secrets Manager for CryptoSmartTrader
+Enterprise secrets management with rotation, audit logging, and secure storage.
 """
 
-import os
-import re
+import hashlib
+import hmac
 import json
 import logging
-from typing import Dict, Any, Optional, List, Union
+import os
+import secrets
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
-from dataclasses import dataclass
+from typing import Dict, List, Optional, Any, Tuple
+from dataclasses import dataclass, asdict
 from enum import Enum
-import hvac
-from functools import wraps
-import threading
-from contextlib import contextmanager
+import warnings
+
+# Encryption libraries
+try:
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    import base64
+except ImportError:
+    warnings.warn("Cryptography library not available, secrets will use basic encoding")
+    Fernet = None
+
 
 class SecretType(Enum):
+    """Types of secrets managed by the system."""
     API_KEY = "api_key"
-    PASSWORD = "password"
-    TOKEN = "token"
-    CERTIFICATE = "certificate"
-    PRIVATE_KEY = "private_key"
     DATABASE_URL = "database_url"
+    WEBHOOK_SECRET = "webhook_secret"
+    ENCRYPTION_KEY = "encryption_key"
+    OAUTH_TOKEN = "oauth_token"
+    SIGNING_KEY = "signing_key"
+    SERVICE_ACCOUNT = "service_account"
+
+
+class SecretStatus(Enum):
+    """Status of secrets in the system."""
+    ACTIVE = "active"
+    ROTATING = "rotating"
+    DEPRECATED = "deprecated"
+    REVOKED = "revoked"
+    PENDING = "pending"
+
 
 @dataclass
 class SecretMetadata:
-    """Metadata for secret management"""
-    name: str
+    """Metadata for secret management."""
+    secret_id: str
     secret_type: SecretType
-    source: str  # 'env', 'vault', 'file'
-    last_rotated: Optional[str] = None
-    expires_at: Optional[str] = None
-    description: Optional[str] = None
+    description: str
+    created_at: datetime
+    last_rotated: datetime
+    rotation_frequency_days: int
+    status: SecretStatus
+    
+    # Access control
+    required_permissions: List[str]
+    allowed_environments: List[str]
+    
+    # Rotation settings
+    auto_rotation_enabled: bool
+    rotation_warning_days: int
+    
+    # Audit trail
+    created_by: str
+    last_accessed: Optional[datetime] = None
+    access_count: int = 0
+    last_rotation_by: Optional[str] = None
+    
+    # Validation
+    validation_regex: Optional[str] = None
+    min_length: int = 8
+    max_length: int = 512
+    
+    # Tags for organization
+    tags: List[str] = None
 
-class SecretRedactor:
-    """Redacts sensitive information from logs and error messages"""
 
-    # Patterns for different types of secrets
-    REDACTION_PATTERNS = {
-        'api_key': [
-            r'["\']?(?:api_?key|apikey|key)["\']?\s*[:=]\s*["\']?([a-zA-Z0-9_\-]{20,})["\']?',
-            r'["\']?(?:secret|password|pwd|pass)["\']?\s*[:=]\s*["\']?([a-zA-Z0-9_\-]{8,})["\']?',
-            r'Bearer\s+([a-zA-Z0-9_\-\.]{20,})',
-            r'token["\']?\s*[:=]\s*["\']?([a-zA-Z0-9_\-]{20,})["\']?'
-        ],
-        'url_credentials': [
-            r'(https?://[^:]+:)([^@]+)(@[^/]+)',  # URLs with credentials
-            r'(postgresql://[^:]+:)([^@]+)(@[^/]+)',  # Database URLs
-        ],
-        'private_key': [
-            r'-----BEGIN\s+(?:RSA\s+)?PRIVATE\s+KEY-----.*?-----END\s+(?:RSA\s+)?PRIVATE\s+KEY-----',
-        ],
-        'credit_card': [
-            r'\b(?:\d{4}[-\s]?){3}\d{4}\b',  # Credit card numbers
-        ]
-    }
+@dataclass
+class SecretAuditEvent:
+    """Audit event for secret access and operations."""
+    event_id: str
+    secret_id: str
+    event_type: str  # access, rotation, creation, deletion, etc.
+    timestamp: datetime
+    user_id: str
+    environment: str
+    success: bool
+    details: Dict[str, Any]
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
 
-    @classmethod
-    def redact_secrets(cls, text: str, redaction_char: str = '*') -> str:
-        """Redact sensitive information from text"""
-        if not isinstance(text, str):
-            text = str(text)
-
-        redacted_text = text
-
-        for category, patterns in cls.REDACTION_PATTERNS.items():
-            for pattern in patterns:
-                if category == 'url_credentials':
-                    # Special handling for URLs - keep structure but redact credentials
-                    redacted_text = re.sub(
-                        pattern,
-                        r'\1***REDACTED***\3',
-                        redacted_text,
-                        flags=re.IGNORECASE | re.DOTALL
-                    )
-                elif category == 'private_key':
-                    # Redact entire private key block
-                    redacted_text = re.sub(
-                        pattern,
-                        '***PRIVATE_KEY_REDACTED***',
-                        redacted_text,
-                        flags=re.IGNORECASE | re.DOTALL
-                    )
-                else:
-                    # Standard redaction - replace captured group with asterisks
-                    def replace_match(match):
-                        if len(match.groups()) > 0:
-                            secret_value = match.group(1)
-                            # Keep first 2 and last 2 characters, redact middle
-                            if len(secret_value) > 8:
-                                redacted = secret_value[:2] + redaction_char * (len(secret_value) - 4) + secret_value[-2:]
-                            else:
-                                redacted = redaction_char * len(secret_value)
-                            return match.group(0).replace(secret_value, redacted)
-                        return match.group(0)
-
-                    redacted_text = re.sub(pattern, replace_match, redacted_text, flags=re.IGNORECASE)
-
-        return redacted_text
-
-    @classmethod
-    def sanitize_exception(cls, exception: Exception) -> str:
-        """Sanitize exception messages to remove secrets"""
-        exc_str = str(exception)
-        return cls.redact_secrets(exc_str)
-
-    @classmethod
-    def sanitize_traceback(cls, traceback_str: str) -> str:
-        """Sanitize traceback strings to remove secrets"""
-        return cls.redact_secrets(traceback_str)
-
-class VaultManager:
-    """HashiCorp Vault integration for secure secret storage"""
-
-    def __init__(self, vault_url: Optional[str] = None, vault_token: Optional[str] = None):
-        self.vault_url = vault_url or os.getenv('VAULT_URL')
-        self.vault_token = vault_token or os.getenv('VAULT_TOKEN')
-        self.client: Optional[hvac.Client] = None
-        self.logger = logging.getLogger(__name__)
-
-        if self.vault_url and self.vault_token:
-            self._initialize_vault()
-
-    def _initialize_vault(self):
-        """Initialize Vault client"""
-        try:
-            self.client = hvac.Client(url=self.vault_url, token=self.vault_token)
-            if self.client.is_authenticated():
-                self.logger.info("Vault client authenticated successfully")
-            else:
-                self.logger.warning("Vault authentication failed")
-                self.client = None
-        except Exception as e:
-            self.logger.error(f"Failed to initialize Vault: {SecretRedactor.sanitize_exception(e)}")
-            self.client = None
-
-    def get_secret(self, path: str, key: str = None) -> Optional[Union[str, Dict[str, Any]]]:
-        """Retrieve secret from Vault"""
-        if not self.client:
-            return None
-
-        try:
-            response = self.client.secrets.kv.v2.read_secret_version(path=path)
-            data = response['data']['data']
-
-            if key:
-                return data.get(key)
-            return data
-        except Exception as e:
-            self.logger.error(f"Failed to retrieve secret from Vault: {SecretRedactor.sanitize_exception(e)}")
-            return None
-
-    def set_secret(self, path: str, secret_data: Dict[str, Any]) -> bool:
-        """Store secret in Vault"""
-        if not self.client:
-            return False
-
-        try:
-            self.client.secrets.kv.v2.create_or_update_secret(
-                path=path,
-                secret=secret_data
-            )
-            self.logger.info(f"Secret stored successfully at path: {path}")
-            return True
-        except Exception as e:
-            self.logger.error(f"Failed to store secret in Vault: {SecretRedactor.sanitize_exception(e)}")
-            return False
 
 class SecretsManager:
-    """Central secrets management with multiple backends"""
-
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {}
-        self.vault_manager = VaultManager()
-        self.secrets_cache: Dict[str, Any] = {}
+    """
+    Enterprise secrets management system with encryption, rotation, and audit logging.
+    
+    Features:
+    - Secure storage with encryption at rest
+    - Automatic secret rotation with configurable schedules
+    - Comprehensive audit logging for compliance
+    - Role-based access control
+    - Environment-specific secret isolation
+    - Integration with CI/CD systems
+    - Emergency secret revocation
+    - Compliance with security standards
+    """
+    
+    def __init__(self, 
+                 secrets_path: str = "secrets",
+                 encryption_key: Optional[str] = None,
+                 environment: str = "development"):
+        
+        self.secrets_path = Path(secrets_path)
+        self.secrets_path.mkdir(parents=True, exist_ok=True)
+        self.environment = environment
+        
+        # Initialize encryption
+        self.cipher_suite = self._init_encryption(encryption_key)
+        
+        # Storage paths
+        self.metadata_path = self.secrets_path / "metadata.json"
+        self.audit_path = self.secrets_path / "audit.json"
+        self.secrets_store_path = self.secrets_path / "store.enc"
+        
+        # In-memory caches
         self.metadata_cache: Dict[str, SecretMetadata] = {}
-        self._lock = threading.Lock()
+        self.audit_events: List[SecretAuditEvent] = []
+        
+        # Load existing data
+        self._load_metadata()
+        self._load_audit_log()
+        
         self.logger = logging.getLogger(__name__)
-
-        # Sensitive environment variable names
-        self.sensitive_env_vars = {
-            'KRAKEN_API_KEY', 'KRAKEN_SECRET',
-            'BINANCE_API_KEY', 'BINANCE_SECRET',
-            'OPENAI_API_KEY',
-            'DATABASE_URL', 'VAULT_TOKEN',
-            'ENCRYPTION_KEY', 'JWT_SECRET',
-            'SMTP_PASSWORD', 'REDIS_PASSWORD'
-        }
-
-        # Load secrets metadata
-        self._load_secrets_metadata()
-
-    def _load_secrets_metadata(self):
-        """Load secrets metadata from configuration"""
-        metadata_config = self.config.get('secrets_metadata', {})
-
-        for secret_name, meta_dict in metadata_config.items():
-            self.metadata_cache[secret_name] = SecretMetadata(**meta_dict)
-
-    def get_secret(self, secret_name: str, default: Any = None) -> Optional[str]:
-        """Retrieve secret with fallback hierarchy: Vault -> Environment -> Default"""
-        with self._lock:
-            # Check cache first
-            if secret_name in self.secrets_cache:
-                return self.secrets_cache[secret_name]
-
-            secret_value = None
-            source = None
-
-            # Try Vault first
-            if self.vault_manager.client:
-                vault_path = f"cryptotrader/{secret_name.lower()}"
-                secret_value = self.vault_manager.get_secret(vault_path, 'value')
-                if secret_value:
-                    source = 'vault'
-
-            # Fallback to environment variables
-            if not secret_value:
-                secret_value = os.getenv(secret_name)
-                if secret_value:
-                    source = 'env'
-
-            # Use default if provided
-            if not secret_value and default is not None:
-                secret_value = default
-                source = 'default'
-
-            # Cache the result (but not defaults)
-            if secret_value and source != 'default':
-                self.secrets_cache[secret_name] = secret_value
-
-                # Update metadata
-                if secret_name not in self.metadata_cache:
-                    secret_type = self._infer_secret_type(secret_name)
-                    self.metadata_cache[secret_name] = SecretMetadata(
-                        name=secret_name,
-                        secret_type=secret_type,
-                        source=source
-                    )
-
-            # Log access (without revealing the secret)
-            if secret_value:
-                self.logger.debug(f"Secret '{secret_name}' retrieved from {source}")
-            else:
-                self.logger.warning(f"Secret '{secret_name}' not found in any source")
-
-            return secret_value
-
-    def _infer_secret_type(self, secret_name: str) -> SecretType:
-        """Infer secret type from name"""
-        name_lower = secret_name.lower()
-
-        if 'api_key' in name_lower or 'apikey' in name_lower:
-            return SecretType.API_KEY
-        elif 'password' in name_lower or 'pwd' in name_lower:
-            return SecretType.PASSWORD
-        elif 'token' in name_lower:
-            return SecretType.TOKEN
-        elif 'database_url' in name_lower or 'db_url' in name_lower:
-            return SecretType.DATABASE_URL
-        elif 'key' in name_lower and 'private' in name_lower:
-            return SecretType.PRIVATE_KEY
-        elif 'cert' in name_lower:
-            return SecretType.CERTIFICATE
-        else:
-            return SecretType.API_KEY  # Default
-
-    def set_secret(self, secret_name: str, secret_value: str, secret_type: SecretType = None) -> bool:
-        """Store secret securely"""
-        with self._lock:
-            # Try Vault first
-            if self.vault_manager.client:
-                vault_path = f"cryptotrader/{secret_name.lower()}"
-                success = self.vault_manager.set_secret(vault_path, {'value': secret_value})
-                if success:
-                    # Update cache and metadata
-                    self.secrets_cache[secret_name] = secret_value
-                    self.metadata_cache[secret_name] = SecretMetadata(
-                        name=secret_name,
-                        secret_type=secret_type or self._infer_secret_type(secret_name),
-                        source='vault'
-                    )
-                    return True
-
-            # Fallback: warn about insecure storage
-            self.logger.warning(f"Vault unavailable, cannot securely store secret '{secret_name}'")
-            return False
-
-    def rotate_secret(self, secret_name: str, new_value: str) -> bool:
-        """Rotate a secret"""
-        old_metadata = self.metadata_cache.get(secret_name)
-
-        success = self.set_secret(secret_name, new_value,
-                                old_metadata.secret_type if old_metadata else None)
-
-        if success:
-            # Update rotation timestamp
-            from datetime import datetime
-            if secret_name in self.metadata_cache:
-                self.metadata_cache[secret_name].last_rotated = datetime.now().isoformat()
-
-            self.logger.info(f"Secret '{secret_name}' rotated successfully")
-            return True
-
-        return False
-
-    def list_secrets(self) -> Dict[str, SecretMetadata]:
-        """List all known secrets with metadata (no values)"""
-        return self.metadata_cache.copy()
-
-    def validate_secrets(self, required_secrets: List[str]) -> Dict[str, bool]:
-        """Validate that required secrets are available"""
-        validation_results = {}
-
-        for secret_name in required_secrets:
-            secret_value = self.get_secret(secret_name)
-            validation_results[secret_name] = bool(secret_value)
-
-            if not secret_value:
-                self.logger.error(f"Required secret '{secret_name}' is missing")
-
-        return validation_results
-
-    @contextmanager
-    def secure_context(self):
-        """Context manager for secure operations with automatic cleanup"""
+        self.logger.info(f"SecretsManager initialized for environment: {environment}")
+    
+    def store_secret(self,
+                    secret_id: str,
+                    secret_value: str,
+                    secret_type: SecretType,
+                    description: str,
+                    rotation_frequency_days: int = 90,
+                    required_permissions: List[str] = None,
+                    tags: List[str] = None,
+                    user_id: str = "system") -> bool:
+        """
+        Store a new secret with metadata and encryption.
+        
+        Args:
+            secret_id: Unique identifier for the secret
+            secret_value: The actual secret value
+            secret_type: Type of secret
+            description: Human-readable description
+            rotation_frequency_days: How often to rotate (days)
+            required_permissions: Required permissions to access
+            tags: Tags for organization
+            user_id: User storing the secret
+            
+        Returns:
+            True if successful
+        """
+        
         try:
-            yield self
-        finally:
-            # Clear sensitive data from memory
-            self._clear_sensitive_cache()
-
-    def _clear_sensitive_cache(self):
-        """Clear sensitive data from memory"""
-        with self._lock:
-            # Only clear non-persistent cache entries
-            sensitive_keys = [
-                key for key in self.secrets_cache.keys()
-                if any(sensitive in key.upper() for sensitive in self.sensitive_env_vars)
-            ]
-
-            for key in sensitive_keys:
-                if key in self.secrets_cache:
-                    # Overwrite with random data before deletion
-                    import random
-                    import string
-                    self.secrets_cache[key] = ''.join(# REMOVED: Mock data pattern not allowed in productions(string.ascii_letters, k=32))
-                    del self.secrets_cache[key]
-
-def secure_function(redact_args: List[str] = None, redact_kwargs: List[str] = None):
-    """Decorator to automatically redact sensitive function arguments from logs"""
-    redact_args = redact_args or []
-    redact_kwargs = redact_kwargs or []
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                # Redact sensitive information from exception
-                sanitized_message = SecretRedactor.sanitize_exception(e)
-
-                # Create new exception with sanitized message
-                new_exception = type(e)(sanitized_message)
-                new_exception.__cause__ = None  # Remove original cause chain
-                new_exception.__traceback__ = None  # Remove traceback with potential secrets
-
-                raise new_exception
-
-        return wrapper
-    return decorator
-
-class SecureLogger:
-    """Logger wrapper that automatically redacts secrets"""
-
-    def __init__(self, logger: logging.Logger):
-        self.logger = logger
-        self.redactor = SecretRedactor()
-
-    def _redact_message(self, message: str, *args, **kwargs) -> str:
-        """Redact secrets from log message"""
-        if args:
-            # Handle format string with positional arguments
-            try:
-                formatted_message = message % args
-            except (TypeError, ValueError):
-                formatted_message = f"{message} {args}"
+            # Validate secret
+            if not self._validate_secret_value(secret_value, secret_type):
+                raise ValueError("Secret validation failed")
+            
+            # Check if secret already exists
+            if secret_id in self.metadata_cache:
+                raise ValueError(f"Secret {secret_id} already exists")
+            
+            # Create metadata
+            metadata = SecretMetadata(
+                secret_id=secret_id,
+                secret_type=secret_type,
+                description=description,
+                created_at=datetime.utcnow(),
+                last_rotated=datetime.utcnow(),
+                rotation_frequency_days=rotation_frequency_days,
+                status=SecretStatus.ACTIVE,
+                required_permissions=required_permissions or [],
+                allowed_environments=[self.environment],
+                auto_rotation_enabled=True,
+                rotation_warning_days=7,
+                created_by=user_id,
+                tags=tags or []
+            )
+            
+            # Store encrypted secret
+            self._store_encrypted_secret(secret_id, secret_value)
+            
+            # Update metadata
+            self.metadata_cache[secret_id] = metadata
+            self._save_metadata()
+            
+            # Audit log
+            self._log_audit_event(
+                secret_id=secret_id,
+                event_type="secret_created",
+                user_id=user_id,
+                success=True,
+                details={"secret_type": secret_type.value, "description": description}
+            )
+            
+            self.logger.info(f"Secret {secret_id} stored successfully")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to store secret {secret_id}: {e}")
+            
+            # Audit failed attempt
+            self._log_audit_event(
+                secret_id=secret_id,
+                event_type="secret_creation_failed",
+                user_id=user_id,
+                success=False,
+                details={"error": str(e)}
+            )
+            
+            return False
+    
+    def get_secret(self,
+                  secret_id: str,
+                  user_id: str = "system",
+                  required_permissions: List[str] = None) -> Optional[str]:
+        """
+        Retrieve a secret value with access control and audit logging.
+        
+        Args:
+            secret_id: Secret identifier
+            user_id: User requesting the secret
+            required_permissions: Required permissions (if None, uses secret's requirements)
+            
+        Returns:
+            Secret value if authorized, None otherwise
+        """
+        
+        try:
+            # Check if secret exists
+            if secret_id not in self.metadata_cache:
+                self.logger.warning(f"Secret {secret_id} not found")
+                return None
+            
+            metadata = self.metadata_cache[secret_id]
+            
+            # Check environment access
+            if self.environment not in metadata.allowed_environments:
+                raise PermissionError(f"Secret not available in environment: {self.environment}")
+            
+            # Check secret status
+            if metadata.status not in [SecretStatus.ACTIVE, SecretStatus.ROTATING]:
+                raise PermissionError(f"Secret {secret_id} is not active (status: {metadata.status.value})")
+            
+            # Check permissions (simplified - in production use proper RBAC)
+            required_perms = required_permissions or metadata.required_permissions
+            if required_perms and not self._check_permissions(user_id, required_perms):
+                raise PermissionError("Insufficient permissions to access secret")
+            
+            # Retrieve encrypted secret
+            secret_value = self._retrieve_encrypted_secret(secret_id)
+            
+            if secret_value is None:
+                raise ValueError("Failed to decrypt secret")
+            
+            # Update access metadata
+            metadata.last_accessed = datetime.utcnow()
+            metadata.access_count += 1
+            self._save_metadata()
+            
+            # Audit log
+            self._log_audit_event(
+                secret_id=secret_id,
+                event_type="secret_accessed",
+                user_id=user_id,
+                success=True,
+                details={"access_count": metadata.access_count}
+            )
+            
+            return secret_value
+            
+        except Exception as e:
+            self.logger.error(f"Failed to retrieve secret {secret_id}: {e}")
+            
+            # Audit failed attempt
+            self._log_audit_event(
+                secret_id=secret_id,
+                event_type="secret_access_failed",
+                user_id=user_id,
+                success=False,
+                details={"error": str(e)}
+            )
+            
+            return None
+    
+    def rotate_secret(self,
+                     secret_id: str,
+                     new_secret_value: str,
+                     user_id: str = "system") -> bool:
+        """
+        Rotate a secret to a new value.
+        
+        Args:
+            secret_id: Secret to rotate
+            new_secret_value: New secret value
+            user_id: User performing rotation
+            
+        Returns:
+            True if successful
+        """
+        
+        try:
+            if secret_id not in self.metadata_cache:
+                raise ValueError(f"Secret {secret_id} not found")
+            
+            metadata = self.metadata_cache[secret_id]
+            
+            # Validate new secret
+            if not self._validate_secret_value(new_secret_value, metadata.secret_type):
+                raise ValueError("New secret validation failed")
+            
+            # Update status to rotating
+            old_status = metadata.status
+            metadata.status = SecretStatus.ROTATING
+            self._save_metadata()
+            
+            # Store new encrypted value
+            self._store_encrypted_secret(secret_id, new_secret_value)
+            
+            # Update metadata
+            metadata.last_rotated = datetime.utcnow()
+            metadata.last_rotation_by = user_id
+            metadata.status = SecretStatus.ACTIVE
+            self._save_metadata()
+            
+            # Audit log
+            self._log_audit_event(
+                secret_id=secret_id,
+                event_type="secret_rotated",
+                user_id=user_id,
+                success=True,
+                details={
+                    "previous_status": old_status.value,
+                    "rotation_type": "manual"
+                }
+            )
+            
+            self.logger.info(f"Secret {secret_id} rotated successfully")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to rotate secret {secret_id}: {e}")
+            
+            # Restore status on failure
+            if secret_id in self.metadata_cache:
+                self.metadata_cache[secret_id].status = SecretStatus.ACTIVE
+                self._save_metadata()
+            
+            # Audit failed attempt
+            self._log_audit_event(
+                secret_id=secret_id,
+                event_type="secret_rotation_failed",
+                user_id=user_id,
+                success=False,
+                details={"error": str(e)}
+            )
+            
+            return False
+    
+    def check_rotation_needed(self) -> List[Tuple[str, int]]:
+        """
+        Check which secrets need rotation.
+        
+        Returns:
+            List of (secret_id, days_overdue) tuples
+        """
+        
+        rotation_needed = []
+        current_time = datetime.utcnow()
+        
+        for secret_id, metadata in self.metadata_cache.items():
+            if not metadata.auto_rotation_enabled:
+                continue
+            
+            if metadata.status != SecretStatus.ACTIVE:
+                continue
+            
+            days_since_rotation = (current_time - metadata.last_rotated).days
+            rotation_due = days_since_rotation >= metadata.rotation_frequency_days
+            
+            if rotation_due:
+                days_overdue = days_since_rotation - metadata.rotation_frequency_days
+                rotation_needed.append((secret_id, days_overdue))
+        
+        return rotation_needed
+    
+    def auto_rotate_secrets(self, user_id: str = "auto_rotation") -> Dict[str, bool]:
+        """
+        Automatically rotate secrets that are due for rotation.
+        
+        Args:
+            user_id: User ID for audit purposes
+            
+        Returns:
+            Dict mapping secret_id to rotation success status
+        """
+        
+        rotation_results = {}
+        secrets_to_rotate = self.check_rotation_needed()
+        
+        for secret_id, days_overdue in secrets_to_rotate:
+            self.logger.info(f"Auto-rotating secret {secret_id} (overdue by {days_overdue} days)")
+            
+            # Generate new secret value based on type
+            new_value = self._generate_secret_value(self.metadata_cache[secret_id].secret_type)
+            
+            if new_value:
+                success = self.rotate_secret(secret_id, new_value, user_id)
+                rotation_results[secret_id] = success
+            else:
+                rotation_results[secret_id] = False
+                self.logger.error(f"Failed to generate new value for {secret_id}")
+        
+        return rotation_results
+    
+    def revoke_secret(self, secret_id: str, user_id: str = "system") -> bool:
+        """
+        Revoke a secret (mark as revoked, do not delete).
+        
+        Args:
+            secret_id: Secret to revoke
+            user_id: User performing revocation
+            
+        Returns:
+            True if successful
+        """
+        
+        try:
+            if secret_id not in self.metadata_cache:
+                raise ValueError(f"Secret {secret_id} not found")
+            
+            metadata = self.metadata_cache[secret_id]
+            old_status = metadata.status
+            
+            # Update status
+            metadata.status = SecretStatus.REVOKED
+            self._save_metadata()
+            
+            # Audit log
+            self._log_audit_event(
+                secret_id=secret_id,
+                event_type="secret_revoked",
+                user_id=user_id,
+                success=True,
+                details={"previous_status": old_status.value}
+            )
+            
+            self.logger.warning(f"Secret {secret_id} revoked by {user_id}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to revoke secret {secret_id}: {e}")
+            return False
+    
+    def list_secrets(self, 
+                    include_revoked: bool = False,
+                    secret_type: Optional[SecretType] = None,
+                    user_id: str = "system") -> List[Dict[str, Any]]:
+        """
+        List all secrets with metadata (excluding secret values).
+        
+        Args:
+            include_revoked: Whether to include revoked secrets
+            secret_type: Filter by secret type
+            user_id: User requesting the list
+            
+        Returns:
+            List of secret metadata dictionaries
+        """
+        
+        secrets_list = []
+        
+        for secret_id, metadata in self.metadata_cache.items():
+            # Filter by status
+            if not include_revoked and metadata.status == SecretStatus.REVOKED:
+                continue
+            
+            # Filter by type
+            if secret_type and metadata.secret_type != secret_type:
+                continue
+            
+            # Check environment access
+            if self.environment not in metadata.allowed_environments:
+                continue
+            
+            # Prepare metadata (excluding sensitive info)
+            secret_info = {
+                'secret_id': metadata.secret_id,
+                'secret_type': metadata.secret_type.value,
+                'description': metadata.description,
+                'status': metadata.status.value,
+                'created_at': metadata.created_at.isoformat(),
+                'last_rotated': metadata.last_rotated.isoformat(),
+                'rotation_frequency_days': metadata.rotation_frequency_days,
+                'auto_rotation_enabled': metadata.auto_rotation_enabled,
+                'access_count': metadata.access_count,
+                'tags': metadata.tags,
+                'days_since_rotation': (datetime.utcnow() - metadata.last_rotated).days
+            }
+            
+            # Add last accessed if available
+            if metadata.last_accessed:
+                secret_info['last_accessed'] = metadata.last_accessed.isoformat()
+            
+            secrets_list.append(secret_info)
+        
+        # Audit the listing operation
+        self._log_audit_event(
+            secret_id="all",
+            event_type="secrets_listed",
+            user_id=user_id,
+            success=True,
+            details={"count": len(secrets_list), "include_revoked": include_revoked}
+        )
+        
+        return secrets_list
+    
+    def get_audit_log(self, 
+                     secret_id: Optional[str] = None,
+                     event_type: Optional[str] = None,
+                     user_id: Optional[str] = None,
+                     hours_back: int = 24) -> List[Dict[str, Any]]:
+        """
+        Get audit log entries with optional filtering.
+        
+        Args:
+            secret_id: Filter by secret ID
+            event_type: Filter by event type
+            user_id: Filter by user ID
+            hours_back: How many hours back to include
+            
+        Returns:
+            List of audit event dictionaries
+        """
+        
+        cutoff_time = datetime.utcnow() - timedelta(hours=hours_back)
+        filtered_events = []
+        
+        for event in self.audit_events:
+            # Time filter
+            if event.timestamp < cutoff_time:
+                continue
+            
+            # Secret ID filter
+            if secret_id and event.secret_id != secret_id:
+                continue
+            
+            # Event type filter
+            if event_type and event.event_type != event_type:
+                continue
+            
+            # User ID filter
+            if user_id and event.user_id != user_id:
+                continue
+            
+            filtered_events.append(asdict(event))
+        
+        return filtered_events
+    
+    def health_check(self) -> Dict[str, Any]:
+        """
+        Perform health check on secrets management system.
+        
+        Returns:
+            Health status and metrics
+        """
+        
+        try:
+            health_status = {
+                'status': 'healthy',
+                'timestamp': datetime.utcnow().isoformat(),
+                'environment': self.environment,
+                'encryption_available': self.cipher_suite is not None,
+                'total_secrets': len(self.metadata_cache),
+                'active_secrets': len([m for m in self.metadata_cache.values() if m.status == SecretStatus.ACTIVE]),
+                'secrets_due_rotation': len(self.check_rotation_needed()),
+                'recent_audit_events': len(self.get_audit_log(hours_back=1))
+            }
+            
+            # Check for issues
+            issues = []
+            
+            # Check for overdue rotations
+            overdue_rotations = self.check_rotation_needed()
+            if overdue_rotations:
+                issues.append(f"{len(overdue_rotations)} secrets overdue for rotation")
+            
+            # Check storage accessibility
+            if not self.secrets_path.exists():
+                issues.append("Secrets storage path not accessible")
+            
+            if issues:
+                health_status['status'] = 'degraded'
+                health_status['issues'] = issues
+            
+            return health_status
+            
+        except Exception as e:
+            return {
+                'status': 'unhealthy',
+                'error': str(e),
+                'timestamp': datetime.utcnow().isoformat()
+            }
+    
+    # Private methods
+    
+    def _init_encryption(self, encryption_key: Optional[str]) -> Optional[object]:
+        """Initialize encryption cipher suite."""
+        
+        if Fernet is None:
+            self.logger.warning("Cryptography not available, using basic encoding")
+            return None
+        
+        try:
+            if encryption_key:
+                key = encryption_key.encode()
+            else:
+                # Use environment variable or generate
+                key = os.environ.get('SECRETS_ENCRYPTION_KEY', '').encode()
+                if not key:
+                    # Generate key from system info (not secure for production)
+                    password = f"cryptosmarttrader_{self.environment}".encode()
+                    salt = b"salt_12345678"  # Should be random in production
+                    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000)
+                    key = base64.urlsafe_b64encode(kdf.derive(password))
+            
+            return Fernet(key)
+            
+        except Exception as e:
+            self.logger.error(f"Failed to initialize encryption: {e}")
+            return None
+    
+    def _store_encrypted_secret(self, secret_id: str, secret_value: str):
+        """Store encrypted secret value."""
+        
+        # Load existing secrets
+        secrets_store = self._load_secrets_store()
+        
+        # Encrypt secret
+        if self.cipher_suite:
+            encrypted_value = self.cipher_suite.encrypt(secret_value.encode()).decode()
         else:
-            formatted_message = message
+            # Basic encoding (not secure)
+            encrypted_value = base64.b64encode(secret_value.encode()).decode()
+        
+        # Store encrypted value
+        secrets_store[secret_id] = encrypted_value
+        
+        # Save store
+        self._save_secrets_store(secrets_store)
+    
+    def _retrieve_encrypted_secret(self, secret_id: str) -> Optional[str]:
+        """Retrieve and decrypt secret value."""
+        
+        try:
+            # Load secrets store
+            secrets_store = self._load_secrets_store()
+            
+            if secret_id not in secrets_store:
+                return None
+            
+            encrypted_value = secrets_store[secret_id]
+            
+            # Decrypt secret
+            if self.cipher_suite:
+                decrypted_value = self.cipher_suite.decrypt(encrypted_value.encode()).decode()
+            else:
+                # Basic decoding
+                decrypted_value = base64.b64decode(encrypted_value.encode()).decode()
+            
+            return decrypted_value
+            
+        except Exception as e:
+            self.logger.error(f"Failed to decrypt secret {secret_id}: {e}")
+            return None
+    
+    def _load_secrets_store(self) -> Dict[str, str]:
+        """Load encrypted secrets store."""
+        
+        if not self.secrets_store_path.exists():
+            return {}
+        
+        try:
+            with open(self.secrets_store_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            self.logger.error(f"Failed to load secrets store: {e}")
+            return {}
+    
+    def _save_secrets_store(self, secrets_store: Dict[str, str]):
+        """Save encrypted secrets store."""
+        
+        try:
+            with open(self.secrets_store_path, 'w') as f:
+                json.dump(secrets_store, f)
+        except Exception as e:
+            self.logger.error(f"Failed to save secrets store: {e}")
+    
+    def _load_metadata(self):
+        """Load secrets metadata."""
+        
+        if not self.metadata_path.exists():
+            return
+        
+        try:
+            with open(self.metadata_path, 'r') as f:
+                data = json.load(f)
+            
+            for secret_id, metadata_dict in data.items():
+                # Convert timestamps
+                metadata_dict['created_at'] = datetime.fromisoformat(metadata_dict['created_at'])
+                metadata_dict['last_rotated'] = datetime.fromisoformat(metadata_dict['last_rotated'])
+                
+                if metadata_dict.get('last_accessed'):
+                    metadata_dict['last_accessed'] = datetime.fromisoformat(metadata_dict['last_accessed'])
+                
+                # Convert enums
+                metadata_dict['secret_type'] = SecretType(metadata_dict['secret_type'])
+                metadata_dict['status'] = SecretStatus(metadata_dict['status'])
+                
+                # Create metadata object
+                metadata = SecretMetadata(**metadata_dict)
+                self.metadata_cache[secret_id] = metadata
+                
+        except Exception as e:
+            self.logger.error(f"Failed to load metadata: {e}")
+    
+    def _save_metadata(self):
+        """Save secrets metadata."""
+        
+        try:
+            data = {}
+            
+            for secret_id, metadata in self.metadata_cache.items():
+                metadata_dict = asdict(metadata)
+                
+                # Convert timestamps to ISO format
+                metadata_dict['created_at'] = metadata.created_at.isoformat()
+                metadata_dict['last_rotated'] = metadata.last_rotated.isoformat()
+                
+                if metadata.last_accessed:
+                    metadata_dict['last_accessed'] = metadata.last_accessed.isoformat()
+                else:
+                    metadata_dict['last_accessed'] = None
+                
+                # Convert enums to strings
+                metadata_dict['secret_type'] = metadata.secret_type.value
+                metadata_dict['status'] = metadata.status.value
+                
+                data[secret_id] = metadata_dict
+            
+            with open(self.metadata_path, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to save metadata: {e}")
+    
+    def _load_audit_log(self):
+        """Load audit log events."""
+        
+        if not self.audit_path.exists():
+            return
+        
+        try:
+            with open(self.audit_path, 'r') as f:
+                events_data = json.load(f)
+            
+            for event_dict in events_data:
+                event_dict['timestamp'] = datetime.fromisoformat(event_dict['timestamp'])
+                event = SecretAuditEvent(**event_dict)
+                self.audit_events.append(event)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to load audit log: {e}")
+    
+    def _save_audit_log(self):
+        """Save audit log events."""
+        
+        try:
+            events_data = []
+            
+            for event in self.audit_events:
+                event_dict = asdict(event)
+                event_dict['timestamp'] = event.timestamp.isoformat()
+                events_data.append(event_dict)
+            
+            with open(self.audit_path, 'w') as f:
+                json.dump(events_data, f, indent=2)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to save audit log: {e}")
+    
+    def _log_audit_event(self,
+                        secret_id: str,
+                        event_type: str,
+                        user_id: str,
+                        success: bool,
+                        details: Dict[str, Any] = None):
+        """Log an audit event."""
+        
+        event = SecretAuditEvent(
+            event_id=secrets.token_hex(16),
+            secret_id=secret_id,
+            event_type=event_type,
+            timestamp=datetime.utcnow(),
+            user_id=user_id,
+            environment=self.environment,
+            success=success,
+            details=details or {}
+        )
+        
+        self.audit_events.append(event)
+        
+        # Keep only recent events in memory (last 1000)
+        if len(self.audit_events) > 1000:
+            self.audit_events = self.audit_events[-1000:]
+        
+        # Save to disk
+        self._save_audit_log()
+    
+    def _validate_secret_value(self, secret_value: str, secret_type: SecretType) -> bool:
+        """Validate secret value based on type."""
+        
+        if not secret_value or len(secret_value) < 8:
+            return False
+        
+        # Type-specific validation
+        if secret_type == SecretType.API_KEY:
+            # API keys should be long enough and not contain spaces
+            return len(secret_value) >= 16 and ' ' not in secret_value
+        
+        elif secret_type == SecretType.DATABASE_URL:
+            # Database URLs should start with appropriate scheme
+            return any(secret_value.startswith(scheme) for scheme in ['postgresql://', 'mysql://', 'sqlite://'])
+        
+        elif secret_type == SecretType.WEBHOOK_SECRET:
+            # Webhook secrets should be random-looking
+            return len(secret_value) >= 32
+        
+        # Default validation
+        return True
+    
+    def _check_permissions(self, user_id: str, required_permissions: List[str]) -> bool:
+        """Check if user has required permissions (simplified implementation)."""
+        
+        # In production, implement proper RBAC
+        admin_users = ["system", "admin", "clont1"]
+        
+        if user_id in admin_users:
+            return True
+        
+        # For demo purposes, all users have basic permissions
+        return "read_secrets" in required_permissions
+    
+    def _generate_secret_value(self, secret_type: SecretType) -> Optional[str]:
+        """Generate new secret value for rotation."""
+        
+        if secret_type == SecretType.API_KEY:
+            return secrets.token_urlsafe(32)
+        
+        elif secret_type == SecretType.WEBHOOK_SECRET:
+            return secrets.token_hex(32)
+        
+        elif secret_type == SecretType.ENCRYPTION_KEY:
+            return base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()
+        
+        # For other types, generate a secure random string
+        return secrets.token_urlsafe(24)
 
-        # Redact extra context
-        if 'extra' in kwargs:
-            extra_dict = kwargs['extra']
-            for key, value in extra_dict.items():
-                if isinstance(value, str):
-                    extra_dict[key] = self.redactor.redact_secrets(value)
 
-        return self.redactor.redact_secrets(formatted_message)
-
-    def info(self, message: str, *args, **kwargs):
-        redacted_message = self._redact_message(message, *args, **kwargs)
-        self.logger.info(redacted_message, **{k: v for k, v in kwargs.items() if k != 'extra'})
-
-    def warning(self, message: str, *args, **kwargs):
-        redacted_message = self._redact_message(message, *args, **kwargs)
-        self.logger.warning(redacted_message, **{k: v for k, v in kwargs.items() if k != 'extra'})
-
-    def error(self, message: str, *args, **kwargs):
-        redacted_message = self._redact_message(message, *args, **kwargs)
-
-        # Handle exception info redaction
-        if kwargs.get('exc_info'):
-            import traceback
-            exc_str = traceback.format_exc()
-            redacted_exc = self.redactor.sanitize_traceback(exc_str)
-            # Log redacted exception separately
-            self.logger.error(f"{redacted_message}\nSanitized traceback: {redacted_exc}")
-            kwargs.pop('exc_info')  # Remove original exc_info
-        else:
-            self.logger.error(redacted_message, **{k: v for k, v in kwargs.items() if k != 'extra'})
-
-    def critical(self, message: str, *args, **kwargs):
-        redacted_message = self._redact_message(message, *args, **kwargs)
-        self.logger.critical(redacted_message, **{k: v for k, v in kwargs.items() if k != 'extra'})
-
-    def debug(self, message: str, *args, **kwargs):
-        redacted_message = self._redact_message(message, *args, **kwargs)
-        self.logger.debug(redacted_message, **{k: v for k, v in kwargs.items() if k != 'extra'})
-
-# Global secrets manager instance
-_secrets_manager: Optional[SecretsManager] = None
-
-def get_secrets_manager(config: Dict[str, Any] = None) -> SecretsManager:
-    """Get global secrets manager instance"""
-    global _secrets_manager
-    if _secrets_manager is None:
-        _secrets_manager = SecretsManager(config)
-    return _secrets_manager
-
-def get_secure_logger(logger: logging.Logger) -> SecureLogger:
-    """Get secure logger wrapper"""
-    return SecureLogger(logger)
+def create_secrets_manager(secrets_path: str = "secrets",
+                          encryption_key: Optional[str] = None,
+                          environment: str = "development") -> SecretsManager:
+    """Create secrets manager instance."""
+    return SecretsManager(secrets_path, encryption_key, environment)

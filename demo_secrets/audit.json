@@ -1,0 +1,178 @@
+[
+  {
+    "event_id": "fb3c7785dd84d1def4e0eb7d884b2366",
+    "secret_id": "kraken_api_key",
+    "event_type": "secret_created",
+    "timestamp": "2025-08-13T10:27:42.721530",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "secret_type": "api_key",
+      "description": "Kraken exchange API key for trading"
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "b0c17cdc6b5a7f75795f158570aecec2",
+    "secret_id": "binance_api_secret",
+    "event_type": "secret_created",
+    "timestamp": "2025-08-13T10:27:42.730347",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "secret_type": "api_key",
+      "description": "Binance exchange API secret"
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "4641304767b399bb12a2f0f8e6070f3b",
+    "secret_id": "database_url",
+    "event_type": "secret_created",
+    "timestamp": "2025-08-13T10:27:42.733861",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "secret_type": "database_url",
+      "description": "Main trading database connection"
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "bb71582b47d118c5b502c5b4f1e77e70",
+    "secret_id": "webhook_secret",
+    "event_type": "secret_created",
+    "timestamp": "2025-08-13T10:27:42.765925",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "secret_type": "webhook_secret",
+      "description": "Webhook signature verification secret"
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "2d8456b28040f533e9b8ab0f5feb01b1",
+    "secret_id": "openai_api_key",
+    "event_type": "secret_created",
+    "timestamp": "2025-08-13T10:27:42.772471",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "secret_type": "api_key",
+      "description": "OpenAI API key for ML predictions"
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "a197894fbc6a6108d4dae9f4f4bd59aa",
+    "secret_id": "kraken_api_key",
+    "event_type": "secret_accessed",
+    "timestamp": "2025-08-13T10:27:42.777391",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "access_count": 1
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "54e0c757a68a3da229c6068cd4cd36a0",
+    "secret_id": "all",
+    "event_type": "secrets_listed",
+    "timestamp": "2025-08-13T10:27:42.778875",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "count": 5,
+      "include_revoked": false
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "78e76a8eae701748d9d5e50fa96b7a1b",
+    "secret_id": "kraken_api_key",
+    "event_type": "secret_rotated",
+    "timestamp": "2025-08-13T10:27:42.796134",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "previous_status": "active",
+      "rotation_type": "manual"
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "fc50f618c49bdefdcf454febe0a341a7",
+    "secret_id": "kraken_api_key",
+    "event_type": "secret_accessed",
+    "timestamp": "2025-08-13T10:27:42.819841",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "access_count": 2
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "9cad8611589ec7d10b641fee571d5e5b",
+    "secret_id": "webhook_secret",
+    "event_type": "secret_revoked",
+    "timestamp": "2025-08-13T10:27:42.842764",
+    "user_id": "security_admin",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "previous_status": "active"
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "e602b297846c78490cd2b7f7a3f412b4",
+    "secret_id": "webhook_secret",
+    "event_type": "secret_access_failed",
+    "timestamp": "2025-08-13T10:27:42.847301",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": false,
+    "details": {
+      "error": "Secret webhook_secret is not active (status: revoked)"
+    },
+    "ip_address": null,
+    "user_agent": null
+  },
+  {
+    "event_id": "465bfd25e30a1b1adff3739711989ae4",
+    "secret_id": "all",
+    "event_type": "secrets_listed",
+    "timestamp": "2025-08-13T10:27:42.852101",
+    "user_id": "demo_user",
+    "environment": "development",
+    "success": true,
+    "details": {
+      "count": 5,
+      "include_revoked": true
+    },
+    "ip_address": null,
+    "user_agent": null
+  }
+]

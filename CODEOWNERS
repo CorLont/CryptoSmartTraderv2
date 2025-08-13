@@ -1,0 +1,91 @@
+# Global code ownership and review requirements for CryptoSmartTrader V2
+# CODEOWNERS file defines individuals or teams that are responsible for code in a repository
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global fallback - requires approval from primary maintainer
+* @clont1
+
+# Security-critical files - require security team approval
+SECURITY.md @clont1 @security-team
+.github/workflows/security.yml @clont1 @security-team
+src/cryptosmarttrader/core/security/ @clont1 @security-team
+
+# Infrastructure and deployment - require DevOps approval
+Dockerfile @clont1 @devops-team
+docker-compose.yml @clont1 @devops-team
+k8s/ @clont1 @devops-team
+.github/workflows/ @clont1 @devops-team
+
+# Configuration files - require careful review
+*.env.example @clont1
+*.env.template @clont1
+config/ @clont1
+pyproject.toml @clont1
+requirements*.txt @clont1
+
+# Core trading logic - require lead developer and trading team approval
+src/cryptosmarttrader/core/ @clont1 @trading-team
+src/cryptosmarttrader/trading/ @clont1 @trading-team
+src/cryptosmarttrader/agents/ @clont1 @trading-team
+
+# ML and data science components - require ML team approval
+src/cryptosmarttrader/ml/ @clont1 @ml-team
+src/cryptosmarttrader/models/ @clont1 @ml-team
+models/ @clont1 @ml-team
+
+# Risk management - require risk team approval
+src/cryptosmarttrader/risk/ @clont1 @risk-team
+src/cryptosmarttrader/core/risk_guard.py @clont1 @risk-team
+
+# Exchange integrations - require exchange specialists
+src/cryptosmarttrader/exchanges/ @clont1 @exchange-team
+src/cryptosmarttrader/integrations/ @clont1 @exchange-team
+
+# API and interfaces - require API team approval
+src/cryptosmarttrader/api/ @clont1 @api-team
+api/ @clont1 @api-team
+
+# Database and data management - require data team approval
+src/cryptosmarttrader/data/ @clont1 @data-team
+migrations/ @clont1 @data-team
+
+# Monitoring and observability - require SRE approval
+src/cryptosmarttrader/monitoring/ @clont1 @sre-team
+metrics/ @clont1 @sre-team
+src/cryptosmarttrader/core/metrics_collector.py @clont1 @sre-team
+
+# Testing infrastructure - require QA approval
+tests/ @clont1 @qa-team
+pytest.ini @clont1 @qa-team
+.github/workflows/test.yml @clont1 @qa-team
+
+# Documentation - require tech writers approval
+docs/ @clont1 @docs-team
+README*.md @clont1 @docs-team
+*.md @clont1
+
+# Legal and compliance - require legal approval
+LICENSE @clont1 @legal-team
+TERMS.md @clont1 @legal-team
+PRIVACY.md @clont1 @legal-team
+
+# Release and versioning - require release manager approval
+CHANGELOG.md @clont1 @release-team
+VERSION @clont1 @release-team
+.github/workflows/release.yml @clont1 @release-team
+
+# Backup and recovery - require backup team approval
+backups/ @clont1 @backup-team
+scripts/backup/ @clont1 @backup-team
+
+# Performance critical paths - require performance team approval
+src/cryptosmarttrader/core/execution_engine.py @clont1 @performance-team
+src/cryptosmarttrader/optimization/ @clont1 @performance-team
+
+# Financial calculations - require quantitative finance approval
+src/cryptosmarttrader/quant/ @clont1 @quant-team
+src/cryptosmarttrader/portfolio/ @clont1 @quant-team
+
+# Emergency response and incident management
+INCIDENT_RESPONSE.md @clont1 @incident-team
+scripts/emergency/ @clont1 @incident-team
