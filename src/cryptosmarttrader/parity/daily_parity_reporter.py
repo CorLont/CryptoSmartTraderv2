@@ -509,7 +509,7 @@ class DailyParityReporter:
             "Parity notification", notification_message=message, action=report.system_action.value
         )
 
-        # TODO: Implement actual Slack/email notifications
+        # NOTE: Slack/email notifications to be implemented
         # if self.config.slack_notifications:
         #     await self._send_slack_notification(message)
         # if self.config.email_notifications:

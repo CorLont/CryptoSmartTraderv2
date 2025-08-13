@@ -3,35 +3,60 @@ CryptoSmartTrader V2 - Simplified Working Dashboard
 Minimal dependency version for Replit environment
 """
 
-# Try Streamlit with fallback
+# Try imports with proper fallbacks
 try:
     import streamlit as st
     STREAMLIT_AVAILABLE = True
 except ImportError:
     STREAMLIT_AVAILABLE = False
+    st = None
+
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+    pd = None
+
+try:
+    import plotly.express as px
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+    px = None
 
 import json
-import pandas as pd
 from datetime import datetime, timedelta
 import time
 
 def create_mock_data():
     """Create representative data for demonstration"""
-    dates = pd.date_range(start='2024-01-01', end='2024-12-31', freq='D')
-    
-    # Market data simulation
-    market_data = {
-        'Date': dates,
-        'BTC_Price': 45000 + (dates.dayofyear * 100) + (dates.dayofyear % 7) * 500,
-        'ETH_Price': 3000 + (dates.dayofyear * 50) + (dates.dayofyear % 5) * 200,
-        'Portfolio_Value': 100000 + (dates.dayofyear * 200),
-        'Daily_Return': (dates.dayofyear % 10) * 0.1 - 0.5
-    }
-    
-    return pd.DataFrame(market_data)
+    if not PANDAS_AVAILABLE:
+        return None
+        
+    try:
+        dates = pd.date_range(start='2024-01-01', end='2024-12-31', freq='D')
+        
+        # Market data simulation
+        market_data = {
+            'Date': dates,
+            'BTC_Price': 45000 + (dates.dayofyear * 100) + (dates.dayofyear % 7) * 500,
+            'ETH_Price': 3000 + (dates.dayofyear * 50) + (dates.dayofyear % 5) * 200,
+            'Portfolio_Value': 100000 + (dates.dayofyear * 200),
+            'Daily_Return': (dates.dayofyear % 10) * 0.1 - 0.5
+        }
+        
+        return pd.DataFrame(market_data)
+    except Exception as e:
+        print(f"Error creating mock data: {e}")
+        return None
 
 def streamlit_dashboard():
     """Full Streamlit dashboard implementation"""
+    if not STREAMLIT_AVAILABLE or st is None:
+        print("Streamlit not available")
+        return
+        
     st.set_page_config(
         page_title="CryptoSmartTrader V2",
         page_icon="🚀",
@@ -83,13 +108,19 @@ def streamlit_dashboard():
         # Portfolio chart
         st.subheader("Portfolio Value Over Time")
         
-        try:
-            import plotly.express as px
-            fig = px.line(data, x='Date', y='Portfolio_Value', 
-                         title='Portfolio Performance')
-            st.plotly_chart(fig, use_container_width=True)
-        except ImportError:
+        if PLOTLY_AVAILABLE and px is not None:
+            try:
+                fig = px.line(data, x='Date', y='Portfolio_Value', 
+                             title='Portfolio Performance')
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.error(f"Chart error: {e}")
+                if data is not None:
+                    st.line_chart(data.set_index('Date')['Portfolio_Value'])
+        elif data is not None:
             st.line_chart(data.set_index('Date')['Portfolio_Value'])
+        else:
+            st.info("Chart data not available")
     
     with tab2:
         st.subheader("🤖 AI Agents Status")
@@ -186,12 +217,15 @@ def streamlit_dashboard():
         col1, col2 = st.columns(2)
         
         with col1:
-            try:
-                import plotly.express as px
-                fig = px.bar(attribution_data, x='Component', y='Contribution',
-                           title='Return Attribution (bps)')
-                st.plotly_chart(fig, use_container_width=True)
-            except ImportError:
+            if PLOTLY_AVAILABLE and px is not None:
+                try:
+                    fig = px.bar(attribution_data, x='Component', y='Contribution',
+                               title='Return Attribution (bps)')
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Chart error: {e}")
+                    st.bar_chart(attribution_data.set_index('Component')['Contribution'])
+            else:
                 st.bar_chart(attribution_data.set_index('Component')['Contribution'])
         
         with col2:

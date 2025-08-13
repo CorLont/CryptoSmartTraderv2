@@ -674,7 +674,8 @@ class ContinualLearningEngine:
         if len(buffer) > self.config.rehearsal_buffer_size:
             # Keep diverse samples (remove older ones with some randomization)
             remove_count = len(buffer) - self.config.rehearsal_buffer_size
-            indices_to_remove = np.random.normal(0, 1) // 2,  # Remove from first half (older samples)
+            indices_to_remove = np.random.choice(
+                len(buffer) // 2,  # Remove from first half (older samples)
                 size=remove_count,
                 replace=False
             )

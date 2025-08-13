@@ -345,7 +345,7 @@ class StressTestSimulator:
         self.logger = logging.getLogger(__name__)
         self.event_generator = BlackSwanEventGenerator(config_manager)
 
-    def # REMOVED: Mock data pattern not allowed in productionself, event: BlackSwanEvent,
+    def simulate_stress_test(self, event: BlackSwanEvent,
                             initial_portfolio: Dict[str, float],
                             market_condition: MarketCondition = MarketCondition.BULL_MARKET) -> StressTestResult:
         """Simulate the impact of a black swan event"""

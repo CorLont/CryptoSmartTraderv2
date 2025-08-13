@@ -254,9 +254,9 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
     )
 
     # === DEVELOPMENT SETTINGS ===
-    # REMOVED: Mock data pattern not allowed in production
+    mock_exchanges: bool = Field(
         default=False,
-        env="MOCK_EXCHANGES",
+        env="MOCK_EXCHANGES", 
         description="Use mock exchange data for development"
     )
     demo_mode: bool = Field(

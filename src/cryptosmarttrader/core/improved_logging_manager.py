@@ -27,7 +27,7 @@ def mask_sensitive_data(message: str) -> str:
 
     # Patterns to mask
     patterns = [
-        (r'(api_key["']?\s*[:=]\s*["']?)([^"'\s]+)', r'\1***MASKED***'),
+        (r'(api_key["\']?\s*[:=]\s*["\']?)([^"\'\s]+)', r'\1***MASKED***'),
         (r'(token["']?\s*[:=]\s*["']?)([^"'\s]+)', r'\1***MASKED***'),
         (r'(secret["']?\s*[:=]\s*["']?)([^"'\s]+)', r'\1***MASKED***'),
         (r'(password["']?\s*[:=]\s*["']?)([^"'\s]+)', r'\1***MASKED***'),
