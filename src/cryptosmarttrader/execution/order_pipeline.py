@@ -285,23 +285,26 @@ class OrderPipeline:
                 # Handle pipeline errors
                 pipeline_time = (time.time() - pipeline_start) * 1000
                 
-                if 'order_result' in locals():
-                    order_result.status = OrderStatus.FAILED
-                    order_result.rejection_reason = f"Pipeline error: {str(e)}"
-                    order_result.execution_time_ms = pipeline_time
-                    order_result.completed_at = datetime.now()
-                    
-                    self._finalize_order_result(order_result, pipeline_start)
-                    result = order_result
-                else:
-                    # Create minimal error result
-                    result = OrderResult(
-                        client_order_id=order_request.client_order_id or "unknown",
-                        status=OrderStatus.FAILED,
-                        rejection_reason=f"Pipeline error: {str(e)}",
-                        execution_time_ms=pipeline_time,
-                        completed_at=datetime.now()
-                    )
+                # Create error result
+                result = OrderResult(
+                    client_order_id=order_request.client_order_id or "unknown",
+                    status=OrderStatus.FAILED,
+                    rejection_reason=f"Pipeline error: {str(e)}",
+                    execution_time_ms=pipeline_time,
+                    completed_at=datetime.now()
+                )
+                
+                # Try to finalize if we have partial order_result
+                try:
+                    if 'order_result' in locals() and hasattr(locals()['order_result'], 'client_order_id'):
+                        order_result.status = OrderStatus.FAILED
+                        order_result.rejection_reason = f"Pipeline error: {str(e)}"
+                        order_result.execution_time_ms = pipeline_time
+                        order_result.completed_at = datetime.now()
+                        self._finalize_order_result(order_result, pipeline_start)
+                        result = order_result
+                except:
+                    pass  # Use the created result above
                 
                 self.logger.error("Order pipeline execution failed",
                                 client_order_id=result.client_order_id,
