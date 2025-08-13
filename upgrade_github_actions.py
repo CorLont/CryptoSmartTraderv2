@@ -1,4 +1,72 @@
-name: CI/CD Pipeline
+#!/usr/bin/env python3
+"""
+GitHub Actions Upgrade Script
+- Upgrade deprecated actions/upload-artifact@v3 → @v4
+- Upgrade actions/download-artifact@v3 → @v4
+- Split checks into clear steps with fail-fast
+- Add coverage gates with --fail-under
+"""
+
+import os
+import re
+from pathlib import Path
+
+def upgrade_github_actions():
+    """Upgrade all GitHub Actions workflows"""
+    
+    workflow_dir = Path(".github/workflows")
+    if not workflow_dir.exists():
+        print("❌ No .github/workflows directory found")
+        return 0
+    
+    upgraded_files = 0
+    
+    for workflow_file in workflow_dir.glob("*.yml"):
+        try:
+            with open(workflow_file, 'r') as f:
+                content = f.read()
+            
+            original_content = content
+            
+            # Upgrade deprecated actions
+            content = re.sub(
+                r'actions/upload-artifact@v3',
+                'actions/upload-artifact@v4',
+                content
+            )
+            content = re.sub(
+                r'actions/download-artifact@v3',
+                'actions/download-artifact@v4',
+                content
+            )
+            content = re.sub(
+                r'actions/setup-python@v4',
+                'actions/setup-python@v5',
+                content
+            )
+            content = re.sub(
+                r'actions/checkout@v3',
+                'actions/checkout@v4',
+                content
+            )
+            
+            if content != original_content:
+                with open(workflow_file, 'w') as f:
+                    f.write(content)
+                upgraded_files += 1
+                print(f"✅ Upgraded: {workflow_file}")
+        
+        except Exception as e:
+            print(f"❌ Error upgrading {workflow_file}: {e}")
+    
+    return upgraded_files
+
+def create_enhanced_ci_workflow():
+    """Create enhanced CI workflow with proper separation and coverage"""
+    
+    os.makedirs(".github/workflows", exist_ok=True)
+    
+    workflow_content = '''name: CI/CD Pipeline
 
 on:
   push:
@@ -263,3 +331,37 @@ jobs:
         echo "✅ Package built successfully"
         echo "🚀 Ready for deployment"
         echo "::endgroup::"
+'''
+
+    with open(".github/workflows/ci.yml", 'w') as f:
+        f.write(workflow_content)
+    
+    print("✅ Created enhanced CI/CD workflow")
+
+def main():
+    """Main upgrade execution"""
+    
+    print("🔧 GitHub Actions CI/CD Upgrade")
+    print("=" * 40)
+    
+    # Upgrade existing workflows
+    print("\n📋 Upgrading existing workflows...")
+    upgraded = upgrade_github_actions()
+    
+    # Create enhanced CI workflow
+    print("\n🏗️  Creating enhanced CI workflow...")
+    create_enhanced_ci_workflow()
+    
+    print(f"\n📊 Results:")
+    print(f"✅ Workflows upgraded: {upgraded}")
+    print(f"✅ Enhanced CI/CD pipeline created")
+    print(f"✅ Deprecated actions updated (v3→v4)")
+    print(f"✅ Coverage gates added (--fail-under=70)")
+    print(f"✅ Clear step separation with fail-fast")
+    print(f"✅ Matrix testing (Python 3.11 & 3.12)")
+    print(f"✅ Artifact management with retention")
+    
+    print(f"\n🎯 CI/CD modernization complete!")
+
+if __name__ == "__main__":
+    main()
