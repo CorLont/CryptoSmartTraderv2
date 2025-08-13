@@ -415,6 +415,36 @@ def main():
         # Show system capabilities
         st.success("✅ Exchange announcement monitoring • API pair detection • Social media tracking • AI analysis")
         
+        # Add Cross-Exchange Arbitrage Status
+        try:
+            from agents.arbitrage_detector_agent import ArbitrageDetectorAgent
+            from agents.funding_rate_monitor import FundingRateMonitor
+            
+            arbitrage_agent = ArbitrageDetectorAgent()
+            funding_monitor = FundingRateMonitor()
+            
+            st.info("⚡ **CROSS-EXCHANGE ARBITRAGE & FUNDING RATE OPPORTUNITIES**")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("🔄 Arbitrage Scanner", "ACTIVE", delta="Multi-exchange")
+            with col2:
+                st.metric("📊 Funding Rates", "MONITORING", delta="8h intervals")
+            with col3:
+                st.metric("💰 Profit Target", "0.5%+", delta="Per opportunity")
+            with col4:
+                st.metric("⚖️ Risk Level", "LOW-MOD", delta="Hedged positions")
+                
+            # Show arbitrage capabilities
+            arb_status = arbitrage_agent.get_arbitrage_summary()
+            funding_summary = funding_monitor.get_funding_summary()
+            
+            st.success(f"✅ Monitoring {arb_status['exchanges_monitored']} exchanges • {arb_status['symbols_monitored']} symbols • Funding rate analysis • Basis tracking")
+            
+        except Exception as e:
+            st.warning(f"Arbitrage System: {str(e)[:100]}...")
+        
         st.divider()
             
     except Exception as e:
