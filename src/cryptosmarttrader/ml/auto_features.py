@@ -18,18 +18,18 @@ def get_feature_importance() -> Dict[str, float]:
 
 class AutoFeatureGenerator:
     """Placeholder auto feature generator"""
-    
+
     def __init__(self):
         pass
-    
+
     def fit(self, X, y):
         """Placeholder fit method"""
         return self
-    
+
     def transform(self, X):
         """Placeholder transform method"""
         return X
-    
+
     def fit_transform(self, X, y):
         """Placeholder fit_transform method"""
         return X

@@ -15,14 +15,14 @@ import uuid
 
 class StructuredFormatter(logging.Formatter):
     """JSON formatter for structured logging"""
-    
+
     def __init__(self, service_name: str = "cryptosmarttrader"):
         self.service_name = service_name
         super().__init__()
-    
+
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as structured JSON"""
-        
+
         # Base log structure
         log_entry = {
             "timestamp": datetime.utcnow().isoformat() + "Z",
@@ -34,11 +34,11 @@ class StructuredFormatter(logging.Formatter):
             "function": record.funcName,
             "line": record.lineno
         }
-        
+
         # Add correlation ID if available
         if hasattr(record, 'correlation_id'):
             log_entry["correlation_id"] = getattr(record, 'correlation_id', None)
-        
+
         # Add exception info if present
         if record.exc_info and record.exc_info[0] is not None:
             log_entry["exception"] = {
@@ -46,7 +46,7 @@ class StructuredFormatter(logging.Formatter):
                 "message": str(record.exc_info[1]),
                 "traceback": self.formatException(record.exc_info)
             }
-        
+
         # Add extra fields from record
         extra_fields = {}
         for key, value in record.__dict__.items():
@@ -56,16 +56,16 @@ class StructuredFormatter(logging.Formatter):
                           'processName', 'process', 'getMessage', 'exc_info',
                           'exc_text', 'stack_info', 'correlation_id']:
                 extra_fields[key] = value
-        
+
         if extra_fields:
             log_entry["extra"] = extra_fields
-        
+
         return json.dumps(log_entry, default=str, ensure_ascii=False)
 
 
 class CorrelationFilter(logging.Filter):
     """Add correlation ID to log records"""
-    
+
     def filter(self, record: logging.LogRecord) -> bool:
         """Add correlation ID if not already present"""
         if not hasattr(record, 'correlation_id'):
@@ -100,7 +100,7 @@ def setup_logging(
 ) -> logging.Logger:
     """
     Setup enterprise logging configuration with structured JSON output
-    
+
     Args:
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_dir: Directory for log files
@@ -109,32 +109,32 @@ def setup_logging(
         enable_file: Enable file logging
         max_bytes: Maximum log file size before rotation
         backup_count: Number of backup files to keep
-        
+
     Returns:
         Configured root logger
     """
-    
+
     # Ensure log directory exists
     log_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Clear any existing handlers
     root_logger = logging.getLogger()
     root_logger.handlers.clear()
-    
+
     # Set log level
     numeric_level = getattr(logging, level.upper(), logging.INFO)
     root_logger.setLevel(numeric_level)
-    
+
     # Create formatters
     json_formatter = StructuredFormatter(service_name)
     console_formatter = logging.Formatter(
         fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
-    
+
     # Add correlation filter
     correlation_filter = CorrelationFilter()
-    
+
     # Console handler (human-readable for development)
     if enable_console:
         console_handler = logging.StreamHandler(sys.stdout)
@@ -142,7 +142,7 @@ def setup_logging(
         console_handler.setFormatter(console_formatter)
         console_handler.addFilter(correlation_filter)
         root_logger.addHandler(console_handler)
-    
+
     # File handler (JSON for production)
     if enable_file:
         log_file = log_dir / "app.log"
@@ -156,7 +156,7 @@ def setup_logging(
         file_handler.setFormatter(json_formatter)
         file_handler.addFilter(correlation_filter)
         root_logger.addHandler(file_handler)
-    
+
     # Error file handler (errors and criticals only)
     if enable_file:
         error_file = log_dir / "error.log"
@@ -170,10 +170,10 @@ def setup_logging(
         error_handler.setFormatter(json_formatter)
         error_handler.addFilter(correlation_filter)
         root_logger.addHandler(error_handler)
-    
+
     # Configure third-party loggers
     configure_third_party_loggers(numeric_level)
-    
+
     # Log startup message
     logger = logging.getLogger(__name__)
     logger.info(
@@ -186,13 +186,13 @@ def setup_logging(
             "file_enabled": enable_file
         }
     )
-    
+
     return root_logger
 
 
 def configure_third_party_loggers(level: int):
     """Configure third-party library loggers"""
-    
+
     # Reduce noise from third-party libraries
     noisy_loggers = [
         'urllib3.connectionpool',
@@ -201,10 +201,10 @@ def configure_third_party_loggers(level: int):
         'matplotlib',
         'PIL'
     ]
-    
+
     for logger_name in noisy_loggers:
         logging.getLogger(logger_name).setLevel(max(level, logging.WARNING))
-    
+
     # Set specific levels for key libraries
     logging.getLogger('streamlit').setLevel(max(level, logging.WARNING))
     logging.getLogger('uvicorn').setLevel(max(level, logging.INFO))
@@ -218,20 +218,20 @@ def get_logger(name: str) -> logging.Logger:
 
 class LogContext:
     """Context manager for adding correlation ID to logs"""
-    
+
     def __init__(self, correlation_id: Optional[str] = None):
         self.correlation_id = correlation_id or str(uuid.uuid4())[:8]
         self.old_factory = logging.getLogRecordFactory()
-    
+
     def __enter__(self):
         def record_factory(*args, **kwargs):
             record = self.old_factory(*args, **kwargs)
             record.correlation_id = self.correlation_id
             return record
-        
+
         logging.setLogRecordFactory(record_factory)
         return self.correlation_id
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         logging.setLogRecordFactory(self.old_factory)
 

@@ -21,7 +21,7 @@ async def get_trading_signals(
 ) -> List[SignalOut]:
     """
     Get current trading signals from all agents
-    
+
     Returns trading signals with confidence scores above the threshold
     """
     try:
@@ -31,7 +31,7 @@ async def get_trading_signals(
             min_confidence=min_confidence,
             symbol=symbol
         )
-        
+
         return [
             SignalOut(
                 symbol=signal["symbol"],
@@ -46,7 +46,7 @@ async def get_trading_signals(
             )
             for signal in signals_data
         ]
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -62,7 +62,7 @@ async def get_symbol_signals(
 ) -> List[SignalOut]:
     """
     Get trading signals for a specific symbol
-    
+
     Returns historical signals for the specified cryptocurrency
     """
     try:
@@ -71,7 +71,7 @@ async def get_symbol_signals(
             symbol=symbol.upper(),
             start_time=datetime.utcnow() - timedelta(hours=hours)
         )
-        
+
         return [
             SignalOut(
                 symbol=signal["symbol"],
@@ -86,7 +86,7 @@ async def get_symbol_signals(
             )
             for signal in signals_data
         ]
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -101,13 +101,13 @@ async def get_portfolio(
 ) -> PortfolioOut:
     """
     Get current portfolio summary
-    
+
     Returns portfolio value, positions, and P&L information
     """
     try:
         # Get portfolio data from orchestrator
         portfolio_data = await orchestrator.get_portfolio_summary()
-        
+
         # Convert positions to API format
         positions = [
             PositionOut(
@@ -122,7 +122,7 @@ async def get_portfolio(
             )
             for pos in portfolio_data["positions"]
         ]
-        
+
         return PortfolioOut(
             total_value=portfolio_data["total_value"],
             available_balance=portfolio_data["available_balance"],
@@ -133,7 +133,7 @@ async def get_portfolio(
             position_count=len(positions),
             last_updated=portfolio_data["last_updated"]
         )
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -147,13 +147,13 @@ async def get_positions(
 ) -> List[PositionOut]:
     """
     Get all active trading positions
-    
+
     Returns list of currently open positions with P&L information
     """
     try:
         # Get positions from orchestrator
         positions_data = await orchestrator.get_active_positions()
-        
+
         return [
             PositionOut(
                 symbol=pos["symbol"],
@@ -167,7 +167,7 @@ async def get_positions(
             )
             for pos in positions_data
         ]
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,

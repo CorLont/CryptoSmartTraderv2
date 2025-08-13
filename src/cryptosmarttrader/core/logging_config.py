@@ -23,57 +23,57 @@ request_path_ctx: ContextVar[Optional[str]] = ContextVar('request_path', default
 
 class CorrelationIdFilter(logging.Filter):
     """Add correlation ID and context to log records"""
-    
+
     def filter(self, record):
         # Add correlation ID
         record.correlation_id = correlation_id_ctx.get()
         record.user_id = user_id_ctx.get()
         record.request_path = request_path_ctx.get()
-        
+
         # Add timestamp in ISO format
         record.timestamp_iso = datetime.utcnow().isoformat() + "Z"
-        
+
         # Add service name
         record.service = "cryptosmarttrader"
-        
+
         return True
 
 
 class TradingEventFilter(logging.Filter):
     """Special filter for trading-related events"""
-    
+
     def filter(self, record):
         # Only pass trading-related logs
         trading_keywords = ['trade', 'order', 'signal', 'position', 'pnl', 'slippage', 'fee']
-        
+
         message = record.getMessage().lower()
         return any(keyword in message for keyword in trading_keywords)
 
 
 class SecurityFilter(logging.Filter):
     """Filter to redact sensitive information"""
-    
+
     SENSITIVE_FIELDS = ['api_key', 'secret', 'password', 'token', 'auth']
-    
+
     def filter(self, record):
         # Redact sensitive information from message
         message = record.getMessage()
-        
+
         for field in self.SENSITIVE_FIELDS:
             if field in message.lower():
                 # Replace with asterisks
                 record.msg = "[REDACTED - SENSITIVE DATA]"
                 break
-        
+
         return True
 
 
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
     """Custom JSON formatter with enterprise fields"""
-    
+
     def add_fields(self, log_record, record, message_dict):
         super().add_fields(log_record, record, message_dict)
-        
+
         # Add standard enterprise fields
         log_record['@timestamp'] = getattr(record, 'timestamp_iso', datetime.utcnow().isoformat() + "Z")
         log_record['level'] = record.levelname
@@ -82,20 +82,20 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         log_record['correlation_id'] = getattr(record, 'correlation_id', None)
         log_record['user_id'] = getattr(record, 'user_id', None)
         log_record['request_path'] = getattr(record, 'request_path', None)
-        
+
         # Add file and line info for debugging
         if hasattr(record, 'pathname'):
             log_record['file'] = Path(record.pathname).name
             log_record['line'] = record.lineno
             log_record['function'] = record.funcName
-        
+
         # Add thread info
         log_record['thread'] = record.thread
         log_record['thread_name'] = record.threadName
-        
+
         # Add process info
         log_record['process'] = record.process
-        
+
         # Clean up None values
         log_record = {k: v for k, v in log_record.items() if v is not None}
 
@@ -108,21 +108,21 @@ def setup_logging(
 ):
     """
     Setup enterprise logging configuration
-    
+
     Args:
         log_level: Logging level
         log_file: Optional log file path
         enable_json: Use JSON formatting
         enable_trading_logs: Enable separate trading event logs
     """
-    
+
     # Clear existing handlers
     root_logger = logging.getLogger()
     root_logger.handlers.clear()
-    
+
     # Set log level
     root_logger.setLevel(getattr(logging, log_level.upper()))
-    
+
     # Create formatters
     if enable_json:
         formatter = CustomJsonFormatter(
@@ -133,14 +133,14 @@ def setup_logging(
             fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
         )
-    
+
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     console_handler.addFilter(CorrelationIdFilter())
     console_handler.addFilter(SecurityFilter())
     root_logger.addHandler(console_handler)
-    
+
     # File handler
     if log_file:
         file_handler = logging.FileHandler(log_file)
@@ -148,7 +148,7 @@ def setup_logging(
         file_handler.addFilter(CorrelationIdFilter())
         file_handler.addFilter(SecurityFilter())
         root_logger.addHandler(file_handler)
-    
+
     # Trading events handler
     if enable_trading_logs:
         trading_handler = logging.FileHandler("logs/trading_events.jsonl")
@@ -156,15 +156,15 @@ def setup_logging(
         trading_handler.addFilter(CorrelationIdFilter())
         trading_handler.addFilter(TradingEventFilter())
         trading_handler.setLevel(logging.INFO)
-        
+
         # Create trading logger
         trading_logger = logging.getLogger("trading")
         trading_logger.addHandler(trading_handler)
         trading_logger.setLevel(logging.INFO)
-    
+
     # Create logs directory
     Path("logs").mkdir(exist_ok=True)
-    
+
     logging.info("Logging configuration initialized")
 
 
@@ -172,7 +172,7 @@ def set_correlation_id(correlation_id: Optional[str] = None) -> str:
     """Set correlation ID for current context"""
     if correlation_id is None:
         correlation_id = str(uuid.uuid4())
-    
+
     correlation_id_ctx.set(correlation_id)
     return correlation_id
 
@@ -198,24 +198,24 @@ def log_trading_event(
 ):
     """
     Log structured trading event
-    
+
     Args:
         event_type: Type of event (trade, signal, order, etc.)
         symbol: Trading symbol
         data: Event data
         logger: Optional logger (defaults to trading logger)
     """
-    
+
     if logger is None:
         logger = logging.getLogger("trading")
-    
+
     event_data = {
         "event_type": event_type,
         "symbol": symbol,
         "timestamp": datetime.utcnow().isoformat() + "Z",
         **data
     }
-    
+
     logger.info(
         f"Trading event: {event_type} for {symbol}",
         extra={"trading_event": event_data}
@@ -231,7 +231,7 @@ def log_signal_event(
     metadata: Optional[Dict[str, Any]] = None
 ):
     """Log trading signal event"""
-    
+
     data = {
         "signal_type": signal_type,
         "confidence": confidence,
@@ -239,7 +239,7 @@ def log_signal_event(
         "price": price,
         "metadata": metadata or {}
     }
-    
+
     log_trading_event("signal", symbol, data)
 
 
@@ -254,7 +254,7 @@ def log_order_event(
     metadata: Optional[Dict[str, Any]] = None
 ):
     """Log order event"""
-    
+
     data = {
         "order_id": order_id,
         "side": side,
@@ -264,7 +264,7 @@ def log_order_event(
         "status": status,
         "metadata": metadata or {}
     }
-    
+
     log_trading_event("order", symbol, data)
 
 
@@ -280,7 +280,7 @@ def log_trade_execution(
     metadata: Optional[Dict[str, Any]] = None
 ):
     """Log trade execution event"""
-    
+
     data = {
         "trade_id": trade_id,
         "side": side,
@@ -291,7 +291,7 @@ def log_trade_execution(
         "pnl": pnl,
         "metadata": metadata or {}
     }
-    
+
     log_trading_event("trade_execution", symbol, data)
 
 
@@ -304,7 +304,7 @@ def log_position_update(
     metadata: Optional[Dict[str, Any]] = None
 ):
     """Log position update event"""
-    
+
     data = {
         "position_size": position_size,
         "avg_price": avg_price,
@@ -312,7 +312,7 @@ def log_position_update(
         "realized_pnl": realized_pnl,
         "metadata": metadata or {}
     }
-    
+
     log_trading_event("position_update", symbol, data)
 
 
@@ -324,13 +324,13 @@ def log_risk_event(
     metadata: Optional[Dict[str, Any]] = None
 ):
     """Log risk management event"""
-    
+
     data = {
         "severity": severity,
         "message": message,
         "metadata": metadata or {}
     }
-    
+
     log_trading_event(f"risk_{event_type}", symbol or "SYSTEM", data)
 
 

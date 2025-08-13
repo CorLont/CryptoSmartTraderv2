@@ -59,32 +59,32 @@ class Alert:
 
 class AlertManager:
     """Comprehensive alert management system."""
-    
+
     def __init__(self, config_path: Optional[str] = None):
         """Initialize alert manager."""
         self.logger = get_logger("alert_manager")
-        
+
         # Alert rules and active alerts
         self.rules: Dict[str, AlertRule] = {}
         self.active_alerts: Dict[str, Alert] = {}
         self.alert_history: List[Alert] = []
-        
+
         # Alert callbacks
         self.alert_callbacks: List[Callable[[Alert], None]] = []
-        
+
         # Persistence
         self.data_path = Path("data/alerts")
         self.data_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Load default rules
         self._load_default_rules()
-        
+
         # Load custom rules if provided
         if config_path:
             self._load_custom_rules(config_path)
-        
+
         self.logger.info(f"Alert manager initialized with {len(self.rules)} rules")
-    
+
     def _load_default_rules(self) -> None:
         """Load default alert rules."""
         default_rules = [
@@ -102,7 +102,7 @@ class AlertManager:
                     "description": "Order error rate has exceeded 10% for 5 minutes"
                 }
             ),
-            
+
             AlertRule(
                 name="DrawdownTooHigh",
                 description="Portfolio drawdown exceeds safe limits",
@@ -116,7 +116,7 @@ class AlertManager:
                     "description": "Maximum drawdown has exceeded 10%"
                 }
             ),
-            
+
             AlertRule(
                 name="DailyLossLimit",
                 description="Daily loss limit reached",
@@ -130,7 +130,7 @@ class AlertManager:
                     "description": "Daily PnL has fallen below -5%"
                 }
             ),
-            
+
             AlertRule(
                 name="NoSignals",
                 description="No trading signals generated recently",
@@ -144,7 +144,7 @@ class AlertManager:
                     "description": "No trading signals generated in the last hour"
                 }
             ),
-            
+
             AlertRule(
                 name="HighSlippage",
                 description="Trading slippage is excessive",
@@ -158,7 +158,7 @@ class AlertManager:
                     "description": "Average slippage has exceeded 0.5% for 15 minutes"
                 }
             ),
-            
+
             # Data quality alerts
             AlertRule(
                 name="DataGapDetected",
@@ -173,7 +173,7 @@ class AlertManager:
                     "description": "Data feed has been interrupted for more than 5 minutes"
                 }
             ),
-            
+
             AlertRule(
                 name="LowDataQuality",
                 description="Data quality score is low",
@@ -187,7 +187,7 @@ class AlertManager:
                     "description": "Data quality score has fallen below 70%"
                 }
             ),
-            
+
             # System health alerts
             AlertRule(
                 name="AgentDown",
@@ -202,7 +202,7 @@ class AlertManager:
                     "description": "A critical trading agent has stopped running"
                 }
             ),
-            
+
             AlertRule(
                 name="HighMemoryUsage",
                 description="Memory usage is too high",
@@ -216,7 +216,7 @@ class AlertManager:
                     "description": "System memory usage has exceeded 85%"
                 }
             ),
-            
+
             AlertRule(
                 name="HighCPUUsage",
                 description="CPU usage is too high",
@@ -230,7 +230,7 @@ class AlertManager:
                     "description": "System CPU usage has exceeded 90%"
                 }
             ),
-            
+
             # API and connectivity alerts
             AlertRule(
                 name="APIErrorRate",
@@ -245,7 +245,7 @@ class AlertManager:
                     "description": "API error rate has exceeded 5% for 5 minutes"
                 }
             ),
-            
+
             AlertRule(
                 name="SlowAPIResponse",
                 description="API response time is too slow",
@@ -259,7 +259,7 @@ class AlertManager:
                     "description": "API response time has exceeded 10 seconds"
                 }
             ),
-            
+
             # Risk management alerts
             AlertRule(
                 name="KillSwitchActivated",
@@ -274,7 +274,7 @@ class AlertManager:
                     "description": "The emergency kill switch has been triggered"
                 }
             ),
-            
+
             AlertRule(
                 name="RiskLevelEscalation",
                 description="Risk level has escalated",
@@ -288,7 +288,7 @@ class AlertManager:
                     "description": "Trading risk level has escalated to defensive or higher"
                 }
             ),
-            
+
             # Performance alerts
             AlertRule(
                 name="LowPredictionAccuracy",
@@ -303,7 +303,7 @@ class AlertManager:
                     "description": "Model prediction accuracy has fallen below 60%"
                 }
             ),
-            
+
             AlertRule(
                 name="ExcessiveRetries",
                 description="Too many order retries",
@@ -318,44 +318,44 @@ class AlertManager:
                 }
             )
         ]
-        
+
         for rule in default_rules:
             self.rules[rule.name] = rule
-    
+
     def _load_custom_rules(self, config_path: str) -> None:
         """Load custom alert rules from configuration file."""
         try:
             with open(config_path, 'r') as f:
                 config = json.load(f)
-            
+
             custom_rules = config.get('alert_rules', [])
             for rule_data in custom_rules:
                 rule = AlertRule(**rule_data)
                 self.rules[rule.name] = rule
                 self.logger.info(f"Loaded custom alert rule: {rule.name}")
-        
+
         except (FileNotFoundError, json.JSONDecodeError, KeyError, TypeError) as e:
             self.logger.warning(f"Failed to load custom alert rules: {e}")
-    
+
     def register_alert_callback(self, callback: Callable[[Alert], None]) -> None:
         """Register callback for alert notifications."""
         self.alert_callbacks.append(callback)
         self.logger.info("Alert callback registered")
-    
-    def check_metric(self, metric_name: str, value: float, 
+
+    def check_metric(self, metric_name: str, value: float,
                     labels: Optional[Dict[str, str]] = None) -> None:
         """Check metric value against alert rules."""
         labels = labels or {}
-        
+
         for rule in self.rules.values():
             if not rule.enabled or rule.metric_name != metric_name:
                 continue
-            
+
             if self._evaluate_condition(value, rule.operator, rule.threshold):
                 self._trigger_alert(rule, value, labels)
             else:
                 self._resolve_alert(rule.name)
-    
+
     def _evaluate_condition(self, value: float, operator: str, threshold: float) -> bool:
         """Evaluate alert condition."""
         if operator == '>':
@@ -373,14 +373,14 @@ class AlertManager:
         else:
             self.logger.warning(f"Unknown operator: {operator}")
             return False
-    
-    def _trigger_alert(self, rule: AlertRule, value: float, 
+
+    def _trigger_alert(self, rule: AlertRule, value: float,
                       labels: Dict[str, str]) -> None:
         """Trigger alert if conditions are met."""
         alert_key = f"{rule.name}_{hash(frozenset(labels.items()))}"
-        
+
         now = datetime.now()
-        
+
         if alert_key in self.active_alerts:
             # Alert already active, check if duration threshold met
             alert = self.active_alerts[alert_key]
@@ -401,77 +401,77 @@ class AlertManager:
                 labels={**rule.labels, **labels},
                 annotations=rule.annotations.copy()
             )
-            
+
             self.active_alerts[alert_key] = alert
             self.alert_history.append(alert)
-            
+
             self.logger.warning(f"Alert triggered: {rule.name}",
                               severity=rule.severity.value,
                               metric_value=value,
                               threshold=rule.threshold)
-            
+
             # Notify callbacks
             for callback in self.alert_callbacks:
                 try:
                     callback(alert)
                 except Exception as e:
                     self.logger.error(f"Alert callback failed: {e}")
-    
+
     def _resolve_alert(self, rule_name: str) -> None:
         """Resolve active alert."""
         alerts_to_resolve = [
             key for key, alert in self.active_alerts.items()
             if alert.rule_name == rule_name and alert.status == AlertStatus.ACTIVE
         ]
-        
+
         for alert_key in alerts_to_resolve:
             alert = self.active_alerts[alert_key]
             alert.status = AlertStatus.RESOLVED
             alert.resolved_at = datetime.now()
-            
+
             self.logger.info(f"Alert resolved: {rule_name}")
-            
+
             # Remove from active alerts
             del self.active_alerts[alert_key]
-    
+
     def _format_alert_message(self, rule: AlertRule, value: float) -> str:
         """Format alert message."""
         return (f"{rule.description}. "
                 f"Current value: {value:.2f}, "
                 f"Threshold: {rule.threshold:.2f}")
-    
+
     def acknowledge_alert(self, alert_key: str) -> bool:
         """Acknowledge an active alert."""
         if alert_key in self.active_alerts:
             alert = self.active_alerts[alert_key]
             alert.status = AlertStatus.ACKNOWLEDGED
             alert.acknowledged_at = datetime.now()
-            
+
             self.logger.info(f"Alert acknowledged: {alert.rule_name}")
             return True
-        
+
         return False
-    
+
     def silence_alert(self, rule_name: str, duration_minutes: int = 60) -> None:
         """Silence alerts for a specific rule."""
         # Implementation would add silencing logic
         self.logger.info(f"Alert rule silenced: {rule_name} for {duration_minutes} minutes")
-    
+
     def get_active_alerts(self) -> List[Alert]:
         """Get all active alerts."""
-        return [alert for alert in self.active_alerts.values() 
+        return [alert for alert in self.active_alerts.values()
                 if alert.status == AlertStatus.ACTIVE]
-    
+
     def get_alert_summary(self) -> Dict[str, Any]:
         """Get alert summary statistics."""
         active_alerts = self.get_active_alerts()
-        
+
         severity_counts = {}
         for severity in AlertSeverity:
             severity_counts[severity.value] = sum(
                 1 for alert in active_alerts if alert.severity == severity
             )
-        
+
         return {
             'total_active': len(active_alerts),
             'by_severity': severity_counts,
@@ -479,7 +479,7 @@ class AlertManager:
             'enabled_rules': sum(1 for rule in self.rules.values() if rule.enabled),
             'total_historical': len(self.alert_history)
         }
-    
+
     def export_rules(self, file_path: str) -> None:
         """Export alert rules to JSON file."""
         rules_data = []
@@ -496,10 +496,10 @@ class AlertManager:
                 'annotations': rule.annotations,
                 'enabled': rule.enabled
             })
-        
+
         with open(file_path, 'w') as f:
             json.dump({'alert_rules': rules_data}, f, indent=2)
-        
+
         self.logger.info(f"Alert rules exported to {file_path}")
 
 

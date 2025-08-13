@@ -12,7 +12,7 @@ from .sklearn_model_adapter import SklearnModelAdapter
 
 __all__ = [
     "KrakenDataAdapter",
-    "RedisCacheAdapter", 
+    "RedisCacheAdapter",
     "FileStorageAdapter",
     "SklearnModelAdapter"
 ]

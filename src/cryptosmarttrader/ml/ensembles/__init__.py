@@ -10,7 +10,7 @@ from .quantile_ensemble import QuantileEnsemble
 
 __all__ = [
     'EnsembleManager',
-    'UncertaintyEnsemble', 
+    'UncertaintyEnsemble',
     'BayesianEnsemble',
     'QuantileEnsemble'
 ]

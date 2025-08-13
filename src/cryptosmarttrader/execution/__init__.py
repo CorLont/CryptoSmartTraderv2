@@ -18,7 +18,7 @@ from .idempotent_executor import IdempotentOrderExecutor, ExecutionContext, Exec
 __all__ = [
     # Order idempotency and deduplication
     "OrderDeduplicationEngine",
-    "OrderSubmission", 
+    "OrderSubmission",
     "ClientOrderId",
     "OrderStatus",
     "IdempotentOrderExecutor",

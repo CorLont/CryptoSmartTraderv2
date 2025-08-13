@@ -24,11 +24,11 @@ OPENAI_MODEL = "gpt-4o"
 
 class OpenAIEnhancedAnalyzer:
     """Enhanced analyzer using OpenAI GPT-4o for advanced insights"""
-    
+
     def __init__(self, config_manager=None):
         self.config_manager = config_manager
         self.logger = logging.getLogger(__name__)
-        
+
         # Initialize OpenAI client
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
@@ -37,7 +37,7 @@ class OpenAIEnhancedAnalyzer:
         else:
             self.client = OpenAI(api_key=api_key)
             self.logger.info("OpenAI client initialized successfully")
-        
+
         # Analysis configurations
         self.batch_configs = {
             "sentiment_analysis": {
@@ -61,7 +61,7 @@ class OpenAIEnhancedAnalyzer:
                 "system_prompt": self._get_market_system_prompt()
             }
         }
-    
+
     def _get_sentiment_system_prompt(self) -> str:
         """Get system prompt for sentiment analysis"""
         return """You are an expert cryptocurrency sentiment analyst with deep understanding of market psychology and social media dynamics.
@@ -75,7 +75,7 @@ Your task is to analyze cryptocurrency-related social media posts, news articles
 
 Provide analysis in structured JSON format with specific metrics and actionable insights.
 Focus on institutional-grade analysis suitable for professional trading decisions."""
-    
+
     def _get_technical_system_prompt(self) -> str:
         """Get system prompt for technical analysis"""
         return """You are a professional technical analyst specializing in cryptocurrency markets with expertise in pattern recognition and signal interpretation.
@@ -89,7 +89,7 @@ Your role is to enhance technical analysis by:
 
 Deliver institutional-quality analysis with clear entry/exit points, stop-loss levels, and probability assessments.
 Use JSON format for structured recommendations."""
-    
+
     def _get_ml_system_prompt(self) -> str:
         """Get system prompt for ML enhancement"""
         return """You are an expert in machine learning applications for financial markets, specializing in cryptocurrency price prediction and model optimization.
@@ -103,7 +103,7 @@ Your responsibilities include:
 
 Focus on practical insights that improve prediction accuracy and trading performance.
 Deliver analysis in structured format with actionable recommendations."""
-    
+
     def _get_market_system_prompt(self) -> str:
         """Get system prompt for comprehensive market insights"""
         return """You are a senior cryptocurrency market analyst with expertise in macro trends, institutional behavior, and market microstructure.
@@ -118,103 +118,103 @@ Provide comprehensive market analysis including:
 
 Deliver professional-grade insights suitable for institutional investment decisions.
 Structure output in actionable format with clear recommendations and risk parameters."""
-    
+
     async def enhance_sentiment_analysis(self, sentiment_data: Dict[str, Any]) -> Dict[str, Any]:
         """Enhance sentiment analysis with OpenAI insights"""
         if not self.client:
             return self._fallback_sentiment_analysis(sentiment_data)
-        
+
         try:
             # Prepare sentiment data for analysis
             analysis_prompt = self._prepare_sentiment_prompt(sentiment_data)
-            
+
             # Get enhanced analysis from OpenAI
             response = await self._call_openai_async(
                 prompt=analysis_prompt,
                 config=self.batch_configs["sentiment_analysis"]
             )
-            
+
             # Parse and structure the response
             enhanced_results = self._parse_sentiment_response(response, sentiment_data)
-            
+
             self.logger.info("Sentiment analysis enhanced with OpenAI insights")
             return enhanced_results
-            
+
         except Exception as e:
             self.logger.error(f"OpenAI sentiment enhancement failed: {e}")
             return self._fallback_sentiment_analysis(sentiment_data)
-    
+
     async def enhance_technical_analysis(self, technical_data: Dict[str, Any]) -> Dict[str, Any]:
         """Enhance technical analysis with AI pattern recognition"""
         if not self.client:
             return self._fallback_technical_analysis(technical_data)
-        
+
         try:
             analysis_prompt = self._prepare_technical_prompt(technical_data)
-            
+
             response = await self._call_openai_async(
                 prompt=analysis_prompt,
                 config=self.batch_configs["technical_analysis"]
             )
-            
+
             enhanced_results = self._parse_technical_response(response, technical_data)
-            
+
             self.logger.info("Technical analysis enhanced with OpenAI pattern recognition")
             return enhanced_results
-            
+
         except Exception as e:
             self.logger.error(f"OpenAI technical enhancement failed: {e}")
             return self._fallback_technical_analysis(technical_data)
-    
+
     async def enhance_ml_predictions(self, ml_data: Dict[str, Any]) -> Dict[str, Any]:
         """Enhance ML predictions with AI model analysis"""
         if not self.client:
             return self._fallback_ml_analysis(ml_data)
-        
+
         try:
             analysis_prompt = self._prepare_ml_prompt(ml_data)
-            
+
             response = await self._call_openai_async(
                 prompt=analysis_prompt,
                 config=self.batch_configs["ml_enhancement"]
             )
-            
+
             enhanced_results = self._parse_ml_response(response, ml_data)
-            
+
             self.logger.info("ML predictions enhanced with OpenAI model analysis")
             return enhanced_results
-            
+
         except Exception as e:
             self.logger.error(f"OpenAI ML enhancement failed: {e}")
             return self._fallback_ml_analysis(ml_data)
-    
+
     async def generate_market_insights(self, combined_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate comprehensive market insights from all analysis types"""
         if not self.client:
             return self._fallback_market_insights(combined_data)
-        
+
         try:
             insight_prompt = self._prepare_market_insights_prompt(combined_data)
-            
+
             response = await self._call_openai_async(
                 prompt=insight_prompt,
                 config=self.batch_configs["market_insights"]
             )
-            
+
             market_insights = self._parse_market_insights_response(response, combined_data)
-            
+
             self.logger.info("Comprehensive market insights generated")
             return market_insights
-            
+
         except Exception as e:
             self.logger.error(f"OpenAI market insights generation failed: {e}")
             return self._fallback_market_insights(combined_data)
-    
+
     async def _call_openai_async(self, prompt: str, config: Dict[str, Any]) -> str:
         """Make async call to OpenAI API"""
         if not self.client:
             raise ValueError("OpenAI client not initialized")
-            
+
         try:
             response = self.client.chat.completions.create(
                 model=OPENAI_MODEL,
@@ -226,17 +226,17 @@ Structure output in actionable format with clear recommendations and risk parame
                 temperature=config["temperature"],
                 response_format={"type": "json_object"}
             )
-            
+
             content = response.choices[0].message.content
             if content is None:
                 raise ValueError("OpenAI response content is None")
-            
+
             return content
-            
+
         except Exception as e:
             self.logger.error(f"OpenAI API call failed: {e}")
             raise
-    
+
     def _prepare_sentiment_prompt(self, sentiment_data: Dict[str, Any]) -> str:
         """Prepare prompt for sentiment analysis enhancement"""
         return f"""
@@ -256,7 +256,7 @@ Please provide:
 
 Format response as JSON with specific metrics and actionable insights.
 """
-    
+
     def _prepare_technical_prompt(self, technical_data: Dict[str, Any]) -> str:
         """Prepare prompt for technical analysis enhancement"""
         return f"""
@@ -276,7 +276,7 @@ Please provide:
 
 Format response as JSON with clear trading signals and risk management.
 """
-    
+
     def _prepare_ml_prompt(self, ml_data: Dict[str, Any]) -> str:
         """Prepare prompt for ML analysis enhancement"""
         return f"""
@@ -296,7 +296,7 @@ Please provide:
 
 Format response as JSON with actionable model insights.
 """
-    
+
     def _prepare_market_insights_prompt(self, combined_data: Dict[str, Any]) -> str:
         """Prepare prompt for comprehensive market insights"""
         return f"""
@@ -317,12 +317,12 @@ Please provide:
 
 Format response as JSON with executive summary and detailed recommendations.
 """
-    
+
     def _parse_sentiment_response(self, response: str, original_data: Dict) -> Dict[str, Any]:
         """Parse OpenAI sentiment analysis response"""
         try:
             ai_analysis = json.loads(response)
-            
+
             return {
                 "original_data": original_data,
                 "ai_enhanced": ai_analysis,
@@ -333,12 +333,12 @@ Format response as JSON with executive summary and detailed recommendations.
             }
         except json.JSONDecodeError:
             return {"error": "Failed to parse OpenAI response", "raw_response": response}
-    
+
     def _parse_technical_response(self, response: str, original_data: Dict) -> Dict[str, Any]:
         """Parse OpenAI technical analysis response"""
         try:
             ai_analysis = json.loads(response)
-            
+
             return {
                 "original_data": original_data,
                 "ai_enhanced": ai_analysis,
@@ -349,12 +349,12 @@ Format response as JSON with executive summary and detailed recommendations.
             }
         except json.JSONDecodeError:
             return {"error": "Failed to parse OpenAI response", "raw_response": response}
-    
+
     def _parse_ml_response(self, response: str, original_data: Dict) -> Dict[str, Any]:
         """Parse OpenAI ML enhancement response"""
         try:
             ai_analysis = json.loads(response)
-            
+
             return {
                 "original_data": original_data,
                 "ai_enhanced": ai_analysis,
@@ -365,12 +365,12 @@ Format response as JSON with executive summary and detailed recommendations.
             }
         except json.JSONDecodeError:
             return {"error": "Failed to parse OpenAI response", "raw_response": response}
-    
+
     def _parse_market_insights_response(self, response: str, original_data: Dict) -> Dict[str, Any]:
         """Parse OpenAI market insights response"""
         try:
             ai_insights = json.loads(response)
-            
+
             return {
                 "original_data": original_data,
                 "ai_insights": ai_insights,
@@ -382,7 +382,7 @@ Format response as JSON with executive summary and detailed recommendations.
             }
         except json.JSONDecodeError:
             return {"error": "Failed to parse OpenAI response", "raw_response": response}
-    
+
     # Fallback methods for when OpenAI is not available
     def _fallback_sentiment_analysis(self, sentiment_data: Dict) -> Dict[str, Any]:
         """Fallback sentiment analysis without OpenAI"""
@@ -395,7 +395,7 @@ Format response as JSON with executive summary and detailed recommendations.
             },
             "enhancement_type": "fallback_sentiment"
         }
-    
+
     def _fallback_technical_analysis(self, technical_data: Dict) -> Dict[str, Any]:
         """Fallback technical analysis without OpenAI"""
         return {
@@ -407,7 +407,7 @@ Format response as JSON with executive summary and detailed recommendations.
             },
             "enhancement_type": "fallback_technical"
         }
-    
+
     def _fallback_ml_analysis(self, ml_data: Dict) -> Dict[str, Any]:
         """Fallback ML analysis without OpenAI"""
         return {
@@ -418,7 +418,7 @@ Format response as JSON with executive summary and detailed recommendations.
             },
             "enhancement_type": "fallback_ml"
         }
-    
+
     def _fallback_market_insights(self, combined_data: Dict) -> Dict[str, Any]:
         """Fallback market insights without OpenAI"""
         return {
@@ -430,31 +430,31 @@ Format response as JSON with executive summary and detailed recommendations.
             },
             "insight_type": "fallback_market_analysis"
         }
-    
+
     async def process_analysis_batch(self, batch_data: Dict[str, Any]) -> Dict[str, Any]:
         """Process a complete analysis batch with OpenAI enhancement"""
         try:
             results = {}
-            
+
             # Process each analysis type
             if "sentiment" in batch_data:
                 results["enhanced_sentiment"] = await self.enhance_sentiment_analysis(
                     batch_data["sentiment"]
                 )
-            
+
             if "technical" in batch_data:
                 results["enhanced_technical"] = await self.enhance_technical_analysis(
                     batch_data["technical"]
                 )
-            
+
             if "ml_predictions" in batch_data:
                 results["enhanced_ml"] = await self.enhance_ml_predictions(
                     batch_data["ml_predictions"]
                 )
-            
+
             # Generate comprehensive insights
             results["market_insights"] = await self.generate_market_insights(batch_data)
-            
+
             # Add batch metadata
             results["batch_metadata"] = {
                 "processed_at": datetime.now().isoformat(),
@@ -462,9 +462,9 @@ Format response as JSON with executive summary and detailed recommendations.
                 "enhancement_status": "openai_enhanced" if self.client else "fallback",
                 "total_processing_time": "calculated_elsewhere"
             }
-            
+
             return results
-            
+
         except Exception as e:
             self.logger.error(f"Batch processing failed: {e}")
             return {"error": str(e), "batch_data": batch_data}

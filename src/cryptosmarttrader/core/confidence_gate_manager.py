@@ -26,7 +26,7 @@ class GateStatus(str, Enum):
 class ConfidenceLevel(str, Enum):
     """Confidence level requirements"""
     STRICT = "strict"      # 90%+ confidence required
-    HIGH = "high"          # 80%+ confidence required  
+    HIGH = "high"          # 80%+ confidence required
     MEDIUM = "medium"      # 70%+ confidence required
     LOW = "low"           # 60%+ confidence required
 
@@ -66,16 +66,16 @@ class GateResult:
 
 class ConfidenceGateManager:
     """Manages confidence-based filtering with strict gates"""
-    
+
     def __init__(self, config: Optional[ConfidenceGateConfig] = None):
         self.config = config or ConfidenceGateConfig()
         self.logger = get_logger()
-        
+
         # Gate state tracking
         self.gate_history = []
         self.current_gate_status = GateStatus.CLOSED
         self.last_gate_result = None
-        
+
         # Confidence thresholds by level
         self.confidence_thresholds = {
             ConfidenceLevel.STRICT: 0.90,
@@ -83,7 +83,7 @@ class ConfidenceGateManager:
             ConfidenceLevel.MEDIUM: 0.70,
             ConfidenceLevel.LOW: 0.60
         }
-        
+
         self.logger.info(
             "Confidence Gate Manager initialized",
             extra={
@@ -92,19 +92,19 @@ class ConfidenceGateManager:
                 "strict_mode": self.config.strict_mode
             }
         )
-    
+
     def apply_confidence_gate(
-        self, 
+        self,
         candidates: List[CandidateResult],
         gate_id: Optional[str] = None
     ) -> GateResult:
         """Apply confidence gate - STRICT filtering with no fallbacks"""
-        
+
         gate_id = gate_id or f"gate_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         gate_start = datetime.now()
-        
+
         self.logger.info(f"Applying confidence gate: {gate_id}")
-        
+
         # Initialize gate result
         gate_result = GateResult(
             gate_id=gate_id,
@@ -118,36 +118,36 @@ class ConfidenceGateManager:
             rejection_reasons={},
             confidence_distribution={}
         )
-        
+
         if not candidates:
             # No candidates to evaluate
             gate_result.gate_status = GateStatus.CLOSED
             gate_result.rejection_reasons["no_candidates"] = 1
-            
+
             self.logger.warning(
                 f"Gate {gate_id}: No candidates provided",
                 extra={"gate_id": gate_id, "status": "CLOSED"}
             )
-            
+
             self._update_gate_state(gate_result)
             return gate_result
-        
+
         # Apply strict confidence filtering
         passed_results = []
         rejected_count = 0
         rejection_reasons = {}
         confidence_distribution = {"0-20%": 0, "20-40%": 0, "40-60%": 0, "60-80%": 0, "80-90%": 0, "90-100%": 0}
-        
+
         for candidate in candidates:
             # Categorize confidence for distribution
             conf_bucket = self._get_confidence_bucket(candidate.confidence)
             confidence_distribution[conf_bucket] += 1
-            
+
             # Apply confidence threshold
             if candidate.confidence >= self.config.minimum_confidence:
                 # Candidate passes confidence gate
                 passed_results.append(candidate)
-                
+
                 self.logger.debug(
                     f"Candidate PASSED gate: {candidate.symbol}",
                     extra={
@@ -160,12 +160,12 @@ class ConfidenceGateManager:
             else:
                 # Candidate REJECTED - insufficient confidence
                 rejected_count += 1
-                
+
                 reason = f"confidence_below_{int(self.config.minimum_confidence * 100)}pct"
                 if reason not in rejection_reasons:
                     rejection_reasons[reason] = 0
                 rejection_reasons[reason] += 1
-                
+
                 self.logger.debug(
                     f"Candidate REJECTED: {candidate.symbol} - confidence {candidate.confidence:.2f} < {self.config.minimum_confidence:.2f}",
                     extra={
@@ -176,10 +176,10 @@ class ConfidenceGateManager:
                         "action": "REJECTED"
                     }
                 )
-        
+
         # Determine gate status
         passed_count = len(passed_results)
-        
+
         if passed_count >= self.config.minimum_candidates:
             if passed_count == len(candidates):
                 gate_result.gate_status = GateStatus.OPEN
@@ -188,11 +188,11 @@ class ConfidenceGateManager:
         else:
             # HARD GATE: Not enough candidates passed
             gate_result.gate_status = GateStatus.CLOSED
-            
+
             if self.config.strict_mode:
                 # In strict mode, clear all results when gate closes
                 passed_results = []
-                
+
                 self.logger.warning(
                     f"STRICT GATE CLOSED: {gate_id} - only {passed_count}/{len(candidates)} candidates passed (minimum: {self.config.minimum_candidates})",
                     extra={
@@ -203,14 +203,14 @@ class ConfidenceGateManager:
                         "action": "GATE_CLOSED"
                     }
                 )
-        
+
         # Finalize gate result
         gate_result.passed_candidates = len(passed_results)
         gate_result.rejected_candidates = len(candidates) - len(passed_results)
         gate_result.passed_results = passed_results
         gate_result.rejection_reasons = rejection_reasons
         gate_result.confidence_distribution = confidence_distribution
-        
+
         # Log gate result
         self.logger.info(
             f"Confidence gate applied: {gate_id}",
@@ -223,15 +223,15 @@ class ConfidenceGateManager:
                 "pass_rate": gate_result.passed_candidates / gate_result.total_candidates if gate_result.total_candidates > 0 else 0
             }
         )
-        
+
         # Update gate state
         self._update_gate_state(gate_result)
-        
+
         return gate_result
-    
+
     def _get_confidence_bucket(self, confidence: float) -> str:
         """Get confidence bucket for distribution tracking"""
-        
+
         if confidence >= 0.9:
             return "90-100%"
         elif confidence >= 0.8:
@@ -244,27 +244,27 @@ class ConfidenceGateManager:
             return "20-40%"
         else:
             return "0-20%"
-    
+
     def _update_gate_state(self, gate_result: GateResult):
         """Update internal gate state"""
-        
+
         self.current_gate_status = gate_result.gate_status
         self.last_gate_result = gate_result
-        
+
         # Store in history
         self.gate_history.append(gate_result)
         if len(self.gate_history) > 1000:  # Keep last 1000 gate results
             self.gate_history = self.gate_history[-1000:]
-    
+
     def get_filtered_recommendations(
-        self, 
+        self,
         candidates: List[CandidateResult],
         sort_by: str = "confidence"
     ) -> List[CandidateResult]:
         """Get filtered recommendations with confidence gate applied"""
-        
+
         gate_result = self.apply_confidence_gate(candidates)
-        
+
         if gate_result.gate_status == GateStatus.CLOSED:
             # Gate is closed - return empty list
             self.logger.info(
@@ -275,7 +275,7 @@ class ConfidenceGateManager:
                 }
             )
             return []
-        
+
         # Sort passed results
         if sort_by == "confidence":
             sorted_results = sorted(gate_result.passed_results, key=lambda x: x.confidence, reverse=True)
@@ -283,31 +283,31 @@ class ConfidenceGateManager:
             sorted_results = sorted(gate_result.passed_results, key=lambda x: x.prediction, reverse=True)
         else:
             sorted_results = gate_result.passed_results
-        
+
         return sorted_results
-    
+
     def is_gate_open(self) -> bool:
         """Check if confidence gate is currently open"""
         return self.current_gate_status in [GateStatus.OPEN, GateStatus.PARTIAL]
-    
+
     def get_gate_summary(self) -> Dict[str, Any]:
         """Get comprehensive gate status summary"""
-        
+
         if not self.last_gate_result:
             return {
                 "status": "no_gate_applied",
                 "message": "No confidence gate has been applied yet"
             }
-        
+
         result = self.last_gate_result
-        
+
         # Calculate recent trends
         recent_gates = self.gate_history[-10:] if len(self.gate_history) >= 10 else self.gate_history
         recent_pass_rates = [
-            g.passed_candidates / g.total_candidates if g.total_candidates > 0 else 0 
+            g.passed_candidates / g.total_candidates if g.total_candidates > 0 else 0
             for g in recent_gates
         ]
-        
+
         return {
             "timestamp": datetime.now().isoformat(),
             "current_gate_status": self.current_gate_status.value,
@@ -336,19 +336,19 @@ class ConfidenceGateManager:
                 "gates_closed_recently": len([g for g in recent_gates if g.gate_status == GateStatus.CLOSED])
             }
         }
-    
+
     def get_empty_state_message(self) -> Dict[str, Any]:
         """Get empty state message when no candidates pass gate"""
-        
+
         if not self.last_gate_result:
             return {
                 "title": "No Analysis Available",
                 "message": "No market analysis has been performed yet.",
                 "action": "Run market analysis to see recommendations."
             }
-        
+
         result = self.last_gate_result
-        
+
         if result.gate_status == GateStatus.CLOSED:
             # Analyze why gate is closed
             if result.total_candidates == 0:
@@ -364,11 +364,11 @@ class ConfidenceGateManager:
             else:
                 # Candidates exist but none passed confidence threshold
                 highest_confidence = max(
-                    (c.confidence for c in result.passed_results + 
-                     [CandidateResult("", 0, 0, "", datetime.now())]), 
+                    (c.confidence for c in result.passed_results +
+                     [CandidateResult("", 0, 0, "", datetime.now())]),
                     default=0
                 )
-                
+
                 return {
                     "title": "No High-Confidence Opportunities",
                     "message": f"No cryptocurrencies meet the {self.config.minimum_confidence:.0%} confidence threshold for trading recommendations.",
@@ -381,7 +381,7 @@ class ConfidenceGateManager:
                         "confidence_distribution": result.confidence_distribution
                     }
                 }
-        
+
         return {
             "title": "Analysis Complete",
             "message": f"{result.passed_candidates} cryptocurrencies meet confidence requirements.",
@@ -394,30 +394,30 @@ class ConfidenceGateManager:
 
 class OrchestrationGateFilter:
     """Orchestration-level confidence gate integration"""
-    
+
     def __init__(self):
         self.logger = get_logger()
         self.confidence_gate = ConfidenceGateManager()
-        
+
     def filter_batch_results(
-        self, 
-        batch_results: List[Dict[str, Any]], 
+        self,
+        batch_results: List[Dict[str, Any]],
         confidence_threshold: float = 0.8
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """Filter batch inference results through confidence gate"""
-        
+
         # Convert batch results to candidates
         candidates = []
-        
+
         for result in batch_results:
             symbol = result.get("symbol", "")
             predictions = result.get("predictions", {})
             confidence_scores = result.get("confidence_scores", {})
-            
+
             # Create candidates for each horizon
             for horizon, prediction in predictions.items():
                 confidence = confidence_scores.get(horizon, 0.0)
-                
+
                 candidate = CandidateResult(
                     symbol=symbol,
                     prediction=prediction,
@@ -427,26 +427,26 @@ class OrchestrationGateFilter:
                     features=result.get("features", {}),
                     metadata={"batch_result": result}
                 )
-                
+
                 candidates.append(candidate)
-        
+
         # Update gate configuration
         self.confidence_gate.config.minimum_confidence = confidence_threshold
-        
+
         # Apply confidence gate
         gate_result = self.confidence_gate.apply_confidence_gate(candidates)
-        
+
         # Convert passed candidates back to batch results
         filtered_results = []
         seen_symbols = set()
-        
+
         for candidate in gate_result.passed_results:
             if candidate.symbol not in seen_symbols:
                 # Reconstruct result for this symbol
                 original_result = candidate.metadata.get("batch_result", {})
                 filtered_results.append(original_result)
                 seen_symbols.add(candidate.symbol)
-        
+
         # Create gate summary
         gate_summary = {
             "gate_status": gate_result.gate_status.value,
@@ -456,7 +456,7 @@ class OrchestrationGateFilter:
             "confidence_threshold": confidence_threshold,
             "empty_state": self.confidence_gate.get_empty_state_message() if gate_result.gate_status == GateStatus.CLOSED else None
         }
-        
+
         self.logger.info(
             f"Batch results filtered through confidence gate",
             extra={
@@ -466,7 +466,7 @@ class OrchestrationGateFilter:
                 "confidence_threshold": confidence_threshold
             }
         )
-        
+
         return filtered_results, gate_summary
 
 # Global instances

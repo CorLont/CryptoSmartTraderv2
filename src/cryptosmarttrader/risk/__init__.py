@@ -19,7 +19,7 @@ from .risk_limits import (
 __all__ = [
     "RiskLimitEngine",
     "RiskLimit",
-    "CircuitBreaker", 
+    "CircuitBreaker",
     "AssetCluster",
     "RiskMetrics",
     "RiskLimitType",

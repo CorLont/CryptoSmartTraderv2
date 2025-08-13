@@ -34,11 +34,11 @@ except ImportError:
 class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
     """
     P1 Enterprise Configuration with Pydantic validation
-    
+
     Replaces direct os.environ[...] access with validated settings.
     All environment variables have defaults and validation.
     """
-    
+
     # === REQUIRED API CREDENTIALS ===
     kraken_api_key: SecretStr = Field(
         default="",
@@ -47,7 +47,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
     )
     kraken_secret: SecretStr = Field(
         default="",
-        env="KRAKEN_SECRET", 
+        env="KRAKEN_SECRET",
         description="Kraken exchange secret key"
     )
     openai_api_key: SecretStr = Field(
@@ -55,7 +55,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         env="OPENAI_API_KEY",
         description="OpenAI API key for AI analysis"
     )
-    
+
     # === OPTIONAL EXCHANGE APIS ===
     binance_api_key: Optional[SecretStr] = Field(
         default=None,
@@ -67,7 +67,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         env="BINANCE_SECRET",
         description="Binance exchange secret"
     )
-    
+
     # === APPLICATION CONFIGURATION ===
     environment: Literal["development", "staging", "production"] = Field(
         default="development",
@@ -84,7 +84,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         env="SECRET_KEY",
         description="Application secret key"
     )
-    
+
     # === MULTI-SERVICE PORTS ===
     dashboard_port: int = Field(
         default=5000,
@@ -107,14 +107,14 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         le=65535,
         description="Prometheus metrics port"
     )
-    
+
     # === DATABASE CONFIGURATION ===
     database_url: str = Field(
         default="sqlite:///cryptotrader.db",
         env="DATABASE_URL",
         description="Database connection URL"
     )
-    
+
     # === MONITORING & LOGGING ===
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
         default="INFO",
@@ -131,7 +131,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         env="PROMETHEUS_ENABLED",
         description="Enable Prometheus metrics"
     )
-    
+
     # === TRADING CONFIGURATION ===
     paper_trading: bool = Field(
         default=True,
@@ -156,7 +156,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         le=1.0,
         description="Risk percentage per trade"
     )
-    
+
     # === ML CONFIGURATION ===
     model_training_enabled: bool = Field(
         default=True,
@@ -179,7 +179,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         env="TORCH_DEVICE",
         description="PyTorch device (auto, cpu, cuda)"
     )
-    
+
     # === SECURITY CONFIGURATION ===
     encryption_enabled: bool = Field(
         default=True,
@@ -197,7 +197,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         gt=0,
         description="JWT token expiration in hours"
     )
-    
+
     # === NOTIFICATIONS ===
     email_enabled: bool = Field(
         default=False,
@@ -226,7 +226,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         env="SMTP_PASSWORD",
         description="SMTP password"
     )
-    
+
     # === RATE LIMITING ===
     rate_limit_enabled: bool = Field(
         default=True,
@@ -239,7 +239,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         gt=0,
         description="Rate limit requests per minute"
     )
-    
+
     # === DATA CONFIGURATION ===
     data_retention_days: int = Field(
         default=30,
@@ -252,7 +252,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         env="BACKUP_ENABLED",
         description="Enable automatic backups"
     )
-    
+
     # === DEVELOPMENT SETTINGS ===
     # REMOVED: Mock data pattern not allowed in production
         default=False,
@@ -264,20 +264,20 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
         env="DEMO_MODE",
         description="Run in demonstration mode"
     )
-    
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
         validate_assignment = True
         arbitrary_types_allowed = True
-        
+
         # Custom validation messages
         fields = {
             "kraken_api_key": {"description": "Kraken API key is required for production"},
             "openai_api_key": {"description": "OpenAI API key is required for AI features"}
         }
-    
+
     if PYDANTIC_V2:
         @field_validator("environment")
         @classmethod
@@ -286,7 +286,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
             if v not in ["development", "staging", "production"]:
                 raise ValueError("Environment must be development, staging, or production")
             return v
-        
+
         @field_validator("database_url")
         @classmethod
         def validate_database_url(cls, v):
@@ -294,7 +294,7 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
             if not v.startswith(("sqlite://", "postgresql://", "mysql://")):
                 raise ValueError("Database URL must start with sqlite://, postgresql://, or mysql://")
             return v
-        
+
         @field_validator("torch_device")
         @classmethod
         def validate_torch_device(cls, v):
@@ -310,14 +310,14 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
             if v not in ["development", "staging", "production"]:
                 raise ValueError("Environment must be development, staging, or production")
             return v
-        
+
         @validator("database_url")
         def validate_database_url(cls, v):
             """Validate database URL format"""
             if not v.startswith(("sqlite://", "postgresql://", "mysql://")):
                 raise ValueError("Database URL must start with sqlite://, postgresql://, or mysql://")
             return v
-        
+
         @validator("torch_device")
         def validate_torch_device(cls, v):
             """Validate PyTorch device setting"""
@@ -325,51 +325,51 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
             if v not in valid_devices and not v.startswith("cuda:"):
                 raise ValueError(f"Invalid torch device. Must be one of {valid_devices} or cuda:N")
             return v
-        
+
         @validator("trading_enabled")
         def validate_trading_safety(cls, v, values):
             """Ensure trading safety - never enable trading in development"""
             if v and values.get("environment") == "development":
                 raise ValueError("Trading cannot be enabled in development environment")
             return v
-    
+
     def is_production(self) -> bool:
         """Check if running in production environment"""
         return self.environment == "production"
-    
+
     def is_development(self) -> bool:
         """Check if running in development environment"""
         return self.environment == "development"
-    
+
     def get_secret_value(self, secret: SecretStr) -> str:
         """Safely get secret value"""
         return secret.get_secret_value() if secret else ""
-    
+
     def validate_required_secrets(self) -> List[str]:
         """Validate that required secrets are provided"""
         missing_secrets = []
-        
+
         if not self.get_secret_value(self.kraken_api_key):
             missing_secrets.append("KRAKEN_API_KEY")
-            
+
         if not self.get_secret_value(self.kraken_secret):
             missing_secrets.append("KRAKEN_SECRET")
-            
+
         if not self.get_secret_value(self.openai_api_key):
             missing_secrets.append("OPENAI_API_KEY")
-        
+
         return missing_secrets
-    
+
     def to_dict(self, include_secrets: bool = False) -> dict:
         """Convert settings to dictionary"""
         data = self.dict()
-        
+
         if not include_secrets:
             # Mask secret values
             for key, value in data.items():
                 if isinstance(value, SecretStr):
                     data[key] = "***MASKED***"
-        
+
         return data
 
 
@@ -380,11 +380,11 @@ settings = CryptoTraderSettings()
 def get_env(key: str, default: str = "") -> str:
     """
     Replacement for os.environ.get() with validation
-    
+
     Args:
         key: Environment variable key
         default: Default value if not found
-        
+
     Returns:
         Environment variable value
     """
@@ -393,13 +393,13 @@ def get_env(key: str, default: str = "") -> str:
 def require_env(key: str) -> str:
     """
     Require environment variable with clear error message
-    
+
     Args:
         key: Environment variable key
-        
+
     Returns:
         Environment variable value
-        
+
     Raises:
         ValueError: If environment variable is not set
     """

@@ -17,13 +17,13 @@ async def get_agents_status(
 ) -> List[AgentStatus]:
     """
     Get operational status of all agents
-    
+
     Returns current state, uptime, and error information for each agent
     """
     try:
         # Get agent status from orchestrator
         agents_status = await orchestrator.get_all_agent_status()
-        
+
         return [
             AgentStatus(
                 name=agent["name"],
@@ -34,7 +34,7 @@ async def get_agents_status(
             )
             for agent in agents_status
         ]
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -49,19 +49,19 @@ async def get_agent_status(
 ) -> AgentStatus:
     """
     Get status for a specific agent
-    
+
     Returns detailed status information for the specified agent
     """
     try:
         # Get specific agent status from orchestrator
         agent_data = await orchestrator.get_agent_status(agent_name)
-        
+
         if not agent_data:
             raise HTTPException(
                 status_code=404,
                 detail=f"Agent {agent_name} not found"
             )
-        
+
         return AgentStatus(
             name=agent_data["name"],
             state=agent_data["state"],
@@ -69,7 +69,7 @@ async def get_agent_status(
             last_activity=agent_data["last_activity"],
             error_message=agent_data.get("error_message")
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -85,13 +85,13 @@ async def get_agents_metrics(
 ) -> List[AgentMetrics]:
     """
     Get performance metrics for all agents
-    
+
     Returns processing statistics, response times, and success rates
     """
     try:
         # Get agent metrics from orchestrator
         agents_metrics = await orchestrator.get_all_agent_metrics()
-        
+
         return [
             AgentMetrics(
                 name=metric["name"],
@@ -103,7 +103,7 @@ async def get_agents_metrics(
             )
             for metric in agents_metrics
         ]
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -118,7 +118,7 @@ async def get_agents_performance(
 ) -> List[AgentPerformance]:
     """
     Get performance analysis for all agents
-    
+
     Returns accuracy, precision, recall and other performance metrics
     """
     try:
@@ -126,7 +126,7 @@ async def get_agents_performance(
         agents_performance = await orchestrator.get_all_agent_performance(
             evaluation_days=days
         )
-        
+
         return [
             AgentPerformance(
                 name=perf["name"],
@@ -141,7 +141,7 @@ async def get_agents_performance(
             )
             for perf in agents_performance
         ]
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -157,7 +157,7 @@ async def get_agent_performance(
 ) -> AgentPerformance:
     """
     Get performance analysis for a specific agent
-    
+
     Returns detailed performance metrics for the specified agent
     """
     try:
@@ -166,13 +166,13 @@ async def get_agent_performance(
             agent_name=agent_name,
             evaluation_days=days
         )
-        
+
         if not perf_data:
             raise HTTPException(
                 status_code=404,
                 detail=f"Agent {agent_name} not found or no performance data available"
             )
-        
+
         return AgentPerformance(
             name=perf_data["name"],
             accuracy=perf_data.get("accuracy"),
@@ -184,7 +184,7 @@ async def get_agent_performance(
             successful_predictions=perf_data["successful_predictions"],
             evaluation_period_days=days
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:

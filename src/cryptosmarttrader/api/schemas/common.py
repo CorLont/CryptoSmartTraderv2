@@ -15,7 +15,7 @@ class BaseResponse(BaseModel):
     success: bool = Field(default=True, description="Request success status")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Response timestamp")
     request_id: Optional[str] = Field(default=None, description="Request correlation ID")
-    
+
     model_config = ConfigDict(
         json_encoders={
             datetime: lambda v: v.isoformat() + "Z"
@@ -35,7 +35,7 @@ class PaginatedResponse(BaseResponse, Generic[T]):
     """Paginated response model"""
     data: List[T] = Field(description="Response data items")
     pagination: Dict[str, Any] = Field(description="Pagination metadata")
-    
+
     @classmethod
     def create(
         cls,
@@ -47,7 +47,7 @@ class PaginatedResponse(BaseResponse, Generic[T]):
         """Create paginated response"""
         total_items = total_items or len(data)
         total_pages = (total_items + page_size - 1) // page_size
-        
+
         return cls(
             data=data,
             pagination={

@@ -3,7 +3,7 @@ Ensemble & Meta-Learning Module
 
 Implements alpha-stacking by combining orthogonal information sources:
 - Technical Analysis signals
-- Sentiment Analysis signals  
+- Sentiment Analysis signals
 - Regime Classification signals
 - On-chain Analysis signals
 
@@ -17,7 +17,7 @@ from .signal_decay import SignalDecayManager, DecayConfig, DecayFunction
 
 __all__ = [
     "BaseModelInterface",
-    "TechnicalAnalysisModel", 
+    "TechnicalAnalysisModel",
     "SentimentModel",
     "RegimeModel",
     "MetaLearner",

@@ -19,21 +19,21 @@ class FinalSystemIntegrator:
     """
     Final system integration and production readiness validation
     """
-    
+
     def __init__(self):
         self.integration_results = {}
         self.critical_issues = []
         self.improvements_made = []
         self.final_recommendations = []
-    
+
     def complete_system_integration(self) -> Dict[str, Any]:
         """Complete final system integration"""
-        
+
         print("🚀 FINAL SYSTEM INTEGRATION FOR WORKSTATION DEPLOYMENT")
         print("=" * 70)
-        
+
         integration_start = time.time()
-        
+
         # Fix all remaining issues
         self._fix_logging_correlation_issues()
         self._implement_workstation_specific_configs()
@@ -41,9 +41,9 @@ class FinalSystemIntegrator:
         self._setup_daily_health_centralization()
         self._validate_all_components()
         self._generate_production_checklist()
-        
+
         integration_duration = time.time() - integration_start
-        
+
         # Compile final integration report
         final_report = {
             'integration_timestamp': datetime.now().isoformat(),
@@ -58,17 +58,17 @@ class FinalSystemIntegrator:
             'improvements_made': self.improvements_made,
             'final_recommendations': self.final_recommendations
         }
-        
+
         # Save final report
         self._save_integration_report(final_report)
-        
+
         return final_report
-    
+
     def _fix_logging_correlation_issues(self):
         """Fix all logging correlation_id issues"""
-        
+
         print("🔧 Fixing logging correlation issues...")
-        
+
         # Create simplified logging configuration
         simple_logging_config = {
             'version': 1,
@@ -114,22 +114,22 @@ class FinalSystemIntegrator:
                 'handlers': ['console']
             }
         }
-        
+
         # Write logging config
         config_dir = Path('config')
         config_dir.mkdir(exist_ok=True)
-        
+
         with open(config_dir / 'logging_config.json', 'w') as f:
             json.dump(simple_logging_config, f, indent=2)
-        
+
         self.improvements_made.append("Fixed logging correlation_id issues with simplified configuration")
         self.integration_results['logging_fix'] = 'COMPLETED'
-    
+
     def _implement_workstation_specific_configs(self):
         """Implement workstation-specific configurations"""
-        
+
         print("⚙️ Implementing workstation-specific configurations...")
-        
+
         # i9-32GB-RTX2000 optimized configuration
         workstation_config = {
             'hardware_profile': 'i9-32GB-RTX2000',
@@ -169,19 +169,19 @@ class FinalSystemIntegrator:
                 'api_server': 8000
             }
         }
-        
+
         # Save workstation config
         with open('config/workstation_config.json', 'w') as f:
             json.dump(workstation_config, f, indent=2)
-        
+
         self.improvements_made.append("Implemented i9-32GB-RTX2000 specific optimizations")
         self.integration_results['workstation_config'] = 'COMPLETED'
-    
+
     def _create_deployment_automation(self):
         """Create complete deployment automation"""
-        
+
         print("🚀 Creating deployment automation...")
-        
+
         # Updated batch files for Windows deployment
         batch_files = {
             '1_install_all_dependencies.bat': '''@echo off
@@ -211,7 +211,7 @@ powershell -Command "Add-MpPreference -ExclusionProcess 'python.exe'"
 echo Dependencies installed successfully!
 pause
 ''',
-            
+
             '2_start_background_services.bat': '''@echo off
 echo CryptoSmartTrader V2 - Starting Background Services
 echo ================================================
@@ -229,7 +229,7 @@ echo Background services started!
 echo Check ports: 8090 (metrics), 5555 (MLflow)
 pause
 ''',
-            
+
             '3_start_dashboard.bat': '''@echo off
 echo CryptoSmartTrader V2 - Starting Dashboard
 echo ======================================
@@ -242,7 +242,7 @@ streamlit run app_minimal.py --server.port 5000 --server.address 0.0.0.0
 
 pause
 ''',
-            
+
             'oneclick_runner.bat': '''@echo off
 echo CryptoSmartTrader V2 - One-Click Complete Pipeline
 echo ===============================================
@@ -276,20 +276,20 @@ echo Check logs/daily/%date:~-4,4%%date:~-10,2%%date:~-7,2%/ for results
 pause
 '''
         }
-        
+
         # Write batch files
         for filename, content in batch_files.items():
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(content)
-        
+
         self.improvements_made.append("Created complete Windows deployment automation")
         self.integration_results['deployment_automation'] = 'COMPLETED'
-    
+
     def _setup_daily_health_centralization(self):
         """Setup centralized daily health logging"""
-        
+
         print("📊 Setting up centralized daily health logging...")
-        
+
         # Create daily health aggregator
         health_aggregator_script = '''#!/usr/bin/env python3
 """
@@ -305,11 +305,11 @@ from datetime import datetime
 
 def aggregate_daily_health():
     """Aggregate all health data for today"""
-    
+
     date_str = datetime.now().strftime("%Y%m%d")
     daily_dir = Path(f"logs/daily/{date_str}")
     daily_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Aggregate from various sources
     sources = [
         ("logs/application.log", "system_logs.txt"),
@@ -317,17 +317,17 @@ def aggregate_daily_health():
         ("logs/ml/*.json", "ml_metrics.json"),
         ("logs/agents/*.json", "agent_status.json")
     ]
-    
+
     health_summary = {
         "date": date_str,
         "generated_at": datetime.now().isoformat(),
         "sources_aggregated": 0,
         "total_files": 0
     }
-    
+
     for source_pattern, target_name in sources:
         source_path = Path(source_pattern.split('*')[0]) if '*' in source_pattern else Path(source_pattern)
-        
+
         if source_path.exists():
             try:
                 if source_path.is_file():
@@ -342,42 +342,42 @@ def aggregate_daily_health():
                             with open(json_file, 'r') as f:
                                 data = json.load(f)
                                 aggregated_data.append(data)
-                        
+
                         with open(daily_dir / target_name, 'w') as f:
                             json.dump(aggregated_data, f, indent=2)
-                        
+
                         health_summary["sources_aggregated"] += 1
                         health_summary["total_files"] += len(json_files)
             except Exception as e:
                 print(f"Error aggregating {source_pattern}: {e}")
-    
+
     # Save health summary
     with open(daily_dir / "health_summary.json", 'w') as f:
         json.dump(health_summary, f, indent=2)
-    
+
     print(f"Daily health data aggregated to: {daily_dir}")
     return health_summary
 
 if __name__ == "__main__":
     aggregate_daily_health()
 '''
-        
+
         with open('scripts/aggregate_daily_health.py', 'w') as f:
             f.write(health_aggregator_script)
-        
+
         # Create daily health script directory
         Path('scripts').mkdir(exist_ok=True)
-        
+
         self.improvements_made.append("Setup centralized daily health logging system")
         self.integration_results['daily_health_centralization'] = 'COMPLETED'
-    
+
     def _validate_all_components(self):
         """Validate all system components"""
-        
+
         print("✅ Validating all components...")
-        
+
         validation_results = {}
-        
+
         # Check critical files exist
         critical_files = [
             'app_minimal.py',
@@ -390,18 +390,18 @@ if __name__ == "__main__":
             'ml/mc_dropout_inference.py',
             'ml/regime_hmm.py'
         ]
-        
+
         missing_files = []
         for file_path in critical_files:
             if not Path(file_path).exists():
                 missing_files.append(file_path)
-        
+
         validation_results['critical_files'] = {
             'total': len(critical_files),
             'present': len(critical_files) - len(missing_files),
             'missing': missing_files
         }
-        
+
         # Check directories
         required_dirs = [
             'logs/daily',
@@ -410,18 +410,18 @@ if __name__ == "__main__":
             'config',
             'scripts'
         ]
-        
+
         for dir_path in required_dirs:
             Path(dir_path).mkdir(parents=True, exist_ok=True)
-        
+
         validation_results['directories'] = 'ALL_CREATED'
-        
+
         # Check configuration files
         config_files = [
             'config/workstation_config.json',
             'config/logging_config.json'
         ]
-        
+
         valid_configs = 0
         for config_file in config_files:
             if Path(config_file).exists():
@@ -431,30 +431,30 @@ if __name__ == "__main__":
                     valid_configs += 1
                 except json.JSONDecodeError:
                     pass
-        
+
         validation_results['configurations'] = {
             'total': len(config_files),
             'valid': valid_configs
         }
-        
+
         # Overall validation status
         all_files_present = len(missing_files) == 0
         all_configs_valid = valid_configs == len(config_files)
-        
+
         validation_results['overall_status'] = 'VALID' if (all_files_present and all_configs_valid) else 'ISSUES'
-        
+
         if validation_results['overall_status'] == 'VALID':
             self.improvements_made.append("All system components validated successfully")
         else:
             self.critical_issues.extend(missing_files)
-        
+
         self.integration_results['component_validation'] = validation_results
-    
+
     def _generate_production_checklist(self):
         """Generate final production deployment checklist"""
-        
+
         print("📋 Generating production deployment checklist...")
-        
+
         production_checklist = {
             "deployment_date": datetime.now().strftime("%Y-%m-%d"),
             "system_version": "CryptoSmartTrader V2",
@@ -498,14 +498,14 @@ if __name__ == "__main__":
                 "Monitor GPU utilization and memory usage"
             ]
         }
-        
+
         # Save production checklist
         with open('PRODUCTION_DEPLOYMENT_CHECKLIST.json', 'w') as f:
             json.dump(production_checklist, f, indent=2)
-        
+
         self.improvements_made.append("Generated comprehensive production deployment checklist")
         self.integration_results['production_checklist'] = 'COMPLETED'
-        
+
         # Generate final recommendations
         self.final_recommendations = [
             "System is production-ready for i9-32GB-RTX2000 workstation",
@@ -517,24 +517,24 @@ if __name__ == "__main__":
             "GPU optimization configured for RTX 2000 (8GB VRAM)",
             "All enterprise risk mitigation systems operational"
         ]
-    
+
     def _save_integration_report(self, report: Dict[str, Any]):
         """Save final integration report"""
-        
+
         report_dir = Path('logs/integration')
         report_dir.mkdir(parents=True, exist_ok=True)
-        
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_path = report_dir / f"final_integration_{timestamp}.json"
-        
+
         with open(report_path, 'w', encoding='utf-8') as f:
             json.dump(report, f, indent=2)
-        
+
         print(f"\n📄 Final integration report saved: {report_path}")
-    
+
     def print_final_summary(self, report: Dict[str, Any]):
         """Print final integration summary"""
-        
+
         print(f"\n🎯 FINAL SYSTEM INTEGRATION COMPLETE")
         print("=" * 60)
         print(f"System Status: {report['system_status']}")
@@ -542,28 +542,28 @@ if __name__ == "__main__":
         print(f"Daily Logging Centralized: {'✓' if report['daily_logging_centralized'] else '✗'}")
         print(f"Deployment Ready: {'✓' if report['deployment_ready'] else '✗'}")
         print(f"Integration Duration: {report['integration_duration']:.2f}s")
-        
+
         if report['improvements_made']:
             print(f"\n🔧 Improvements Made ({len(report['improvements_made'])}):")
             for improvement in report['improvements_made']:
                 print(f"   ✓ {improvement}")
-        
+
         if report['final_recommendations']:
             print(f"\n🎯 Final Recommendations:")
             for rec in report['final_recommendations'][:5]:
                 print(f"   • {rec}")
-        
+
         print(f"\n🚀 READY FOR WORKSTATION DEPLOYMENT!")
         print("   Run: oneclick_runner.bat")
         print("   Monitor: logs/daily/YYYYMMDD/")
 
 def run_final_integration() -> Dict[str, Any]:
     """Run final system integration"""
-    
+
     integrator = FinalSystemIntegrator()
     report = integrator.complete_system_integration()
     integrator.print_final_summary(report)
-    
+
     return report
 
 if __name__ == "__main__":

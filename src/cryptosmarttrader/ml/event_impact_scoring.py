@@ -51,7 +51,7 @@ class EventImpactScore:
 
 class NewsCollector:
     """Collects crypto news from multiple sources"""
-    
+
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.sources = {
@@ -59,25 +59,25 @@ class NewsCollector:
             'cointelegraph': 'https://cointelegraph.com/rss',
             'cryptonews': 'https://cryptonews.net/news/rss.xml'
         }
-    
+
     async def collect_latest_news(self, hours_back: int = 24) -> List[Dict[str, Any]]:
         """Collect latest crypto news from multiple sources"""
-        
+
         all_news = []
-        
+
         # For now, simulate news collection with realistic examples
         # In production, this would parse actual RSS feeds
-        
+
         simulated_news = self._generate_simulated_news(hours_back)
         all_news.extend(simulated_news)
-        
+
         return all_news
-    
+
     def _generate_simulated_news(self, hours_back: int) -> List[Dict[str, Any]]:
         """Generate realistic simulated news for testing"""
-        
+
         now = datetime.utcnow()
-        
+
         simulated_events = [
             {
                 'timestamp': now - timedelta(hours=2),
@@ -122,48 +122,48 @@ class NewsCollector:
                 'symbols': ['MATIC']
             }
         ]
-        
+
         return simulated_events
 
 class LLMEventAnalyzer:
     """Uses LLM to analyze news events for impact scoring"""
-    
+
     def __init__(self):
         self.client = None
         self.logger = logging.getLogger(__name__)
-        
+
         # Initialize OpenAI client if API key available
         api_key = os.getenv('OPENAI_API_KEY')
         if api_key:
             self.client = OpenAI(api_key=api_key)
         else:
             self.logger.warning("OpenAI API key not found, using fallback analysis")
-    
+
     async def analyze_event_impact(
-        self, 
-        headline: str, 
-        content: str, 
+        self,
+        headline: str,
+        content: str,
         symbols: List[str]
     ) -> Dict[str, Any]:
         """Analyze news event for crypto impact using LLM"""
-        
+
         if self.client:
             return await self._llm_analysis(headline, content, symbols)
         else:
             return self._fallback_analysis(headline, content, symbols)
-    
+
     async def _llm_analysis(
-        self, 
-        headline: str, 
-        content: str, 
+        self,
+        headline: str,
+        content: str,
         symbols: List[str]
     ) -> Dict[str, Any]:
         """Perform LLM-based analysis using OpenAI"""
-        
+
         try:
             # Create analysis prompt
             prompt = self._create_analysis_prompt(headline, content, symbols)
-            
+
             response = self.client.chat.completions.create(
                 model="gpt-4o",  # Latest OpenAI model
                 messages=[
@@ -172,29 +172,29 @@ class LLMEventAnalyzer:
                         "content": "You are a cryptocurrency market analyst. Analyze news events for their potential price impact on mentioned cryptocurrencies. Respond with valid JSON only."
                     },
                     {
-                        "role": "user", 
+                        "role": "user",
                         "content": prompt
                     }
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.3
             )
-            
+
             analysis = json.loads(response.choices[0].message.content)
             return analysis
-            
+
         except Exception as e:
             self.logger.error(f"LLM analysis failed: {e}")
             return self._fallback_analysis(headline, content, symbols)
-    
+
     def _create_analysis_prompt(
-        self, 
-        headline: str, 
-        content: str, 
+        self,
+        headline: str,
+        content: str,
         symbols: List[str]
     ) -> str:
         """Create analysis prompt for LLM"""
-        
+
         return f"""
 Analyze the following cryptocurrency news event:
 
@@ -222,23 +222,23 @@ Provide analysis in this JSON format:
 
 Analysis guidelines:
 - Listings/partnerships: Usually bullish, 12-48h half-life
-- Unlocks: Usually bearish, 168h+ half-life  
+- Unlocks: Usually bearish, 168h+ half-life
 - Technical issues: Bearish, 24-72h half-life
 - Regulatory: Variable direction, 72-168h half-life
 - Consider market cap, trading volume, and ecosystem effects
 - Magnitude: 0.1=minor, 0.5=moderate, 0.8+=major impact
 """
-    
+
     def _fallback_analysis(
-        self, 
-        headline: str, 
-        content: str, 
+        self,
+        headline: str,
+        content: str,
         symbols: List[str]
     ) -> Dict[str, Any]:
         """Fallback analysis using keyword matching"""
-        
+
         text = (headline + " " + content).lower()
-        
+
         # Event type classification
         event_type = "market"  # default
         if any(word in text for word in ['list', 'listing', 'trading', 'exchange']):
@@ -251,14 +251,14 @@ Analysis guidelines:
             event_type = "regulatory"
         elif any(word in text for word in ['outage', 'bug', 'hack', 'exploit', 'technical']):
             event_type = "technical"
-        
+
         # Impact direction
         bullish_words = ['partnership', 'listing', 'adoption', 'launch', 'upgrade', 'positive', 'growth']
         bearish_words = ['outage', 'hack', 'ban', 'regulatory', 'unlock', 'negative', 'down']
-        
+
         bullish_count = sum(1 for word in bullish_words if word in text)
         bearish_count = sum(1 for word in bearish_words if word in text)
-        
+
         if bullish_count > bearish_count:
             impact_direction = "bullish"
             magnitude = min(0.8, (bullish_count - bearish_count) * 0.2 + 0.2)
@@ -268,7 +268,7 @@ Analysis guidelines:
         else:
             impact_direction = "neutral"
             magnitude = 0.1
-        
+
         # Half-life based on event type
         half_life_map = {
             'listing': 24,
@@ -278,7 +278,7 @@ Analysis guidelines:
             'technical': 48,
             'market': 12
         }
-        
+
         return {
             'event_type': event_type,
             'impact_direction': impact_direction,
@@ -298,26 +298,26 @@ Analysis guidelines:
 
 class EventImpactCalculator:
     """Calculates time-decayed impact scores from events"""
-    
+
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.event_history = {}  # symbol -> list of events
-    
+
     def add_event(self, event: NewsEvent):
         """Add event to history for impact calculation"""
-        
+
         for symbol in event.symbols_mentioned:
             if symbol not in self.event_history:
                 self.event_history[symbol] = []
-            
+
             self.event_history[symbol].append(event)
-    
+
     def calculate_current_impact(self, symbol: str, current_time: datetime = None) -> EventImpactScore:
         """Calculate current impact score for symbol"""
-        
+
         if current_time is None:
             current_time = datetime.utcnow()
-        
+
         if symbol not in self.event_history:
             return EventImpactScore(
                 symbol=symbol,
@@ -331,51 +331,51 @@ class EventImpactCalculator:
                 decay_adjusted_score=0,
                 confidence=0
             )
-        
+
         events = self.event_history[symbol]
-        
+
         # Filter events within reasonable timeframe (7 days)
         cutoff_time = current_time - timedelta(days=7)
         recent_events = [e for e in events if e.timestamp >= cutoff_time]
-        
+
         # Calculate time-decayed impacts
         bullish_score = 0
         bearish_score = 0
         total_confidence = 0
         events_24h = 0
         major_events = []
-        
+
         for event in recent_events:
             # Calculate time decay
             hours_elapsed = (current_time - event.timestamp).total_seconds() / 3600
             decay_factor = self._calculate_decay(hours_elapsed, event.half_life_hours, event.decay_model)
-            
+
             # Calculate decayed impact
             decayed_impact = event.impact_magnitude * decay_factor * event.confidence
-            
+
             # Add to appropriate bucket
             if event.impact_direction == 'bullish':
                 bullish_score += decayed_impact
             elif event.impact_direction == 'bearish':
                 bearish_score += decayed_impact
-            
+
             total_confidence += event.confidence * decay_factor
-            
+
             # Count recent events
             if hours_elapsed <= 24:
                 events_24h += 1
-            
+
             # Track major events
             if event.impact_magnitude >= 0.6:
                 major_events.append(event.headline)
-        
+
         # Calculate net sentiment and total impact
         net_sentiment = bullish_score - bearish_score
         total_impact = bullish_score + bearish_score
-        
+
         # Normalize confidence
         avg_confidence = total_confidence / len(recent_events) if recent_events else 0
-        
+
         return EventImpactScore(
             symbol=symbol,
             timestamp=current_time,
@@ -388,22 +388,22 @@ class EventImpactCalculator:
             decay_adjusted_score=net_sentiment,
             confidence=avg_confidence
         )
-    
+
     def _calculate_decay(self, hours_elapsed: float, half_life_hours: float, decay_model: str) -> float:
         """Calculate time decay factor"""
-        
+
         if hours_elapsed <= 0:
             return 1.0
-        
+
         if decay_model == 'exponential':
             # Exponential decay: impact halves every half_life_hours
             return 0.5 ** (hours_elapsed / half_life_hours)
-        
+
         elif decay_model == 'linear':
             # Linear decay: impact reaches zero at 2 * half_life_hours
             fade_time = 2 * half_life_hours
             return max(0, 1 - hours_elapsed / fade_time)
-        
+
         elif decay_model == 'step':
             # Step decay: full impact until half_life, then halves
             if hours_elapsed <= half_life_hours:
@@ -412,62 +412,62 @@ class EventImpactCalculator:
                 return 0.5
             else:
                 return 0.1
-        
+
         else:
             # Default to exponential
             return 0.5 ** (hours_elapsed / half_life_hours)
-    
+
     def get_top_impact_symbols(self, n: int = 10) -> List[Tuple[str, float]]:
         """Get symbols with highest current impact scores"""
-        
+
         current_time = datetime.utcnow()
         symbol_scores = []
-        
+
         for symbol in self.event_history.keys():
             impact_score = self.calculate_current_impact(symbol, current_time)
             symbol_scores.append((symbol, abs(impact_score.decay_adjusted_score)))
-        
+
         # Sort by absolute impact (highest first)
         symbol_scores.sort(key=lambda x: x[1], reverse=True)
-        
+
         return symbol_scores[:n]
 
 class EventImpactSystem:
     """Complete event impact scoring system"""
-    
+
     def __init__(self, update_interval_hours: int = 1):
         self.news_collector = NewsCollector()
         self.llm_analyzer = LLMEventAnalyzer()
         self.impact_calculator = EventImpactCalculator()
         self.update_interval = update_interval_hours
         self.logger = logging.getLogger(__name__)
-        
+
         # System state
         self.last_update = None
         self.processed_events = set()
-    
+
     async def update_event_impacts(self) -> Dict[str, Any]:
         """Update event impacts with latest news"""
-        
+
         # Collect latest news
         hours_back = 24 if self.last_update is None else self.update_interval + 1
         news_items = await self.news_collector.collect_latest_news(hours_back)
-        
+
         new_events_processed = 0
-        
+
         for news_item in news_items:
             # Skip if already processed
             news_id = f"{news_item['headline']}_{news_item['timestamp']}"
             if news_id in self.processed_events:
                 continue
-            
+
             # Analyze event impact
             analysis = await self.llm_analyzer.analyze_event_impact(
                 news_item['headline'],
                 news_item['content'],
                 news_item['symbols']
             )
-            
+
             # Create NewsEvent object
             event = NewsEvent(
                 timestamp=news_item['timestamp'],
@@ -483,37 +483,37 @@ class EventImpactSystem:
                 half_life_hours=analysis['half_life_hours'],
                 decay_model=analysis['decay_model']
             )
-            
+
             # Add to impact calculator
             self.impact_calculator.add_event(event)
             self.processed_events.add(news_id)
             new_events_processed += 1
-        
+
         self.last_update = datetime.utcnow()
-        
+
         return {
             'news_items_collected': len(news_items),
             'new_events_processed': new_events_processed,
             'total_processed_events': len(self.processed_events),
             'last_update': self.last_update
         }
-    
+
     def get_symbol_impact_scores(self, symbols: List[str]) -> Dict[str, EventImpactScore]:
         """Get current impact scores for specified symbols"""
-        
+
         impact_scores = {}
-        
+
         for symbol in symbols:
             impact_scores[symbol] = self.impact_calculator.calculate_current_impact(symbol)
-        
+
         return impact_scores
-    
+
     def create_event_features(self, symbols: List[str]) -> pd.DataFrame:
         """Create ML features from event impact scores"""
-        
+
         impact_scores = self.get_symbol_impact_scores(symbols)
         features_data = []
-        
+
         for symbol, impact_score in impact_scores.items():
             features = {
                 'symbol': symbol,
@@ -528,20 +528,20 @@ class EventImpactSystem:
                 'event_intensity': impact_score.event_count_24h / 24,  # Events per hour
                 'event_sentiment_ratio': (
                     impact_score.bullish_events_score / (impact_score.bearish_events_score + 0.001)
-                    if impact_score.bearish_events_score > 0 else 
+                    if impact_score.bearish_events_score > 0 else
                     impact_score.bullish_events_score
                 )
             }
-            
+
             features_data.append(features)
-        
+
         return pd.DataFrame(features_data)
-    
+
     def get_system_status(self) -> Dict[str, Any]:
         """Get system status and statistics"""
-        
+
         top_impact = self.impact_calculator.get_top_impact_symbols(5)
-        
+
         return {
             'last_update': self.last_update,
             'total_events_processed': len(self.impact_calculator.event_history),
@@ -552,28 +552,28 @@ class EventImpactSystem:
 
 async def main():
     """Test event impact system"""
-    
+
     system = EventImpactSystem()
-    
+
     # Update with latest events
     update_result = await system.update_event_impacts()
     print(f"Update result: {update_result}")
-    
+
     # Get impact scores for test symbols
     test_symbols = ['BTC', 'ETH', 'ADA', 'SOL', 'MATIC']
     impact_scores = system.get_symbol_impact_scores(test_symbols)
-    
+
     print("\\nImpact Scores:")
     for symbol, score in impact_scores.items():
         print(f"{symbol}: Net={score.net_sentiment_score:.3f}, "
               f"Events={score.event_count_24h}, "
               f"Confidence={score.confidence:.3f}")
-    
+
     # Create features
     features_df = system.create_event_features(test_symbols)
     print(f"\\nGenerated features DataFrame with {len(features_df)} rows")
     print(features_df[['symbol', 'event_net_sentiment', 'event_count_24h', 'event_confidence']].to_string())
-    
+
     # System status
     status = system.get_system_status()
     print(f"\\nSystem status: {status}")

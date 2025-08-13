@@ -6,7 +6,7 @@ of the CryptoSmartTrader system, enabling dependency inversion and testability.
 """
 
 from .data_provider_port import DataProviderPort
-from .storage_port import StoragePort  
+from .storage_port import StoragePort
 from .model_inference_port import ModelInferencePort
 from .risk_management_port import RiskManagementPort
 from .notification_port import NotificationPort
@@ -14,7 +14,7 @@ from .notification_port import NotificationPort
 __all__ = [
     "DataProviderPort",
     "StoragePort",
-    "ModelInferencePort", 
+    "ModelInferencePort",
     "RiskManagementPort",
     "NotificationPort"
 ]

@@ -87,37 +87,37 @@ class ComponentStatus:
 
 class SelfHealingSystem:
     """Self-healing and auto-disabling system"""
-    
+
     def __init__(self, config_path: str = "config/self_healing_config.json"):
         self.logger = logging.getLogger(__name__)
         self.config_path = Path(config_path)
-        
+
         # Performance tracking
         self.performance_metrics: Dict[SystemComponent, deque] = defaultdict(lambda: deque(maxlen=100))
         self.component_status: Dict[SystemComponent, ComponentStatus] = {}
         self.system_alerts: deque = deque(maxlen=1000)
-        
+
         # Monitoring state
         self.monitoring_active = False
         self.monitoring_thread = None
         self.last_check_time = datetime.now()
-        
+
         # Black swan detection
         self.black_swan_indicators = deque(maxlen=50)
         self.market_volatility_history = deque(maxlen=100)
-        
+
         # Data quality tracking
         self.data_quality_scores = defaultdict(lambda: deque(maxlen=50))
         self.api_response_times = defaultdict(lambda: deque(maxlen=100))
-        
+
         # Load configuration
         self.config = self._load_config()
-        
+
         # Initialize component status
         self._initialize_component_status()
-        
+
         self.logger.info("Self-Healing System initialized")
-    
+
     def _load_config(self) -> Dict[str, Any]:
         """Load self-healing configuration"""
         default_config = {
@@ -160,7 +160,7 @@ class SelfHealingSystem:
                 "performance_anomaly_detection": True
             }
         }
-        
+
         try:
             if self.config_path.exists():
                 with open(self.config_path, 'r') as f:
@@ -169,9 +169,9 @@ class SelfHealingSystem:
                     default_config.update(loaded_config)
         except Exception as e:
             self.logger.warning(f"Could not load config, using defaults: {e}")
-        
+
         return default_config
-    
+
     def _initialize_component_status(self):
         """Initialize status for all components"""
         for component in SystemComponent:
@@ -184,30 +184,30 @@ class SelfHealingSystem:
                 consecutive_failures=0,
                 recovery_attempts=0
             )
-    
+
     def start_monitoring(self):
         """Start continuous monitoring"""
         if self.monitoring_active:
             return
-        
+
         self.monitoring_active = True
         self.monitoring_thread = threading.Thread(target=self._monitoring_loop, daemon=True)
         self.monitoring_thread.start()
         self.logger.info("Self-healing monitoring started")
-    
+
     def stop_monitoring(self):
         """Stop monitoring"""
         self.monitoring_active = False
         if self.monitoring_thread:
             self.monitoring_thread.join(timeout=5)
         self.logger.info("Self-healing monitoring stopped")
-    
+
     def _monitoring_loop(self):
         """Main monitoring loop"""
         while self.monitoring_active:
             try:
                 current_time = datetime.now()
-                
+
                 # Check system health every 30 seconds
                 if (current_time - self.last_check_time).seconds >= 30:
                     self._perform_health_check()
@@ -216,14 +216,14 @@ class SelfHealingSystem:
                     self._check_security_alerts()
                     self._attempt_auto_recovery()
                     self.last_check_time = current_time
-                
+
                 time.sleep(5)
-                
+
             except Exception as e:
                 self.logger.error(f"Error in monitoring loop: {e}")
                 time.sleep(10)
-    
-    def report_performance_metric(self, component: SystemComponent, metric_name: str, 
+
+    def report_performance_metric(self, component: SystemComponent, metric_name: str,
                                  value: float, threshold: float = None):
         """Report a performance metric for monitoring"""
         try:
@@ -231,7 +231,7 @@ class SelfHealingSystem:
             if threshold is None:
                 component_thresholds = self.config["performance_thresholds"].get(component.value, {})
                 threshold = component_thresholds.get(metric_name, 0.5)
-            
+
             # Create metric
             metric = PerformanceMetric(
                 component=component,
@@ -241,20 +241,20 @@ class SelfHealingSystem:
                 threshold=threshold,
                 is_anomaly=value < threshold
             )
-            
+
             # Store metric
             self.performance_metrics[component].append(metric)
-            
+
             # Update component performance score
             self._update_component_performance(component)
-            
+
             # Check for immediate action if critical
             if metric.is_anomaly and value < threshold * 0.5:  # Critical threshold
                 self._handle_critical_performance_issue(component, metric)
-            
+
         except Exception as e:
             self.logger.error(f"Error reporting performance metric: {e}")
-    
+
     def report_black_swan_indicator(self, indicator_type: str, severity: float, description: str):
         """Report a potential black swan indicator"""
         try:
@@ -264,21 +264,21 @@ class SelfHealingSystem:
                 "description": description,
                 "timestamp": datetime.now()
             }
-            
+
             self.black_swan_indicators.append(indicator)
-            
+
             # Check if this triggers black swan response
             if severity > 0.8 or self._is_black_swan_event():
                 self._trigger_black_swan_response(indicator)
-            
+
         except Exception as e:
             self.logger.error(f"Error reporting black swan indicator: {e}")
-    
+
     def report_data_gap(self, component: SystemComponent, gap_duration: float, description: str):
         """Report a data gap"""
         try:
             gap_threshold = self.config["data_quality_thresholds"]["data_gap_threshold"]
-            
+
             if gap_duration > gap_threshold:
                 self._create_alert(
                     level=AlertLevel.HIGH if gap_duration > gap_threshold * 2 else AlertLevel.MEDIUM,
@@ -286,15 +286,15 @@ class SelfHealingSystem:
                     reason=DisableReason.DATA_GAP,
                     message=f"Data gap detected: {description} (duration: {gap_duration:.1f}s)"
                 )
-                
+
                 # Disable component if gap is severe
                 if gap_duration > gap_threshold * 3:
                     self.disable_component(component, DisableReason.DATA_GAP, auto_disable=True)
-            
+
         except Exception as e:
             self.logger.error(f"Error reporting data gap: {e}")
-    
-    def report_security_alert(self, alert_type: str, severity: AlertLevel, description: str, 
+
+    def report_security_alert(self, alert_type: str, severity: AlertLevel, description: str,
                             affected_components: List[SystemComponent] = None):
         """Report a security alert"""
         try:
@@ -305,29 +305,29 @@ class SelfHealingSystem:
                     reason=DisableReason.SECURITY_ALERT,
                     message=f"Security alert: {alert_type} - {description}"
                 )
-                
+
                 # Auto-disable on high/critical security alerts
                 if severity in [AlertLevel.HIGH, AlertLevel.CRITICAL]:
                     self.disable_component(component, DisableReason.SECURITY_ALERT, auto_disable=True)
-            
+
         except Exception as e:
             self.logger.error(f"Error reporting security alert: {e}")
-    
-    def disable_component(self, component: SystemComponent, reason: DisableReason, 
+
+    def disable_component(self, component: SystemComponent, reason: DisableReason,
                          auto_disable: bool = False, recovery_delay: float = None):
         """Disable a system component"""
         try:
             status = self.component_status[component]
-            
+
             if not status.is_enabled:
                 return  # Already disabled
-            
+
             # Update status
             status.is_enabled = False
             status.last_disabled = datetime.now()
             status.disable_reason = reason
             status.consecutive_failures += 1
-            
+
             # Create alert
             self._create_alert(
                 level=AlertLevel.CRITICAL if auto_disable else AlertLevel.HIGH,
@@ -336,78 +336,78 @@ class SelfHealingSystem:
                 message=f"Component {component.value} disabled: {reason.value}",
                 auto_disabled=auto_disable
             )
-            
+
             # Schedule recovery if auto-disabled
             if auto_disable and status.auto_recovery_enabled:
                 delay = recovery_delay or self.config["auto_disable_settings"]["auto_recovery_delay"]
                 threading.Timer(delay, self._attempt_component_recovery, args=[component]).start()
-            
+
             self.logger.warning(f"Component {component.value} disabled due to {reason.value}")
-            
+
         except Exception as e:
             self.logger.error(f"Error disabling component: {e}")
-    
+
     def enable_component(self, component: SystemComponent, force: bool = False):
         """Enable a system component"""
         try:
             status = self.component_status[component]
-            
+
             if status.is_enabled and not force:
                 return  # Already enabled
-            
+
             # Reset status
             status.is_enabled = True
             status.last_disabled = None
             status.disable_reason = None
             status.consecutive_failures = 0
-            
+
             self._create_alert(
                 level=AlertLevel.LOW,
                 component=component,
                 reason=DisableReason.MANUAL_OVERRIDE,
                 message=f"Component {component.value} enabled"
             )
-            
+
             self.logger.info(f"Component {component.value} enabled")
-            
+
         except Exception as e:
             self.logger.error(f"Error enabling component: {e}")
-    
+
     def _perform_health_check(self):
         """Perform comprehensive health check"""
         try:
             for component in SystemComponent:
                 if not self.component_status[component].is_enabled:
                     continue
-                
+
                 # Check recent performance metrics
-                recent_metrics = [m for m in self.performance_metrics[component] 
+                recent_metrics = [m for m in self.performance_metrics[component]
                                 if (datetime.now() - m.timestamp).seconds < 300]  # Last 5 minutes
-                
+
                 if not recent_metrics:
                     continue
-                
+
                 # Calculate performance degradation
                 degradation = self._calculate_performance_degradation(recent_metrics)
-                
+
                 if degradation > self.config["auto_disable_settings"]["performance_degradation_threshold"]:
                     self._handle_performance_degradation(component, degradation)
-            
+
         except Exception as e:
             self.logger.error(f"Error in health check: {e}")
-    
+
     def _check_black_swan_indicators(self):
         """Check for black swan events"""
         try:
             if len(self.black_swan_indicators) < 3:
                 return
-            
-            recent_indicators = [i for i in self.black_swan_indicators 
+
+            recent_indicators = [i for i in self.black_swan_indicators
                                if (datetime.now() - i["timestamp"]).seconds < 1800]  # Last 30 minutes
-            
+
             if len(recent_indicators) >= 3:
                 avg_severity = np.mean([i["severity"] for i in recent_indicators])
-                
+
                 if avg_severity > 0.7:
                     self._trigger_black_swan_response({
                         "type": "multiple_indicators",
@@ -415,29 +415,29 @@ class SelfHealingSystem:
                         "description": f"Multiple black swan indicators detected (avg severity: {avg_severity:.2f})",
                         "timestamp": datetime.now()
                     })
-            
+
         except Exception as e:
             self.logger.error(f"Error checking black swan indicators: {e}")
-    
+
     def _check_data_quality(self):
         """Check data quality across all sources"""
         try:
             for component in SystemComponent:
                 if component not in self.data_quality_scores:
                     continue
-                
+
                 recent_scores = list(self.data_quality_scores[component])[-10:]  # Last 10 scores
-                
+
                 if recent_scores and np.mean(recent_scores) < self.config["data_quality_thresholds"]["completeness"]:
                     self.report_data_gap(
-                        component, 
+                        component,
                         300,  # Assume 5-minute gap
                         f"Data quality degraded to {np.mean(recent_scores):.2%}"
                     )
-            
+
         except Exception as e:
             self.logger.error(f"Error checking data quality: {e}")
-    
+
     def _check_security_alerts(self):
         """Check for security-related issues"""
         try:
@@ -445,48 +445,48 @@ class SelfHealingSystem:
             for component, response_times in self.api_response_times.items():
                 if len(response_times) < 10:
                     continue
-                
+
                 recent_times = list(response_times)[-10:]
                 avg_time = np.mean(recent_times)
-                
+
                 if avg_time > self.config["data_quality_thresholds"]["api_response_time"] * 3:
                     self.report_security_alert(
                         "unusual_api_response_time",
                         AlertLevel.MEDIUM,
                         f"API response time anomaly: {avg_time:.2f}s (component: {component})"
                     )
-            
+
         except Exception as e:
             self.logger.error(f"Error checking security alerts: {e}")
-    
+
     def _attempt_auto_recovery(self):
         """Attempt automatic recovery of disabled components"""
         try:
             recovery_delay = self.config["auto_disable_settings"]["auto_recovery_delay"]
-            
+
             for component, status in self.component_status.items():
                 if status.is_enabled or not status.auto_recovery_enabled:
                     continue
-                
+
                 if status.last_disabled and (datetime.now() - status.last_disabled).seconds > recovery_delay:
                     if status.recovery_attempts < self.config["auto_disable_settings"]["recovery_attempt_limit"]:
                         self._attempt_component_recovery(component)
-            
+
         except Exception as e:
             self.logger.error(f"Error in auto recovery: {e}")
-    
+
     def _attempt_component_recovery(self, component: SystemComponent):
         """Attempt to recover a specific component"""
         try:
             status = self.component_status[component]
             status.recovery_attempts += 1
-            
+
             # REMOVED: Mock data pattern not allowed in production
             recovery_success = status.consecutive_failures <= 2  # Simple heuristic
-            
+
             if recovery_success:
                 self.enable_component(component, force=True)
-                
+
                 self._create_alert(
                     level=AlertLevel.LOW,
                     component=component,
@@ -495,59 +495,59 @@ class SelfHealingSystem:
                 )
             else:
                 self.logger.warning(f"Auto-recovery failed for {component.value} (attempt {status.recovery_attempts})")
-            
+
         except Exception as e:
             self.logger.error(f"Error in component recovery: {e}")
-    
+
     def _update_component_performance(self, component: SystemComponent):
         """Update overall performance score for component"""
         try:
-            recent_metrics = [m for m in self.performance_metrics[component] 
+            recent_metrics = [m for m in self.performance_metrics[component]
                             if (datetime.now() - m.timestamp).seconds < 600]  # Last 10 minutes
-            
+
             if not recent_metrics:
                 return
-            
+
             # Calculate weighted performance score
             performance_ratios = [min(m.value / m.threshold, 2.0) for m in recent_metrics]
             performance_score = np.mean(performance_ratios)
-            
+
             self.component_status[component].performance_score = performance_score
-            
+
         except Exception as e:
             self.logger.error(f"Error updating component performance: {e}")
-    
+
     def _calculate_performance_degradation(self, metrics: List[PerformanceMetric]) -> float:
         """Calculate performance degradation percentage"""
         try:
             if len(metrics) < 2:
                 return 0.0
-            
+
             # Sort by timestamp
             sorted_metrics = sorted(metrics, key=lambda m: m.timestamp)
-            
+
             # Compare recent vs. earlier performance
             recent = sorted_metrics[-len(sorted_metrics)//2:]
             earlier = sorted_metrics[:len(sorted_metrics)//2]
-            
+
             recent_avg = np.mean([m.value / m.threshold for m in recent])
             earlier_avg = np.mean([m.value / m.threshold for m in earlier])
-            
+
             if earlier_avg == 0:
                 return 0.0
-            
+
             degradation = (earlier_avg - recent_avg) / earlier_avg
             return max(0.0, degradation)
-            
+
         except Exception as e:
             self.logger.error(f"Error calculating performance degradation: {e}")
             return 0.0
-    
+
     def _handle_performance_degradation(self, component: SystemComponent, degradation: float):
         """Handle detected performance degradation"""
         try:
             status = self.component_status[component]
-            
+
             if degradation > 0.5:  # Severe degradation
                 self.disable_component(component, DisableReason.PERFORMANCE_DEGRADATION, auto_disable=True)
             else:
@@ -558,58 +558,58 @@ class SelfHealingSystem:
                     reason=DisableReason.PERFORMANCE_DEGRADATION,
                     message=f"Performance degradation detected: {degradation:.1%}"
                 )
-            
+
         except Exception as e:
             self.logger.error(f"Error handling performance degradation: {e}")
-    
+
     def _handle_critical_performance_issue(self, component: SystemComponent, metric: PerformanceMetric):
         """Handle critical performance issues immediately"""
         try:
             self.disable_component(component, DisableReason.PERFORMANCE_DEGRADATION, auto_disable=True)
-            
+
             self._create_alert(
                 level=AlertLevel.CRITICAL,
                 component=component,
                 reason=DisableReason.PERFORMANCE_DEGRADATION,
                 message=f"Critical performance issue: {metric.metric_name}={metric.value:.3f} (threshold: {metric.threshold:.3f})"
             )
-            
+
         except Exception as e:
             self.logger.error(f"Error handling critical performance issue: {e}")
-    
+
     def _is_black_swan_event(self) -> bool:
         """Determine if recent indicators constitute a black swan event"""
         try:
             if len(self.black_swan_indicators) < 2:
                 return False
-            
-            recent = [i for i in self.black_swan_indicators 
+
+            recent = [i for i in self.black_swan_indicators
                      if (datetime.now() - i["timestamp"]).seconds < 900]  # Last 15 minutes
-            
+
             # Multiple high-severity indicators in short time = black swan
             high_severity_count = len([i for i in recent if i["severity"] > 0.8])
-            
+
             return high_severity_count >= 2
-            
+
         except Exception as e:
             self.logger.error(f"Error checking black swan event: {e}")
             return False
-    
+
     def _trigger_black_swan_response(self, indicator: Dict[str, Any]):
         """Trigger emergency black swan response"""
         try:
             self.logger.critical(f"BLACK SWAN EVENT DETECTED: {indicator['description']}")
-            
+
             # Disable all trading-related components immediately
             critical_components = [
                 SystemComponent.TRADING_ENGINE,
                 SystemComponent.PORTFOLIO_ALLOCATION,
                 SystemComponent.RL_ALLOCATION
             ]
-            
+
             for component in critical_components:
                 self.disable_component(component, DisableReason.BLACK_SWAN_EVENT, auto_disable=True, recovery_delay=1800)
-            
+
             # Create critical alert
             self._create_alert(
                 level=AlertLevel.CRITICAL,
@@ -617,11 +617,11 @@ class SelfHealingSystem:
                 reason=DisableReason.BLACK_SWAN_EVENT,
                 message=f"BLACK SWAN EVENT: {indicator['description']} - Trading suspended"
             )
-            
+
         except Exception as e:
             self.logger.error(f"Error in black swan response: {e}")
-    
-    def _create_alert(self, level: AlertLevel, component: SystemComponent, 
+
+    def _create_alert(self, level: AlertLevel, component: SystemComponent,
                      reason: DisableReason, message: str, auto_disabled: bool = False):
         """Create and store system alert"""
         try:
@@ -634,9 +634,9 @@ class SelfHealingSystem:
                 timestamp=datetime.now(),
                 auto_disabled=auto_disabled
             )
-            
+
             self.system_alerts.append(alert)
-            
+
             # Log alert
             log_level = {
                 AlertLevel.LOW: logging.INFO,
@@ -644,20 +644,20 @@ class SelfHealingSystem:
                 AlertLevel.HIGH: logging.ERROR,
                 AlertLevel.CRITICAL: logging.CRITICAL
             }[level]
-            
+
             self.logger.log(log_level, f"ALERT [{level.value.upper()}] {component.value}: {message}")
-            
+
         except Exception as e:
             self.logger.error(f"Error creating alert: {e}")
-    
+
     def get_system_status(self) -> Dict[str, Any]:
         """Get comprehensive system status"""
         try:
             enabled_components = [c.value for c, s in self.component_status.items() if s.is_enabled]
             disabled_components = [c.value for c, s in self.component_status.items() if not s.is_enabled]
-            
+
             recent_alerts = [asdict(alert) for alert in list(self.system_alerts)[-10:]]
-            
+
             performance_summary = {}
             for component, status in self.component_status.items():
                 performance_summary[component.value] = {
@@ -667,7 +667,7 @@ class SelfHealingSystem:
                     "last_disabled": status.last_disabled.isoformat() if status.last_disabled else None,
                     "disable_reason": status.disable_reason.value if status.disable_reason else None
                 }
-            
+
             return {
                 "monitoring_active": self.monitoring_active,
                 "total_components": len(self.component_status),
@@ -679,17 +679,17 @@ class SelfHealingSystem:
                 "black_swan_indicators": len(self.black_swan_indicators),
                 "last_check": self.last_check_time.isoformat()
             }
-            
+
         except Exception as e:
             self.logger.error(f"Error getting system status: {e}")
             return {"error": str(e)}
-    
+
     def get_component_health(self, component: SystemComponent) -> Dict[str, Any]:
         """Get detailed health info for specific component"""
         try:
             status = self.component_status[component]
             recent_metrics = [asdict(m) for m in self.performance_metrics[component]][-20:]
-            
+
             return {
                 "component": component.value,
                 "status": asdict(status),
@@ -697,7 +697,7 @@ class SelfHealingSystem:
                 "data_quality_score": np.mean(list(self.data_quality_scores[component])[-10:]) if self.data_quality_scores[component] else 1.0,
                 "api_response_time": np.mean(list(self.api_response_times[component])[-10:]) if self.api_response_times[component] else 0.0
             }
-            
+
         except Exception as e:
             self.logger.error(f"Error getting component health: {e}")
             return {"error": str(e)}
@@ -734,7 +734,7 @@ def report_data_gap(component: SystemComponent, gap_duration: float, description
     system = get_self_healing_system()
     system.report_data_gap(component, gap_duration, description)
 
-def report_security_alert(alert_type: str, severity: AlertLevel, description: str, 
+def report_security_alert(alert_type: str, severity: AlertLevel, description: str,
                          affected_components: List[SystemComponent] = None):
     """Convenient function to report security alerts"""
     system = get_self_healing_system()

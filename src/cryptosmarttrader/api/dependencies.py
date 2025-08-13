@@ -21,7 +21,7 @@ def get_settings() -> Settings:
 # This would be replaced with actual orchestrator implementation
 class MockOrchestrator:
     """Mock orchestrator for development/testing"""
-    
+
     async def get_market_data(self, limit: int = 100, sort_by: str = "market_cap"):
         """Mock market data"""
         return {
@@ -31,11 +31,11 @@ class MockOrchestrator:
             "data_source": "kraken",
             "confidence_score": 0.95
         }
-    
+
     async def get_trading_signals(self, limit: int = 50, min_confidence: float = 0.7, symbol: Optional[str] = None):
         """Mock trading signals"""
         return []
-    
+
     async def get_portfolio_summary(self):
         """Mock portfolio summary"""
         return {
@@ -47,7 +47,7 @@ class MockOrchestrator:
             "positions": [],
             "last_updated": "2025-01-11T12:00:00Z"
         }
-    
+
     async def get_all_agent_status(self):
         """Mock agent status"""
         return []

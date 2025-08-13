@@ -18,7 +18,7 @@ from .event_analytics import EventAnalytics, EventMetrics
 
 __all__ = [
     "FundingAnalyzer",
-    "FundingEvent", 
+    "FundingEvent",
     "FundingFlip",
     "OpenInterestTracker",
     "OIEvent",

@@ -38,19 +38,19 @@ class CardinalityController:
     """
     Control metric label cardinality to prevent unbounded growth
     """
-    
+
     def __init__(self, max_global_cardinality: int = 10000):
         self.max_global_cardinality = max_global_cardinality
         self.label_sets: Dict[str, Set[tuple]] = defaultdict(set)
         self.cardinality_warnings: Dict[str, int] = defaultdict(int)
         self.lock = Lock()
         self.logger = logging.getLogger(__name__)
-        
+
         # Allowed values for high-cardinality labels
         self.allowed_symbols = self._get_allowed_symbols()
         self.allowed_exchanges = {"kraken", "binance", "coinbase", "kucoin", "huobi"}
         self.allowed_signal_types = {"buy", "sell", "hold", "strong_buy", "strong_sell"}
-    
+
     def _get_allowed_symbols(self) -> Set[str]:
         """Get allowed trading symbols (top coins + major pairs)"""
         # Top 100 cryptocurrencies by market cap + major fiat pairs
@@ -66,25 +66,25 @@ class CardinalityController:
             # Add BTC pairs
             "ETH/BTC", "BNB/BTC", "XRP/BTC", "ADA/BTC", "DOT/BTC"
         }
-        
+
         return top_symbols
-    
+
     def validate_labels(self, metric_name: str, labels: Dict[str, str]) -> Dict[str, str]:
         """
         Validate and sanitize metric labels to control cardinality
-        
+
         Args:
             metric_name: Name of the metric
             labels: Label dictionary
-            
+
         Returns:
             Sanitized label dictionary
         """
-        
+
         with self.lock:
             # Sanitize labels
             sanitized_labels = {}
-            
+
             for key, value in labels.items():
                 if key == "symbol":
                     # Control symbol cardinality
@@ -92,26 +92,26 @@ class CardinalityController:
                         sanitized_labels[key] = value
                     else:
                         sanitized_labels[key] = "OTHER"
-                        
+
                 elif key == "exchange":
                     # Control exchange cardinality
                     if value.lower() in self.allowed_exchanges:
                         sanitized_labels[key] = value.lower()
                     else:
                         sanitized_labels[key] = "other"
-                        
+
                 elif key == "signal_type":
                     # Control signal type cardinality
                     if value.lower() in self.allowed_signal_types:
                         sanitized_labels[key] = value.lower()
                     else:
                         sanitized_labels[key] = "other"
-                        
+
                 elif key in ["user_id", "session_id", "trade_id"]:
                     # Hash high-cardinality IDs to buckets
                     hash_bucket = hash(value) % 100
                     sanitized_labels[key] = f"bucket_{hash_bucket:02d}"
-                    
+
                 elif key == "status_code":
                     # Group HTTP status codes
                     if value.startswith("2"):
@@ -122,20 +122,20 @@ class CardinalityController:
                         sanitized_labels[key] = "5xx"
                     else:
                         sanitized_labels[key] = "other"
-                        
+
                 else:
                     # For other labels, truncate long values
                     if len(str(value)) > 50:
                         sanitized_labels[key] = str(value)[:47] + "..."
                     else:
                         sanitized_labels[key] = str(value)
-            
+
             # Check cardinality
             label_tuple = tuple(sorted(sanitized_labels.items()))
             self.label_sets[metric_name].add(label_tuple)
-            
+
             current_cardinality = len(self.label_sets[metric_name])
-            
+
             # Warn if cardinality is high
             if current_cardinality > 500 and current_cardinality % 100 == 0:
                 if self.cardinality_warnings[metric_name] < 5:  # Limit warnings
@@ -143,7 +143,7 @@ class CardinalityController:
                         f"High cardinality for metric {metric_name}: {current_cardinality} series"
                     )
                     self.cardinality_warnings[metric_name] += 1
-            
+
             # Reset if too high (emergency measure)
             if current_cardinality > 1000:
                 self.logger.error(
@@ -151,7 +151,7 @@ class CardinalityController:
                 )
                 self.label_sets[metric_name].clear()
                 sanitized_labels = {"error": "cardinality_reset"}
-            
+
             return sanitized_labels
 
 
@@ -159,22 +159,22 @@ class EnterpriseMetricsCollector:
     """
     Enterprise metrics collector with cardinality control
     """
-    
+
     def __init__(self, registry: Optional[CollectorRegistry] = None):
         self.registry = registry or CollectorRegistry()
         self.cardinality_controller = CardinalityController()
         self.metrics: Dict[str, Any] = {}
         self.logger = logging.getLogger(__name__)
-        
+
         # Initialize core business metrics
         self._init_trading_metrics()
         self._init_system_metrics()
         self._init_api_metrics()
         self._init_ml_metrics()
-    
+
     def _init_trading_metrics(self):
         """Initialize trading-specific metrics"""
-        
+
         # Trade execution metrics
         self.metrics["trades_total"] = Counter(
             "cryptotrader_trades_total",
@@ -182,7 +182,7 @@ class EnterpriseMetricsCollector:
             ["symbol", "exchange", "side", "status"],
             registry=self.registry
         )
-        
+
         self.metrics["trade_value_usd"] = Histogram(
             "cryptotrader_trade_value_usd",
             "Trade value in USD",
@@ -190,7 +190,7 @@ class EnterpriseMetricsCollector:
             buckets=[100, 500, 1000, 5000, 10000, 50000, 100000, 500000, float('inf')],
             registry=self.registry
         )
-        
+
         self.metrics["slippage_bps"] = Histogram(
             "cryptotrader_slippage_bps",
             "Trade slippage in basis points",
@@ -198,42 +198,42 @@ class EnterpriseMetricsCollector:
             buckets=[0, 5, 10, 25, 50, 100, 250, 500, float('inf')],
             registry=self.registry
         )
-        
+
         self.metrics["trading_fees_usd"] = Counter(
             "cryptotrader_trading_fees_usd_total",
             "Total trading fees paid in USD",
             ["exchange", "fee_type"],
             registry=self.registry
         )
-        
+
         # Portfolio metrics
         self.metrics["portfolio_value_usd"] = Gauge(
             "cryptotrader_portfolio_value_usd",
             "Current portfolio value in USD",
             registry=self.registry
         )
-        
+
         self.metrics["position_count"] = Gauge(
             "cryptotrader_positions_count",
             "Number of open positions",
             ["exchange"],
             registry=self.registry
         )
-        
+
         self.metrics["unrealized_pnl_usd"] = Gauge(
             "cryptotrader_unrealized_pnl_usd",
             "Unrealized P&L in USD",
             ["symbol"],
             registry=self.registry
         )
-        
+
         self.metrics["realized_pnl_usd"] = Counter(
             "cryptotrader_realized_pnl_usd_total",
             "Cumulative realized P&L in USD",
             ["symbol"],
             registry=self.registry
         )
-        
+
         # Signal metrics
         self.metrics["signals_generated"] = Counter(
             "cryptotrader_signals_generated_total",
@@ -241,61 +241,61 @@ class EnterpriseMetricsCollector:
             ["symbol", "signal_type", "confidence_bucket"],
             registry=self.registry
         )
-        
+
         self.metrics["signal_accuracy"] = Gauge(
             "cryptotrader_signal_accuracy_ratio",
             "Signal accuracy ratio (0-1)",
             ["symbol", "signal_type", "timeframe"],
             registry=self.registry
         )
-    
+
     def _init_system_metrics(self):
         """Initialize system health metrics"""
-        
+
         self.metrics["system_health_score"] = Gauge(
             "cryptotrader_system_health_score",
             "Overall system health score (0-1)",
             registry=self.registry
         )
-        
+
         self.metrics["component_health"] = Gauge(
             "cryptotrader_component_health_score",
             "Component health score (0-1)",
             ["component"],
             registry=self.registry
         )
-        
+
         self.metrics["data_drift_score"] = Gauge(
             "cryptotrader_data_drift_score",
             "Data drift score (0-1)",
             ["model", "feature_group"],
             registry=self.registry
         )
-        
+
         self.metrics["model_inference_count"] = Counter(
             "cryptotrader_model_inference_total",
             "Model inference requests",
             ["model", "version", "status"],
             registry=self.registry
         )
-        
+
         self.metrics["circuit_breaker_state"] = Gauge(
             "cryptotrader_circuit_breaker_state",
             "Circuit breaker state (0=closed, 1=open, 2=half-open)",
             ["service"],
             registry=self.registry
         )
-    
+
     def _init_api_metrics(self):
         """Initialize API metrics"""
-        
+
         self.metrics["http_requests_total"] = Counter(
             "cryptotrader_http_requests_total",
             "Total HTTP requests",
             ["method", "endpoint", "status_code"],
             registry=self.registry
         )
-        
+
         self.metrics["http_request_duration"] = Histogram(
             "cryptotrader_http_request_duration_seconds",
             "HTTP request duration",
@@ -303,24 +303,24 @@ class EnterpriseMetricsCollector:
             buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, float('inf')],
             registry=self.registry
         )
-        
+
         self.metrics["api_rate_limit_hits"] = Counter(
             "cryptotrader_api_rate_limit_hits_total",
             "API rate limit violations",
             ["service", "endpoint"],
             registry=self.registry
         )
-        
+
         self.metrics["cache_operations"] = Counter(
             "cryptotrader_cache_operations_total",
             "Cache operations",
             ["operation", "status"],
             registry=self.registry
         )
-    
+
     def _init_ml_metrics(self):
         """Initialize ML/AI metrics"""
-        
+
         self.metrics["model_training_duration"] = Histogram(
             "cryptotrader_model_training_duration_seconds",
             "Model training duration",
@@ -328,14 +328,14 @@ class EnterpriseMetricsCollector:
             buckets=[60, 300, 900, 1800, 3600, 7200, 14400, float('inf')],
             registry=self.registry
         )
-        
+
         self.metrics["model_accuracy"] = Gauge(
             "cryptotrader_model_accuracy_score",
             "Model accuracy score (0-1)",
             ["model", "version", "dataset"],
             registry=self.registry
         )
-        
+
         self.metrics["prediction_confidence"] = Histogram(
             "cryptotrader_prediction_confidence",
             "Prediction confidence distribution",
@@ -343,7 +343,7 @@ class EnterpriseMetricsCollector:
             buckets=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
             registry=self.registry
         )
-    
+
     def record_trade(
         self,
         symbol: str,
@@ -355,7 +355,7 @@ class EnterpriseMetricsCollector:
         status: str = "executed"
     ):
         """Record trade execution metrics"""
-        
+
         labels = self.cardinality_controller.validate_labels(
             "trades",
             {
@@ -365,21 +365,21 @@ class EnterpriseMetricsCollector:
                 "status": status
             }
         )
-        
+
         self.metrics["trades_total"].labels(**labels).inc()
-        
+
         value_labels = {k: v for k, v in labels.items() if k != "status"}
         self.metrics["trade_value_usd"].labels(**value_labels).observe(value_usd)
-        
+
         slippage_labels = {k: v for k, v in labels.items() if k not in ["side", "status"]}
         self.metrics["slippage_bps"].labels(**slippage_labels).observe(slippage_bps)
-        
+
         fee_labels = self.cardinality_controller.validate_labels(
             "fees",
             {"exchange": exchange, "fee_type": "trading"}
         )
         self.metrics["trading_fees_usd"].labels(**fee_labels).inc(fees_usd)
-    
+
     def record_signal(
         self,
         symbol: str,
@@ -388,7 +388,7 @@ class EnterpriseMetricsCollector:
         timeframe: str = "1h"
     ):
         """Record trading signal metrics"""
-        
+
         # Bucket confidence for cardinality control
         if confidence >= 0.8:
             confidence_bucket = "high"
@@ -396,7 +396,7 @@ class EnterpriseMetricsCollector:
             confidence_bucket = "medium"
         else:
             confidence_bucket = "low"
-        
+
         labels = self.cardinality_controller.validate_labels(
             "signals",
             {
@@ -405,12 +405,12 @@ class EnterpriseMetricsCollector:
                 "confidence_bucket": confidence_bucket
             }
         )
-        
+
         self.metrics["signals_generated"].labels(**labels).inc()
-    
+
     def update_health_score(self, score: float, component: Optional[str] = None):
         """Update health score metrics"""
-        
+
         if component:
             labels = self.cardinality_controller.validate_labels(
                 "component_health",
@@ -419,7 +419,7 @@ class EnterpriseMetricsCollector:
             self.metrics["component_health"].labels(**labels).set(score)
         else:
             self.metrics["system_health_score"].set(score)
-    
+
     def record_http_request(
         self,
         method: str,
@@ -428,7 +428,7 @@ class EnterpriseMetricsCollector:
         duration_seconds: float
     ):
         """Record HTTP request metrics"""
-        
+
         labels = self.cardinality_controller.validate_labels(
             "http_requests",
             {
@@ -437,12 +437,12 @@ class EnterpriseMetricsCollector:
                 "status_code": str(status_code)
             }
         )
-        
+
         self.metrics["http_requests_total"].labels(**labels).inc()
-        
+
         duration_labels = {k: v for k, v in labels.items() if k != "status_code"}
         self.metrics["http_request_duration"].labels(**duration_labels).observe(duration_seconds)
-    
+
     def record_model_inference(
         self,
         model: str,
@@ -450,7 +450,7 @@ class EnterpriseMetricsCollector:
         status: str = "success"
     ):
         """Record model inference metrics"""
-        
+
         labels = self.cardinality_controller.validate_labels(
             "model_inference",
             {
@@ -459,25 +459,25 @@ class EnterpriseMetricsCollector:
                 "status": status
             }
         )
-        
+
         self.metrics["model_inference_count"].labels(**labels).inc()
-    
+
     def set_circuit_breaker_state(self, service: str, state: str):
         """Set circuit breaker state"""
-        
+
         state_value = {"closed": 0, "open": 1, "half_open": 2}.get(state, 0)
-        
+
         labels = self.cardinality_controller.validate_labels(
             "circuit_breaker",
             {"service": service}
         )
-        
+
         self.metrics["circuit_breaker_state"].labels(**labels).set(state_value)
-    
+
     def get_metrics(self) -> str:
         """Get metrics in Prometheus format"""
         return generate_latest(self.registry).decode('utf-8')
-    
+
     def get_cardinality_stats(self) -> Dict[str, int]:
         """Get cardinality statistics"""
         return {

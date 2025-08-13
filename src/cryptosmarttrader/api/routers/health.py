@@ -117,14 +117,14 @@ def calculate_health_score(components: SystemStatus) -> float:
         "degraded": 50,
         "unhealthy": 0
     }
-    
+
     component_scores = [
         scores.get(components.database.status, 0),
         scores.get(components.exchange_apis.status, 0),
         scores.get(components.ml_models.status, 0),
         scores.get(components.cache.status, 0)
     ]
-    
+
     return sum(component_scores) / len(component_scores)
 
 
@@ -138,13 +138,13 @@ def calculate_health_score(components: SystemStatus) -> float:
 async def health_check(request) -> HealthResponse:
     """
     Comprehensive health check with detailed system information.
-    
+
     **Returns:**
     - Overall health status and score
     - Component-by-component health status
     - System metrics (CPU, memory, disk usage)
     - Service uptime information
-    
+
     **Rate limit:** 30 requests per minute per IP
     """
     try:
@@ -155,10 +155,10 @@ async def health_check(request) -> HealthResponse:
             ml_models=await check_ml_models(),
             cache=await check_cache_system()
         )
-        
+
         # Calculate health score
         health_score = calculate_health_score(components)
-        
+
         # Determine overall status
         if health_score >= 90:
             overall_status = "healthy"
@@ -166,12 +166,12 @@ async def health_check(request) -> HealthResponse:
             overall_status = "degraded"
         else:
             overall_status = "unhealthy"
-        
+
         # System metrics
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage('/')
-        
+
         checks = {
             "cpu_usage": round(cpu_percent, 1),
             "memory_usage": round(memory.percent, 1),
@@ -182,10 +182,10 @@ async def health_check(request) -> HealthResponse:
             "active_connections": len(psutil.net_connections()),
             "process_count": len(psutil.pids())
         }
-        
+
         # Calculate uptime
         uptime_seconds = time.time() - START_TIME
-        
+
         return HealthResponse(
             status=overall_status,
             score=health_score,
@@ -194,7 +194,7 @@ async def health_check(request) -> HealthResponse:
             components=components,
             checks=checks
         )
-        
+
     except Exception as e:
         logging.error(f"Health check failed: {e}", exc_info=True)
         raise HTTPException(
@@ -213,7 +213,7 @@ async def health_check(request) -> HealthResponse:
 async def liveness_check(request) -> LivenessResponse:
     """
     Kubernetes/Docker liveness probe endpoint.
-    
+
     Returns basic service availability status.
     **Rate limit:** 60 requests per minute per IP
     """
@@ -223,14 +223,14 @@ async def liveness_check(request) -> LivenessResponse:
 @router.get(
     "/ready",
     response_model=ReadinessResponse,
-    summary="Readiness probe", 
+    summary="Readiness probe",
     description="Readiness check for traffic routing decisions"
 )
 @limiter.limit("60/minute")
 async def readiness_check(request) -> ReadinessResponse:
     """
     Kubernetes/Docker readiness probe endpoint.
-    
+
     Checks if service is ready to accept traffic.
     **Rate limit:** 60 requests per minute per IP
     """
@@ -238,18 +238,18 @@ async def readiness_check(request) -> ReadinessResponse:
         # Quick dependency checks
         db_ready = (await check_database_health()).status != "unhealthy"
         models_ready = (await check_ml_models()).status != "unhealthy"
-        
+
         dependencies_ready = db_ready and models_ready
         startup_complete = time.time() - START_TIME > 30  # 30 second startup grace period
-        
+
         ready = dependencies_ready and startup_complete
-        
+
         return ReadinessResponse(
             ready=ready,
             dependencies_ready=dependencies_ready,
             startup_complete=startup_complete
         )
-        
+
     except Exception as e:
         logging.error(f"Readiness check failed: {e}")
         return ReadinessResponse(

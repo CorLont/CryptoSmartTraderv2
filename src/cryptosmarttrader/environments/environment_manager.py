@@ -39,32 +39,32 @@ class EnvironmentConfig:
     """Environment-specific configuration"""
     name: str
     environment: Environment
-    
+
     # API Keys and Credentials
     kraken_api_key: Optional[str] = None
     kraken_secret: Optional[str] = None
     openai_api_key: Optional[str] = None
     telegram_token: Optional[str] = None
     telegram_chat_id: Optional[str] = None
-    
+
     # Rate Limits and Quotas
     api_rate_limit_per_minute: int = 60
     openai_requests_per_day: int = 1000
     max_concurrent_orders: int = 5
     max_position_size_usd: int = 10000
-    
+
     # Risk Limits (environment-specific)
     max_daily_loss_usd: int = 5000
     max_drawdown_percent: float = 10.0
     position_size_limit_percent: float = 5.0
-    
+
     # Feature Flags
     feature_flags: Dict[str, bool] = field(default_factory=dict)
-    
+
     # Database and Storage
     database_url: Optional[str] = None
     redis_url: Optional[str] = None
-    
+
     # Monitoring
     metrics_enabled: bool = True
     alerts_enabled: bool = True
@@ -87,24 +87,24 @@ class CanaryDeployment:
     """Canary deployment configuration"""
     name: str
     description: str
-    
+
     # Traffic split
     canary_percentage: float = 1.0  # Start with 1% traffic
-    
+
     # Duration and validation
     min_duration_hours: int = 168  # 1 week minimum
     validation_metrics: List[str] = field(default_factory=list)
     success_criteria: Dict[str, float] = field(default_factory=dict)
-    
+
     # State tracking
     state: CanaryState = CanaryState.INACTIVE
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
-    
+
     # Risk controls
     max_risk_exposure_usd: float = 1000.0  # Max $1k at risk in canary
     auto_rollback_triggers: Dict[str, float] = field(default_factory=dict)
-    
+
     # Metrics tracking
     metrics_history: List[Dict[str, Any]] = field(default_factory=list)
     alerts_triggered: List[str] = field(default_factory=list)
@@ -113,43 +113,43 @@ class EnvironmentManager:
     """
     Comprehensive environment management system
     """
-    
+
     def __init__(self, config_dir: str = "configs/environments"):
         self.config_dir = Path(config_dir)
         self.config_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Current environment
         self.current_environment = self._detect_environment()
-        
+
         # Environment configurations
         self.environments: Dict[Environment, EnvironmentConfig] = {}
         self.feature_flags: Dict[str, FeatureFlag] = {}
         self.canary_deployments: Dict[str, CanaryDeployment] = {}
-        
+
         # Load configurations
         self._load_environment_configs()
         self._load_feature_flags()
         self._load_canary_deployments()
-        
+
         # Setup default environments if not exist
         self._setup_default_environments()
-        
+
         logger.info(f"Environment Manager initialized - Current: {self.current_environment.value}")
-    
+
     def _detect_environment(self) -> Environment:
         """Detect current environment from environment variables"""
         env_name = os.getenv("ENVIRONMENT", "development").lower()
-        
+
         if env_name in ["prod", "production"]:
             return Environment.PRODUCTION
         elif env_name in ["stage", "staging"]:
             return Environment.STAGING
         else:
             return Environment.DEVELOPMENT
-    
+
     def _setup_default_environments(self):
         """Setup default environment configurations"""
-        
+
         if Environment.DEVELOPMENT not in self.environments:
             self.environments[Environment.DEVELOPMENT] = EnvironmentConfig(
                 name="Development",
@@ -169,7 +169,7 @@ class EnvironmentManager:
                     "debug_mode": True
                 }
             )
-        
+
         if Environment.STAGING not in self.environments:
             self.environments[Environment.STAGING] = EnvironmentConfig(
                 name="Staging",
@@ -189,7 +189,7 @@ class EnvironmentManager:
                     "shadow_trading": True
                 }
             )
-        
+
         if Environment.PRODUCTION not in self.environments:
             self.environments[Environment.PRODUCTION] = EnvironmentConfig(
                 name="Production",
@@ -209,13 +209,13 @@ class EnvironmentManager:
                     "strict_validation": True
                 }
             )
-        
+
         # Setup default feature flags
         self._setup_default_feature_flags()
-    
+
     def _setup_default_feature_flags(self):
         """Setup default feature flags"""
-        
+
         default_flags = [
             FeatureFlag(
                 name="advanced_ml_models",
@@ -266,63 +266,63 @@ class EnvironmentManager:
                 rollout_percentage=100.0
             )
         ]
-        
+
         for flag in default_flags:
             if flag.name not in self.feature_flags:
                 self.feature_flags[flag.name] = flag
-    
+
     def get_current_config(self) -> EnvironmentConfig:
         """Get configuration for current environment"""
         return self.environments[self.current_environment]
-    
+
     def get_config(self, environment: Environment) -> EnvironmentConfig:
         """Get configuration for specific environment"""
         return self.environments.get(environment)
-    
+
     def is_feature_enabled(self, feature_name: str) -> bool:
         """Check if feature is enabled in current environment"""
         if feature_name not in self.feature_flags:
             logger.warning(f"Unknown feature flag: {feature_name}")
             return False
-        
+
         flag = self.feature_flags[feature_name]
-        
+
         # Check if enabled for current environment
         if self.current_environment not in flag.enabled_environments:
             return False
-        
+
         # Check rollout percentage (simple random check)
         import random
         return random.random() * 100 <= flag.rollout_percentage
-    
+
     def set_feature_flag(self, feature_name: str, enabled: bool, environments: Optional[List[Environment]] = None):
         """Set feature flag state"""
         if feature_name not in self.feature_flags:
             logger.error(f"Feature flag not found: {feature_name}")
             return
-        
+
         flag = self.feature_flags[feature_name]
-        
+
         if environments:
             flag.enabled_environments = environments
-        
+
         flag.rollout_percentage = 100.0 if enabled else 0.0
         flag.updated_at = datetime.now()
-        
+
         self._save_feature_flags()
         logger.info(f"Feature flag updated: {feature_name} = {enabled}")
-    
-    def create_canary_deployment(self, 
+
+    def create_canary_deployment(self,
                                 name: str,
                                 description: str,
                                 canary_percentage: float = 1.0,
                                 min_duration_hours: int = 168) -> CanaryDeployment:
         """Create new canary deployment"""
-        
+
         # Validate canary percentage for safety
         if canary_percentage > 5.0:
             raise ValueError("Canary percentage cannot exceed 5% for safety")
-        
+
         canary = CanaryDeployment(
             name=name,
             description=description,
@@ -330,7 +330,7 @@ class EnvironmentManager:
             min_duration_hours=min_duration_hours,
             validation_metrics=[
                 "error_rate",
-                "latency_p95", 
+                "latency_p95",
                 "slippage_realized",
                 "pnl_daily",
                 "drawdown_current"
@@ -350,62 +350,62 @@ class EnvironmentManager:
                 "drawdown": 3.0  # 3% drawdown triggers rollback
             }
         )
-        
+
         self.canary_deployments[name] = canary
         self._save_canary_deployments()
-        
+
         logger.info(f"Created canary deployment: {name} ({canary_percentage}% traffic)")
         return canary
-    
+
     def start_canary_deployment(self, name: str) -> bool:
         """Start canary deployment"""
         if name not in self.canary_deployments:
             logger.error(f"Canary deployment not found: {name}")
             return False
-        
+
         canary = self.canary_deployments[name]
-        
+
         if canary.state != CanaryState.INACTIVE:
             logger.warning(f"Canary deployment already active: {name}")
             return False
-        
+
         # Validate environment
         if self.current_environment != Environment.STAGING:
             logger.error("Canary deployments can only be started in staging environment")
             return False
-        
+
         # Start canary
         canary.state = CanaryState.STARTING
         canary.start_time = datetime.now()
-        
+
         logger.info(f"🕊️ Starting canary deployment: {name}")
-        
+
         # In a real implementation, this would:
         # 1. Deploy new version to canary infrastructure
         # 2. Route specified percentage of traffic
         # 3. Start monitoring and validation
-        
+
         canary.state = CanaryState.RUNNING
         self._save_canary_deployments()
-        
+
         return True
-    
+
     def validate_canary_deployment(self, name: str, metrics: Dict[str, float]) -> bool:
         """Validate canary deployment against success criteria"""
         if name not in self.canary_deployments:
             return False
-        
+
         canary = self.canary_deployments[name]
-        
+
         if canary.state != CanaryState.RUNNING:
             return False
-        
+
         # Record metrics
         canary.metrics_history.append({
             "timestamp": datetime.now().isoformat(),
             "metrics": metrics.copy()
         })
-        
+
         # Check auto-rollback triggers
         rollback_triggered = False
         for trigger_name, trigger_value in canary.auto_rollback_triggers.items():
@@ -413,15 +413,15 @@ class EnvironmentManager:
                 logger.error(f"🚨 Canary rollback triggered: {trigger_name} = {metrics[trigger_name]} > {trigger_value}")
                 canary.alerts_triggered.append(f"Auto rollback: {trigger_name}")
                 rollback_triggered = True
-        
+
         if rollback_triggered:
             self.rollback_canary_deployment(name)
             return False
-        
+
         # Check if canary has run long enough
         if canary.start_time:
             runtime_hours = (datetime.now() - canary.start_time).total_seconds() / 3600
-            
+
             if runtime_hours >= canary.min_duration_hours:
                 # Check success criteria
                 success = True
@@ -429,7 +429,7 @@ class EnvironmentManager:
                     if criterion in metrics and metrics[criterion] > max_value:
                         success = False
                         break
-                
+
                 if success:
                     logger.info(f"✅ Canary deployment validation successful: {name}")
                     canary.state = CanaryState.VALIDATING
@@ -438,63 +438,63 @@ class EnvironmentManager:
                     logger.warning(f"⚠️ Canary deployment failed validation: {name}")
                     self.rollback_canary_deployment(name)
                     return False
-        
+
         self._save_canary_deployments()
         return True
-    
+
     def promote_canary_deployment(self, name: str) -> bool:
         """Promote canary deployment to production"""
         if name not in self.canary_deployments:
             return False
-        
+
         canary = self.canary_deployments[name]
-        
+
         if canary.state != CanaryState.VALIDATING:
             logger.error(f"Canary deployment not ready for promotion: {name}")
             return False
-        
+
         canary.state = CanaryState.PROMOTING
-        
+
         logger.info(f"🚀 Promoting canary deployment to production: {name}")
-        
+
         # In real implementation:
         # 1. Deploy to production infrastructure
         # 2. Route 100% traffic to new version
         # 3. Decommission old version
-        
+
         canary.state = CanaryState.PROMOTED
         canary.end_time = datetime.now()
-        
+
         self._save_canary_deployments()
         return True
-    
+
     def rollback_canary_deployment(self, name: str) -> bool:
         """Rollback canary deployment"""
         if name not in self.canary_deployments:
             return False
-        
+
         canary = self.canary_deployments[name]
         canary.state = CanaryState.ROLLING_BACK
-        
+
         logger.warning(f"⏪ Rolling back canary deployment: {name}")
-        
+
         # In real implementation:
         # 1. Route traffic back to stable version
         # 2. Stop canary infrastructure
         # 3. Clean up resources
-        
+
         canary.state = CanaryState.FAILED
         canary.end_time = datetime.now()
-        
+
         self._save_canary_deployments()
         return True
-    
+
     def get_environment_secrets(self) -> Dict[str, str]:
         """Get secrets for current environment"""
         config = self.get_current_config()
-        
+
         secrets = {}
-        
+
         # Add environment-specific secrets
         if config.kraken_api_key:
             secrets["KRAKEN_API_KEY"] = config.kraken_api_key
@@ -506,9 +506,9 @@ class EnvironmentManager:
             secrets["TELEGRAM_TOKEN"] = config.telegram_token
         if config.telegram_chat_id:
             secrets["TELEGRAM_CHAT_ID"] = config.telegram_chat_id
-        
+
         return secrets
-    
+
     def _load_environment_configs(self):
         """Load environment configurations from disk"""
         for env in Environment:
@@ -517,17 +517,17 @@ class EnvironmentManager:
                 try:
                     with open(config_file, 'r') as f:
                         data = json.load(f)
-                    
+
                     config = EnvironmentConfig(
                         name=data.get("name", env.value.title()),
                         environment=env,
                         **{k: v for k, v in data.items() if k != "name"}
                     )
                     self.environments[env] = config
-                    
+
                 except Exception as e:
                     logger.error(f"Failed to load config for {env.value}: {e}")
-    
+
     def _save_environment_configs(self):
         """Save environment configurations to disk"""
         for env, config in self.environments.items():
@@ -548,13 +548,13 @@ class EnvironmentManager:
                     "alerts_enabled": config.alerts_enabled,
                     "debug_logging": config.debug_logging
                 }
-                
+
                 with open(config_file, 'w') as f:
                     json.dump(data, f, indent=2)
-                    
+
             except Exception as e:
                 logger.error(f"Failed to save config for {env.value}: {e}")
-    
+
     def _load_feature_flags(self):
         """Load feature flags from disk"""
         flags_file = self.config_dir / "feature_flags.json"
@@ -562,7 +562,7 @@ class EnvironmentManager:
             try:
                 with open(flags_file, 'r') as f:
                     data = json.load(f)
-                
+
                 for flag_name, flag_data in data.items():
                     self.feature_flags[flag_name] = FeatureFlag(
                         name=flag_name,
@@ -574,10 +574,10 @@ class EnvironmentManager:
                         created_at=datetime.fromisoformat(flag_data.get("created_at", datetime.now().isoformat())),
                         updated_at=datetime.fromisoformat(flag_data.get("updated_at", datetime.now().isoformat()))
                     )
-                    
+
             except Exception as e:
                 logger.error(f"Failed to load feature flags: {e}")
-    
+
     def _save_feature_flags(self):
         """Save feature flags to disk"""
         flags_file = self.config_dir / "feature_flags.json"
@@ -593,13 +593,13 @@ class EnvironmentManager:
                     "created_at": flag.created_at.isoformat(),
                     "updated_at": flag.updated_at.isoformat()
                 }
-            
+
             with open(flags_file, 'w') as f:
                 json.dump(data, f, indent=2)
-                
+
         except Exception as e:
             logger.error(f"Failed to save feature flags: {e}")
-    
+
     def _load_canary_deployments(self):
         """Load canary deployments from disk"""
         canary_file = self.config_dir / "canary_deployments.json"
@@ -607,7 +607,7 @@ class EnvironmentManager:
             try:
                 with open(canary_file, 'r') as f:
                     data = json.load(f)
-                
+
                 for canary_name, canary_data in data.items():
                     self.canary_deployments[canary_name] = CanaryDeployment(
                         name=canary_name,
@@ -624,10 +624,10 @@ class EnvironmentManager:
                         metrics_history=canary_data.get("metrics_history", []),
                         alerts_triggered=canary_data.get("alerts_triggered", [])
                     )
-                    
+
             except Exception as e:
                 logger.error(f"Failed to load canary deployments: {e}")
-    
+
     def _save_canary_deployments(self):
         """Save canary deployments to disk"""
         canary_file = self.config_dir / "canary_deployments.json"
@@ -648,29 +648,29 @@ class EnvironmentManager:
                     "metrics_history": canary.metrics_history,
                     "alerts_triggered": canary.alerts_triggered
                 }
-            
+
             with open(canary_file, 'w') as f:
                 json.dump(data, f, indent=2)
-                
+
         except Exception as e:
             logger.error(f"Failed to save canary deployments: {e}")
-    
+
     def get_environment_summary(self) -> Dict[str, Any]:
         """Get comprehensive environment summary"""
         current_config = self.get_current_config()
-        
+
         # Active canaries
         active_canaries = [
             name for name, canary in self.canary_deployments.items()
             if canary.state in [CanaryState.RUNNING, CanaryState.VALIDATING]
         ]
-        
+
         # Feature flags summary
         enabled_flags = [
             name for name, flag in self.feature_flags.items()
             if self.current_environment in flag.enabled_environments
         ]
-        
+
         return {
             "current_environment": self.current_environment.value,
             "config": {

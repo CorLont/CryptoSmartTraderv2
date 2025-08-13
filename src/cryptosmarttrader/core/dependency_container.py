@@ -17,22 +17,22 @@ from core.secrets_manager import SecretsManager, get_secrets_manager
 
 class Container(containers.DeclarativeContainer):
     """Main DI container for the application"""
-    
+
     # Configuration
     config = providers.Singleton(get_settings)
-    
+
     # Secrets management
     secrets_manager = providers.Singleton(
         get_secrets_manager,
         config=config.provided.dict()
     )
-    
+
     # Logging
     logger_factory = providers.Factory(
         logging.getLogger,
         name="CryptoSmartTrader"
     )
-    
+
     # Rate limiting configuration
     rate_limit_config = providers.Factory(
         RateLimitConfig,
@@ -40,13 +40,13 @@ class Container(containers.DeclarativeContainer):
         burst_size=config.provided.exchange.burst_size,
         cool_down_period=60
     )
-    
+
     # Async Data Manager
     async_data_manager = providers.Singleton(
         AsyncDataManager,
         rate_limit_config=rate_limit_config
     )
-    
+
     # Secure exchange configurations
     kraken_config = providers.Factory(
         lambda settings, secrets: {
@@ -57,7 +57,7 @@ class Container(containers.DeclarativeContainer):
         settings=config,
         secrets=secrets_manager
     )
-    
+
     binance_config = providers.Factory(
         lambda settings, secrets: {
             **settings.get_exchange_config('binance'),
@@ -70,10 +70,10 @@ class Container(containers.DeclarativeContainer):
 
 class AgentContainer(containers.DeclarativeContainer):
     """Container for agent-specific dependencies"""
-    
+
     # Parent container
     parent = providers.DependenciesContainer()
-    
+
     # Agent configuration
     agent_config = providers.Factory(
         dict,
@@ -85,10 +85,10 @@ class AgentContainer(containers.DeclarativeContainer):
 
 class MLContainer(containers.DeclarativeContainer):
     """Container for ML-specific dependencies"""
-    
+
     # Parent container
     parent = providers.DependenciesContainer()
-    
+
     # ML configuration
     ml_config = providers.Factory(
         dict,
@@ -115,11 +115,11 @@ def configure_container(settings: Optional[AppSettings] = None) -> Container:
     if settings:
         # Override config provider for testing
         container.config.override(settings)
-    
+
     # Configure sub-containers
     agent_container = AgentContainer(parent=container)
     ml_container = MLContainer(parent=container)
-    
+
     return container
 
 def reset_container() -> None:
@@ -146,24 +146,24 @@ def inject_rate_limit_config() -> RateLimitConfig:
 # Context managers for dependency injection
 class DIContext:
     """Context manager for dependency injection in agents"""
-    
+
     def __init__(self, container: Container = None):
         self.container = container or get_container()
         self.original_providers = {}
-    
+
     def __enter__(self):
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         # Restore original providers if any were overridden
         for key, provider in self.original_providers.items():
             setattr(self.container, key, provider)
-    
+
     def override_config(self, settings: AppSettings):
         """Override configuration for testing"""
         self.original_providers['config'] = self.container.config
         self.container.config.override(settings)
-    
+
     def override_async_data_manager(self, mock_manager: AsyncDataManager):
         """Override async data manager for testing"""
         self.original_providers['async_data_manager'] = self.container.async_data_manager
@@ -178,17 +178,17 @@ def create_data_collector_agent(
 ):
     """Factory function for data collector agent with DI"""
     from agents.data_collector import AsyncDataCollectorAgent
-    
+
     agent_config = {
         'collection_interval': 45,
         'health_check_interval': config.agents.health_check_interval,
         'max_memory_mb': config.agents.max_memory_mb
     }
-    
+
     agent = AsyncDataCollectorAgent(agent_config)
     agent.data_manager = async_data_manager
     agent.logger = logger.getChild('DataCollector')
-    
+
     return agent
 
 @inject
@@ -198,25 +198,25 @@ def create_health_monitor_agent(
 ):
     """Factory function for health monitor agent with DI"""
     from agents.health_monitor import HealthMonitorAgent
-    
+
     agent_config = {
         'monitor_interval': config.agents.health_check_interval,
         'health_check_interval': config.agents.health_check_interval * 2
     }
-    
+
     agent = HealthMonitorAgent(agent_config)
     agent.logger = logger.getChild('HealthMonitor')
-    
+
     return agent
 
 # Helper functions for testing
 def create_test_container(test_settings: AppSettings = None) -> Container:
     """Create a container for testing with optional custom settings"""
     test_container = Container()
-    
+
     if test_settings:
         test_container.config.override(test_settings)
-    
+
     return test_container
 
 def inject_dependencies(func):
@@ -235,23 +235,23 @@ def validate_configuration(
         config.data.data_dir.mkdir(parents=True, exist_ok=True)
         config.logging.log_dir.mkdir(parents=True, exist_ok=True)
         config.ml.model_cache_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Check exchange credentials
         has_exchange_access = (
             (config.exchange.kraken_api_key and config.exchange.kraken_secret) or
             (config.exchange.binance_api_key and config.exchange.binance_secret)
         )
-        
+
         if not has_exchange_access:
             logger.warning("No exchange credentials configured - using public APIs only")
-        
+
         # Validate rate limits
         if config.exchange.requests_per_second > 50:
             logger.warning("High rate limit configured - may cause API throttling")
-        
+
         logger.info("Configuration validation passed")
         return True
-        
+
     except Exception as e:
         logger.error(f"Configuration validation failed: {e}")
         return False

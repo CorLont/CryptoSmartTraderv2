@@ -32,11 +32,11 @@ class ScrapeResult:
 
 class TwitterScraper:
     """Twitter/X scraping using public endpoints and snscrape fallback"""
-    
+
     def __init__(self, client: AsyncScrapeClient):
         self.client = client
         self.source_name = "twitter"
-        
+
         # Configure rate limits for Twitter
         self.client.configure_rate_limit(
             source=self.source_name,
@@ -44,12 +44,12 @@ class TwitterScraper:
             requests_per_hour=180,
             burst_limit=5
         )
-    
+
     async def scrape_symbol_mentions(self, symbol: str, limit: int = 100) -> List[ScrapeResult]:
         """Scrape Twitter mentions for a cryptocurrency symbol"""
-        
+
         results = []
-        
+
         try:
             # Twitter public search (limited)
             search_queries = [
@@ -58,13 +58,13 @@ class TwitterScraper:
                 f"{symbol} crypto",
                 f"{symbol} cryptocurrency"
             ]
-            
+
             for query in search_queries[:2]:  # Limit to avoid rate limits
                 try:
                     # Use a public Twitter search endpoint (limited functionality)
                     # In production, would use official Twitter API v2
                     search_data = await self._search_twitter_public(query, limit // len(search_queries))
-                    
+
                     for tweet in search_data:
                         result = ScrapeResult(
                             source=self.source_name,
@@ -80,22 +80,22 @@ class TwitterScraper:
                             }
                         )
                         results.append(result)
-                
+
                 except Exception as e:
                     self.client.logger.warning(f"Twitter search failed for {query}: {e}")
-        
+
         except Exception as e:
             self.client.logger.error(f"Twitter scraping failed for {symbol}: {e}")
-        
+
         return results[:limit]
-    
+
     async def _search_twitter_public(self, query: str, limit: int) -> List[Dict[str, Any]]:
         """Search Twitter using public endpoints (limited functionality)"""
-        
+
         # Mock Twitter data for development
         # In production, would implement actual Twitter API calls
         mock_tweets = []
-        
+
         for i in range(min(limit, 10)):
             # REMOVED: Mock data pattern not allowed in production{
                 "id": f"tweet_{i}_{hash(query) % 10000}",
@@ -105,16 +105,16 @@ class TwitterScraper:
                 "likes": i * 5,
                 "created_at": (datetime.now() - timedelta(hours=i)).isoformat()
             })
-        
+
         return mock_tweets
 
 class RedditScraper:
     """Reddit scraping using public API and web scraping"""
-    
+
     def __init__(self, client: AsyncScrapeClient):
         self.client = client
         self.source_name = "reddit"
-        
+
         # Configure rate limits for Reddit
         self.client.configure_rate_limit(
             source=self.source_name,
@@ -122,27 +122,27 @@ class RedditScraper:
             requests_per_hour=600,
             burst_limit=10
         )
-    
+
     async def scrape_symbol_mentions(self, symbol: str, limit: int = 100) -> List[ScrapeResult]:
         """Scrape Reddit mentions for a cryptocurrency symbol"""
-        
+
         results = []
-        
+
         try:
             # Reddit subreddits to search
             subreddits = [
                 "cryptocurrency",
-                "CryptoMoonShots", 
+                "CryptoMoonShots",
                 "altcoin",
                 "bitcoin",
                 "ethereum"
             ]
-            
+
             for subreddit in subreddits:
                 try:
                     # Search specific subreddit
                     posts = await self._search_reddit_subreddit(subreddit, symbol, limit // len(subreddits))
-                    
+
                     for post in posts:
                         result = ScrapeResult(
                             source=self.source_name,
@@ -159,18 +159,18 @@ class RedditScraper:
                             }
                         )
                         results.append(result)
-                
+
                 except Exception as e:
                     self.client.logger.warning(f"Reddit scraping failed for r/{subreddit}: {e}")
-        
+
         except Exception as e:
             self.client.logger.error(f"Reddit scraping failed for {symbol}: {e}")
-        
+
         return results[:limit]
-    
+
     async def _search_reddit_subreddit(self, subreddit: str, symbol: str, limit: int) -> List[Dict[str, Any]]:
         """Search Reddit subreddit using public API"""
-        
+
         try:
             # Reddit public API endpoint
             url = f"https://www.reddit.com/r/{subreddit}/search.json"
@@ -181,36 +181,36 @@ class RedditScraper:
                 "restrict_sr": "1",
                 "type": "link"
             }
-            
+
             headers = {
                 "User-Agent": "CryptoSmartTrader/2.0 (https://example.com/contact)"
             }
-            
+
             data = await self.client.fetch_json(
                 url=url,
                 source=self.source_name,
                 headers=headers,
                 params=params
             )
-            
+
             posts = []
             if data and "data" in data and "children" in data["data"]:
                 for child in data["data"]["children"]:
                     if "data" in child:
                         posts.append(child["data"])
-            
+
             return posts
-        
+
         except Exception as e:
             self.client.logger.warning(f"Reddit API search failed: {e}")
             # Return mock data for development
             return self._generate_# REMOVED: Mock data pattern not allowed in productionsymbol, limit)
-    
-    def _generate_# REMOVED: Mock data pattern not allowed in productionself, symbol: str, limit: int) -> List[Dict[str, Any]]:
+
+    def _generate_generate_sample_data_self, symbol: str, limit: int) -> List[Dict[str, Any]]:
         """Generate mock Reddit posts for development"""
-        
+
         mock_posts = []
-        
+
         for i in range(min(limit, 10)):
             # REMOVED: Mock data pattern not allowed in production{
                 "id": f"reddit_{i}_{hash(symbol) % 10000}",
@@ -222,16 +222,16 @@ class RedditScraper:
                 "created_utc": (datetime.now() - timedelta(hours=i)).timestamp(),
                 "url": f"https://reddit.com/r/mock/comments/{i}"
             })
-        
+
         return mock_posts
 
 class NewsScraper:
     """News scraping using RSS feeds and web scraping"""
-    
+
     def __init__(self, client: AsyncScrapeClient):
         self.client = client
         self.source_name = "news"
-        
+
         # Configure rate limits for news sources
         self.client.configure_rate_limit(
             source=self.source_name,
@@ -239,7 +239,7 @@ class NewsScraper:
             requests_per_hour=500,
             burst_limit=5
         )
-        
+
         # News RSS feeds
         self.rss_feeds = [
             "https://cointelegraph.com/rss",
@@ -248,18 +248,18 @@ class NewsScraper:
             "https://decrypt.co/feed",
             "https://cryptoslate.com/feed/"
         ]
-    
+
     async def scrape_symbol_mentions(self, symbol: str, limit: int = 100) -> List[ScrapeResult]:
         """Scrape news mentions for a cryptocurrency symbol"""
-        
+
         results = []
-        
+
         try:
             # Fetch RSS feeds
             for feed_url in self.rss_feeds:
                 try:
                     articles = await self._parse_rss_feed(feed_url, symbol, limit // len(self.rss_feeds))
-                    
+
                     for article in articles:
                         result = ScrapeResult(
                             source=self.source_name,
@@ -275,40 +275,40 @@ class NewsScraper:
                             }
                         )
                         results.append(result)
-                
+
                 except Exception as e:
                     self.client.logger.warning(f"RSS feed parsing failed for {feed_url}: {e}")
-        
+
         except Exception as e:
             self.client.logger.error(f"News scraping failed for {symbol}: {e}")
-        
+
         return results[:limit]
-    
+
     async def _parse_rss_feed(self, feed_url: str, symbol: str, limit: int) -> List[Dict[str, Any]]:
         """Parse RSS feed and filter for symbol mentions"""
-        
+
         try:
             # Fetch RSS content
             rss_content = await self.client.fetch_html(
                 url=feed_url,
                 source=self.source_name
             )
-            
+
             # Parse RSS feed
             if feedparser is None:
                 self.client.logger.warning("feedparser not available, using mock data")
                 return self._generate_# REMOVED: Mock data pattern not allowed in productionsymbol, limit)
-            
+
             feed = feedparser.parse(rss_content)
-            
+
             articles = []
             symbol_pattern = re.compile(rf'\b{re.escape(symbol)}\b', re.IGNORECASE)
-            
+
             for entry in feed.entries[:limit * 2]:  # Fetch more to filter
                 # Check if symbol is mentioned in title or summary
                 title = entry.get("title", "")
                 summary = entry.get("summary", "")
-                
+
                 if symbol_pattern.search(title + " " + summary):
                     articles.append({
                         "title": title,
@@ -317,22 +317,22 @@ class NewsScraper:
                         "published": entry.get("published", ""),
                         "author": entry.get("author", "")
                     })
-                
+
                 if len(articles) >= limit:
                     break
-            
+
             return articles
-        
+
         except Exception as e:
             self.client.logger.warning(f"RSS parsing failed: {e}")
             # Return mock data for development
             return self._generate_# REMOVED: Mock data pattern not allowed in productionsymbol, limit)
-    
-    def _generate_# REMOVED: Mock data pattern not allowed in productionself, symbol: str, limit: int) -> List[Dict[str, Any]]:
+
+    def _generate_generate_sample_data_self, symbol: str, limit: int) -> List[Dict[str, Any]]:
         """Generate mock news articles for development"""
-        
+
         mock_articles = []
-        
+
         for i in range(min(limit, 5)):
             # REMOVED: Mock data pattern not allowed in production{
                 "title": f"{symbol} Market Analysis - Mock Article {i}",
@@ -341,16 +341,16 @@ class NewsScraper:
                 "published": (datetime.now() - timedelta(hours=i)).isoformat(),
                 "author": f"News Author {i % 2}"
             })
-        
+
         return mock_articles
 
 class TelegramScraper:
     """Telegram scraping for public channels (where possible)"""
-    
+
     def __init__(self, client: AsyncScrapeClient):
         self.client = client
         self.source_name = "telegram"
-        
+
         # Configure rate limits for Telegram
         self.client.configure_rate_limit(
             source=self.source_name,
@@ -358,15 +358,15 @@ class TelegramScraper:
             requests_per_hour=200,
             burst_limit=3
         )
-    
+
     async def scrape_symbol_mentions(self, symbol: str, limit: int = 50) -> List[ScrapeResult]:
         """Scrape Telegram mentions (limited to public channels)"""
-        
+
         results = []
-        
+
         # Note: Telegram scraping is limited due to API restrictions
         # In production, would require official Telegram API access
-        
+
         try:
             # Mock Telegram data for development
             for i in range(min(limit, 5)):
@@ -382,19 +382,19 @@ class TelegramScraper:
                     }
                 )
                 results.append(result)
-        
+
         except Exception as e:
             self.client.logger.error(f"Telegram scraping failed for {symbol}: {e}")
-        
+
         return results
 
 class DiscordScraper:
     """Discord scraping for public servers (where possible)"""
-    
+
     def __init__(self, client: AsyncScrapeClient):
         self.client = client
         self.source_name = "discord"
-        
+
         # Configure rate limits for Discord
         self.client.configure_rate_limit(
             source=self.source_name,
@@ -402,15 +402,15 @@ class DiscordScraper:
             requests_per_hour=100,
             burst_limit=2
         )
-    
+
     async def scrape_symbol_mentions(self, symbol: str, limit: int = 50) -> List[ScrapeResult]:
         """Scrape Discord mentions (limited to public servers)"""
-        
+
         results = []
-        
+
         # Note: Discord scraping is limited due to API restrictions
         # In production, would require official Discord bot access
-        
+
         try:
             # Mock Discord data for development
             for i in range(min(limit, 5)):
@@ -427,10 +427,10 @@ class DiscordScraper:
                     }
                 )
                 results.append(result)
-        
+
         except Exception as e:
             self.client.logger.error(f"Discord scraping failed for {symbol}: {e}")
-        
+
         return results
 
 # Source registry

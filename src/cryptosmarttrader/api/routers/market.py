@@ -20,7 +20,7 @@ async def get_market_data(
 ) -> MarketDataOut:
     """
     Get cryptocurrency market data
-    
+
     Returns real-time market data for cryptocurrencies including:
     - Current prices
     - 24-hour volume
@@ -30,7 +30,7 @@ async def get_market_data(
     try:
         # Get market data from orchestrator
         market_data = await orchestrator.get_market_data(limit=limit, sort_by=sort_by)
-        
+
         # Convert to API response format
         coins = [
             PriceData(
@@ -42,7 +42,7 @@ async def get_market_data(
             )
             for coin in market_data["coins"]
         ]
-        
+
         return MarketDataOut(
             coins=coins,
             total_count=market_data["total_count"],
@@ -50,7 +50,7 @@ async def get_market_data(
             data_source=market_data["data_source"],
             confidence_score=market_data["confidence_score"]
         )
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -65,27 +65,27 @@ async def get_coin_data(
 ) -> PriceData:
     """
     Get detailed data for a specific cryptocurrency
-    
+
     Returns current price, volume, and change information for the specified symbol
     """
     try:
         # Get specific coin data from orchestrator
         coin_data = await orchestrator.get_coin_data(symbol.upper())
-        
+
         if not coin_data:
             raise HTTPException(
                 status_code=404,
                 detail=f"Coin {symbol} not found"
             )
-        
+
         return PriceData(
             symbol=coin_data["symbol"],
-            price=coin_data["price"], 
+            price=coin_data["price"],
             volume_24h=coin_data["volume_24h"],
             change_24h=coin_data["change_24h"],
             timestamp=coin_data["timestamp"]
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -103,7 +103,7 @@ async def get_top_gainers(
 ) -> List[PriceData]:
     """
     Get top gaining cryptocurrencies by 24-hour price change
-    
+
     Returns list of cryptocurrencies with highest positive price changes
     """
     try:
@@ -112,7 +112,7 @@ async def get_top_gainers(
             limit=limit,
             min_volume=min_volume
         )
-        
+
         return [
             PriceData(
                 symbol=coin["symbol"],
@@ -123,7 +123,7 @@ async def get_top_gainers(
             )
             for coin in gainers_data
         ]
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -139,7 +139,7 @@ async def get_top_losers(
 ) -> List[PriceData]:
     """
     Get top losing cryptocurrencies by 24-hour price change
-    
+
     Returns list of cryptocurrencies with highest negative price changes
     """
     try:
@@ -148,7 +148,7 @@ async def get_top_losers(
             limit=limit,
             min_volume=min_volume
         )
-        
+
         return [
             PriceData(
                 symbol=coin["symbol"],
@@ -159,7 +159,7 @@ async def get_top_losers(
             )
             for coin in losers_data
         ]
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,

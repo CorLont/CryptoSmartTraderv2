@@ -18,7 +18,7 @@ class SecretManager:
     Secure secret management with HashiCorp Vault integration.
     Falls back to environment variables if Vault is not configured.
     """
-    
+
     def __init__(self):
         self.vault_client = None
         if config.vault_configured and HVAC_AVAILABLE:
@@ -35,16 +35,16 @@ class SecretManager:
             except Exception as e:
                 logger.error(f"Failed to connect to Vault: {e}")
                 self.vault_client = None
-    
+
     def get_secret(self, path: str, key: str, default: Optional[str] = None) -> Optional[str]:
         """
         Retrieve a secret from Vault or environment variables.
-        
+
         Args:
             path: Vault secret path
             key: Secret key name
             default: Default value if secret not found
-        
+
         Returns:
             Secret value or default
         """
@@ -58,16 +58,16 @@ class SecretManager:
                     return secret_data[key]
             except Exception as e:
                 logger.warning(f"Failed to retrieve secret from Vault: {e}")
-        
+
         # Fall back to environment variables
         env_key = f"{path.replace('/', '_').upper()}_{key.upper()}"
         value = os.getenv(env_key, default)
-        
+
         if value:
             logger.debug(f"Retrieved secret '{key}' from environment")
-        
+
         return value
-    
+
     def get_database_credentials(self) -> Dict[str, Optional[str]]:
         """Get database connection credentials"""
         return {
@@ -77,7 +77,7 @@ class SecretManager:
             "username": self.get_secret("database", "username"),
             "password": self.get_secret("database", "password"),
         }
-    
+
     def get_exchange_credentials(self, exchange: str) -> Dict[str, Optional[str]]:
         """Get exchange API credentials"""
         return {
@@ -86,7 +86,7 @@ class SecretManager:
             "passphrase": self.get_secret(f"exchanges/{exchange}", "passphrase"),
             "sandbox": self.get_secret(f"exchanges/{exchange}", "sandbox", "false").lower() == "true"
         }
-    
+
     def get_notification_credentials(self) -> Dict[str, Optional[str]]:
         """Get notification service credentials"""
         return {

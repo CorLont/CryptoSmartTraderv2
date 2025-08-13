@@ -1,9 +1,7 @@
-# replit.md
+# Overview
+CryptoSmartTrader V2 is an institutional-grade multi-agent cryptocurrency trading intelligence system. Its purpose is to achieve superior returns and market leadership through advanced intelligence and robust execution in automated crypto trading. Key capabilities include real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution across 1457+ cryptocurrencies.
 
-## Overview
-CryptoSmartTrader V2 is an institutional-grade multi-agent cryptocurrency trading intelligence system designed for high returns. It provides real-time market analysis, deep learning-powered price predictions, sentiment analysis, technical analysis, backtesting, and automated trade execution across 1457+ cryptocurrencies. The system prioritizes high prediction accuracy, strict data integrity, robust asynchronous data scraping, and advanced AI/ML techniques, with a business vision focused on achieving superior returns and market leadership in automated crypto trading.
-
-## User Preferences
+# User Preferences
 Preferred communication style: Simple, everyday language.
 Data integrity policy: ABSOLUTE ZERO-TOLERANCE for synthetic/fallback data - Complete elimination of all non-authentic data sources in production mode. Only 100% authentic data from direct exchange APIs allowed. Production automatically blocks any violations. No fallback, no synthetic data, no interpolated values, no NaN values allowed in production. Strict data integrity enforcement with real-time validation and automatic production blocking.
 RENDEMENT-DRUKKENDE FACTOREN ELIMINATED: All critical decision-reliability issues resolved.
@@ -30,12 +28,10 @@ FASE 2 GUARDRAILS & OBSERVABILITY COMPLETED: Complete implementation of enterpri
 FASE 3 ALPHA & PARITY COMPLETED: Complete implementation of advanced alpha generation and production deployment systems including RegimeDetector (6 market regimes with Hurst exponent, ADX strength, momentum scoring), StrategySwitcher (volatility targeting 15%, cluster caps, 8 core strategies), BacktestParityAnalyzer (<20 bps/day tracking error target, component attribution), and CanaryDeploymentSystem (7-day staging ≤1% risk, 72h prod canary ≤5% risk, automated safety gates). Comprehensive alpha attribution system breaks down returns into alpha/fees/slippage/timing/sizing components with statistical confidence scoring.
 Additional systems: Environment separation (dev/staging/prod), Prometheus monitoring (24/7 observability), backtest-live parity (<20 bps tracking error), security manager (secret rotation, audit logs), and health checker (99.5% uptime SLO). All systems tested and production-ready with comprehensive integration scenarios validated.
 
-## System Architecture
+# System Architecture
+The system employs a Distributed Multi-Process Architecture with isolated agent processes, featuring circuit breakers, exponential backoff, health monitoring, and automatic restart.
 
-### Core Architecture Pattern
-The system uses a Distributed Multi-Process Architecture with isolated agent processes, featuring circuit breakers, exponential backoff, health monitoring, and automatic restart.
-
-### Key Architectural Decisions
+## Key Architectural Decisions
 - **Deployment & Structure:** Lean 3-script deployment, duplicate-free core, consolidated dependencies, clean archiving, and multi-service architecture for Replit.
 - **Foundational Services:** Comprehensive testing (80%+ coverage), enterprise security, production-grade structured JSON logging, Pydantic configuration, async I/O with global rate limiting, intelligent caching, and health monitoring with GO/NO-GO gates.
 - **Data & Exchange Management:** Multi-exchange (CCXT-based), real-time data pipeline, hard data integrity filter (zero-tolerance), timestamp synchronization, and temporal validation/splits/feature engineering.
@@ -53,7 +49,7 @@ The system uses a Distributed Multi-Process Architecture with isolated agent pro
 - **UI/UX & Monitoring:** Enterprise Streamlit dashboard with performance optimization, async data refresh, intelligent caching, modular page architecture, and session state management.
 - **System Automation & Integration:** Final system integrator, production optimizer, critical fixes applier, and production deployment system.
 
-### Technology Stack
+## Technology Stack
 - **Frontend:** Streamlit.
 - **Backend:** Python, FastAPI.
 - **Machine Learning:** PyTorch (LSTM, GRU, Transformer, N-BEATS), scikit-learn, XGBoost, LightGBM.
@@ -62,8 +58,7 @@ The system uses a Distributed Multi-Process Architecture with isolated agent pro
 - **Visualization:** Plotly.
 - **Storage:** Local file system (JSON/CSV) with caching.
 
-## External Dependencies
-
+# External Dependencies
 - **AI/ML Services:** OpenAI API
 - **Cryptocurrency Exchanges:** Kraken, Binance, KuCoin, Huobi (via CCXT)
 - **Monitoring:** Prometheus

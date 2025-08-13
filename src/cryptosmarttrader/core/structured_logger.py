@@ -16,7 +16,7 @@ correlation_id: ContextVar[Optional[str]] = ContextVar('correlation_id', default
 
 class StructuredFormatter(logging.Formatter):
     """Custom formatter for structured JSON logging."""
-    
+
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as structured JSON."""
         log_entry = {
@@ -30,11 +30,11 @@ class StructuredFormatter(logging.Formatter):
             "thread_id": threading.get_ident(),
             "correlation_id": correlation_id.get(),
         }
-        
+
         # Add exception information if present
         if record.exc_info:
             log_entry["exception"] = self.formatException(record.exc_info)
-        
+
         # Add extra fields from the record
         for key, value in record.__dict__.items():
             if key not in ('name', 'msg', 'args', 'levelname', 'levelno', 'pathname',
@@ -43,22 +43,22 @@ class StructuredFormatter(logging.Formatter):
                           'processName', 'process', 'getMessage', 'exc_info',
                           'exc_text', 'stack_info'):
                 log_entry[key] = value
-        
+
         return json.dumps(log_entry, default=str, ensure_ascii=False)
 
 
 class SecurityFilter(logging.Filter):
     """Filter to prevent logging of sensitive information."""
-    
+
     SENSITIVE_KEYS = {
         'password', 'passwd', 'secret', 'token', 'key', 'api_key',
         'authorization', 'auth', 'credentials', 'private_key'
     }
-    
+
     def filter(self, record: logging.LogRecord) -> bool:
         """Filter out sensitive information from log records."""
         message = record.getMessage().lower()
-        
+
         # Check if any sensitive keywords are in the message
         for sensitive_key in self.SENSITIVE_KEYS:
             if sensitive_key in message:
@@ -66,30 +66,30 @@ class SecurityFilter(logging.Filter):
                 record.msg = f"[REDACTED] Potential sensitive information in {record.funcName}"
                 record.args = ()
                 break
-        
+
         return True
 
 
 class PerformanceLogger:
     """Context manager for performance timing and logging."""
-    
+
     def __init__(self, operation: str, logger: logging.Logger):
         """Initialize performance logger."""
         self.operation = operation
         self.logger = logger
         self.start_time: Optional[float] = None
-    
+
     def __enter__(self) -> 'PerformanceLogger':
         """Start timing the operation."""
         self.start_time = time.perf_counter()
         self.logger.info(f"Starting operation: {self.operation}")
         return self
-    
+
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Log operation completion with timing."""
         if self.start_time is not None:
             elapsed = time.perf_counter() - self.start_time
-            
+
             if exc_type is None:
                 self.logger.info(
                     f"Operation completed: {self.operation}",
@@ -113,7 +113,7 @@ class PerformanceLogger:
 
 class StructuredLogger:
     """Enterprise structured logger with correlation IDs and security filtering."""
-    
+
     def __init__(
         self,
         name: str,
@@ -126,13 +126,13 @@ class StructuredLogger:
         self.name = name
         self.logger = logging.getLogger(name)
         self.logger.setLevel(log_level)
-        
+
         # Clear existing handlers to avoid duplication
         self.logger.handlers.clear()
-        
+
         # Configure structured formatter
         formatter = StructuredFormatter()
-        
+
         # Console handler
         if enable_console:
             console_handler = logging.StreamHandler()
@@ -140,61 +140,61 @@ class StructuredLogger:
             if enable_security_filter:
                 console_handler.addFilter(SecurityFilter())
             self.logger.addHandler(console_handler)
-        
+
         # File handler
         if log_file:
             log_path = Path(log_file)
             log_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             file_handler = logging.FileHandler(log_path, encoding='utf-8')
             file_handler.setFormatter(formatter)
             if enable_security_filter:
                 file_handler.addFilter(SecurityFilter())
             self.logger.addHandler(file_handler)
-    
+
     def set_correlation_id(self, cid: Optional[str] = None) -> str:
         """Set correlation ID for request tracking."""
         if cid is None:
             cid = str(uuid.uuid4())
         correlation_id.set(cid)
         return cid
-    
+
     def get_correlation_id(self) -> Optional[str]:
         """Get current correlation ID."""
         return correlation_id.get()
-    
+
     def clear_correlation_id(self) -> None:
         """Clear correlation ID."""
         correlation_id.set(None)
-    
+
     def performance_timer(self, operation: str) -> PerformanceLogger:
         """Create a performance timing context manager."""
         return PerformanceLogger(operation, self.logger)
-    
+
     def debug(self, message: str, **kwargs: Any) -> None:
         """Log debug message with structured data."""
         self.logger.debug(message, extra=kwargs)
-    
+
     def info(self, message: str, **kwargs: Any) -> None:
         """Log info message with structured data."""
         self.logger.info(message, extra=kwargs)
-    
+
     def warning(self, message: str, **kwargs: Any) -> None:
         """Log warning message with structured data."""
         self.logger.warning(message, extra=kwargs)
-    
+
     def error(self, message: str, **kwargs: Any) -> None:
         """Log error message with structured data."""
         self.logger.error(message, extra=kwargs)
-    
+
     def critical(self, message: str, **kwargs: Any) -> None:
         """Log critical message with structured data."""
         self.logger.critical(message, extra=kwargs)
-    
+
     def exception(self, message: str, **kwargs: Any) -> None:
         """Log exception with traceback and structured data."""
         self.logger.exception(message, extra=kwargs)
-    
+
     def log_user_action(
         self,
         action: str,
@@ -211,7 +211,7 @@ class StructuredLogger:
             audit=True,
             **kwargs
         )
-    
+
     def log_system_event(
         self,
         event: str,
@@ -228,7 +228,7 @@ class StructuredLogger:
             system=True,
             **kwargs
         )
-    
+
     def log_security_event(
         self,
         event: str,
@@ -246,7 +246,7 @@ class StructuredLogger:
             security=True,
             **kwargs
         )
-    
+
     def log_performance_metric(
         self,
         metric_name: str,
@@ -282,10 +282,10 @@ def setup_root_logger(log_level: Union[str, int] = logging.INFO) -> None:
     """Setup root logger with structured formatting."""
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
-    
+
     # Clear existing handlers
     root_logger.handlers.clear()
-    
+
     # Add structured console handler
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(StructuredFormatter())

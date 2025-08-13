@@ -4,6 +4,6 @@ from .config_manager import ConfigManager
 from .structured_logger import StructuredLogger
 
 __all__ = [
-    "ConfigManager", 
+    "ConfigManager",
     "StructuredLogger",
 ]

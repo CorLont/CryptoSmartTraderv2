@@ -23,9 +23,9 @@ async def lifespan(app: FastAPI):
     logger.info("Starting CryptoSmartTrader API server")
     settings = get_settings()
     logger.info(f"API server configuration: {settings.get_summary()}")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down CryptoSmartTrader API server")
 
@@ -41,7 +41,7 @@ def get_app() -> FastAPI:
 def create_app() -> FastAPI:
     """Create and configure FastAPI application"""
     settings = get_settings()
-    
+
     # Create FastAPI instance
     app = FastAPI(
         title="CryptoSmartTrader V2 API",
@@ -52,13 +52,13 @@ def create_app() -> FastAPI:
         openapi_url="/api/openapi.json",
         lifespan=lifespan
     )
-    
+
     # Add security middleware
     app.add_middleware(
         TrustedHostMiddleware,
         allowed_hosts=["localhost", "127.0.0.1", "0.0.0.0", "*.replit.app", "*.replit.dev"]
     )
-    
+
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
@@ -70,17 +70,17 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["*"]
     )
-    
+
     # Add request timing middleware
     @app.middleware("http")
     async def add_process_time_header(request: Request, call_next):
         start_time = time.time()
         response = await call_next(request)
         process_time = time.time() - start_time
-        
+
         # Add timing header
         response.headers["X-Process-Time"] = str(process_time)
-        
+
         # Log performance metric
         log_performance_metric(
             metric_name="api_request_duration",
@@ -92,9 +92,9 @@ def create_app() -> FastAPI:
                 "status_code": str(response.status_code)
             }
         )
-        
+
         return response
-    
+
     # Add exception handler
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
@@ -107,7 +107,7 @@ def create_app() -> FastAPI:
                 "client_ip": request.client.host if request.client else None
             }
         )
-        
+
         return JSONResponse(
             status_code=500,
             content={
@@ -116,13 +116,13 @@ def create_app() -> FastAPI:
                 "timestamp": time.time()
             }
         )
-    
+
     # Include API routers
     app.include_router(health_router, prefix="/api/v1")
     app.include_router(market_router, prefix="/api/v1")
     app.include_router(trading_router, prefix="/api/v1")
     app.include_router(agents_router, prefix="/api/v1")
-    
+
     # Root endpoint
     @app.get("/", tags=["root"])
     async def root() -> Dict[str, Any]:
@@ -137,13 +137,13 @@ def create_app() -> FastAPI:
             "environment": "development" if settings.DEBUG_MODE else "production",
             "timestamp": time.time()
         }
-    
+
     # Health check endpoint (simple)
     @app.get("/health", tags=["health"])
     async def simple_health():
         """Simple health check endpoint"""
         return {"status": "ok", "timestamp": time.time()}
-    
+
     return app
 
 

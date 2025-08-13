@@ -10,10 +10,10 @@ import logging
 
 class FeatureMonitor:
     """Placeholder feature monitor"""
-    
+
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-    
+
     def monitor_features(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Placeholder feature monitoring"""
         return {"status": "ok", "features_monitored": len(df.columns)}

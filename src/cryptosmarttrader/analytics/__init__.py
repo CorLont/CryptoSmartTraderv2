@@ -12,7 +12,7 @@ from .dashboard_analytics import DashboardAnalytics, AnalyticsCache, RealtimeMet
 
 __all__ = [
     "ReturnAttributor",
-    "AttributionResult", 
+    "AttributionResult",
     "AttributionComponent",
     "PerformanceMonitor",
     "PerformanceAlert",

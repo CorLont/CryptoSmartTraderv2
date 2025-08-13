@@ -58,90 +58,90 @@ class PositionRisk:
 class RiskManagementPort(ABC):
     """
     Abstract interface for risk management systems
-    
+
     This port defines the contract for risk assessment and management,
     enabling different risk models and strategies to be plugged in.
     """
-    
+
     @abstractmethod
     def assess_symbol_risk(self, symbol: str, market_data: pd.DataFrame) -> RiskAssessment:
         """
         Assess risk for a specific symbol
-        
+
         Args:
             symbol: Trading symbol to assess
             market_data: Historical market data for assessment
-            
+
         Returns:
             RiskAssessment with risk level and recommendations
         """
         pass
-    
+
     @abstractmethod
     def assess_portfolio_risk(self, positions: Dict[str, float]) -> Dict[str, Any]:
         """
         Assess overall portfolio risk
-        
+
         Args:
             positions: Dictionary of symbol -> position size
-            
+
         Returns:
             Dictionary with portfolio risk metrics
         """
         pass
-    
+
     @abstractmethod
     def calculate_position_size(self, symbol: str, risk_budget: float,
                               confidence: float, price: float) -> float:
         """
         Calculate appropriate position size based on risk
-        
+
         Args:
             symbol: Trading symbol
             risk_budget: Maximum risk budget for position
             confidence: Prediction confidence level
             price: Current price
-            
+
         Returns:
             Recommended position size
         """
         pass
-    
+
     @abstractmethod
     def validate_trade(self, symbol: str, size: float, price: float,
                       current_positions: Dict[str, float]) -> Tuple[bool, str]:
         """
         Validate if a trade is within risk limits
-        
+
         Args:
             symbol: Trading symbol
             size: Proposed trade size
             price: Trade price
             current_positions: Current portfolio positions
-            
+
         Returns:
             Tuple of (is_valid, reason)
         """
         pass
-    
+
     @abstractmethod
     def get_risk_limits(self) -> Dict[str, Any]:
         """
         Get current risk limits and parameters
-        
+
         Returns:
             Dictionary with risk limits configuration
         """
         pass
-    
+
     @abstractmethod
     def update_risk_limits(self, limits: Dict[str, Any]) -> bool:
         """
         Update risk limits configuration
-        
+
         Args:
             limits: New risk limits to apply
-            
+
         Returns:
             True if limits were updated successfully
         """
@@ -149,13 +149,13 @@ class RiskManagementPort(ABC):
 
 class NotificationPort(ABC):
     """Interface for notification systems"""
-    
+
     @abstractmethod
     def send_alert(self, message: str, severity: str = "info",
                   channels: Optional[List[str]] = None) -> bool:
         """Send alert notification"""
         pass
-    
+
     @abstractmethod
     def send_report(self, report_data: Dict[str, Any],
                    report_type: str = "daily") -> bool:

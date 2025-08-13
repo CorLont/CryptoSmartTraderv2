@@ -12,7 +12,7 @@ from .regime_strategies import RegimeStrategies
 
 __all__ = [
     "RegimeDetector",
-    "RegimeFeatures", 
+    "RegimeFeatures",
     "RegimeClassifier",
     "RegimeStrategies"
 ]

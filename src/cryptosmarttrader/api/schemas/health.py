@@ -26,7 +26,7 @@ class HealthResponse(BaseResponse):
     uptime_seconds: float = Field(description="Server uptime in seconds", example=3600.5)
     components: SystemStatus = Field(description="Component health status")
     checks: Dict[str, Any] = Field(description="Detailed health checks")
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -43,7 +43,7 @@ class HealthResponse(BaseResponse):
                         "last_updated": "2025-01-11T10:00:00Z"
                     },
                     "exchange_apis": {
-                        "status": "healthy", 
+                        "status": "healthy",
                         "message": "All exchanges responding",
                         "last_updated": "2025-01-11T10:00:00Z"
                     },
@@ -74,7 +74,7 @@ class LivenessResponse(BaseResponse):
 
 
 class ReadinessResponse(BaseResponse):
-    """Readiness probe response"""  
+    """Readiness probe response"""
     ready: bool = Field(description="Service is ready to accept traffic", example=True)
     dependencies_ready: bool = Field(description="All dependencies are ready", example=True)
     startup_complete: bool = Field(description="Startup sequence completed", example=True)

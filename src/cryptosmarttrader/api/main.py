@@ -39,29 +39,29 @@ async def lifespan(app: FastAPI):
     # Startup
     logging.info("Starting CryptoSmartTrader V2 API...")
     log_startup_config(settings)
-    
+
     # Initialize Prometheus metrics
     if settings.ENABLE_PROMETHEUS:
         instrumentator = Instrumentator()
         instrumentator.instrument(app).expose(app)
         logging.info(f"Prometheus metrics enabled on /metrics")
-    
+
     logging.info(f"API server ready on {settings.API_HOST}:{settings.API_PORT}")
-    
+
     yield
-    
+
     # Shutdown
     logging.info("Shutting down CryptoSmartTrader V2 API...")
 
 
 def create_app() -> FastAPI:
     """Create and configure FastAPI application"""
-    
+
     # Validate configuration
     missing_secrets = settings.validate_required_secrets()
     if missing_secrets and settings.is_production():
         raise RuntimeError(f"Missing required secrets: {missing_secrets}")
-    
+
     # Create FastAPI app
     app = FastAPI(
         title="CryptoSmartTrader V2 API",
@@ -78,12 +78,12 @@ def create_app() -> FastAPI:
             "requestSnippetsEnabled": True,
         }
     )
-    
+
     # Add rate limiting
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     app.add_middleware(SlowAPIMiddleware)
-    
+
     # CORS Configuration - Enterprise hardening
     if settings.ENABLE_CORS:
         allowed_origins = [
@@ -91,13 +91,13 @@ def create_app() -> FastAPI:
             f"http://127.0.0.1:{settings.DASHBOARD_PORT}",
             f"http://0.0.0.0:{settings.DASHBOARD_PORT}",
         ]
-        
+
         if settings.is_production():
             # Production: Restrict to specific domains
             allowed_origins = [
                 "https://your-production-domain.com",  # Replace with actual domain
             ]
-        
+
         app.add_middleware(
             CORSMiddleware,
             allow_origins=allowed_origins,
@@ -106,43 +106,43 @@ def create_app() -> FastAPI:
             allow_headers=["*"],
             expose_headers=["X-Rate-Limit-*", "X-Process-Time"],
         )
-    
+
     # Trusted host middleware (security)
     if settings.is_production():
         app.add_middleware(
             TrustedHostMiddleware,
             allowed_hosts=["your-production-domain.com", "*.your-domain.com"]
         )
-    
+
     # Custom middleware
     app.middleware("http")(security_headers_middleware)
     app.middleware("http")(logging_middleware)
-    
+
     # Include routers with tags
     app.include_router(
         health.router,
         prefix="/health",
         tags=["Health & Monitoring"],
     )
-    
+
     app.include_router(
         data.router,
         prefix="/api/v1/data",
         tags=["Market Data"],
     )
-    
+
     app.include_router(
         predictions.router,
         prefix="/api/v1/predictions",
         tags=["ML Predictions"],
     )
-    
+
     app.include_router(
         signals.router,
         prefix="/api/v1/signals",
         tags=["Trading Signals"],
     )
-    
+
     # Global exception handler
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
@@ -155,7 +155,7 @@ def create_app() -> FastAPI:
                 "request_id": getattr(request.state, "request_id", None)
             }
         )
-    
+
     return app
 
 
@@ -170,7 +170,7 @@ def main():
         level=getattr(logging, settings.LOG_LEVEL),
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
-    
+
     # Server configuration with limits
     config = uvicorn.Config(
         app=app,
@@ -186,7 +186,7 @@ def main():
         # Request size limits
         h11_max_incomplete_event_size=16 * 1024,  # 16KB
     )
-    
+
     logging.info(f"Starting server on {settings.API_HOST}:{settings.API_PORT}")
     uvicorn.run(config)
 
