@@ -18,15 +18,31 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "UVMultiService"
+args = "StreamlitDirect"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "EnterpriseDashboard"
 
 [[workflows.workflow]]
-name = "UVMultiService"
+name = "StreamlitDirect"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "bash -c \"uv sync && (uv run python src/cryptosmarttrader/api/health_endpoint.py & uv run python metrics/metrics_server.py & uv run streamlit run app_fixed_all_issues.py --server.port 5000 --server.headless true --server.address 0.0.0.0 & wait)\""
+args = "python -m streamlit run app_working_dashboard.py --server.port 5000 --server.headless true --server.address 0.0.0.0"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow]]
+name = "EnterpriseDashboard"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python app_enterprise_dashboard.py"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
