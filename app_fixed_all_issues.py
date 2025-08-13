@@ -518,6 +518,46 @@ def main():
         except Exception as e:
             st.warning(f"Portfolio Optimization System: {str(e)[:100]}...")
         
+        # Add News Speed Advantage Status
+        try:
+            from agents.news_speed_agent import NewsSpeedAgent, NewsImpact, TradingDirection
+            
+            news_agent = NewsSpeedAgent()
+            
+            st.info("⚡ **NEWS SPEED ADVANTAGE VOOR MILLISECONDE TRADING REACTIES**")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("🚀 Speed Target", "< 50ms", delta="Ultra-fast")
+            with col2:
+                st.metric("📰 News Sources", f"{news_agent.get_agent_status()['news_sources_configured']}", delta="Real-time")
+            with col3:
+                st.metric("⚡ Processing", f"{news_agent.monitoring_interval * 1000:.0f}ms", delta="Polling")
+            with col4:
+                st.metric("🎯 Signals Generated", f"{news_agent.signals_generated}", delta="Live")
+                
+            # Show news capabilities
+            speed_summary = news_agent.get_speed_summary()
+            
+            if speed_summary.get('total_signals_generated', 0) > 0:
+                st.success(f"✅ {speed_summary['total_signals_generated']} signals generated • Avg: {speed_summary['average_generation_time_ms']:.1f}ms • Fastest: {speed_summary['fastest_signal_ms']:.1f}ms")
+                
+                # Show recent signals
+                recent_signals = news_agent.get_recent_signals(3)
+                if recent_signals:
+                    st.success("⚡ **Recent Speed Signals:**")
+                    for signal in recent_signals:
+                        time_ago = (datetime.now() - signal.timestamp).total_seconds()
+                        st.info(f"📈 {signal.symbol} {signal.direction.value} • Strength: {signal.signal_strength:.2f} • {signal.generated_in_ms:.1f}ms • {time_ago:.0f}s ago")
+            else:
+                st.info("🔍 Monitoring news feeds for speed signals...")
+            
+            st.success("✅ Ultra-fast news processing • CoinDesk + Cointelegraph + The Block + Decrypt • Sentiment analysis • Impact assessment • Milliseconde signalen")
+            
+        except Exception as e:
+            st.warning(f"News Speed System: {str(e)[:100]}...")
+        
         st.divider()
             
     except Exception as e:
