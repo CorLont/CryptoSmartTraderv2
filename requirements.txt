@@ -32,3 +32,10 @@ scikit-learn
 streamlit
 tarsafe
 uvicorn
+bandit
+black
+mypy
+pip-audit
+pytest
+pytest-cov
+ruff

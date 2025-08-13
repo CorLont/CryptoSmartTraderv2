@@ -1,0 +1,229 @@
+name: CI/CD Pipeline - Modernized
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # Security scans - non-blocking
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true  # Non-blocking per requirements
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5  # Updated to v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install security tools
+        run: |
+          pip install pip-audit bandit gitleaks
+
+      - name: Run Gitleaks scan
+        run: gitleaks detect --source . --verbose --report-format json --report-path gitleaks-report.json
+        continue-on-error: true
+
+      - name: Run pip-audit
+        run: pip-audit --desc --format=json --output=pip-audit-report.json || true
+
+      - name: Run bandit security scan
+        run: bandit -r src/ -f json -o bandit-report.json || true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4  # Updated to v4
+        if: always()
+        with:
+          name: security-reports-${{ github.sha }}
+          path: |
+            gitleaks-report.json
+            pip-audit-report.json
+            bandit-report.json
+          retention-days: 30
+
+  # Code quality checks - mandatory
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5  # Updated to v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ruff black mypy pytest pytest-cov
+          pip install -e .
+
+      - name: Run ruff check
+        run: ruff check src/ tests/ --output-format=github
+
+      - name: Run black format check
+        run: black --check src/ tests/
+
+      - name: Run mypy type checking
+        run: mypy src/ --ignore-missing-imports
+
+      - name: Upload code quality reports
+        uses: actions/upload-artifact@v4  # Updated to v4
+        if: always()
+        with:
+          name: code-quality-reports-${{ github.sha }}
+          path: |
+            .coverage
+            htmlcov/
+          retention-days: 30
+
+  # Tests with coverage - mandatory
+  test:
+    name: Tests & Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [code-quality]  # Run after code quality passes
+    
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5  # Updated to v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pytest pytest-cov pytest-xdist
+          pip install -e .
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=src --cov-report=html --cov-report=xml --cov-report=term \
+                 --cov-fail-under=70 \
+                 --maxfail=5 \
+                 --tb=short \
+                 -v tests/
+
+      - name: Upload coverage reports  
+        uses: actions/upload-artifact@v4  # Updated to v4
+        if: always()
+        with:
+          name: coverage-reports-${{ matrix.python-version }}-${{ github.sha }}
+          path: |
+            htmlcov/
+            coverage.xml
+          retention-days: 30
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4  # Updated to v4
+        if: always() 
+        with:
+          name: test-results-${{ matrix.python-version }}-${{ github.sha }}
+          path: |
+            test-results.xml
+          retention-days: 30
+
+  # Production build validation
+  build:
+    name: Build Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [test]  # Run after tests pass
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5  # Updated to v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Build package
+        run: |
+          pip install build
+          python -m build
+
+      - name: Validate imports
+        run: |
+          pip install dist/*.whl
+          python -c "
+          import sys
+          sys.path.insert(0, 'src')
+          
+          # Test critical imports
+          from cryptosmarttrader.risk.central_risk_guard import CentralRiskGuard
+          from cryptosmarttrader.execution.execution_policy import ExecutionPolicy
+          from cryptosmarttrader.simulation.execution_simulator import ExecutionSimulator
+          from cryptosmarttrader.simulation.parity_tracker import ParityTracker
+          
+          print('✅ All core modules import successfully')
+          "
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4  # Updated to v4
+        with:
+          name: build-artifacts-${{ github.sha }}
+          path: dist/
+          retention-days: 30
+
+  # Status check for branch protection
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality, test, build]
+    if: always()
+    
+    steps:
+      - name: Check CI status
+        run: |
+          # Security scans are allowed to fail (non-blocking)
+          # But code quality, tests, and build must pass
+          
+          if [[ "${{ needs.code-quality.result }}" != "success" ]]; then
+            echo "❌ Code quality checks failed"
+            exit 1
+          fi
+          
+          if [[ "${{ needs.test.result }}" != "success" ]]; then
+            echo "❌ Tests failed"
+            exit 1
+          fi
+          
+          if [[ "${{ needs.build.result }}" != "success" ]]; then
+            echo "❌ Build failed"
+            exit 1
+          fi
+          
+          echo "✅ All mandatory CI checks passed"
+          echo "🔒 Security scans: ${{ needs.security-scan.result }} (non-blocking)"
+          echo "✅ Code quality: ${{ needs.code-quality.result }}"
+          echo "✅ Tests: ${{ needs.test.result }}"
+          echo "✅ Build: ${{ needs.build.result }}"
