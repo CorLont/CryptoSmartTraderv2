@@ -68,4 +68,3 @@ The system employs a Distributed Multi-Process Architecture with isolated agent 
 *   **AI/ML Services:** OpenAI API
 *   **Cryptocurrency Exchanges:** Kraken, Binance, KuCoin, Huobi
 *   **Monitoring:** Prometheus
-```
