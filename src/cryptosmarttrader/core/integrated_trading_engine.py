@@ -16,6 +16,7 @@ import json
 
 from ..core.structured_logger import get_logger
 from ..core.data_flow_orchestrator import DataFlowOrchestrator, DataQualityGate, DataFlowState
+from ..execution.order_pipeline import OrderPipeline, OrderRequest, OrderType, TimeInForce
 # from ..adapters.kraken_data_adapter import KrakenDataAdapter  # Would be imported when available
 from ..observability.unified_metrics import UnifiedMetrics
 
@@ -69,6 +70,13 @@ class IntegratedTradingEngine:
         self.data_orchestrator = DataFlowOrchestrator(
             strict_mode=True,
             quality_gate=data_quality_gate
+        )
+        
+        # HARD WIRED ORDER PIPELINE - All orders go through ExecutionPolicy.decide
+        self.order_pipeline = OrderPipeline(
+            default_slippage_budget_bps=30.0,
+            order_deduplication_window_minutes=60,
+            max_concurrent_orders=max_concurrent_signals
         )
         
         # Data adapter (placeholder for now)
@@ -224,17 +232,33 @@ class IntegratedTradingEngine:
             
             processing_time = (time.time() - signal_start) * 1000
             
-            # Update session stats
+            # Update session stats and EXECUTE ORDER through pipeline if approved
             if self.current_session:
                 self.current_session.signals_processed += 1
                 
                 if pipeline_result['pipeline_success']:
-                    # Would execute order here in real trading
-                    self.current_session.orders_executed += 1
-                    self.logger.info("Signal approved for execution",
-                                   symbol=symbol,
-                                   position_size=pipeline_result.get('final_position_size', 0),
-                                   processing_time_ms=processing_time)
+                    # HARD WIRE-UP: Execute order through centralized OrderPipeline
+                    order_result = await self._execute_order_through_pipeline(
+                        symbol=symbol,
+                        pipeline_result=pipeline_result,
+                        signal_data=signal_data
+                    )
+                    
+                    if order_result.status.value in ['filled', 'partially_filled']:
+                        self.current_session.orders_executed += 1
+                        self.logger.info("Order executed through pipeline",
+                                       symbol=symbol,
+                                       client_order_id=order_result.client_order_id,
+                                       filled_quantity=order_result.filled_quantity,
+                                       slippage_bps=order_result.slippage_bps,
+                                       processing_time_ms=processing_time)
+                    else:
+                        self.current_session.orders_rejected += 1
+                        self.logger.info("Order rejected by execution pipeline",
+                                       symbol=symbol,
+                                       client_order_id=order_result.client_order_id,
+                                       rejection_reason=order_result.rejection_reason,
+                                       processing_time_ms=processing_time)
                 else:
                     self.current_session.orders_rejected += 1
                     self.logger.info("Signal rejected",
@@ -270,6 +294,55 @@ class IntegratedTradingEngine:
                 'reason': f'Processing error: {str(e)}',
                 'processing_time_ms': processing_time
             }
+
+    async def _execute_order_through_pipeline(self, symbol: str, pipeline_result: Dict[str, Any], 
+                                            signal_data: Dict[str, Any]) -> Any:
+        """Execute order through centralized OrderPipeline with ExecutionPolicy gates."""
+        
+        try:
+            # Extract execution parameters from pipeline result
+            position_size = pipeline_result.get('final_position_size', 0)
+            execution_params = pipeline_result.get('execution_parameters', {})
+            
+            # Determine order side based on signal
+            side = 'buy' if position_size > 0 else 'sell'
+            quantity = abs(position_size)
+            
+            # Create order request with hard wire-up parameters
+            order_request = OrderRequest(
+                symbol=symbol,
+                side=side,
+                quantity=quantity,
+                order_type=OrderType.LIMIT,  # Default to limit orders
+                time_in_force=TimeInForce.POST_ONLY,  # Default to post-only (maker)
+                
+                # Hard wire-up execution parameters
+                max_slippage_bps=execution_params.get('max_slippage_bps', 30.0),
+                min_fill_ratio=0.1,
+                timeout_seconds=300,
+                
+                # Metadata from signal
+                strategy_id=signal_data.get('strategy_id', 'integrated_engine'),
+                signal_id=signal_data.get('signal_id', f"signal_{int(time.time())}")
+            )
+            
+            # Submit order through centralized pipeline (HARD GATE)
+            order_result = await self.order_pipeline.submit_order(order_request)
+            
+            return order_result
+            
+        except Exception as e:
+            self.logger.error("Order execution through pipeline failed",
+                            symbol=symbol,
+                            error=str(e))
+            
+            # Return mock failure result
+            from ..execution.order_pipeline import OrderResult, OrderStatus
+            return OrderResult(
+                client_order_id=f"failed_{symbol}_{int(time.time())}",
+                status=OrderStatus.FAILED,
+                rejection_reason=f"Pipeline execution error: {str(e)}"
+            )
 
     async def _get_market_data(self, symbol: str) -> Optional[Dict[str, Any]]:
         """Get current market data for symbol."""
@@ -448,12 +521,22 @@ class IntegratedTradingEngine:
         
         flow_status = self.data_orchestrator.get_flow_status()
         
+        # Get order pipeline status
+        pipeline_status = self.order_pipeline.get_pipeline_status()
+        
         status = {
             'engine_state': self.current_state.value,
             'data_flow_state': flow_status['flow_state'],
             'performance_stats': self.performance_stats.copy(),
             'queue_size': self.signal_queue.qsize(),
-            'symbols_tracked': len(self.symbols)
+            'symbols_tracked': len(self.symbols),
+            'order_pipeline_status': {
+                'active_orders': pipeline_status['active_orders'],
+                'total_orders': pipeline_status['total_orders_submitted'],
+                'policy_rejection_rate': pipeline_status['pipeline_stats']['policy_rejection_rate'],
+                'average_slippage_bps': pipeline_status['average_slippage_bps'],
+                'execution_policy_status': pipeline_status['execution_policy_status']
+            }
         }
         
         if self.current_session:
