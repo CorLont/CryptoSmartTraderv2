@@ -67,7 +67,7 @@ jobs:
       run: safety check --json --output safety-report.json || true
     
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-reports
         path: |
@@ -111,7 +111,7 @@ jobs:
         name: codecov-umbrella
     
     - name: Upload test artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-results-${{ matrix.python-version }}
         path: |
@@ -202,7 +202,7 @@ jobs:
         cp requirements.txt deployment/ || echo "requirements.txt not found"
     
     - name: Upload deployment artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: deployment-package
         path: deployment/
@@ -219,7 +219,7 @@ jobs:
         echo "- Code Quality: ✅" >> deployment-report.md
     
     - name: Upload deployment report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: deployment-report
         path: deployment-report.md
