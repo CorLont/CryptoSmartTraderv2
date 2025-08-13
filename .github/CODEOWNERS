@@ -1,33 +1,43 @@
-# CODEOWNERS - Defines code ownership for pull request reviews
-# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# CODEOWNERS file for CryptoSmartTrader V2
+# This file defines who should review changes to specific parts of the codebase
 
-# Global ownership - all files require review from @clont1
+# Global ownership - all files require review
 * @clont1
 
-# API components - critical for system integration
-api/** @clont1
-src/cryptosmarttrader/api/** @clont1
+# Core system components require additional scrutiny
+/src/cryptosmarttrader/core/ @clont1
+/src/cryptosmarttrader/risk/ @clont1
+/src/cryptosmarttrader/portfolio/ @clont1
 
-# Machine Learning components - core intelligence
-ml/** @clont1  
-src/cryptosmarttrader/ml/** @clont1
-models/ @clont1
+# Security-related files
+/src/cryptosmarttrader/security/ @clont1
+/.github/workflows/ @clont1
+/.gitleaks.toml @clont1
+/SECURITY.md @clont1
 
-# Configuration and infrastructure - system stability
-.github/** @clont1
-pyproject.toml @clont1
-uv.lock @clont1
-config/ @clont1
-configs/ @clont1
+# Configuration and infrastructure
+/pyproject.toml @clont1
+/uv.lock @clont1
+/.env.example @clont1
+/docker/ @clont1
+/Dockerfile @clont1
 
-# Security and CI - critical for production safety  
-SECURITY.md @clont1
-.github/workflows/** @clont1
+# Trading and execution logic
+/src/cryptosmarttrader/agents/ @clont1
+/src/cryptosmarttrader/adapters/ @clont1
+/src/cryptosmarttrader/trading/ @clont1
 
-# Core application logic
-src/cryptosmarttrader/core/** @clont1
-trading/** @clont1
+# Machine Learning components
+/src/cryptosmarttrader/ml/ @clont1
+/src/cryptosmarttrader/analysis/ @clont1
 
-# Documentation - project clarity
-*.md @clont1
-docs/** @clont1
+# Testing and quality assurance
+/tests/ @clont1
+/run_test_suite.py @clont1
+/run_quality_gates.py @clont1
+
+# Documentation
+/README.md @clont1
+/docs/ @clont1
+/replit.md @clont1
+/*.md @clont1

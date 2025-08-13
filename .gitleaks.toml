@@ -1,93 +1,87 @@
-# Gitleaks configuration for secret detection
+# Gitleaks configuration for CryptoSmartTrader V2
 
-title = "CryptoSmartTrader V2 Secret Detection"
+title = "CryptoSmartTrader V2 Secrets Detection"
 
 [extend]
-# Extend default rules
+# Extend default gitleaks rules
 useDefault = true
 
-# Custom rules for cryptocurrency trading platform
 [[rules]]
-id = "kraken-api-key"
-description = "Kraken API Key"
-regex = '''(?i)kraken[_-]?api[_-]?key['"\\s:=]*[a-zA-Z0-9+/]{56}'''
-tags = ["key", "kraken", "api"]
+id = "crypto-api-keys"
+description = "Cryptocurrency exchange API keys"
+regex = '''(?i)(kraken|binance|coinbase|kucoin|huobi)[_-]?api[_-]?key['":\s]*[=:]\s*['"][a-zA-Z0-9/+=]{20,}['"]'''
+keywords = [
+    "kraken_api_key",
+    "binance_api_key", 
+    "coinbase_api_key",
+    "kucoin_api_key",
+    "huobi_api_key"
+]
 
 [[rules]]
-id = "binance-api-key"
-description = "Binance API Key"
-regex = '''(?i)binance[_-]?api[_-]?key['"\\s:=]*[a-zA-Z0-9]{64}'''
-tags = ["key", "binance", "api"]
+id = "crypto-secret-keys"
+description = "Cryptocurrency exchange secret keys"
+regex = '''(?i)(kraken|binance|coinbase|kucoin|huobi)[_-]?secret[_-]?key['":\s]*[=:]\s*['"][a-zA-Z0-9/+=]{20,}['"]'''
+keywords = [
+    "kraken_secret",
+    "binance_secret",
+    "coinbase_secret", 
+    "kucoin_secret",
+    "huobi_secret"
+]
 
 [[rules]]
-id = "coinbase-api-key"
-description = "Coinbase API Key"
-regex = '''(?i)coinbase[_-]?api[_-]?key['"\\s:=]*[a-f0-9]{32}'''
-tags = ["key", "coinbase", "api"]
+id = "openai-api-keys"
+description = "OpenAI API keys"
+regex = '''sk-[a-zA-Z0-9]{48}'''
+keywords = ["openai", "gpt", "chatgpt"]
 
 [[rules]]
-id = "exchange-secret"
-description = "Exchange API Secret"
-regex = '''(?i)(api[_-]?secret|secret[_-]?key)['"\\s:=]*[a-zA-Z0-9+/]{40,}'''
-tags = ["secret", "exchange", "api"]
+id = "anthropic-api-keys"
+description = "Anthropic API keys"
+regex = '''sk-ant-[a-zA-Z0-9\-_]{95}'''
+keywords = ["anthropic", "claude"]
 
 [[rules]]
-id = "private-key"
-description = "Cryptocurrency Private Key"
-regex = '''(?i)(private[_-]?key|priv[_-]?key)['"\\s:=]*[a-fA-F0-9]{64}'''
-tags = ["key", "private", "crypto"]
+id = "telegram-bot-tokens"
+description = "Telegram bot tokens"
+regex = '''[0-9]{8,10}:[a-zA-Z0-9_-]{35}'''
+keywords = ["telegram", "bot", "token"]
 
 [[rules]]
-id = "webhook-url"
-description = "Webhook URL with potential secrets"
-regex = '''https://hooks\.slack\.com/services/[A-Z0-9]{9}/[A-Z0-9]{11}/[a-zA-Z0-9]{24}'''
-tags = ["webhook", "slack"]
+id = "database-urls"
+description = "Database connection URLs"
+regex = '''(?i)(postgres|mysql|mongodb)://[^\s'"`]{10,}'''
+keywords = ["postgres://", "mysql://", "mongodb://"]
 
-# Allow list for test files and examples
+[[rules]]
+id = "private-keys"
+description = "Private keys"
+regex = '''-----BEGIN[A-Z ]*PRIVATE KEY-----[A-Za-z0-9+/=\s]*-----END[A-Z ]*PRIVATE KEY-----'''
+keywords = ["private key", "rsa", "dsa", "ec", "openssh"]
+
 [allowlist]
-description = "Allowlist for false positives"
+description = "Global allowlist for false positives"
 paths = [
-    '''\.env\.template$''',
     '''\.env\.example$''',
-    '''test[s]?/.*\.py$''',
-    '''.*test.*\.py$''',
-    '''example[s]?/.*$''',
-    '''docs?/.*$''',
-    '''README.*$''',
+    '''\.env\.template$''',
+    '''README\.md$''',
+    '''docs/.*''',
+    '''tests/.*test.*\.py$''',
+    '''\.gitleaks\.toml$'''
 ]
 
-# Files to ignore completely
-files = [
-    '''(.*)?\.lock$''',
-    '''(.*)?\.log$''',
-    '''(.*)?\.cache$''',
-    '''.*\.min\.js$''',
-    '''.*\.map$''',
-]
-
-# Regex patterns to ignore
 regexes = [
-    '''example[_-]?key''',
-    '''dummy[_-]?secret''',
-    '''test[_-]?api[_-]?key''',
-    '''fake[_-]?token''',
-    '''placeholder''',
-    '''your[_-]?api[_-]?key[_-]?here''',
-    '''insert[_-]?key[_-]?here''',
-]
-
-# Stop words that indicate non-secrets
-stopwords = [
-    "example",
-    "test",
-    "dummy",
-    "fake",
-    "placeholder",
-    "sample",
-    "template",
-    "insert",
-    "your",
-    "api",
-    "key",
-    "here",
+    '''(?i)example[_-]?api[_-]?key''',
+    '''(?i)test[_-]?api[_-]?key''',
+    '''(?i)dummy[_-]?secret''',
+    '''(?i)placeholder[_-]?token''',
+    '''(?i)fake[_-]?password''',
+    '''sk-test-[a-zA-Z0-9]{48}''',
+    '''YOUR_API_KEY_HERE''',
+    '''<API_KEY>''',
+    '''\*\*\*\*\*\*\*\*''',
+    '''xxx''',
+    '''yyy''',
+    '''zzz'''
 ]
