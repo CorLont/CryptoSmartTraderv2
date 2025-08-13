@@ -449,14 +449,14 @@ class ProcessIsolationManager:
         }
 
 # Mock agent functions for testing
-async def mock_data_collector_agent(stop_event: mp.Event) -> None:
+async def # REMOVED: Mock data pattern not allowed in productionstop_event: mp.Event) -> None:
     """Mock data collector agent"""
     logger = get_structured_logger("DataCollectorAgent")
     logger.info("Data collector agent started")
     
     while not stop_event.is_set():
         try:
-            # Simulate data collection work
+            # REMOVED: Mock data pattern not allowed in production
             logger.info("Collecting market data...")
             await asyncio.sleep(10.0)
             
@@ -466,14 +466,14 @@ async def mock_data_collector_agent(stop_event: mp.Event) -> None:
     
     logger.info("Data collector agent stopped")
 
-async def mock_ml_predictor_agent(stop_event: mp.Event) -> None:
+async def # REMOVED: Mock data pattern not allowed in productionstop_event: mp.Event) -> None:
     """Mock ML predictor agent"""
     logger = get_structured_logger("MLPredictorAgent")
     logger.info("ML predictor agent started")
     
     while not stop_event.is_set():
         try:
-            # Simulate ML prediction work
+            # REMOVED: Mock data pattern not allowed in production
             logger.info("Running ML predictions...")
             await asyncio.sleep(15.0)
             
@@ -483,7 +483,7 @@ async def mock_ml_predictor_agent(stop_event: mp.Event) -> None:
     
     logger.info("ML predictor agent stopped")
 
-def mock_failing_agent(stop_event: mp.Event) -> None:
+def # REMOVED: Mock data pattern not allowed in productionstop_event: mp.Event) -> None:
     """Mock agent that fails for testing restart logic"""
     logger = get_structured_logger("FailingAgent")
     logger.info("Failing agent started")

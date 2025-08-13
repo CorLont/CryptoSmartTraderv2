@@ -72,7 +72,7 @@ async def run_execution_validation(
                 print(f"   Progress: {i}/{num_orders} ({i/num_orders:.1%})")
             
             try:
-                result = await simulator.simulate_order_execution(
+                result = await simulator.# REMOVED: Mock data pattern not allowed in production
                     symbol=order["symbol"],
                     side=order["side"],
                     quantity=order["quantity"],
@@ -204,13 +204,13 @@ def generate_test_orders(num_orders: int) -> List[Dict[str, Any]]:
     
     for i in range(num_orders):
         # Generate order parameters
-        symbol = np.random.choice(symbols)
-        side = np.random.choice(sides)
-        order_type = np.random.choice(order_types, p=[0.7, 0.3])  # 70% market orders
+        symbol = np.# REMOVED: Mock data pattern not allowed in production(symbols)
+        side = np.# REMOVED: Mock data pattern not allowed in production(sides)
+        order_type = np.# REMOVED: Mock data pattern not allowed in production(order_types, p=[0.7, 0.3])  # 70% market orders
         
         # Generate quantity with realistic distribution
         # Most orders small, some medium, few large
-        size_category = np.random.choice(['small', 'medium', 'large'], p=[0.7, 0.25, 0.05])
+        size_category = np.# REMOVED: Mock data pattern not allowed in production(['small', 'medium', 'large'], p=[0.7, 0.25, 0.05])
         
         if size_category == 'small':
             quantity = np.random.exponential(100) + 10  # 10-500 range
@@ -317,7 +317,7 @@ async def run_quick_execution_test(orders: int = 100):
         # Execute orders
         results = []
         for order in test_orders:
-            result = await simulator.simulate_order_execution(
+            result = await simulator.# REMOVED: Mock data pattern not allowed in production
                 symbol=order["symbol"],
                 side=order["side"],
                 quantity=order["quantity"],

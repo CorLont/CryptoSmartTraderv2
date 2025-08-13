@@ -513,7 +513,7 @@ class RiskLimitEngine:
     def _evaluate_circuit_breaker(self, breaker: CircuitBreaker) -> bool:
         """Evaluate if circuit breaker should trigger"""
         
-        # Simulate circuit breaker conditions (in real implementation, 
+        # REMOVED: Mock data pattern not allowed in production
         # these would check actual system metrics)
         
         if breaker.breaker_type == CircuitBreakerType.DATA_GAP:
@@ -670,7 +670,7 @@ class RiskLimitEngine:
             logger.warning(f"Kill switch reset: {reason}")
             return was_active  # Return True if was previously active
     
-    def simulate_data_gap(self, duration_seconds: float):
+    def # REMOVED: Mock data pattern not allowed in productionself, duration_seconds: float):
         """Simulate data gap for testing"""
         breaker = self.circuit_breakers.get(CircuitBreakerType.DATA_GAP)
         if breaker and duration_seconds > breaker.threshold:
@@ -678,7 +678,7 @@ class RiskLimitEngine:
             breaker.last_trigger_time = datetime.now()
             logger.warning(f"Simulated data gap: {duration_seconds}s")
     
-    def simulate_model_drift(self, accuracy_drop: float):
+    def # REMOVED: Mock data pattern not allowed in productionself, accuracy_drop: float):
         """Simulate model drift for testing"""
         breaker = self.circuit_breakers.get(CircuitBreakerType.MODEL_DRIFT)
         if breaker and accuracy_drop > breaker.threshold:

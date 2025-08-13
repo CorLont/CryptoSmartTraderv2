@@ -154,7 +154,7 @@ class EnsembleTrainer:
             )
             
             time_scaling = np.sqrt(hours) / 10
-            noise = np.random.normal(0, 0.01 * time_scaling, len(df))
+            noise = np.# REMOVED: Mock data pattern not allowed in production(0, 0.01 * time_scaling, len(df))
             
             df[f'target_return_{horizon}'] = base_return * time_scaling + noise
         

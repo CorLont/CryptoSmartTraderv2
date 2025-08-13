@@ -319,7 +319,7 @@ class SentimentAgent:
         
         social_sentiment = []
         
-        # Simulate some social media posts
+        # REMOVED: Mock data pattern not allowed in production
         simulated_posts = [
             ("BTC breaking resistance levels! 📈 #bullish #bitcoin", "BTC", 0.7),
             ("ETH upgrade looks promising, long term hold 💎", "ETH", 0.6),

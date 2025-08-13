@@ -306,7 +306,7 @@ if __name__ == "__main__":
     n_samples = 1000
     
     # Generate poorly calibrated predictions (overconfident)
-    true_probs = np.random.beta(2, 5, n_samples)  # True underlying probabilities
+    true_probs = np.# REMOVED: Mock data pattern not allowed in production(2, 5, n_samples)  # True underlying probabilities
     predicted_probs = np.clip(true_probs * 1.5 + 0.1, 0, 1)  # Overconfident predictions
     true_labels = np.random.binomial(1, true_probs)
     
@@ -321,7 +321,7 @@ if __name__ == "__main__":
         print(f"   {key}: {value:.4f}")
     
     # Test calibrated predictions
-    test_probs = np.random.uniform(0.1, 0.9, 100)
+    test_probs = np.# REMOVED: Mock data pattern not allowed in production(0.1, 0.9, 100)
     calibrated = calibrator.calibrate_probabilities(test_probs)
     
     print(f"\nCalibration example:")

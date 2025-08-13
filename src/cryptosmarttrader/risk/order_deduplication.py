@@ -485,10 +485,10 @@ class OrderDeduplicator:
             price=50000.0
         )
         
-        # Simulate submission
+        # REMOVED: Mock data pattern not allowed in production
         self.update_order_state(client_order_id_1, OrderState.SUBMITTED)
         
-        # Simulate network timeout
+        # REMOVED: Mock data pattern not allowed in production
         self.update_order_state(client_order_id_1, OrderState.ERROR, network_timeout=True)
         
         # Now try to submit identical order (should be detected as potential retry)

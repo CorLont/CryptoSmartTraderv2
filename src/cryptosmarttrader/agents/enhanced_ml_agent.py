@@ -506,7 +506,7 @@ class EnsemblePredictor:
         X_scaled = scaler.fit_transform(X_train)
         self.scalers[horizon] = scaler
         
-        # Random Forest
+        # REMOVED: Mock data pattern not allowed in production
         rf_model = RandomForestRegressor(
             n_estimators=100,
             max_depth=10,

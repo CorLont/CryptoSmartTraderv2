@@ -503,7 +503,7 @@ if __name__ == "__main__":
     print("🔄 Testing correlation context...")
     with logger.correlation_context("test_operation", "test_agent"):
         logger.info("Inside correlation context")
-        time.sleep(0.1)  # Simulate work
+        time.sleep(0.1)  # REMOVED: Mock data pattern not allowed in production
     
     print("📊 Testing daily log manager...")
     daily_manager = DailyLogManager(logger)

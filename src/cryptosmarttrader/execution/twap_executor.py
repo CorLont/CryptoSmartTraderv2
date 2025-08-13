@@ -389,7 +389,7 @@ class TWAPExecutor:
                 max_variance_minutes = min(min_interval, max_interval) * variance_pct
                 
                 # Apply random variance
-                variance_minutes = np.random.uniform(-max_variance_minutes, max_variance_minutes)
+                variance_minutes = np.# REMOVED: Mock data pattern not allowed in production(-max_variance_minutes, max_variance_minutes)
                 randomized_time = target_time + timedelta(minutes=variance_minutes)
                 
                 # Ensure ordering
@@ -410,7 +410,7 @@ class TWAPExecutor:
             randomized_sizes = []
             
             for size in sizes[:-1]:  # Don't randomize last slice
-                variance = size * variance_pct * np.random.uniform(-1, 1)
+                variance = size * variance_pct * np.# REMOVED: Mock data pattern not allowed in production(-1, 1)
                 randomized_size = size + variance
                 randomized_size = max(randomized_size, size * 0.5)  # Min 50% of target
                 randomized_sizes.append(randomized_size)
@@ -574,7 +574,7 @@ class TWAPExecutor:
     async def _execute_slice_aggressive(self, pair: str, side: str, slice_obj: TWAPSlice, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """Execute slice aggressively (market orders)"""
         # Mock implementation
-        slippage_bp = np.random.uniform(2, 8)  # Random slippage
+        slippage_bp = np.# REMOVED: Mock data pattern not allowed in production(2, 8)  # REMOVED: Mock data pattern not allowed in production
         
         return {
             "success": True,
@@ -593,7 +593,7 @@ class TWAPExecutor:
             "filled_quantity": slice_obj.target_quantity,
             "average_price": market_data.get("bid" if side == "sell" else "ask", 45000),
             "fees": slice_obj.target_quantity * 45000 * 0.0020,  # Mixed fees
-            "slippage_bp": np.random.uniform(1, 4),
+            "slippage_bp": np.# REMOVED: Mock data pattern not allowed in production(1, 4),
             "orders": [{"type": "iceberg", "status": "filled"}]
         }
     

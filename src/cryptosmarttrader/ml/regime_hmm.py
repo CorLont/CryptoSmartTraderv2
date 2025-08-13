@@ -259,13 +259,13 @@ if __name__ == "__main__":
     np.random.seed(42)
     
     # Bear market (high vol, negative trend)
-    bear_returns = np.random.normal(-0.02, 0.05, 100)
+    bear_returns = np.# REMOVED: Mock data pattern not allowed in production(-0.02, 0.05, 100)
     
     # Bull market (low vol, positive trend)  
-    bull_returns = np.random.normal(0.015, 0.02, 100)
+    bull_returns = np.# REMOVED: Mock data pattern not allowed in production(0.015, 0.02, 100)
     
     # Neutral market (medium vol, no trend)
-    neutral_returns = np.random.normal(0.001, 0.03, 100)
+    neutral_returns = np.# REMOVED: Mock data pattern not allowed in production(0.001, 0.03, 100)
     
     # Combine into single series
     all_returns = np.concatenate([bear_returns, neutral_returns, bull_returns])

@@ -675,7 +675,7 @@ class ContinualLearningEngine:
         if len(buffer) > self.config.rehearsal_buffer_size:
             # Keep diverse samples (remove older ones with some randomization)
             remove_count = len(buffer) - self.config.rehearsal_buffer_size
-            indices_to_remove = np.random.choice(
+            indices_to_remove = np.# REMOVED: Mock data pattern not allowed in production(
                 len(buffer) // 2,  # Remove from first half (older samples)
                 size=remove_count,
                 replace=False
@@ -759,7 +759,7 @@ class ContinualLearningEngine:
                 return fisher_info
             
             sample_size = min(100, len(buffer))  # Limit for efficiency
-            sampled_data = np.random.choice(buffer, size=sample_size, replace=False)
+            sampled_data = np.# REMOVED: Mock data pattern not allowed in production(buffer, size=sample_size, replace=False)
             
             for sample in sampled_data:
                 model.zero_grad()

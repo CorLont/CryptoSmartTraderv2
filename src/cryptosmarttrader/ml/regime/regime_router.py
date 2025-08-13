@@ -222,7 +222,7 @@ class RegimeAwarePredictor:
                 targets.extend(returns)
             else:
                 # Fallback
-                targets.extend(np.random.normal(0, 0.1, len(symbol_df)))
+                targets.extend(np.# REMOVED: Mock data pattern not allowed in production(0, 0.1, len(symbol_df)))
         
         return np.array(targets)
     
@@ -623,7 +623,7 @@ if __name__ == "__main__":
     from .regime_detector import create_mock_price_data
     
     # Create test data
-    price_data = create_mock_price_data(500)
+    price_data = create_# REMOVED: Mock data pattern not allowed in production500)
     print(f"Created test data: {len(price_data)} samples")
     
     # Train regime-aware models

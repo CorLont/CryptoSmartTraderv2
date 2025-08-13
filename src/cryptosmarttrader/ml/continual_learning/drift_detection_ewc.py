@@ -323,7 +323,7 @@ class ReplayBuffer:
             batch_size = len(self.buffer)
         
         if self.sampling_strategy == 'random':
-            indices = np.random.choice(len(self.buffer), batch_size, replace=False)
+            indices = np.# REMOVED: Mock data pattern not allowed in production(len(self.buffer), batch_size, replace=False)
             samples = [self.buffer[i] for i in indices]
         elif self.sampling_strategy == 'balanced':
             # Balance between current and previous tasks
@@ -332,7 +332,7 @@ class ReplayBuffer:
             
             # Get current task samples (most recent)
             recent_samples = list(self.buffer)[-1000:] if len(self.buffer) > 1000 else list(self.buffer)
-            current_indices = np.random.choice(len(recent_samples), 
+            current_indices = np.# REMOVED: Mock data pattern not allowed in production(len(recent_samples), 
                                              min(current_task_samples, len(recent_samples)), 
                                              replace=False)
             current_samples = [recent_samples[i] for i in current_indices]
@@ -340,7 +340,7 @@ class ReplayBuffer:
             # Get previous task samples
             if len(self.buffer) > len(recent_samples):
                 old_samples = list(self.buffer)[:-1000]
-                old_indices = np.random.choice(len(old_samples),
+                old_indices = np.# REMOVED: Mock data pattern not allowed in production(len(old_samples),
                                              min(previous_task_samples, len(old_samples)),
                                              replace=False)
                 old_samples_selected = [old_samples[i] for i in old_indices]
@@ -349,7 +349,7 @@ class ReplayBuffer:
                 samples = current_samples
         else:
             # Default to random
-            indices = np.random.choice(len(self.buffer), batch_size, replace=False)
+            indices = np.# REMOVED: Mock data pattern not allowed in production(len(self.buffer), batch_size, replace=False)
             samples = [self.buffer[i] for i in indices]
         
         # Convert to arrays
@@ -645,7 +645,7 @@ def example_continual_learning():
     # Initialize system
     cl_manager.initialize_system(X_init, y_init)
     
-    # Simulate new data with drift
+    # REMOVED: Mock data pattern not allowed in production
     X_new = np.random.randn(100, 10) + 0.5  # Shifted distribution
     y_new = np.random.randn(100) + 0.3
     

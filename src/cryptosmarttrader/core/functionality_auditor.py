@@ -34,7 +34,7 @@ class FunctionalityAuditor:
         
         # Audit all required functionalities
         self._audit_dynamic_kraken_coverage()
-        self._audit_no_dummy_fallback()
+        self._audit_no_# REMOVED: Mock data pattern not allowed in production)
         self._audit_batched_multi_horizon()
         self._audit_confidence_gate_80()
         self._audit_uncertainty_calibration()
@@ -119,7 +119,7 @@ class FunctionalityAuditor:
         
         print(f"   Coverage: {coverage_percentage:.1f}%, Missing: {len(missing_symbols)}")
     
-    def _audit_no_dummy_fallback(self):
+    def _audit_no_# REMOVED: Mock data pattern not allowed in productionself):
         """Audit 2: No dummy/fallback in production"""
         
         print("🚫 Auditing no dummy/fallback policy...")

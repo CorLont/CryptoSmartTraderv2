@@ -259,7 +259,7 @@ class AdaptiveConformalPredictor:
         if len(self.rolling_errors) < 10:
             return self.confidence_level
         
-        # Simulate coverage for recent predictions
+        # REMOVED: Mock data pattern not allowed in production
         recent_quantile = self._calculate_current_quantile()
         recent_intervals_covered = []
         

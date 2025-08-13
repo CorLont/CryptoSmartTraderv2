@@ -388,7 +388,7 @@ class SlippageAnalyzer:
             # Assumes price can move unfavorably during execution
             timing_cost_bps = execution_time * volatility * self.timing_decay_rate * 10000
             
-            # Random direction - timing cost can be positive or negative
+            # REMOVED: Mock data pattern not allowed in production
             import random
             direction = 1 if random.random() > 0.5 else -1
             

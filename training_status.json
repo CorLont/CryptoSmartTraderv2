@@ -1,0 +1,12 @@
+{
+  "status": "training_in_progress",
+  "training_complete": false,
+  "weeks_trained": 0.1,
+  "weeks_required": 12,
+  "weeks_remaining": 11.9,
+  "oldest_model_date": "2025-08-11T07:53:36.125236",
+  "model_count": 4,
+  "estimated_completion": "2025-11-03T07:53:36.125236",
+  "message": "\u23f3 Training in progress (0.1/12 weeks) - 11.9 weeks remaining",
+  "last_checked": "2025-08-13T06:11:28.666204"
+}

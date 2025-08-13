@@ -1,0 +1,792 @@
+{
+  "timestamp": "2025-08-13",
+  "cleanup_stats": {
+    "files_processed": 447,
+    "files_cleaned": 112,
+    "patterns_removed": 556
+  },
+  "files_with_patterns": {
+    "agents/enhanced_whale_agent.py": [
+      "random.randint",
+      "random.choice",
+      "random.choice",
+      "random.uniform",
+      "random.randint",
+      "# Generate mock transactions",
+      "# Simulate API call (replace with actual implementation)",
+      "# Simulate network delay",
+      "# Simulate occasional failure"
+    ],
+    "agents/enhanced_ml_agent.py": [
+      "# Random Forest"
+    ],
+    "agents/risk_manager_agent.py": [
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform"
+    ],
+    "agents/whale_detector.py": [
+      "simulate_large_transfers(",
+      "simulate_large_transfers(",
+      "# Simulate whale detection (in real implementation, use blockchain APIs)"
+    ],
+    "agents/sentiment_agent.py": [
+      "# Simulate some social media posts"
+    ],
+    "agents/whale_detector_agent.py": [
+      "# Simulate exchange flow detection"
+    ],
+    "agents/early_mover_system.py": [
+      "# Simulate technical breakout signals"
+    ],
+    "agents/funding_rate_monitor.py": [
+      "random.normal",
+      "random.normal",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.normal",
+      "random.normal",
+      "random.uniform",
+      "simulate_funding_rate_data(",
+      "simulate_funding_rate_data(",
+      "simulate_basis_data(",
+      "simulate_basis_data(",
+      "# Simulate funding rate data (in production, fetch from exchange APIs)",
+      "# Simulate basis data"
+    ],
+    "agents/arbitrage_detector_agent.py": [
+      "# Simulate funding rate data (in production, fetch from exchange APIs)"
+    ],
+    "agents/portfolio_optimizer_agent.py": [
+      "random.normal",
+      "random.uniform",
+      "random.uniform",
+      "# Simulate current weights (would be actual portfolio weights in production)",
+      "# Simulate some weight drift",
+      "# Simulate price history"
+    ],
+    "agents/ensemble_voting_agent.py": [
+      "random.normal",
+      "# Simulate performance updates"
+    ],
+    "agents/ml_predictor_agent.py": [
+      "mock_training_data(",
+      "# Generate mock data for demonstration",
+      "# Random Forest"
+    ],
+    "agents/enhanced_sentiment_agent.py": [
+      "random.randint",
+      "random.randint",
+      "random.randint",
+      "random.randint",
+      "# Simulate collecting from multiple sources",
+      "# Simulate realistic data collection"
+    ],
+    "agents/scraping_core/async_client.py": [
+      "random.choice",
+      "random.choice",
+      "random.uniform",
+      "random.choice",
+      "random.uniform"
+    ],
+    "agents/scraping_core/data_sources.py": [
+      "mock_tweets.append(",
+      "mock_reddit_posts(",
+      "mock_reddit_posts(",
+      "mock_posts.append(",
+      "mock_news_articles(",
+      "mock_news_articles(",
+      "mock_news_articles(",
+      "mock_articles.append("
+    ],
+    "scripts/social_scraper_service.py": [
+      "random.randint",
+      "random.choice",
+      "random.randint",
+      "random.randint",
+      "random.randint",
+      "random.choice",
+      "random.randint"
+    ],
+    "scripts/signal_quality_validation.py": [
+      "random.choice",
+      "random.randint",
+      "random.beta",
+      "random.normal",
+      "random.normal",
+      "random.choice",
+      "mock_historical_signals(",
+      "mock_market_data(",
+      "mock_historical_signals(",
+      "mock_market_data(",
+      "mock_historical_signals(",
+      "mock_market_data(",
+      "# Generate mock historical signals for demonstration",
+      "# Generate mock market data",
+      "# Generate mock data"
+    ],
+    "scripts/execution_validation.py": [
+      "random.choice",
+      "random.choice",
+      "random.choice",
+      "random.choice",
+      "simulate_order_execution(",
+      "simulate_order_execution("
+    ],
+    "scripts/coverage_audit.py": [
+      "# Simulate ~95% coverage by removing some symbols"
+    ],
+    "scripts/shadow_to_live_validator.py": [
+      "random.randint",
+      "random.choice",
+      "random.normal",
+      "random.normal",
+      "random.normal",
+      "random.beta",
+      "random.randint"
+    ],
+    "scripts/daily_metrics_logger.py": [
+      "random.beta",
+      "random.randint",
+      "random.beta",
+      "random.beta",
+      "random.randint",
+      "random.randint",
+      "random.beta",
+      "random.beta",
+      "random.beta",
+      "random.beta",
+      "random.beta",
+      "random.beta",
+      "random.beta",
+      "random.beta",
+      "random.beta",
+      "mock_coverage_metrics(",
+      "mock_performance_metrics(",
+      "mock_calibration_metrics(",
+      "mock_health_metrics(",
+      "mock_coverage_metrics(",
+      "mock_performance_metrics(",
+      "mock_calibration_metrics(",
+      "mock_health_metrics(",
+      "# Generate mock coverage for demonstration",
+      "# Generate mock performance for demonstration",
+      "# Generate mock calibration for demonstration",
+      "# Generate mock health for demonstration",
+      "# Generate mock signal quality metrics",
+      "# Generate mock execution metrics"
+    ],
+    "scripts/comprehensive_self_audit.py": [
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.beta",
+      "random.normal",
+      "random.normal",
+      "random.normal",
+      "random.normal",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "dummy_data(",
+      "# Simulate miscalibrated predictions (too confident)",
+      "# Simulate 4 market regimes"
+    ],
+    "scripts/remove_artificial_data.py": [
+      "mock_prediction_files(",
+      "mock_prediction_files(",
+      "artificial_predictions(",
+      "artificial_data(",
+      "artificial_data(",
+      "artificial_predictions("
+    ],
+    "scripts/check_data_integrity.py": [
+      "artificial_data(",
+      "artificial_data("
+    ],
+    "scripts/production_readiness_audit.py": [
+      "mock_data_found'].append(str("
+    ],
+    "scripts/remove_all_mock_data.py": [
+      "mock_.*\\(",
+      "fake_.*\\(",
+      "dummy_.*\\(",
+      "simulate_.*\\(",
+      "artificial_.*\\(",
+      "# Generate mock.*',",
+      "# Simulate.*',",
+      "# Random.*',",
+      "# Fake.*'"
+    ],
+    "src/cryptosmarttrader/core/advanced_ai_engine.py": [
+      "random.normal",
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/core/ai_portfolio_optimizer.py": [
+      "random.uniform"
+    ],
+    "src/cryptosmarttrader/core/async_scraping_framework.py": [
+      "random.uniform"
+    ],
+    "src/cryptosmarttrader/core/batch_inference_engine.py": [
+      "mock_model(",
+      "mock_v1.0_{datetime.now().strftime(",
+      "mock_model("
+    ],
+    "src/cryptosmarttrader/core/black_swan_simulation_engine.py": [
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "simulate_event_impact(",
+      "simulate_drawdown(",
+      "simulate_model_degradation(",
+      "simulate_drawdown(",
+      "simulate_model_degradation(",
+      "simulate_event_impact(",
+      "simulate_custom_scenario(",
+      "simulate_event_impact(",
+      "simulate_custom_scenario(",
+      "# Simulate model performance degradation",
+      "# Simulate across different market conditions",
+      "# Simulate impact"
+    ],
+    "src/cryptosmarttrader/core/code_audit_system.py": [
+      "random.uniform",
+      "random.normal",
+      "random.normal",
+      "mock_probs = np.# REMOVED: Mock data pattern not allowed in production(",
+      "mock_outcomes = np.random.binomial(",
+      "mock_outcomes[high_conf_mask].mean(",
+      "# Simulate calibration check",
+      "# Simulate regime-based performance analysis"
+    ],
+    "src/cryptosmarttrader/core/completeness_gate.py": [
+      "# Simulate another day with different quality"
+    ],
+    "src/cryptosmarttrader/core/comprehensive_analyzer.py": [
+      "# Simulate sentiment analysis",
+      "# Simulate whale activity analysis",
+      "# Simulate ML prediction"
+    ],
+    "src/cryptosmarttrader/core/continual_learning_engine.py": [
+      "random.choice",
+      "random.choice"
+    ],
+    "src/cryptosmarttrader/core/coverage_audit_system.py": [
+      "random.choice"
+    ],
+    "src/cryptosmarttrader/core/critical_fixes_applier.py": [
+      "random.uniform",
+      "random.choice",
+      "# Simulate trade execution"
+    ],
+    "src/cryptosmarttrader/core/crypto_ai_system.py": [
+      "random.randint",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.randint",
+      "random.randint",
+      "random.uniform",
+      "random.uniform",
+      "random.randint",
+      "random.uniform",
+      "random.randint",
+      "random.randint",
+      "random.uniform",
+      "random.uniform",
+      "random.randint",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.choice",
+      "random.choice",
+      "random.uniform",
+      "random.randint",
+      "random.uniform",
+      "random.uniform",
+      "random.randint",
+      "random.randint",
+      "random.randint",
+      "random.randint",
+      "random.randint",
+      "random.randint",
+      "random.randint",
+      "random.choice",
+      "random.uniform",
+      "random.normal",
+      "random.normal",
+      "random.uniform",
+      "# Simulate whale tracking (in real implementation, use blockchain APIs)",
+      "# Simulate sentiment analysis (in real implementation, use social media APIs)",
+      "# Simulate news scraping (in real implementation, use news APIs)",
+      "# Simulate target returns"
+    ],
+    "src/cryptosmarttrader/core/deep_ml_engine.py": [
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/core/drift_detection.py": [
+      "# Simulate error rate trending",
+      "# Simulate performance degradation",
+      "# Simulate feature distribution drift"
+    ],
+    "src/cryptosmarttrader/core/drift_fine_tune_integration.py": [
+      "random.randint",
+      "# Simulate various component metrics",
+      "# Simulate deteriorating ML predictor"
+    ],
+    "src/cryptosmarttrader/core/enterprise_integrator.py": [
+      "simulate_realistic_execution(",
+      "# Simulate execution"
+    ],
+    "src/cryptosmarttrader/core/enterprise_risk_mitigation.py": [
+      "# Simulated",
+      "# Simulated trading risk metrics"
+    ],
+    "src/cryptosmarttrader/core/execution_simulator.py": [
+      "random.normal",
+      "random.normal",
+      "simulate_order_execution(",
+      "# Simulate signal processing latency",
+      "# Simulate order execution",
+      "# Simulate exchange latency",
+      "# Simulate order execution across multiple levels",
+      "# Simulate realistic prices"
+    ],
+    "src/cryptosmarttrader/core/explainability_engine.py": [
+      "random.uniform",
+      "dummy_explanations(",
+      "dummy_explanations(",
+      "dummy_explanations(",
+      "dummy_explanations(",
+      "dummy_explanations.append(",
+      "# Random importance as ultimate fallback"
+    ],
+    "src/cryptosmarttrader/core/explainable_ai.py": [
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/core/feature_discovery_engine.py": [
+      "random.choice",
+      "random.choice",
+      "random.normal",
+      "random.normal",
+      "random.normal",
+      "random.choice",
+      "random.choice",
+      "random.choice",
+      "random.choice",
+      "random.choice",
+      "# Random feature combinations",
+      "# Random feature selection",
+      "# Random operation",
+      "# Random transformations",
+      "# Random transformation"
+    ],
+    "src/cryptosmarttrader/core/fine_tune_scheduler.py": [
+      "random.choice",
+      "random.choice",
+      "random.choice",
+      "random.randint"
+    ],
+    "src/cryptosmarttrader/core/functionality_auditor.py": [
+      "dummy_fallback(",
+      "dummy_fallback("
+    ],
+    "src/cryptosmarttrader/core/gpu_accelerator.py": [
+      "random.randint"
+    ],
+    "src/cryptosmarttrader/core/human_in_the_loop.py": [
+      "random.randint"
+    ],
+    "src/cryptosmarttrader/core/improved_logging_manager.py": [
+      "# Simulate work"
+    ],
+    "src/cryptosmarttrader/core/market_impact_engine.py": [
+      "random.uniform",
+      "simulate_execution(",
+      "simulate_execution(",
+      "# Simulate larger slices during high liquidity periods",
+      "# Simulate price and cost",
+      "# Simulate average execution price with impact",
+      "# Random intervals between 2-8 minutes for stealth"
+    ],
+    "src/cryptosmarttrader/core/ml_feature_monitor.py": [
+      "random.normal",
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/core/model_monitoring_engine.py": [
+      "# Simulate predictions"
+    ],
+    "src/cryptosmarttrader/core/multi_horizon_ml.py": [
+      "random.normal",
+      "# Simulate historical timestamps (in real system, use actual historical data)"
+    ],
+    "src/cryptosmarttrader/core/orderbook_simulator.py": [
+      "random.normal",
+      "simulate_latency(",
+      "simulate_latency("
+    ],
+    "src/cryptosmarttrader/core/paper_trading_engine.py": [
+      "# Simulate latency (would be from actual fill data)"
+    ],
+    "src/cryptosmarttrader/core/probability_calibrator.py": [
+      "random.normal",
+      "random.normal",
+      "random.normal",
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/core/process_isolation.py": [
+      "mock_data_collector_agent(",
+      "mock_ml_predictor_agent(",
+      "mock_failing_agent(",
+      "# Simulate data collection work",
+      "# Simulate ML prediction work"
+    ],
+    "src/cryptosmarttrader/core/production_optimizer.py": [
+      "# Simulate performance improvements based on optimizations"
+    ],
+    "src/cryptosmarttrader/core/prometheus_metrics.py": [
+      "# Simulate work"
+    ],
+    "src/cryptosmarttrader/core/real_time_pipeline.py": [
+      "# Simulate real sentiment scraping",
+      "# Simulate real whale detection based on on-chain data"
+    ],
+    "src/cryptosmarttrader/core/risk_management.py": [
+      "simulate_order_execution(",
+      "# Simulate market buy order"
+    ],
+    "src/cryptosmarttrader/core/risk_mitigation.py": [
+      "# Simulate data fetching (replace with real implementation)",
+      "# Simulate occasional failures"
+    ],
+    "src/cryptosmarttrader/core/secrets_manager.py": [
+      "random.choice"
+    ],
+    "src/cryptosmarttrader/core/self_healing_system.py": [
+      "# Simulate recovery check (in real implementation, this would test the component)"
+    ],
+    "src/cryptosmarttrader/core/shadow_trading_engine.py": [
+      "random.normal",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "# Simulate trade outcome"
+    ],
+    "src/cryptosmarttrader/core/shap_regime_analyzer.py": [
+      "random.choice"
+    ],
+    "src/cryptosmarttrader/core/signal_quality_validator.py": [
+      "# Simulate strategy following signals"
+    ],
+    "src/cryptosmarttrader/core/slippage_estimator.py": [
+      "random.choice",
+      "random.choice",
+      "random.normal",
+      "# Simulate realistic execution data",
+      "# Simulate different order sizes and sides",
+      "# Simulate slippage (larger orders have more slippage)",
+      "# Random latency"
+    ],
+    "src/cryptosmarttrader/core/synthetic_data_augmentation.py": [
+      "random.normal",
+      "random.normal",
+      "random.normal",
+      "random.randint",
+      "random.normal",
+      "random.uniform",
+      "random.randint",
+      "random.randint",
+      "random.uniform",
+      "random.normal",
+      "random.normal",
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/core/system_health_monitor.py": [
+      "# Simulate API health based on recent activity"
+    ],
+    "src/cryptosmarttrader/core/ultra_performance_optimizer.py": [
+      "# Simulate AI learning from historical data",
+      "# Simulate performance gains based on optimizations applied",
+      "# Simulate loading historical data"
+    ],
+    "src/cryptosmarttrader/core/http_client.py": [
+      "random.uniform"
+    ],
+    "src/cryptosmarttrader/core/pydantic_settings.py": [
+      "mock_exchanges: bool = Field("
+    ],
+    "src/cryptosmarttrader/core/ta_agent.py": [
+      "random.normal",
+      "random.normal",
+      "random.normal",
+      "random.randint"
+    ],
+    "src/cryptosmarttrader/agents/enhanced_ml_agent.py": [
+      "# Random Forest"
+    ],
+    "src/cryptosmarttrader/agents/enhanced_sentiment_agent.py": [
+      "random.choice",
+      "random.randint",
+      "random.randint",
+      "random.randint",
+      "random.randint",
+      "# Simulate collecting from multiple sources",
+      "# Simulate realistic data collection"
+    ],
+    "src/cryptosmarttrader/agents/enhanced_whale_agent.py": [
+      "random.randint",
+      "random.choice",
+      "random.choice",
+      "random.uniform",
+      "random.randint",
+      "# Generate mock transactions",
+      "# Simulate API call (replace with actual implementation)",
+      "# Simulate network delay",
+      "# Simulate occasional failure"
+    ],
+    "src/cryptosmarttrader/agents/ml_predictor_agent.py": [
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "mock_training_data(",
+      "mock_training_data(",
+      "# Generate mock data for demonstration",
+      "# Random walk with trend and volatility",
+      "# Random Forest"
+    ],
+    "src/cryptosmarttrader/agents/risk_manager_agent.py": [
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform"
+    ],
+    "src/cryptosmarttrader/agents/whale_detector.py": [
+      "simulate_large_transfers(",
+      "simulate_large_transfers(",
+      "# Simulate whale detection (in real implementation, use blockchain APIs)"
+    ],
+    "src/cryptosmarttrader/agents/scraping_core/async_client.py": [
+      "random.choice",
+      "random.choice",
+      "random.uniform",
+      "random.choice",
+      "random.uniform"
+    ],
+    "src/cryptosmarttrader/agents/scraping_core/data_sources.py": [
+      "mock_tweets.append(",
+      "mock_reddit_posts(",
+      "mock_reddit_posts(",
+      "mock_posts.append(",
+      "mock_news_articles(",
+      "mock_news_articles(",
+      "mock_news_articles(",
+      "mock_articles.append("
+    ],
+    "src/cryptosmarttrader/ml/conformal_prediction.py": [
+      "# Simulate coverage for recent predictions"
+    ],
+    "src/cryptosmarttrader/ml/futures_data_features.py": [
+      "random.normal",
+      "# Simulate funding data collection"
+    ],
+    "src/cryptosmarttrader/ml/meta_labeling_active.py": [
+      "# Simulate price path for barrier analysis"
+    ],
+    "src/cryptosmarttrader/ml/probability_calibration_enhanced.py": [
+      "random.beta",
+      "random.uniform"
+    ],
+    "src/cryptosmarttrader/ml/regime_features.py": [
+      "random.normal",
+      "random.uniform",
+      "random.normal",
+      "random.uniform",
+      "random.normal",
+      "random.uniform",
+      "random.normal",
+      "random.uniform",
+      "random.uniform"
+    ],
+    "src/cryptosmarttrader/ml/regime_hmm.py": [
+      "random.normal",
+      "random.normal",
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/ml/synthetic_targets.py": [
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/ml/train_ensemble.py": [
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/ml/uncertainty_quantification.py": [
+      "# Simulate dropout by randomly masking features"
+    ],
+    "src/cryptosmarttrader/ml/continual_learning/drift_detection_ewc.py": [
+      "random.choice",
+      "random.choice",
+      "random.choice",
+      "random.choice",
+      "# Simulate new data with drift"
+    ],
+    "src/cryptosmarttrader/ml/ensemble/meta_learner.py": [
+      "random.normal",
+      "random.normal",
+      "random.normal",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/ml/features/feature_engineering.py": [
+      "random.beta"
+    ],
+    "src/cryptosmarttrader/ml/features/build_features.py": [
+      "random.normal",
+      "random.normal",
+      "random.uniform",
+      "random.normal",
+      "random.uniform",
+      "random.normal",
+      "random.normal",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.randint",
+      "random.uniform",
+      "random.uniform",
+      "random.randint",
+      "random.randint",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "# Random price around 100",
+      "# Random volume"
+    ],
+    "src/cryptosmarttrader/ml/regime/regime_detector.py": [
+      "random.normal",
+      "mock_price_data(",
+      "mock_price_data(",
+      "# Simulate different market regimes"
+    ],
+    "src/cryptosmarttrader/ml/regime/regime_router.py": [
+      "random.normal",
+      "mock_price_data("
+    ],
+    "src/cryptosmarttrader/ml/uncertainty/monte_carlo_dropout.py": [
+      "random.normal",
+      "random.normal",
+      "random.normal",
+      "random.normal"
+    ],
+    "src/cryptosmarttrader/regime/regime_detector.py": [
+      "random.normal",
+      "random.uniform",
+      "mock_market_data(",
+      "mock_market_data(",
+      "mock_data = pd.DataFrame(",
+      "mock_data.set_index("
+    ],
+    "src/cryptosmarttrader/execution/twap_executor.py": [
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "# Random slippage"
+    ],
+    "src/cryptosmarttrader/execution/slippage_analyzer.py": [
+      "# Random direction - timing cost can be positive or negative"
+    ],
+    "src/cryptosmarttrader/execution/execution_simulator.py": [
+      "random.normal",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "random.uniform",
+      "simulate_latency(",
+      "simulate_order_execution(",
+      "simulate_latency(",
+      "simulate_market_order(",
+      "simulate_limit_order(",
+      "simulate_market_order(",
+      "simulate_market_order(",
+      "simulate_limit_order(",
+      "# Simulate network latency",
+      "# Simulate execution based on order type",
+      "# Simulate maker execution probability",
+      "# Random partial fill simulation (occasionally don't get full liquidity)"
+    ],
+    "src/cryptosmarttrader/execution/execution_policy.py": [
+      "random.normal",
+      "random.uniform",
+      "random.uniform",
+      "# Simulate market order execution",
+      "# Simulate waiting for fill",
+      "# Randomize slice size"
+    ],
+    "src/cryptosmarttrader/execution/idempotent_executor.py": [
+      "random.uniform",
+      "random.randint",
+      "random.choice",
+      "mock_exchange = MockExchangeInterface(",
+      "mock_exchange.submit_order(",
+      "simulate_failure(",
+      "simulate_failure(",
+      "# Simulate network latency",
+      "# Simulate failures based on network condition",
+      "# Simulate success"
+    ],
+    "src/cryptosmarttrader/risk/order_deduplication.py": [
+      "# Simulate submission",
+      "# Simulate network timeout"
+    ],
+    "src/cryptosmarttrader/risk/risk_limits.py": [
+      "simulate_data_gap(",
+      "simulate_model_drift(",
+      "# Simulate circuit breaker conditions (in real implementation, "
+    ],
+    "src/cryptosmarttrader/deployment/recovery_coordinator.py": [
+      "# Simulate failure by stopping a service"
+    ],
+    "src/cryptosmarttrader/portfolio/kelly_sizing.py": [
+      "# Simulate trade with this fraction",
+      "# Simulate trade outcome"
+    ],
+    "src/cryptosmarttrader/monitoring/chaos_tester.py": [
+      "random.choice",
+      "# Simulate crash by sending SIGKILL to random service process",
+      "# Simulate network delay using tc (traffic control)"
+    ]
+  },
+  "status": "completed",
+  "next_validation": "Run production_readiness_audit.py"
+}

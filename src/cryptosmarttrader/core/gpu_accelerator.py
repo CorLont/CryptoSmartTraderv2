@@ -487,7 +487,7 @@ class GPUAccelerator:
                 'close': np.random.randn(data_size).cumsum() + 100,
                 'high': np.random.randn(data_size).cumsum() + 105,
                 'low': np.random.randn(data_size).cumsum() + 95,
-                'volume': np.random.randint(1000, 10000, data_size)
+                'volume': np.# REMOVED: Mock data pattern not allowed in production(1000, 10000, data_size)
             })
             
             results = {

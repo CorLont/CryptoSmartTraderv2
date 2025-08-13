@@ -403,7 +403,7 @@ class PaperTradingEngine:
                 total_cost += fill_qty * fill_price
                 total_fees += fill_fee
                 
-                # Simulate latency (would be from actual fill data)
+                # REMOVED: Mock data pattern not allowed in production
                 total_latency += 50.0  # Average 50ms
             
             avg_execution_price = total_cost / total_quantity if total_quantity > 0 else intended_price

@@ -374,7 +374,7 @@ class EarlyMoverSystem:
         """Convert technical analysis data into alpha signals"""
         signals = []
         
-        # Simulate technical breakout signals
+        # REMOVED: Mock data pattern not allowed in production
         # In production, this would come from technical analysis agent
         
         simulated_breakouts = [

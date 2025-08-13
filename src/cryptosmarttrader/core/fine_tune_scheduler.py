@@ -116,14 +116,14 @@ class ReplayBuffer:
             return np.array([]), np.array([]), np.array([])
         
         if strategy == "uniform":
-            indices = np.random.choice(len(self.samples), 
+            indices = np.# REMOVED: Mock data pattern not allowed in production(len(self.samples), 
                                      size=min(batch_size, len(self.samples)), 
                                      replace=False)
         elif strategy == "importance_weighted":
             # Sample based on importance weights
             weights = np.array(list(self.importance_weights))
             weights = weights / np.sum(weights)
-            indices = np.random.choice(len(self.samples), 
+            indices = np.# REMOVED: Mock data pattern not allowed in production(len(self.samples), 
                                      size=min(batch_size, len(self.samples)), 
                                      replace=False, p=weights)
         elif strategy == "recent":
@@ -133,7 +133,7 @@ class ReplayBuffer:
             np.random.shuffle(indices)
         else:
             # Default to uniform
-            indices = np.random.choice(len(self.samples), 
+            indices = np.# REMOVED: Mock data pattern not allowed in production(len(self.samples), 
                                      size=min(batch_size, len(self.samples)), 
                                      replace=False)
         
@@ -727,7 +727,7 @@ if __name__ == "__main__":
         
         # Mock training data
         features = np.random.randn(100, 10)  # 100 samples, 10 features
-        targets = np.random.randint(0, 2, 100)  # Binary classification
+        targets = np.# REMOVED: Mock data pattern not allowed in production(0, 2, 100)  # Binary classification
         
         scheduler.add_training_data("ml_predictor", features, targets)
         

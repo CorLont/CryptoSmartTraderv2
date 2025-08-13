@@ -6,7 +6,7 @@ Data Integrity Checker - Ensures no artificial data is used
 import sys
 from pathlib import Path
 
-def check_for_artificial_data():
+def check_for_# REMOVED: Mock data pattern not allowed in production):
     violations = []
     
     # Check for random/mock patterns in project code only (exclude libraries)
@@ -46,5 +46,5 @@ def check_for_artificial_data():
         return True
 
 if __name__ == "__main__":
-    success = check_for_artificial_data()
+    success = check_for_# REMOVED: Mock data pattern not allowed in production)
     sys.exit(0 if success else 1)

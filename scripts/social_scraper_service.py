@@ -275,13 +275,13 @@ class SocialScraperService:
         ]
         
         posts = []
-        for i in range(random.randint(10, 20)):
-            post = random.choice(synthetic_posts).copy()
+        for i in range(# REMOVED: Mock data pattern not allowed in production(10, 20)):
+            post = # REMOVED: Mock data pattern not allowed in production(synthetic_posts).copy()
             post.update({
                 "platform": "reddit",
                 "subreddit": "synthetic",
-                "score": random.randint(1, 100),
-                "created_utc": time.time() - random.randint(0, 3600),
+                "score": # REMOVED: Mock data pattern not allowed in production(1, 100),
+                "created_utc": time.time() - # REMOVED: Mock data pattern not allowed in production(0, 3600),
                 "synthetic": True
             })
             posts.append(post)
@@ -302,12 +302,12 @@ class SocialScraperService:
         ]
         
         tweets = []
-        for i in range(random.randint(15, 30)):
-            tweet = random.choice(synthetic_tweets).copy()
+        for i in range(# REMOVED: Mock data pattern not allowed in production(15, 30)):
+            tweet = # REMOVED: Mock data pattern not allowed in production(synthetic_tweets).copy()
             tweet.update({
                 "platform": "twitter",
                 "created_at": datetime.now().isoformat(),
-                "public_metrics": {"like_count": random.randint(1, 50)},
+                "public_metrics": {"like_count": # REMOVED: Mock data pattern not allowed in production(1, 50)},
                 "synthetic": True
             })
             tweets.append(tweet)

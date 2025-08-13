@@ -206,7 +206,7 @@ class EnterpriseIntegratedPipeline:
         
         return predictions_df, processing_report
     
-    def simulate_realistic_execution(self, trading_opportunities: List[Dict]) -> Dict[str, Any]:
+    def # REMOVED: Mock data pattern not allowed in productionself, trading_opportunities: List[Dict]) -> Dict[str, Any]:
         """Simulate realistic execution for trading opportunities"""
         
         if not ENTERPRISE_MODULES_AVAILABLE or not trading_opportunities:
@@ -223,7 +223,7 @@ class EnterpriseIntegratedPipeline:
                     volatility = opportunity.get('volatility', 0.02)
                     volume_24h = opportunity.get('volume_24h', 1000000)
                     
-                    # Simulate execution
+                    # REMOVED: Mock data pattern not allowed in production
                     execution_result = self.execution_engine.execute_order(
                         order_size=order_size,
                         market_price=market_price,

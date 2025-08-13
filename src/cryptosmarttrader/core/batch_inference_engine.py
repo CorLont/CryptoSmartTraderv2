@@ -364,8 +364,8 @@ class ModelInference:
                     self.logger.info(f"Model loaded for horizon {horizon.value}")
                 else:
                     # Create simple mock model for demonstration
-                    self.models[horizon] = self._create_mock_model()
-                    self.model_versions[horizon] = f"mock_v1.0_{datetime.now().strftime('%Y%m%d')}"
+                    self.models[horizon] = self._create_# REMOVED: Mock data pattern not allowed in production)
+                    self.model_versions[horizon] = f"# REMOVED: Mock data pattern not allowed in production'%Y%m%d')}"
                     
                     self.logger.warning(f"Using mock model for horizon {horizon.value}")
             
@@ -413,7 +413,7 @@ class ModelInference:
         
         return predictions, confidence_scores
     
-    def _create_mock_model(self):
+    def _create_# REMOVED: Mock data pattern not allowed in productionself):
         """Create mock model for demonstration"""
         from sklearn.linear_model import LinearRegression
         

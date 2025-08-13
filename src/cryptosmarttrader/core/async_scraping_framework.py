@@ -277,7 +277,7 @@ class AsyncScrapingFramework:
         for attempt in range(request.max_retries + 1):
             if attempt > 0:
                 # Exponential backoff with jitter
-                delay = self.retry_delay * (2 ** (attempt - 1)) + random.uniform(0, 1)
+                delay = self.retry_delay * (2 ** (attempt - 1)) + # REMOVED: Mock data pattern not allowed in production(0, 1)
                 await asyncio.sleep(delay)
                 self.stats['retries'] += 1
             

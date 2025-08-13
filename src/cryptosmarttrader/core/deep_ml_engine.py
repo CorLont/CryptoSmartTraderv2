@@ -425,7 +425,7 @@ class DeepMLEngine:
             
             for i in range(5):
                 # Add small noise to features
-                noisy_features = features + np.random.normal(0, 0.01, features.shape)
+                noisy_features = features + np.# REMOVED: Mock data pattern not allowed in production(0, 0.01, features.shape)
                 
                 # Predict with both models
                 lstm_model = self.models[f'lstm_{horizon}']

@@ -440,7 +440,7 @@ class RecoveryCoordinator:
         
         test_start = datetime.now()
         
-        # Simulate failure by stopping a service
+        # REMOVED: Mock data pattern not allowed in production
         test_service = "api"
         self.process_manager.stop_process(test_service)
         

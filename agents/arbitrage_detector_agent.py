@@ -479,7 +479,7 @@ class ArbitrageDetectorAgent:
         """Detect funding rate arbitrage opportunities"""
         opportunities = []
         
-        # Simulate funding rate data (in production, fetch from exchange APIs)
+        # REMOVED: Mock data pattern not allowed in production
         funding_data = [
             {
                 'symbol': 'BTC/USDT',

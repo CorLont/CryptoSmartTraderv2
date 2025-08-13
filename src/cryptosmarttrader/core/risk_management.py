@@ -456,7 +456,7 @@ class RiskManagementEngine:
         
         return "; ".join(reasoning_parts)
     
-    async def simulate_order_execution(self, 
+    async def # REMOVED: Mock data pattern not allowed in productionself, 
                                      coin: str,
                                      order_size: float,
                                      market_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -493,7 +493,7 @@ class RiskManagementEngine:
                     'method': 'no_orderbook'
                 }
             
-            # Simulate market buy order
+            # REMOVED: Mock data pattern not allowed in production
             remaining_size = order_size
             total_cost = 0
             

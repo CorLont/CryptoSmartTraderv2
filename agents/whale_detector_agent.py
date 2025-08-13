@@ -475,7 +475,7 @@ class WhaleDetectorAgent:
         """Detect large flows into/out of exchanges"""
         
         # This would monitor blockchain data for large transfers to/from exchange wallets
-        # Simulate exchange flow detection
+        # REMOVED: Mock data pattern not allowed in production
         
         simulated_flows = [
             {

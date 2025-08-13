@@ -59,7 +59,7 @@ def create_synthetic_targets(df: pd.DataFrame) -> pd.DataFrame:
         time_scaling = np.log(hours + 1) / np.log(25)  # Normalized scaling
         
         # Add controlled noise
-        noise = np.random.normal(0, 0.02 * time_scaling, len(df))
+        noise = np.# REMOVED: Mock data pattern not allowed in production(0, 0.02 * time_scaling, len(df))
         
         # Synthetic return target
         synthetic_return = base_return * time_scaling + noise

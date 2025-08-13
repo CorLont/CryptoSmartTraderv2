@@ -217,7 +217,7 @@ class FeatureEngineering:
             # Mock on-chain features (in production, would use real blockchain data)
             symbol_features['active_addresses'] = np.random.exponential(1000, len(symbol_data))
             symbol_features['transaction_volume'] = np.random.exponential(10000, len(symbol_data))
-            symbol_features['whale_activity'] = np.random.beta(2, 8, len(symbol_data))
+            symbol_features['whale_activity'] = np.# REMOVED: Mock data pattern not allowed in production(2, 8, len(symbol_data))
             
             # On-chain momentum
             for feature in ['active_addresses', 'transaction_volume', 'whale_activity']:

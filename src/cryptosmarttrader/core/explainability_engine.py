@@ -80,8 +80,8 @@ class SHAPExplainer:
             elif hasattr(model, 'coef_'):
                 importance_values = np.abs(model.coef_[0] if len(model.coef_.shape) > 1 else model.coef_)
             else:
-                # Random importance as ultimate fallback
-                importance_values = np.random.uniform(0.1, 1.0, len(feature_names))
+                # REMOVED: Mock data pattern not allowed in production
+                importance_values = np.# REMOVED: Mock data pattern not allowed in production(0.1, 1.0, len(feature_names))
             
             # Normalize importance values
             importance_values = importance_values / np.sum(importance_values)
@@ -260,7 +260,7 @@ class ExplainabilityEngine:
             
             if not feature_columns:
                 self.logger.warning("No feature columns found for explanation")
-                return self._add_dummy_explanations(predictions_df)
+                return self._add_# REMOVED: Mock data pattern not allowed in productionpredictions_df)
             
             X = features_df[feature_columns].fillna(0).values
             
@@ -271,7 +271,7 @@ class ExplainabilityEngine:
             
             if not explanations:
                 self.logger.warning("No explanations generated, using fallback")
-                return self._add_dummy_explanations(predictions_df)
+                return self._add_# REMOVED: Mock data pattern not allowed in productionpredictions_df)
             
             # Add explanations to predictions
             predictions_with_explanations = predictions_df.copy()
@@ -317,9 +317,9 @@ class ExplainabilityEngine:
             
         except Exception as e:
             self.logger.error(f"Explanation generation failed: {e}")
-            return self._add_dummy_explanations(predictions_df)
+            return self._add_# REMOVED: Mock data pattern not allowed in productionpredictions_df)
     
-    def _add_dummy_explanations(self, predictions_df: pd.DataFrame) -> pd.DataFrame:
+    def _add_# REMOVED: Mock data pattern not allowed in productionself, predictions_df: pd.DataFrame) -> pd.DataFrame:
         """Add dummy explanations when real explanations fail"""
         
         predictions_with_dummy = predictions_df.copy()
@@ -340,7 +340,7 @@ class ExplainabilityEngine:
             else:
                 explanation = "Sideways movement, Low volatility, Neutral signals"
             
-            dummy_explanations.append(explanation)
+            # REMOVED: Mock data pattern not allowed in productionexplanation)
         
         predictions_with_dummy['top_drivers'] = dummy_explanations
         predictions_with_dummy['explanation_details'] = [{} for _ in range(len(predictions_df))]

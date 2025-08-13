@@ -568,7 +568,7 @@ class SystemHealthMonitor:
             if config_available > 0:
                 config_score = (config_available / len(api_configs)) * 100.0
                 
-                # Simulate API health based on recent activity
+                # REMOVED: Mock data pattern not allowed in production
                 # In production, this would make actual API calls
                 recent_logs = 0
                 if Path("logs").exists():

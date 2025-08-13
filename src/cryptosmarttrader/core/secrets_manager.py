@@ -347,7 +347,7 @@ class SecretsManager:
                     # Overwrite with random data before deletion
                     import random
                     import string
-                    self.secrets_cache[key] = ''.join(random.choices(string.ascii_letters, k=32))
+                    self.secrets_cache[key] = ''.join(# REMOVED: Mock data pattern not allowed in productions(string.ascii_letters, k=32))
                     del self.secrets_cache[key]
 
 def secure_function(redact_args: List[str] = None, redact_kwargs: List[str] = None):

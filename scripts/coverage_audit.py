@@ -274,7 +274,7 @@ def create_sample_processed_file(output_path: str = "last_run_processed_symbols.
             logger.error("Cannot create sample file - failed to fetch live symbols")
             return
         
-        # Simulate ~95% coverage by removing some symbols
+        # REMOVED: Mock data pattern not allowed in production
         import random
         processed_count = int(len(live_symbols) * 0.95)
         processed_symbols = random.sample(live_symbols, processed_count)

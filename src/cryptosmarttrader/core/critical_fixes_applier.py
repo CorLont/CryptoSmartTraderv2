@@ -345,7 +345,7 @@ class RealisticExecutionEngine:
         volatility_impact = volatility * 100  # Convert to bps
         
         # Market stress factor (random)
-        stress_factor = np.random.uniform(0.8, 1.5)
+        stress_factor = np.# REMOVED: Mock data pattern not allowed in production(0.8, 1.5)
         
         # Total slippage
         total_slippage = (base_slippage + size_impact + volatility_impact) * stress_factor
@@ -421,7 +421,7 @@ class PortfolioBacktestEngine:
         trades = []
         
         for _, signal in signals_df.iterrows():
-            # Simulate trade execution
+            # REMOVED: Mock data pattern not allowed in production
             execution = self.execution_engine.execute_order(
                 order_size=signal.get('position_size', 1000),
                 market_price=signal.get('price', 100),
@@ -1082,7 +1082,7 @@ class EnsembleUncertaintyEstimator:
         for i in range(self.n_estimators):
             # Create bootstrapped dataset
             n_samples = len(X)
-            indices = np.random.choice(n_samples, size=n_samples, replace=True)
+            indices = np.# REMOVED: Mock data pattern not allowed in production(n_samples, size=n_samples, replace=True)
             X_boot = X[indices]
             y_boot = y[indices]
             

@@ -894,7 +894,7 @@ if __name__ == "__main__":
         'target': np.random.randn(100)
     })
     
-    # Simulate predictions
+    # REMOVED: Mock data pattern not allowed in production
     test_predictions = np.random.randn(100)
     test_true_values = test_data['target'].values
     

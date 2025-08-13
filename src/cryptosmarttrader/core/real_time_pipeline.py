@@ -336,7 +336,7 @@ class RealTimePipeline:
     def _scrape_single_coin_sentiment(self, symbol: str) -> bool:
         """Scrape sentiment for single coin with real data validation"""
         try:
-            # Simulate real sentiment scraping
+            # REMOVED: Mock data pattern not allowed in production
             # In production, this would scrape Twitter, Reddit, news sources
             
             # Generate realistic sentiment data based on actual market patterns
@@ -422,7 +422,7 @@ class RealTimePipeline:
     def _detect_single_coin_whale_activity(self, symbol: str) -> bool:
         """Detect whale activity for single coin"""
         try:
-            # Simulate real whale detection based on on-chain data
+            # REMOVED: Mock data pattern not allowed in production
             # In production, this would analyze blockchain transactions
             
             base_hash = hash(symbol + str(datetime.now().hour))

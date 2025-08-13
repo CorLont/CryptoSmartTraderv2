@@ -351,7 +351,7 @@ class EnterpriseHTTPClient:
         endpoint = url.split('/')[-1] if '/' in url else url
         if not await self._check_rate_limit(service, endpoint):
             # Wait before retry
-            await asyncio.sleep(random.uniform(1, 3))
+            await asyncio.sleep(# REMOVED: Mock data pattern not allowed in production(1, 3))
             if not await self._check_rate_limit(service, endpoint):
                 raise RuntimeError(f"Rate limit exceeded for {service}")
         

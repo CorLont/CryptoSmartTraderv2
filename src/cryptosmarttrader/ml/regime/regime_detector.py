@@ -600,7 +600,7 @@ def train_regime_models(price_data_df: pd.DataFrame) -> Dict[str, Any]:
     return detector.fit(price_data_df)
 
 # Test function
-def create_mock_price_data(n_samples: int = 1000) -> pd.DataFrame:
+def create_# REMOVED: Mock data pattern not allowed in productionn_samples: int = 1000) -> pd.DataFrame:
     """Create mock price data for testing regime detection"""
     
     symbols = ['BTC', 'ETH', 'ADA'] * (n_samples // 3)
@@ -608,7 +608,7 @@ def create_mock_price_data(n_samples: int = 1000) -> pd.DataFrame:
     
     data = []
     for i in range(n_samples):
-        # Simulate different market regimes
+        # REMOVED: Mock data pattern not allowed in production
         if i < n_samples // 3:  # Bull market
             price_trend = 1.002  # 0.2% daily growth
             volatility = 0.02
@@ -620,7 +620,7 @@ def create_mock_price_data(n_samples: int = 1000) -> pd.DataFrame:
             volatility = 0.015
         
         base_price = 100 * (price_trend ** i)
-        noise = np.random.normal(0, volatility)
+        noise = np.# REMOVED: Mock data pattern not allowed in production(0, volatility)
         price = base_price * (1 + noise)
         
         volume = np.random.exponential(1000000)
@@ -639,7 +639,7 @@ if __name__ == "__main__":
     print("Testing Regime Detection System")
     
     # Create mock data
-    price_data = create_mock_price_data(300)
+    price_data = create_# REMOVED: Mock data pattern not allowed in production300)
     print(f"Created mock data: {len(price_data)} samples")
     
     # Train models

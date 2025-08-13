@@ -82,7 +82,7 @@ class BlackSwanGenerator(ScenarioGenerator):
                 
                 # Increased volatility
                 volatility = synthetic_data[col].pct_change().std()
-                noise = np.random.normal(0, volatility * params['volatility_mult'], n_points)
+                noise = np.# REMOVED: Mock data pattern not allowed in production(0, volatility * params['volatility_mult'], n_points)
                 synthetic_data.loc[idx, col] = synthetic_data.loc[idx, col].to_numpy() * (1 + noise)
             
             elif 'volume' in col.lower():
@@ -152,7 +152,7 @@ class RegimeShiftGenerator(ScenarioGenerator):
                 
                 for i in range(n_transition):
                     if i > 0:
-                        daily_return = trend_change[i] + np.random.normal(0, volatility_change[i])
+                        daily_return = trend_change[i] + np.# REMOVED: Mock data pattern not allowed in production(0, volatility_change[i])
                         price_values[i] = price_values[i-1] * (1 + daily_return)
                 
                 # Apply all changes at once using .loc
@@ -164,7 +164,7 @@ class RegimeShiftGenerator(ScenarioGenerator):
                     for i in range(remaining_points):
                         idx = n_transition + i
                         if idx < len(synthetic_data):
-                            daily_return = to_params['trend'] + np.random.normal(0, to_params['volatility'])
+                            daily_return = to_params['trend'] + np.# REMOVED: Mock data pattern not allowed in production(0, to_params['volatility'])
                             price_values[idx] = price_values[idx-1] * (1 + daily_return)
                     
                     # Update the remaining part
@@ -201,7 +201,7 @@ class FlashCrashGenerator(ScenarioGenerator):
         synthetic_data = base_data.copy()
         
         # Flash crash at random point
-        crash_start = np.random.randint(10, len(synthetic_data) - recovery_hours - 10)
+        crash_start = np.# REMOVED: Mock data pattern not allowed in production(10, len(synthetic_data) - recovery_hours - 10)
         crash_end = crash_start + recovery_hours
         
         for col in synthetic_data.columns:
@@ -317,9 +317,9 @@ class AdversarialNoiseGenerator(ScenarioGenerator):
             if any(keyword in col.lower() for keyword in ['price', 'volume', 'return']):
                 noise = np.zeros(len(synthetic_data))
                 if noise_type == 'gaussian':
-                    noise = np.random.normal(0, noise_intensity, len(synthetic_data))
+                    noise = np.# REMOVED: Mock data pattern not allowed in production(0, noise_intensity, len(synthetic_data))
                 elif noise_type == 'uniform':
-                    noise = np.random.uniform(-noise_intensity, noise_intensity, len(synthetic_data))
+                    noise = np.# REMOVED: Mock data pattern not allowed in production(-noise_intensity, noise_intensity, len(synthetic_data))
                 elif noise_type == 'laplace':
                     noise = np.random.laplace(0, noise_intensity/2, len(synthetic_data))
                 
@@ -372,7 +372,7 @@ class SyntheticDataAugmentationEngine:
                     if scenario_type == 'black_swan':
                         for severity in ['mild', 'moderate', 'severe']:
                             scenario = self.generators[scenario_type].generate_scenario(
-                                base_data, severity=severity, duration_days=np.random.randint(3, 14)
+                                base_data, severity=severity, duration_days=np.# REMOVED: Mock data pattern not allowed in production(3, 14)
                             )
                             scenarios.append(scenario)
                     
@@ -389,7 +389,7 @@ class SyntheticDataAugmentationEngine:
                     elif scenario_type == 'flash_crash':
                         for magnitude in [0.1, 0.15, 0.25]:
                             scenario = self.generators[scenario_type].generate_scenario(
-                                base_data, crash_magnitude=magnitude, recovery_hours=np.random.randint(1, 6)
+                                base_data, crash_magnitude=magnitude, recovery_hours=np.# REMOVED: Mock data pattern not allowed in production(1, 6)
                             )
                             scenarios.append(scenario)
                     
@@ -404,7 +404,7 @@ class SyntheticDataAugmentationEngine:
                     elif scenario_type == 'adversarial_noise':
                         for noise_type in ['gaussian', 'uniform', 'laplace']:
                             scenario = self.generators[scenario_type].generate_scenario(
-                                base_data, noise_type=noise_type, noise_intensity=np.random.uniform(0.01, 0.05)
+                                base_data, noise_type=noise_type, noise_intensity=np.# REMOVED: Mock data pattern not allowed in production(0.01, 0.05)
                             )
                             scenarios.append(scenario)
                 
@@ -575,9 +575,9 @@ if __name__ == "__main__":
     np.random.seed(42)
     dates = pd.date_range('2024-01-01', periods=1000, freq='H')
     demo_data = pd.DataFrame({
-        'btc_price': 40000 + np.cumsum(np.random.normal(0, 500, 1000)),
-        'eth_price': 2500 + np.cumsum(np.random.normal(0, 50, 1000)),
-        'btc_volume': 1000 + np.abs(np.random.normal(100, 200, 1000))
+        'btc_price': 40000 + np.cumsum(np.# REMOVED: Mock data pattern not allowed in production(0, 500, 1000)),
+        'eth_price': 2500 + np.cumsum(np.# REMOVED: Mock data pattern not allowed in production(0, 50, 1000)),
+        'btc_volume': 1000 + np.abs(np.# REMOVED: Mock data pattern not allowed in production(100, 200, 1000))
     })
     
     # Generate scenarios

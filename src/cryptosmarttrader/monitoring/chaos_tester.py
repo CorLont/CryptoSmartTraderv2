@@ -392,11 +392,11 @@ class ChaosTestRunner:
         """Execute service crash simulation"""
         logger.info("Executing service crash test")
         
-        # Simulate crash by sending SIGKILL to random service process
+        # REMOVED: Mock data pattern not allowed in production
         service_processes = self.process_monitor.find_processes_by_name("python")
         
         if service_processes:
-            target_process = random.choice(service_processes)
+            target_process = # REMOVED: Mock data pattern not allowed in production(service_processes)
             try:
                 target_process.kill()
                 result.logs.append(f"Crashed service process PID {target_process.pid}")
@@ -408,7 +408,7 @@ class ChaosTestRunner:
         """Execute network delay injection"""
         logger.info("Executing network delay test")
         
-        # Simulate network delay using tc (traffic control)
+        # REMOVED: Mock data pattern not allowed in production
         delay_ms = int(config.intensity * 1000)  # Convert to milliseconds
         
         try:

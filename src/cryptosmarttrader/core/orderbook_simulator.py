@@ -304,7 +304,7 @@ class OrderBookSimulator:
         
         try:
             # Add latency simulation
-            latency_ms = self._simulate_latency()
+            latency_ms = self._# REMOVED: Mock data pattern not allowed in production)
             
             # Determine which side of book to match against
             book_levels = (self.current_book.asks if order.side == OrderSide.BUY 
@@ -389,14 +389,14 @@ class OrderBookSimulator:
             order.status = OrderStatus.REJECTED
             self.logger.error(f"Order processing failed for {order.order_id}: {e}")
     
-    def _simulate_latency(self) -> float:
+    def _# REMOVED: Mock data pattern not allowed in productionself) -> float:
         """Simulate exchange latency"""
         
         # Generate realistic latency with occasional spikes
         if np.random.random() < 0.05:  # 5% chance of high latency
             latency = np.random.exponential(self.exchange_config.latency_mean_ms * 5)
         else:
-            latency = np.random.normal(self.exchange_config.latency_mean_ms, 
+            latency = np.# REMOVED: Mock data pattern not allowed in production(self.exchange_config.latency_mean_ms, 
                                      self.exchange_config.latency_std_ms)
         
         # Cap at maximum latency

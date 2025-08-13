@@ -354,11 +354,11 @@ class FractionalKellySizer:
                 peak = 1.0
                 
                 for params in historical_params[-lookback_trades:]:
-                    # Simulate trade with this fraction
+                    # REMOVED: Mock data pattern not allowed in production
                     params.kelly_fraction = fraction
                     sizing_result = self.calculate_fractional_kelly(params)
                     
-                    # Simulate trade outcome
+                    # REMOVED: Mock data pattern not allowed in production
                     if np.random.random() < params.win_rate:
                         trade_return = 1 + (sizing_result.final_size * params.avg_win)
                     else:

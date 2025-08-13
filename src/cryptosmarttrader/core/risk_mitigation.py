@@ -207,10 +207,10 @@ class DataGapMitigation:
         Actual data fetching implementation
         """
         
-        # Simulate data fetching (replace with real implementation)
+        # REMOVED: Mock data pattern not allowed in production
         await asyncio.sleep(0.1)
         
-        # Simulate occasional failures
+        # REMOVED: Mock data pattern not allowed in production
         if random.random() < 0.1:
             raise Exception("Connection timeout")
         

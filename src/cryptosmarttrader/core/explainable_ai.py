@@ -193,7 +193,7 @@ class PredictionExplainer:
             
             # Generate synthetic background data as fallback
             n_features = 15  # Adjust based on actual feature count
-            background = np.random.normal(0, 1, (100, n_features))
+            background = np.# REMOVED: Mock data pattern not allowed in production(0, 1, (100, n_features))
             
             self.cache_manager.set("training_data_sample", background, ttl_minutes=120)
             return background

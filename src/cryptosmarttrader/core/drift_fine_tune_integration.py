@@ -441,11 +441,11 @@ if __name__ == "__main__":
         
         print("📊 Simulating system metrics...")
         
-        # Simulate various component metrics
+        # REMOVED: Mock data pattern not allowed in production
         import numpy as np
         import random
         
-        # Simulate deteriorating ML predictor
+        # REMOVED: Mock data pattern not allowed in production
         for i in range(5):
             metrics = {
                 'error_rate': 0.05 + (i * 0.02),  # Increasing error rate
@@ -464,7 +464,7 @@ if __name__ == "__main__":
         # Add some training data
         print("\n📚 Adding training data...")
         features = np.random.randn(50, 10)
-        targets = np.random.randint(0, 2, 50)
+        targets = np.# REMOVED: Mock data pattern not allowed in production(0, 2, 50)
         integration.add_training_data('ml_predictor', features, targets)
         
         # Run a few monitoring cycles

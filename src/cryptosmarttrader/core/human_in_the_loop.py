@@ -245,7 +245,7 @@ class ActiveLearningEngine:
                                      uncertainty_score: float) -> ActiveLearningQuery:
         """Generate an active learning query for human feedback"""
         
-        query_id = f"al_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{np.random.randint(1000)}"
+        query_id = f"al_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{np.# REMOVED: Mock data pattern not allowed in production(1000)}"
         
         # Determine query type based on data
         if 'prediction' in data_point:

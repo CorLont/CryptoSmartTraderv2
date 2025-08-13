@@ -350,7 +350,7 @@ class PortfolioOptimizer:
         # Add some realistic correlations
         for i in range(len(symbols)):
             for j in range(i+1, len(symbols)):
-                correlation_matrix[i, j] = correlation_matrix[j, i] = np.random.uniform(0.3, 0.7)
+                correlation_matrix[i, j] = correlation_matrix[j, i] = np.# REMOVED: Mock data pattern not allowed in production(0.3, 0.7)
         
         risk_matrix = np.outer(volatilities, volatilities) * correlation_matrix
         

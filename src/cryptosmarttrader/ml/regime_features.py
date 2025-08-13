@@ -340,23 +340,23 @@ if __name__ == "__main__":
     
     for i, period_length in enumerate(regime_periods):
         if i == 0:  # Bull trend
-            prices = np.cumsum(np.random.normal(0.001, 0.02, period_length)) + 100
-            volumes = np.random.uniform(1e6, 5e6, period_length)
+            prices = np.cumsum(np.# REMOVED: Mock data pattern not allowed in production(0.001, 0.02, period_length)) + 100
+            volumes = np.# REMOVED: Mock data pattern not allowed in production(1e6, 5e6, period_length)
         elif i == 1:  # Bear trend
-            prices = np.cumsum(np.random.normal(-0.001, 0.025, period_length)) + 100
-            volumes = np.random.uniform(2e6, 8e6, period_length)
+            prices = np.cumsum(np.# REMOVED: Mock data pattern not allowed in production(-0.001, 0.025, period_length)) + 100
+            volumes = np.# REMOVED: Mock data pattern not allowed in production(2e6, 8e6, period_length)
         elif i == 2:  # Sideways
-            prices = np.cumsum(np.random.normal(0, 0.01, period_length)) + 100
-            volumes = np.random.uniform(0.5e6, 2e6, period_length)
+            prices = np.cumsum(np.# REMOVED: Mock data pattern not allowed in production(0, 0.01, period_length)) + 100
+            volumes = np.# REMOVED: Mock data pattern not allowed in production(0.5e6, 2e6, period_length)
         else:  # High volatility
-            prices = np.cumsum(np.random.normal(0, 0.05, period_length)) + 100
-            volumes = np.random.uniform(3e6, 10e6, period_length)
+            prices = np.cumsum(np.# REMOVED: Mock data pattern not allowed in production(0, 0.05, period_length)) + 100
+            volumes = np.# REMOVED: Mock data pattern not allowed in production(3e6, 10e6, period_length)
         
         regime_data = pd.DataFrame({
             'close': prices,
             'volume_24h': volumes,
             'market_cap': prices * 1e6,
-            'technical_rsi': np.random.uniform(20, 80, period_length)
+            'technical_rsi': np.# REMOVED: Mock data pattern not allowed in production(20, 80, period_length)
         })
         
         sample_data.append(regime_data)

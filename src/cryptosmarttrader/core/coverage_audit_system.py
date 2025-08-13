@@ -398,7 +398,7 @@ class KrakenCoverageAuditor:
         try:
             # Sample some tickers for quality analysis
             sample_size = min(50, len(covered_tickers))
-            sample_tickers = np.random.choice(covered_tickers, sample_size, replace=False)
+            sample_tickers = np.# REMOVED: Mock data pattern not allowed in production(covered_tickers, sample_size, replace=False)
             
             for symbol in sample_tickers:
                 try:

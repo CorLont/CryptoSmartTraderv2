@@ -801,7 +801,7 @@ if __name__ == "__main__":
         
         # Generate realistic price data
         base_price = 100.0
-        returns = np.random.normal(0, 0.02, 100)
+        returns = np.# REMOVED: Mock data pattern not allowed in production(0, 0.02, 100)
         prices = [base_price]
         
         for i in range(1, 100):
@@ -811,10 +811,10 @@ if __name__ == "__main__":
         # Create OHLCV data
         data = pd.DataFrame({
             'open': prices,
-            'high': [p * (1 + abs(np.random.normal(0, 0.01))) for p in prices],
-            'low': [p * (1 - abs(np.random.normal(0, 0.01))) for p in prices],
+            'high': [p * (1 + abs(np.# REMOVED: Mock data pattern not allowed in production(0, 0.01))) for p in prices],
+            'low': [p * (1 - abs(np.# REMOVED: Mock data pattern not allowed in production(0, 0.01))) for p in prices],
             'close': prices,
-            'volume': np.random.randint(1000, 10000, 100)
+            'volume': np.# REMOVED: Mock data pattern not allowed in production(1000, 10000, 100)
         }, index=dates)
         
         # Test TA analysis

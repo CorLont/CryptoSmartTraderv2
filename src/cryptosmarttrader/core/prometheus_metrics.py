@@ -561,7 +561,7 @@ if __name__ == "__main__":
         for i in range(10):
             # Latency metrics
             op_id = latency_collector.start_operation("ml_prediction")
-            await asyncio.sleep(0.01)  # Simulate work
+            await asyncio.sleep(0.01)  # REMOVED: Mock data pattern not allowed in production
             latency_collector.end_operation(op_id, "ml_prediction")
             
             # Error metrics

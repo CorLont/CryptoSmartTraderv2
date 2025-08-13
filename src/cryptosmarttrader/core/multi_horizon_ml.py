@@ -191,7 +191,7 @@ class MultiHorizonMLSystem:
             # Convert to DataFrame and simulate historical progression
             df = pd.DataFrame(coin_records)
             
-            # Simulate historical timestamps (in real system, use actual historical data)
+            # REMOVED: Mock data pattern not allowed in production
             base_time = datetime.now() - timedelta(days=lookback_days)
             df['timestamp'] = pd.date_range(
                 start=base_time, 
@@ -505,7 +505,7 @@ class MultiHorizonMLSystem:
                 predictions = []
                 for _ in range(10):
                     # Add small noise to get prediction variance
-                    X_noisy = X + np.random.normal(0, 0.01, X.shape)
+                    X_noisy = X + np.# REMOVED: Mock data pattern not allowed in production(0, 0.01, X.shape)
                     pred = model.predict(X_noisy)
                     predictions.append(pred)
                 

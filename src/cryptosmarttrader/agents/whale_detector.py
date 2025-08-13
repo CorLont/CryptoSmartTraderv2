@@ -23,7 +23,7 @@ class WhaleDetectorAgent:
         whale_scores = []
         
         for coin in coin_data:
-            # Simulate whale detection (in real implementation, use blockchain APIs)
+            # REMOVED: Mock data pattern not allowed in production
             volume_24h = coin.get('volume_24h', 0)
             price_change = abs(coin.get('change_24h', 0))
             
@@ -37,14 +37,14 @@ class WhaleDetectorAgent:
                 'coin': coin['coin'],
                 'timestamp': datetime.utcnow(),
                 'feat_whale_score': whale_score,
-                'feat_large_transfers': self._simulate_large_transfers(),
+                'feat_large_transfers': self._# REMOVED: Mock data pattern not allowed in production),
                 'volume_anomaly': volume_score > 0.8,
                 'price_anomaly': volatility_score > 0.7
             })
             
         return whale_scores
     
-    def _simulate_large_transfers(self):
+    def _# REMOVED: Mock data pattern not allowed in productionself):
         """Simulate large transfer detection"""
         # In production, this would query blockchain APIs
         return max(0, int(np.random.poisson(2)))

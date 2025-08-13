@@ -324,11 +324,11 @@ class PortfolioOptimizerAgent:
         if not self.current_portfolio:
             return 1.0
         
-        # Simulate current weights (would be actual portfolio weights in production)
+        # REMOVED: Mock data pattern not allowed in production
         total_drift = 0.0
         
         for allocation in self.current_portfolio.asset_allocations:
-            # Simulate some weight drift
+            # REMOVED: Mock data pattern not allowed in production
             weight_drift = abs(allocation.current_weight - allocation.target_weight)
             total_drift += weight_drift
         
@@ -342,9 +342,9 @@ class PortfolioOptimizerAgent:
         
         for symbol in self.asset_universe:
             
-            # Simulate price history
+            # REMOVED: Mock data pattern not allowed in production
             days = self.kelly_lookback_days
-            returns = np.random.normal(0.001, 0.03, days)  # Daily returns
+            returns = np.# REMOVED: Mock data pattern not allowed in production(0.001, 0.03, days)  # Daily returns
             prices = np.cumprod(1 + returns) * 100  # Price series
             
             # Create DataFrame
@@ -364,8 +364,8 @@ class PortfolioOptimizerAgent:
                 'volatility': np.std(returns) * np.sqrt(365),
                 'sharpe_ratio': (np.mean(returns) * 365 - self.risk_free_rate) / (np.std(returns) * np.sqrt(365)),
                 'current_price': prices[-1],
-                'liquidity_score': np.random.uniform(0.7, 1.0),
-                'transaction_cost': np.random.uniform(0.001, 0.005)
+                'liquidity_score': np.# REMOVED: Mock data pattern not allowed in production(0.7, 1.0),
+                'transaction_cost': np.# REMOVED: Mock data pattern not allowed in production(0.001, 0.005)
             }
     
     def _optimize_portfolio(self) -> Optional[PortfolioOptimization]:

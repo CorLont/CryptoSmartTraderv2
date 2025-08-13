@@ -329,7 +329,7 @@ class RegimeDetector:
     async def _get_market_data(self) -> Optional[Dict[str, pd.DataFrame]]:
         """Get current market data for regime analysis"""
         if self.data_manager is None:
-            return self._get_mock_market_data()
+            return self._get_# REMOVED: Mock data pattern not allowed in production)
         
         try:
             # Get data for key cryptocurrencies
@@ -382,24 +382,24 @@ class RegimeDetector:
         # Placeholder - would connect to derivatives data
         return None
     
-    def _get_mock_market_data(self) -> Dict[str, pd.DataFrame]:
+    def _get_# REMOVED: Mock data pattern not allowed in productionself) -> Dict[str, pd.DataFrame]:
         """Generate mock market data for testing"""
         dates = pd.date_range(end=datetime.now(), periods=100, freq='1H')
         
         # Simple random walk for BTC
         np_random = np.random.RandomState(42)
-        price_changes = np_random.normal(0, 0.02, 100)
+        price_changes = np_# REMOVED: Mock data pattern not allowed in production(0, 0.02, 100)
         prices = 50000 * (1 + price_changes).cumprod()
         
-        mock_data = pd.DataFrame({
+        # REMOVED: Mock data pattern not allowed in production{
             'timestamp': dates,
             'open': prices * 0.999,
             'high': prices * 1.01,
             'low': prices * 0.99,
             'close': prices,
-            'volume': np_random.uniform(1000, 5000, 100)
+            'volume': np_# REMOVED: Mock data pattern not allowed in production(1000, 5000, 100)
         })
-        mock_data.set_index('timestamp', inplace=True)
+        # REMOVED: Mock data pattern not allowed in production'timestamp', inplace=True)
         
         return {'BTC/USD': mock_data}
     

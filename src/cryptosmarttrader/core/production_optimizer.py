@@ -348,7 +348,7 @@ class ProductionOptimizer:
     def _calculate_improvement(self) -> Dict[str, float]:
         """Calculate performance improvement metrics"""
         
-        # Simulate performance improvements based on optimizations
+        # REMOVED: Mock data pattern not allowed in production
         baseline_scores = {
             'cpu_efficiency': 65.0,
             'memory_efficiency': 70.0,
