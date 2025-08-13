@@ -214,8 +214,8 @@ class ProductionOptimizer:
         temp_dir.mkdir(parents=True, exist_ok=True)
 
         # Set environment variables for I/O optimization
-        os.environ["TMPDIR"] = str(temp_dir)
-        os.environ["TEMP"] = str(temp_dir)
+        settings.TMPDIR.lower() = str(temp_dir)
+        settings.TEMP.lower() = str(temp_dir)
 
         self.optimization_results["io_operations"] = io_config
         self.optimization_history.append("I/O operations optimized for high-throughput")

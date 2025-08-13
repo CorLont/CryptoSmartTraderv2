@@ -354,13 +354,13 @@ class StressTestSimulator:
             portfolio_impact = self._calculate_portfolio_impact(event, initial_portfolio)
 
             # Calculate maximum drawdown
-            max_drawdown = self._# REMOVED: Mock data pattern not allowed in productionevent, market_condition)
+            max_drawdown = self._calculate_max_drawdown(event, market_condition)
 
             # Estimate recovery time
             recovery_time = self._estimate_recovery_time(event, market_condition)
 
-            # REMOVED: Mock data pattern not allowed in production
-            model_degradation = self._# REMOVED: Mock data pattern not allowed in productionevent)
+            # Calculate model degradation
+            model_degradation = self._calculate_model_degradation(event)
 
             # Identify system failures
             system_failures = self._identify_system_failures(event)

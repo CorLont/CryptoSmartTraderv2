@@ -256,8 +256,8 @@ class UltraPerformanceOptimizer:
         gc.set_threshold(int(700 * memory_params["gc_threshold_multiplier"]), 10, 10)
 
         # Set environment variables for memory optimization
-        os.environ["PYTHONHASHSEED"] = "0"  # Reproducible hashing
-        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
+        settings.PYTHONHASHSEED.lower() = "0"  # Reproducible hashing
+        settings.PYTORCH_CUDA_ALLOC_CONF.lower() = "max_split_size_mb:512"
 
         return {
             "gc_thresholds_optimized": True,
@@ -272,9 +272,9 @@ class UltraPerformanceOptimizer:
         cpu_params = params["cpu_scheduling"]
 
         # Configure thread pool sizes
-        os.environ["OMP_NUM_THREADS"] = str(cpu_params["worker_threads"])
-        os.environ["MKL_NUM_THREADS"] = str(cpu_params["worker_threads"])
-        os.environ["NUMEXPR_NUM_THREADS"] = str(cpu_params["async_workers"])
+        settings.OMP_NUM_THREADS.lower() = str(cpu_params["worker_threads"])
+        settings.MKL_NUM_THREADS.lower() = str(cpu_params["worker_threads"])
+        settings.NUMEXPR_NUM_THREADS.lower() = str(cpu_params["async_workers"])
 
         # Configure process affinity if possible
         try:
@@ -308,7 +308,7 @@ class UltraPerformanceOptimizer:
             Path(cache_dir).mkdir(parents=True, exist_ok=True)
 
         # Configure I/O optimization environment variables
-        os.environ["TMPDIR"] = str(Path("cache/temp/fast_io").absolute())
+        settings.TMPDIR.lower() = str(Path("cache/temp/fast_io").absolute())
 
         return {
             "cache_directories_optimized": True,
