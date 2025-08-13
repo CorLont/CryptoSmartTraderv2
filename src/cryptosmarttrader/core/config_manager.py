@@ -71,8 +71,7 @@ class ConfigManager:
                     "database": DatabaseConfig().model_dump(),
                     "api": ApiConfig().model_dump(),
                     "trading": TradingConfig().model_dump(),
-                }
-            )
+                })
 
             # Load from file if exists
             if self.config_path.exists():
@@ -179,6 +178,7 @@ class ConfigManager:
             api_config = self.get_section("api")
             validation_results["api_keys_present"] = bool(
                 api_config.get("kraken_api_key") and api_config.get("openai_api_key")
+            )
 
             # Check critical directories
             required_dirs = ["data", "logs", "models"]
