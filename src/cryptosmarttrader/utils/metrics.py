@@ -50,7 +50,7 @@ def get_legacy_metrics():
 metrics = get_metrics()
 
 
-
+class MetricsServer:
     def __init__(self, config_manager=None, health_monitor=None):
         self.config_manager = config_manager
         self.health_monitor = health_monitor

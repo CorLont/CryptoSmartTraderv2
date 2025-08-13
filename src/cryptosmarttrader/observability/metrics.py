@@ -4,7 +4,7 @@ All observability metrics consolidated in single module with consistent naming
 """
 
 from prometheus_client import Counter, Gauge, Histogram, Summary, CollectorRegistry, generate_latest
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 import time
 import threading
 from dataclasses import dataclass
@@ -325,7 +325,7 @@ class CryptoSmartTraderMetrics:
     
     def export_metrics(self) -> str:
         """Export metrics in Prometheus format"""
-        return generate_latest(self.registry)
+        return generate_latest(self.registry).decode('utf-8')
 
 
 class PrometheusMetrics:
@@ -412,53 +412,63 @@ def record_order_metrics(symbol: str, side: str, order_type: str, exchange: str 
                 
         return wrapper
     return decorator
-            ['service', 'endpoint', 'method', 'status_code'],
-            registry=self.registry
-        )
-        
-        self.cache_hits = Counter(
-            'cache_hits_total',
-            'Cache hit/miss statistics',
-            ['cache_type', 'hit_miss'],
-            registry=self.registry
-        )
-        
-        self.memory_usage_bytes = Gauge(
-            'memory_usage_bytes',
-            'Memory usage in bytes by component',
-            ['component', 'memory_type'],
-            registry=self.registry
-        )
-        
-        # Risk Management Metrics
-        self.risk_violations = Counter(
-            'risk_violations_total',
-            'Total risk limit violations',
-            ['violation_type', 'symbol', 'strategy'],
-            registry=self.registry
-        )
-        
-        self.position_size_usd = Gauge(
-            'position_size_usd',
-            'Current position size in USD',
-            ['symbol', 'strategy', 'side'],
-            registry=self.registry
-        )
-        
-        # Data Quality Metrics
-        self.data_points_received = Counter(
-            'data_points_received_total',
-            'Total data points received from sources',
-            ['source', 'data_type', 'symbol'],
-            registry=self.registry
-        )
-        
-        self.data_quality_score = Gauge(
-            'data_quality_score',
-            'Data quality score (0-1) by source',
-            ['source', 'data_type'],
-            registry=self.registry
-        )
+
+
+# Additional system metrics initialization (moved from duplicate location)
+def _initialize_additional_system_metrics(registry):
+    """Initialize additional system metrics"""
+    api_calls_total = Counter(
+        'api_calls_total',
+        'Total API calls made',
+        ['service', 'endpoint', 'method', 'status_code'],
+        registry=registry
+    )
+    
+    cache_hits = Counter(
+        'cache_hits_total',
+        'Cache hit/miss statistics',
+        ['cache_type', 'hit_miss'],
+        registry=registry
+    )
+    
+    memory_usage_bytes = Gauge(
+        'memory_usage_bytes',
+        'Memory usage in bytes by component',
+        ['component', 'memory_type'],
+        registry=registry
+    )
+    
+    # Risk Management Metrics
+    risk_violations = Counter(
+        'risk_violations_total',
+        'Total risk limit violations',
+        ['violation_type', 'symbol', 'strategy'],
+        registry=registry
+    )
+    
+    position_size_usd = Gauge(
+        'position_size_usd',
+        'Current position size in USD',
+        ['symbol', 'strategy', 'side'],
+        registry=registry
+    )
+    
+    # Data Quality Metrics  
+    data_points_received = Counter(
+        'data_points_received_total',
+        'Total data points received from sources',
+        ['source', 'data_type', 'symbol'],
+        registry=registry
+    )
+    
+    return {
+        'api_calls_total': api_calls_total,
+        'cache_hits': cache_hits,
+        'memory_usage_bytes': memory_usage_bytes,
+        'risk_violations': risk_violations,
+        'position_size_usd': position_size_usd,
+        'data_points_received': data_points_received
+    }
     
     # Convenience Methods for Common Operations
     

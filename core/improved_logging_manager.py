@@ -74,55 +74,18 @@ class CorrelationContext:
         return {k: v for k, v in asdict(self).items() if v is not None}
 
 
-class PrometheusMetrics:
-    """Prometheus metrics for monitoring"""
-
-    def __init__(self, registry: Optional[object] = None):
-        if not PROMETHEUS_AVAILABLE:
-            return
-
-        self.registry = registry or CollectorRegistry()
-
-        # Operation metrics
-        self.operation_counter = Counter(
-            "cryptotrader_operations_total",
-            "Total number of operations",
-            ["operation", "agent", "status"],
-            registry=self.registry,
-        )
-
-        self.operation_duration = Histogram(
-            "cryptotrader_operation_duration_seconds",
-            "Operation duration in seconds",
-            ["operation", "agent", "status"],
-            registry=self.registry,
-        )
-
-        # System metrics
-        self.active_agents = Gauge(
-            "cryptotrader_active_agents",
-            "Number of active agents",
-            ["agent_type"],
-            registry=self.registry,
-        )
-
-        self.prediction_accuracy = Gauge(
-            "cryptotrader_prediction_accuracy",
-            "Current prediction accuracy",
-            ["model", "horizon"],
-            registry=self.registry,
-        )
-
-    def record_operation(self, operation: str, agent: str, status: str, duration: float):
-        """Record operation metrics"""
-        if not PROMETHEUS_AVAILABLE:
-            return
-
-        self.operation_counter.labels(operation=operation, agent=agent, status=status).inc()
-
-        self.operation_duration.labels(operation=operation, agent=agent, status=status).observe(
-            duration
-        )
+# PrometheusMetrics moved to src/cryptosmarttrader/observability/metrics.py
+# Import from centralized location to avoid duplication
+try:
+    from ..src.cryptosmarttrader.observability.metrics import PrometheusMetrics
+except ImportError:
+    # Fallback for backward compatibility
+    class PrometheusMetrics:
+        """Stub for backward compatibility - use observability.metrics instead"""
+        def __init__(self, *args, **kwargs):
+            pass
+        def record_operation(self, *args, **kwargs):
+            pass
 
 
 class ImprovedLogger:

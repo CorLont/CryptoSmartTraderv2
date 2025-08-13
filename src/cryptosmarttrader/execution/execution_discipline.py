@@ -7,7 +7,7 @@ import uuid
 import time
 import hashlib
 import threading
-from typing import Dict, Optional, Tuple, List, Set
+from typing import Dict, Optional, Tuple, List, Set, Union
 from dataclasses import dataclass, field
 from enum import Enum
 from decimal import Decimal
@@ -178,10 +178,11 @@ class ExecutionPolicy:
         logger.info(f"Evaluating order: {order_request.client_order_id} for {order_request.symbol}")
         
         # Gate 1: Idempotency check (CRITICAL)
-        if self.idempotency.is_duplicate(order_request.client_order_id):
+        client_order_id = order_request.client_order_id or "unknown"
+        if self.idempotency.is_duplicate(client_order_id):
             return ExecutionResult(
                 decision=ExecutionDecision.REJECT,
-                reason=f"Duplicate order ID: {order_request.client_order_id}",
+                reason=f"Duplicate order ID: {client_order_id}",
                 gate_results={"idempotency": False}
             )
         
@@ -269,7 +270,7 @@ class ExecutionPolicy:
             gate_results["price"] = True
         
         # All gates passed - mark as pending and approve
-        if not self.idempotency.mark_pending(order_request.client_order_id):
+        if not self.idempotency.mark_pending(client_order_id):
             return ExecutionResult(
                 decision=ExecutionDecision.REJECT,
                 reason="Failed to acquire execution lock",
@@ -329,7 +330,7 @@ class ExecutionPolicy:
             self._rejection_count += 1
         logger.warning(f"Order failed: {client_order_id} - {reason}")
     
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> Dict[str, Union[int, float]]:
         """Get execution statistics"""
         with self._lock:
             return {
@@ -365,25 +366,27 @@ class OrderExecutor:
         
         # MANDATORY: All orders must go through policy.decide()
         result = self.policy.decide(order_request, market_conditions)
+        client_order_id = order_request.client_order_id or "unknown"
         
         if result.decision != ExecutionDecision.APPROVE:
             return False, f"Order rejected: {result.reason}"
         
         try:
             # Simulate order execution (replace with actual exchange API)
-            success = self._send_to_exchange(result.approved_order)
+            approved_order = result.approved_order or order_request
+            success = self._send_to_exchange(approved_order)
             
             if success:
-                self.policy.mark_order_executed(order_request.client_order_id)
+                self.policy.mark_order_executed(client_order_id)
                 with self._lock:
                     self.executed_orders.append(order_request)
-                return True, f"Order executed successfully: {order_request.client_order_id}"
+                return True, f"Order executed successfully: {client_order_id}"
             else:
-                self.policy.mark_order_failed(order_request.client_order_id, "Exchange rejected")
+                self.policy.mark_order_failed(client_order_id, "Exchange rejected")
                 return False, "Exchange execution failed"
                 
         except Exception as e:
-            self.policy.mark_order_failed(order_request.client_order_id, str(e))
+            self.policy.mark_order_failed(client_order_id, str(e))
             return False, f"Execution error: {str(e)}"
     
     def _send_to_exchange(self, order: OrderRequest) -> bool:
