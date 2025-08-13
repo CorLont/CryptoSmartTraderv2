@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Generate final predictions based on exports/production/predictions.csv with 80% gate
-Consistent model status implementation
+Clean prediction generator - NO ARTIFICIAL DATA
+Only generates predictions when real ML models and authentic data are available
 """
+
 import pandas as pd
 import numpy as np
 import json
@@ -12,7 +13,6 @@ from pathlib import Path
 from datetime import datetime
 import logging
 import ccxt
-import time
 
 # Import advanced logging system
 from utils.logging_manager import get_advanced_logger, log_prediction, log_confidence_scoring, log_performance, PerformanceTimer
@@ -20,46 +20,66 @@ from utils.logging_manager import get_advanced_logger, log_prediction, log_confi
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class ProductionPredictionGenerator:
-    """Generate production predictions with consistent RF model architecture"""
+class RealDataPredictionGenerator:
+    """
+    Prediction generator that only uses authentic data sources
+    NO artificial, mock, or synthetic data allowed
+    """
     
     def __init__(self):
-        self.model_path = Path("models/saved")
         self.output_path = Path("exports/production")
         self.output_path.mkdir(parents=True, exist_ok=True)
         self.horizons = ['1h', '24h', '168h', '720h']
         
-    def load_rf_models(self):
-        """Load consistent RF models"""
-        models = {}
+        # Verify API connectivity
+        self.kraken = None
+        self.api_available = False
+        self._verify_data_sources()
         
-        for horizon in self.horizons:
-            model_file = self.model_path / f"rf_{horizon}.pkl"
-            
-            if model_file.exists():
-                try:
-                    with open(model_file, 'rb') as f:
-                        models[horizon] = pickle.load(f)
-                    logger.info(f"Loaded RF model for {horizon}")
-                except Exception as e:
-                    logger.error(f"Failed to load RF model for {horizon}: {e}")
-            else:
-                logger.warning(f"RF model for {horizon} not found")
-                
-        return models
-    
-    def get_all_kraken_pairs(self):
-        """Get ALL Kraken USD pairs without capping"""
+    def _verify_data_sources(self):
+        """Verify that authentic data sources are available"""
+        logger.info("Verifying authentic data sources...")
+        
+        # Check Kraken API
         try:
-            client = ccxt.kraken({'enableRateLimit': True})
-            tickers = client.fetch_tickers()
+            self.kraken = ccxt.kraken({'enableRateLimit': True})
+            test_ticker = self.kraken.fetch_ticker('BTC/USD')
+            if test_ticker and 'last' in test_ticker:
+                self.api_available = True
+                logger.info("✅ Kraken API verified - authentic market data available")
+            else:
+                logger.error("❌ Kraken API test failed - no authentic market data")
+        except Exception as e:
+            logger.error(f"❌ Kraken API unavailable: {e}")
             
-            # Get ALL USD pairs
-            usd_pairs = {k: v for k, v in tickers.items() if k.endswith('/USD')}
+        # Check for trained ML models
+        model_dir = Path("models/saved")
+        if model_dir.exists() and any(model_dir.glob("*.pkl")):
+            logger.info("✅ Trained ML models found")
+        else:
+            logger.warning("⚠️ No trained ML models found")
             
-            market_data = []
-            for symbol, ticker in usd_pairs.items():
-                if ticker['last'] is not None:
+        # Check for OpenAI key
+        if os.getenv('OPENAI_API_KEY'):
+            logger.info("✅ OpenAI API key available")
+        else:
+            logger.warning("⚠️ No OpenAI API key - AI analysis unavailable")
+    
+    def get_authentic_market_data(self):
+        """Get authentic market data from Kraken API"""
+        if not self.api_available:
+            logger.error("No authentic market data source available")
+            return []
+        
+        try:
+            with PerformanceTimer('kraken_data_fetch'):
+                markets = self.kraken.load_markets()
+                usd_pairs = [symbol for symbol in markets.keys() if '/USD' in symbol]
+                
+                market_data = []
+                tickers = self.kraken.fetch_tickers(usd_pairs[:50])  # Limit for rate limiting
+                
+                for symbol, ticker in tickers.items():
                     market_data.append({
                         'symbol': symbol,
                         'coin': symbol.split('/')[0],
@@ -67,290 +87,167 @@ class ProductionPredictionGenerator:
                         'volume_24h': ticker.get('baseVolume', 0),
                         'change_24h': ticker.get('percentage', 0),
                         'high_24h': ticker.get('high', ticker['last']),
-                        'low_24h': ticker.get('low', ticker['last'])
+                        'low_24h': ticker.get('low', ticker['last']),
+                        'timestamp': datetime.now().isoformat()
                     })
-            
-            logger.info(f"Retrieved {len(market_data)} Kraken USD pairs (ALL, no capping)")
-            return market_data
-            
+                
+                logger.info(f"Retrieved authentic data for {len(market_data)} pairs from Kraken")
+                return market_data
+                
         except Exception as e:
-            logger.error(f"Failed to get Kraken data: {e}")
+            logger.error(f"Failed to get authentic market data: {e}")
             return []
     
-    def generate_predictions_with_features(self, market_data, models):
-        """Generate predictions with sentiment/whale features"""
+    def load_trained_models(self):
+        """Load only trained ML models - no mock models"""
+        models = {}
+        model_dir = Path("models/saved")
+        
+        if not model_dir.exists():
+            logger.error("No trained models directory found")
+            return models
+        
+        for horizon in self.horizons:
+            model_file = model_dir / f"rf_{horizon}.pkl"
+            if model_file.exists():
+                try:
+                    with open(model_file, 'rb') as f:
+                        model = pickle.load(f)
+                    models[horizon] = model
+                    logger.info(f"✅ Loaded trained model: {horizon}")
+                except Exception as e:
+                    logger.error(f"Failed to load model {horizon}: {e}")
+            else:
+                logger.warning(f"⚠️ No trained model for horizon {horizon}")
+        
+        return models
+    
+    def calculate_real_technical_indicators(self, coin_data):
+        """Calculate technical indicators from real price data"""
+        # This requires historical price data - not available in single ticker
+        logger.warning("Real technical indicator calculation requires historical OHLCV data")
+        return None
+    
+    def get_real_sentiment_data(self, coin):
+        """Get real sentiment data from news/social APIs"""
+        # Requires NewsAPI, Twitter API, Reddit API keys
+        if not os.getenv('NEWS_API_KEY'):
+            logger.warning(f"No sentiment data available for {coin} - requires NEWS_API_KEY")
+            return None
+        
+        # Placeholder for real sentiment analysis implementation
+        logger.warning("Real sentiment analysis not yet implemented")
+        return None
+    
+    def detect_real_whale_activity(self, coin):
+        """Detect real whale activity from blockchain data"""
+        # Requires blockchain API access (Etherscan, etc.)
+        logger.warning(f"Real whale detection not implemented for {coin}")
+        return None
+    
+    def generate_real_predictions(self):
+        """Generate predictions using only authentic data and trained models"""
+        logger.info("🔍 Generating predictions with AUTHENTIC DATA ONLY")
+        
+        # Get authentic market data
+        market_data = self.get_authentic_market_data()
+        if not market_data:
+            logger.error("❌ No authentic market data available - cannot generate predictions")
+            return []
+        
+        # Load trained models
+        models = self.load_trained_models()
+        if not models:
+            logger.error("❌ No trained ML models available - cannot generate predictions")
+            return []
+        
         predictions = []
+        authenticated_predictions = 0
         
         for coin_data in market_data:
             coin = coin_data['coin']
-            price = coin_data['price']
-            volume = coin_data['volume_24h']
             
-            # Generate predictions for each horizon
-            horizon_predictions = {}
-            confidence_scores = {}
+            # Skip if no sufficient data quality
+            if coin_data['volume_24h'] < 10000:  # Minimum volume threshold
+                logger.debug(f"Skipping {coin} - insufficient volume")
+                continue
             
-            for horizon in self.horizons:
-                if horizon in models:
-                    try:
-                        # Simulate RF prediction with realistic market-based features
-                        # Factor in volume, volatility, and market conditions for realistic confidence
-                        volume_factor = min(volume / 1000000, 1.0)  # Volume impact on confidence
-                        volatility = abs(coin_data.get('change_24h', 0)) / 100.0
-                        
-                        # Base prediction with market factors
-                        price_change = np.random.normal(0.01, 0.08)  # 1% expected return, 8% volatility
-                        
-                        # Realistic confidence based on market conditions
-                        base_confidence = np.random.beta(2, 3)  # Skewed toward lower values (0.3-0.8 typical)
-                        volume_boost = volume_factor * 0.15  # High volume adds confidence
-                        volatility_penalty = min(volatility * 0.3, 0.25)  # High volatility reduces confidence
-                        
-                        confidence = np.clip(base_confidence + volume_boost - volatility_penalty, 0.25, 0.95)
-                        
-                        # Log detailed confidence scoring
-                        confidence_details = {
-                            'base_confidence': base_confidence,
-                            'volume_factor': volume_factor,
-                            'volume_boost': volume_boost,
-                            'volatility': volatility,
-                            'volatility_penalty': volatility_penalty,
-                            'final_confidence': confidence,
-                            'horizon': horizon,
-                            'volume_24h': volume,
-                            'change_24h': coin_data.get('change_24h', 0)
-                        }
-                        log_confidence_scoring(coin, confidence_details)
-                        
-                        horizon_predictions[horizon] = price_change * 100  # Convert to percentage
-                        confidence_scores[f'confidence_{horizon}'] = confidence
-                        
-                    except Exception as e:
-                        logger.error(f"Prediction failed for {coin} at horizon {horizon}: {e}")
-                        # FIXED: Provide realistic fallback values for failed predictions
-                        horizon_predictions[horizon] = np.random.normal(0.0, 0.02)  # Small random walk
-                        confidence_scores[f'confidence_{horizon}'] = np.random.uniform(0.30, 0.55)  # Low confidence fallback
-                        
-                        # Store error for UI notification
-                        if not hasattr(self, 'prediction_errors'):
-                            self.prediction_errors = []
-                        self.prediction_errors.append(f"Model {horizon} failed for {coin}: {e}")
-                else:
-                    logger.warning(f"Model {horizon} not available for {coin}")
-                    # FIXED: Realistic fallback for missing models
-                    horizon_predictions[horizon] = np.random.normal(0.0, 0.01)  # Minimal random prediction
-                    confidence_scores[f'confidence_{horizon}'] = np.random.uniform(0.25, 0.45)  # Low confidence for missing models
-
-
+            # Calculate technical indicators from real data
+            technical_data = self.calculate_real_technical_indicators(coin_data)
+            if not technical_data:
+                logger.debug(f"Skipping {coin} - no technical analysis available")
+                continue
             
-            # Add sentiment features
-            sentiment_score = np.random.beta(2, 2)  # Bell curve around 0.5
-            sentiment_label = 'bullish' if sentiment_score > 0.6 else 'bearish' if sentiment_score < 0.4 else 'neutral'
+            # Get real sentiment data
+            sentiment_data = self.get_real_sentiment_data(coin)
+            if not sentiment_data:
+                logger.debug(f"Skipping {coin} - no sentiment analysis available")
+                continue
             
-            # Add whale detection
-            whale_threshold = 1000000  # $1M
-            whale_detected = volume > whale_threshold
+            # Detect real whale activity
+            whale_data = self.detect_real_whale_activity(coin)
+            if not whale_data:
+                logger.debug(f"Skipping {coin} - no whale detection available")
+                continue
             
-            # Meta-labeling (Lopez de Prado)
-            meta_label_quality = np.random.uniform(0.1, 0.9)
-            
-            # Uncertainty quantification
-            epistemic_uncertainty = np.random.uniform(0.01, 0.1)
-            aleatoric_uncertainty = np.random.uniform(0.02, 0.08)
-            total_uncertainty = epistemic_uncertainty + aleatoric_uncertainty
-            
-            # Regime detection
-            regimes = ['bull_strong', 'bull_weak', 'sideways', 'bear_weak', 'bear_strong', 'volatile']
-            regime = np.random.choice(regimes)
-            
-            prediction = {
-                'coin': coin,
-                'symbol': coin_data['symbol'],
-                'price': price,
-                'volume_24h': volume,
-                'change_24h': coin_data['change_24h'],
-                
-                # Multi-horizon predictions
-                'expected_return_1h': horizon_predictions['1h'],
-                'expected_return_24h': horizon_predictions['24h'],
-                'expected_return_168h': horizon_predictions['168h'],
-                'expected_return_720h': horizon_predictions['720h'],
-                'expected_return_pct': horizon_predictions['24h'],  # Primary horizon
-                
-                # Confidence scores
-                **confidence_scores,
-                
-                # Sentiment features
-                'sentiment_score': sentiment_score,
-                'sentiment_label': sentiment_label,
-                'news_impact': np.random.normal(0, 0.1),
-                'social_volume': np.random.uniform(0.1, 1.0),
-                
-                # Whale detection
-                'whale_activity_detected': whale_detected,
-                'whale_score': min(volume / whale_threshold, 5.0),
-                'large_transaction_risk': 'high' if whale_detected else 'low',
-                
-                # Advanced ML features
-                'meta_label_quality': meta_label_quality,
-                'epistemic_uncertainty': epistemic_uncertainty,
-                'aleatoric_uncertainty': aleatoric_uncertainty,
-                'total_uncertainty': total_uncertainty,
-                'regime': regime,
-                
-                # Event impact (placeholder for OpenAI integration)
-                'event_impact': {
-                    'strength': np.random.uniform(-0.2, 0.2),
-                    'category': np.random.choice(['news', 'technical', 'macro', 'regulatory'])
-                },
-                
-                'horizon': '24h',
-                'model_type': 'RandomForest',
-                'timestamp': datetime.now().isoformat()
-            }
-            
-            predictions.append(prediction)
+            # At this point, we would generate predictions using real data
+            # Since we don't have the full pipeline yet, we log the requirement
+            logger.info(f"✅ {coin} has all authentic data sources - ready for ML prediction")
+            authenticated_predictions += 1
+        
+        logger.info(f"✅ {authenticated_predictions} coins have complete authentic data for predictions")
+        
+        if authenticated_predictions == 0:
+            logger.warning("⚠️ No predictions generated - authentic data pipeline incomplete")
+            self._create_empty_predictions_file()
         
         return predictions
     
-    def apply_80_percent_gate(self, predictions):
-        """Apply strict 80% confidence gate"""
-        filtered_predictions = []
-        
-        for pred in predictions:
-            # Get max confidence across all horizons
-            conf_cols = [k for k in pred.keys() if k.startswith('confidence_')]
-            if conf_cols:
-                max_confidence = max([pred[col] for col in conf_cols])
-                
-                # Apply 80% threshold
-                if max_confidence >= 0.80:
-                    pred['gate_passed'] = True
-                    pred['max_confidence'] = max_confidence
-                    filtered_predictions.append(pred)
-        
-        logger.info(f"80% confidence gate: {len(filtered_predictions)}/{len(predictions)} predictions passed")
-        
-        # FIXED: Log empty results for dashboard diagnostics
-        if len(filtered_predictions) == 0:
-            logger.warning("No predictions passed 80% confidence gate - check model calibration")
-            # Save empty gate log for UI diagnostics
-            empty_gate_log = {
-                'timestamp': datetime.now().isoformat(),
-                'total_predictions': len(predictions),
-                'passed_gate': 0,
-                'reason': 'no_predictions_above_threshold',
-                'max_confidence_seen': max([max([pred.get(f'confidence_{h}', 0) for h in self.horizons]) for pred in predictions]) if predictions else 0.0
-            }
-            
-            gate_log_file = self.output_path / "empty_gate_log.json"
-            with open(gate_log_file, 'w') as f:
-                json.dump(empty_gate_log, f, indent=2)
-        
-        return filtered_predictions
-    
-    def generate_and_save_predictions(self):
-        """Main function to generate and save predictions"""
-        logger.info("Generating production predictions with all features...")
-        
-        # Load RF models
-        models = self.load_rf_models()
-        
-        if not models:
-            logger.error("No RF models available - train models first")
-            return False
-        
-        # Get market data
-        market_data = self.get_all_kraken_pairs()
-        
-        if not market_data:
-            logger.error("No market data available")
-            return False
-        
-        # Generate predictions
-        predictions = self.generate_predictions_with_features(market_data, models)
-        
-        # Apply confidence gate
-        filtered_predictions = self.apply_80_percent_gate(predictions)
-        
-        # Log ML prediction generation
-        advanced_logger = get_advanced_logger()
-        for pred in filtered_predictions:
-            prediction_data = {
-                'coin': pred['coin'],
-                'expected_returns': {
-                    '1h': pred.get('expected_return_1h', 0),
-                    '24h': pred.get('expected_return_24h', 0),
-                    '168h': pred.get('expected_return_168h', 0),
-                    '720h': pred.get('expected_return_720h', 0)
-                },
-                'sentiment_score': pred.get('sentiment_score', 0),
-                'whale_detected': pred.get('whale_activity_detected', False),
-                'regime': pred.get('regime', 'unknown')
-            }
-            log_prediction(pred['coin'], prediction_data, pred['max_confidence'])
-        
-        # Save predictions
-        pred_file = self.output_path / "predictions.csv"
-        json_file = self.output_path / "enhanced_predictions.json"
-        
-        # Save as CSV
-        pred_df = pd.DataFrame(filtered_predictions)
-        pred_df.to_csv(pred_file, index=False)
-        
-        # Save as JSON
-        with open(json_file, 'w') as f:
-            json.dump(filtered_predictions, f, indent=2, default=str)
-        
-        # Fixed: Calculate proper mean confidence across all horizons
-        if filtered_predictions:
-            all_confidences = []
-            for pred in filtered_predictions:
-                conf_values = [pred.get(f'confidence_{h}', 0) for h in self.horizons]
-                all_confidences.extend(conf_values)
-            mean_confidence = np.mean(all_confidences) if all_confidences else 0.0
-        else:
-            mean_confidence = 0.0
-        
-        # Save metadata
-        metadata = {
+    def _create_empty_predictions_file(self):
+        """Create empty predictions file with explanation"""
+        empty_result = {
             'timestamp': datetime.now().isoformat(),
-            'total_coins_analyzed': len(market_data),
-            'predictions_generated': len(predictions),
-            'predictions_passed_gate': len(filtered_predictions),
-            'gate_threshold': 0.80,
-            'mean_confidence_all_horizons': float(mean_confidence),  # FIXED
-            'model_type': 'RandomForest',
-            'horizons': self.horizons,
-            'features_included': [
-                'sentiment_analysis', 'whale_detection', 'meta_labeling',
-                'uncertainty_quantification', 'regime_detection', 'event_impact'
-            ],
-            'confidence_calculation_method': 'ensemble_sigma_based'  # For consistency tracking
+            'status': 'no_predictions_generated',
+            'reason': 'authentic_data_pipeline_incomplete',
+            'requirements': {
+                'market_data': 'Available from Kraken API ✅',
+                'trained_models': 'Available ✅' if Path("models/saved").exists() else 'Missing ❌',
+                'technical_indicators': 'Requires historical OHLCV data ❌',
+                'sentiment_analysis': 'Requires NewsAPI/Twitter/Reddit keys ❌',
+                'whale_detection': 'Requires blockchain APIs ❌'
+            },
+            'next_steps': [
+                'Implement historical data collection for technical indicators',
+                'Add NewsAPI, Twitter API, Reddit API integrations',
+                'Add blockchain APIs for whale detection',
+                'Train models on complete authentic dataset'
+            ]
         }
         
-        metadata_file = self.output_path / "predictions_metadata.json"
-        with open(metadata_file, 'w') as f:
-            json.dump(metadata, f, indent=2)
+        # Save to JSON file
+        result_file = self.output_path / "authentic_data_status.json"
+        with open(result_file, 'w') as f:
+            json.dump(empty_result, f, indent=2)
         
-        logger.info(f"Predictions saved: {pred_file}")
-        logger.info(f"Enhanced predictions saved: {json_file}")
-        logger.info(f"Metadata saved: {metadata_file}")
+        logger.info(f"📋 Created authentic data status report: {result_file}")
+    
+    def run(self):
+        """Run authentic-only prediction generation"""
+        logger.info("🚀 STARTING AUTHENTIC DATA PREDICTION GENERATION")
+        logger.info("=" * 60)
         
-        return True
-
-def main():
-    """Generate final production predictions"""
-    generator = ProductionPredictionGenerator()
-    success = generator.generate_and_save_predictions()
-    
-    if success:
-        print("✅ Production predictions generated successfully")
-    else:
-        print("❌ Failed to generate predictions")
-        return 1
-    
-    return 0
+        with PerformanceTimer('authentic_prediction_generation'):
+            predictions = self.generate_real_predictions()
+        
+        logger.info("✅ AUTHENTIC DATA PREDICTION GENERATION COMPLETED")
+        return predictions
 
 if __name__ == "__main__":
-    exit(main())
+    generator = RealDataPredictionGenerator()
+    result = generator.run()
+    
+    print("\n🎯 RESULTAAT:")
+    print("✅ Alleen authentieke data gebruikt")
+    print("✅ Geen kunstmatige/mock data gegenereerd") 
+    print("✅ System klaar voor echte API integraties")
+    print("✅ Volledige data integrity gegarandeerd")

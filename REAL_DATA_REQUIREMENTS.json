@@ -1,0 +1,60 @@
+{
+  "real_data_sources_required": {
+    "market_data": {
+      "source": "Kraken API",
+      "endpoint": "/0/public/Ticker",
+      "authentication": "API key required",
+      "data_types": [
+        "OHLCV",
+        "volume",
+        "bid/ask spreads"
+      ]
+    },
+    "sentiment_analysis": {
+      "source": "NewsAPI / Twitter API / Reddit API",
+      "authentication": "API keys required",
+      "data_types": [
+        "news headlines",
+        "social media posts",
+        "sentiment scores"
+      ]
+    },
+    "whale_detection": {
+      "source": "Blockchain APIs (Etherscan, etc.)",
+      "authentication": "API keys required",
+      "data_types": [
+        "large transactions",
+        "wallet movements",
+        "exchange flows"
+      ]
+    },
+    "technical_indicators": {
+      "source": "Real-time calculation from OHLCV data",
+      "requirements": [
+        "sufficient historical data",
+        "real-time price feeds"
+      ],
+      "indicators": [
+        "RSI",
+        "MACD",
+        "Bollinger Bands",
+        "volume profiles"
+      ]
+    }
+  },
+  "ml_model_requirements": {
+    "training_data": "Minimum 1 year historical data per coin",
+    "features": "Real market indicators only",
+    "validation": "Walk-forward analysis on real data",
+    "confidence_scoring": "Based on model uncertainty and data quality"
+  },
+  "prohibited_data_sources": [
+    "Random number generation",
+    "Simulated market data",
+    "Mock API responses",
+    "Hardcoded predictions",
+    "Artificial confidence scores",
+    "Fake sentiment data",
+    "Dummy whale activity"
+  ]
+}

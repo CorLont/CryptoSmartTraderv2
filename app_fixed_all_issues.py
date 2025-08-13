@@ -339,7 +339,28 @@ def render_ai_predictions():
     if not pred_status['available']:
         st.error("❌ No production predictions available")
         st.info("Generate predictions: python generate_final_predictions.py")
-        st.warning("🏷️ NO MOCK PREDICTIONS SHOWN - Production data required")
+        
+        # Check for authentic data status
+        status_file = Path("exports/production/authentic_data_status.json")
+        if status_file.exists():
+            with open(status_file, 'r') as f:
+                status = json.load(f)
+            
+            st.subheader("🔒 Authentic Data Status")
+            
+            # Display requirements
+            for req, status_text in status['requirements'].items():
+                if "✅" in status_text:
+                    st.success(f"{req.replace('_', ' ').title()}: {status_text}")
+                else:
+                    st.error(f"{req.replace('_', ' ').title()}: {status_text}")
+            
+            # Display next steps
+            st.subheader("🎯 Next Steps for Production")
+            for step in status['next_steps']:
+                st.write(f"• {step}")
+        
+        st.warning("🏷️ NO ARTIFICIAL PREDICTIONS SHOWN - Only authentic data allowed")
         return
     
     # Load predictions

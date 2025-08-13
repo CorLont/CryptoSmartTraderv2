@@ -468,15 +468,15 @@ class EnsembleVotingAgent:
         
         model = self.model_cache[model_id]
         
-        # Simulate feature data (in production, use real features)
-        features = np.random.random((1, 10))  # 10 features
+        # DISABLED: No simulated features - requires real market data
+        logger.error(f"Cannot generate RF prediction for {symbol} - no real feature engineering pipeline")
+        return None
         
         try:
             # Generate prediction
             predicted_return = model.predict(features)[0]
             
-            # Simulate current price for demonstration
-            current_price = 45000.0 if 'BTC' in symbol else 3000.0
+            # DISABLED: No simulated prices - requires real market data
             predicted_price = current_price * (1 + predicted_return / 100)
             
             # Estimate confidence based on feature importance
@@ -524,12 +524,9 @@ class EnsembleVotingAgent:
     ) -> Optional[ModelPrediction]:
         """Generate XGBoost prediction"""
         
-        # Simulate XGBoost prediction
-        predicted_return = np.random.normal(2.0, 5.0)  # 2% mean, 5% std
-        confidence = min(0.9, 0.7 + abs(predicted_return) / 200)
-        
-        current_price = 45000.0 if 'BTC' in symbol else 3000.0
-        predicted_price = current_price * (1 + predicted_return / 100)
+        # DISABLED: No simulated XGBoost predictions - requires real trained models
+        logger.error(f"Cannot generate XGBoost prediction for {symbol} - no trained model available")
+        return None
         
         direction = "up" if predicted_return > 1.0 else "down" if predicted_return < -1.0 else "neutral"
         
@@ -563,20 +560,9 @@ class EnsembleVotingAgent:
     ) -> Optional[ModelPrediction]:
         """Generate technical analysis prediction"""
         
-        # Simulate technical indicators
-        rsi = np.random.uniform(20, 80)
-        macd_signal = np.random.choice([-1, 0, 1])  # Bearish, neutral, bullish
-        
-        # Generate prediction based on technical signals
-        if rsi < 30 and macd_signal >= 0:  # Oversold + bullish MACD
-            predicted_return = np.random.uniform(3, 8)
-            confidence = 0.8
-        elif rsi > 70 and macd_signal <= 0:  # Overbought + bearish MACD
-            predicted_return = np.random.uniform(-8, -3)
-            confidence = 0.8
-        else:
-            predicted_return = np.random.uniform(-2, 2)
-            confidence = 0.5
+        # DISABLED: No simulated technical indicators - requires real TA calculation from live data
+        logger.error(f"Cannot generate technical prediction for {symbol} - no real TA pipeline available")
+        return None
         
         current_price = 45000.0 if 'BTC' in symbol else 3000.0
         predicted_price = current_price * (1 + predicted_return / 100)
@@ -613,16 +599,9 @@ class EnsembleVotingAgent:
     ) -> Optional[ModelPrediction]:
         """Generate sentiment-based prediction"""
         
-        # Simulate sentiment analysis
-        news_sentiment = np.random.uniform(-1, 1)  # -1 very negative, +1 very positive
-        social_sentiment = np.random.uniform(-1, 1)
-        
-        # Combine sentiment signals
-        combined_sentiment = (news_sentiment * 0.6 + social_sentiment * 0.4)
-        
-        # Generate prediction based on sentiment
-        predicted_return = combined_sentiment * 10  # Scale sentiment to return %
-        confidence = 0.4 + abs(combined_sentiment) * 0.3  # Higher confidence for extreme sentiment
+        # DISABLED: No simulated sentiment - requires real news/social media APIs
+        logger.error(f"Cannot generate sentiment prediction for {symbol} - no real sentiment analysis available")
+        return None
         
         current_price = 45000.0 if 'BTC' in symbol else 3000.0
         predicted_price = current_price * (1 + predicted_return / 100)
