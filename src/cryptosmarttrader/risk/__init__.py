@@ -1,29 +1,22 @@
 """
-Risk Management Module
-
-Comprehensive risk management with limits, kill switches, and circuit breakers.
+Enterprise Risk Management Module
+Comprehensive risk controls with hard blockers and kill switch functionality.
 """
 
-from .risk_limits import (
-    RiskLimitEngine,
-    RiskLimit,
-    CircuitBreaker,
-    AssetCluster,
-    RiskMetrics,
-    RiskLimitType,
-    CircuitBreakerType,
-    RiskAction,
-    TradingMode
+from .risk_guard import (
+    RiskGuard,
+    RiskLevel,
+    TradingMode,
+    RiskLimits,
+    RiskEvent,
+    RiskMonitor
 )
 
 __all__ = [
-    "RiskLimitEngine",
-    "RiskLimit",
-    "CircuitBreaker",
-    "AssetCluster",
-    "RiskMetrics",
-    "RiskLimitType",
-    "CircuitBreakerType",
-    "RiskAction",
-    "TradingMode"
+    'RiskGuard',
+    'RiskLevel', 
+    'TradingMode',
+    'RiskLimits',
+    'RiskEvent',
+    'RiskMonitor'
 ]

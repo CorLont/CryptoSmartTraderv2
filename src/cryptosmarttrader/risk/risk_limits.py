@@ -678,7 +678,7 @@ class RiskLimitEngine:
             breaker.last_trigger_time = datetime.now()
             logger.warning(f"Simulated data gap: {duration_seconds}s")
 
-    def # REMOVED: Mock data pattern not allowed in productionself, accuracy_drop: float):
+    def simulate_model_drift(self, accuracy_drop: float):
         """Simulate model drift for testing"""
         breaker = self.circuit_breakers.get(CircuitBreakerType.MODEL_DRIFT)
         if breaker and accuracy_drop > breaker.threshold:
