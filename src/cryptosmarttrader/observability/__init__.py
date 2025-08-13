@@ -1,40 +1,20 @@
 """
-Enterprise Observability Module
-Comprehensive monitoring, metrics, and alerting for CryptoSmartTrader.
+CryptoSmartTrader V2 Observability Package
+
+Centralized metrics, monitoring, and observability for the trading system.
+All Prometheus metrics are consolidated in metrics.py for consistency.
 """
 
-from .metrics_collector import (
-    MetricsCollector,
-    RequestContext,
-    OrderState,
-    AlertSeverity,
-    get_metrics_collector,
-    setup_metrics_collector,
-    record_order_sent,
-    record_order_filled,
-    record_order_error,
-    record_signal_received,
-    update_equity,
-    update_drawdown,
-)
-
-from .alert_rules import AlertRule, AlertState, AlertManager, create_alert_manager
+from .metrics import get_metrics, timer, track_api_calls, track_orders
 
 __all__ = [
-    "MetricsCollector",
-    "RequestContext",
-    "OrderState",
-    "AlertSeverity",
-    "AlertRule",
-    "AlertState",
-    "AlertManager",
-    "get_metrics_collector",
-    "setup_metrics_collector",
-    "create_alert_manager",
-    "record_order_sent",
-    "record_order_filled",
-    "record_order_error",
-    "record_signal_received",
-    "update_equity",
-    "update_drawdown",
+    'get_metrics',
+    'timer', 
+    'track_api_calls',
+    'track_orders'
 ]
+
+# Version info
+__version__ = '2.0.0'
+__title__ = 'CryptoSmartTrader Observability'
+__description__ = 'Centralized observability and metrics collection'

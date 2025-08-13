@@ -31,6 +31,26 @@ class MetricsServer:
     Implements Dutch requirements for metrics infrastructure.
     """
 
+"""
+DEPRECATED: This module has been superseded by centralized observability.
+Use: from cryptosmarttrader.observability.metrics import get_metrics
+
+This file is kept for backward compatibility only.
+"""
+
+# Redirect to centralized metrics
+from cryptosmarttrader.observability.metrics import get_metrics
+
+# Legacy compatibility - delegate to centralized metrics
+def get_legacy_metrics():
+    """Legacy compatibility function"""
+    return get_metrics()
+
+# Re-export centralized metrics for backward compatibility
+metrics = get_metrics()
+
+
+
     def __init__(self, config_manager=None, health_monitor=None):
         self.config_manager = config_manager
         self.health_monitor = health_monitor

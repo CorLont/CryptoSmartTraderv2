@@ -1,4 +1,60 @@
+#!/usr/bin/env python3
 """
+Centralize Prometheus Observability
+- Consolidate metrics from ≥11 files into single observability/metrics.py
+- Standardize metric naming: orders_sent/filled, order_errors, latency_ms, slippage_bps, equity, drawdown_pct, signals_received
+- Create central metrics registry with consistent structure
+"""
+
+import os
+import re
+from pathlib import Path
+
+def analyze_prometheus_usage():
+    """Analyze current Prometheus metrics usage across codebase"""
+    
+    prometheus_files = []
+    metrics_patterns = {
+        'counter': r'Counter\s*\(',
+        'gauge': r'Gauge\s*\(',
+        'histogram': r'Histogram\s*\(',
+        'summary': r'Summary\s*\(',
+        'prometheus_import': r'from prometheus_client import|import prometheus_client'
+    }
+    
+    for root, dirs, files in os.walk('src/'):
+        for file in files:
+            if file.endswith('.py'):
+                filepath = os.path.join(root, file)
+                try:
+                    with open(filepath, 'r') as f:
+                        content = f.read()
+                    
+                    metrics_found = {}
+                    for pattern_name, pattern in metrics_patterns.items():
+                        matches = re.findall(pattern, content)
+                        if matches:
+                            metrics_found[pattern_name] = len(matches)
+                    
+                    if metrics_found:
+                        prometheus_files.append({
+                            'file': filepath,
+                            'metrics': metrics_found,
+                            'size': len(content)
+                        })
+                        
+                except Exception:
+                    pass
+    
+    return prometheus_files
+
+def create_centralized_metrics():
+    """Create centralized observability/metrics.py module"""
+    
+    # Ensure observability directory exists
+    os.makedirs('src/cryptosmarttrader/observability', exist_ok=True)
+    
+    metrics_module = '''"""
 Centralized Prometheus Metrics for CryptoSmartTrader V2
 All observability metrics consolidated in single module with consistent naming
 """
@@ -353,3 +409,193 @@ if __name__ == "__main__":
     
     print("Sample metrics recorded successfully")
     print(f"Metrics export size: {len(metrics.get_metrics())} bytes")
+'''
+
+    with open('src/cryptosmarttrader/observability/metrics.py', 'w') as f:
+        f.write(metrics_module)
+    
+    print("✅ Created centralized observability/metrics.py")
+
+def create_metrics_migration_script():
+    """Create script to help migrate existing metrics usage"""
+    
+    migration_script = '''#!/usr/bin/env python3
+"""
+Metrics Migration Helper
+Assists in migrating existing Prometheus metrics to centralized observability
+"""
+
+import os
+import re
+from pathlib import Path
+
+def find_and_replace_metrics():
+    """Find and suggest replacements for existing metrics usage"""
+    
+    replacements = {
+        # Old patterns -> New centralized patterns
+        r'Counter\s*\(\s*["\']orders_total["\']': 'get_metrics().orders_sent',
+        r'Counter\s*\(\s*["\']filled_orders["\']': 'get_metrics().orders_filled',
+        r'Counter\s*\(\s*["\']order_errors["\']': 'get_metrics().order_errors',
+        r'Histogram\s*\(\s*["\']latency["\']': 'get_metrics().latency_ms',
+        r'Histogram\s*\(\s*["\']slippage["\']': 'get_metrics().slippage_bps',
+        r'Gauge\s*\(\s*["\']equity["\']': 'get_metrics().equity',
+        r'Gauge\s*\(\s*["\']drawdown["\']': 'get_metrics().drawdown_pct',
+        r'Counter\s*\(\s*["\']signals["\']': 'get_metrics().signals_received',
+    }
+    
+    files_to_update = []
+    
+    for root, dirs, files in os.walk('src/'):
+        for file in files:
+            if file.endswith('.py') and 'observability/metrics.py' not in file:
+                filepath = os.path.join(root, file)
+                try:
+                    with open(filepath, 'r') as f:
+                        content = f.read()
+                    
+                    changes_needed = []
+                    for old_pattern, new_usage in replacements.items():
+                        if re.search(old_pattern, content):
+                            changes_needed.append((old_pattern, new_usage))
+                    
+                    if changes_needed:
+                        files_to_update.append({
+                            'file': filepath,
+                            'changes': changes_needed
+                        })
+                        
+                except Exception:
+                    pass
+    
+    return files_to_update
+
+def generate_migration_report():
+    """Generate migration report"""
+    
+    files_to_update = find_and_replace_metrics()
+    
+    report = f"""
+# OBSERVABILITY MIGRATION REPORT
+
+## Summary
+Found {len(files_to_update)} files that need migration to centralized metrics.
+
+## Migration Steps:
+
+### 1. Add centralized import:
+```python
+from cryptosmarttrader.observability.metrics import get_metrics
+```
+
+### 2. Replace individual metric definitions with centralized calls:
+
+"""
+    
+    for file_info in files_to_update:
+        report += f"### {file_info['file']}\\n"
+        for old_pattern, new_usage in file_info['changes']:
+            report += f"- Replace `{old_pattern}` with `{new_usage}`\\n"
+        report += "\\n"
+    
+    report += """
+### 3. Standard Usage Patterns:
+
+```python
+# Trading metrics
+get_metrics().record_order_sent("kraken", "BTC/USD", "buy", "market")
+get_metrics().record_order_filled("kraken", "BTC/USD", "buy", "market") 
+get_metrics().record_order_error("kraken", "BTC/USD", "timeout")
+
+# Performance metrics  
+get_metrics().record_latency("place_order", "kraken", "/api/orders", 45.2)
+get_metrics().record_slippage("kraken", "BTC/USD", "buy", 2.5)
+get_metrics().update_equity("momentum", "main", 100000.0)
+get_metrics().update_drawdown("momentum", "1h", 5.2)
+
+# Signal metrics
+get_metrics().record_signal("ml_agent", "entry", "BTC/USD")
+get_metrics().record_api_call("kraken", "/api/balance", "GET", 200)
+```
+
+### 4. Context Manager Usage:
+
+```python
+# Automatic latency tracking
+with timer("place_order", "kraken", "/api/orders"):
+    result = exchange.place_order(...)
+
+# Decorator usage
+@track_orders("kraken")
+def place_order(symbol, side, order_type):
+    return exchange_api.place_order(symbol, side, order_type)
+```
+
+## Benefits:
+✅ Consistent metric naming across all modules
+✅ Centralized registry for easy monitoring
+✅ Standard labels and conventions
+✅ Context managers and decorators for automation
+✅ Thread-safe singleton pattern
+✅ Easy testing with reset functionality
+"""
+
+    with open('OBSERVABILITY_MIGRATION_REPORT.md', 'w') as f:
+        f.write(report)
+    
+    print("📋 Migration report created: OBSERVABILITY_MIGRATION_REPORT.md")
+    return len(files_to_update)
+
+if __name__ == "__main__":
+    print("🔍 Analyzing metrics migration needs...")
+    files_needing_migration = generate_migration_report()
+    print(f"📊 Found {files_needing_migration} files needing migration")
+    print("📋 See OBSERVABILITY_MIGRATION_REPORT.md for detailed migration steps")
+'''
+
+    with open('metrics_migration_helper.py', 'w') as f:
+        f.write(migration_script)
+    
+    print("✅ Created metrics migration helper script")
+
+def main():
+    """Main observability centralization execution"""
+    
+    print("📊 Observability Centralization")
+    print("=" * 40)
+    
+    # Analyze current Prometheus usage
+    print("\n🔍 Analyzing current Prometheus usage...")
+    prometheus_files = analyze_prometheus_usage()
+    
+    print(f"Found Prometheus usage in {len(prometheus_files)} files:")
+    for file_info in prometheus_files[:10]:  # Show first 10
+        print(f"  📄 {file_info['file']}: {file_info['metrics']}")
+    
+    if len(prometheus_files) > 10:
+        print(f"  ... and {len(prometheus_files) - 10} more files")
+    
+    # Create centralized metrics module
+    print(f"\n🏗️  Creating centralized observability module...")
+    create_centralized_metrics()
+    
+    # Create migration helper
+    print(f"\n🔧 Creating migration helper...")
+    create_metrics_migration_script()
+    
+    print(f"\n📊 Results:")
+    print(f"✅ Prometheus usage found in: {len(prometheus_files)} files")
+    print(f"✅ Centralized metrics module created")
+    print(f"✅ Migration helper script created")
+    print(f"✅ Standardized metric naming implemented:")
+    print(f"   - orders_sent/filled, order_errors")
+    print(f"   - latency_ms, slippage_bps")
+    print(f"   - equity, drawdown_pct")
+    print(f"   - signals_received, signal_accuracy")
+    print(f"   - api_calls_total, cache_hits")
+    
+    print(f"\n🎯 Observability centralization complete!")
+    print(f"📋 Next: Run metrics_migration_helper.py for migration guidance")
+
+if __name__ == "__main__":
+    main()
