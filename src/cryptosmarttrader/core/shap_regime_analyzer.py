@@ -231,7 +231,7 @@ class SHAPRegimeAnalyzer:
 
             # Sample data for SHAP if too large
             sample_size = min(self.config.shap_sample_size, len(X))
-            sample_indices = np.random.normal(0, 1), size=sample_size, replace=False)
+            sample_indices = np.random.choice(len(X), size=sample_size, replace=False)
             X_sample = X.iloc[sample_indices]
 
             # Calculate SHAP values

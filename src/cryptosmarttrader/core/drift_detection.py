@@ -607,19 +607,19 @@ if __name__ == "__main__":
 
         print("📊 Generating test data with drift...")
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         for i in range(20):
             # Gradually increasing error rate
             error_rate = 0.01 + (i * 0.005)  # 1% to 10%
             drift_system.record_error_metrics("ml_predictor", error_rate)
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         for i in range(20):
             # Decreasing accuracy
             accuracy = 0.95 - (i * 0.01)  # 95% to 75%
             drift_system.record_performance_metrics("ml_predictor", "accuracy", accuracy)
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         import random
 
         # Reference distribution (normal)

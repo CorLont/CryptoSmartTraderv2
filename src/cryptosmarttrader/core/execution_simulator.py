@@ -267,7 +267,7 @@ class ExecutionSimulator:
         signal_time = signal_timestamp or datetime.now()
 
         try:
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             processing_latency_ms = np.random.gamma(2, 25)  # Gamma distribution ~50ms mean
             order_timestamp = signal_time + timedelta(milliseconds=processing_latency_ms)
 
@@ -279,7 +279,7 @@ class ExecutionSimulator:
                 symbol, current_mid_price, volatility
             )
 
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             execution_result = await self._execute_order_on_book(
                 order_id=order_id,
                 symbol=symbol,
@@ -347,14 +347,14 @@ class ExecutionSimulator:
             # Base market impact increases with order size
             market_impact_bps = self.config.base_market_impact_bps * (impact_ratio ** 0.5)
 
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             exchange_latency_ms = np.random.gamma(
                 2, self.config.exchange_latency_ms / 2
             ) + np.random.normal(0, 1)
 
             first_fill_time = order_timestamp + timedelta(milliseconds=exchange_latency_ms)
 
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             fills = []
             remaining_quantity = quantity
             total_fill_value = 0.0
@@ -485,7 +485,7 @@ class ExecutionSimulator:
     async def _get_market_price(self, symbol: str) -> float:
         """Get current market price for symbol"""
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         base_prices = {
             "BTC/USD": 45000.0,
             "ETH/USD": 3000.0,

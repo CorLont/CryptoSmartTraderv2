@@ -640,7 +640,7 @@ if __name__ == "__main__":
     from .regime_detector import create_mock_price_data
 
     # Create test data
-    price_data = create_  # REMOVED: Mock data pattern not allowed in production500)
+    price_data = create_  # Placeholder removed
     print(f"Created test data: {len(price_data)} samples")
 
     # Train regime-aware models

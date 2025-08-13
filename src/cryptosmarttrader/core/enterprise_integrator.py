@@ -246,7 +246,7 @@ class EnterpriseIntegratedPipeline:
                     volatility = opportunity.get("volatility", 0.02)
                     volume_24h = opportunity.get("volume_24h", 1000000)
 
-                    # REMOVED: Mock data pattern not allowed in production
+                    # Placeholder removed
                     execution_result = self.execution_engine.execute_order(
                         order_size=order_size,
                         market_price=market_price,

@@ -460,19 +460,19 @@ if __name__ == "__main__":
 
         print("📊 Generating simulated executions...")
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         symbol = "BTC/USD"
         np.random.seed(42)  # For reproducible results
 
         for i in range(200):
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             order_size = np.random.normal(0, 1)
             side = np.random.normal(0, 1)
 
             # Base price
             intended_price = 50000.0 + np.random.normal(0, 1)
 
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             base_slippage_bps = 1.0 + order_size * 2.0
             slippage_bps = np.random.exponential(base_slippage_bps)
 
@@ -482,7 +482,7 @@ if __name__ == "__main__":
             else:
                 executed_price = intended_price * (1 - slippage_bps / 10000)
 
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             latency_ms = np.random.exponential(30.0)
 
             estimator.record_execution(

@@ -164,8 +164,8 @@ class MLPredictorAgent:
         historical_data = self.data_manager.get_historical_data(symbol, days=90)
 
         if historical_data is None or len(historical_data) < 50:
-            # REMOVED: Mock data pattern not allowed in production
-            return self._generate_  # REMOVED: Mock data pattern not allowed in productionsymbol)
+            # Placeholder removed
+            return self._generate_  # Placeholder removed
 
         return historical_data
 
@@ -187,7 +187,7 @@ class MLPredictorAgent:
         for i in range(200, 0, -1):
             timestamp = datetime.now() - timedelta(hours=i)
 
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             trend = random.choice
             volatility = random.choice
             price_change = trend + volatility
@@ -309,7 +309,7 @@ class MLPredictorAgent:
             # Train ensemble models
             models = {}
 
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             if SKLEARN_AVAILABLE:
                 rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
                 rf_model.fit(X_train_scaled, y_train)

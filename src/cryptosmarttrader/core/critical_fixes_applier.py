@@ -418,7 +418,7 @@ class PortfolioBacktestEngine:
         trades = []
 
         for _, signal in signals_df.iterrows():
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             execution = self.execution_engine.execute_order(
                 order_size=signal.get('position_size', 1000),
                 market_price=signal.get('price', 100),

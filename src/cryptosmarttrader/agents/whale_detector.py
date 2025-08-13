@@ -24,7 +24,7 @@ class WhaleDetectorAgent:
         whale_scores = []
 
         for coin in coin_data:
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             volume_24h = coin.get("volume_24h", 0)
             price_change = abs(coin.get("change_24h", 0))
 

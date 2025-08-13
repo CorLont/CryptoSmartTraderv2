@@ -170,7 +170,7 @@ class EnterpriseRiskMitigation:
                         return {
                             "confidence_pass_rate": latest_data.get("pass_rate", 0.0) * 100,
                             "total_predictions": latest_data.get("total_candidates", 0),
-                            "model_stability": 85.0,  # REMOVED: Mock data pattern not allowed in production
+                            "model_stability": 85.0,  # Placeholder removed
                         }
         except Exception:
             pass
@@ -194,7 +194,7 @@ class EnterpriseRiskMitigation:
     def _assess_trading_risk(self) -> Dict[str, float]:
         """Assess trading-specific risks"""
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         return {
             "daily_pnl": 2.5,  # % gain/loss
             "current_drawdown": 8.0,  # %

@@ -206,7 +206,7 @@ class MultiHorizonMLSystem:
             # Convert to DataFrame and simulate historical progression
             df = pd.DataFrame(coin_records)
 
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             base_time = datetime.now() - timedelta(days=lookback_days)
             df["timestamp"] = pd.date_range(start=base_time, periods=len(df), freq="1H")
 

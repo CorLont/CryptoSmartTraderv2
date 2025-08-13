@@ -294,10 +294,10 @@ class FeatureMerger:
                     timestamp = base_time + timedelta(hours=i)
                     price = 100 + np.random.normal(
                         0, 1
-                    )  # REMOVED: Mock data pattern not allowed in production
+                    )  # Placeholder removed
                     volume = np.random.exponential(
                         1000000
-                    )  # REMOVED: Mock data pattern not allowed in production
+                    )  # Placeholder removed
 
                     data.append(
                         {

@@ -641,7 +641,7 @@ def create_synthetic_data(n_samples: int = 1000) -> pd.DataFrame:
 
     data = []
     for i in range(n_samples):
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         if i < n_samples // 3:  # Bull market
             price_trend = 1.002  # 0.2% daily growth
             volatility = 0.02
@@ -675,7 +675,7 @@ if __name__ == "__main__":
     print("Testing Regime Detection System")
 
     # Create mock data
-    price_data = create_  # REMOVED: Mock data pattern not allowed in production300)
+    price_data = create_  # Placeholder removed
     print(f"Created mock data: {len(price_data)} samples")
 
     # Train models

@@ -27,7 +27,7 @@ class TripleBarrierLabeler:
         labeled_predictions = []
 
         for _, pred in predictions_df.iterrows():
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             base_return = pred.get("expected_return_pct", 0) / 100
             confidence = pred.get("confidence_1h", pred.get("confidence_24h", 70)) / 100
 

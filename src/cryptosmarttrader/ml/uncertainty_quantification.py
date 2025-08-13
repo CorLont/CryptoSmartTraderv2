@@ -45,7 +45,7 @@ class BayesianEnsemble(BaseEstimator, RegressorMixin):
 
             # Monte Carlo sampling for each model
             for _ in range(self.n_samples):
-                # REMOVED: Mock data pattern not allowed in production
+                # Placeholder removed
                 X_dropped = self._apply_dropout(X)
                 pred = model.predict(X_dropped)
                 model_preds.append(pred)

@@ -256,6 +256,11 @@ class CryptoTraderSettings(V2BaseSettings if PYDANTIC_V2 else BaseSettings):
     # === DEVELOPMENT SETTINGS ===
     mock_exchanges: bool = Field(
         default=False,
+        env="MOCK_EXCHANGES",
+        description="Use mock exchange data for development"
+    )
+    mock_exchanges: bool = Field(
+        default=False,
         env="MOCK_EXCHANGES", 
         description="Use mock exchange data for development"
     )

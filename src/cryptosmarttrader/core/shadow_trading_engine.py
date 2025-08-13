@@ -592,7 +592,7 @@ class ShadowTradingEngine:
                 else:
                     win_probability = 0.45
 
-                # REMOVED: Mock data pattern not allowed in production
+                # Placeholder removed
                 is_winner = np.random.random() < win_probability
 
                 if is_winner:

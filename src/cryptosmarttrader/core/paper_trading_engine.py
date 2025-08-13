@@ -443,7 +443,7 @@ class PaperTradingEngine:
                 total_cost += fill_qty * fill_price
                 total_fees += fill_fee
 
-                # REMOVED: Mock data pattern not allowed in production
+                # Placeholder removed
                 total_latency += 50.0  # Average 50ms
 
             avg_execution_price = (

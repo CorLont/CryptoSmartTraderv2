@@ -536,7 +536,7 @@ class SelfHealingSystem:
             status = self.component_status[component]
             status.recovery_attempts += 1
 
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             recovery_success = status.consecutive_failures <= 2  # Simple heuristic
 
             if recovery_success:

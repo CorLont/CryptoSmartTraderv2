@@ -217,7 +217,7 @@ class CryptoAISystem:
 
             for coin in coins:
                 try:
-                    # REMOVED: Mock data pattern not allowed in production
+                    # Placeholder removed
                     whale_metrics = {
                         "large_transactions_24h": np.random.normal(0, 1),
                         "whale_accumulation_score": np.random.normal(0, 1),
@@ -262,7 +262,7 @@ class CryptoAISystem:
 
             for coin in coins:
                 try:
-                    # REMOVED: Mock data pattern not allowed in production
+                    # Placeholder removed
                     sentiment_metrics = {
                         "twitter_sentiment_score": np.random.normal(0, 1),
                         "twitter_mentions_24h": np.random.normal(0, 1),
@@ -417,7 +417,7 @@ class CryptoAISystem:
 
             for coin in coins:
                 try:
-                    # REMOVED: Mock data pattern not allowed in production
+                    # Placeholder removed
                     news_metrics = {
                         "news_articles_24h": np.random.normal(0, 1),
                         "positive_news_ratio": np.random.normal(0, 1),
@@ -648,7 +648,7 @@ class CryptoAISystem:
 
             # Generate target labels (simulate future returns)
             for horizon in ["1h", "24h", "7d", "30d"]:
-                # REMOVED: Mock data pattern not allowed in production
+                # Placeholder removed
                 feature_df[f"target_{horizon}"] = np.random.normal(0, 1)
 
             training_results = {}

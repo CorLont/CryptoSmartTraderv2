@@ -594,7 +594,7 @@ class SystemHealthMonitor:
             if config_available > 0:
                 config_score = (config_available / len(api_configs)) * 100.0
 
-                # REMOVED: Mock data pattern not allowed in production
+                # Placeholder removed
                 # In production, this would make actual API calls
                 recent_logs = 0
                 if Path("logs").exists():

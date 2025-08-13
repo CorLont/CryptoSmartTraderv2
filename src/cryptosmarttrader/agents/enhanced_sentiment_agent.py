@@ -290,7 +290,7 @@ class EnhancedSentimentAgent:
         """Collect data from multiple sources with anti-detection"""
         all_posts = []
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         # In production, this would include Reddit, Twitter, Telegram, Discord
         sources = ["reddit", "twitter", "telegram"]
 
@@ -311,7 +311,7 @@ class EnhancedSentimentAgent:
     async def _scrape_source(self, source: str, coin: str, hours: int) -> List[Dict]:
         """Scrape individual source with proper error handling"""
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         # In production, implement actual API calls or web scraping
 
         posts = []

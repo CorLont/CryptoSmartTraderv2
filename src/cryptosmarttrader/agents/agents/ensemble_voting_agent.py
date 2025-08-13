@@ -1090,7 +1090,7 @@ class EnsembleVotingAgent:
         # This would track actual vs predicted performance in production
         with self._lock:
             for model_id in self.registered_models:
-                # REMOVED: Mock data pattern not allowed in production
+                # Placeholder removed
                 if model_id not in self.model_performance:
                     self.model_performance[model_id] = {
                         "accuracy_history": [],

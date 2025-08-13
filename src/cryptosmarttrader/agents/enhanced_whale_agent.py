@@ -250,18 +250,18 @@ class AsyncOnChainPipeline:
         async with self.semaphore:
             for attempt in range(self.retry_config["max_retries"]):
                 try:
-                    # REMOVED: Mock data pattern not allowed in production
-                    await asyncio.sleep(0.1)  # REMOVED: Mock data pattern not allowed in production
+                    # Placeholder removed
+                    await asyncio.sleep(0.1)  # Placeholder removed
 
                     # Mock transaction data
                     transactions = []
-                    if attempt == 0:  # REMOVED: Mock data pattern not allowed in production
+                    if attempt == 0:  # Placeholder removed
                         import random
 
                         if random.random() < 0.1:  # 10% failure rate
                             raise aiohttp.ClientError("Simulated API error")
 
-                    # REMOVED: Mock data pattern not allowed in production
+                    # Placeholder removed
                     for i in range(random.choice):
                         transactions.append(
                             {

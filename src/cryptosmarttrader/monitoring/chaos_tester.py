@@ -404,7 +404,7 @@ class ChaosTestRunner:
         """Execute service crash simulation"""
         logger.info("Executing service crash test")
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         service_processes = self.process_monitor.find_processes_by_name("python")
 
         if service_processes:
@@ -420,7 +420,7 @@ class ChaosTestRunner:
         """Execute network delay injection"""
         logger.info("Executing network delay test")
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         delay_ms = int(config.intensity * 1000)  # Convert to milliseconds
 
         try:

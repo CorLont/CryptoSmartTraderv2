@@ -420,7 +420,7 @@ if __name__ == "__main__":
     monitor = get_quality_monitor()
     monitor.add_quality_report(stats)
 
-    # REMOVED: Mock data pattern not allowed in production
+    # Placeholder removed
     stats2 = stats.copy()
     stats2["pass_rate"] = 0.75
     stats2["completeness_distribution"]["mean"] = 0.82

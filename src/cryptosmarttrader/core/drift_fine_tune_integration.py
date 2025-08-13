@@ -464,11 +464,11 @@ if __name__ == "__main__":
 
         print("📊 Simulating system metrics...")
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         import numpy as np
         import random
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         for i in range(5):
             metrics = {
                 "error_rate": 0.05 + (i * 0.02),  # Increasing error rate

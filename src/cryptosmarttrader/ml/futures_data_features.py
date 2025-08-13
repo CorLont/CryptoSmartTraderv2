@@ -344,7 +344,7 @@ if __name__ == "__main__":
     # Test with sample data since real API calls might fail
     sample_symbols = ["BTC", "ETH", "SOL"]
 
-    # REMOVED: Mock data pattern not allowed in production
+    # Placeholder removed
     sample_funding = {
         "BTC": {
             "binance": {"funding_rate": 0.0001, "mark_price": 67500},

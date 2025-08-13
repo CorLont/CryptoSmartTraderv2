@@ -556,7 +556,7 @@ class SignalQualityValidator:
         """Calculate strategy performance with transaction costs"""
 
         try:
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             returns = []
             portfolio_value = 1.0
             portfolio_history = [portfolio_value]

@@ -977,7 +977,7 @@ if __name__ == "__main__":
         }
     )
 
-    # REMOVED: Mock data pattern not allowed in production
+    # Placeholder removed
     test_predictions = np.random.randn(100)
     test_true_values = test_data["target"].values
 

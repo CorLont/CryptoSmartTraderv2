@@ -351,11 +351,11 @@ class PortfolioOptimizerAgent:
         if not self.current_portfolio:
             return 1.0
 
-        # REMOVED: Mock data pattern not allowed in production
+        # Placeholder removed
         total_drift = 0.0
 
         for allocation in self.current_portfolio.asset_allocations:
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             weight_drift = abs(allocation.current_weight - allocation.target_weight)
             total_drift += weight_drift
 
@@ -368,7 +368,7 @@ class PortfolioOptimizerAgent:
         # For demonstration, we'll simulate realistic data
 
         for symbol in self.asset_universe:
-            # REMOVED: Mock data pattern not allowed in production
+            # Placeholder removed
             days = self.kelly_lookback_days
             returns = np.zeros(days)  # Initialize with zeros for authentic data only
             prices = np.cumprod(1 + returns) * 100  # Price series
