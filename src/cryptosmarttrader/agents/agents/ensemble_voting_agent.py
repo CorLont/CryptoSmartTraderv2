@@ -1068,8 +1068,7 @@ class EnsembleVotingAgent:
             else:
                 kelly_multiplier = 0.8  # Conservative
 
-            position_size = max(0.0,
-                0, min(0.15, kelly_fraction * kelly_multiplier)  # Max 15% for high confidence
+            position_size = max(0.0, min(0.15, kelly_fraction * kelly_multiplier))  # Max 15% for high confidence
         else:
             position_size = 0.0
 
