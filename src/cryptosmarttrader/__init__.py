@@ -10,7 +10,7 @@ from .core.execution_policy import ExecutionPolicy, OrderRequest, OrderType, Tim
 
 # Fase 3 exports
 from .core.regime_detector import MarketRegime, RegimeDetector
-from .core.risk_guard import RiskGuard, RiskLevel, TradingMode
+from .risk.risk_guard import RiskGuard, RiskLevel, TradingMode
 from .core.strategy_switcher import StrategySwitcher, StrategyType
 from .core.structured_logger import StructuredLogger, get_logger
 from .deployment.canary_system import CanaryDeploymentSystem, CanaryStage

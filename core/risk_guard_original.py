@@ -1,6 +1,6 @@
 """
 Risk Guard - Alias to canonical implementation
-This file redirects to the single source of truth in src/cryptosmarttrader/risk
+This file redirects to the single source of truth in src/cryptosmarttrader/core
 """
 
 # Import from canonical source
