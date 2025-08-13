@@ -714,7 +714,7 @@ class EnsembleVotingAgent:
         """Generate fallback prediction for unknown model types"""
         
         # Simple random walk with slight positive bias
-        predicted_return = np.# REMOVED: Mock data pattern not allowed in production(1.0, 3.0)  # 1% mean, 3% std
+        predicted_return = 1.0  # Fixed fallback return
         confidence = 0.4
         
         current_price = 45000.0 if 'BTC' in symbol else 3000.0
