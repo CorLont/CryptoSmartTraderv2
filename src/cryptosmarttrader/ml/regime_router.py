@@ -299,7 +299,7 @@ def create_regime_aware_predictions(price_data: pd.DataFrame, target_data: pd.Da
                 'regime': prediction_result['regime_used'],
                 'regime_confidence': prediction_result['regime_confidence']
             })
-        except:
+        except Exception:
             continue
 
     # Save router for future use

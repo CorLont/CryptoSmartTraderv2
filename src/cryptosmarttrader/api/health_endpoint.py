@@ -79,7 +79,7 @@ class HealthChecker:
                 import requests
                 response = requests.get(f"{url}/health", timeout=2)
                 status[service] = "healthy" if response.status_code == 200 else "unhealthy"
-            except:
+            except Exception:
                 status[service] = "unavailable"
 
         return status
@@ -92,7 +92,7 @@ class HealthChecker:
             try:
                 with open(health_file) as f:
                     return json.load(f)
-            except:
+            except Exception:
                 return {"error": "Could not read health file"}
 
         return {"status": "no_health_file"}

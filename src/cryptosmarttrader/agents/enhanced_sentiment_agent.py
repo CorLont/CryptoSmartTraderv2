@@ -217,7 +217,7 @@ class EnhancedSentimentAgent:
             import os
             self.openai_client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
             self.openai_available = True
-        except:
+        except Exception:
             self.openai_available = False
             self.logger.warning("OpenAI not available for advanced sentiment analysis")
 

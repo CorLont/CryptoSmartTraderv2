@@ -383,7 +383,7 @@ class DriftDetector:
                 test_results['ks_statistic'] = ks_stat
                 test_results['ks_pvalue'] = ks_pvalue
                 ks_drift = ks_stat  # KS statistic as drift score
-            except:
+            except Exception:
                 ks_drift = 0.0
                 test_results['ks_statistic'] = 0.0
                 test_results['ks_pvalue'] = 1.0
@@ -395,7 +395,7 @@ class DriftDetector:
             psi_score = self._calculate_psi(baseline_values, current_values)
             test_results['psi_score'] = psi_score
             psi_drift = min(1.0, psi_score / 0.25)  # Normalize PSI
-        except:
+        except Exception:
             psi_drift = 0.0
             test_results['psi_score'] = 0.0
         
@@ -423,7 +423,7 @@ class DriftDetector:
                 js_divergence = jensenshannon(hist_baseline, hist_current)
                 test_results['js_divergence'] = js_divergence
                 js_drift = js_divergence
-            except:
+            except Exception:
                 js_drift = 0.0
                 test_results['js_divergence'] = 0.0
         else:
@@ -499,7 +499,7 @@ class DriftDetector:
                     chi2_drift = min(1.0, chi2_stat / len(all_categories))
                 else:
                     chi2_drift = 0.0
-            except:
+            except Exception:
                 chi2_drift = 0.0
         else:
             chi2_drift = 0.0
@@ -571,7 +571,7 @@ class DriftDetector:
                     else:
                         drift_score = 0.0
                     
-                except:
+                except Exception:
                     drift_score = 0.0
             else:
                 # Simple percentage change

@@ -396,7 +396,7 @@ class MarketRegimeDetector:
             # Fill NaN values
             try:
                 features = features.fillna(method='ffill').fillna(0)
-            except:
+            except Exception:
                 features = features.fillna(0)
 
             return features

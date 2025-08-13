@@ -226,7 +226,7 @@ Focus on:
             try:
                 blob = TextBlob(title + " " + content)
                 sentiment_score = blob.sentiment.polarity
-            except:
+            except Exception:
                 pass
 
         # Simple keyword-based analysis
@@ -373,7 +373,7 @@ class WebScraper:
         try:
             from urllib.parse import urlparse
             return urlparse(url).netloc
-        except:
+        except Exception:
             return url
 
     async def _rate_limit(self):

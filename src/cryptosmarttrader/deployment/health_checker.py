@@ -681,7 +681,7 @@ class HealthChecker:
         """Get current system uptime"""
         try:
             return time.time() - psutil.boot_time()
-        except:
+        except Exception:
             return 0.0
 
     def _get_last_recovery_time(self) -> Optional[float]:

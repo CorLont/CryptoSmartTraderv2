@@ -187,7 +187,7 @@ class DailyHealthChecker:
                         self.results["warnings"].append("Trading metrics not available")
                 else:
                     self.results["warnings"].append("Metrics endpoint not accessible")
-            except:
+            except Exception:
                 self.results["warnings"].append("Unable to check metrics")
                 
         except Exception as e:

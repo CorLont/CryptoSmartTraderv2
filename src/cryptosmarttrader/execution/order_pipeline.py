@@ -303,7 +303,7 @@ class OrderPipeline:
                         order_result.completed_at = datetime.now()
                         self._finalize_order_result(order_result, pipeline_start)
                         result = order_result
-                except:
+                except Exception:
                     pass  # Use the created result above
                 
                 self.logger.error("Order pipeline execution failed",

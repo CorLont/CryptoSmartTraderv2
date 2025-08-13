@@ -229,7 +229,7 @@ class MultiServiceManager:
                 except subprocess.TimeoutExpired:
                     print(f"Force killing {name}...")
                     process.kill()
-                except:
+                except Exception:
                     pass
         
         print("✅ All services stopped")

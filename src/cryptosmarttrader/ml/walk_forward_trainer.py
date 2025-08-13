@@ -597,7 +597,7 @@ class WalkForwardTrainer:
                     auc_roc = roc_auc_score(y, y_proba_pos)
                 else:
                     auc_roc = 0.5  # Multi-class placeholder
-            except:
+            except Exception:
                 auc_roc = 0.5
             
             # Log loss
@@ -606,7 +606,7 @@ class WalkForwardTrainer:
                     log_loss_val = log_loss(y, model.predict_proba(X))
                 else:
                     log_loss_val = 0.0
-            except:
+            except Exception:
                 log_loss_val = 0.0
             
             # Trading-specific metrics (simplified)
@@ -858,7 +858,7 @@ class WalkForwardTrainer:
         try:
             correlation = np.corrcoef(val_scores, test_scores)[0, 1]
             return correlation if not np.isnan(correlation) else 0.0
-        except:
+        except Exception:
             return 0.0
 
 

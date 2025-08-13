@@ -71,7 +71,7 @@ def start_services():
             api_process.terminate()
             metrics_process.terminate() 
             dashboard_process.terminate()
-        except:
+        except Exception:
             pass
         sys.exit(0)
     

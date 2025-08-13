@@ -160,7 +160,7 @@ class SystemOptimizer:
                 try:
                     current_process.nice(5)  # Lower priority slightly
                     optimizations.append("reduced_process_priority")
-                except:
+                except Exception:
                     pass
 
             # Optimize agent update intervals

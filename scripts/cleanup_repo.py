@@ -84,7 +84,7 @@ class RepositoryCleanup:
                 cwd=self.repo_root
             )
             return result.returncode == 0
-        except:
+        except Exception:
             return False
     
     def should_remove_file(self, file_path: Path) -> bool:

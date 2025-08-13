@@ -195,7 +195,7 @@ class CoinRegistry:
             last_update_dt = datetime.fromisoformat(self.last_update)
             hours_since_update = (datetime.now() - last_update_dt).total_seconds() / 3600
             return hours_since_update >= self.update_interval_hours
-        except:
+        except Exception:
             return True
     
     def add_coin(self, symbol: str, name: str, rank: int = 999, 
@@ -769,7 +769,7 @@ class CoinRegistry:
                             deactivated_dt = datetime.fromisoformat(coin_data['deactivated_at'])
                             if deactivated_dt < cutoff_date:
                                 should_remove = True
-                        except:
+                        except Exception:
                             pass
                     
                     if should_remove:

@@ -531,7 +531,7 @@ class MetricsCollector:
             else:
                 # Sum all values
                 return sum(sample.value for sample in counter.collect()[0].samples)
-        except:
+        except Exception:
             return 0.0
 
 

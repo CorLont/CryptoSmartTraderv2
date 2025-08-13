@@ -41,7 +41,7 @@ class ReleaseManager:
                 cwd=self.repo_root
             )
             return result.stdout.strip() if result.returncode == 0 else None
-        except:
+        except Exception:
             return None
     
     def validate_version_format(self, version: str) -> bool:
@@ -92,7 +92,7 @@ class ReleaseManager:
             if result.returncode == 0:
                 return [line.strip() for line in result.stdout.split('\n') if line.strip()]
             return []
-        except:
+        except Exception:
             return []
     
     def categorize_commits(self, commits: List[str]) -> dict:

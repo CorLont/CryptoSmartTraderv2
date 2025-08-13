@@ -234,7 +234,7 @@ class ComprehensiveSystemManager:
                 current_status = self.monitor.get_current_status()
                 monitor_health = current_status.get('health_score', 100)
                 base_health = (base_health + monitor_health) / 2
-            except:
+            except Exception:
                 pass
 
         return round(base_health, 1)
@@ -257,7 +257,7 @@ class ComprehensiveSystemManager:
             try:
                 monitor_status = self.monitor.get_current_status()
                 status['real_time_metrics'] = monitor_status
-            except:
+            except Exception:
                 status['real_time_metrics'] = {'status': 'unavailable'}
 
         # Add analytics insights if available
@@ -265,7 +265,7 @@ class ComprehensiveSystemManager:
             try:
                 # Get recent insights
                 status['recent_insights'] = len(getattr(self.analytics, 'insights_generated', []))
-            except:
+            except Exception:
                 status['recent_insights'] = 0
 
         return status
@@ -291,7 +291,7 @@ class ComprehensiveSystemManager:
                     'status': 'operational',
                     'optimizations_applied': len(getattr(self.optimizer, 'optimization_history', []))
                 }
-            except:
+            except Exception:
                 component_reports['production_optimization'] = {'status': 'error'}
 
         if self.analytics:
@@ -300,7 +300,7 @@ class ComprehensiveSystemManager:
                     'status': 'operational',
                     'insights_generated': len(getattr(self.analytics, 'insights_generated', []))
                 }
-            except:
+            except Exception:
                 component_reports['advanced_analytics'] = {'status': 'error'}
 
         if self.health_dashboard:
@@ -309,7 +309,7 @@ class ComprehensiveSystemManager:
                     'status': 'operational',
                     'daily_reports_available': True
                 }
-            except:
+            except Exception:
                 component_reports['health_dashboard'] = {'status': 'error'}
 
         report['component_reports'] = component_reports
@@ -339,14 +339,14 @@ class ComprehensiveSystemManager:
             try:
                 self.monitor.stop_monitoring()
                 print("   ✓ Real-time monitoring stopped")
-            except:
+            except Exception:
                 print("   ✗ Error stopping monitor")
 
         if self.logger:
             try:
                 self.logger.flush_logs()
                 print("   ✓ Logs flushed")
-            except:
+            except Exception:
                 print("   ✗ Error flushing logs")
 
         print("   System shutdown complete")

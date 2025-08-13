@@ -33,7 +33,7 @@ class TestSystemStartup:
         try:
             os.killpg(os.getpgid(process.pid), signal.SIGTERM)
             process.wait(timeout=10)
-        except:
+        except Exception:
             os.killpg(os.getpgid(process.pid), signal.SIGKILL)
     
     @pytest.mark.asyncio
@@ -48,7 +48,7 @@ class TestSystemStartup:
                     response = await client.get("http://localhost:5000/", timeout=5.0)
                     if response.status_code == 200:
                         break
-                except:
+                except Exception:
                     pass
                 
                 retry_count += 1
@@ -72,7 +72,7 @@ class TestSystemStartup:
                     response = await client.get("http://localhost:8001/health", timeout=5.0)
                     if response.status_code == 200:
                         break
-                except:
+                except Exception:
                     pass
                 
                 retry_count += 1
@@ -97,7 +97,7 @@ class TestSystemStartup:
                     response = await client.get("http://localhost:8000/metrics", timeout=5.0)
                     if response.status_code == 200:
                         break
-                except:
+                except Exception:
                     pass
                 
                 retry_count += 1
@@ -127,7 +127,7 @@ class TestSystemStartup:
                         if response.status_code == 200:
                             success = True
                             break
-                    except:
+                    except Exception:
                         pass
                     await asyncio.sleep(1)
                 
@@ -148,7 +148,7 @@ class TestSystemStartup:
                     info_data = response.json()
                     assert "version" in info_data
                     assert "environment" in info_data
-            except:
+            except Exception:
                 # Info endpoint might not be implemented yet
                 pytest.skip("Info endpoint not available")
     
@@ -170,7 +170,7 @@ class TestSystemStartup:
                 try:
                     response = await client.get(service_url, timeout=3.0)
                     responses.append(response.status_code)
-                except:
+                except Exception:
                     responses.append(0)  # Failed
             
             # At least 2 out of 3 services should be responding
@@ -312,7 +312,7 @@ class TestSystemStress:
                 try:
                     response = await client.get("http://localhost:8001/health", timeout=5.0)
                     return response.status_code
-                except:
+                except Exception:
                     return 0
         
         # Make 10 concurrent requests
@@ -335,7 +335,7 @@ class TestSystemStress:
                     response = await client.get("http://localhost:8001/health", timeout=2.0)
                     if response.status_code == 200:
                         success_count += 1
-                except:
+                except Exception:
                     pass
                 
                 await asyncio.sleep(0.1)  # 100ms between requests

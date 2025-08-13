@@ -117,7 +117,7 @@ class FuturesDataCollector:
                                 futures_symbol, timeframe='1h', limit=168
                             )
                             oi_values = [oi['openInterest'] for oi in oi_history]
-                        except:
+                        except Exception:
                             oi_values = []
 
                         oi_data[symbol] = {

@@ -290,7 +290,7 @@ class AutoMLEngine:
             skew = np.mean(((data - mean) / std) ** 3)
             return skew
 
-        except:
+        except Exception:
             return 0.0
 
     def _get_meta_recommendations(self, dataset_chars: Dict[str, Any]) -> List[str]:

@@ -226,7 +226,7 @@ class BayesianUncertaintyModel:
                     try:
                         pred = estimator.predict(features)[0]
                         individual_predictions.append(pred)
-                    except:
+                    except Exception:
                         continue
 
                 if individual_predictions:

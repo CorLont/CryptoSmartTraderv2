@@ -206,7 +206,7 @@ class ProductionHealthChecker:
             try:
                 model_status = ml_system.get_model_status() if hasattr(ml_system, 'get_model_status') else {}
                 loaded_models = sum(1 for status in model_status.values() if status.get('loaded', False))
-            except:
+            except Exception:
                 loaded_models = 0
             
             if loaded_models == 0:

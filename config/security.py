@@ -240,7 +240,7 @@ class SecurityManager:
                             event_time = datetime.fromisoformat(event['timestamp'])
                             if event_time > hour_ago:
                                 recent_events.append(event)
-                        except:
+                        except Exception:
                             continue
             
             # Count by severity

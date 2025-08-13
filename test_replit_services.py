@@ -19,7 +19,7 @@ def test_service_health(service_name: str, port: int, health_path: str) -> Dict[
         
         try:
             data = response.json() if response.content else {}
-        except:
+        except Exception:
             data = {"response": response.text[:200]}
         
         return {
@@ -79,7 +79,7 @@ def test_all_services():
             print("✅ API Documentation: ACCESSIBLE")
         else:
             print(f"⚠️  API Documentation: {response.status_code}")
-    except:
+    except Exception:
         print("❌ API Documentation: UNAVAILABLE")
     
     # Test metrics endpoint
@@ -89,7 +89,7 @@ def test_all_services():
             print("✅ Prometheus Metrics: ACCESSIBLE")
         else:
             print(f"⚠️  Prometheus Metrics: {response.status_code}")
-    except:
+    except Exception:
         print("❌ Prometheus Metrics: UNAVAILABLE")
     
     # Test detailed health
@@ -103,7 +103,7 @@ def test_all_services():
                 print(f"   Uptime: {data['uptime_formatted']}")
         else:
             print(f"⚠️  Detailed Health: {response.status_code}")
-    except:
+    except Exception:
         print("❌ Detailed Health: UNAVAILABLE")
     
     # Summary

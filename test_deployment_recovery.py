@@ -387,7 +387,7 @@ except KeyboardInterrupt:
                         server_ready = True
                         logger.info("Health server is ready")
                         break
-                except:
+                except Exception:
                     pass
                 time.sleep(1)
             
@@ -424,7 +424,7 @@ except KeyboardInterrupt:
                         recovery_time = time.time() - kill_time
                         logger.info(f"Service recovered to healthy in {recovery_time:.1f} seconds")
                         break
-                except:
+                except Exception:
                     pass
                 time.sleep(0.5)
             

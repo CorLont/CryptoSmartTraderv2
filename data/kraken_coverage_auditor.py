@@ -145,7 +145,7 @@ class KrakenCoverageAuditor:
                                 monitored.add(data['symbol'])
                             elif 'symbols' in data:
                                 monitored.update(data['symbols'])
-                    except:
+                    except Exception:
                         continue
             
             return monitored

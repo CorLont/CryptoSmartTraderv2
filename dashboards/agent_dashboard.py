@@ -132,7 +132,7 @@ class AgentDashboard:
                     last_update_dt = datetime.fromisoformat(last_update)
                     time_ago = (datetime.now() - last_update_dt).total_seconds() / 60
                     last_update = f"{time_ago:.0f}m ago"
-                except:
+                except Exception:
                     pass
             st.metric("Last Update", last_update)
         

@@ -565,7 +565,7 @@ def main():
             connections = psutil.net_connections()
             listening = [c for c in connections if c.status == 'LISTEN']
             st.write(f"**Network Connections:** {len(connections)} total, {len(listening)} listening")
-        except:
+        except Exception:
             st.write("**Network Connections:** Unable to retrieve")
     
     # Auto-refresh logic

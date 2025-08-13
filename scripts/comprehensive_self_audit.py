@@ -793,7 +793,7 @@ class ComprehensiveSelfAudit:
                                 'pattern': pattern,
                                 'matches': len(matches)
                             })
-                except:
+                except Exception:
                     continue
             
             # Scan log files  
@@ -810,7 +810,7 @@ class ComprehensiveSelfAudit:
                                     'pattern': pattern,
                                     'matches': len(matches)
                                 })
-                    except:
+                    except Exception:
                         continue
             
             # Test secure logging

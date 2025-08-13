@@ -628,7 +628,7 @@ class FallbackDataEliminator:
                             timestamp = pd.to_datetime(value)
                             if latest_timestamp is None or timestamp > latest_timestamp:
                                 latest_timestamp = timestamp
-                        except:
+                        except Exception:
                             continue
 
             if latest_timestamp is not None:

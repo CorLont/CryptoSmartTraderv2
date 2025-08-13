@@ -224,7 +224,7 @@ class EnterpriseSafetySystemTester:
             for i in range(5):
                 try:
                     circuit_breaker.call(failing_function)
-                except:
+                except Exception:
                     failure_count += 1
             
             # Check if circuit opened

@@ -389,7 +389,7 @@ class GoLiveDeployment:
                     response = requests.get(service_url, timeout=3)
                     if response.status_code != 200:
                         return False
-                except:
+                except Exception:
                     return False
             
             return True

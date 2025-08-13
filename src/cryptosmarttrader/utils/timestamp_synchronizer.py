@@ -257,7 +257,7 @@ class TimestampSynchronizer:
                 # Try ISO format first
                 dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
                 return dt.astimezone(timezone.utc)
-            except:
+            except Exception:
                 # Try pandas parsing
                 dt = pd.to_datetime(timestamp, utc=True)
                 return dt.to_pydatetime()

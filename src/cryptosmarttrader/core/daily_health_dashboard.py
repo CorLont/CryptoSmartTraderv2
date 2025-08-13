@@ -463,7 +463,7 @@ class DailyHealthDashboard:
             boot_time = psutil.boot_time()
             uptime_seconds = psutil.time.time() - boot_time
             return uptime_seconds / 3600
-        except:
+        except Exception:
             return 0.0
 
 def generate_daily_health_report(date_str: Optional[str] = None) -> Dict[str, Any]:

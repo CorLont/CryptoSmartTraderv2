@@ -577,7 +577,7 @@ class AlphaOpportunitiesDashboard:
                             time_ago = datetime.now() - dt
                             minutes_ago = int(time_ago.total_seconds() / 60)
                             st.metric("Last Analysis", f"{minutes_ago}m ago")
-                        except:
+                        except Exception:
                             st.metric("Last Analysis", "Unknown")
                     else:
                         st.metric("Last Analysis", "Never")
@@ -677,7 +677,7 @@ class AlphaOpportunitiesDashboard:
                                 dt = datetime.fromisoformat(latest_training)
                                 hours_ago = int((datetime.now() - dt).total_seconds() / 3600)
                                 st.metric("Last Training", f"{hours_ago}h ago")
-                            except:
+                            except Exception:
                                 st.metric("Last Training", "Unknown")
                     else:
                         st.metric("Last Training", "Never")
