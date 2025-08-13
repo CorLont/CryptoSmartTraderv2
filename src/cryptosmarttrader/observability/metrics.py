@@ -257,7 +257,6 @@ class SystemMetricsCollector(MetricsCollector):
         # GPU metrics (if available)
         if self.gpu_available:
             try:
-                import GPUtil
                 gpus = GPUtil.getGPUs()
                 
                 for i, gpu in enumerate(gpus):

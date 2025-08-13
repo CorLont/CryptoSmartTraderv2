@@ -297,11 +297,7 @@ Daily Health Aggregator
 Centralize all health data into single daily directory
 """
 
-import os
-import json
 import shutil
-from pathlib import Path
-from datetime import datetime
 
 def aggregate_daily_health():
     """Aggregate all health data for today"""

@@ -276,7 +276,6 @@ class ContinualLearningManager:
     def _full_retrain(self, X: np.ndarray, y: np.ndarray):
         """Perform full model retraining"""
 
-        from sklearn.ensemble import RandomForestRegressor
 
         new_model = RandomForestRegressor(
             n_estimators=300,  # More trees for full retrain
@@ -323,7 +322,6 @@ class ContinualLearningManager:
         joblib.dump(new_model, latest_path)
 
         # Save metadata
-        import json
         metadata = {
             'version': self.model_version,
             'deployed_at': datetime.now().isoformat(),

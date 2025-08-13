@@ -526,7 +526,6 @@ class SHAPFeatureAnalyzer:
 
             # Train model if not provided
             if model is None:
-                from sklearn.ensemble import RandomForestRegressor
                 model = RandomForestRegressor(n_estimators=100, random_state=42)
                 model.fit(X, y)
 
@@ -691,7 +690,6 @@ class SHAPFeatureAnalyzer:
                     continue
 
                 # Train regime-specific model
-                from sklearn.ensemble import RandomForestRegressor
                 regime_model = RandomForestRegressor(n_estimators=50, random_state=42)
                 regime_model.fit(X_regime, y_regime)
 

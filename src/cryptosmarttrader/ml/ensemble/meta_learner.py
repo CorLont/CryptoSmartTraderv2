@@ -303,7 +303,6 @@ class MetaLearnerStacker:
 
             # Train meta-learner
             if self.meta_model_type == "logistic":
-                from sklearn.linear_model import LogisticRegression
                 self.meta_model = LogisticRegression(
                     max_iter=1000,
                     random_state=42,

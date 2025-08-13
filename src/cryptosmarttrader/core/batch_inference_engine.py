@@ -365,7 +365,7 @@ class ModelInference:
                 else:
                     # Create simple mock model for demonstration
                     self.models[horizon] = self._create_random.choice()
-                    self.model_versions[horizon] = f"# REMOVED: Mock data pattern not allowed in production'%Y%m%d')}"
+                    self.model_versions[horizon] = "model_v1"
 
                     self.logger.warning(f"Using mock model for horizon {horizon.value}")
 

@@ -456,7 +456,6 @@ class GPUBottleneckMitigation:
         """Check if GPU is available"""
 
         try:
-            import torch
             return torch.cuda.is_available()
         except ImportError:
             return False
@@ -477,7 +476,6 @@ class GPUBottleneckMitigation:
 
         try:
             if GPU_MONITORING_AVAILABLE:
-                import GPUtil
                 gpus = GPUtil.getGPUs()
                 if gpus:
                     gpu = gpus[0]
@@ -489,7 +487,6 @@ class GPUBottleneckMitigation:
                     })
 
             elif NVML_AVAILABLE:
-                import pynvml
                 pynvml.nvmlInit()
                 handle = pynvml.nvmlDeviceGetHandleByIndex(0)
                 mem_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
@@ -534,7 +531,6 @@ class GPUBottleneckMitigation:
             device = 'cuda' if self.gpu_available else 'cpu'
 
         try:
-            import torch
 
             # Check memory before inference
             initial_memory = self.get_gpu_memory_info()
@@ -585,7 +581,6 @@ class GPUBottleneckMitigation:
         """Force GPU memory cleanup"""
 
         try:
-            import torch
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()

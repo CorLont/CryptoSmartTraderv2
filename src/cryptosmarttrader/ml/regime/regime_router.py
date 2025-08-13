@@ -75,7 +75,6 @@ class RegimeSpecificModel:
                     self.model.fit(X_scaled, y)
 
             elif self.model_type == "random_forest":
-                from sklearn.ensemble import RandomForestRegressor
                 self.model = RandomForestRegressor(
                     n_estimators=100,
                     max_depth=6,
@@ -222,7 +221,7 @@ class RegimeAwarePredictor:
                 targets.extend(returns)
             else:
                 # Fallback
-                targets.extend(np.random.normal(0, 1)))
+                targets.extend([np.random.normal(0, 1)])
 
         return np.array(targets)
 

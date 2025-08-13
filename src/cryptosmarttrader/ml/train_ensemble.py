@@ -154,7 +154,7 @@ class EnsembleTrainer:
             )
 
             time_scaling = np.sqrt(hours) / 10
-            noise = np.random.normal(0, 1))
+            noise = np.random.normal(0, 1)
 
             df[f'target_return_{horizon}'] = base_return * time_scaling + noise
 

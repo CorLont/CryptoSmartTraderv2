@@ -249,7 +249,7 @@ class AsyncOnChainPipeline:
                             raise aiohttp.ClientError("Simulated API error")
                     
                     # REMOVED: Mock data pattern not allowed in production
-                    for i in range(# REMOVED: Mock data pattern not allowed in production(0, 5)):
+                    for i in range(0, 5):
                         transactions.append({
                             'hash': f"0x{''.join(# REMOVED: Mock data pattern not allowed in productions('0123456789abcdef', k=64))}",
                             'from': address,

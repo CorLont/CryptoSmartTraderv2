@@ -306,7 +306,7 @@ class EnhancedSentimentAgent:
         # In production, implement actual API calls or web scraping
         
         posts = []
-        for i in range(# REMOVED: Mock data pattern not allowed in production(10, 50)):
+        for i in range(10, 50):
             # Generate realistic mock data for demonstration
             posts.append({
                 'text': f"Sample {coin} discussion post {i}",

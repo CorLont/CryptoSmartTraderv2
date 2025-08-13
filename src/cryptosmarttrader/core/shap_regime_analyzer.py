@@ -567,7 +567,6 @@ class SHAPRegimeAnalyzer:
 
                 except Exception as e:
                     self.logger.error(f"Background analysis error: {e}")
-                    import time
                     time.sleep(300)  # Wait 5 minutes on error
 
         analysis_thread = threading.Thread(target=analysis_loop, daemon=True)

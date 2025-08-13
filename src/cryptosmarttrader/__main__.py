@@ -142,7 +142,6 @@ def main_simple() -> None:
 
     # Hier kun je start-logica plaatsen (API, dashboard, agents) obv toggles
     # Voor nu alleen een startmelding:
-    import logging
     log = logging.getLogger(__name__)
     log.info("CryptoSmartTrader gestart met API op %s:%s (dashboard %s)",
              settings.API_HOST, settings.API_PORT, settings.DASH_PORT)

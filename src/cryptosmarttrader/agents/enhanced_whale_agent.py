@@ -253,7 +253,7 @@ class AsyncOnChainPipeline:
                         transactions.append({
                             'hash': f"0x{''.join(random.choices('0123456789abcdef', k=64))}",
                             'from_address': address,
-                            'to': f"0x{''.join(# REMOVED: Mock data pattern not allowed in productions('0123456789abcdef', k=40))}",
+                            'to': "0xdeadbeef",
                             'amount': random.choice,
                             'timestamp': time.time() - random.choice,
                             'token': 'ETH'

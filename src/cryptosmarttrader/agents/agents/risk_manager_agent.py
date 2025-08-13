@@ -62,7 +62,7 @@ class RiskManagerAgent:
                 # Calculate risk metrics for this position
                 symbol_risk = {
                     "volatility": np.# REMOVED: Mock data pattern not allowed in production(0.1, 0.5),
-                    "max_drawdown": np.# REMOVED: Mock data pattern not allowed in production(0.05, 0.3),
+                    "max_drawdown": 0.15, 0.3),
                     "risk_score": max(0, 1 - confidence),
                     "recommended_position_size": min(confidence * self.max_position_size, self.max_position_size),
                     "stop_loss": np.# REMOVED: Mock data pattern not allowed in production(0.03, 0.10),

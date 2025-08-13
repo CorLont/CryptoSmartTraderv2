@@ -775,8 +775,6 @@ def get_advanced_ai_engine(config_manager=None, cache_manager=None) -> AdvancedA
 
 if __name__ == "__main__":
     # Test the advanced AI engine
-    import pandas as pd
-    import numpy as np
 
     # Create test data
     np.random.seed(42)

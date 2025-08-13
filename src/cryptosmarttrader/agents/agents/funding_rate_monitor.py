@@ -742,7 +742,6 @@ class FundingRateMonitor:
         try:
             # Save top opportunities
 
-import time
 import random
 from functools import wraps
 

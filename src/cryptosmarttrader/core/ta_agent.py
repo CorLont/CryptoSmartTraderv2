@@ -790,7 +790,6 @@ async def quick_ta_analysis(symbol: str, price_data: pd.DataFrame) -> Dict[str, 
 
 if __name__ == "__main__":
     # Test TA agent
-    import asyncio
 
     async def test_ta_agent():
         print("Testing Technical Analysis Agent")

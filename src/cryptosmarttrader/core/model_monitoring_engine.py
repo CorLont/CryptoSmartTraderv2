@@ -883,8 +883,6 @@ if __name__ == "__main__":
     coordinator.register_model('test_model_v1', {'type': 'LSTM', 'version': '1.0'})
 
     # Create test data
-    import pandas as pd
-    import numpy as np
 
     np.random.seed(42)
     test_data = pd.DataFrame({

@@ -86,8 +86,6 @@ Timestamp Validation Utility
 Ensures proper timezone handling and candle alignment
 """
 
-import pandas as pd
-from datetime import datetime, timezone
 from typing import Union
 
 def normalize_timestamp(ts: Union[str, pd.Timestamp, datetime], target_tz: str = 'UTC') -> pd.Timestamp:
@@ -191,8 +189,6 @@ Enhanced Probability Calibration
 Ensures ML confidence scores are properly calibrated
 """
 
-import numpy as np
-import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import brier_score_loss
@@ -306,8 +302,6 @@ Realistic Execution & Slippage Modeling
 Enterprise-grade execution simulation
 """
 
-import numpy as np
-import pandas as pd
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 
@@ -477,9 +471,7 @@ Prevents secrets leakage and implements correlation IDs
 """
 
 import logging
-import re
 import uuid
-import json
 from typing import Any, Dict, Optional
 from datetime import datetime
 
@@ -622,10 +614,7 @@ Data Completeness Gate
 Zero-tolerance validation for incomplete data
 """
 
-import pandas as pd
-import numpy as np
 from typing import Dict, List, Any, Tuple
-from datetime import datetime
 
 class DataCompletenessGate:
     """Strict data completeness validation"""
@@ -773,8 +762,6 @@ Market Regime Detection & Adaptive Modeling
 Prevents regime-blind predictions
 """
 
-import pandas as pd
-import numpy as np
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 from typing import Dict, Any, List, Tuple
@@ -1018,13 +1005,10 @@ Uncertainty Quantification for ML Models
 Implements Monte Carlo Dropout and Ensemble Uncertainty
 """
 
-import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
 from typing import Dict, Any, List, Tuple, Optional
 from sklearn.ensemble import RandomForestRegressor
-import warnings
 warnings.filterwarnings('ignore')
 
 class MonteCarloDropoutModel(nn.Module):

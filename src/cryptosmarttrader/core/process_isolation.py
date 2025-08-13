@@ -20,7 +20,6 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Import core components
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from ..core.structured_logger import get_logger
 

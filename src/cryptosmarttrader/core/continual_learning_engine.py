@@ -340,7 +340,6 @@ class DriftDetector:
         """Detect concept drift using model performance comparison"""
         try:
             from sklearn.linear_model import LinearRegression
-            from sklearn.metrics import mean_squared_error
 
             # Train model on reference data
             ref_model = LinearRegression()
@@ -787,7 +786,6 @@ class ContinualLearningEngine:
 
     def _start_retraining_scheduler(self):
         """Start automated retraining scheduler"""
-        import threading
         import time
 
         def scheduler_loop():

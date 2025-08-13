@@ -129,7 +129,6 @@ class BaseAgent(ABC):
 
 def run_agent(agent_class, config: Dict[str, Any] = None):
     """Utility function to run an agent"""
-    import os
 
     agent = agent_class(config)
 

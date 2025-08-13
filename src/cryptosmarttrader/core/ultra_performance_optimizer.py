@@ -270,7 +270,6 @@ class UltraPerformanceOptimizer:
 
         # Configure process affinity if possible
         try:
-            import psutil
             current_process = psutil.Process()
             available_cpus = list(range(psutil.cpu_count()))
             current_process.cpu_affinity(available_cpus)

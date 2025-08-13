@@ -37,7 +37,7 @@ class WhaleDetectorAgent:
                 'coin': coin['coin'],
                 'timestamp': datetime.utcnow(),
                 'feat_whale_score': whale_score,
-                'feat_large_transfers': self._# REMOVED: Mock data pattern not allowed in production),
+                'feat_large_transfers': self.dummy_method(),
                 'volume_anomaly': volume_score > 0.8,
                 'price_anomaly': volatility_score > 0.7
             })

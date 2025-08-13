@@ -213,7 +213,6 @@ class RegimeAwarePredictor:
                                  regime_labels: np.ndarray) -> Dict[str, float]:
         """Train separate models for each regime"""
 
-        from sklearn.ensemble import RandomForestRegressor
 
         regime_maes = {}
 

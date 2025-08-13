@@ -233,7 +233,6 @@ def apply_backend_enforcement(predictions_df: pd.DataFrame, confidence_threshold
 
 if __name__ == "__main__":
     # Test enforcement
-    import pandas as pd
 
     # Create test predictions
     test_data = [

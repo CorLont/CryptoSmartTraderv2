@@ -536,7 +536,6 @@ class SystemValidator:
         try:
             # Try to import logging manager - WARNING not CRITICAL if missing
             try:
-                from ..core.consolidated_logging_manager import get_consolidated_logger
                 test_logger = get_consolidated_logger("test")
                 self._add_result("logging_system", ValidationSeverity.SUCCESS, True,
                                "Enterprise logging system available")
@@ -553,7 +552,6 @@ class SystemValidator:
                                "Log directory missing (will be created)")
 
             # Test basic logging functionality
-            import logging
             test_logger = logging.getLogger("validation_test")
             test_logger.info("Validation test message")
             self._add_result("basic_logging", ValidationSeverity.SUCCESS, True,

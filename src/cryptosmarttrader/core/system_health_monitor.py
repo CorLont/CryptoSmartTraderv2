@@ -599,7 +599,6 @@ class SystemHealthMonitor:
         metrics = {}
 
         try:
-            import psutil
 
             # Get actual system metrics
             cpu_percent = psutil.cpu_percent(interval=1)
@@ -887,5 +886,4 @@ if __name__ == "__main__":
 
         print("\n✅ SYSTEM HEALTH MONITOR TEST COMPLETE")
 
-    import asyncio
     asyncio.run(test_health_monitor())

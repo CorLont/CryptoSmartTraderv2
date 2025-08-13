@@ -720,7 +720,6 @@ async def validate_existing_features(file_path: str) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test feature building
-    import asyncio
 
     async def main():
         results = await build_crypto_features()

@@ -553,7 +553,6 @@ class RegimeDetector:
 
         try:
             if self.hmm_detector:
-                import joblib
 
                 model_path = self.model_dir / "hmm_model.pkl"
                 scaler_path = self.model_dir / "hmm_scaler.pkl"
@@ -600,7 +599,7 @@ def train_regime_models(price_data_df: pd.DataFrame) -> Dict[str, Any]:
     return detector.fit(price_data_df)
 
 # Test function
-def create_# REMOVED: Mock data pattern not allowed in productionn_samples: int = 1000) -> pd.DataFrame:
+def create_synthetic_data(n_samples: int = 1000) -> pd.DataFrame:
     """Create mock price data for testing regime detection"""
 
     symbols = ['BTC', 'ETH', 'ADA'] * (n_samples // 3)

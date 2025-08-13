@@ -217,7 +217,7 @@ class FeatureEngineering:
             # Mock on-chain features (in production, would use real blockchain data)
             symbol_features['active_addresses'] = np.random.exponential(1000, len(symbol_data))
             symbol_features['transaction_volume'] = np.random.exponential(10000, len(symbol_data))
-            symbol_features['whale_activity'] = np.random.normal(0, 1))
+            symbol_features['whale_activity'] = np.random.normal(0, 1)
 
             # On-chain momentum
             for feature in ['active_addresses', 'transaction_volume', 'whale_activity']:

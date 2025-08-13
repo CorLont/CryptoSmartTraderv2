@@ -459,7 +459,6 @@ class DailyHealthDashboard:
     def _get_uptime_hours(self) -> float:
         """Get system uptime in hours"""
         try:
-            import psutil
             boot_time = psutil.boot_time()
             uptime_seconds = psutil.time.time() - boot_time
             return uptime_seconds / 3600
