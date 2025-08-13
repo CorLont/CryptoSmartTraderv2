@@ -488,6 +488,7 @@ class ComprehensiveMarketDashboard:
                         text=[f"{v:.2f}" for v in values],
                         textposition="auto",
                     )
+                )
 
                 fig.update_layout(
                     title=f"{metric.upper()} Across Timeframes",

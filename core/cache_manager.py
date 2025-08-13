@@ -163,7 +163,8 @@ class CacheManager:
                     "last_accessed": cache_item["last_accessed"].isoformat(),
                     "access_count": cache_item["access_count"],
                     "ttl_remaining_minutes": (
-                        cache_item["expires"] - datetime.now().total_seconds()
+                        cache_item["expires"] - datetime.now()
+                    ).total_seconds()
                     / 60,
                 }
             return info

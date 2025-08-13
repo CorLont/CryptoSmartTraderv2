@@ -397,6 +397,7 @@ class FuturesSignalGenerator:
             # Calculate crowding score based on multiple factors
             funding_extreme = self._calculate_percentile(
                 funding["current_rate"], funding.get("history", [])
+            )
 
             oi_change = oi.get("oi_change_24h", 0)
             basis_bps = basis["basis_bps"]

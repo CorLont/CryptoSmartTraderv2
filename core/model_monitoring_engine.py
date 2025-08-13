@@ -620,6 +620,7 @@ class ModelPerformanceMonitor:
                             "Consider model retraining",
                         ],
                     )
+                )
 
             # Check latency degradation
             recent_latency = np.mean([m.prediction_latency for m in recent_metrics])
@@ -638,6 +639,7 @@ class ModelPerformanceMonitor:
                         affected_features=["latency"],
                         recommended_actions=["Check system resources", "Optimize model inference"],
                     )
+                )
 
             return alerts
 

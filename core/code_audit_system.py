@@ -236,6 +236,7 @@ class CriticalCodeAuditor:
                                     (df[col] == 0.0).sum()
                                     + (df[col] == -999).sum()
                                     + (df[col] == 999).sum()
+                                )
 
                                 if placeholder_count > len(df) * 0.1:  # >10% placeholders
                                     issues.append(

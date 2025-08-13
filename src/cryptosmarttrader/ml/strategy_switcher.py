@@ -443,7 +443,8 @@ class StrategySwitcher:
             tp_levels = []
 
             for i, (tp_pct, scaling) in enumerate(
-                zip(params.partial_profit_levels, params.profit_scaling):
+                zip(params.partial_profit_levels, params.profit_scaling)
+            ):
                 if side.lower() == "buy":
                     tp_price = entry_price * (1 + tp_pct / 100)
                 else:

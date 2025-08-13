@@ -163,6 +163,7 @@ def validate_branch_protection():
         content = gitleaks_config.read_text()
         security_compliance["crypto_patterns"] = (
             "crypto-api-keys" in content or "kraken" in content.lower()
+        )
 
     if security_workflow.exists():
         content = security_workflow.read_text()

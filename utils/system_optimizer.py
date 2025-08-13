@@ -46,7 +46,8 @@ class SystemOptimizer:
     def start_auto_optimization(self):
         """Start automatic optimization monitoring"""
         if self.auto_optimization_enabled and (
-            self.optimization_thread is None or not self.optimization_thread.is_alive():
+            self.optimization_thread is None or not self.optimization_thread.is_alive()
+        ):
             self.optimization_thread = threading.Thread(target=self._optimization_loop, daemon=True)
             self.optimization_thread.start()
             logger.info("Auto-optimization started")

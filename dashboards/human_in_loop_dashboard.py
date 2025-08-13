@@ -559,6 +559,7 @@ class HumanInLoopDashboard:
                 name="Daily Feedback Count",
                 yaxis="y",
             )
+        )
 
         fig_timeline.add_trace(
             go.Scatter(
@@ -569,6 +570,7 @@ class HumanInLoopDashboard:
                 yaxis="y2",
                 line=dict(color="red"),
             )
+        )
 
         fig_timeline.update_layout(
             title="Feedback Activity Over Time",
@@ -610,6 +612,7 @@ class HumanInLoopDashboard:
                     name="Actual Accuracy",
                     line=dict(color="blue"),
                 )
+            )
 
             fig_cal.add_trace(
                 go.Scatter(
@@ -619,6 +622,7 @@ class HumanInLoopDashboard:
                     name="Human Agreement",
                     line=dict(color="red"),
                 )
+            )
 
             # Perfect calibration line
             fig_cal.add_trace(
@@ -629,6 +633,7 @@ class HumanInLoopDashboard:
                     name="Perfect Calibration",
                     line=dict(color="gray", dash="dash"),
                 )
+            )
 
             fig_cal.update_layout(
                 title="Model Calibration Analysis",

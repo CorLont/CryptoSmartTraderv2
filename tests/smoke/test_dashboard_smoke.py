@@ -92,6 +92,7 @@ class TestDashboardSmoke:
                 go.Scatter(
                     x=sample_data["timestamp"], y=sample_data["price"], mode="lines", name="Price"
                 )
+            )
 
             fig.update_layout(title="Sample Price Chart", xaxis_title="Time", yaxis_title="Price")
 

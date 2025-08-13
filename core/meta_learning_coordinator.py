@@ -381,6 +381,7 @@ class TaskGenerator:
             volatility = returns.rolling(20).std()
             trend = (
                 pd.Series(prices).rolling(20).apply(lambda x: np.polyfit(range(len(x)), x, 1)[0])
+            )
 
             # Simple regime classification
             for i in range(20, len(prices), 20):  # 20-period regimes

@@ -172,6 +172,7 @@ class SyntheticDataDashboard:
                                     risk_level="medium",
                                     probability=0.05,
                                     timestamp=datetime.now()
+                                )
                             scenarios.append(scenario)
                     
                     st.success(f"✅ Generated {len(scenarios)} synthetic scenarios")

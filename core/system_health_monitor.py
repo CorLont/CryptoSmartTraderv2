@@ -458,6 +458,7 @@ class SystemHealthMonitor:
                 if Path(model_path).exists():
                     model_files = list(Path(model_path).glob("*.pkl")) + list(
                         Path(model_path).glob("*.joblib")
+                    )
                     model_files_found += len(model_files)
 
             # Base health on model availability
@@ -480,7 +481,8 @@ class SystemHealthMonitor:
                     "accuracy": availability_score * 0.9,  # Assume good but not perfect accuracy
                     "confidence": availability_score * 0.8,  # Conservative confidence estimate
                     "drift": max(
-                        0.0, 100.0 - (model_files_found * 5),  # Less drift with more models
+                        0.0, 100.0 - (model_files_found * 5)
+                    ),  # Less drift with more models
                 }
             else:
                 # No models found
@@ -522,9 +524,11 @@ class SystemHealthMonitor:
                 metrics = {
                     "execution_rate": availability * 0.8,
                     "latency": min(
-                        100.0, 100.0 - (recent_activity * 2),  # Lower latency with more activity
+                        100.0, 100.0 - (recent_activity * 2)
+                    ),  # Lower latency with more activity
                     "errors": max(
-                        0.0, 90.0 - (recent_activity * 5),  # Fewer errors with healthy activity
+                        0.0, 90.0 - (recent_activity * 5)
+                    ),  # Fewer errors with healthy activity
                 }
             else:
                 metrics = {"execution_rate": 0.0, "latency": 100.0, "errors": 100.0}
@@ -605,7 +609,8 @@ class SystemHealthMonitor:
                     "uptime": config_score * 0.9,
                     "response_time": activity_score,
                     "rate_limits": max(
-                        50.0, 100.0 - (recent_logs * 10),  # Conservative rate limit usage
+                        50.0, 100.0 - (recent_logs * 10)
+                    ),  # Conservative rate limit usage
                 }
             else:
                 metrics = {"uptime": 0.0, "response_time": 0.0, "rate_limits": 0.0}

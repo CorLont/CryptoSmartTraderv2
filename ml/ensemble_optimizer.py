@@ -64,7 +64,8 @@ class ModelPerformance:
         """Update performance metrics with new prediction result"""
         self.prediction_count += 1
         self.success_rate = (
-            self.success_rate * (self.prediction_count - 1) + (1.0 if prediction_correct else 0.0) / self.prediction_count
+            self.success_rate * (self.prediction_count - 1) + (1.0 if prediction_correct else 0.0)
+        ) / self.prediction_count
 
         # Update rolling returns
         self.recent_returns = (self.recent_returns * 0.9) + (actual_return * 0.1)

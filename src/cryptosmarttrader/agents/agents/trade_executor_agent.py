@@ -64,9 +64,10 @@ class TradeExecutorAgent:
             try:
                 # Get update interval from config
                 interval = (
-                        return self.config_manager.get("agents", {})
+                    self.config_manager.get("agents", {})
                     .get("trade_executor", {})
                     .get("update_interval", 120)
+                )
 
                 # Generate trading signals
                 self._generate_trading_signals()
@@ -270,6 +271,7 @@ class TradeExecutorAgent:
                 total_positions = len(self.portfolio_positions)
                 total_exposure = sum(
                     pos.get("value", 0) for pos in self.portfolio_positions.values()
+                )
 
                 # Calculate risk metrics
                 portfolio_var = self._calculate_portfolio_var()
@@ -382,6 +384,7 @@ class TradeExecutorAgent:
                 current_value = position.get("value", 0)
                 portfolio_value = sum(
                     pos.get("value", 0) for pos in self.portfolio_positions.values()
+                )
 
                 if portfolio_value > 0:
                     position_weight = current_value / portfolio_value

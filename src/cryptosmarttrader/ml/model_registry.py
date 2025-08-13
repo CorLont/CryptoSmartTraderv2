@@ -332,7 +332,8 @@ class ModelRegistry:
             model_version.deployment_info = {
                 "canary_start": datetime.utcnow().isoformat(),
                 "canary_end": (
-                    datetime.utcnow() + timedelta(hours=canary_duration_hours).isoformat(),
+                    datetime.utcnow() + timedelta(hours=canary_duration_hours)
+                ).isoformat(),
                 "risk_budget_pct": risk_budget_pct,
                 "deployment_type": "canary",
             }
@@ -508,6 +509,7 @@ class ModelRegistry:
         # Data quality drift
         current_missing_ratio = current_data.isnull().sum().sum() / (
             len(current_data) * len(current_data.columns)
+        )
         original_missing_ratio = model_version.dataset_info.missing_value_ratio
 
         drift_metrics["missing_value_drift"] = abs(current_missing_ratio - original_missing_ratio)
@@ -723,8 +725,10 @@ class ModelRegistry:
                     version_dict["updated_at"] = model_version.updated_at.isoformat()
                     version_dict["dataset_info"]["start_date"] = (
                         model_version.dataset_info.start_date.isoformat()
+                    )
                     version_dict["dataset_info"]["end_date"] = (
                         model_version.dataset_info.end_date.isoformat()
+                    )
 
                     # Convert enums to strings
                     version_dict["model_type"] = model_version.model_type.value

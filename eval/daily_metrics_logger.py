@@ -172,6 +172,7 @@ class DailyMetricsLogger:
                 coverage_audit.get("coverage_analysis", {})
                 .get("coverage_summary", {})
                 .get("coverage_percentage", 0)
+            )
             health_score = health_assessment.get("overall_score", 0)
             health_status = health_assessment.get("status", "NO-GO")
 
@@ -240,6 +241,7 @@ class DailyMetricsLogger:
                 coverage_audit.get("coverage_analysis", {})
                 .get("coverage_summary", {})
                 .get("coverage_percentage", 0)
+            )
             if coverage_pct < 95.0:
                 alerts.append(f"ALERT: Coverage below target: {coverage_pct:.1f}% < 95%")
 

@@ -133,6 +133,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Consider process optimization or resource scaling",
                 )
+            )
 
         if memory_trend > 0.3:
             self.insights_generated.append(
@@ -146,6 +147,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Investigate memory leaks and optimize garbage collection",
                 )
+            )
 
         self.analytics_results["performance_trends"] = performance_analysis
         print(f"   Analyzed {len(df)} performance data points")
@@ -195,6 +197,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Review confidence thresholds and model performance",
                 )
+            )
 
         if trading_analysis["predictions_per_day_trend"] < -0.5:
             self.insights_generated.append(
@@ -208,6 +211,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Investigate data source availability and model health",
                 )
+            )
 
         self.analytics_results["trading_effectiveness"] = trading_analysis
         print(f"   Analyzed {len(trading_data)} days of trading data")
@@ -258,6 +262,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Consider if filtering is too restrictive for trading opportunities",
                 )
+            )
 
         if gate_analysis["volatility_index"] > 2.0:
             self.insights_generated.append(
@@ -271,6 +276,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Investigate market regime changes or model instability",
                 )
+            )
 
         self.analytics_results["confidence_patterns"] = gate_analysis
         print(f"   Analyzed {len(pass_rates)} confidence gate measurements")
@@ -304,6 +310,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Retrain models with recent data and feature engineering",
                 )
+            )
 
         self.analytics_results["prediction_accuracy"] = accuracy_analysis
         print("   Prediction accuracy analysis completed")
@@ -345,6 +352,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Consider increasing parallel processing or batch sizes",
                 )
+            )
 
         self.analytics_results["resource_utilization"] = utilization_analysis
         print(f"   Resource utilization analysis completed")
@@ -377,6 +385,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Investigate error root causes and implement fixes",
                 )
+            )
 
         self.analytics_results["error_patterns"] = error_analysis
         print(f"   Analyzed {len(error_data)} error occurrences")
@@ -427,6 +436,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Plan resource scaling or workload reduction",
                 )
+            )
 
         if predicted_memory > 95:
             predictive_analysis["potential_issues"].append("Memory exhaustion risk")
@@ -441,6 +451,7 @@ class AdvancedAnalytics:
                     actionable=True,
                     recommended_action="Implement memory cleanup or restart services",
                 )
+            )
 
         self.analytics_results["predictive_insights"] = predictive_analysis
         print("   Predictive insights generated for 24h horizon")

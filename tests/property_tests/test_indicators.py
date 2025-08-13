@@ -49,6 +49,7 @@ class TestTechnicalIndicators:
             # Check if consistently rising prices increase RSI
             rising_prices = all(
                 prices[i] <= prices[i + 1] for i in range(len(prices) - 5, len(prices) - 1)
+            )
             if rising_prices and len(valid_rsi) >= 2:
                 assert valid_rsi[-1] >= valid_rsi[-2] * 0.9, (
                     "RSI should increase with rising prices"

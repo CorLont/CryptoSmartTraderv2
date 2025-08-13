@@ -587,6 +587,7 @@ class VolatilityTargetingKelly:
             if cluster_id not in self.cluster_metrics:
                 self.cluster_metrics[cluster_id] = ClusterMetrics(
                     cluster_id=cluster_id, cluster_name=cluster_id.replace("_", " ").title()
+                )
 
             cluster = self.cluster_metrics[cluster_id]
             cluster.assets = symbols

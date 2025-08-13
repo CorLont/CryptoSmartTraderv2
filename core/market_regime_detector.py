@@ -973,6 +973,7 @@ class MarketRegimeDetector:
                 ).to(self.device)
                 self.autoencoder.load_state_dict(
                     torch.load(autoencoder_path, map_location=self.device)
+                )
 
             # Load clustering model
             clustering_path = self.model_cache_dir / "clustering_model.pkl"

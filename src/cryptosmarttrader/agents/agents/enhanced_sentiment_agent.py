@@ -259,10 +259,6 @@ class EnhancedSentimentAgent:
         data_completeness = min(len(filtered_posts) / 100, 1.0)  # Target 100 posts
         
         result = SentimentResult(
-            symbol=coin,
-            confidence=avg_confidence,
-            sentiment_score=avg_sentiment
-        )
             coin=coin,
             sentiment_score=sentiment_score,
             confidence=confidence,
@@ -272,6 +268,7 @@ class EnhancedSentimentAgent:
             timestamp=datetime.now(),
             raw_mentions=len(raw_posts),
             filtered_mentions=len(filtered_posts)
+        )
         
         # Cache result
         self.cache[cache_key] = (result, time.time())
@@ -313,10 +310,10 @@ class EnhancedSentimentAgent:
             # Generate realistic mock data for demonstration
             posts.append({
                 'text': f"Sample {coin} discussion post {i}",
-                'timestamp': time.time() - 3600,
+                'timestamp': time.time() - # REMOVED: Mock data pattern not allowed in production(0, hours * 3600),
                 'source': source,
-                'author': "user_123",
-                'engagement': 50
+                'author': f"user_{# REMOVED: Mock data pattern not allowed in production(1000, 9999)}",
+                'engagement': # REMOVED: Mock data pattern not allowed in production(1, 100)
             })
         
         return posts

@@ -112,6 +112,7 @@ class AutomatedFeatureEngineeringDashboard:
         timeframes = ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"]
         selected_timeframe = st.sidebar.selectbox(
             "Timeframe", options=timeframes, index=timeframes.index("1h")
+        )
         st.session_state.selected_timeframe = selected_timeframe
 
         # Data period
@@ -218,11 +219,13 @@ class AutomatedFeatureEngineeringDashboard:
                                 # Top features by importance
                                 importance_summary = (
                                     self.feature_engineer.get_feature_importance_summary()
+                                )
 
                                 if "global_importance_scores" in importance_summary:
                                     top_features = dict(
                                         list(
-                                            importance_summary["global_importance_scores"].items()[:10]
+                                            importance_summary["global_importance_scores"].items()
+                                        )[:10]
                                     )
 
                                     if top_features:
@@ -269,6 +272,7 @@ class AutomatedFeatureEngineeringDashboard:
 
             st.metric(
                 "Total Features Generated", importance_summary.get("total_features_generated", 0)
+            )
 
             if importance_summary.get("feature_types_distribution"):
                 st.write("**Feature Types:**")
@@ -427,7 +431,8 @@ class AutomatedFeatureEngineeringDashboard:
                                                     importance_data.items(),
                                                     key=lambda x: x[1],
                                                     reverse=True,
-                                                )[:10]
+                                                )
+                                            )[:10]
                                         )
 
                                         fig = px.bar(

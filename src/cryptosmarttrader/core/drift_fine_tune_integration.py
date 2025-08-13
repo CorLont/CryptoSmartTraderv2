@@ -318,6 +318,7 @@ class DriftFineTuneIntegration:
 
             weighted_score = sum(
                 score * weights.get(component, 0) for component, score in component_scores.items()
+            )
 
             self.logger.debug(f"Health calculation: {component_scores} -> {weighted_score:.1f}")
 

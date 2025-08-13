@@ -323,6 +323,7 @@ class BacktestLiveParityTester:
                     # Price movement within day
                     price_drift = (
                         scenario["base_price"] * scenario["volatility"] * random.gauss(0, 1)
+                    )
                     current_price = scenario["base_price"] + price_drift
 
                     trade_id = f"ab_test_d{day}_t{trade}"

@@ -415,6 +415,7 @@ class HyperparameterOptimizer:
                             )
                             validation_scores["regime_performance"].append(
                                 np.mean(list(regime_performance.values()))
+                            )
 
                 except Exception as e:
                     logger.warning(f"Validation fold failed: {e}")
@@ -562,6 +563,7 @@ class HyperparameterOptimizer:
             in_sample_sharpe = oos_sharpe_mean * 1.2  # Simplified - would calculate from in-sample
             overfitting_risk = max(
                 0, (in_sample_sharpe - oos_sharpe_mean) / (abs(in_sample_sharpe) + 0.01)
+            )
 
             # Additional metrics
             returns_mean = np.mean(oos_returns) if oos_returns else 0

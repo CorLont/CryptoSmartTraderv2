@@ -171,6 +171,7 @@ def show_system_overview():
                 "threshold": {"line": {"color": "red", "width": 4}, "thickness": 0.75, "value": 90},
             },
         )
+    )
 
     st.plotly_chart(fig_gauge, use_container_width=True)
 
@@ -234,6 +235,7 @@ def show_live_performance():
                 name="Confidence Score",
                 line=dict(color="blue", width=2),
             )
+        )
         fig_confidence.add_hline(
             y=0.8, line_dash="dash", line_color="red", annotation_text="Confidence Threshold (80%)"
         )
@@ -258,6 +260,7 @@ def show_live_performance():
                 name="Model Accuracy",
                 line=dict(color="green", width=2),
             )
+        )
         fig_accuracy.update_layout(
             title="Model Accuracy Trend",
             xaxis_title="Time",
@@ -283,6 +286,7 @@ def show_live_performance():
                 name="Events Detected",
                 marker_color="orange",
             )
+        )
         fig_events.update_layout(
             title="News Events Detected (Last 24h)", xaxis_title="Hour", yaxis_title="Events Count"
         )
@@ -297,6 +301,7 @@ def show_live_performance():
             go.Histogram(
                 x=sentiment_scores, nbinsx=20, name="Sentiment Distribution", marker_color="purple"
             )
+        )
         fig_sentiment.update_layout(
             title="News Sentiment Distribution",
             xaxis_title="Sentiment Score",
@@ -323,6 +328,7 @@ def show_live_performance():
                 name="Portfolio Value",
                 line=dict(color="blue", width=3),
             )
+        )
         fig_returns.update_layout(
             title="Portfolio Performance", xaxis_title="Time", yaxis_title="Cumulative Return"
         )
@@ -341,6 +347,7 @@ def show_live_performance():
                 name="24h Volatility",
                 line=dict(color="red", width=2),
             )
+        )
         fig_vol.add_hline(
             y=0.15, line_dash="dash", line_color="orange", annotation_text="Risk Tolerance (15%)"
         )
@@ -384,6 +391,7 @@ def show_model_analysis():
                 "red" if x < 0 else "green" for x in np.random.normal(0, 1, len(features))
             ],
         )
+    )
     fig_importance.update_layout(
         title="Feature Importance (SHAP Values)", xaxis_title="SHAP Value", yaxis_title="Features"
     )
@@ -408,6 +416,7 @@ def show_model_analysis():
             texttemplate="%{text}",
             textfont={"size": 12},
         )
+    )
     fig_heatmap.update_layout(
         title="Model Performance Comparison", xaxis_title="Metrics", yaxis_title="Models"
     )
@@ -438,6 +447,7 @@ def show_model_analysis():
         fig_anomaly = go.Figure()
         fig_anomaly.add_trace(
             go.Histogram(x=all_scores, nbinsx=30, name="Anomaly Scores", marker_color="red")
+        )
         fig_anomaly.add_vline(
             x=np.percentile(all_scores, 95),
             line_dash="dash",

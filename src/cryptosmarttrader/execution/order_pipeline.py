@@ -618,7 +618,8 @@ class OrderPipeline:
             "client_order_registry_size": len(self.client_order_registry),
             "average_slippage_bps": (
                 self.pipeline_stats["total_slippage_bps"]
-                / max(self.pipeline_stats["orders_filled"], 1),
+                / max(self.pipeline_stats["orders_filled"], 1)
+            ),
             "recent_orders": [
                 {
                     "client_order_id": result.client_order_id,

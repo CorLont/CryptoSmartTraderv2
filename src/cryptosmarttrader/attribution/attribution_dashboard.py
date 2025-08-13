@@ -312,6 +312,7 @@ class AttributionDashboard:
                         },
                     },
                 )
+            )
             fig_gauge.update_layout(height=300)
             st.plotly_chart(fig_gauge, use_container_width=True)
 
@@ -481,6 +482,7 @@ class AttributionDashboard:
                     text=f"{comp_value:.1f} bps",
                     textposition="outside",
                 )
+            )
 
         # Total bar
         fig.add_trace(
@@ -492,6 +494,7 @@ class AttributionDashboard:
                 text=f"{total_return:.1f} bps",
                 textposition="outside",
             )
+        )
 
         fig.update_layout(
             title="Return Attribution Waterfall",

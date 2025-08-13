@@ -51,12 +51,15 @@ def create_synthetic_targets(df: pd.DataFrame) -> pd.DataFrame:
         # Base return using momentum and volatility - explicit feature handling
         momentum_3d = (
             df["momentum_3d"] if "momentum_3d" in df.columns else pd.Series(0, index=df.index)
+        )
         momentum_7d = (
             df["momentum_7d"] if "momentum_7d" in df.columns else pd.Series(0, index=df.index)
+        )
         price_change_24h = (
             df["price_change_24h"]
             if "price_change_24h" in df.columns
             else pd.Series(0, index=df.index)
+        )
 
         base_return = momentum_3d * 0.3 + momentum_7d * 0.2 + price_change_24h / 100 * 0.5
 

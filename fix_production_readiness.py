@@ -293,6 +293,7 @@ class ProductionReadinessFixer:
             len(analysis["syntax_errors"])
             + len(analysis["bare_excepts"])
             + len(analysis["duplicates"])
+        )
 
         report.append("## PRODUCTION READINESS STATUS")
         if total_issues == 0:

@@ -207,6 +207,7 @@ class TemporalValidationSystem:
                     recommended_fix="Add 'timestamp' column with UTC datetime values",
                     impact_assessment="Cannot synchronize agent with others",
                 )
+            )
             return violations, 0.0
 
         timestamps = df[timestamp_col]
@@ -278,6 +279,7 @@ class TemporalValidationSystem:
                         recommended_fix=f"Synchronize {agent_name} timestamps with {reference_agent}",
                         impact_assessment="Cannot merge agent data reliably",
                     )
+                )
             else:
                 aligned_comparisons += 1
 
@@ -313,6 +315,7 @@ class TemporalValidationSystem:
                         recommended_fix="Sort data by timestamp before ML processing",
                         impact_assessment="Can cause look-ahead bias in ML models",
                     )
+                )
 
             # Check 2: Look for duplicate timestamps
             duplicate_timestamps = timestamps.duplicated().sum()
@@ -327,6 +330,7 @@ class TemporalValidationSystem:
                         recommended_fix="Remove or aggregate duplicate timestamp entries",
                         impact_assessment="May cause data leakage in cross-validation",
                     )
+                )
 
             # Check 3: Large gaps in data
             if len(timestamps) > 1:
@@ -347,6 +351,7 @@ class TemporalValidationSystem:
                             recommended_fix="Fill gaps or use gap-aware ML techniques",
                             impact_assessment="May reduce ML model performance",
                         )
+                    )
 
         return violations
 
@@ -386,6 +391,7 @@ class TemporalValidationSystem:
                             recommended_fix="Convert all timestamps to UTC",
                             impact_assessment="Cannot reliably synchronize with other agents",
                         )
+                    )
                 elif ts.tzinfo != timezone.utc:
                     violations.append(
                         TemporalViolation(
@@ -397,6 +403,7 @@ class TemporalValidationSystem:
                             recommended_fix="Convert to UTC timezone",
                             impact_assessment="May cause synchronization errors",
                         )
+                    )
 
         return violations
 
@@ -435,6 +442,7 @@ class TemporalValidationSystem:
                             recommended_fix="Align timestamp to candle boundary",
                             impact_assessment="Creates label leakage in ML training",
                         )
+                    )
 
         sync_score = aligned_count / total_count if total_count > 0 else 0.0
 
@@ -474,6 +482,7 @@ class TemporalValidationSystem:
                             recommended_fix="Ensure consistent timeframe intervals",
                             impact_assessment="May affect time series model performance",
                         )
+                    )
 
         return violations
 
@@ -505,6 +514,7 @@ class TemporalValidationSystem:
                     recommended_fix="Remove future timestamps from dataset",
                     impact_assessment="Creates impossible look-ahead bias",
                 )
+            )
 
         return violations
 

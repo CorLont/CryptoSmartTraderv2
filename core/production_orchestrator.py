@@ -197,6 +197,7 @@ class ProductionOrchestrator:
             # Normalize all timestamps to UTC
             features_df["timestamp"] = features_df["timestamp"].apply(
                 lambda x: normalize_timestamp(x, target_timezone="UTC")
+            )
 
             # Validate timestamp sequence
             timestamp_validation = validate_timestamp_sequence(features_df["timestamp"])

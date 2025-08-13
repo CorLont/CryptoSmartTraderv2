@@ -327,7 +327,8 @@ class FallbackDataEliminator:
                         latest_time = pd.to_datetime(data[time_col]).max()
                         if isinstance(latest_time, pd.Timestamp):
                             age_minutes = (
-                                datetime.now() - latest_time.to_pydatetime().total_seconds() / 60
+                                datetime.now() - latest_time.to_pydatetime()
+                            ).total_seconds() / 60
                             if age_minutes < 10:  # Fresh data, likely authentic
                                 return DataSource.AUTHENTIC
 
@@ -413,7 +414,8 @@ class FallbackDataEliminator:
 
                     # Check for unrealistic precision
                     if all(
-                        len(f"{p:.10f}".rstrip("0").split(".")[-1]) > 8 for p in prices.head(10):
+                        len(f"{p:.10f}".rstrip("0").split(".")[-1]) > 8 for p in prices.head(10)
+                    ):
                         return False
 
             return True

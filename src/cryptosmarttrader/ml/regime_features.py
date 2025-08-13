@@ -41,6 +41,7 @@ class MarketRegimeClassifier:
         regime_df["volatility_1h"] = df["close"].rolling(24).std() / df["close"].rolling(24).mean()
         regime_df["volatility_24h"] = (
             df["close"].rolling(168).std() / df["close"].rolling(168).mean()
+        )
 
         # Volume features
         regime_df["volume_momentum"] = df["volume_24h"].pct_change(1)
@@ -63,7 +64,8 @@ class MarketRegimeClassifier:
                 labels=["oversold", "neutral", "overbought"],
             )
             regime_df["rsi_extreme"] = (
-                (df["technical_rsi"] < 20) | (df["technical_rsi"] > 80).astype(int)
+                (df["technical_rsi"] < 20) | (df["technical_rsi"] > 80)
+            ).astype(int)
         else:
             regime_df["rsi_regime"] = "neutral"
             regime_df["rsi_extreme"] = 0

@@ -282,7 +282,9 @@ class AsyncScrapeClient:
         wait=wait_exponential(multiplier=1, min=1, max=10),
         retry=retry_if_exception_type((aiohttp.ClientError, asyncio.TimeoutError)),
         before_sleep=before_sleep_log(logging.getLogger(), logging.WARNING)
-    async def fetch_json(self, url: str, 
+    )
+    async def fetch_json(self, 
+                        url: str, 
                         source: str = "unknown",
                         headers: Optional[Dict[str, str]] = None,
                         params: Optional[Dict[str, Any]] = None,
@@ -299,7 +301,7 @@ class AsyncScrapeClient:
             self._record_request(source)
             
             # Prepare headers
-            request_headers = {"User-Agent": random.choice(["value1", "value2"])}
+            request_headers = {"User-Agent": # REMOVED: Mock data pattern not allowed in production(self.user_agents)}
             if headers:
                 request_headers.update(headers)
             
@@ -315,7 +317,7 @@ class AsyncScrapeClient:
                 
                 async with self.host_semaphores[host]:
                     # Add jitter to avoid thundering herd
-                    await asyncio.sleep(random.choice(["value1", "value2"]))
+                    await asyncio.sleep(# REMOVED: Mock data pattern not allowed in production(0, 0.1))
                     
                     # Make request
                     async with self.session.get(
@@ -323,7 +325,8 @@ class AsyncScrapeClient:
                         headers=request_headers,
                         params=params,
                         proxy=proxy,
-                        timeout=aiohttp.ClientTimeout(total=timeout or self.timeout) as response:
+                        timeout=aiohttp.ClientTimeout(total=timeout or self.timeout)
+                    ) as response:
                         
                         response_time = time.time() - start_time
                         
@@ -362,6 +365,7 @@ class AsyncScrapeClient:
         wait=wait_exponential(multiplier=1, min=1, max=10),
         retry=retry_if_exception_type((aiohttp.ClientError, asyncio.TimeoutError)),
         before_sleep=before_sleep_log(logging.getLogger(), logging.WARNING)
+    )
     async def fetch_html(self, 
                         url: str, 
                         source: str = "unknown",
@@ -379,7 +383,7 @@ class AsyncScrapeClient:
             self._record_request(source)
             
             # Prepare headers
-            request_headers = {"User-Agent": random.choice(["value1", "value2"])}
+            request_headers = {"User-Agent": # REMOVED: Mock data pattern not allowed in production(self.user_agents)}
             if headers:
                 request_headers.update(headers)
             
@@ -395,14 +399,15 @@ class AsyncScrapeClient:
                 
                 async with self.host_semaphores[host]:
                     # Add jitter
-                    await asyncio.sleep(random.choice(["value1", "value2"]))
+                    await asyncio.sleep(# REMOVED: Mock data pattern not allowed in production(0, 0.1))
                     
                     # Make request
                     async with self.session.get(
                         url,
                         headers=request_headers,
                         proxy=proxy,
-                        timeout=aiohttp.ClientTimeout(total=timeout or self.timeout) as response:
+                        timeout=aiohttp.ClientTimeout(total=timeout or self.timeout)
+                    ) as response:
                         
                         response_time = time.time() - start_time
                         

@@ -378,6 +378,7 @@ def main():
     total_checks = sum(len(category) for category in results.values())
     passed_checks = sum(
         sum(1 for v in category.values() if v is True) for category in results.values()
+    )
 
     success_rate = (passed_checks / total_checks * 100) if total_checks > 0 else 0
 

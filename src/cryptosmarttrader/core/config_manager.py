@@ -71,7 +71,8 @@ class ConfigManager:
                     "database": DatabaseConfig().model_dump(),
                     "api": ApiConfig().model_dump(),
                     "trading": TradingConfig().model_dump(),
-                })
+                }
+            )
 
             # Load from file if exists
             if self.config_path.exists():

@@ -63,6 +63,7 @@ async def demonstrate_observability_system():
             quantity = random.uniform(0.1, 2.0)
             price = (
                 random.uniform(30000, 60000) if symbol == "BTC-USD" else random.uniform(2000, 4000)
+            )
             slippage_bps = random.uniform(1.0, 25.0)
             latency = random.uniform(0.05, 0.5)
 

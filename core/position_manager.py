@@ -327,7 +327,8 @@ class PositionManager:
                 "reason": reason,
                 "positions_count": len(self.current_positions),
                 "total_exposure": sum(
-                    abs(pos.market_value) for pos in self.current_positions.values(),
+                    abs(pos.market_value) for pos in self.current_positions.values()
+                ),
             },
         )
 

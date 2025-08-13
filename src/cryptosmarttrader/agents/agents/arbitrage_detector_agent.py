@@ -789,10 +789,6 @@ class ArbitrageDetectorAgent:
         """Save arbitrage data to disk"""
         try:
             # Save best opportunities
-            opportunities_file = self.data_path / "arbitrage_opportunities.json"
-            pass  # Placeholder implementation
-        except Exception as e:
-            self.logger.error(f"Failed to save arbitrage data: {e}")
 
 import random
 from functools import wraps
@@ -816,3 +812,42 @@ def retry_with_backoff(max_retries=3, base_delay=1, max_delay=60):
         return wrapper
     return decorator
 
+            opportunities_file = self.data_path / "arbitrage_opportunities.json"
+            best_opportunities = self.get_best_opportunities(50)
+            
+            opportunities_data = []
+            for opp in best_opportunities:
+                opportunities_data.append({
+                    'timestamp': opp.timestamp.isoformat(),
+                    'symbol': opp.symbol,
+                    'type': opp.arbitrage_type.value,
+                    'buy_exchange': opp.buy_exchange,
+                    'sell_exchange': opp.sell_exchange,
+                    'profit_percentage': opp.net_profit_percentage,
+                    'risk_level': opp.risk_level.value,
+                    'confidence': opp.confidence
+                })
+            
+            with open(opportunities_file, 'w') as f:
+                json.dump(opportunities_data, f, indent=2)
+                
+        except (ccxt.NetworkError, ccxt.ExchangeError, ccxt.BaseError) as e:
+            self.logger.error(f"Error saving arbitrage data: {e}")
+    
+    @retry_with_backoff()
+
+    
+    def get_agent_status(self) -> Dict[str, Any]:
+        """Get comprehensive agent status"""
+        return {
+            'active': self.active,
+            'last_update': self.last_update.isoformat() if self.last_update else None,
+            'opportunities_found': self.opportunities_found,
+            'error_count': self.error_count,
+            'active_opportunities': len(self.arbitrage_opportunities),
+            'funding_opportunities': len(self.funding_opportunities),
+            'exchanges_connected': len(self.exchange_clients),
+            'symbols_monitored': len(self.monitored_symbols),
+            'statistics': self.stats,
+            'has_ccxt': HAS_CCXT
+        }

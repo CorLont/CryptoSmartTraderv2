@@ -303,6 +303,7 @@ class CryptoAISystemDashboard:
             with overview_col3:
                 successful_modules = sum(
                     1 for r in results.values() if isinstance(r, dict) and r.get("success", False)
+                )
                 st.metric("Successful Modules", f"{successful_modules}/{len(results)}")
 
             with overview_col4:

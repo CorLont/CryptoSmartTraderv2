@@ -185,6 +185,7 @@ class SimulationTester:
         self.metrics.update_data_source("kraken", 0.0)  # Zero quality score
         self.metrics.data_source_last_update.labels(source="kraken").set(
             time.time() - (gap_minutes * 60)
+        )
 
         # Trigger data quality alert
         self.alert_manager.check_metric("cst_data_quality_score", 0.0)

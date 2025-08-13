@@ -440,7 +440,8 @@ class ParityAnalyzer:
 
         # Tracking error component (inverse relationship)
         te_confidence = max(
-            0, 1.0 - (tracking_error_bps / 100.0)  # Full confidence at 0 bps, zero at 100 bps
+            0, 1.0 - (tracking_error_bps / 100.0)
+        )  # Full confidence at 0 bps, zero at 100 bps
         confidence += te_confidence * 0.3
 
         # Correlation component

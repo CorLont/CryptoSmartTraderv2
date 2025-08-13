@@ -143,7 +143,8 @@ class AsyncDataManager:
                     "authenticated_exchanges": sum(
                         1
                         for name in self.exchanges.keys()
-                        if secrets_manager.get_secret(f"{name.upper()}_API_KEY"),
+                        if secrets_manager.get_secret(f"{name.upper()}_API_KEY")
+                    ),
                 },
             )
 
@@ -177,7 +178,8 @@ class AsyncDataManager:
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=1, max=60, jitter=2),
         retry=retry_if_exception_type(
-            (aiohttp.ClientError, asyncio.TimeoutError, ccxt_async.BaseError),
+            (aiohttp.ClientError, asyncio.TimeoutError, ccxt_async.BaseError)
+        ),
     )
     async def fetch_market_data_async(self, exchange_name: str) -> Dict[str, Any]:
         """Fetch market data with async retries and rate limiting"""
@@ -610,6 +612,7 @@ class AsyncDataManager:
         total_score = sum(
             component_scores[component] * weight
             for component, weight in required_components.items()
+        )
 
         # Hard threshold: 80% completeness required
         is_complete = total_score >= 0.8 and len(missing_components) <= 2

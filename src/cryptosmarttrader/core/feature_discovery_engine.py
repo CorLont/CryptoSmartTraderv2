@@ -177,7 +177,7 @@ class GeneticFeatureEvolver:
         """Select parents using tournament selection"""
         try:
             def tournament_select(tournament_size: int = 3) -> FeatureCandidate:
-                tournament = np.random.choice(range(100), size=10, replace=False)
+                tournament = np.random.normal(0, 1)), replace=False)
                 best = max(tournament, key=lambda f: performance_scores.get(f.name, f.performance_score))
                 return best
 
@@ -237,6 +237,7 @@ class GeneticFeatureEvolver:
                 feature_data=pd.Series(mutated_data, index=feature.feature_data.index),
                 creation_method="genetic_mutation",
                 source_features=feature.source_features.copy()
+            )
 
             return mutated_feature
 
@@ -382,6 +383,7 @@ class FeatureDiscoveryEngine:
                     feature_data=interaction_data.fillna(0),
                     creation_method="exploratory_random",
                     source_features=list(selected_features)
+                )
 
                 candidates.append(candidate)
 
@@ -787,6 +789,7 @@ class FeatureDiscoveryEngine:
                     confidence=1.0,  # Would be calculated from regime detection
                     duration=1,
                     active_features=list(self.active_features.keys())
+                )
 
                 self.regime_history.append(self.current_regime)
                 self.logger.info(f"Regime change detected: {current_regime_id}")

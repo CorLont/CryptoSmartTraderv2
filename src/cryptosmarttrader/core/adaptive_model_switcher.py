@@ -925,6 +925,7 @@ class AdaptiveModelSwitcher:
                     signal = "HOLD"
                     confidence = 1.0 - (
                         abs(predicted_return) / max(buy_threshold, abs(sell_threshold))
+                    )
 
                 return {
                     "signal": signal,

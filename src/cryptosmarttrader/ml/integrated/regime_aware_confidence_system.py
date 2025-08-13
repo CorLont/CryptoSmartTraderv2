@@ -311,7 +311,8 @@ class RegimeAwareConfidenceSystem:
                 if (
                     self.uncertainty_quantifier
                     and feature_data is not None
-                    and i < len(feature_data):
+                    and i < len(feature_data)
+                ):
                     try:
                         uncertainty_est = self.uncertainty_quantifier.predict_with_uncertainty(
                             feature_data[i : i + 1]

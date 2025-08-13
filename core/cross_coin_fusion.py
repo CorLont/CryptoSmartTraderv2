@@ -163,7 +163,8 @@ class CrossCoinFusionEngine:
                 "strong_correlations": strong_correlations,
                 "average_correlation": float(np.mean(np.abs(correlation_matrix))),
                 "max_correlation": float(
-                    np.max(np.abs(correlation_matrix[correlation_matrix < 1])),
+                    np.max(np.abs(correlation_matrix[correlation_matrix < 1]))
+                ),
                 "correlation_clusters": self._identify_correlation_clusters(
                     correlation_matrix, coin_symbols
                 ),
@@ -357,6 +358,7 @@ class CrossCoinFusionEngine:
                 else 0,
                 "bullish_coins_ratio": float(
                     len([p for p in price_changes if p > 0]) / len(price_changes)
+                )
                 if price_changes
                 else 0,
                 "extreme_movers": len([p for p in price_changes if abs(p) > 0.1]),
@@ -461,10 +463,13 @@ class CrossCoinFusionEngine:
 
                     correlation_features[f"{symbol}_market_correlation"] = float(
                         np.mean(other_correlations)
+                    )
                     correlation_features[f"{symbol}_correlation_volatility"] = float(
                         np.std(other_correlations)
+                    )
                     correlation_features[f"{symbol}_max_correlation"] = float(
                         np.max(np.abs(other_correlations))
+                    )
 
             return correlation_features
 

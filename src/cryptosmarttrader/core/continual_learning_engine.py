@@ -216,6 +216,7 @@ class DriftDetector:
                     affected_features=[],
                     recommendation="Insufficient reference data",
                     timestamp=datetime.now()
+                )
 
             reference = self.reference_data[model_id]
 
@@ -279,6 +280,7 @@ class DriftDetector:
                 affected_features=main_result.get('affected_features', []),
                 recommendation=recommendation,
                 timestamp=datetime.now()
+            )
 
         except Exception as e:
             self.logger.error(f"Drift detection failed for {model_id}: {e}")
@@ -291,6 +293,7 @@ class DriftDetector:
                 affected_features=[],
                 recommendation="Drift detection failed",
                 timestamp=datetime.now()
+            )
 
     def _detect_covariate_shift(self, ref_features: np.ndarray,
                               new_features: np.ndarray) -> Dict[str, Any]:
@@ -627,6 +630,7 @@ class ContinualLearningEngine:
                 affected_features=[],
                 recommendation="Error in drift detection",
                 timestamp=datetime.now()
+            )
 
     def _handle_detected_drift(self, model_id: str, drift_result: DriftDetectionResult):
         """Handle detected drift by scheduling retraining"""
@@ -928,6 +932,7 @@ class ContinualLearningEngine:
                     distill_loss = F.mse_loss(
                         F.softmax(train_pred / self.config.distillation_temperature, dim=-1),
                         F.softmax(teacher_pred / self.config.distillation_temperature, dim=-1)
+                    )
                     loss += 0.5 * distill_loss
 
                 loss.backward()
@@ -991,6 +996,7 @@ class ContinualLearningEngine:
                     priority=1,  # Low priority for scheduled tasks
                     created_at=current_time,
                     scheduled_for=current_time + timedelta(hours=self.config.retraining_schedule_hours)
+                )
 
                 self.retraining_queue.append(task)
 

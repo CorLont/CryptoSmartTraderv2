@@ -375,6 +375,7 @@ class TestRiskScenarios:
             positions={"BTC-USD": 0.04},  # 4% position (above 2% limit)
             asset_exposures={"BTC": 0.08},  # 8% asset exposure (above 5% limit)
             cluster_exposures={"crypto": 0.30},  # 30% cluster exposure (above 20% limit)
+        )
 
         # Should trigger critical risk due to position and asset exposure
         assert risk_guard.current_risk_level == RiskLevel.CRITICAL

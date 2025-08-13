@@ -286,6 +286,7 @@ class TestAutomatedFeatureEngineering:
         sample_data["price_ma_5"] = sample_data["price"].rolling(5).mean()
         sample_data["volume_ratio"] = (
             sample_data["volume"] / sample_data["volume"].rolling(10).mean()
+        )
 
         # Get regime-optimized features
         bull_features = analyzer.get_regime_optimized_features(MarketRegime.BULL_MARKET)

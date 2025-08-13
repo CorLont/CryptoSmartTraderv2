@@ -152,6 +152,7 @@ class ChaosTestRunner:
                 expected_restart_count=1,
                 run_interval_hours=12,
             )
+        )
 
         # Service crash simulation
         self.add_test_config(
@@ -166,6 +167,7 @@ class ChaosTestRunner:
                 expected_restart_count=1,
                 run_interval_hours=24,
             )
+        )
 
         # Network latency test
         self.add_test_config(
@@ -180,6 +182,7 @@ class ChaosTestRunner:
                 expect_auto_restart=False,  # Should handle gracefully
                 run_interval_hours=48,
             )
+        )
 
         # Memory pressure test
         self.add_test_config(
@@ -193,6 +196,7 @@ class ChaosTestRunner:
                 max_alert_time_seconds=45,
                 run_interval_hours=72,
             )
+        )
 
         # API failure simulation
         self.add_test_config(
@@ -207,6 +211,7 @@ class ChaosTestRunner:
                 expect_auto_restart=False,
                 run_interval_hours=24,
             )
+        )
 
     def add_test_config(self, config: ChaosTestConfig):
         """Add chaos test configuration"""

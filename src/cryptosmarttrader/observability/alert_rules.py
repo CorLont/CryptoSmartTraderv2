@@ -82,6 +82,7 @@ class AlertManager:
                 cooldown_seconds=300,
                 escalation_after_minutes=15,
             )
+        )
 
         # Drawdown Too High Alert
         self.add_alert_rule(
@@ -98,6 +99,7 @@ class AlertManager:
                 cooldown_seconds=60,  # Short cooldown for critical alerts
                 escalation_after_minutes=5,
             )
+        )
 
         # No Signals Received Alert
         self.add_alert_rule(
@@ -113,6 +115,7 @@ class AlertManager:
                 cooldown_seconds=600,  # 10 minutes cooldown
                 escalation_after_minutes=30,
             )
+        )
 
         # High Slippage Alert
         self.add_alert_rule(
@@ -123,78 +126,11 @@ class AlertManager:
                 condition=self._check_high_slippage,
                 threshold_config={
                     "slippage_threshold_bps": 50,  # 50 bps
-                    "min_orders": 5,
-                    "time_window_minutes": 30,
-                },
-                cooldown_seconds=300,
-                escalation_after_minutes=20,
-            )
-        )
-
-        # API Connectivity Alert
-        self.add_alert_rule(
-            AlertRule(
-                name="ExchangeConnectivityLost",
-                description="Exchange API connectivity issues detected",
-                severity=AlertSeverity.CRITICAL,
-                condition=self._check_exchange_connectivity,
-                threshold_config={
-                    "max_consecutive_failures": 3,
-                    "timeout_threshold_seconds": 30,
-                },
-                cooldown_seconds=120,  # 2 minutes
-                escalation_after_minutes=10,
-            )
-        )
-
-        # High API Error Rate Alert
-        self.add_alert_rule(
-            AlertRule(
-                name="HighAPIErrorRate",
-                description="API error rate exceeds acceptable threshold",
-                severity=AlertSeverity.WARNING,
-                condition=self._check_api_error_rate,
-                threshold_config={
-                    "error_rate_threshold": 0.15,  # 15%
-                    "min_requests": 20,
+                    "consecutive_orders": 3,
                     "time_window_minutes": 10,
                 },
-                cooldown_seconds=600,
-                escalation_after_minutes=20,
-            )
-        )
-
-        # Low Liquidity Alert
-        self.add_alert_rule(
-            AlertRule(
-                name="LowLiquidity",
-                description="Market liquidity below safe trading thresholds",
-                severity=AlertSeverity.WARNING,
-                condition=self._check_low_liquidity,
-                threshold_config={
-                    "min_volume_24h": 100000,  # $100k
-                    "max_spread_percent": 0.5,  # 50 bps
-                    "min_orderbook_depth": 10000,  # $10k
-                },
                 cooldown_seconds=300,
-                escalation_after_minutes=30,
-            )
-        )
-
-        # High Resource Usage Alert
-        self.add_alert_rule(
-            AlertRule(
-                name="HighResourceUsage",
-                description="System resource usage exceeds safe limits",
-                severity=AlertSeverity.WARNING,
-                condition=self._check_high_resource_usage,
-                threshold_config={
-                    "cpu_threshold_percent": 80,
-                    "memory_threshold_percent": 85,
-                    "disk_threshold_percent": 90,
-                },
-                cooldown_seconds=600,
-                escalation_after_minutes=30,
+                escalation_after_minutes=20,
             )
         )
 
@@ -212,6 +148,7 @@ class AlertManager:
                 cooldown_seconds=60,
                 escalation_after_minutes=2,
             )
+        )
 
         # High API Error Rate Alert
         self.add_alert_rule(
@@ -228,6 +165,7 @@ class AlertManager:
                 cooldown_seconds=180,
                 escalation_after_minutes=10,
             )
+        )
 
         # Low Liquidity Alert
         self.add_alert_rule(
@@ -244,6 +182,7 @@ class AlertManager:
                 cooldown_seconds=300,
                 escalation_after_minutes=30,
             )
+        )
 
         # System Resource Alert
         self.add_alert_rule(
@@ -260,6 +199,7 @@ class AlertManager:
                 cooldown_seconds=300,
                 escalation_after_minutes=20,
             )
+        )
 
     def add_alert_rule(self, rule: AlertRule):
         """Add new alert rule."""

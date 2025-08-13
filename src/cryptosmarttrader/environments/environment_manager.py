@@ -595,9 +595,11 @@ class EnvironmentManager:
                         conditions=flag_data.get("conditions", {}),
                         metadata=flag_data.get("metadata", {}),
                         created_at=datetime.fromisoformat(
-                            flag_data.get("created_at", datetime.now().isoformat()),
+                            flag_data.get("created_at", datetime.now().isoformat())
+                        ),
                         updated_at=datetime.fromisoformat(
-                            flag_data.get("updated_at", datetime.now().isoformat()),
+                            flag_data.get("updated_at", datetime.now().isoformat())
+                        ),
                     )
 
             except Exception as e:

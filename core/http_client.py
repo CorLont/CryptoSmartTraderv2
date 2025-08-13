@@ -246,6 +246,7 @@ class EnterpriseHTTPClient:
         if len(self.cache) > 500:
             sorted_entries = sorted(
                 self.cache.items(), key=lambda x: (x[1].access_count, x[1].last_accessed)
+            )
 
             # Remove bottom 25%
             remove_count = len(sorted_entries) // 4
@@ -380,6 +381,7 @@ class EnterpriseHTTPClient:
                         cache_ttl,
                         **kwargs,
                     )
+                )
                 return stale_data
 
         # Get client

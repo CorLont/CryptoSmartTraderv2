@@ -380,6 +380,7 @@ class PortfolioRiskManager:
                     action_required=PositionAction.RESTRICT,
                     timestamp=datetime.now(),
                 )
+            )
 
         # 2. ADV utilization check
         adv_usd = market_data.get("adv_usd", 0)
@@ -398,6 +399,7 @@ class PortfolioRiskManager:
                         action_required=PositionAction.REDUCE,
                         timestamp=datetime.now(),
                     )
+                )
 
         # 3. Portfolio weight check
         total_portfolio_value = (
@@ -420,6 +422,7 @@ class PortfolioRiskManager:
                     action_required=PositionAction.REDUCE,
                     timestamp=datetime.now(),
                 )
+            )
 
         # 4. Data quality check
         data_quality_summary = self.data_quality_manager.get_quality_summary()
@@ -438,6 +441,7 @@ class PortfolioRiskManager:
                     action_required=PositionAction.KILL,
                     timestamp=datetime.now(),
                 )
+            )
 
         # 5. Liquidity check
         liquidity_score = market_data.get("liquidity_score", 0)
@@ -454,6 +458,7 @@ class PortfolioRiskManager:
                     action_required=PositionAction.RESTRICT,
                     timestamp=datetime.now(),
                 )
+            )
 
         # 6. Correlation check
         max_correlation = self._calculate_position_correlation(symbol, current_positions)
@@ -470,6 +475,7 @@ class PortfolioRiskManager:
                     action_required=PositionAction.RESTRICT,
                     timestamp=datetime.now(),
                 )
+            )
 
         # Determine overall action
         action = self._determine_position_action(alerts)

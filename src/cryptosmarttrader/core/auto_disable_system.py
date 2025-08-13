@@ -472,11 +472,13 @@ class AutoDisableSystem:
                     next_change = recent_changes[i + 1]
                     duration = (
                         datetime.fromisoformat(next_change["timestamp"])
-                        - datetime.fromisoformat(change["timestamp"]).total_seconds()
+                        - datetime.fromisoformat(change["timestamp"])
+                    ).total_seconds()
                 else:
                     # Current mode duration
                     duration = (
-                        datetime.now() - datetime.fromisoformat(change["timestamp"]).total_seconds()
+                        datetime.now() - datetime.fromisoformat(change["timestamp"])
+                    ).total_seconds()
 
                 total_time += duration
                 if change["new_mode"] == "live":

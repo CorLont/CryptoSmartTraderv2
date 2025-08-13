@@ -252,6 +252,7 @@ class SLOMonitor:
                 target_latency = 1.0  # 1 second
                 compliance_percentage = max(
                     0.0, min(100.0, (target_latency - p95_latency) / target_latency * 100)
+                )
 
                 return {
                     "percentage": compliance_percentage,
@@ -275,6 +276,7 @@ class SLOMonitor:
 
             compliance_percentage = max(
                 0.0, min(100.0, (target_bps - tracking_error_bps) / target_bps * 100)
+            )
 
             return {
                 "percentage": compliance_percentage,
@@ -296,6 +298,7 @@ class SLOMonitor:
 
             compliance_percentage = max(
                 0.0, min(100.0, (target_minutes - avg_response_minutes) / target_minutes * 100)
+            )
 
             return {
                 "percentage": compliance_percentage,
@@ -324,14 +327,17 @@ class SLOMonitor:
                     if last_update:
                         last_update_time = datetime.fromisoformat(
                             last_update.replace("Z", "+00:00")
+                        )
                         age_minutes = (
-                            datetime.utcnow() - last_update_time.replace(tzinfo=None).total_seconds() / 60
+                            datetime.utcnow() - last_update_time.replace(tzinfo=None)
+                        ).total_seconds() / 60
                     else:
                         age_minutes = 999  # Very old data
 
                     target_minutes = 5.0  # 5 minutes target freshness
                     compliance_percentage = max(
                         0.0, min(100.0, (target_minutes - age_minutes) / target_minutes * 100)
+                    )
 
                     return {
                         "percentage": compliance_percentage,
@@ -527,6 +533,7 @@ class ChaosTestRunner:
                 for i in range(50):  # 50 concurrent requests
                     task = asyncio.create_task(
                         client.get(f"{self.api_base_url}/health", timeout=30.0)
+                    )
                     tasks.append(task)
 
                 results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -807,6 +814,7 @@ class GoLiveManager:
         self.current_stage = DeploymentStage.STAGING
         self.current_deployment = DeploymentMetrics(
             stage=DeploymentStage.STAGING, start_time=datetime.utcnow()
+        )
 
         staging_result = {
             "phase": "staging",
@@ -867,6 +875,7 @@ class GoLiveManager:
         self.current_stage = DeploymentStage.CANARY
         self.current_deployment = DeploymentMetrics(
             stage=DeploymentStage.CANARY, start_time=datetime.utcnow()
+        )
 
         canary_result = {
             "phase": "canary",
@@ -884,7 +893,8 @@ class GoLiveManager:
 
             # Monitor key metrics during canary
             for hour in range(
-                min(self.canary_config.duration_hours, 3):  # Demo: 3 hours instead of 72
+                min(self.canary_config.duration_hours, 3)
+            ):  # Demo: 3 hours instead of 72
                 self.logger.info(f"Canary monitoring: hour {hour + 1}")
 
                 # Check SLO compliance
@@ -952,6 +962,7 @@ class GoLiveManager:
         self.current_stage = DeploymentStage.PRODUCTION
         self.current_deployment = DeploymentMetrics(
             stage=DeploymentStage.PRODUCTION, start_time=datetime.utcnow()
+        )
 
         production_result = {
             "phase": "production",
@@ -1114,6 +1125,7 @@ class GoLiveManager:
                 or check.get("available", True)
                 or check.get("operational", True)
                 for check in readiness_checks.values()
+            )
 
             issues = []
             if not readiness_checks["slo_compliance"].get("overall_compliance", False):

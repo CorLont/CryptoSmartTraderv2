@@ -624,7 +624,8 @@ class LiveFeatureAdaptationEngine:
                 "adaptations_today": sum(
                     1
                     for event in self.adaptation_history
-                    if event.timestamp.date() == datetime.now().date(),
+                    if event.timestamp.date() == datetime.now().date()
+                ),
                 "total_adaptations": len(self.adaptation_history),
                 "last_adaptation": self.last_adaptation_time.isoformat()
                 if self.last_adaptation_time

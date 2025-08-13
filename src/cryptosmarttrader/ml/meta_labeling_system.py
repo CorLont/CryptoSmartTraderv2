@@ -178,6 +178,7 @@ class MetaLabelingClassifier:
         features["volatility_20d"] = market_data["price"].rolling(20).std() / market_data["price"]
         features["volume_ratio"] = (
             market_data["volume_24h"] / market_data["volume_24h"].rolling(7).mean()
+        )
         features["price_momentum"] = market_data["price"].pct_change(5)
 
         # Technical features

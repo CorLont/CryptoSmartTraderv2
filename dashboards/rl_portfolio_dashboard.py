@@ -230,7 +230,8 @@ class RLPortfolioDashboard:
             # Episode rewards
             fig.add_trace(
                 go.Scatter(
-                    x=episodes, y=rewards, mode="lines", name="Rewards", line=dict(color="blue"),
+                    x=episodes, y=rewards, mode="lines", name="Rewards", line=dict(color="blue")
+                ),
                 row=1,
                 col=1,
             )
@@ -459,6 +460,7 @@ class RLPortfolioDashboard:
                     text=[f"{v:.1f}" for v in values],
                     textposition="auto",
                 )
+            )
 
         fig.update_layout(
             title="Performance Comparison Across Strategies",
@@ -491,6 +493,7 @@ class RLPortfolioDashboard:
                 + "Return: %{y:.1f}%<br>"
                 + "Volatility: %{x:.1f}%<extra></extra>",
             )
+        )
 
         fig_scatter.update_layout(
             title="Risk vs Return Analysis",
@@ -523,6 +526,7 @@ class RLPortfolioDashboard:
         fig_evolution.add_trace(
             go.Scatter(
                 x=dates, y=rl_values, mode="lines", name="RL Agent", line=dict(color="red", width=2)
+            )
         )
 
         fig_evolution.add_trace(
@@ -533,6 +537,7 @@ class RLPortfolioDashboard:
                 name="Buy & Hold",
                 line=dict(color="blue", width=2),
             )
+        )
 
         fig_evolution.update_layout(
             title="Portfolio Value Over Time",
@@ -797,12 +802,14 @@ class RLPortfolioDashboard:
         eth_correlation = 0.8
         eth_returns = eth_correlation * btc_returns + np.sqrt(1 - eth_correlation**2) * np.cumsum(
             np.random.normal(0, 0.03, n_points)
+        )
         eth_price = 2000 + eth_returns * 150
 
         # ADA (moderate correlation)
         ada_correlation = 0.6
         ada_returns = ada_correlation * btc_returns + np.sqrt(1 - ada_correlation**2) * np.cumsum(
             np.random.normal(0, 0.04, n_points)
+        )
         ada_price = 0.5 + ada_returns * 0.05
         ada_price = np.clip(ada_price, 0.1, 3.0)  # Reasonable bounds
 
@@ -810,6 +817,7 @@ class RLPortfolioDashboard:
         dot_correlation = 0.5
         dot_returns = dot_correlation * btc_returns + np.sqrt(1 - dot_correlation**2) * np.cumsum(
             np.random.normal(0, 0.05, n_points)
+        )
         dot_price = 10 + dot_returns * 1.5
         dot_price = np.clip(dot_price, 2, 50)
 
@@ -817,6 +825,7 @@ class RLPortfolioDashboard:
         sol_correlation = 0.4
         sol_returns = sol_correlation * btc_returns + np.sqrt(1 - sol_correlation**2) * np.cumsum(
             np.random.normal(0, 0.06, n_points)
+        )
         sol_price = 100 + sol_returns * 20
         sol_price = np.clip(sol_price, 20, 500)
 

@@ -66,6 +66,7 @@ async def get_symbol_signals(
         # Get symbol-specific signals from orchestrator
         signals_data = await orchestrator.get_symbol_signals(
             symbol=symbol.upper(), start_time=datetime.utcnow() - timedelta(hours=hours)
+        )
 
         return [
             SignalOut(
@@ -90,7 +91,8 @@ async def get_symbol_signals(
 
 @router.get("/portfolio", response_model=PortfolioOut, summary="Get Portfolio Summary")
 async def get_portfolio(
-    orchestrator=Depends(get_orchestrator), settings: Settings = Depends(get_settings) -> PortfolioOut:
+    orchestrator=Depends(get_orchestrator), settings: Settings = Depends(get_settings)
+) -> PortfolioOut:
     """
     Get current portfolio summary
 

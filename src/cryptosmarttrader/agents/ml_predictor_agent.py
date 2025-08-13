@@ -93,6 +93,7 @@ class MLPredictorAgent:
                     self.config_manager.get("agents", {})
                     .get("ml_predictor", {})
                     .get("update_interval", 900)
+                )
 
                 # Train models and make predictions
                 self._update_predictions()

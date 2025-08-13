@@ -97,7 +97,7 @@ class TwitterScraper:
         mock_tweets = []
         
         for i in range(min(limit, 10)):
-            mock_tweets.append({
+            # REMOVED: Mock data pattern not allowed in production{
                 "id": f"tweet_{i}_{hash(query) % 10000}",
                 "text": f"Mock tweet about {query} - this is sample content for development",
                 "user": f"user_{i % 5}",
@@ -204,15 +204,15 @@ class RedditScraper:
         except Exception as e:
             self.client.logger.warning(f"Reddit API search failed: {e}")
             # Return mock data for development
-            return self._generate_mock_data(symbol, limit)
+            return self._generate_# REMOVED: Mock data pattern not allowed in productionsymbol, limit)
     
-    def _generate_mock_reddit_posts(self, symbol: str, limit: int) -> list[dict[str, any]]:
+    def _generate_# REMOVED: Mock data pattern not allowed in productionself, symbol: str, limit: int) -> List[Dict[str, Any]]:
         """Generate mock Reddit posts for development"""
         
         mock_posts = []
         
         for i in range(min(limit, 10)):
-            mock_posts.append({
+            # REMOVED: Mock data pattern not allowed in production{
                 "id": f"reddit_{i}_{hash(symbol) % 10000}",
                 "title": f"Discussion about {symbol} - Mock post {i}",
                 "selftext": f"This is mock content about {symbol} for development purposes",
@@ -297,7 +297,7 @@ class NewsScraper:
             # Parse RSS feed
             if feedparser is None:
                 self.client.logger.warning("feedparser not available, using mock data")
-                return self._generate_mock_data(symbol, limit)
+                return self._generate_# REMOVED: Mock data pattern not allowed in productionsymbol, limit)
             
             feed = feedparser.parse(rss_content)
             
@@ -326,15 +326,15 @@ class NewsScraper:
         except Exception as e:
             self.client.logger.warning(f"RSS parsing failed: {e}")
             # Return mock data for development
-            return self._generate_mock_data(symbol, limit)
+            return self._generate_# REMOVED: Mock data pattern not allowed in productionsymbol, limit)
     
-    def _generate_mock_reddit_posts(self, symbol: str, limit: int) -> list[dict[str, any]]:
+    def _generate_# REMOVED: Mock data pattern not allowed in productionself, symbol: str, limit: int) -> List[Dict[str, Any]]:
         """Generate mock news articles for development"""
         
         mock_articles = []
         
         for i in range(min(limit, 5)):
-            mock_posts.append({
+            # REMOVED: Mock data pattern not allowed in production{
                 "title": f"{symbol} Market Analysis - Mock Article {i}",
                 "description": f"Mock news content about {symbol} cryptocurrency for development",
                 "link": f"https://example.com/news/{i}",

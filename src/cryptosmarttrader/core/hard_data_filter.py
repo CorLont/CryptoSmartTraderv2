@@ -297,6 +297,7 @@ class HardDataFilter:
         total_score = sum(
             component_scores[component] * weight
             for component, weight in self.component_weights.items()
+        )
 
         # Determine filter action
         action, block_reason = self._determine_filter_action(
@@ -406,7 +407,8 @@ class HardDataFilter:
                     if (
                         isinstance(point, list)
                         and len(point) >= 6
-                        and all(isinstance(x, (int, float)) and x > 0 for x in point[1:5]):  # OHLC values
+                        and all(isinstance(x, (int, float)) and x > 0 for x in point[1:5])
+                    ):  # OHLC values
                         valid_points += 1
 
                 if valid_points >= 8:  # At least 80% valid points

@@ -108,6 +108,7 @@ class FeatureEngineering:
                 symbol_features[f"return_{window}h"] = symbol_data["close"].pct_change(window)
                 metadata[f"return_{window}h"] = FeatureMetadata(
                     f"return_{window}h", "technical", window, datetime.now()
+                )
 
             # Volatility features
             for window in [24, 168, 720]:  # 1d, 1w, 1m
@@ -115,6 +116,7 @@ class FeatureEngineering:
                 symbol_features[f"volatility_{window}h"] = returns.rolling(window).std()
                 metadata[f"volatility_{window}h"] = FeatureMetadata(
                     f"volatility_{window}h", "technical", window, datetime.now()
+                )
 
             # Technical indicators
             symbol_features["rsi_14"] = self._calculate_rsi(symbol_data["close"], 14)
@@ -131,12 +133,15 @@ class FeatureEngineering:
             if "volume" in symbol_data.columns:
                 symbol_features["volume_ma_ratio"] = (
                     symbol_data["volume"] / symbol_data["volume"].rolling(24).mean()
+                )
                 symbol_features["price_volume_trend"] = self._calculate_pvt(symbol_data)
 
                 metadata["volume_ma_ratio"] = FeatureMetadata(
                     "volume_ma_ratio", "technical", 24, datetime.now()
+                )
                 metadata["price_volume_trend"] = FeatureMetadata(
                     "price_volume_trend", "technical", 1, datetime.now()
+                )
 
             features_list.append(symbol_features)
 
@@ -172,18 +177,23 @@ class FeatureEngineering:
             for window in [6, 24, 168]:
                 symbol_features[f"sentiment_ma_{window}h"] = (
                     symbol_data["sentiment_score"].rolling(window).mean()
+                )
                 symbol_features[f"sentiment_momentum_{window}h"] = (
                     symbol_data["sentiment_score"]
                     - symbol_data["sentiment_score"].rolling(window).mean()
+                )
 
                 metadata[f"sentiment_ma_{window}h"] = FeatureMetadata(
                     f"sentiment_ma_{window}h", "sentiment", window, datetime.now()
+                )
                 metadata[f"sentiment_momentum_{window}h"] = FeatureMetadata(
                     f"sentiment_momentum_{window}h", "sentiment", window, datetime.now()
+                )
 
             # Sentiment volatility
             symbol_features["sentiment_volatility"] = (
                 symbol_data["sentiment_score"].rolling(24).std()
+            )
 
             # Add metadata for basic sentiment features
             for feature in [
@@ -234,6 +244,7 @@ class FeatureEngineering:
 
                     metadata[momentum_feature] = FeatureMetadata(
                         momentum_feature, "onchain", window, datetime.now()
+                    )
 
             # Add metadata for basic on-chain features
             for feature in ["active_addresses", "transaction_volume", "whale_activity"]:
@@ -287,8 +298,10 @@ class FeatureEngineering:
 
                 metadata["relative_strength"] = FeatureMetadata(
                     "relative_strength", "cross_asset", 1, datetime.now()
+                )
                 metadata["market_correlation"] = FeatureMetadata(
                     "market_correlation", "cross_asset", 168, datetime.now()
+                )
 
             features_list.append(symbol_features)
 
@@ -314,6 +327,7 @@ class FeatureEngineering:
             )
             metadata["price_sentiment_interaction"] = FeatureMetadata(
                 "price_sentiment_interaction", "interaction", 1, datetime.now()
+            )
 
         # Volatility-sentiment interactions
         if (
@@ -325,6 +339,7 @@ class FeatureEngineering:
             )
             metadata["vol_sentiment_interaction"] = FeatureMetadata(
                 "vol_sentiment_interaction", "interaction", 1, datetime.now()
+            )
 
         return interaction_features, metadata
 

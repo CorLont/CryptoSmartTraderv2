@@ -251,11 +251,11 @@ class AsyncOnChainPipeline:
                     # REMOVED: Mock data pattern not allowed in production
                     for i in range(0, 5):
                         transactions.append({
-                            'hash': "0xdeadbeef",
+                            'hash': f"0x{''.join(# REMOVED: Mock data pattern not allowed in productions('0123456789abcdef', k=64))}",
                             'from': address,
-                            'to': "0xdeadbeef",
-                            'amount': 1000.0,
-                            'timestamp': time.time() - 3600,
+                            'to': f"0x{''.join(# REMOVED: Mock data pattern not allowed in productions('0123456789abcdef', k=40))}",
+                            'amount': # REMOVED: Mock data pattern not allowed in production(min_value_usd, min_value_usd * 10),
+                            'timestamp': time.time() - # REMOVED: Mock data pattern not allowed in production(0, 86400),
                             'token': 'ETH'
                         })
                     

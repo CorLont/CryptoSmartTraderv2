@@ -402,6 +402,7 @@ class AlphaBlender:
         try:
             model_names = list(
                 set(name for pred in ensemble_predictions for name in pred.base_predictions.keys())
+            )
 
             if len(model_names) < 2:
                 return self._equal_weight_strategy(ensemble_predictions)
@@ -566,6 +567,7 @@ class AlphaBlender:
                 # Apply min/max constraints
                 constrained_weight = max(
                     self.config.min_weight, min(self.config.max_weight, weight)
+                )
                 constrained_weights[model_name] = constrained_weight
 
             # Renormalize to sum to 1

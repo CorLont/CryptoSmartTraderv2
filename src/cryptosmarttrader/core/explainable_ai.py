@@ -143,6 +143,7 @@ class PredictionExplainer:
             for i, (feature, value) in enumerate(features.items()):
                 importance = (
                     abs(shap_values[0][i]) if len(shap_values.shape) > 1 else abs(shap_values[i])
+                )
                 direction = (
                     "positive"
                     if (shap_values[0][i] if len(shap_values.shape) > 1 else shap_values[i]) > 0

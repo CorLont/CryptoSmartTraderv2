@@ -55,6 +55,7 @@ class TestExecutionPolicy:
             depth_ask=100.0,
             volume_1m=500.0,  # Low volume
             volatility_1m=0.10,  # High volatility (10%)
+        )
 
     @pytest.fixture
     def standard_order_params(self):
@@ -479,6 +480,7 @@ class TestExecutionScenarios:
             depth_ask=2000.0,
             volume_1m=15000.0,
             volatility_1m=0.08,  # 8% volatility (high)
+        )
 
         params = ExecutionParams(
             symbol="ETH-USD",

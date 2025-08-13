@@ -61,7 +61,8 @@ class UnifiedConfidenceGate:
                 not filtered_df.empty
                 and self.ai_intelligence
                 and hasattr(self.ai_intelligence, "is_available")
-                and self.ai_intelligence.is_available():
+                and self.ai_intelligence.is_available()
+            ):
                 explanations = await self._generate_authentic_explanations(filtered_df)
             elif not filtered_df.empty:
                 # Fallback to feature-based explanations (not random)
@@ -76,6 +77,7 @@ class UnifiedConfidenceGate:
                     self.ai_intelligence
                     and hasattr(self.ai_intelligence, "is_available")
                     and self.ai_intelligence.is_available()
+                )
                 else "feature_based"
             )
 

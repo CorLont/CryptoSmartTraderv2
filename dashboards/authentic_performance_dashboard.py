@@ -111,6 +111,7 @@ class AuthenticPerformanceDashboard:
                                 },
                             },
                         )
+                    )
                     fig_cpu.update_layout(height=200)
                     st.plotly_chart(fig_cpu, use_container_width=True)
 
@@ -150,6 +151,7 @@ class AuthenticPerformanceDashboard:
                             },
                         },
                     )
+                )
                 fig_mem.update_layout(height=200)
                 st.plotly_chart(fig_mem, use_container_width=True)
 
@@ -189,6 +191,7 @@ class AuthenticPerformanceDashboard:
                             },
                         },
                     )
+                )
                 fig_disk.update_layout(height=200)
                 st.plotly_chart(fig_disk, use_container_width=True)
 

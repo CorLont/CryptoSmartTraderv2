@@ -350,6 +350,7 @@ class DataFlowOrchestrator:
                 and current_risk_level in [RiskLevel.NORMAL, RiskLevel.CONSERVATIVE]
                 and trading_mode == TradingMode.LIVE
                 and not getattr(self.risk_guard, "kill_switch_active", False)
+            )
 
             rejection_reason = None
             if not position_check:
@@ -377,7 +378,7 @@ class DataFlowOrchestrator:
                 "rejection_reason": f"Risk assessment error: {str(e)}",
             }
 
-    async def _detect_regime(self, symbol: str, market_data: dict[str, Any]) -> dict[str, Any]:
+    async def _detect_regime(self, symbol: str, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """Detect market regime."""
 
         try:

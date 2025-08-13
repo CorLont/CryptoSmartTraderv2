@@ -179,6 +179,7 @@ class ProbabilisticTrader:
                 # Generate reasoning
                 reasoning = self._generate_reasoning(
                     consensus_prediction, decision, len(predictions)
+                )
 
                 # Create trading signal
                 signal = TradingSignal(

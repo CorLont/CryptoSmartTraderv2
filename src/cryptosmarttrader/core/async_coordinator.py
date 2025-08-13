@@ -330,6 +330,7 @@ class AsyncCoordinator:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             self.thread_pool, lambda: task.function(*task.args, **task.kwargs)
+        )
 
     async def _check_dependencies(self, task: AsyncTask) -> bool:
         """Check if all task dependencies are satisfied"""

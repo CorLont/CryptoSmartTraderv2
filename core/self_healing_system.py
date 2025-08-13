@@ -108,6 +108,7 @@ class SelfHealingSystem:
         # Performance tracking
         self.performance_metrics: Dict[SystemComponent, deque] = defaultdict(
             lambda: deque(maxlen=100)
+        )
         self.component_status: Dict[SystemComponent, ComponentStatus] = {}
         self.system_alerts: deque = deque(maxlen=1000)
 

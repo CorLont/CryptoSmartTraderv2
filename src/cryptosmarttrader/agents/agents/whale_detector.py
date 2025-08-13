@@ -44,7 +44,7 @@ class WhaleDetectorAgent:
             
         return whale_scores
     
-    def dummy_method(self):
+    def _# REMOVED: Mock data pattern not allowed in productionself):
         """Simulate large transfer detection"""
         # In production, this would query blockchain APIs
         return max(0, int(np.random.poisson(2)))

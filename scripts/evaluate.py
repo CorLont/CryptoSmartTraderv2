@@ -134,6 +134,7 @@ def generate_coverage_audit() -> Dict:
             processed_df = pd.read_csv(processed_file)
             processed_coins = (
                 set(processed_df["coin"].unique()) if "coin" in processed_df.columns else set()
+            )
 
             coverage_audit["processed_coverage"] = {
                 "total_coins": len(processed_coins),

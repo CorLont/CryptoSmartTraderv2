@@ -160,6 +160,7 @@ async def test_fine_tune_scheduler():
         job_ids.append(scheduler.create_fine_tune_job("ml_predictor", "drift_detected", "critical"))
         job_ids.append(
             scheduler.create_fine_tune_job("sentiment_analyzer", "performance_degradation", "high")
+        )
         job_ids.append(scheduler.create_fine_tune_job("technical_analyzer", "scheduled", "medium"))
 
         print(f"   Created {len(job_ids)} jobs")

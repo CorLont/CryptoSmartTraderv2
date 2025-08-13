@@ -218,6 +218,7 @@ class EventDetector:
                     event.timestamp >= cutoff_time
                     and (exchange is None or event.exchange == exchange)
                     and (pair is None or event.pair == pair)
+                )
             ]
 
             if not filtered_events:

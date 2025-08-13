@@ -191,6 +191,7 @@ class FileStorageAdapter(StoragePort):
             file_path.with_suffix(".json").exists()
             or file_path.with_suffix(".parquet").exists()
             or file_path.with_suffix(".pkl").exists()
+        )
 
     def delete(self, key: str) -> StorageResponse:
         """Delete data by key"""

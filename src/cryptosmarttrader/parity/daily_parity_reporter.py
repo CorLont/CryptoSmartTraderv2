@@ -289,6 +289,7 @@ class DailyParityReporter:
                         recommended_actions=["investigate_execution", "check_market_regime"],
                         metadata={"recent_te": recent_te, "baseline_te": baseline_te},
                     )
+                )
 
         # Correlation drift detection
         if len(self.correlation_history) >= 3:
@@ -313,6 +314,7 @@ class DailyParityReporter:
                         recommended_actions=["retrain_models", "validate_data_sources"],
                         metadata={"recent_corr": recent_corr, "baseline_corr": baseline_corr},
                     )
+                )
 
         return drift_alerts
 

@@ -331,6 +331,7 @@ class ShadowTradingDashboard:
                     name="Portfolio Value",
                     line=dict(color="blue"),
                 )
+            )
 
             # Add benchmark (buy and hold)
             benchmark = 100000 * (1 + 0.02) ** (np.arange(30) / 365)  # 2% annual growth
@@ -342,6 +343,7 @@ class ShadowTradingDashboard:
                     name="Buy & Hold Benchmark",
                     line=dict(color="gray", dash="dash"),
                 )
+            )
 
             fig_portfolio.update_layout(
                 title="Portfolio Performance vs Benchmark",
@@ -612,6 +614,7 @@ class ShadowTradingDashboard:
                 name="BTC Price",
                 line=dict(color="orange", width=2),
             )
+        )
 
         # Add trade markers
         buy_times = [timestamps[5], timestamps[15]]
@@ -625,6 +628,7 @@ class ShadowTradingDashboard:
                 name="Shadow Trades",
                 marker=dict(color="green", size=10, symbol="triangle-up"),
             )
+        )
 
         fig_live.update_layout(
             title="Live BTC Price with Shadow Trades",

@@ -653,6 +653,7 @@ class ShadowTradingEngine:
                 "profit_factor": abs(
                     sum([np.random.normal(0, 1) for _ in winning_trades])
                     / sum([np.random.normal(0, 1) for _ in losing_trades])
+                )
                 if losing_trades
                 else float("inf"),
             }
@@ -709,7 +710,8 @@ class ShadowTradingEngine:
                 "regimes_encountered": list(self.market_regimes_encountered),
                 "regimes_required": self.config.required_market_regimes,
                 "regimes_remaining": max(
-                    0, self.config.required_market_regimes - len(self.market_regimes_encountered),
+                    0, self.config.required_market_regimes - len(self.market_regimes_encountered)
+                ),
             },
             "validation_criteria": {
                 "max_false_positive_ratio": self.config.max_false_positive_ratio,

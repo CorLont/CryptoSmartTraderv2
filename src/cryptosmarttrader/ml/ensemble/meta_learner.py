@@ -274,6 +274,7 @@ class MetaLearnerStacker:
                         for value in unique_values[:5]:  # Limit to top 5 categories
                             encoded = (
                                 (regime_features[col] == value).astype(int).values.reshape(-1, 1)
+                            )
                             meta_features.append(encoded)
 
             # Concatenate all features

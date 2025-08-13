@@ -170,6 +170,7 @@ class TradingEnvironment:
             self.market_data[f"{col}_return"] = self.market_data[col].pct_change()
             self.market_data[f"{col}_volatility"] = (
                 self.market_data[f"{col}_return"].rolling(24).std()
+            )
 
         # Calculate market features
         self.market_data["market_volatility"] = self.market_data[

@@ -148,6 +148,7 @@ def test_risk_scenarios():
         correlation_risk=0.15,
         data_quality_score=0.65,  # Poor data quality (below 0.7 threshold)
         last_signal_age_minutes=45,  # Stale signals (above 30min threshold)
+    )
 
     risk_level = risk_guard.assess_risk_level(poor_data_metrics)
     quality_protection = risk_level != RiskLevel.NORMAL  # Should escalate due to poor data

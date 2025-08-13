@@ -336,7 +336,8 @@ class OrderBookAnalyzer:
                     spoof_signals.append(
                         {
                             "timestamp": current_book.get(
-                                "timestamp", datetime.utcnow().isoformat(),
+                                "timestamp", datetime.utcnow().isoformat()
+                            ),
                             "pattern_type": spoof_pattern["type"],
                             "side": spoof_pattern["side"],
                             "confidence": spoof_pattern["confidence"],
@@ -462,7 +463,7 @@ class AdvancedTimingSignals:
         self.futures_analyzer = FuturesDataAnalyzer()
         self.orderbook_analyzer = OrderBookAnalyzer()
 
-    def generate_timing_signals(self, market_data: dict[str, Any]) -> dict[str, Any]:
+    def generate_timing_signals(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate comprehensive timing signals from advanced features"""
 
         try:

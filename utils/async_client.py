@@ -61,7 +61,8 @@ class AsyncHTTPClient:
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=1, max=10),
             retry=retry_if_exception_type(
-                (aiohttp.ClientError, asyncio.TimeoutError, aiohttp.ServerTimeoutError),
+                (aiohttp.ClientError, asyncio.TimeoutError, aiohttp.ServerTimeoutError)
+            ),
             reraise=True,
         ):
             with attempt:

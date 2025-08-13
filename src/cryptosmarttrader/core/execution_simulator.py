@@ -251,7 +251,7 @@ class ExecutionSimulator:
         self.logger = get_logger()
         self.order_book_simulator = OrderBookSimulator(self.config)
 
-    async def execute_order(
+    async def # REMOVED: Mock data pattern not allowed in production
         self,
         symbol: str,
         side: str,

@@ -142,6 +142,7 @@ class TemporalIntegrityValidator:
 
             result = self._create_validation_result(
                 agent_name, is_valid, violations, warnings_list, len(df)
+            )
 
             # Add detailed validation results
             result["validation_details"] = validation_results

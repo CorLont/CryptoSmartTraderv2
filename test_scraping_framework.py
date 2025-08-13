@@ -118,6 +118,7 @@ async def test_parallel_scraping():
         # 2. Daily logs contain scraping reports
         logs_pass = len(scraping_reports) > 0 and any(
             "scraping_report" in f.name for f in daily_log_dir.glob("*.json")
+        )
         print(f"   {'✅' if logs_pass else '❌'} logs/daily/*/scraping_report.json created")
         if logs_pass:
             criteria_met += 1

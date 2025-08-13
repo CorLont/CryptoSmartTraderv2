@@ -276,6 +276,7 @@ def test_slippage_tracking():
             # Record execution
             execution_time = datetime.now() - timedelta(
                 days=7 - day, hours=np.random.randint(0, 24)
+            )
 
             slippage_tracker.record_execution(
                 symbol=symbol,

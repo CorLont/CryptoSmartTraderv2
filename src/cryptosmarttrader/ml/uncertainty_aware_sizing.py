@@ -481,6 +481,7 @@ class UncertaintyAwarePortfolioSizer:
         # Correlation risk
         correlation_risk = self.correlation_manager.get_portfolio_correlation_risk(
             dict(zip(symbols, weights))
+        )
 
         # Uncertainty risk (weighted average of uncertainties)
         uncertainty_risk = np.average(1 - confidences, weights=weights)
@@ -503,6 +504,7 @@ class UncertaintyAwarePortfolioSizer:
         avg_correlation = min(0.5, correlation_risk)  # Cap correlation assumption
         portfolio_variance = np.sum((weights * volatilities) ** 2) + 2 * avg_correlation * np.sum(
             np.outer(weights * volatilities, weights * volatilities)
+        )
         portfolio_volatility = np.sqrt(max(0, portfolio_variance))
 
         # 95% VaR (assuming normal distribution)

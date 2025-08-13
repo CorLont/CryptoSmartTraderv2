@@ -263,6 +263,7 @@ class CausalInferenceDashboard:
                         text=[f"{e:.4f}" for e in effect_sizes],
                         textposition="auto",
                     )
+                )
 
                 fig.update_layout(
                     title="Significant Causal Effects",
@@ -520,6 +521,7 @@ class CausalInferenceDashboard:
                     + "Effect Size: %{y:.4f}<br>"
                     + "%{text}<extra></extra>",
                 )
+            )
 
         fig.update_layout(
             title="Counterfactual Effects by Treatment Variable",
@@ -635,6 +637,7 @@ class CausalInferenceDashboard:
                 text=[f"{c:.2f}" for c in contributions],
                 textposition="auto",
             )
+        )
 
         fig.update_layout(
             title="Causal Factor Contributions to Price Movement",
@@ -778,6 +781,7 @@ class CausalInferenceDashboard:
         for i in range(1, n_points):
             sentiment[i] = (
                 0.5 + 0.3 * sentiment[i - 1] + 0.1 * btc_returns[i - 1] + np.random.normal(0, 0.1)
+            )
         sentiment = np.clip(sentiment, 0, 1)
 
         # Whale activity (causes volume spikes)

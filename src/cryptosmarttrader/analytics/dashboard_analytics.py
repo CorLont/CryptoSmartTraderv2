@@ -261,6 +261,7 @@ class DashboardAnalytics:
 
             pivot_data = (
                 data.groupby(["pair", "regime"])["realized_pnl"].sum().unstack(fill_value=0)
+            )
 
             # Create plotly heatmap
             fig = go.Figure(
@@ -275,6 +276,7 @@ class DashboardAnalytics:
                     hoverongaps=False,
                     hovertemplate="<b>%{y}</b><br>Regime: %{x}<br>PnL: %{z:.1f} bps<extra></extra>",
                 )
+            )
 
             fig.update_layout(
                 title="Return Attribution: Pair vs Regime",
@@ -345,6 +347,7 @@ class DashboardAnalytics:
                     hoverongaps=False,
                     hovertemplate="<b>%{y}</b><br>Time: %{x}<br>Contribution: %{z:.1f} bps<extra></extra>",
                 )
+            )
 
             fig.update_layout(
                 title=f"Attribution Components Over Time ({time_granularity.value.title()})",
@@ -451,6 +454,7 @@ class DashboardAnalytics:
                     name="Total PnL",
                     line=dict(color="blue", width=2),
                 )
+            )
 
             fig.add_trace(
                 go.Scatter(
@@ -460,6 +464,7 @@ class DashboardAnalytics:
                     name="Alpha Contribution",
                     line=dict(color="green", width=2),
                 )
+            )
 
             fig.add_trace(
                 go.Scatter(
@@ -469,6 +474,7 @@ class DashboardAnalytics:
                     name="Cost Drag",
                     line=dict(color="red", width=2),
                 )
+            )
 
             fig.update_layout(
                 title="Performance Attribution Trends",

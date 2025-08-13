@@ -241,7 +241,7 @@ class RiskOverlaySystem:
             "high_correlation_active": False,
         }
 
-    def evaluate_risk_conditions(self, market_data: dict[str, Any]) -> dict[str, Any]:
+    def evaluate_risk_conditions(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """Evaluate current risk conditions"""
 
         risk_signals = {}

@@ -255,6 +255,7 @@ class AdvancedAnalyticsDashboard:
                     marker_color="green",
                     opacity=0.7,
                 )
+            )
 
             # Asks (red)
             fig_orderbook.add_trace(
@@ -266,6 +267,7 @@ class AdvancedAnalyticsDashboard:
                     marker_color="red",
                     opacity=0.7,
                 )
+            )
 
             fig_orderbook.update_layout(
                 title=f"{selected_coin} Order Book Depth",
@@ -612,6 +614,7 @@ class AdvancedAnalyticsDashboard:
                         name="CPU Usage (%)",
                         line=dict(color="red"),
                     )
+                )
 
                 fig_trends.add_trace(
                     go.Scatter(
@@ -621,6 +624,7 @@ class AdvancedAnalyticsDashboard:
                         name="Memory Usage (%)",
                         line=dict(color="blue"),
                     )
+                )
 
                 fig_trends.update_layout(
                     title="24-Hour Performance Trends",

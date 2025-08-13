@@ -145,6 +145,7 @@ class BacktestParityAnalyzer:
             (bid_price + ask_price) / 2
             if bid_price > 0 and ask_price > 0
             else market_conditions.get("price", 0.0)
+        )
         volume_24h = market_conditions.get("volume_24h", 1000000)
         volatility = market_conditions.get("volatility", 0.02)
         orderbook_depth = market_conditions.get("orderbook_depth", 50000)
@@ -173,7 +174,8 @@ class BacktestParityAnalyzer:
 
         # Volatility impact during execution delay
         volatility_impact = volatility * np.sqrt(
-            latency_ms / (1000 * 60 * 60 * 24 * 365)  # Annualized vol
+            latency_ms / (1000 * 60 * 60 * 24 * 365)
+        )  # Annualized vol
 
         # Bid-ask spread cost
         spread = ask_price - bid_price if ask_price > bid_price else mid_price * 0.001

@@ -448,7 +448,7 @@ class ProcessIsolationManager:
         }
 
 # Mock agent functions for testing
-async def mock_taskstop_event: mp.Event) -> None:
+async def # REMOVED: Mock data pattern not allowed in productionstop_event: mp.Event) -> None:
     """Mock data collector agent"""
     logger = get_logger("DataCollectorAgent")
     logger.info("Data collector agent started")
@@ -465,7 +465,7 @@ async def mock_taskstop_event: mp.Event) -> None:
 
     logger.info("Data collector agent stopped")
 
-async def mock_taskstop_event: mp.Event) -> None:
+async def # REMOVED: Mock data pattern not allowed in productionstop_event: mp.Event) -> None:
     """Mock ML predictor agent"""
     logger = get_logger("MLPredictorAgent")
     logger.info("ML predictor agent started")

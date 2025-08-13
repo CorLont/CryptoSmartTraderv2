@@ -201,6 +201,7 @@ class ReturnAttributor:
             logger.error(f"Return attribution failed: {e}")
             return self._create_empty_attribution(
                 datetime.now() - timedelta(days=period_days), datetime.now()
+            )
 
     def _analyze_attribution_components(
         self, trade_data: pd.DataFrame, market_data: pd.DataFrame = None
@@ -284,6 +285,7 @@ class ReturnAttributor:
                     trade_data["realized_pnl"]
                     - trade_data.get("fees", 0)
                     - trade_data.get("slippage_cost", 0)
+                )
                 alpha_volatility = np.std(alpha_per_trade) if len(alpha_per_trade) > 1 else 0
             else:
                 alpha_volatility = np.std(trade_data["realized_pnl"]) if len(trade_data) > 1 else 0
@@ -693,14 +695,17 @@ class ReturnAttributor:
                 # Hourly attribution
                 time_attribution["hourly"] = (
                     trade_data_copy.groupby("hour")["realized_pnl"].sum().to_dict()
+                )
 
                 # Daily attribution
                 time_attribution["daily"] = (
                     trade_data_copy.groupby("day_of_week")["realized_pnl"].sum().to_dict()
+                )
 
                 # Monthly attribution
                 time_attribution["monthly"] = (
                     trade_data_copy.groupby("month")["realized_pnl"].sum().to_dict()
+                )
 
             return time_attribution
 

@@ -67,7 +67,8 @@ class TrainingEnforcer:
             "oldest_model_date": oldest_date.isoformat(),
             "model_count": model_count,
             "estimated_completion": (
-                oldest_date + timedelta(weeks=self.required_weeks).isoformat(),
+                oldest_date + timedelta(weeks=self.required_weeks)
+            ).isoformat(),
             "message": self._get_status_message(training_complete, weeks_trained),
         }
 

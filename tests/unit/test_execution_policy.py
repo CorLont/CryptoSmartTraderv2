@@ -88,6 +88,7 @@ class TestExecutionPolicy:
 
         iceberg_orders = self.execution_policy.create_iceberg_orders(
             large_order, max_slice_size=Decimal("2.0")
+        )
 
         assert len(iceberg_orders) == 5  # 10.0 / 2.0 = 5 slices
         assert all(order.quantity <= Decimal("2.0") for order in iceberg_orders)
@@ -140,6 +141,7 @@ class TestExecutionPolicy:
         """Test bid-ask spread analysis."""
         spread_analysis = self.execution_policy.analyze_spread(
             symbol="BTC/USDT", target_quantity=Decimal("0.1")
+        )
 
         assert spread_analysis.current_spread_bps >= 0
         assert spread_analysis.impact_on_spread_bps >= 0

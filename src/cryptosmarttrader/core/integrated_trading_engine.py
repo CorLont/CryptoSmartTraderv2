@@ -158,6 +158,7 @@ class IntegratedTradingEngine:
 
         self.current_session = TradingSession(
             session_id=session_id, start_time=datetime.now(), symbols_tracked=self.symbols.copy()
+        )
 
         try:
             # Start background tasks
@@ -540,6 +541,7 @@ class IntegratedTradingEngine:
         except Exception as e:
             self.logger.error(
                 "Order execution through pipeline failed", symbol=symbol, error=str(e)
+            )
 
             # Return mock failure result
             from ..execution.order_pipeline import OrderResult, OrderStatus

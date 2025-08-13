@@ -509,6 +509,7 @@ class DriftDetector:
                     # Chi-square statistic
                     chi2_stat = np.sum(
                         ((expected_current - expected_baseline) ** 2) / (expected_baseline + 1e-8)
+                    )
 
                     test_results["chi2_statistic"] = chi2_stat
                     chi2_drift = min(1.0, chi2_stat / len(all_categories))
@@ -576,7 +577,9 @@ class DriftDetector:
                         (
                             (len(baseline_values) - 1) * np.var(baseline_values)
                             + (len(current_values) - 1) * np.var(current_values)
+                        )
                         / (len(baseline_values) + len(current_values) - 2)
+                    )
 
                     cohens_d = (np.mean(current_values) - np.mean(baseline_values)) / pooled_std
                     statistical_tests[metric_name]["cohens_d"] = cohens_d

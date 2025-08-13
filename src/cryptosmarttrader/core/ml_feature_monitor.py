@@ -382,6 +382,7 @@ class FeatureDriftMonitor:
                 try:
                     # Generate baseline samples (approximation)
                     baseline_samples = np.random.normal(0, 1)
+                    )
                     ks_stat, p_value = ks_2samp(baseline_samples, feature_values)
 
                     if p_value < self.drift_thresholds['ks_test_p_value']:
@@ -394,6 +395,7 @@ class FeatureDriftMonitor:
                 # Wasserstein distance for distribution comparison
                 try:
                     baseline_samples = np.random.normal(0, 1)
+                    )
                     wasserstein_dist = wasserstein_distance(baseline_samples, feature_values)
 
                     # Normalize by baseline standard deviation
@@ -424,7 +426,8 @@ class FeatureDriftMonitor:
                         current_stats=current_stats,
                         p_value=p_value,
                         action_required=drift_magnitude > 0.5,
-                        timestamp=datetime.now())
+                        timestamp=datetime.now()
+                    ))
 
             except Exception as e:
                 self.logger.warning(f"Drift detection failed for {column}: {e}")
@@ -650,11 +653,13 @@ class MLFeatureMonitor:
             # 4. Generate recommendations
             analysis_results['recommendations'] = self._generate_feature_recommendations(
                 leakage_violations, drift_alerts, analysis_results.get('feature_importance', [])
+            )
 
             # 5. Calculate quality scores
             analysis_results['quality_scores'] = self._calculate_feature_quality_scores(
                 features_df.columns, leakage_violations, drift_alerts,
                 analysis_results.get('feature_importance', [])
+            )
 
             self.last_analysis = analysis_results
 

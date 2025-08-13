@@ -464,7 +464,8 @@ class AlphaSeeker:
                     if (
                         analysis
                         and analysis.get("confidence", 0) >= min_confidence
-                        and analysis.get("meets_criteria", False):
+                        and analysis.get("meets_criteria", False)
+                    ):
                         opportunities.append(analysis)
 
             # Sort by expected 30-day return

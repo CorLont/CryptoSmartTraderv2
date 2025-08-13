@@ -107,6 +107,7 @@ class ParityMonitorService:
             and (
                 self.daily_reporter.last_report_date is None
                 or self.daily_reporter.last_report_date.date() < current_time.date()
+            )
         ):
             return True
 

@@ -126,6 +126,7 @@ class FeatureEngineer:
             # High/Low ratios
             df[f"hl_ratio_{period}"] = (
                 df["high"].rolling(period).max() / df["low"].rolling(period).min()
+            )
 
         return df
 
@@ -412,6 +413,7 @@ class EnsemblePredictor:
                     pred = model.predict(latest_features_scaled)
                     model_predictions.append(
                         float(pred[0]) if hasattr(pred, "__len__") else float(pred)
+                    )
                     model_names.append(model_name)
             except Exception as e:
                 self.logger.error(f"Model {model_name} prediction failed: {e}")

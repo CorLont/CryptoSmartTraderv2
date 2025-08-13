@@ -283,6 +283,7 @@ class MultiHorizonMLSystem:
                 .rolling(window=24, min_periods=1)
                 .std()
                 .reset_index(0, drop=True)
+            )
 
             # Price relative to recent high/low
             df["price_vs_24h_high"] = df["close"] / df.groupby("coin")["high"].rolling(

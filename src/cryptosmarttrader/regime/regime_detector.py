@@ -126,6 +126,7 @@ class RegimeDetector:
                 dominance_data=dominance_data,
                 funding_data=await self._get_funding_data(),
                 oi_data=await self._get_oi_data()
+            )
 
             # Classify regime
             self.current_regime = self.classifier.predict_regime(self.current_features)
@@ -390,7 +391,7 @@ class RegimeDetector:
         price_changes = np_random.choice
         prices = 50000 * (1 + price_changes).cumprod()
 
-        mock_posts.append({
+        # REMOVED: Mock data pattern not allowed in production{
             'timestamp': dates,
             'open': prices * 0.999,
             'high': prices * 1.01,
