@@ -141,6 +141,17 @@ class ArbitrageDetectorAgent:
         self.opportunities_found = 0
         self.error_count = 0
         
+        # Initialize stats before calling _initialize_exchanges
+        self.stats = {
+            'exchanges_monitored': 0,
+            'arbitrage_opportunities_found': 0,
+            'funding_rate_opportunities': 0,
+            'triangular_arbitrage_found': 0,
+            'average_spread': 0.0,
+            'best_spread_today': 0.0,
+            'execution_success_rate': 0.0
+        }
+        
         # Data storage
         self.arbitrage_opportunities: deque = deque(maxlen=1000)
         self.funding_opportunities: deque = deque(maxlen=500)
@@ -166,15 +177,14 @@ class ArbitrageDetectorAgent:
             'LINK/USDT', 'UNI/USDT', 'ATOM/USDT', 'FTM/USDT', 'ALGO/USDT'
         ]
         
-        # Statistics
-        self.stats = {
+        # Additional statistics tracking
+        self.extended_stats = {
             'total_opportunities_found': 0,
             'profitable_opportunities': 0,
             'executed_trades': 0,
             'successful_arbitrages': 0,
             'average_profit': 0.0,
-            'total_profit': 0.0,
-            'exchanges_monitored': 0
+            'total_profit': 0.0
         }
         
         # Thread safety
