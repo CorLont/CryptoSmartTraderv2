@@ -11,7 +11,7 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with json
 from pathlib import Path
 import asyncio
 import aiohttp

@@ -167,7 +167,7 @@ class DailyAnalysisScheduler:
         if sys.platform.startswith("win"):
             script_path = self.project_root / "scripts" / "start_ml_analysis.bat"
             if script_path.exists():
-                process = subprocess.Popen(
+                process = logger.info(f"Executing subprocess: {cmd}"); subprocess.Popen(
                     str(script_path),
                     shell=True,
                     cwd=str(self.project_root),

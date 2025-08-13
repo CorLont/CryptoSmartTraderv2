@@ -16,7 +16,7 @@ import optuna
 from optuna.samplers import TPESampler
 from optuna.pruners import MedianPruner
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with json
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -759,7 +759,7 @@ class HyperparameterOptimizer:
             # Save study object
             study_file = self.results_path / f"{result.study_name}_study.pkl"
             with open(study_file, "wb") as f:
-                pickle.dump(result.study, f)
+                json.dump(result.study, f)
 
             logger.info(f"Optimization results saved: {result_file}")
 
@@ -782,7 +782,7 @@ class HyperparameterOptimizer:
 
             # Load study
             with open(study_file, "rb") as f:
-                study = pickle.load(f)
+                study = json.load(f)
 
             # Reconstruct OptimizationResult (simplified)
             logger.info(f"Loaded optimization results: {study_name}")

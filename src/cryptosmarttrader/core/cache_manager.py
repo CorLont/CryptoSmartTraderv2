@@ -3,7 +3,7 @@ import time
 from typing import Any, Optional, Dict
 from datetime import datetime, timedelta
 import sys
-import pickle
+import json  # SECURITY: Replaced pickle with json
 import pandas as pd
 import numpy as np
 

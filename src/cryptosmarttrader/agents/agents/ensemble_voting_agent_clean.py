@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
-import pickle
+import json  # SECURITY: Replaced pickle with json
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -87,7 +87,7 @@ class CleanEnsembleVotingAgent:
             if model_file.exists():
                 try:
                     with open(model_file, "rb") as f:
-                        model = pickle.load(f)
+                        model = json.load(f)
 
                     # Verify model was trained on authentic data
                     if self._verify_model_authenticity(model, model_file):

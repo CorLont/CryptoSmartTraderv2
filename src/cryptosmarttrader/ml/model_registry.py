@@ -5,7 +5,7 @@ Enterprise model versioning, tracking, and deployment management.
 
 import hashlib
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with json
 import shutil
 import uuid
 from datetime import datetime, timedelta
@@ -244,7 +244,7 @@ class ModelRegistry:
         # Save model
         try:
             with open(model_file_path, "wb") as f:
-                pickle.dump(model, f)
+                json.dump(model, f)
         except Exception as e:
             self.logger.error(f"Failed to save model: {e}")
             raise
@@ -609,7 +609,7 @@ class ModelRegistry:
 
         try:
             with open(model_version.model_path, "rb") as f:
-                model = pickle.load(f)
+                model = json.load(f)
             return model
         except Exception as e:
             self.logger.error(f"Failed to load model {model_id} {version}: {e}")

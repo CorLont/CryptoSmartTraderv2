@@ -15,7 +15,7 @@ import threading
 import asyncio
 import json
 from pathlib import Path
-import pickle
+import json  # SECURITY: Replaced pickle with json
 import warnings
 
 warnings.filterwarnings("ignore")

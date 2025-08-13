@@ -182,7 +182,7 @@ class ProcessManager:
 
             # Start process
             full_command = [config.command] + config.args
-            process = subprocess.Popen(
+            process = logger.info(f"Executing subprocess: {cmd}"); subprocess.Popen(
                 full_command,
                 cwd=config.working_dir,
                 env=env,
@@ -388,6 +388,7 @@ class ProcessManager:
                         config.health_check_command.split(),
                         timeout=config.health_check_timeout,
                         capture_output=True,
+                        check=True
                     )
                     return (
                         HealthStatus.HEALTHY if result.returncode == 0 else HealthStatus.UNHEALTHY

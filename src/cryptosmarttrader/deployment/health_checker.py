@@ -523,6 +523,7 @@ class HealthChecker:
                     timeout=check.timeout_seconds,
                     capture_output=True,
                     text=True,
+                    check=True
                 )
 
                 response_time = (time.time() - start_time) * 1000

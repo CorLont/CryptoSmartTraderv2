@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from collections import defaultdict, deque
-import pickle
+import json  # SECURITY: Replaced pickle with json
 import hashlib
 
 try:

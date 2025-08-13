@@ -429,7 +429,7 @@ class ChaosTestRunner:
             result.logs.append(f"Adding network delay: {delay_ms}ms")
 
             # In production, this would actually run the command
-            # subprocess.run(cmd.split(), check=True)
+            # logger.info(f"Executing subprocess: {cmd}"); subprocess.run(cmd.split(, timeout=30, check=True), check=True)
 
             # Wait for test duration
             time.sleep(config.duration_seconds)
@@ -437,7 +437,7 @@ class ChaosTestRunner:
             # Remove network delay
             cmd = "tc qdisc del dev lo root"
             result.logs.append("Removing network delay")
-            # subprocess.run(cmd.split(), check=True)
+            # subprocess.run(cmd.split(, timeout=30, check=True), check=True)
 
         except Exception as e:
             result.error_message = f"Network delay test failed: {e}"

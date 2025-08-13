@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 import threading
 import warnings
-import pickle
+import json  # SECURITY: Replaced pickle with json
 from pathlib import Path
 
 warnings.filterwarnings("ignore")
@@ -943,16 +943,16 @@ class MarketRegimeDetector:
             # Save clustering model
             if self.clustering_model is not None:
                 with open(self.model_cache_dir / "clustering_model.pkl", "wb") as f:
-                    pickle.dump(self.clustering_model, f)
+                    json.dump(self.clustering_model, f)
 
             # Save PCA model
             if self.pca_model is not None:
                 with open(self.model_cache_dir / "pca_model.pkl", "wb") as f:
-                    pickle.dump(self.pca_model, f)
+                    json.dump(self.pca_model, f)
 
             # Save scaler
             with open(self.model_cache_dir / "scaler.pkl", "wb") as f:
-                pickle.dump(self.scaler, f)
+                json.dump(self.scaler, f)
 
             self.logger.info("Models saved successfully")
 
@@ -979,19 +979,19 @@ class MarketRegimeDetector:
             clustering_path = self.model_cache_dir / "clustering_model.pkl"
             if clustering_path.exists():
                 with open(clustering_path, "rb") as f:
-                    self.clustering_model = pickle.load(f)
+                    self.clustering_model = json.load(f)
 
             # Load PCA model
             pca_path = self.model_cache_dir / "pca_model.pkl"
             if pca_path.exists():
                 with open(pca_path, "rb") as f:
-                    self.pca_model = pickle.load(f)
+                    self.pca_model = json.load(f)
 
             # Load scaler
             scaler_path = self.model_cache_dir / "scaler.pkl"
             if scaler_path.exists():
                 with open(scaler_path, "rb") as f:
-                    self.scaler = pickle.load(f)
+                    self.scaler = json.load(f)
 
             self.logger.info("Models loaded successfully")
 

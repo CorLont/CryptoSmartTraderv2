@@ -15,7 +15,7 @@ import threading
 import warnings
 import itertools
 from pathlib import Path
-import pickle
+import json  # SECURITY: Replaced pickle with json
 
 warnings.filterwarnings("ignore")
 

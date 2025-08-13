@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 import logging
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-import pickle
+import json  # SECURITY: Replaced pickle with json
 import warnings
 from pathlib import Path
 

@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 import threading
-import pickle
+import json  # SECURITY: Replaced pickle with json
 from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')

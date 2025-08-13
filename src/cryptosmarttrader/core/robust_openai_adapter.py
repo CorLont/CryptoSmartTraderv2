@@ -13,7 +13,7 @@ from typing import Dict, List, Any, Optional, Union, Callable
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from enum import Enum
-import pickle
+import json  # SECURITY: Replaced pickle with json
 from pathlib import Path
 
 import openai
@@ -207,7 +207,7 @@ class LLMCache:
                 return None
 
             with open(cache_file, "rb") as f:
-                cached_data = pickle.load(f)
+                cached_data = json.load(f)
 
             # Check if cache is still fresh
             cache_age = datetime.utcnow() - cached_data["timestamp"]
@@ -236,7 +236,7 @@ class LLMCache:
             }
 
             with open(cache_file, "wb") as f:
-                pickle.dump(cache_data, f)
+                json.dump(cache_data, f)
 
             self.logger.info(f"Cached response for {cache_key[:8]}...")
 

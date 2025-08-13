@@ -6,7 +6,7 @@ Provides file-based storage following the StoragePort contract.
 
 import os
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with json
 import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Union
@@ -93,7 +93,7 @@ class FileStorageAdapter(StoragePort):
 
             elif format_type == DataFormat.PICKLE:
                 with open(file_path.with_suffix(".pkl"), "wb") as f:
-                    pickle.dump(storage_obj, f)
+                    json.dump(storage_obj, f)
 
             else:
                 # Default to JSON
@@ -162,7 +162,7 @@ class FileStorageAdapter(StoragePort):
 
                     elif format_type == DataFormat.PICKLE:
                         with open(path, "rb") as f:
-                            storage_obj = pickle.load(f)
+                            storage_obj = json.load(f)
 
                         # Check TTL
                         if self._is_expired(storage_obj):

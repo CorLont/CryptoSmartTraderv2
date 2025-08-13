@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import logging
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with json
 from pathlib import Path
 import warnings
 

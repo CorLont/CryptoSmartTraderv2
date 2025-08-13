@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 import logging
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with json
 from pathlib import Path
 
 # Machine Learning libraries
@@ -477,7 +477,7 @@ class MLPredictorAgent:
             }
 
             with open(model_file, "wb") as f:
-                pickle.dump(save_data, f)
+                json.dump(save_data, f)
 
         except Exception as e:
             self.logger.error(f"Error saving model {model_key}: {str(e)}")
@@ -488,7 +488,7 @@ class MLPredictorAgent:
             for model_file in self.models_path.glob("*.pkl"):
                 try:
                     with open(model_file, "rb") as f:
-                        model_data = pickle.load(f)
+                        model_data = json.load(f)
 
                     model_key = model_file.stem.replace("_", "/")
                     self.model_performance[model_key] = model_data

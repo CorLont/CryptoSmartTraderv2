@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple, Callable
 from pathlib import Path
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with json
 from dataclasses import dataclass, asdict
 from enum import Enum
 import threading
