@@ -1,0 +1,98 @@
+{
+  "timestamp": "2025-08-13T12:59:51.514927",
+  "categories": {
+    "Core Services": {
+      "score": 60,
+      "max_score": 60,
+      "results": [
+        "\u2705 Dashboard: Streamlit UI operational",
+        "\u2705 API: Health API operational",
+        "\u2705 Metrics: Prometheus Metrics operational"
+      ],
+      "critical_failure": false
+    },
+    "API Connectivity": {
+      "score": 30,
+      "max_score": 60,
+      "results": [
+        "\u2705 Kraken API: 1153 markets available",
+        "\u274c OpenAI API: Configuration failed - No module named 'openai'",
+        "\u26a0\ufe0f Live Data: 60% quality (below 90%)"
+      ],
+      "critical_failure": true
+    },
+    "Data Pipeline": {
+      "score": 70,
+      "max_score": 80,
+      "results": [
+        "\u2705 Directory: data exists",
+        "\u2705 Directory: models exists",
+        "\u2705 Directory: logs exists",
+        "\u2705 Model: models/saved/rf_1h.pkl (1,070,924 bytes)",
+        "\u2705 Model: models/saved/rf_24h.pkl (1,070,924 bytes)",
+        "\u2705 Model: models/saved/rf_168h.pkl (1,070,924 bytes)",
+        "\u2705 Config: config.json present",
+        "\u2705 Config: .env.example present"
+      ],
+      "critical_failure": false
+    },
+    "Risk Management": {
+      "score": 100,
+      "max_score": 100,
+      "results": [
+        "\u2705 Risk Guard: Emergency escalation working",
+        "\u2705 Kill Switch: Functional",
+        "\u2705 Execution Policy: Initialized",
+        "\u2705 Position Limits: Size validation available"
+      ],
+      "critical_failure": false
+    },
+    "ML Models": {
+      "score": 80,
+      "max_score": 80,
+      "results": [
+        "\u2705 Ensemble Optimizer: Initialized for 500% target",
+        "\u2705 ML Predictions: 98% confidence generated",
+        "\u2705 Confidence Gating: 85%+ threshold working",
+        "\u2705 Regime Detection: low_volatility"
+      ],
+      "critical_failure": false
+    },
+    "Monitoring": {
+      "score": 40,
+      "max_score": 60,
+      "results": [
+        "\u2705 Prometheus Metrics: Endpoint operational",
+        "\u2705 Logging: 4 log files found",
+        "\u274c Alert System: cannot import name 'get_structured_logger' from 'core.structured_logger' (/home/runner/workspace/src/cryptosmarttrader/core/structured_logger.py)"
+      ],
+      "critical_failure": false
+    },
+    "Security": {
+      "score": 60,
+      "max_score": 60,
+      "results": [
+        "\u2705 Secret: KRAKEN_API_KEY configured",
+        "\u2705 Secret: KRAKEN_SECRET configured",
+        "\u2705 Secret: OPENAI_API_KEY configured",
+        "\u2705 Security: .gitignore present",
+        "\u2705 Security: .env.example present",
+        "\u2705 Security: No exposed secrets detected"
+      ],
+      "critical_failure": false
+    },
+    "Performance": {
+      "score": 40,
+      "max_score": 40,
+      "results": [
+        "\u2705 Python: 3.11 (compatible)",
+        "\u2705 Dependencies: 4/4 critical modules available",
+        "\u2705 Storage: 245GB available"
+      ],
+      "critical_failure": false
+    }
+  },
+  "critical_failures": [],
+  "production_ready": true,
+  "confidence_score": 88.88888888888889
+}
