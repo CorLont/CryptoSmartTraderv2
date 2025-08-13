@@ -1,22 +1,29 @@
 # Global ownership
 * @clont1
 
-# Critical system files require approval
-pyproject.toml @clont1
-uv.lock @clont1
-Dockerfile @clont1
-docker-compose.yml @clont1
-.github/ @clont1
+# Critical infrastructure
+/.github/ @clont1
+/pyproject.toml @clont1
+/README.md @clont1
+/replit.md @clont1
 
 # Core system components
-src/cryptosmarttrader/core/ @clont1
-src/cryptosmarttrader/deployment/ @clont1
-src/cryptosmarttrader/security/ @clont1
+/src/cryptosmarttrader/core/ @clont1
+/src/cryptosmarttrader/risk/ @clont1
+/src/cryptosmarttrader/execution/ @clont1
+/src/cryptosmarttrader/api/ @clont1
 
-# Production configuration
-k8s/ @clont1
-scripts/ @clont1
+# Security and configuration
+/.env.example @clont1
+/config/ @clont1
+/secrets/ @clont1
+
+# CI/CD and automation
+/.github/workflows/ @clont1
+/scripts/ @clont1
+/docker/ @clont1
 
 # Documentation
-README*.md @clont1
-docs/ @clont1
+/docs/ @clont1
+/CHANGELOG.md @clont1
+/SECURITY.md @clont1

@@ -189,7 +189,7 @@ class TextProcessor:
                     blob = TextBlob(text)
                     sentiments.append(blob.sentiment.polarity)
                     subjectivities.append(blob.sentiment.subjectivity)
-                except:
+                except Exception:
                     sentiments.append(0.0)
                     subjectivities.append(0.0)
             
@@ -427,7 +427,7 @@ class TimeSeriesProcessor:
             rs = gain / loss
             rsi = 100 - (100 / (1 + rs))
             return rsi.fillna(50).values
-        except:
+        except Exception:
             return np.full(len(prices), 50.0)
     
     def _calculate_macd(self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -444,7 +444,7 @@ class TimeSeriesProcessor:
                 macd_signal.fillna(0).values,
                 macd_histogram.fillna(0).values
             )
-        except:
+        except Exception:
             return (
                 np.zeros(len(prices)),
                 np.zeros(len(prices)),
@@ -464,7 +464,7 @@ class TimeSeriesProcessor:
                 middle.fillna(prices).values,
                 lower.fillna(prices).values
             )
-        except:
+        except Exception:
             return (
                 prices.values,
                 prices.values,

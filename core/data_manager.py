@@ -221,7 +221,7 @@ class DataManager:
                                 'status': 'stale' if age_minutes > 10 else 'fresh',
                                 'age_minutes': age_minutes
                             }
-                        except:
+                        except Exception:
                             pass
     
     def get_market_data(self, exchange: Optional[str] = None, symbol: Optional[str] = None) -> Optional[pd.DataFrame]:

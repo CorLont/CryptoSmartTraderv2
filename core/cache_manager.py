@@ -31,7 +31,7 @@ class CacheManager:
             else:
                 # General Python object
                 return sys.getsizeof(obj) / (1024 * 1024)
-        except:
+        except Exception:
             return 0.1  # Default small size
     
     def _cleanup_loop(self):

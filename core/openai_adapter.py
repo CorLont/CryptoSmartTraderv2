@@ -36,7 +36,7 @@ class OpenAIAdapter:
             try:
                 with open(self.cost_log, 'r') as f:
                     return json.load(f)
-            except:
+            except Exception:
                 return {"total_cost": 0, "calls": []}
         return {"total_cost": 0, "calls": []}
     
@@ -63,7 +63,7 @@ class OpenAIAdapter:
                 if time.time() - cached['timestamp'] < 86400:
                     logger.info(f"Using cached OpenAI response")
                     return cached['response']
-            except:
+            except Exception:
                 pass
         
         return None

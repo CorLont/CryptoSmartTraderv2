@@ -409,7 +409,7 @@ class StrictDataIntegrityEnforcer:
                                     description=f"Column '{column}' has unrealistically low variation (CV={cv:.3f})",
                                     recommended_action=f"Verify authenticity of '{column}' - real data should have more variation"
                                 ))
-                    except:
+                    except Exception:
                         pass  # Skip if calculation fails
         
         return violations

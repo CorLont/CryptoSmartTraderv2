@@ -166,7 +166,7 @@ class PerformanceMonitor:
                 total = cache_stats['total_accesses']
                 return hits / total
             return 0.8  # Default assumption
-        except:
+        except Exception:
             return 0.8
     
     def _get_api_response_times(self) -> Dict[str, float]:
@@ -175,7 +175,7 @@ class PerformanceMonitor:
             # Get cached response times from data manager
             api_times = self.cache_manager.get("api_response_times")
             return api_times or {"kraken": 1.5, "average": 1.5}
-        except:
+        except Exception:
             return {"kraken": 1.5, "average": 1.5}
     
     def _get_ml_inference_time(self) -> float:
@@ -185,7 +185,7 @@ class PerformanceMonitor:
             if inference_times:
                 return float(np.mean(list(inference_times.values())))
             return 1.0  # Default
-        except:
+        except Exception:
             return 1.0
     
     def _get_data_processing_time(self) -> float:
@@ -195,7 +195,7 @@ class PerformanceMonitor:
             if processing_times:
                 return float(np.mean(list(processing_times.values())))
             return 0.5  # Default
-        except:
+        except Exception:
             return 0.5
     
     def _calculate_error_rate(self) -> float:
@@ -209,7 +209,7 @@ class PerformanceMonitor:
                 total_operations = error_stats.get("total_operations", 1000)
                 return recent_errors / total_operations
             return 0.01  # Default low error rate
-        except:
+        except Exception:
             return 0.01
     
     def _calculate_throughput(self) -> float:
@@ -226,7 +226,7 @@ class PerformanceMonitor:
                 return estimated_ops / time_diff if time_diff > 0 else 0
             
             return 10.0  # Default throughput
-        except:
+        except Exception:
             return 10.0
     
     def _get_default_metrics(self) -> PerformanceMetrics:

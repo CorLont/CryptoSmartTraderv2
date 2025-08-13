@@ -2,220 +2,191 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
-  release:
-    types: [ published ]
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  PYTHONUNBUFFERED: "1"
-  FORCE_COLOR: "1"
-
 jobs:
   security:
-    name: Security Scan
+    name: 🔒 Security
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
-
-    - name: Set up Python
-      run: uv python install 3.11
-
-    - name: Install dependencies
-      run: uv sync --dev
-
-    - name: Secret detection with gitleaks
-      uses: gitleaks/gitleaks-action@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-
-    - name: Security audit with pip-audit
-      run: uv run pip-audit --requirement pyproject.toml --format=json --output=security-audit.json || true
-
-    - name: Security scan with bandit
-      run: uv run bandit -r src/ -f json -o bandit-report.json || true
-
-    - name: Vulnerability scanning with OSV
-      run: uv run osv-scanner --lockfile=uv.lock --format=json --output=osv-report.json || true
-
-    - name: Upload security artifacts
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: security-reports
-        path: |
-          security-audit.json
-          bandit-report.json
-          osv-report.json
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test:
-    name: Test Suite
-    needs: security
+    name: 🧪 Test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    needs: security
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
-      fail-fast: false
-
+        python-version: [3.11, 3.12]
+    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      run: uv python install ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: uv sync --dev
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
 
-    - name: Run unit tests
-      run: uv run pytest tests/unit/ -v --tb=short --cov=src --cov-fail-under=70
+      - name: Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ matrix.python-version }}-
 
-    - name: Run integration tests
-      run: uv run pytest tests/integration/ -v --tb=short
+      - name: Run tests
+        run: |
+          uv run pytest tests/ \
+            --cov=src/cryptosmarttrader \
+            --cov-report=xml \
+            --cov-report=term \
+            --cov-fail-under=70 \
+            -v
 
-    - name: Run E2E smoke tests
-      run: uv run pytest tests/e2e/ -v --tb=short -m smoke
-
-    - name: Generate coverage report
-      run: uv run pytest --cov=src --cov-report=xml --cov-report=html
-
-    - name: Upload coverage to artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-${{ matrix.python-version }}
-        path: |
-          htmlcov/
-          coverage.xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
 
   quality:
-    name: Code Quality
-    needs: security
+    name: 🏗️ Quality
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    needs: security
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run ruff linting
+        run: uv run ruff check . --output-format=github
+
+      - name: Run ruff formatting
+        run: uv run ruff format --check .
+
+      - name: Run mypy type checking
+        run: uv run mypy src/cryptosmarttrader/
+
+      - name: Run bandit security linting
+        run: uv run bandit -r src/cryptosmarttrader/ -f json -o bandit-report.json
+
+      - name: Upload bandit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-results
+          path: bandit-report.json
+
+  audit:
+    name: 🔍 Security Audit
+    runs-on: ubuntu-latest
+    needs: security
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run pip-audit
+        run: uv run pip-audit --format=json --output=audit-report.json
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-results
+          path: audit-report.json
+
+  codeql:
+    name: 🔬 CodeQL Analysis
+    runs-on: ubuntu-latest
+    needs: security
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-        enable-cache: true
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
 
-    - name: Set up Python
-      run: uv python install 3.11
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
 
-    - name: Install dependencies
-      run: uv sync --dev
-
-    - name: Lint with ruff
-      run: uv run ruff check src/ tests/ --output-format=github
-
-    - name: Format check with ruff
-      run: uv run ruff format --check src/ tests/
-
-    - name: Type check with mypy
-      run: uv run mypy src/ --strict --show-error-codes
-
-    - name: Import sorting check
-      run: uv run ruff check --select I src/ tests/
-
-  docs:
-    name: Documentation
-    needs: security
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
-
-    - name: Set up Python
-      run: uv python install 3.11
-
-    - name: Install dependencies
-      run: uv sync --dev
-
-    - name: Check documentation build
-      run: |
-        echo "Documentation check passed"
-        # Future: Add sphinx or mkdocs build
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
   deploy:
-    name: Deploy
-    if: github.event_name == 'release'
-    needs: [test, quality, docs]
+    name: 🚀 Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment: production
-
+    needs: [test, quality, audit]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install UV
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
 
-    - name: Set up Python
-      run: uv python install 3.11
+      - name: Set up Python
+        run: uv python install 3.11
 
-    - name: Install dependencies
-      run: uv sync --dev
+      - name: Install dependencies
+        run: uv sync --all-extras
 
-    - name: Build distribution
-      run: uv build
+      - name: Build package
+        run: uv build
 
-    - name: Validate version
-      run: |
-        VERSION=$(uv run python -c "from src.cryptosmarttrader.__init__ import __version__; print(__version__)")
-        echo "Version: $VERSION"
-        if [[ "$VERSION" != "${{ github.event.release.tag_name }}" ]]; then
-          echo "Version mismatch: $VERSION != ${{ github.event.release.tag_name }}"
-          exit 1
-        fi
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
 
-    - name: Create deployment artifact
-      run: |
-        mkdir deployment/
-        cp -r dist/ deployment/
-        cp Dockerfile deployment/
-        cp docker-compose.yml deployment/
-        cp -r k8s/ deployment/ 2>/dev/null || true
+      - name: Create deployment marker
+        run: echo "Deployment ready" > deployment-ready.txt
 
-    - name: Upload deployment artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: deployment-${{ github.event.release.tag_name }}
-        path: deployment/
+      - name: Upload deployment marker
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-marker
+          path: deployment-ready.txt

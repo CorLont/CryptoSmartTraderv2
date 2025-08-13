@@ -375,7 +375,7 @@ class KrakenCoverageAuditor:
         try:
             ticker = await self.exchange.fetch_ticker(symbol)
             return ticker.get('quoteVolume', 0.0) or ticker.get('baseVolume', 0.0) or 0.0
-        except:
+        except Exception:
             return 0.0
     
     def _classify_market_cap_tier(self, volume_24h: float) -> str:

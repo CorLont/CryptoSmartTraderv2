@@ -279,7 +279,7 @@ class AuthenticDataCollector:
         for exchange in self.exchanges.values():
             try:
                 await exchange.close()
-            except:
+            except Exception:
                 pass
     
     def create_authentic_dataframe(self, data_points: List[AuthenticDataPoint]) -> pd.DataFrame:

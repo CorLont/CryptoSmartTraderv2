@@ -184,7 +184,7 @@ class WorkstationOptimizer:
             
             # Simple heuristic: assume SSD if high free space ratio
             is_ssd = (disk_usage.free / disk_usage.total) > 0.1
-        except:
+        except Exception:
             is_ssd = True  # Default assumption
         
         return {
@@ -359,7 +359,7 @@ class WorkstationHealthMonitor:
                 handle = pynvml.nvmlDeviceGetHandleByIndex(0)
                 utilization = pynvml.nvmlDeviceGetUtilizationRates(handle)
                 return utilization.gpu
-        except:
+        except Exception:
             pass
         
         return 0.0

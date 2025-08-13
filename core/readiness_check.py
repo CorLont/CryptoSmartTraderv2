@@ -188,7 +188,7 @@ def check_predictions_ready() -> Dict[str, Any]:
         import pandas as pd
         pred_df = pd.read_csv(predictions_path)
         prediction_count = len(pred_df)
-    except:
+    except Exception:
         pass
     
     return {

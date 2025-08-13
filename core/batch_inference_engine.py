@@ -311,7 +311,7 @@ class FeatureEngineering:
             rsi = 100 - (100 / (1 + rs))
             
             return rsi.iloc[-1] if not np.isnan(rsi.iloc[-1]) else 50.0
-        except:
+        except Exception:
             return 50.0  # Neutral RSI
     
     def _validate_and_normalize_features(self, features: Dict[str, float]) -> Dict[str, float]:

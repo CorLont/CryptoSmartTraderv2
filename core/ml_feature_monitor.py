@@ -475,10 +475,10 @@ class SHAPFeatureAnalyzer:
                 # Try different explainer types
                 try:
                     self.explainer = shap.TreeExplainer(model)
-                except:
+                except Exception:
                     try:
                         self.explainer = shap.LinearExplainer(model, background)
-                    except:
+                    except Exception:
                         try:
                             self.explainer = shap.KernelExplainer(model.predict, background)
                         except Exception as e:

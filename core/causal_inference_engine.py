@@ -253,7 +253,7 @@ class GrangerCausalityAnalyzer:
                 if aic < best_aic:
                     best_aic = aic
                     best_lag = lag
-            except:
+            except Exception:
                 continue
         
         return best_lag, best_aic
@@ -288,7 +288,7 @@ class GrangerCausalityAnalyzer:
             
             return aic
             
-        except:
+        except Exception:
             return float('inf')
     
     def _compute_granger_test(self, cause: np.ndarray, effect: np.ndarray, lag: int) -> Tuple[float, float]:

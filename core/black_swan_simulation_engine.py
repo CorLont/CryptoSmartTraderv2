@@ -875,11 +875,11 @@ if __name__ == "__main__":
     
     # Test portfolio
     test_portfolio = {
-        'BTC/USD': 50000,
-        'ETH/USD': 30000,
-        'BNB/USD': 10000,
-        'ADA/USD': 5000,
-        'LINK/USD': 5000
+        'BTC/USD': 50000.0,
+        'ETH/USD': 30000.0,
+        'BNB/USD': 10000.0,
+        'ADA/USD': 5000.0,
+        'LINK/USD': 5000.0
     }
     
     # Run comprehensive stress test

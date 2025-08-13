@@ -723,7 +723,7 @@ class AIPortfolioOptimizerCoordinator:
                 try:
                     performance_metrics = self.performance_tracker.get_performance_metrics()
                     analysis["performance_metrics"] = performance_metrics
-                except:
+                except Exception:
                     analysis["performance_metrics"] = {"error": "Failed to calculate metrics"}
             
             return analysis
