@@ -17,6 +17,16 @@ logger = logging.getLogger(__name__)
 if not logger.handlers:
     logging.basicConfig(level=logging.INFO)
 
+# Import advanced logging system
+try:
+    from utils.logging_manager import get_advanced_logger, log_user_action, log_performance, PerformanceTimer
+    HAS_ADVANCED_LOGGING = True
+    advanced_logger = get_advanced_logger()
+except ImportError:
+    HAS_ADVANCED_LOGGING = False
+    advanced_logger = None
+    logging.warning("Advanced logging niet beschikbaar")
+
 st.set_page_config(
     page_title="CryptoSmartTrader V2 - Fixed",
     page_icon="🚀",

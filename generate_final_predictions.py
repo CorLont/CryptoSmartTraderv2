@@ -12,6 +12,10 @@ from pathlib import Path
 from datetime import datetime
 import logging
 import ccxt
+import time
+
+# Import advanced logging system
+from utils.logging_manager import get_advanced_logger, log_prediction, log_confidence_scoring, log_performance, PerformanceTimer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -103,6 +107,20 @@ class ProductionPredictionGenerator:
                         volatility_penalty = min(volatility * 0.3, 0.25)  # High volatility reduces confidence
                         
                         confidence = np.clip(base_confidence + volume_boost - volatility_penalty, 0.25, 0.95)
+                        
+                        # Log detailed confidence scoring
+                        confidence_details = {
+                            'base_confidence': base_confidence,
+                            'volume_factor': volume_factor,
+                            'volume_boost': volume_boost,
+                            'volatility': volatility,
+                            'volatility_penalty': volatility_penalty,
+                            'final_confidence': confidence,
+                            'horizon': horizon,
+                            'volume_24h': volume,
+                            'change_24h': coin_data.get('change_24h', 0)
+                        }
+                        log_confidence_scoring(coin, confidence_details)
                         
                         horizon_predictions[horizon] = price_change * 100  # Convert to percentage
                         confidence_scores[f'confidence_{horizon}'] = confidence
@@ -254,6 +272,23 @@ class ProductionPredictionGenerator:
         
         # Apply confidence gate
         filtered_predictions = self.apply_80_percent_gate(predictions)
+        
+        # Log ML prediction generation
+        advanced_logger = get_advanced_logger()
+        for pred in filtered_predictions:
+            prediction_data = {
+                'coin': pred['coin'],
+                'expected_returns': {
+                    '1h': pred.get('expected_return_1h', 0),
+                    '24h': pred.get('expected_return_24h', 0),
+                    '168h': pred.get('expected_return_168h', 0),
+                    '720h': pred.get('expected_return_720h', 0)
+                },
+                'sentiment_score': pred.get('sentiment_score', 0),
+                'whale_detected': pred.get('whale_activity_detected', False),
+                'regime': pred.get('regime', 'unknown')
+            }
+            log_prediction(pred['coin'], prediction_data, pred['max_confidence'])
         
         # Save predictions
         pred_file = self.output_path / "predictions.csv"
