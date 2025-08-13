@@ -1,382 +1,521 @@
-# CryptoSmartTrader V2 - Operations & Runbook
+# CryptoSmartTrader V2 - Operations Runbook
 
-> 📋 **Production Operations Manual**  
-> Comprehensive guide for incident response, system monitoring, and operational procedures.
+📋 **Enterprise operations manual** for incident response, maintenance procedures, and system administration.
 
-## 🏥 System Health & Monitoring
+## 🚨 Emergency Procedures
 
-### Health Grading System
+### 1. Kill Switch Activation
 
-The system uses a 5-tier health grading system with automatic policy enforcement:
+**When to Use**: Immediately stop all trading activity due to:
+- Unexpected market conditions
+- System malfunction
+- Security breach
+- Regulatory requirements
 
-#### **A-Grade (Excellent): 90-100%**
-- ✅ All agents operational
-- ✅ Data latency < 30 seconds
-- ✅ Prediction accuracy > 75%
-- ✅ No critical errors in 24h
-- **Trading Policy**: Full automated trading enabled
+**Procedures**:
 
-#### **B-Grade (Good): 80-89%**  
-- ✅ Core agents operational
-- ⚠️ Minor performance degradation
-- ✅ Prediction accuracy > 70%
-- ✅ < 5 non-critical errors/hour
-- **Trading Policy**: Automated trading with reduced position sizes
-
-#### **C-Grade (Fair): 70-79%**
-- ⚠️ Some agents degraded
-- ⚠️ Data latency 30-60 seconds
-- ⚠️ Prediction accuracy 65-70%
-- ⚠️ 5-15 errors/hour
-- **Trading Policy**: Shadow trading only - no real positions
-
-#### **D-Grade (Poor): 60-69%**
-- 🚨 Multiple agent failures
-- 🚨 Data latency > 60 seconds  
-- 🚨 Prediction accuracy < 65%
-- 🚨 > 15 errors/hour
-- **Trading Policy**: TRADING SUSPENDED - monitoring only
-
-#### **F-Grade (Failing): < 60%**
-- 🚨 System critical failure
-- 🚨 Multiple service outages
-- 🚨 Data pipeline failures
-- **Trading Policy**: KILL-SWITCH ACTIVATED - all trading stopped
-
-### GO/NO-GO Decision Matrix
-
-```
-┌──────────────┬─────────┬─────────┬─────────┬─────────┬─────────┐
-│ Health Grade │    A    │    B    │    C    │    D    │    F    │
-├──────────────┼─────────┼─────────┼─────────┼─────────┼─────────┤
-│ Auto Trading │   ✅    │   ✅    │   ❌    │   ❌    │   ❌    │
-│ Position Size│  100%   │  75%    │   0%    │   0%    │   0%    │
-│ New Entries  │   ✅    │   ✅    │   ❌    │   ❌    │   ❌    │
-│ Exits Only   │   ❌    │   ❌    │   ✅    │   ✅    │   ✅    │
-│ Kill Switch  │   ❌    │   ❌    │   ❌    │   ❌    │   ✅    │
-└──────────────┴─────────┴─────────┴─────────┴─────────┴─────────┘
-```
-
-## 🚨 Incident Response Procedures
-
-### P0 - Critical (Response: < 15 minutes)
-**System down, trading halted, data loss risk**
-
-#### Immediate Actions:
 ```bash
-# 1. Check system status
-curl http://localhost:8001/health
-curl http://localhost:8000/metrics
+# Method 1: API Kill Switch
+curl -X POST http://localhost:8001/api/v1/emergency/kill_switch \
+  -H "Content-Type: application/json" \
+  -d '{"reason": "emergency_stop", "user_id": "operator"}'
 
-# 2. Check service status
-ps aux | grep -E "(streamlit|uvicorn|python.*health|python.*metrics)"
+# Method 2: Manual Process Kill
+pkill -f "python.*agent"
+pkill -f "streamlit"
 
-# 3. Check logs for critical errors
-tail -f logs/system_health.log | grep -i "critical\|error\|failed"
+# Method 3: Emergency Script
+uv run python scripts/emergency_stop.py --all
 
-# 4. Activate kill-switch if needed
-curl -X POST http://localhost:8001/kill-switch/activate
-```
-
-#### Escalation:
-1. **0-15 min**: On-call engineer response
-2. **15-30 min**: Senior engineer + system architect
-3. **30-60 min**: Management notification
-4. **60+ min**: Client notification required
-
-### P1 - High (Response: < 1 hour)
-**Degraded performance, some features unavailable**
-
-#### Actions:
-```bash
-# 1. Identify affected components
+# Method 4: Database Kill Switch
 uv run python -c "
-from cryptosmarttrader.core import SystemHealth
-health = SystemHealth()
-status = health.get_detailed_status()
-print(f'Overall Grade: {status[\"grade\"]}')
-for agent, health in status['agents'].items():
-    if health['status'] != 'healthy':
-        print(f'⚠️ {agent}: {health[\"status\"]} - {health[\"error\"]}')
+from cryptosmarttrader.core.risk_guard import RiskGuard
+guard = RiskGuard()
+guard.emergency_stop('manual_intervention')
 "
-
-# 2. Restart affected services
-# Individual service restart
-pkill -f "python.*health_endpoint" && uv run python api/health_endpoint.py &
-pkill -f "python.*metrics_server" && uv run python metrics/metrics_server.py &
-
-# 3. Monitor recovery
-watch -n 5 "curl -s http://localhost:8001/health | jq '.health_grade'"
 ```
 
-### P2 - Medium (Response: < 4 hours)
-**Minor issues, system functional but suboptimal**
-
-#### Actions:
-- Monitor and document
-- Schedule maintenance window if needed
-- Update runbooks based on findings
-
-## 🔧 Operational Procedures
-
-### Daily Health Checks
-
-**Morning Checklist (09:00 UTC)**
+**Verification**:
 ```bash
-#!/bin/bash
-# Daily health check script
+# Confirm all trading stopped
+curl http://localhost:8001/api/v1/trading/status
+# Should return: {"trading_active": false, "mode": "emergency_stopped"}
 
-echo "=== CryptoSmartTrader V2 Daily Health Check ==="
-echo "Date: $(date)"
-echo ""
-
-# 1. Service Status
-echo "1. Service Health:"
-curl -s http://localhost:8001/health | jq '.'
-echo ""
-
-# 2. System Resources
-echo "2. System Resources:"
-echo "Memory: $(free -h | grep Mem | awk '{print $3"/"$2}')"
-echo "Disk: $(df -h | grep -v tmpfs | awk 'NR==2{print $3"/"$2" ("$5")"}')"
-echo "Load: $(uptime | awk -F'load average:' '{print $2}')"
-echo ""
-
-# 3. Trading Status
-echo "3. Trading Status:"
-curl -s http://localhost:8001/trading/status | jq '.status'
-echo ""
-
-# 4. Recent Errors
-echo "4. Recent Critical Errors (last 24h):"
-grep -c "CRITICAL\|ERROR" logs/system_health.log | tail -1
-echo ""
-
-# 5. Data Pipeline Health
-echo "5. Data Pipeline:"
-echo "Last data update: $(curl -s http://localhost:8001/data/status | jq -r '.last_update')"
-echo "Active pairs: $(curl -s http://localhost:8001/data/status | jq '.active_pairs')"
+# Check agent status
+curl http://localhost:8001/api/v1/agents/status
+# All agents should show "stopped" or "emergency"
 ```
 
-### Weekly Maintenance
+### 2. Portfolio Liquidation
 
-**Every Sunday 02:00 UTC**
-```bash
-#!/bin/bash
-# Weekly maintenance script
+**When to Use**: Emergency exit from all positions
 
-# 1. Log rotation
-find logs/ -name "*.log" -mtime +7 -exec gzip {} \;
-find logs/ -name "*.log.gz" -mtime +30 -delete
+```python
+# Emergency liquidation
+import httpx
 
-# 2. Model backup
-cp -r models/ backup/models_$(date +%Y%m%d)/
+response = httpx.post("http://localhost:8001/api/v1/emergency/liquidate_all", 
+                     json={
+                         "reason": "emergency_liquidation",
+                         "max_slippage": 0.05,  # 5% max slippage
+                         "time_limit": 300       # 5 minutes
+                     })
 
-# 3. Database cleanup (if applicable)
-# Clean old prediction records
-# Vacuum/optimize storage
-
-# 4. Performance metrics collection
-uv run python scripts/weekly_performance_report.py
-
-# 5. Dependency updates check
-uv sync --upgrade-package
+print(f"Liquidation initiated: {response.json()}")
 ```
 
-### Kill-Switch Procedures
-
-The kill-switch is the ultimate safety mechanism that immediately halts all trading activities.
-
-#### Automatic Activation Triggers:
-- System health grade drops to F (< 60%)
-- Data pipeline failure > 5 minutes
-- Critical error rate > 50/minute
-- Memory usage > 90%
-- Disk space < 1GB
-
-#### Manual Activation:
+**Monitor Progress**:
 ```bash
-# Via API
-curl -X POST http://localhost:8001/kill-switch/activate \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -d '{"reason": "Manual intervention", "operator": "admin"}'
+# Check liquidation status
+curl http://localhost:8001/api/v1/portfolio/liquidation_status
 
-# Via emergency script
-uv run python scripts/emergency_stop.py --reason "market_volatility"
+# Monitor positions
+curl http://localhost:8001/api/v1/portfolio/positions
 ```
 
-#### Kill-Switch Status Check:
+### 3. System Recovery
+
+**Recovery Steps**:
+
+1. **Assess Situation**
+   ```bash
+   # Check system health
+   curl http://localhost:8001/health
+   
+   # Review recent logs
+   tail -f logs/system.log
+   tail -f logs/trading.log
+   tail -f logs/error.log
+   ```
+
+2. **Restart Services**
+   ```bash
+   # Restart background services
+   ./2_start_background_services.bat
+   
+   # Restart main dashboard
+   ./3_start_dashboard.bat
+   
+   # Or restart all
+   uv run python start_replit_services.py --restart
+   ```
+
+3. **Validate Recovery**
+   ```bash
+   # Run system checks
+   uv run python scripts/system_health_check.py
+   
+   # Test exchange connectivity
+   uv run python scripts/test_exchange_connectivity.py
+   
+   # Validate ML models
+   uv run python scripts/validate_models.py
+   ```
+
+## 🔄 Rollback Procedures
+
+### 1. Code Rollback
+
+**Git-based Rollback**:
 ```bash
-curl http://localhost:8001/kill-switch/status
-# Response: {"active": true/false, "activated_at": "timestamp", "reason": "..."}
+# Check recent commits
+git log --oneline -10
+
+# Rollback to specific commit
+git reset --hard <commit_hash>
+
+# Restart services
+uv sync
+uv run python start_replit_services.py --restart
 ```
 
-#### Deactivation (Requires Manual Approval):
+**Checkpoint Rollback** (if using Replit):
 ```bash
-# 1. Verify system health
-curl http://localhost:8001/health
-
-# 2. Run system diagnostics
-uv run python scripts/pre_activation_check.py
-
-# 3. Deactivate if all clear
-curl -X POST http://localhost:8001/kill-switch/deactivate \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -d '{"operator": "admin", "verified_checks": true}'
+# Use Replit rollback interface
+# 1. Click "View Checkpoints" button
+# 2. Select desired checkpoint
+# 3. Confirm rollback
 ```
 
-## 📊 Monitoring & Alerting
-
-### Key Metrics to Monitor
-
-**System Level:**
-- CPU usage (alert if > 80% for 5 min)
-- Memory usage (alert if > 85%)
-- Disk space (alert if < 5GB free)
-- Network latency to exchanges (alert if > 500ms)
-
-**Application Level:**
-- Health grade (alert if drops below B)
-- Data lag (alert if > 60 seconds)
-- Prediction accuracy (alert if < 65% daily average)
-- Error rate (alert if > 10/minute)
-
-**Trading Level:**
-- Position sizes vs limits
-- Daily P&L vs expectations
-- Confidence gate violations
-- Risk metric breaches
-
-### Prometheus Metrics Endpoints
+### 2. Configuration Rollback
 
 ```bash
-# System metrics
-curl http://localhost:8000/metrics | grep cryptotrader_
+# Backup current config
+cp config.json config.json.backup
 
-# Key metrics:
-# - cryptotrader_health_grade
-# - cryptotrader_prediction_accuracy  
-# - cryptotrader_data_lag_seconds
-# - cryptotrader_active_positions
-# - cryptotrader_daily_pnl
-```
-
-### Log Analysis
-
-**Critical Log Locations:**
-- `/logs/system_health.log` - System health and grades
-- `/logs/trading.log` - Trading decisions and executions
-- `/logs/data_pipeline.log` - Data collection and processing
-- `/logs/ml_predictions.log` - ML model outputs and accuracy
-- `/logs/errors.log` - Application errors and exceptions
-
-**Log Analysis Commands:**
-```bash
-# Real-time critical errors
-tail -f logs/errors.log | grep -i "critical\|fatal"
-
-# Trading decision analysis
-grep "TRADE_DECISION" logs/trading.log | tail -20
-
-# Health grade changes
-grep "HEALTH_GRADE_CHANGE" logs/system_health.log | tail -10
-
-# Data pipeline issues
-grep -E "(timeout|failed|error)" logs/data_pipeline.log | tail -20
-```
-
-## 🔄 Backup & Recovery
-
-### Automated Backups
-
-**Daily Backups (03:00 UTC):**
-- Model files and parameters
-- Configuration files
-- Trading history and positions
-- System logs (last 7 days)
-
-**Weekly Backups (Sunday 04:00 UTC):**
-- Complete database snapshot
-- Full log archive
-- Performance metrics history
-
-### Recovery Procedures
-
-**Service Recovery:**
-```bash
-# 1. Stop all services
-pkill -f "streamlit\|uvicorn\|python.*health\|python.*metrics"
-
-# 2. Restore from backup (if needed)
-cp -r backup/models_latest/* models/
-cp backup/config_latest.json config/
-
-# 3. Restart services
-uv sync && (uv run python api/health_endpoint.py & uv run python metrics/metrics_server.py & uv run streamlit run app_fixed_all_issues.py --server.port 5000 --server.headless true --server.address 0.0.0.0 & wait)
-
-# 4. Verify recovery
-curl http://localhost:8001/health
-```
-
-**Database Recovery:**
-```bash
 # Restore from backup
-cp backup/trading_db_latest.json data/trading_database.json
+cp config/production_backup.json config.json
 
-# Verify data integrity
-uv run python scripts/verify_data_integrity.py
+# Restart with new config
+uv run python start_replit_services.py --restart
 ```
 
-## 📞 Emergency Contacts
+### 3. Database Rollback
 
-**On-Call Rotation:**
-- **Primary**: System Administrator (24/7)
-- **Secondary**: Senior Engineer (business hours)
-- **Escalation**: System Architect (critical issues)
-
-**External Dependencies:**
-- **Kraken API**: https://status.kraken.com/
-- **OpenAI API**: https://status.openai.com/
-- **Infrastructure**: Replit Status
-
-## 🔍 Troubleshooting Guide
-
-### Common Issues
-
-**Issue: Services Won't Start**
 ```bash
-# Check port conflicts
-netstat -tlnp | grep -E "(5000|8001|8000)"
+# Create emergency backup
+uv run python scripts/backup_database.py --emergency
 
-# Check permissions
-ls -la logs/ models/ config/
+# Restore from backup
+uv run python scripts/restore_database.py --backup-id=<backup_id>
 
-# Check disk space
-df -h
-
-# Fix: Kill conflicting processes and restart
+# Validate data integrity
+uv run python scripts/validate_database.py
 ```
 
-**Issue: High Memory Usage**
+### 4. Model Rollback
+
+```python
+# Rollback to previous model version
+from cryptosmarttrader.ml.model_registry import ModelRegistry
+
+registry = ModelRegistry()
+
+# List available models
+models = registry.list_models()
+print("Available models:", models)
+
+# Rollback to previous version
+success = registry.rollback_model("rf_24h", "v1.2.3")
+print(f"Rollback success: {success}")
+
+# Verify rollback
+current_model = registry.get_current_model("rf_24h")
+print(f"Current model: {current_model['version']}")
+```
+
+## 🔐 Secret Rotation Procedures
+
+### 1. Manual Secret Rotation
+
+**Kraken API Keys**:
+```python
+from cryptosmarttrader.core.secrets_manager import create_secrets_manager
+
+# Initialize secrets manager
+secrets_manager = create_secrets_manager()
+
+# Rotate Kraken API key
+new_api_key = "new_kraken_api_key_here"
+success = secrets_manager.rotate_secret(
+    secret_id="kraken_api_key",
+    new_secret_value=new_api_key,
+    user_id="admin"
+)
+
+print(f"Rotation success: {success}")
+```
+
+**OpenAI API Keys**:
+```python
+# Rotate OpenAI key
+new_openai_key = "sk-new_openai_key_here"
+success = secrets_manager.rotate_secret(
+    secret_id="openai_api_key", 
+    new_secret_value=new_openai_key,
+    user_id="admin"
+)
+
+# Restart AI agents to use new key
+import httpx
+httpx.post("http://localhost:8001/api/v1/agents/restart", 
+          json={"agents": ["sentiment_predictor", "technical_analyzer"]})
+```
+
+### 2. Automated Secret Rotation
+
 ```bash
-# Identify memory hogs
-ps aux --sort=-%mem | head -10
+# Check which secrets need rotation
+uv run python scripts/check_secret_rotation.py
 
-# Check for memory leaks in agents
-pgrep -f python | xargs -I {} cat /proc/{}/status | grep -E "(Name|VmRSS)"
+# Run automated rotation
+uv run python scripts/auto_rotate_secrets.py --dry-run
 
-# Fix: Restart memory-intensive agents
+# Execute rotation (remove --dry-run when ready)
+uv run python scripts/auto_rotate_secrets.py
 ```
 
-**Issue: Data Pipeline Lag**
+### 3. Emergency Secret Revocation
+
+```python
+# Emergency revoke compromised secret
+success = secrets_manager.revoke_secret(
+    secret_id="compromised_secret_id",
+    user_id="security_admin"
+)
+
+# Verify revocation
+secret = secrets_manager.get_secret("compromised_secret_id")
+assert secret is None, "Secret should be revoked"
+
+print("Secret successfully revoked")
+```
+
+## 📊 Incident Response
+
+### 1. Incident Classification
+
+**Severity Levels**:
+
+- **P0 - Critical**: Trading stopped, data loss, security breach
+- **P1 - High**: Performance degradation, partial outage
+- **P2 - Medium**: Non-critical feature issues  
+- **P3 - Low**: Minor bugs, documentation issues
+
+### 2. Response Procedures
+
+**P0 Critical Incidents**:
+
+1. **Immediate Actions** (0-5 minutes):
+   ```bash
+   # Activate kill switch if trading-related
+   curl -X POST http://localhost:8001/api/v1/emergency/kill_switch
+   
+   # Notify stakeholders
+   uv run python scripts/incident_notification.py --severity=P0
+   
+   # Create incident log
+   echo "$(date): P0 incident detected" >> logs/incidents.log
+   ```
+
+2. **Assessment** (5-15 minutes):
+   ```bash
+   # Gather system status
+   uv run python scripts/incident_assessment.py --generate-report
+   
+   # Check recent changes
+   git log --since="1 hour ago" --oneline
+   
+   # Review error logs
+   tail -100 logs/error.log
+   ```
+
+3. **Resolution** (15+ minutes):
+   ```bash
+   # Apply fix or rollback
+   git reset --hard <known_good_commit>
+   
+   # Restart services
+   uv run python start_replit_services.py --restart
+   
+   # Validate fix
+   uv run python scripts/post_incident_validation.py
+   ```
+
+**P1 High Incidents**:
+
+1. **Response** (0-30 minutes):
+   ```bash
+   # Log incident
+   uv run python scripts/log_incident.py --severity=P1 --description="<issue>"
+   
+   # Investigate root cause
+   uv run python scripts/investigate_issue.py --timeframe="last_hour"
+   ```
+
+2. **Mitigation**:
+   ```bash
+   # Apply temporary fix
+   uv run python scripts/apply_hotfix.py --issue-id=<incident_id>
+   
+   # Monitor for improvement
+   curl http://localhost:8001/api/v1/health/detailed
+   ```
+
+### 3. Post-Incident Procedures
+
 ```bash
-# Check network connectivity
-ping api.kraken.com
+# Generate incident report
+uv run python scripts/generate_incident_report.py --incident-id=<id>
 
-# Check API rate limits
-curl -H "API-Key: $KRAKEN_API_KEY" https://api.kraken.com/0/private/TradeBalance
+# Update runbook based on lessons learned
+# (Manual process - document in incidents/ directory)
 
-# Fix: Implement exponential backoff
+# Schedule follow-up review
+echo "Follow-up review scheduled for $(date -d '+1 week')" >> logs/incidents.log
 ```
 
-For additional support, consult the [Quick Start Guide](README_QUICK_START.md) or create an issue in the repository.
+## 💾 Backup & Recovery
+
+### 1. Automated Backups
+
+**Database Backup**:
+```bash
+# Daily backup (automated via cron)
+0 2 * * * /usr/bin/uv run python scripts/backup_database.py --type=daily
+
+# Weekly backup
+0 2 * * 0 /usr/bin/uv run python scripts/backup_database.py --type=weekly
+
+# Before major changes
+uv run python scripts/backup_database.py --type=pre_deployment
+```
+
+**Configuration Backup**:
+```bash
+# Backup all configs
+uv run python scripts/backup_configs.py
+
+# Backup secrets (encrypted)
+uv run python scripts/backup_secrets.py --encrypted
+```
+
+### 2. Recovery Procedures
+
+**Database Recovery**:
+```bash
+# List available backups
+uv run python scripts/list_backups.py
+
+# Restore from specific backup
+uv run python scripts/restore_database.py --backup-date=2025-01-13
+
+# Validate restoration
+uv run python scripts/validate_restored_data.py
+```
+
+**Configuration Recovery**:
+```bash
+# Restore configurations
+uv run python scripts/restore_configs.py --backup-date=2025-01-13
+
+# Restart services with restored config
+uv run python start_replit_services.py --restart
+```
+
+## 📈 Performance Monitoring
+
+### 1. Key Metrics
+
+**System Health**:
+```bash
+# CPU and Memory usage
+curl http://localhost:8000/metrics | grep "process_"
+
+# API response times
+curl http://localhost:8000/metrics | grep "http_request_duration"
+
+# Trading metrics
+curl http://localhost:8000/metrics | grep "trading_"
+```
+
+**Alert Thresholds**:
+- CPU usage > 80% for 5 minutes
+- Memory usage > 85% for 3 minutes  
+- API latency > 2 seconds (95th percentile)
+- Trading signals < 10/hour for 30 minutes
+- Drawdown > 5% for 1 hour
+
+### 2. Log Analysis
+
+**Error Pattern Detection**:
+```bash
+# Check for error spikes
+grep -c "ERROR" logs/system.log | tail -10
+
+# Look for specific error patterns
+grep "ConnectionError\|TimeoutError\|APIError" logs/error.log
+
+# Analyze trading errors
+grep "ORDER_FAILED\|EXECUTION_ERROR" logs/trading.log
+```
+
+**Performance Analysis**:
+```bash
+# Slow query detection
+grep "slow_query" logs/database.log
+
+# API latency analysis
+grep "request_duration" logs/api.log | awk '{print $NF}' | sort -n
+```
+
+## 🛠️ Maintenance Procedures
+
+### 1. Scheduled Maintenance
+
+**Weekly Maintenance** (Sundays 02:00 UTC):
+```bash
+# System health check
+uv run python scripts/weekly_health_check.py
+
+# Log rotation
+uv run python scripts/rotate_logs.py
+
+# Database optimization
+uv run python scripts/optimize_database.py
+
+# Model retraining check
+uv run python scripts/check_model_drift.py
+```
+
+**Monthly Maintenance**:
+```bash
+# Dependency updates
+uv lock --upgrade
+uv sync
+
+# Security audit
+uv run python scripts/security_audit.py
+
+# Performance benchmarking
+uv run python scripts/performance_benchmark.py
+
+# Backup cleanup
+uv run python scripts/cleanup_old_backups.py --keep-days=30
+```
+
+### 2. Agent Maintenance
+
+**Agent Health Monitoring**:
+```python
+# Check all agent status
+import httpx
+
+agents_status = httpx.get("http://localhost:8001/api/v1/agents/status")
+print("Agent Status:", agents_status.json())
+
+# Restart unhealthy agents
+for agent in agents_status.json():
+    if agent['status'] != 'healthy':
+        restart_response = httpx.post(
+            f"http://localhost:8001/api/v1/agents/{agent['name']}/restart"
+        )
+        print(f"Restarted {agent['name']}: {restart_response.status_code}")
+```
+
+**Model Refresh**:
+```bash
+# Check model performance
+uv run python scripts/evaluate_model_performance.py
+
+# Retrain underperforming models
+uv run python scripts/retrain_models.py --performance-threshold=0.6
+
+# Update model registry
+uv run python scripts/update_model_registry.py
+```
+
+## 📞 Contact Information
+
+### Emergency Contacts
+
+- **System Administrator**: admin@cryptosmarttrader.com
+- **Security Team**: security@cryptosmarttrader.com  
+- **On-Call Engineer**: +1-XXX-XXX-XXXX
+
+### Escalation Procedures
+
+1. **Level 1**: Automated alerts and self-healing
+2. **Level 2**: On-call engineer notification
+3. **Level 3**: Security team and management escalation
+4. **Level 4**: External vendor and regulatory notification
+
+### Communication Channels
+
+- **Incident Updates**: #incidents Slack channel
+- **System Status**: status.cryptosmarttrader.com
+- **Documentation Updates**: #docs Slack channel
+
+---
+
+**📋 Remember**: Always document incidents, test recovery procedures regularly, and keep this runbook updated with operational learnings.

@@ -1,0 +1,853 @@
+{
+  "info": {
+    "name": "CryptoSmartTrader V2 API",
+    "description": "Enterprise cryptocurrency trading intelligence system API collection",
+    "version": "2.5.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{API_KEY}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8001",
+      "type": "string"
+    },
+    {
+      "key": "API_KEY",
+      "value": "your-api-key-here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Basic Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Basic system health check"
+          },
+          "response": []
+        },
+        {
+          "name": "Detailed Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/detailed",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "detailed"]
+            },
+            "description": "Detailed health check with all components"
+          },
+          "response": []
+        },
+        {
+          "name": "Database Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/database",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "database"]
+            },
+            "description": "Database connectivity and performance"
+          },
+          "response": []
+        },
+        {
+          "name": "Exchange Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/exchanges",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "exchanges"]
+            },
+            "description": "Exchange connectivity status"
+          },
+          "response": []
+        },
+        {
+          "name": "Version Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/version",
+              "host": ["{{baseUrl}}"],
+              "path": ["version"]
+            },
+            "description": "Application version information"
+          },
+          "response": []
+        }
+      ],
+      "description": "Health checks and system status endpoints"
+    },
+    {
+      "name": "Market Data",
+      "item": [
+        {
+          "name": "Market Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/market/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "market", "overview"]
+            },
+            "description": "Overall market statistics and summary"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pair Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/market/pair/:symbol",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "market", "pair", ":symbol"],
+              "variable": [
+                {
+                  "key": "symbol",
+                  "value": "BTC-USD",
+                  "description": "Trading pair symbol"
+                }
+              ]
+            },
+            "description": "Get specific trading pair data"
+          },
+          "response": []
+        },
+        {
+          "name": "Top Performers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/market/top_performers?limit=10&timeframe=24h",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "market", "top_performers"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of results"
+                },
+                {
+                  "key": "timeframe",
+                  "value": "24h",
+                  "description": "Time period"
+                }
+              ]
+            },
+            "description": "Get top performing cryptocurrencies"
+          },
+          "response": []
+        },
+        {
+          "name": "ML Predictions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/market/predictions?confidence_threshold=0.7",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "market", "predictions"],
+              "query": [
+                {
+                  "key": "confidence_threshold",
+                  "value": "0.7",
+                  "description": "Minimum confidence level"
+                }
+              ]
+            },
+            "description": "Get ML model predictions for market movements"
+          },
+          "response": []
+        },
+        {
+          "name": "Technical Analysis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/market/technical/:symbol",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "market", "technical", ":symbol"],
+              "variable": [
+                {
+                  "key": "symbol",
+                  "value": "BTC-USD",
+                  "description": "Trading pair symbol"
+                }
+              ]
+            },
+            "description": "Get technical analysis indicators for a pair"
+          },
+          "response": []
+        }
+      ],
+      "description": "Market data and analysis endpoints"
+    },
+    {
+      "name": "Portfolio Management",
+      "item": [
+        {
+          "name": "Portfolio Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/portfolio/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "portfolio", "overview"]
+            },
+            "description": "Get portfolio overview and summary"
+          },
+          "response": []
+        },
+        {
+          "name": "Current Positions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/portfolio/positions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "portfolio", "positions"]
+            },
+            "description": "Get all current portfolio positions"
+          },
+          "response": []
+        },
+        {
+          "name": "Performance Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/portfolio/performance?timeframe=30d",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "portfolio", "performance"],
+              "query": [
+                {
+                  "key": "timeframe",
+                  "value": "30d",
+                  "description": "Performance timeframe"
+                }
+              ]
+            },
+            "description": "Get portfolio performance metrics"
+          },
+          "response": []
+        },
+        {
+          "name": "Risk Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/portfolio/risk",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "portfolio", "risk"]
+            },
+            "description": "Get portfolio risk metrics and analysis"
+          },
+          "response": []
+        },
+        {
+          "name": "Portfolio History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/portfolio/history?start_date=2025-01-01&end_date=2025-01-13",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "portfolio", "history"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2025-01-01",
+                  "description": "Start date (YYYY-MM-DD)"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-01-13",
+                  "description": "End date (YYYY-MM-DD)"
+                }
+              ]
+            },
+            "description": "Get historical portfolio performance"
+          },
+          "response": []
+        }
+      ],
+      "description": "Portfolio management and analytics endpoints",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{API_KEY}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Trading Operations",
+      "item": [
+        {
+          "name": "Trading Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/trading/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "trading", "status"]
+            },
+            "description": "Get current trading system status"
+          },
+          "response": []
+        },
+        {
+          "name": "Place Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BTC-USD\",\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"quantity\": 0.001,\n  \"price\": 45000.00,\n  \"demo_mode\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/trading/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "trading", "orders"]
+            },
+            "description": "Place a new trading order"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/trading/orders?limit=20&status=all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "trading", "orders"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of orders to return"
+                },
+                {
+                  "key": "status",
+                  "value": "all",
+                  "description": "Order status filter"
+                }
+              ]
+            },
+            "description": "Get order history"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/trading/orders/:order_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "trading", "orders", ":order_id"],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "order_123456",
+                  "description": "Order ID to cancel"
+                }
+              ]
+            },
+            "description": "Cancel a specific order"
+          },
+          "response": []
+        },
+        {
+          "name": "Execution Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/trading/execution_stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "trading", "execution_stats"]
+            },
+            "description": "Get trading execution statistics"
+          },
+          "response": []
+        },
+        {
+          "name": "Emergency Stop",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"emergency_stop\",\n  \"user_id\": \"operator\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emergency/kill_switch",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emergency", "kill_switch"]
+            },
+            "description": "Emergency stop all trading activity"
+          },
+          "response": []
+        }
+      ],
+      "description": "Trading operations and order management",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{API_KEY}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Agent Management",
+      "item": [
+        {
+          "name": "Agent Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "status"]
+            },
+            "description": "Get status of all agents"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Agent Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/:agent_name",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", ":agent_name"],
+              "variable": [
+                {
+                  "key": "agent_name",
+                  "value": "technical_agent",
+                  "description": "Name of the agent"
+                }
+              ]
+            },
+            "description": "Get detailed information about a specific agent"
+          },
+          "response": []
+        },
+        {
+          "name": "Start Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_name\": \"technical_agent\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "start"]
+            },
+            "description": "Start a specific agent"
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_name\": \"technical_agent\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/stop",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "stop"]
+            },
+            "description": "Stop a specific agent"
+          },
+          "response": []
+        },
+        {
+          "name": "Restart Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_name\": \"technical_agent\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/:agent_name/restart",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", ":agent_name", "restart"],
+              "variable": [
+                {
+                  "key": "agent_name",
+                  "value": "technical_agent",
+                  "description": "Name of the agent to restart"
+                }
+              ]
+            },
+            "description": "Restart a specific agent"
+          },
+          "response": []
+        },
+        {
+          "name": "Agent Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/logs?limit=50&level=ERROR",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "logs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Number of log entries"
+                },
+                {
+                  "key": "level",
+                  "value": "ERROR",
+                  "description": "Log level filter"
+                }
+              ]
+            },
+            "description": "Get agent log entries"
+          },
+          "response": []
+        }
+      ],
+      "description": "Multi-agent system management endpoints",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{API_KEY}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Security & Compliance",
+      "item": [
+        {
+          "name": "Security Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/security/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "security", "status"]
+            },
+            "description": "Get overall security system status"
+          },
+          "response": []
+        },
+        {
+          "name": "Secret Rotation Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/security/secrets/rotation_status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "security", "secrets", "rotation_status"]
+            },
+            "description": "Check which secrets need rotation"
+          },
+          "response": []
+        },
+        {
+          "name": "Rotate Secret",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"secret_id\": \"kraken_api_key\",\n  \"new_secret_value\": \"new_api_key_value\",\n  \"user_id\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/security/secrets/rotate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "security", "secrets", "rotate"]
+            },
+            "description": "Manually rotate a secret"
+          },
+          "response": []
+        },
+        {
+          "name": "Audit Log",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/security/audit?limit=100&hours_back=24",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "security", "audit"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100",
+                  "description": "Number of audit entries"
+                },
+                {
+                  "key": "hours_back",
+                  "value": "24",
+                  "description": "Hours of history to include"
+                }
+              ]
+            },
+            "description": "Get security audit log entries"
+          },
+          "response": []
+        },
+        {
+          "name": "Emergency Revoke Secret",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"secret_id\": \"compromised_secret\",\n  \"reason\": \"security_breach\",\n  \"user_id\": \"security_admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/security/secrets/revoke",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "security", "secrets", "revoke"]
+            },
+            "description": "Emergency revoke a compromised secret"
+          },
+          "response": []
+        },
+        {
+          "name": "Compliance Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/security/compliance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "security", "compliance"]
+            },
+            "description": "Check compliance status with exchange ToS"
+          },
+          "response": []
+        }
+      ],
+      "description": "Security and compliance management endpoints",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{API_KEY}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ML Model Management",
+      "item": [
+        {
+          "name": "Model Registry Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ml/models",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ml", "models"]
+            },
+            "description": "Get all registered models"
+          },
+          "response": []
+        },
+        {
+          "name": "Model Performance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ml/models/:model_name/performance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ml", "models", ":model_name", "performance"],
+              "variable": [
+                {
+                  "key": "model_name",
+                  "value": "rf_24h",
+                  "description": "Model name"
+                }
+              ]
+            },
+            "description": "Get model performance metrics"
+          },
+          "response": []
+        },
+        {
+          "name": "Drift Detection Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ml/drift_status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ml", "drift_status"]
+            },
+            "description": "Check model drift status"
+          },
+          "response": []
+        },
+        {
+          "name": "Trigger Model Retraining",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_name\": \"rf_24h\",\n  \"reason\": \"performance_degradation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ml/retrain",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ml", "retrain"]
+            },
+            "description": "Trigger model retraining"
+          },
+          "response": []
+        },
+        {
+          "name": "Model Rollback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_name\": \"rf_24h\",\n  \"target_version\": \"v1.2.3\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ml/rollback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ml", "rollback"]
+            },
+            "description": "Rollback model to previous version"
+          },
+          "response": []
+        }
+      ],
+      "description": "Machine learning model management endpoints",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{API_KEY}}",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+}
