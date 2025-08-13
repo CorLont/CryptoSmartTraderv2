@@ -445,6 +445,42 @@ def main():
         except Exception as e:
             st.warning(f"Arbitrage System: {str(e)[:100]}...")
         
+        # Add Live AI Ensemble Voting Status
+        try:
+            from agents.ensemble_voting_agent import EnsembleVotingAgent, ModelType, VotingMethod
+            
+            ensemble_agent = EnsembleVotingAgent()
+            
+            st.info("🧠 **LIVE AI ENSEMBLE VOTING VOOR REAL-TIME VOORSPELLINGEN**")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("🤖 AI Models", f"{ensemble_agent.stats['models_registered']}", delta="Multi-model")
+            with col2:
+                st.metric("🎯 Ensemble Voting", "ACTIVE", delta="Real-time")
+            with col3:
+                st.metric("📊 Confidence", f"{ensemble_agent.stats['average_confidence']:.1%}", delta="Live scoring")
+            with col4:
+                st.metric("🔮 Predictions", f"{ensemble_agent.stats['total_predictions']}", delta="Generated")
+                
+            # Show ensemble capabilities
+            ensemble_summary = ensemble_agent.get_ensemble_summary()
+            
+            st.success(f"✅ {ensemble_summary['models_registered']} AI models registered • Random Forest + XGBoost + Technical Analysis + Sentiment + OpenAI GPT-4o")
+            
+            # Show high confidence predictions if available
+            high_conf_preds = ensemble_agent.get_high_confidence_predictions()
+            if high_conf_preds:
+                st.success(f"🔥 {len(high_conf_preds)} High Confidence Ensemble Predictions Active!")
+                for pred in high_conf_preds[:3]:  # Show top 3
+                    st.info(f"💎 {pred.symbol} {pred.horizon.value}: {pred.ensemble_return:.2f}% expected • {pred.ensemble_confidence:.1%} confidence • Action: {pred.recommended_action}")
+            else:
+                st.info("🔍 Generating ensemble predictions...")
+            
+        except Exception as e:
+            st.warning(f"Ensemble Voting System: {str(e)[:100]}...")
+        
         st.divider()
             
     except Exception as e:
