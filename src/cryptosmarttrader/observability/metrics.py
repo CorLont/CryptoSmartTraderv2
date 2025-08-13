@@ -126,6 +126,292 @@ class CryptoSmartTraderMetrics:
         self.api_calls_total = Counter(
             'api_calls_total',
             'Total number of API calls by service',
+            ['service', 'endpoint', 'status_code'],
+            registry=self.registry
+        )
+        
+        self.cache_operations = Counter(
+            'cache_operations_total',
+            'Cache operations by type and result',
+            ['operation', 'result'],
+            registry=self.registry
+        )
+        
+        self.memory_usage_bytes = Gauge(
+            'memory_usage_bytes',
+            'Memory usage in bytes by component',
+            ['component'],
+            registry=self.registry
+        )
+        
+        # FASE C SPECIFIC METRICS - Guardrails & Observability
+        
+        # Execution Policy Metrics
+        self.execution_decisions = Counter(
+            'execution_decisions_total',
+            'Execution policy decisions by outcome',
+            ['symbol', 'side', 'decision'],
+            registry=self.registry
+        )
+        
+        self.execution_gates = Counter(
+            'execution_gates_total',
+            'Execution gate results by gate type',
+            ['gate', 'result'],
+            registry=self.registry
+        )
+        
+        self.execution_latency_ms = Histogram(
+            'execution_latency_ms',
+            'Execution policy decision latency',
+            ['operation'],
+            buckets=[1, 5, 10, 25, 50, 100, 250, 500],
+            registry=self.registry
+        )
+        
+        self.estimated_slippage_bps = Histogram(
+            'estimated_slippage_bps',
+            'Estimated slippage in basis points',
+            ['symbol'],
+            buckets=[0.1, 0.5, 1, 2, 5, 10, 25, 50, 100],
+            registry=self.registry
+        )
+        
+        # Risk Guard Metrics
+        self.risk_violations = Counter(
+            'risk_violations_total',
+            'Risk violations by type and severity',
+            ['risk_type', 'risk_level'],
+            registry=self.registry
+        )
+        
+        self.portfolio_risk_score = Gauge(
+            'portfolio_risk_score',
+            'Current portfolio risk score (0.0-1.0)',
+            registry=self.registry
+        )
+        
+        self.portfolio_equity = Gauge(
+            'portfolio_equity_usd',
+            'Current portfolio equity in USD',
+            registry=self.registry
+        )
+        
+        self.portfolio_drawdown_pct = Gauge(
+            'portfolio_drawdown_pct',
+            'Current portfolio drawdown percentage',
+            registry=self.registry
+        )
+        
+        self.portfolio_exposure = Gauge(
+            'portfolio_exposure_usd',
+            'Current total portfolio exposure',
+            registry=self.registry
+        )
+        
+        self.portfolio_positions = Gauge(
+            'portfolio_positions_count',
+            'Current number of open positions',
+            registry=self.registry
+        )
+        
+        self.kill_switch_triggers = Counter(
+            'kill_switch_triggers_total',
+            'Kill switch trigger events',
+            registry=self.registry
+        )
+        
+        # Alert-specific metrics for monitoring
+        self.high_order_error_rate = Gauge(
+            'high_order_error_rate',
+            'Boolean indicator for high order error rate alert',
+            registry=self.registry
+        )
+        
+        self.drawdown_too_high = Gauge(
+            'drawdown_too_high',
+            'Boolean indicator for excessive drawdown alert',
+            registry=self.registry
+        )
+        
+        self.no_signals_timeout = Gauge(
+            'no_signals_timeout',
+            'Boolean indicator for signal timeout alert',
+            registry=self.registry
+        )
+        
+        self.last_signal_timestamp = Gauge(
+            'last_signal_timestamp_seconds',
+            'Unix timestamp of last received signal',
+            registry=self.registry
+        )
+    
+    # FASE C METHODS - Alert Logic Integration
+    
+    def record_execution_decision(self, symbol: str, side: str, decision: str):
+        """Record execution policy decision"""
+        self.execution_decisions.labels(symbol=symbol, side=side, decision=decision).inc()
+    
+    def record_execution_gate(self, gate: str, result: str):
+        """Record execution gate result"""
+        self.execution_gates.labels(gate=gate, result=result).inc()
+    
+    def record_risk_violation(self, risk_type: str, risk_level: str):
+        """Record risk violation"""
+        self.risk_violations.labels(risk_type=risk_type, risk_level=risk_level).inc()
+    
+    def update_portfolio_metrics(self, equity: float, drawdown_pct: float, exposure: float, positions: int):
+        """Update portfolio metrics"""
+        self.portfolio_equity.set(equity)
+        self.portfolio_drawdown_pct.set(drawdown_pct)
+        self.portfolio_exposure.set(exposure)
+        self.portfolio_positions.set(positions)
+    
+    def check_alert_conditions(self):
+        """Check and update alert condition metrics"""
+        import time
+        from datetime import datetime, timedelta
+        
+        # Check HighOrderErrorRate (>10% error rate in last 5 minutes)
+        # This would require tracking order errors vs total orders
+        # For now, set based on simple heuristic
+        
+        # Check DrawdownTooHigh (>3% drawdown)
+        current_drawdown = self.portfolio_drawdown_pct._value._value if hasattr(self.portfolio_drawdown_pct, '_value') else 0
+        self.drawdown_too_high.set(1 if current_drawdown > 3.0 else 0)
+        
+        # Check NoSignals (no signals for 30 minutes)
+        current_time = time.time()
+        last_signal = self.last_signal_timestamp._value._value if hasattr(self.last_signal_timestamp, '_value') else current_time
+        signal_age_minutes = (current_time - last_signal) / 60.0
+        self.no_signals_timeout.set(1 if signal_age_minutes > 30.0 else 0)
+    
+    def record_signal_received(self, agent: str, signal_type: str, symbol: str):
+        """Record signal received and update timestamp"""
+        import time
+        self.signals_received.labels(agent=agent, signal_type=signal_type, symbol=symbol).inc()
+        self.last_signal_timestamp.set(time.time())
+    
+    def get_metrics_summary(self) -> Dict[str, Any]:
+        """Get summary of key metrics for monitoring"""
+        return {
+            'total_orders_sent': self._get_counter_value(self.orders_sent),
+            'total_orders_filled': self._get_counter_value(self.orders_filled),
+            'total_order_errors': self._get_counter_value(self.order_errors),
+            'total_signals_received': self._get_counter_value(self.signals_received),
+            'total_risk_violations': self._get_counter_value(self.risk_violations),
+            'current_portfolio_equity': self._get_gauge_value(self.portfolio_equity),
+            'current_drawdown_pct': self._get_gauge_value(self.portfolio_drawdown_pct),
+            'current_risk_score': self._get_gauge_value(self.portfolio_risk_score),
+            'kill_switch_triggers': self._get_counter_value(self.kill_switch_triggers),
+            'alert_high_order_error_rate': self._get_gauge_value(self.high_order_error_rate),
+            'alert_drawdown_too_high': self._get_gauge_value(self.drawdown_too_high),
+            'alert_no_signals_timeout': self._get_gauge_value(self.no_signals_timeout)
+        }
+    
+    def _get_counter_value(self, counter) -> float:
+        """Safely get counter value"""
+        try:
+            return sum(sample.value for sample in counter.collect()[0].samples)
+        except:
+            return 0.0
+    
+    def _get_gauge_value(self, gauge) -> float:
+        """Safely get gauge value"""
+        try:
+            return gauge._value._value
+        except:
+            return 0.0
+    
+    def export_metrics(self) -> str:
+        """Export metrics in Prometheus format"""
+        return generate_latest(self.registry)
+
+
+class PrometheusMetrics:
+    """
+    Singleton wrapper for CryptoSmartTraderMetrics
+    Provides global access to centralized metrics
+    """
+    
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = CryptoSmartTraderMetrics()
+            return cls._instance
+    
+    @classmethod
+    def get_instance(cls) -> CryptoSmartTraderMetrics:
+        """Get the singleton metrics instance"""
+        return cls()
+    
+    @classmethod
+    def reset_instance(cls):
+        """Reset singleton (for testing)"""
+        cls._instance = None
+
+
+# Context managers for automatic metric recording
+class ExecutionTimer:
+    """Context manager for automatic execution latency recording"""
+    
+    def __init__(self, operation: str, metrics: CryptoSmartTraderMetrics = None):
+        self.operation = operation
+        self.metrics = metrics or PrometheusMetrics.get_instance()
+        self.start_time = None
+    
+    def __enter__(self):
+        self.start_time = time.time()
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.start_time:
+            latency_ms = (time.time() - self.start_time) * 1000
+            self.metrics.execution_latency_ms.labels(operation=self.operation).observe(latency_ms)
+
+
+def record_order_metrics(symbol: str, side: str, order_type: str, exchange: str = "kraken"):
+    """Decorator for automatic order metrics recording"""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            metrics = PrometheusMetrics.get_instance()
+            
+            # Record order sent
+            metrics.orders_sent.labels(
+                exchange=exchange, 
+                symbol=symbol, 
+                side=side, 
+                order_type=order_type
+            ).inc()
+            
+            try:
+                result = func(*args, **kwargs)
+                
+                # Record order filled (assuming success means filled)
+                metrics.orders_filled.labels(
+                    exchange=exchange,
+                    symbol=symbol, 
+                    side=side,
+                    order_type=order_type
+                ).inc()
+                
+                return result
+                
+            except Exception as e:
+                # Record order error
+                metrics.order_errors.labels(
+                    exchange=exchange,
+                    symbol=symbol,
+                    error_type=type(e).__name__,
+                    error_code=getattr(e, 'code', 'unknown')
+                ).inc()
+                raise
+                
+        return wrapper
+    return decorator
             ['service', 'endpoint', 'method', 'status_code'],
             registry=self.registry
         )

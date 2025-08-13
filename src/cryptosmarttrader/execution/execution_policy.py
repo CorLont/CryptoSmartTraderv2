@@ -1,7 +1,7 @@
 
-# Import from new execution discipline system
-from .execution_discipline import (
-    ExecutionPolicy as HardExecutionPolicy,
+# Import from hard execution policy (FASE C implementation)
+from .hard_execution_policy import (
+    HardExecutionPolicy,
     OrderRequest, MarketConditions, ExecutionResult,
     OrderSide, TimeInForce, ExecutionDecision,
     get_execution_policy, reset_execution_policy
@@ -10,7 +10,7 @@ from .execution_discipline import (
 # Backward compatibility alias
 ExecutionPolicy = HardExecutionPolicy
 
-# Re-export all discipline components
+# Re-export all components
 __all__ = [
     'ExecutionPolicy', 'HardExecutionPolicy',
     'OrderRequest', 'MarketConditions', 'ExecutionResult',
