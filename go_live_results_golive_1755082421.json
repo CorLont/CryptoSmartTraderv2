@@ -1,0 +1,114 @@
+{
+  "sequence_id": "golive_1755082421",
+  "start_time": "2025-08-13T10:53:41.015280",
+  "stages": {
+    "staging": {
+      "phase": "staging",
+      "duration_target_days": 7,
+      "success": false,
+      "metrics": {
+        "slo_compliance": {
+          "overall_compliance": false,
+          "slo_results": {
+            "uptime": {
+              "percentage": 0.0,
+              "status": "violation",
+              "measurement": "0.00% uptime",
+              "target": "99.5%"
+            },
+            "api_latency_p95": {
+              "percentage": 100.0,
+              "status": "compliant",
+              "measurement": "P95 latency: 0.000s",
+              "target": "<1.0s for 95.0% of requests"
+            },
+            "tracking_error": {
+              "percentage": 25.0,
+              "status": "compliant",
+              "measurement": "Tracking error: 15.0 bps",
+              "target": "<20.0 bps daily"
+            },
+            "alert_response_time": {
+              "percentage": 46.666666666666664,
+              "status": "compliant",
+              "measurement": "Avg response: 8.0 min",
+              "target": "<15.0 min for 90.0% of alerts"
+            },
+            "data_freshness": {
+              "percentage": 0.0,
+              "status": "failed",
+              "error": "Market data unavailable: 404"
+            }
+          },
+          "timestamp": "2025-08-13T10:53:41.263634"
+        },
+        "chaos_tests": {
+          "overall_success_rate": 0.5,
+          "passed_tests": 3,
+          "total_tests": 6,
+          "test_results": {
+            "network_timeout_test": {
+              "status": "failed",
+              "reason": "Expected timeout did not occur",
+              "duration": 0.034218788146972656
+            },
+            "upstream_500_test": {
+              "status": "passed",
+              "reason": "System handles upstream errors gracefully",
+              "error_code": 404,
+              "recovery_verified": true,
+              "duration": 0.031394243240356445
+            },
+            "high_load_test": {
+              "status": "passed",
+              "success_rate": 1.0,
+              "successful_requests": 50,
+              "failed_requests": 0,
+              "total_requests": 50,
+              "duration": 0.5152618885040283,
+              "reason": "Load test completed with 100.0% success rate"
+            },
+            "database_failure_test": {
+              "status": "failed",
+              "reason": "Database health check failed: 404",
+              "duration": 0.03157401084899902
+            },
+            "memory_pressure_test": {
+              "status": "failed",
+              "reason": "Could not determine memory usage",
+              "duration": 0.03307461738586426
+            },
+            "disk_space_test": {
+              "status": "passed",
+              "reason": "Sufficient disk space available",
+              "free_space_gb": 245.58477401733398,
+              "total_space_gb": 256.0,
+              "usage_percentage": 3.355701267719269,
+              "duration": 0.0003402233123779297
+            }
+          },
+          "timestamp": "2025-08-13T10:53:41.919351",
+          "recommendation": "investigate_failures"
+        },
+        "alerting": {
+          "functional": true,
+          "response_time_seconds": 5.0,
+          "test_alert": {
+            "alert_name": "deployment_validation_test",
+            "severity": "warning",
+            "description": "Test alert for deployment validation",
+            "timestamp": "2025-08-13T10:53:41.919382"
+          },
+          "within_slo": true
+        }
+      },
+      "issues": [
+        "SLO compliance violations detected",
+        "Chaos engineering tests failed"
+      ]
+    }
+  },
+  "result": "failed_staging",
+  "recommendation": "Fix staging issues before proceeding",
+  "end_time": "2025-08-13T10:53:41.919396"
+}

@@ -364,6 +364,13 @@ app.include_router(market.router, prefix="/api/v1/market", tags=["market"])
 app.include_router(agents.router, prefix="/api/v1/agents", tags=["agents"])
 app.include_router(security.router, prefix="/api/v1/security", tags=["security"])
 
+# Import and include deployment router
+try:
+    from cryptosmarttrader.api.routers import deployment
+    app.include_router(deployment.router, prefix="/api/v1/deployment", tags=["deployment"])
+except ImportError:
+    logger.warning("Deployment router not available - some endpoints may be missing")
+
 
 # Global exception handler
 @app.exception_handler(HTTPException)

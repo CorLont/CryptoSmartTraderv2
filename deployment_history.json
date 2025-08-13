@@ -1,0 +1,16 @@
+[
+  {
+    "stage": "DeploymentStage.STAGING",
+    "start_time": "2025-08-13 10:53:41.015560",
+    "end_time": "2025-08-13 10:53:41.919400",
+    "success_rate": 0.0,
+    "error_rate": 0.0,
+    "uptime_percentage": 0.0,
+    "alert_count": 0,
+    "rollback_triggered": false,
+    "slo_violations": [
+      "SLO compliance violations detected",
+      "Chaos engineering tests failed"
+    ]
+  }
+]
