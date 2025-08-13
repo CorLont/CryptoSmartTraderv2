@@ -1,0 +1,123 @@
+{
+  "period": "AttributionPeriod.DAILY",
+  "period_start": "2025-08-12T15:07:33.787633",
+  "period_end": "2025-08-13T15:07:33.787633",
+  "total_return_bps": -808.314386112091,
+  "benchmark_return_bps": -336.29959222233026,
+  "excess_return_bps": -472.01479388976077,
+  "alpha_component": {
+    "name": "Alpha",
+    "contribution_bps": -472.01479388976105,
+    "contribution_pct": 0.5839495151881481,
+    "confidence": 0.12620908091842586,
+    "data_points": 23,
+    "period_start": "2025-08-12T15:07:33.787633",
+    "period_end": "2025-08-13T15:07:33.787633",
+    "metadata": {
+      "sharpe_ratio": -0.07894923766916252,
+      "hit_rate": 0.30434782608695654,
+      "max_drawdown": 0.13888607828554778
+    }
+  },
+  "fees_component": {
+    "name": "Fees",
+    "contribution_bps": -20.44503756460443,
+    "contribution_pct": 0.02529342285115443,
+    "confidence": 0.99,
+    "data_points": 29,
+    "period_start": "2025-08-12T15:07:33.787633",
+    "period_end": "2025-08-13T15:07:33.787633",
+    "metadata": {
+      "total_fees_usd": 3299.2495133827,
+      "total_volume_usd": 1613716.5329030952,
+      "avg_fee_bps": -20.44503756460443,
+      "maker_orders": 16,
+      "taker_orders": 13,
+      "maker_ratio": 0.5517241379310345
+    }
+  },
+  "slippage_component": {
+    "name": "Slippage",
+    "contribution_bps": -8.173446669390648,
+    "contribution_pct": 0.010111717432995453,
+    "confidence": 0.8,
+    "data_points": 29,
+    "period_start": "2025-08-12T15:07:33.787633",
+    "period_end": "2025-08-13T15:07:33.787633",
+    "metadata": {
+      "avg_slippage_bps": 8.717130839651348,
+      "median_slippage_bps": 6.163871910168872,
+      "max_slippage_bps": 24.0012393410161,
+      "slippage_std_bps": 7.183710938584446,
+      "high_slippage_orders": 5,
+      "total_slippage_cost_usd": 1318.9626021197428
+    }
+  },
+  "timing_component": {
+    "name": "Timing",
+    "contribution_bps": -17.532803462509,
+    "contribution_pct": 0.02169057456324634,
+    "confidence": 0.6,
+    "data_points": 29,
+    "period_start": "2025-08-12T15:07:33.787633",
+    "period_end": "2025-08-13T15:07:33.787633",
+    "metadata": {
+      "avg_latency_ms": 175.32803462509,
+      "median_latency_ms": 170.01568153893516,
+      "max_latency_ms": 299.2507399515849,
+      "timing_efficiency": 0.1724137931034483,
+      "slow_executions": 0,
+      "timing_score": 0.8246719653749099
+    }
+  },
+  "sizing_component": {
+    "name": "Sizing",
+    "contribution_bps": -19.241978321263716,
+    "contribution_pct": 0.02380506725089436,
+    "confidence": 0.5,
+    "data_points": 29,
+    "period_start": "2025-08-12T15:07:33.787633",
+    "period_end": "2025-08-13T15:07:33.787633",
+    "metadata": {
+      "avg_order_size_usd": 55645.39768631363,
+      "order_size_std": 24409.23176834487,
+      "size_coefficient_of_variation": 0.43865679433087224,
+      "large_orders": 0,
+      "small_orders": 2
+    }
+  },
+  "market_impact_component": {
+    "name": "Market Impact",
+    "contribution_bps": -58.0,
+    "contribution_pct": 0.07175425922947386,
+    "confidence": 0.4,
+    "data_points": 29,
+    "period_start": "2025-08-12T15:07:33.787633",
+    "period_end": "2025-08-13T15:07:33.787633",
+    "metadata": {
+      "large_orders_count": 29,
+      "large_orders_ratio": 1.0,
+      "avg_large_order_size": 55645.39768631363,
+      "market_impact_estimate_bps": -58.0
+    }
+  },
+  "explained_variance_pct": 100.0,
+  "attribution_confidence": 0.21782131921337672,
+  "execution_quality_score": 0.8696763064390405,
+  "optimization_opportunities": [
+    "High fee impact (-20.4 bps): Optimize maker/taker ratio",
+    "Timing cost detected (-17.5 bps): Reduce execution latency",
+    "Market impact cost (-58.0 bps): Break up large orders",
+    "Low alpha generation: Review signal quality and model performance"
+  ],
+  "execution_improvements": [
+    "High partial fill rate: Adjust order sizes for market liquidity"
+  ],
+  "cost_reduction_suggestions": [
+    "Increase maker ratio (currently 55.2%): Use limit orders",
+    "Break up 29 large orders to reduce market impact"
+  ],
+  "observation_count": 29,
+  "data_quality_score": 1.0,
+  "report_generation_time": "2025-08-13T15:07:33.790984"
+}
