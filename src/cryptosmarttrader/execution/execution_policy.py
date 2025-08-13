@@ -1,743 +1,636 @@
 """
-Execution Policy System
-
-Advanced execution policies with spread/volume/depth gating, slippage budgeting,
-post-only/TWAP strategies, and real-time telemetry tracking.
+Enterprise Execution Policy System
+Advanced execution controls with tradability gates, slippage budget, and order deduplication.
 """
 
 import asyncio
+import hashlib
+import json
+import logging
 import time
-import numpy as np
-from typing import Dict, List, Optional, Any, Tuple, Union
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-import logging
-import json
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
+from dataclasses import dataclass, field
+from decimal import Decimal
+
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-class ExecutionStrategy(Enum):
-    """Execution strategy types"""
-    MARKET = "market"           # Immediate market order
-    POST_ONLY = "post_only"     # Maker-only orders
-    TWAP = "twap"              # Time-weighted average price
-    ICEBERG = "iceberg"        # Large order fragmentation
-    ADAPTIVE = "adaptive"      # Dynamic strategy selection
 
-class OrderSide(Enum):
-    """Order side"""
-    BUY = "buy"
-    SELL = "sell"
+class OrderType(Enum):
+    """Order types with execution characteristics."""
+    MARKET = "market"
+    LIMIT = "limit"
+    STOP_LOSS = "stop_loss"
+    TAKE_PROFIT = "take_profit"
+    TWAP = "twap"
+    ICEBERG = "iceberg"
 
-class GatingReason(Enum):
-    """Reasons for execution gating"""
+
+class TimeInForce(Enum):
+    """Time in force options."""
+    GTC = "gtc"  # Good till canceled
+    IOC = "ioc"  # Immediate or cancel
+    FOK = "fok"  # Fill or kill
+    GTD = "gtd"  # Good till date
+    POST_ONLY = "post_only"  # Post only (maker)
+
+
+class OrderStatus(Enum):
+    """Order execution status."""
+    PENDING = "pending"
+    SUBMITTED = "submitted"
+    PARTIALLY_FILLED = "partially_filled"
+    FILLED = "filled"
+    CANCELED = "canceled"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+
+
+class TradabilityGate(Enum):
+    """Tradability gate types."""
     SPREAD_TOO_WIDE = "spread_too_wide"
+    INSUFFICIENT_DEPTH = "insufficient_depth"
     LOW_VOLUME = "low_volume"
-    SHALLOW_DEPTH = "shallow_depth"
-    HIGH_SLIPPAGE = "high_slippage"
+    HIGH_VOLATILITY = "high_volatility"
     MARKET_CLOSED = "market_closed"
-    RISK_LIMIT = "risk_limit"
     CIRCUIT_BREAKER = "circuit_breaker"
+
 
 @dataclass
 class MarketConditions:
-    """Current market conditions for execution decision"""
+    """Current market conditions for execution decisions."""
     symbol: str
-    timestamp: datetime
-
-    # Spread data
-    bid_price: float
-    ask_price: float
+    bid: float
+    ask: float
     spread_bps: float
+    depth_bid: float  # USD depth at best bid
+    depth_ask: float  # USD depth at best ask
+    volume_1m: float  # 1-minute volume in USD
+    volatility_1m: float  # 1-minute volatility
+    timestamp: datetime = field(default_factory=datetime.now)
 
-    # Volume data
-    volume_24h: float
-    volume_1h: float
-    avg_trade_size: float
-
-    # Order book depth
-    bid_depth_5: float  # Total volume in top 5 bid levels
-    ask_depth_5: float  # Total volume in top 5 ask levels
-    bid_depth_10: float
-    ask_depth_10: float
-
-    # Market impact estimation
-    estimated_slippage_bps: float
-    market_impact_bps: float
-
-    # Volatility
-    volatility_1h: float
-    volatility_24h: float
 
 @dataclass
-class ExecutionGates:
-    """Execution gating thresholds"""
-
-    # Spread gates
-    max_spread_bps: float = 20.0  # Maximum allowed spread
-    max_spread_percentage: float = 0.5  # 0.5% max spread
-
-    # Volume gates
-    min_volume_24h_usd: float = 100000.0  # $100k minimum daily volume
-    min_volume_1h_usd: float = 5000.0     # $5k minimum hourly volume
-    min_avg_trade_size_usd: float = 100.0  # $100 minimum average trade
-
-    # Depth gates
-    min_depth_5_levels_usd: float = 10000.0  # $10k minimum in top 5 levels
-    min_depth_ratio: float = 2.0            # Depth must be 2x order size
-
-    # Slippage gates
-    max_slippage_bps: float = 50.0          # 50 bps maximum slippage
-    max_market_impact_bps: float = 30.0     # 30 bps maximum market impact
-
-    # Volatility gates
-    max_volatility_1h: float = 0.05         # 5% max hourly volatility
-    pause_on_high_volatility: bool = True
-
-@dataclass
-class SlippageBudget:
-    """Slippage budget configuration"""
-
-    # Budget limits
-    daily_budget_bps: float = 100.0         # 100 bps daily budget
-    hourly_budget_bps: float = 25.0         # 25 bps hourly budget
-    per_trade_budget_bps: float = 50.0      # 50 bps per trade budget
-
-    # Tracking
-    daily_consumed_bps: float = 0.0
-    hourly_consumed_bps: float = 0.0
-    last_reset_daily: datetime = field(default_factory=datetime.now)
-    last_reset_hourly: datetime = field(default_factory=datetime.now)
-
-    # Compliance targets
-    compliance_target_95th_percentile: float = 45.0  # 95th percentile target
-    compliance_target_99th_percentile: float = 75.0  # 99th percentile target
-
-@dataclass
-class ExecutionOrder:
-    """Execution order specification"""
+class ExecutionParams:
+    """Execution parameters for order placement."""
     symbol: str
-    side: OrderSide
+    side: str  # 'buy' or 'sell'
     quantity: float
-    target_price: Optional[float] = None
+    order_type: OrderType = OrderType.LIMIT
+    time_in_force: TimeInForce = TimeInForce.GTC
+    limit_price: Optional[float] = None
+    stop_price: Optional[float] = None
+    max_slippage_bps: float = 30.0  # 0.3% default slippage budget
+    post_only: bool = False
+    reduce_only: bool = False
+    client_order_id: Optional[str] = None
 
-    # Execution parameters
-    strategy: ExecutionStrategy = ExecutionStrategy.ADAPTIVE
-    max_slippage_bps: float = 50.0
-    timeout_seconds: int = 300
-
-    # TWAP parameters
-    twap_duration_minutes: int = 10
-    twap_slices: int = 5
-
-    # Iceberg parameters
-    iceberg_slice_size: float = 0.1  # 10% of order size per slice
-    iceberg_randomization: float = 0.2  # 20% randomization
-
-    # Metadata
-    order_id: str = ""
-    created_at: datetime = field(default_factory=datetime.now)
-    priority: int = 1  # 1=low, 5=high
 
 @dataclass
-class ExecutionResult:
-    """Result of order execution"""
-    order_id: str
+class OrderExecution:
+    """Order execution result with detailed tracking."""
+    client_order_id: str
+    exchange_order_id: Optional[str]
     symbol: str
-    side: OrderSide
-
-    # Execution details
-    requested_quantity: float
+    side: str
+    quantity: float
     filled_quantity: float
     average_price: float
-
-    # Performance metrics
-    realized_slippage_bps: float
-    market_impact_bps: float
-    execution_time_seconds: float
-
-    # Cost breakdown
-    trading_fees: float
-    market_impact_cost: float
-    total_cost_bps: float
-
-    # Metadata
-    strategy_used: ExecutionStrategy
-    execution_timestamp: datetime
-    market_conditions: MarketConditions
-
-    # Status
-    status: str = "completed"  # completed, partial, failed, cancelled
+    status: OrderStatus
+    slippage_bps: float
+    fees: float
+    execution_time_ms: float
+    timestamp: datetime
     error_message: Optional[str] = None
+    partial_fills: List[Dict] = field(default_factory=list)
 
-class ExecutionPolicyEngine:
+
+class TradabilityLimits(BaseModel):
+    """Tradability gate thresholds."""
+    max_spread_bps: float = Field(default=50.0, description="Maximum spread in basis points")
+    min_depth_usd: float = Field(default=1000.0, description="Minimum order book depth in USD")
+    min_volume_1m_usd: float = Field(default=5000.0, description="Minimum 1-minute volume in USD")
+    max_volatility_1m: float = Field(default=0.05, description="Maximum 1-minute volatility (5%)")
+    max_slippage_budget_bps: float = Field(default=30.0, description="Maximum slippage budget (0.3%)")
+
+
+class ExecutionPolicy:
     """
-    Advanced execution policy engine with comprehensive gating and budget management
+    Enterprise execution policy with comprehensive controls.
+    
+    Features:
+    - Tradability gates with market condition checks
+    - Slippage budget enforcement
+    - Idempotent client order IDs with retry deduplication
+    - Advanced order types (TWAP, post-only, iceberg)
+    - Partial fill handling
+    - Execution quality tracking
     """
-
-    def __init__(self,
-                 environment_manager: Optional[Any] = None,
-                 metrics_collector: Optional[Any] = None):
-
-        self.environment_manager = environment_manager
-        self.metrics_collector = metrics_collector
-
-        # Configuration
-        self.execution_gates = ExecutionGates()
-        self.slippage_budget = SlippageBudget()
-
-        # Execution tracking
-        self.pending_orders: Dict[str, ExecutionOrder] = {}
-        self.execution_history: List[ExecutionResult] = []
-        self.slippage_history: List[Tuple[datetime, float]] = []
-
-        # Real-time telemetry
-        self.telemetry_data: Dict[str, Any] = {
-            'total_executions': 0,
+    
+    def __init__(self, config_path: Optional[Path] = None):
+        self.config_path = config_path or Path("config/execution_policy.json")
+        self.limits = self._load_limits()
+        
+        # Order tracking
+        self.active_orders: Dict[str, OrderExecution] = {}
+        self.completed_orders: Dict[str, OrderExecution] = {}
+        self.deduplication_cache: Dict[str, datetime] = {}
+        
+        # Execution metrics
+        self.execution_stats = {
+            'total_orders': 0,
             'successful_executions': 0,
-            'gated_executions': 0,
+            'rejected_by_gates': 0,
+            'slippage_violations': 0,
             'average_slippage_bps': 0.0,
-            'slippage_95th_percentile': 0.0,
-            'budget_utilization': 0.0
+            'average_execution_time_ms': 0.0
         }
-
-        # Load environment-specific configuration
-        self._load_environment_config()
-
-        logger.info("Execution Policy Engine initialized")
-
-    def _load_environment_config(self):
-        """Load environment-specific execution configuration"""
-
-        if not self.environment_manager:
-            return
-
-        # Get slippage budget from feature flags
-        slippage_budget_bps = self.environment_manager.get_feature_flag_value(
-            "slippage_budget_bps", default=50
-        )
-        if slippage_budget_bps:
-            self.slippage_budget.per_trade_budget_bps = float(slippage_budget_bps)
-            self.execution_gates.max_slippage_bps = float(slippage_budget_bps)
-
-        # Check if strict execution policy is enabled
-        strict_policy = self.environment_manager.is_feature_enabled("execution_policy_strict")
-        if strict_policy:
-            # Tighter gates for production
-            self.execution_gates.max_spread_bps = 15.0
-            self.execution_gates.max_slippage_bps = 30.0
-            self.execution_gates.min_volume_24h_usd = 500000.0
-
-        logger.info(f"Loaded execution config - Slippage budget: {self.slippage_budget.per_trade_budget_bps} bps")
-
-    def evaluate_execution_feasibility(self,
-                                     order: ExecutionOrder,
-                                     market_conditions: MarketConditions) -> Tuple[bool, List[GatingReason]]:
-        """Evaluate if order execution should proceed based on current conditions"""
-
-        can_execute = True
-        gating_reasons = []
-
-        # Check spread gates
-        if market_conditions.spread_bps > self.execution_gates.max_spread_bps:
-            can_execute = False
-            gating_reasons.append(GatingReason.SPREAD_TOO_WIDE)
-
-        # Check volume gates
-        if market_conditions.volume_24h < self.execution_gates.min_volume_24h_usd:
-            can_execute = False
-            gating_reasons.append(GatingReason.LOW_VOLUME)
-
-        if market_conditions.volume_1h < self.execution_gates.min_volume_1h_usd:
-            can_execute = False
-            gating_reasons.append(GatingReason.LOW_VOLUME)
-
-        # Check depth gates
-        required_depth = order.quantity * (order.target_price or market_conditions.ask_price)
-        min_required_depth = required_depth * self.execution_gates.min_depth_ratio
-
-        available_depth = (market_conditions.bid_depth_5 if order.side == OrderSide.SELL
-                          else market_conditions.ask_depth_5)
-
-        if available_depth < min_required_depth:
-            can_execute = False
-            gating_reasons.append(GatingReason.SHALLOW_DEPTH)
-
-        # Check slippage gates
-        if market_conditions.estimated_slippage_bps > self.execution_gates.max_slippage_bps:
-            can_execute = False
-            gating_reasons.append(GatingReason.HIGH_SLIPPAGE)
-
-        # Check slippage budget
-        if not self._check_slippage_budget(order.max_slippage_bps):
-            can_execute = False
-            gating_reasons.append(GatingReason.HIGH_SLIPPAGE)
-
-        # Check volatility gates
-        if (self.execution_gates.pause_on_high_volatility and
-            market_conditions.volatility_1h > self.execution_gates.max_volatility_1h):
-            can_execute = False
-            gating_reasons.append(GatingReason.CIRCUIT_BREAKER)
-
-        # Record gating decision
-        if not can_execute:
-            self.telemetry_data['gated_executions'] += 1
-
-            if self.metrics_collector:
-                self.metrics_collector.record_execution_gate(
-                    symbol=order.symbol,
-                    side=order.side.value,
-                    gating_reasons=[reason.value for reason in gating_reasons]
-                )
-
-        return can_execute, gating_reasons
-
-    def _check_slippage_budget(self, required_slippage_bps: float) -> bool:
-        """Check if slippage budget allows for execution"""
-
-        # Reset budgets if needed
-        self._reset_slippage_budgets()
-
-        # Check daily budget
-        if (self.slippage_budget.daily_consumed_bps + required_slippage_bps >
-            self.slippage_budget.daily_budget_bps):
-            return False
-
-        # Check hourly budget
-        if (self.slippage_budget.hourly_consumed_bps + required_slippage_bps >
-            self.slippage_budget.hourly_budget_bps):
-            return False
-
-        return True
-
-    def _reset_slippage_budgets(self):
-        """Reset slippage budgets if time periods have elapsed"""
-
-        now = datetime.now()
-
-        # Reset daily budget
-        if (now - self.slippage_budget.last_reset_daily).days >= 1:
-            self.slippage_budget.daily_consumed_bps = 0.0
-            self.slippage_budget.last_reset_daily = now
-
-        # Reset hourly budget
-        if (now - self.slippage_budget.last_reset_hourly).total_seconds() >= 3600:
-            self.slippage_budget.hourly_consumed_bps = 0.0
-            self.slippage_budget.last_reset_hourly = now
-
-    def select_execution_strategy(self,
-                                order: ExecutionOrder,
-                                market_conditions: MarketConditions) -> ExecutionStrategy:
-        """Select optimal execution strategy based on market conditions"""
-
-        if order.strategy != ExecutionStrategy.ADAPTIVE:
-            return order.strategy
-
-        # Strategy selection logic
-        order_value = order.quantity * (order.target_price or market_conditions.ask_price)
-
-        # Large orders → TWAP or Iceberg
-        if order_value > 50000:  # $50k+
-            if market_conditions.volume_1h > order_value * 10:
-                return ExecutionStrategy.TWAP
-            else:
-                return ExecutionStrategy.ICEBERG
-
-        # Medium orders with good depth → Post-only
-        elif (order_value > 5000 and
-              market_conditions.bid_depth_5 > order_value * 3 and
-              market_conditions.spread_bps < 10):
-            return ExecutionStrategy.POST_ONLY
-
-        # Small orders or urgent → Market
+        
+        # Cache for market conditions
+        self.market_conditions_cache: Dict[str, MarketConditions] = {}
+        self.cache_ttl_seconds = 5  # 5-second cache
+        
+        logger.info("ExecutionPolicy initialized with comprehensive controls")
+    
+    def _load_limits(self) -> TradabilityLimits:
+        """Load execution limits from configuration."""
+        if self.config_path and self.config_path.exists():
+            try:
+                with open(self.config_path, 'r') as f:
+                    config_data = json.load(f)
+                return TradabilityLimits(**config_data)
+            except Exception as e:
+                logger.warning(f"Failed to load execution config: {e}, using defaults")
+        
+        return TradabilityLimits()
+    
+    def save_limits(self):
+        """Save current execution limits."""
+        self.config_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.config_path, 'w') as f:
+            json.dump(self.limits.dict(), f, indent=2)
+        logger.info(f"Execution limits saved to {self.config_path}")
+    
+    def generate_client_order_id(self, params: ExecutionParams) -> str:
+        """Generate deterministic, idempotent client order ID."""
+        # Create deterministic hash from order parameters
+        order_data = {
+            'symbol': params.symbol,
+            'side': params.side,
+            'quantity': params.quantity,
+            'order_type': params.order_type.value,
+            'limit_price': params.limit_price,
+            'timestamp_minute': datetime.now().strftime('%Y%m%d_%H%M')  # Minute precision for deduplication
+        }
+        
+        order_string = json.dumps(order_data, sort_keys=True)
+        hash_digest = hashlib.sha256(order_string.encode()).hexdigest()
+        
+        # Create readable client order ID
+        client_order_id = f"CST_{params.symbol}_{params.side.upper()}_{hash_digest[:8]}"
+        
+        return client_order_id
+    
+    def check_order_deduplication(self, client_order_id: str) -> Tuple[bool, Optional[str]]:
+        """Check if order was recently submitted (deduplication)."""
+        # Clean old entries (older than 1 hour)
+        cutoff_time = datetime.now() - timedelta(hours=1)
+        expired_ids = [oid for oid, timestamp in self.deduplication_cache.items() 
+                      if timestamp < cutoff_time]
+        
+        for oid in expired_ids:
+            del self.deduplication_cache[oid]
+        
+        # Check if order was recently submitted
+        if client_order_id in self.deduplication_cache:
+            last_submission = self.deduplication_cache[client_order_id]
+            time_since = datetime.now() - last_submission
+            
+            if time_since.total_seconds() < 60:  # 1-minute deduplication window
+                return True, f"Order submitted {time_since.total_seconds():.0f} seconds ago"
+        
+        # Record this submission
+        self.deduplication_cache[client_order_id] = datetime.now()
+        return False, None
+    
+    def check_tradability_gates(self, conditions: MarketConditions) -> Tuple[bool, List[TradabilityGate]]:
+        """Check all tradability gates for market conditions."""
+        violations = []
+        
+        # Check spread
+        if conditions.spread_bps > self.limits.max_spread_bps:
+            violations.append(TradabilityGate.SPREAD_TOO_WIDE)
+        
+        # Check order book depth
+        min_depth = min(conditions.depth_bid, conditions.depth_ask)
+        if min_depth < self.limits.min_depth_usd:
+            violations.append(TradabilityGate.INSUFFICIENT_DEPTH)
+        
+        # Check volume
+        if conditions.volume_1m < self.limits.min_volume_1m_usd:
+            violations.append(TradabilityGate.LOW_VOLUME)
+        
+        # Check volatility
+        if conditions.volatility_1m > self.limits.max_volatility_1m:
+            violations.append(TradabilityGate.HIGH_VOLATILITY)
+        
+        is_tradable = len(violations) == 0
+        return is_tradable, violations
+    
+    def calculate_optimal_execution_strategy(self, params: ExecutionParams, 
+                                           conditions: MarketConditions) -> ExecutionParams:
+        """Calculate optimal execution strategy based on market conditions."""
+        optimized_params = params
+        
+        # Large orders -> TWAP or Iceberg
+        if params.quantity * conditions.ask > 10000:  # Orders > $10k
+            if conditions.volume_1m > 50000:  # High volume -> TWAP
+                optimized_params.order_type = OrderType.TWAP
+            else:  # Low volume -> Iceberg
+                optimized_params.order_type = OrderType.ICEBERG
+        
+        # Wide spreads -> Post-only to capture spread
+        if conditions.spread_bps > 20:
+            optimized_params.post_only = True
+            optimized_params.time_in_force = TimeInForce.POST_ONLY
+        
+        # High volatility -> Tighter slippage budget
+        if conditions.volatility_1m > 0.02:  # 2% volatility
+            optimized_params.max_slippage_bps = min(
+                optimized_params.max_slippage_bps, 
+                15.0  # Tighter budget in volatile conditions
+            )
+        
+        # Set optimal limit price
+        if optimized_params.order_type == OrderType.LIMIT:
+            if params.side == 'buy':
+                # Aggressive but within slippage budget
+                max_price = conditions.ask * (1 + optimized_params.max_slippage_bps / 10000)
+                optimized_params.limit_price = min(max_price, conditions.ask * 1.001)  # Max 0.1% above ask
+            else:  # sell
+                min_price = conditions.bid * (1 - optimized_params.max_slippage_bps / 10000)
+                optimized_params.limit_price = max(min_price, conditions.bid * 0.999)  # Max 0.1% below bid
+        
+        return optimized_params
+    
+    def validate_slippage_budget(self, params: ExecutionParams, execution_price: float, 
+                                conditions: MarketConditions) -> Tuple[bool, float]:
+        """Validate execution against slippage budget."""
+        # Calculate reference price
+        if params.side == 'buy':
+            reference_price = conditions.ask
         else:
-            return ExecutionStrategy.MARKET
-
-    async def execute_order(self,
-                          order: ExecutionOrder,
-                          market_conditions: MarketConditions) -> ExecutionResult:
-        """Execute order using selected strategy"""
-
+            reference_price = conditions.bid
+        
+        # Calculate actual slippage
+        if params.side == 'buy':
+            slippage_bps = ((execution_price - reference_price) / reference_price) * 10000
+        else:
+            slippage_bps = ((reference_price - execution_price) / reference_price) * 10000
+        
+        # Check against budget
+        within_budget = slippage_bps <= params.max_slippage_bps
+        
+        return within_budget, slippage_bps
+    
+    async def execute_order(self, params: ExecutionParams, 
+                           conditions: MarketConditions) -> OrderExecution:
+        """Execute order with comprehensive controls and monitoring."""
         start_time = time.time()
-
-        # Evaluate execution feasibility
-        can_execute, gating_reasons = self.evaluate_execution_feasibility(order, market_conditions)
-
-        if not can_execute:
-            return ExecutionResult(
-                order_id=order.order_id,
-                symbol=order.symbol,
-                side=order.side,
-                requested_quantity=order.quantity,
+        
+        # Generate client order ID if not provided
+        if not params.client_order_id:
+            params.client_order_id = self.generate_client_order_id(params)
+        
+        # Check deduplication
+        is_duplicate, duplicate_reason = self.check_order_deduplication(params.client_order_id)
+        if is_duplicate:
+            logger.warning(f"Duplicate order detected: {duplicate_reason}")
+            return OrderExecution(
+                client_order_id=params.client_order_id,
+                exchange_order_id=None,
+                symbol=params.symbol,
+                side=params.side,
+                quantity=params.quantity,
                 filled_quantity=0.0,
                 average_price=0.0,
-                realized_slippage_bps=0.0,
-                market_impact_bps=0.0,
-                execution_time_seconds=time.time() - start_time,
-                trading_fees=0.0,
-                market_impact_cost=0.0,
-                total_cost_bps=0.0,
-                strategy_used=order.strategy,
-                execution_timestamp=datetime.now(),
-                market_conditions=market_conditions,
-                status="gated",
-                error_message=f"Execution gated: {[r.value for r in gating_reasons]}"
+                status=OrderStatus.REJECTED,
+                slippage_bps=0.0,
+                fees=0.0,
+                execution_time_ms=0.0,
+                timestamp=datetime.now(),
+                error_message=f"Duplicate order: {duplicate_reason}"
             )
-
-        # Select execution strategy
-        selected_strategy = self.select_execution_strategy(order, market_conditions)
-
-        # Execute based on strategy
-        if selected_strategy == ExecutionStrategy.MARKET:
-            result = await self._execute_market_order(order, market_conditions)
-        elif selected_strategy == ExecutionStrategy.POST_ONLY:
-            result = await self._execute_post_only_order(order, market_conditions)
-        elif selected_strategy == ExecutionStrategy.TWAP:
-            result = await self._execute_twap_order(order, market_conditions)
-        elif selected_strategy == ExecutionStrategy.ICEBERG:
-            result = await self._execute_iceberg_order(order, market_conditions)
-        else:
-            result = await self._execute_market_order(order, market_conditions)  # Fallback
-
-        # Update slippage budget
-        self._consume_slippage_budget(result.realized_slippage_bps)
-
-        # Record execution
-        self._record_execution(result)
-
-        return result
-
-    async def _execute_market_order(self,
-                                  order: ExecutionOrder,
-                                  market_conditions: MarketConditions) -> ExecutionResult:
-        """Execute immediate market order"""
-
-        # REMOVED: Mock data pattern not allowed in production
-        execution_price = (market_conditions.ask_price if order.side == OrderSide.BUY
-                          else market_conditions.bid_price)
-
-        # Calculate slippage
-        reference_price = (market_conditions.bid_price + market_conditions.ask_price) / 2
-        slippage_bps = abs(execution_price - reference_price) / reference_price * 10000
-
-        # Add market impact
-        order_value = order.quantity * execution_price
-        impact_factor = min(order_value / market_conditions.volume_1h, 0.1)  # Cap at 10%
-        market_impact_bps = impact_factor * 50  # Up to 50 bps impact
-
-        total_slippage = slippage_bps + market_impact_bps
-
-        return ExecutionResult(
-            order_id=order.order_id,
-            symbol=order.symbol,
-            side=order.side,
-            requested_quantity=order.quantity,
-            filled_quantity=order.quantity,
-            average_price=execution_price,
-            realized_slippage_bps=total_slippage,
-            market_impact_bps=market_impact_bps,
-            execution_time_seconds=0.5,  # Fast execution
-            trading_fees=order_value * 0.001,  # 0.1% fee
-            market_impact_cost=order_value * (market_impact_bps / 10000),
-            total_cost_bps=total_slippage + 10,  # Slippage + fees
-            strategy_used=ExecutionStrategy.MARKET,
-            execution_timestamp=datetime.now(),
-            market_conditions=market_conditions,
-            status="completed"
-        )
-
-    async def _execute_post_only_order(self,
-                                     order: ExecutionOrder,
-                                     market_conditions: MarketConditions) -> ExecutionResult:
-        """Execute post-only (maker) order"""
-
-        # Post at mid-price or better
-        mid_price = (market_conditions.bid_price + market_conditions.ask_price) / 2
-
-        # Wait for fill simulation
-        await asyncio.sleep(5)  # REMOVED: Mock data pattern not allowed in production
-
-        # Assume filled at mid-price (best case for post-only)
-        execution_price = mid_price
-
-        # Minimal slippage for post-only
-        slippage_bps = market_conditions.spread_bps / 4  # Quarter of spread
-
-        order_value = order.quantity * execution_price
-
-        return ExecutionResult(
-            order_id=order.order_id,
-            symbol=order.symbol,
-            side=order.side,
-            requested_quantity=order.quantity,
-            filled_quantity=order.quantity,
-            average_price=execution_price,
-            realized_slippage_bps=slippage_bps,
-            market_impact_bps=0.0,  # No market impact for post-only
-            execution_time_seconds=5.0,
-            trading_fees=order_value * 0.0005,  # Lower maker fees
-            market_impact_cost=0.0,
-            total_cost_bps=slippage_bps + 5,  # Slippage + lower fees
-            strategy_used=ExecutionStrategy.POST_ONLY,
-            execution_timestamp=datetime.now(),
-            market_conditions=market_conditions,
-            status="completed"
-        )
-
-    async def _execute_twap_order(self,
-                                order: ExecutionOrder,
-                                market_conditions: MarketConditions) -> ExecutionResult:
-        """Execute TWAP (Time-Weighted Average Price) order"""
-
-        slice_size = order.quantity / order.twap_slices
-        slice_duration = order.twap_duration_minutes * 60 / order.twap_slices
-
-        total_filled = 0.0
-        weighted_price = 0.0
-        total_slippage = 0.0
-
-        for slice_num in range(order.twap_slices):
-            # Execute slice
-            await asyncio.sleep(slice_duration / 60)  # Scale down for simulation
-
-            # Vary execution price slightly for each slice
-            price_variation = np.random.normal(0, 1)  # 0.1% variation
-            execution_price = (market_conditions.ask_price if order.side == OrderSide.BUY
-                             else market_conditions.bid_price) * (1 + price_variation)
-
-            filled_quantity = slice_size
-            total_filled += filled_quantity
-            weighted_price += execution_price * filled_quantity
-
-            # Calculate slice slippage
-            reference_price = (market_conditions.bid_price + market_conditions.ask_price) / 2
-            slice_slippage = abs(execution_price - reference_price) / reference_price * 10000
-            total_slippage += slice_slippage
-
-        average_price = weighted_price / total_filled
-        average_slippage = total_slippage / order.twap_slices
-
-        order_value = total_filled * average_price
-
-        return ExecutionResult(
-            order_id=order.order_id,
-            symbol=order.symbol,
-            side=order.side,
-            requested_quantity=order.quantity,
-            filled_quantity=total_filled,
-            average_price=average_price,
-            realized_slippage_bps=average_slippage,
-            market_impact_bps=average_slippage * 0.6,  # 60% of slippage is impact
-            execution_time_seconds=order.twap_duration_minutes * 60,
-            trading_fees=order_value * 0.0008,  # Mid-tier fees
-            market_impact_cost=order_value * (average_slippage * 0.6 / 10000),
-            total_cost_bps=average_slippage + 8,
-            strategy_used=ExecutionStrategy.TWAP,
-            execution_timestamp=datetime.now(),
-            market_conditions=market_conditions,
-            status="completed"
-        )
-
-    async def _execute_iceberg_order(self,
-                                   order: ExecutionOrder,
-                                   market_conditions: MarketConditions) -> ExecutionResult:
-        """Execute iceberg order (large order fragmentation)"""
-
-        slice_size = order.quantity * order.iceberg_slice_size
-        total_filled = 0.0
-        weighted_price = 0.0
-        total_slippage = 0.0
-        execution_count = 0
-
-        remaining_quantity = order.quantity
-
-        while remaining_quantity > 0 and execution_count < 20:  # Max 20 slices
-            # REMOVED: Mock data pattern not allowed in production
-            randomization = np.random.normal(0, 1)
-            current_slice = min(slice_size * (1 + randomization), remaining_quantity)
-
-            # Execute slice with slight delay
-            await asyncio.sleep(np.random.normal(0, 1))
-
-            # Price impact accumulation
-            cumulative_impact = execution_count * 2  # 2 bps per slice
-            execution_price = (market_conditions.ask_price if order.side == OrderSide.BUY
-                             else market_conditions.bid_price) * (1 + cumulative_impact / 10000)
-
-            total_filled += current_slice
-            weighted_price += execution_price * current_slice
-            remaining_quantity -= current_slice
-            execution_count += 1
-
-            # Calculate slice slippage
-            reference_price = (market_conditions.bid_price + market_conditions.ask_price) / 2
-            slice_slippage = abs(execution_price - reference_price) / reference_price * 10000
-            total_slippage += slice_slippage
-
-        average_price = weighted_price / total_filled
-        average_slippage = total_slippage / execution_count
-        market_impact = execution_count * 2  # Cumulative impact
-
-        order_value = total_filled * average_price
-
-        return ExecutionResult(
-            order_id=order.order_id,
-            symbol=order.symbol,
-            side=order.side,
-            requested_quantity=order.quantity,
-            filled_quantity=total_filled,
-            average_price=average_price,
-            realized_slippage_bps=average_slippage,
-            market_impact_bps=market_impact,
-            execution_time_seconds=execution_count * 3,  # 3s per slice average
-            trading_fees=order_value * 0.001,
-            market_impact_cost=order_value * (market_impact / 10000),
-            total_cost_bps=average_slippage + 10,
-            strategy_used=ExecutionStrategy.ICEBERG,
-            execution_timestamp=datetime.now(),
-            market_conditions=market_conditions,
-            status="completed"
-        )
-
-    def _consume_slippage_budget(self, slippage_bps: float):
-        """Consume slippage budget for executed trade"""
-        self.slippage_budget.daily_consumed_bps += slippage_bps
-        self.slippage_budget.hourly_consumed_bps += slippage_bps
-
-    def _record_execution(self, result: ExecutionResult):
-        """Record execution for telemetry and analysis"""
-
-        # Add to history
-        self.execution_history.append(result)
-        self.slippage_history.append((result.execution_timestamp, result.realized_slippage_bps))
-
-        # Update telemetry
-        self.telemetry_data['total_executions'] += 1
-        if result.status == "completed":
-            self.telemetry_data['successful_executions'] += 1
-
-        # Calculate running statistics
-        recent_slippages = [s for _, s in self.slippage_history[-100:]]  # Last 100 trades
-        if recent_slippages:
-            self.telemetry_data['average_slippage_bps'] = np.mean(recent_slippages)
-            self.telemetry_data['slippage_95th_percentile'] = np.percentile(recent_slippages, 95)
-
-        # Budget utilization
-        self.telemetry_data['budget_utilization'] = (
-            self.slippage_budget.daily_consumed_bps / self.slippage_budget.daily_budget_bps
-        )
-
-        # Record metrics
-        if self.metrics_collector:
-            self.metrics_collector.record_trade_execution(
-                symbol=result.symbol,
-                side=result.side.value,
-                order_type=result.strategy_used.value,
-                status=result.status
+        
+        # Check tradability gates
+        is_tradable, gate_violations = self.check_tradability_gates(conditions)
+        if not is_tradable:
+            self.execution_stats['rejected_by_gates'] += 1
+            violation_names = [gate.value for gate in gate_violations]
+            logger.warning(f"Order rejected by tradability gates: {violation_names}")
+            
+            return OrderExecution(
+                client_order_id=params.client_order_id,
+                exchange_order_id=None,
+                symbol=params.symbol,
+                side=params.side,
+                quantity=params.quantity,
+                filled_quantity=0.0,
+                average_price=0.0,
+                status=OrderStatus.REJECTED,
+                slippage_bps=0.0,
+                fees=0.0,
+                execution_time_ms=(time.time() - start_time) * 1000,
+                timestamp=datetime.now(),
+                error_message=f"Tradability gates failed: {violation_names}"
             )
-
-            self.metrics_collector.record_slippage(
-                symbol=result.symbol,
-                order_type=result.strategy_used.value,
-                side=result.side.value,
-                slippage_bps=result.realized_slippage_bps
-            )
-
-        logger.info(f"Execution recorded: {result.symbol} {result.side.value} "
-                   f"{result.filled_quantity:.4f} @ {result.average_price:.4f} "
-                   f"(slippage: {result.realized_slippage_bps:.1f} bps)")
-
-    def get_execution_telemetry(self) -> Dict[str, Any]:
-        """Get real-time execution telemetry"""
-
-        # Calculate compliance metrics
-        recent_slippages = [s for _, s in self.slippage_history[-1000:]]  # Last 1000 trades
-
-        compliance_95th = 0.0
-        compliance_99th = 0.0
-        if recent_slippages:
-            p95 = np.percentile(recent_slippages, 95)
-            p99 = np.percentile(recent_slippages, 99)
-
-            compliance_95th = (p95 <= self.slippage_budget.compliance_target_95th_percentile)
-            compliance_99th = (p99 <= self.slippage_budget.compliance_target_99th_percentile)
-
-        return {
-            'timestamp': datetime.now().isoformat(),
-            'execution_statistics': self.telemetry_data,
-
-            'slippage_compliance': {
-                '95th_percentile_target': self.slippage_budget.compliance_target_95th_percentile,
-                '99th_percentile_target': self.slippage_budget.compliance_target_99th_percentile,
-                '95th_percentile_actual': np.percentile(recent_slippages, 95) if recent_slippages else 0,
-                '99th_percentile_actual': np.percentile(recent_slippages, 99) if recent_slippages else 0,
-                '95th_percentile_compliant': compliance_95th,
-                '99th_percentile_compliant': compliance_99th
-            },
-
-            'budget_status': {
-                'daily_budget_bps': self.slippage_budget.daily_budget_bps,
-                'daily_consumed_bps': self.slippage_budget.daily_consumed_bps,
-                'daily_remaining_bps': self.slippage_budget.daily_budget_bps - self.slippage_budget.daily_consumed_bps,
-                'hourly_budget_bps': self.slippage_budget.hourly_budget_bps,
-                'hourly_consumed_bps': self.slippage_budget.hourly_consumed_bps,
-                'hourly_remaining_bps': self.slippage_budget.hourly_budget_bps - self.slippage_budget.hourly_consumed_bps,
-                'utilization_percentage': self.telemetry_data['budget_utilization'] * 100
-            },
-
-            'execution_gates': {
-                'max_spread_bps': self.execution_gates.max_spread_bps,
-                'max_slippage_bps': self.execution_gates.max_slippage_bps,
-                'min_volume_24h_usd': self.execution_gates.min_volume_24h_usd,
-                'min_depth_5_levels_usd': self.execution_gates.min_depth_5_levels_usd
-            },
-
-            'recent_performance': {
-                'total_executions_24h': len([r for r in self.execution_history
-                                           if (datetime.now() - r.execution_timestamp).days < 1]),
-                'success_rate_24h': (
-                    len([r for r in self.execution_history
-                        if (datetime.now() - r.execution_timestamp).days < 1 and r.status == "completed"]) /
-                    max(len([r for r in self.execution_history
-                           if (datetime.now() - r.execution_timestamp).days < 1]), 1) * 100
+        
+        # Optimize execution strategy
+        optimized_params = self.calculate_optimal_execution_strategy(params, conditions)
+        
+        # Execute order based on type
+        try:
+            if optimized_params.order_type == OrderType.TWAP:
+                execution = await self._execute_twap_order(optimized_params, conditions)
+            elif optimized_params.order_type == OrderType.ICEBERG:
+                execution = await self._execute_iceberg_order(optimized_params, conditions)
+            else:
+                execution = await self._execute_standard_order(optimized_params, conditions)
+            
+            execution.execution_time_ms = (time.time() - start_time) * 1000
+            
+            # Validate slippage budget
+            if execution.status == OrderStatus.FILLED and execution.average_price > 0:
+                within_budget, actual_slippage = self.validate_slippage_budget(
+                    optimized_params, execution.average_price, conditions
                 )
-            }
-        }
-
-    def validate_slippage_compliance(self) -> Dict[str, Any]:
-        """Validate slippage compliance against targets"""
-
-        recent_slippages = [s for _, s in self.slippage_history[-1000:]]
-
-        if not recent_slippages:
-            return {
-                'compliant': True,
-                'reason': 'No recent trades to analyze',
-                'sample_size': 0
-            }
-
-        p95 = np.percentile(recent_slippages, 95)
-        p99 = np.percentile(recent_slippages, 99)
-
-        compliant_95th = p95 <= self.slippage_budget.compliance_target_95th_percentile
-        compliant_99th = p99 <= self.slippage_budget.compliance_target_99th_percentile
-
+                execution.slippage_bps = actual_slippage
+                
+                if not within_budget:
+                    self.execution_stats['slippage_violations'] += 1
+                    logger.warning(f"Slippage budget exceeded: {actual_slippage:.1f} bps > {optimized_params.max_slippage_bps:.1f} bps")
+            
+            # Update statistics
+            self._update_execution_stats(execution)
+            
+            # Store execution record
+            if execution.status in [OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED]:
+                self.completed_orders[execution.client_order_id] = execution
+            else:
+                self.active_orders[execution.client_order_id] = execution
+            
+            return execution
+            
+        except Exception as e:
+            logger.error(f"Order execution failed: {e}")
+            return OrderExecution(
+                client_order_id=params.client_order_id,
+                exchange_order_id=None,
+                symbol=params.symbol,
+                side=params.side,
+                quantity=params.quantity,
+                filled_quantity=0.0,
+                average_price=0.0,
+                status=OrderStatus.REJECTED,
+                slippage_bps=0.0,
+                fees=0.0,
+                execution_time_ms=(time.time() - start_time) * 1000,
+                timestamp=datetime.now(),
+                error_message=str(e)
+            )
+    
+    async def _execute_standard_order(self, params: ExecutionParams, 
+                                    conditions: MarketConditions) -> OrderExecution:
+        """Execute standard order (market/limit)."""
+        # Simulate order execution (replace with actual exchange API calls)
+        await asyncio.sleep(0.1)  # Simulate network latency
+        
+        # Simulate execution price
+        if params.order_type == OrderType.MARKET:
+            if params.side == 'buy':
+                execution_price = conditions.ask * (1 + 0.0005)  # Small slippage
+            else:
+                execution_price = conditions.bid * (1 - 0.0005)
+        else:  # LIMIT
+            execution_price = params.limit_price or (
+                conditions.ask if params.side == 'buy' else conditions.bid
+            )
+        
+        # Simulate fees (0.1% taker fee)
+        fees = params.quantity * execution_price * 0.001
+        
+        return OrderExecution(
+            client_order_id=params.client_order_id,
+            exchange_order_id=f"EX_{int(time.time() * 1000)}",
+            symbol=params.symbol,
+            side=params.side,
+            quantity=params.quantity,
+            filled_quantity=params.quantity,
+            average_price=execution_price,
+            status=OrderStatus.FILLED,
+            slippage_bps=0.0,  # Will be calculated later
+            fees=fees,
+            execution_time_ms=0.0,  # Will be set by caller
+            timestamp=datetime.now()
+        )
+    
+    async def _execute_twap_order(self, params: ExecutionParams, 
+                                conditions: MarketConditions) -> OrderExecution:
+        """Execute TWAP (Time-Weighted Average Price) order."""
+        # Split order into smaller chunks over time
+        num_slices = min(10, max(3, int(params.quantity * conditions.ask / 1000)))  # 1 slice per $1k
+        slice_size = params.quantity / num_slices
+        slice_interval = 30  # 30 seconds between slices
+        
+        total_filled = 0.0
+        total_cost = 0.0
+        total_fees = 0.0
+        partial_fills = []
+        
+        for i in range(num_slices):
+            # Execute slice
+            slice_params = ExecutionParams(
+                symbol=params.symbol,
+                side=params.side,
+                quantity=slice_size,
+                order_type=OrderType.LIMIT,
+                limit_price=params.limit_price,
+                max_slippage_bps=params.max_slippage_bps
+            )
+            
+            slice_execution = await self._execute_standard_order(slice_params, conditions)
+            
+            if slice_execution.status == OrderStatus.FILLED:
+                total_filled += slice_execution.filled_quantity
+                total_cost += slice_execution.filled_quantity * slice_execution.average_price
+                total_fees += slice_execution.fees
+                
+                partial_fills.append({
+                    'slice': i + 1,
+                    'quantity': slice_execution.filled_quantity,
+                    'price': slice_execution.average_price,
+                    'timestamp': slice_execution.timestamp.isoformat()
+                })
+            
+            # Wait between slices (except last one)
+            if i < num_slices - 1:
+                await asyncio.sleep(min(slice_interval, 5))  # Cap at 5 seconds for demo
+        
+        average_price = total_cost / total_filled if total_filled > 0 else 0.0
+        
+        return OrderExecution(
+            client_order_id=params.client_order_id,
+            exchange_order_id=f"TWAP_{int(time.time() * 1000)}",
+            symbol=params.symbol,
+            side=params.side,
+            quantity=params.quantity,
+            filled_quantity=total_filled,
+            average_price=average_price,
+            status=OrderStatus.FILLED if total_filled == params.quantity else OrderStatus.PARTIALLY_FILLED,
+            slippage_bps=0.0,
+            fees=total_fees,
+            execution_time_ms=0.0,
+            timestamp=datetime.now(),
+            partial_fills=partial_fills
+        )
+    
+    async def _execute_iceberg_order(self, params: ExecutionParams, 
+                                   conditions: MarketConditions) -> OrderExecution:
+        """Execute iceberg order (hidden quantity)."""
+        # Show only small portion of total order
+        visible_size = min(params.quantity * 0.1, conditions.depth_ask / conditions.ask)
+        remaining_quantity = params.quantity
+        
+        total_filled = 0.0
+        total_cost = 0.0
+        total_fees = 0.0
+        partial_fills = []
+        
+        while remaining_quantity > 0:
+            # Execute visible portion
+            current_slice = min(visible_size, remaining_quantity)
+            
+            slice_params = ExecutionParams(
+                symbol=params.symbol,
+                side=params.side,
+                quantity=current_slice,
+                order_type=OrderType.LIMIT,
+                limit_price=params.limit_price,
+                post_only=True  # Iceberg orders are typically passive
+            )
+            
+            slice_execution = await self._execute_standard_order(slice_params, conditions)
+            
+            if slice_execution.status == OrderStatus.FILLED:
+                total_filled += slice_execution.filled_quantity
+                total_cost += slice_execution.filled_quantity * slice_execution.average_price
+                total_fees += slice_execution.fees
+                remaining_quantity -= slice_execution.filled_quantity
+                
+                partial_fills.append({
+                    'slice': len(partial_fills) + 1,
+                    'quantity': slice_execution.filled_quantity,
+                    'price': slice_execution.average_price,
+                    'timestamp': slice_execution.timestamp.isoformat()
+                })
+            else:
+                break  # Stop if slice fails
+            
+            await asyncio.sleep(2)  # Wait between iceberg reveals
+        
+        average_price = total_cost / total_filled if total_filled > 0 else 0.0
+        
+        return OrderExecution(
+            client_order_id=params.client_order_id,
+            exchange_order_id=f"ICE_{int(time.time() * 1000)}",
+            symbol=params.symbol,
+            side=params.side,
+            quantity=params.quantity,
+            filled_quantity=total_filled,
+            average_price=average_price,
+            status=OrderStatus.FILLED if total_filled == params.quantity else OrderStatus.PARTIALLY_FILLED,
+            slippage_bps=0.0,
+            fees=total_fees,
+            execution_time_ms=0.0,
+            timestamp=datetime.now(),
+            partial_fills=partial_fills
+        )
+    
+    def _update_execution_stats(self, execution: OrderExecution):
+        """Update execution statistics."""
+        self.execution_stats['total_orders'] += 1
+        
+        if execution.status in [OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED]:
+            self.execution_stats['successful_executions'] += 1
+            
+            # Update average slippage
+            total_slippage = (self.execution_stats['average_slippage_bps'] * 
+                            (self.execution_stats['successful_executions'] - 1) + 
+                            execution.slippage_bps)
+            self.execution_stats['average_slippage_bps'] = total_slippage / self.execution_stats['successful_executions']
+            
+            # Update average execution time
+            total_time = (self.execution_stats['average_execution_time_ms'] * 
+                         (self.execution_stats['successful_executions'] - 1) + 
+                         execution.execution_time_ms)
+            self.execution_stats['average_execution_time_ms'] = total_time / self.execution_stats['successful_executions']
+    
+    def get_execution_stats(self) -> Dict:
+        """Get comprehensive execution statistics."""
+        total_orders = self.execution_stats['total_orders']
+        successful_rate = (self.execution_stats['successful_executions'] / total_orders * 100) if total_orders > 0 else 0.0
+        rejection_rate = (self.execution_stats['rejected_by_gates'] / total_orders * 100) if total_orders > 0 else 0.0
+        
         return {
-            'compliant': compliant_95th and compliant_99th,
-            'sample_size': len(recent_slippages),
-            '95th_percentile': {
-                'target': self.slippage_budget.compliance_target_95th_percentile,
-                'actual': p95,
-                'compliant': compliant_95th
-            },
-            '99th_percentile': {
-                'target': self.slippage_budget.compliance_target_99th_percentile,
-                'actual': p99,
-                'compliant': compliant_99th
-            },
-            'average_slippage': np.mean(recent_slippages),
-            'max_slippage': np.max(recent_slippages),
-            'violations': len([s for s in recent_slippages if s > self.slippage_budget.per_trade_budget_bps])
+            'total_orders': total_orders,
+            'successful_executions': self.execution_stats['successful_executions'],
+            'success_rate_percent': successful_rate,
+            'rejected_by_gates': self.execution_stats['rejected_by_gates'],
+            'rejection_rate_percent': rejection_rate,
+            'slippage_violations': self.execution_stats['slippage_violations'],
+            'average_slippage_bps': self.execution_stats['average_slippage_bps'],
+            'average_execution_time_ms': self.execution_stats['average_execution_time_ms'],
+            'active_orders': len(self.active_orders),
+            'completed_orders': len(self.completed_orders),
+            'deduplication_cache_size': len(self.deduplication_cache)
         }
+    
+    def cancel_order(self, client_order_id: str) -> bool:
+        """Cancel active order."""
+        if client_order_id in self.active_orders:
+            order = self.active_orders[client_order_id]
+            order.status = OrderStatus.CANCELED
+            del self.active_orders[client_order_id]
+            self.completed_orders[client_order_id] = order
+            logger.info(f"Order canceled: {client_order_id}")
+            return True
+        
+        logger.warning(f"Cannot cancel order {client_order_id}: not found in active orders")
+        return False
+    
+    def get_order_status(self, client_order_id: str) -> Optional[OrderExecution]:
+        """Get order status by client order ID."""
+        return (self.active_orders.get(client_order_id) or 
+                self.completed_orders.get(client_order_id))
+
+
+# Execution utility functions
+def create_market_conditions(symbol: str, bid: float, ask: float, 
+                           volume_1m: float = 10000.0) -> MarketConditions:
+    """Create market conditions for testing."""
+    spread_bps = ((ask - bid) / bid) * 10000
+    
+    return MarketConditions(
+        symbol=symbol,
+        bid=bid,
+        ask=ask,
+        spread_bps=spread_bps,
+        depth_bid=volume_1m * 0.1,  # 10% of 1m volume as depth
+        depth_ask=volume_1m * 0.1,
+        volume_1m=volume_1m,
+        volatility_1m=0.02  # 2% default volatility
+    )
