@@ -11,8 +11,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.cryptosmarttrader.config import load_and_validate_settings, Settings
-from src.cryptosmarttrader.logging import setup_logging, setup_simple_logging, get_logger, LogContext
+from ..config import load_and_validate_settings, Settings
+from ..logging import setup_logging, setup_simple_logging, get_logger, LogContext
 import logging
 
 

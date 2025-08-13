@@ -12,7 +12,7 @@ from pathlib import Path
 
 from ..core.structured_logger import get_logger
 from ..core.risk_guard import RiskGuard, RiskLevel
-from ..core.execution_policy import ExecutionPolicy, OrderRequest, OrderType, TimeInForce
+from ..execution.execution_policy import ExecutionPolicy, OrderRequest, OrderType, TimeInForce
 from ..monitoring.prometheus_metrics import get_metrics
 from ..monitoring.alert_rules import AlertManager, AlertSeverity
 
