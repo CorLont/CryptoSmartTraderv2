@@ -1,3 +1,32 @@
+
+# Import from central risk guard system
+from .central_risk_guard import (
+    CentralRiskGuard as HardRiskGuard,
+    RiskLimits, PositionInfo, DataGap, RiskViolation, RiskCheckResult,
+    RiskType, RiskLevel, KillSwitchStatus, KillSwitch,
+    get_risk_guard, reset_risk_guard, check_trade_risk, is_trading_halted
+)
+
+# Import integration components
+from .risk_integration import (
+    RiskIntegratedExecutionPolicy, RiskAwarePortfolioManager, DataQualityMonitor,
+    get_integrated_execution_policy, get_portfolio_manager, get_data_monitor
+)
+
+# Backward compatibility alias
+RiskGuard = HardRiskGuard
+
+# Re-export all risk components
+__all__ = [
+    'RiskGuard', 'HardRiskGuard', 'CentralRiskGuard',
+    'RiskLimits', 'PositionInfo', 'DataGap', 'RiskViolation', 'RiskCheckResult',
+    'RiskType', 'RiskLevel', 'KillSwitchStatus', 'KillSwitch',
+    'RiskIntegratedExecutionPolicy', 'RiskAwarePortfolioManager', 'DataQualityMonitor',
+    'get_risk_guard', 'get_integrated_execution_policy', 'get_portfolio_manager',
+    'check_trade_risk', 'is_trading_halted'
+]
+
+
 """Enterprise RiskGuard System - Comprehensive risk management and kill-switch functionality."""
 
 import asyncio

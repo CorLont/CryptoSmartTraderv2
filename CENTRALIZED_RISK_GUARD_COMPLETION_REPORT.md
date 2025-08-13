@@ -1,185 +1,283 @@
-# Centralized RiskGuard - Hard Wire-Up Completion Report
+# CENTRAL RISKGUARD SYSTEM COMPLETED
 
-**Date:** 2025-08-13  
-**Status:** ✅ COMPLETED  
-**Integration:** Hard Wired in IntegratedTradingEngine  
-**Kill-Switch:** Persistent across sessions  
+## Summary
+✅ **HARD CENTRAL RISK MANAGEMENT IMPLEMENTED**
 
-## Implementation Summary
+Every trade must pass through centralized risk validation with automatic kill-switch protection and comprehensive alerting.
 
-Het **Centralized RiskGuard** systeem is volledig geïmplementeerd en hard wired in het CryptoSmartTrader V2 systeem. Elke entry/resize/hedge operatie gaat nu verplicht door comprehensive risk checks met day-loss limits, max drawdown protection, position/exposure limits, data quality gates en kill-switch functionaliteit.
+## Core Risk Protection
 
-## Core Features Implemented
+### 1. Mandatory Risk Checks (ALL TRADES)
+**Every trade passes through CentralRiskGuard.check_trade_risk():**
 
-### 1. Risk Limit Enforcement
-- ✅ **Day-Loss Limits**: 5% trigger (block), 8% kill-switch
-- ✅ **Max Drawdown**: 10% block, 15% kill-switch  
-- ✅ **Position Size Limits**: 2% per asset maximum
-- ✅ **Total Exposure Limits**: 95% portfolio maximum
-- ✅ **Data Quality Gates**: Age (5min) & quality score (0.7) validation
+✅ **Day Loss Limit**: Maximum $10,000 daily loss
+- Tracks cumulative daily P&L
+- Emergency halt when limit exceeded
+- Kill-switch activation on breach
+
+✅ **Max Drawdown**: Maximum 5% portfolio drawdown
+- Tracks peak equity vs current equity
+- Real-time drawdown calculation
+- Automatic trading halt on breach
+
+✅ **Max Exposure**: Maximum $100,000 total exposure
+- Aggregates all position sizes
+- Prevents over-leveraging
+- Pre-trade exposure validation
+
+✅ **Max Positions**: Maximum 10 total positions
+- Counts all open positions
+- Per-symbol position limits (max 3)
+- Portfolio diversification enforcement
+
+✅ **Data Gap Detection**: Maximum 5-minute data gaps
+- Real-time data quality monitoring
+- Historical gap tracking and reporting
+- Trade blocking on stale data
 
 ### 2. Kill-Switch System
-- ✅ **Automatic Triggers**: Day-loss/drawdown thresholds
-- ✅ **Manual Override**: Authorized user deactivation  
-- ✅ **Persistent State**: Survives system restarts
-- ✅ **Emergency Protection**: Blocks all operations when active
+**Emergency trading halt with full logging:**
 
-### 3. Operation Type Support
-- ✅ **Entry Operations**: New position creation
-- ✅ **Resize Operations**: Position size adjustments
-- ✅ **Hedge Operations**: Risk mitigation trades
-- ✅ **Exit Operations**: Position closure
-- ✅ **Rebalance Operations**: Portfolio adjustments
+🚨 **Automatic Triggers:**
+- Critical day loss exceeded
+- Maximum drawdown breached
+- Emergency risk violations
+- Manual emergency halt
 
-## Technical Architecture
+🔒 **Protection Features:**
+- Immediate trading halt
+- Comprehensive violation logging
+- Emergency alert generation
+- Persistent state management
+- Authorized reset requirement
 
-```
-Trading Signal
-     ↓
-DataFlowOrchestrator.process_market_signal()
-     ↓
-IntegratedTradingEngine._check_centralized_risk_guard()
-     ↓
-CentralizedRiskGuard.check_operation_risk()
-     ↓
-HARD RISK CHECKS:
-  1. Kill-Switch Status (HARD BLOCK)
-  2. Day-Loss Limits (5%/8%)
-  3. Max Drawdown (10%/15%)
-  4. Position Size Limits (2% per asset)
-  5. Total Exposure (95% max)
-  6. Data Quality Gates
-     ↓
-Risk Decision: ALLOW/WARN/REDUCE/BLOCK/KILL_SWITCH
-     ↓
-OrderPipeline.submit_order() (if approved)
-     ↓
-ExecutionPolicy.decide() gates
-     ↓
-Order Execution
-```
+📝 **Audit Trail:**
+- All violations logged with timestamps
+- Kill-switch state persisted to disk
+- Emergency alerts saved to logs/emergency_alerts.log
+- Comprehensive status reporting
 
-## Risk Check Flow
+### 3. Real-Time Risk Monitoring
 
-### Risk Assessment Process:
-1. **Kill-Switch Check**: Immediate block if active
-2. **Day-Loss Validation**: Current day P&L vs limits
-3. **Drawdown Analysis**: Total portfolio drawdown check  
-4. **Position Size Limits**: Per-asset concentration validation
-5. **Exposure Calculation**: Total portfolio exposure check
-6. **Data Quality Gates**: Age, score, staleness validation
-7. **Risk Level Determination**: Normal→Conservative→Warning→Critical→Emergency
-8. **Final Decision**: Allow/reduce/block/kill-switch
-
-### Risk Action Types:
-- **ALLOW**: Operation approved as requested
-- **WARN**: Operation approved with warnings logged
-- **REDUCE**: Operation approved with reduced quantity
-- **BLOCK**: Operation rejected due to risk breach
-- **KILL_SWITCH**: All operations blocked, system emergency stop
-
-## Integration Points
-
-### IntegratedTradingEngine Integration:
+**Position Tracking:**
 ```python
-# Before every order execution:
-risk_check_result = await self._check_centralized_risk_guard(
-    symbol=symbol,
-    pipeline_result=pipeline_result,
-    signal_data=signal_data
+# Automatic position updates
+risk_guard.update_position(PositionInfo(
+    symbol="BTC/USD",
+    size_usd=5000.0,
+    entry_price=50000.0,
+    current_price=50500.0,
+    unrealized_pnl=50.0,
+    timestamp=time.time(),
+    strategy_id="momentum_v1"
+))
+```
+
+**Data Quality Monitoring:**
+```python
+# Automatic gap detection
+risk_guard.report_data_gap(DataGap(
+    symbol="BTC/USD", 
+    gap_minutes=8.0,
+    data_type="price"
+))
+```
+
+**Daily P&L Tracking:**
+```python
+# Real-time loss monitoring
+risk_guard.update_daily_pnl(-2500.0)  # Updates loss tracking
+risk_guard.update_equity(97500.0)     # Updates drawdown calculation
+```
+
+### 4. Integration with Execution
+
+**Risk-Integrated Execution Policy:**
+```python
+from cryptosmarttrader.risk.risk_integration import get_integrated_execution_policy
+
+# ALL orders pass through BOTH execution discipline AND risk guard
+policy = get_integrated_execution_policy()
+result = policy.decide(order_request, market_conditions)
+
+# Result includes both execution gates AND risk validation
+if result.decision == "approve":
+    # Trade approved by both systems
+    execute_order(result.approved_order)
+else:
+    # Rejected by execution discipline OR risk guard
+    log_rejection(result.reason)
+```
+
+### 5. Portfolio-Aware Management
+
+**Integrated Portfolio Manager:**
+```python
+from cryptosmarttrader.risk.risk_integration import get_portfolio_manager
+
+portfolio = get_portfolio_manager()
+
+# Automatic risk tracking
+portfolio.add_position(position)     # Updates central risk guard
+portfolio.update_position(symbol, current_price)  # Real-time risk updates
+portfolio.close_position(symbol)    # Updates daily P&L
+```
+
+### 6. Usage Pattern (MANDATORY)
+
+```python
+from cryptosmarttrader.risk.central_risk_guard import get_risk_guard
+
+# Get central risk guard
+risk_guard = get_risk_guard()
+
+# MANDATORY: Check every trade
+result = risk_guard.check_trade_risk(
+    symbol="BTC/USD",
+    trade_size_usd=5000.0,
+    strategy_id="momentum_v1"
 )
 
-if risk_check_result.approved:
-    # Proceed with OrderPipeline execution
-    order_result = await self._execute_order_through_pipeline(...)
+if result.is_safe:
+    # Trade approved - proceed with execution
+    success = execute_trade(symbol, size)
+    
+    if success:
+        # Update position tracking
+        risk_guard.update_position(position_info)
+    else:
+        # Handle execution failure
+        log_execution_failure()
 else:
-    # Block operation and log violation
-    self.logger.warning("Order blocked by centralized risk guard")
+    # Trade blocked by risk guard
+    logger.warning(f"Trade blocked: {result.reason}")
+    
+    # Check if kill-switch triggered
+    if result.kill_switch_triggered:
+        send_emergency_alert("Trading halted by kill-switch")
+    
+    # Log all violations
+    for violation in result.violations:
+        logger.warning(f"Risk violation: {violation.description}")
 ```
 
-## Kill-Switch System
+### 7. Emergency Procedures
 
-### Automatic Triggers:
-- **Daily Loss ≥ 8%**: Immediate kill-switch activation
-- **Max Drawdown ≥ 15%**: Emergency system shutdown
-- **Data Quality Failure**: Critical data integrity breach
-- **System Errors**: Risk check failures block operations
+**Manual Emergency Halt:**
+```python
+from cryptosmarttrader.risk.central_risk_guard import trigger_emergency_halt
 
-### Manual Controls:
-- **Deactivation**: `risk_guard.deactivate_kill_switch(authorized_user)`
-- **Status Check**: `risk_guard.get_risk_status()['kill_switch_active']`
-- **Persistent State**: Automatically saved/loaded across restarts
+# Manual emergency stop
+trigger_emergency_halt("Market volatility spike detected")
+```
+
+**Kill-Switch Status Check:**
+```python
+from cryptosmarttrader.risk.central_risk_guard import is_trading_halted
+
+if is_trading_halted():
+    # All trading operations blocked
+    logger.critical("Trading halted - no new orders allowed")
+    return False
+```
+
+**Authorized Reset:**
+```python
+risk_guard = get_risk_guard()
+
+# Reset requires authorization
+risk_guard.kill_switch.reset(authorized_user="admin_user")
+logger.info("Trading resumed after manual reset")
+```
+
+### 8. Comprehensive Monitoring
+
+**Risk Summary Dashboard:**
+```python
+summary = risk_guard.get_risk_summary()
+
+# Kill-switch status
+print(f"Trading status: {summary['kill_switch']['status']}")
+
+# Current metrics
+current = summary['current']
+print(f"Daily P&L: ${current['daily_pnl']:,.0f}")
+print(f"Drawdown: {current['drawdown_pct']:.1f}%")
+print(f"Exposure: ${current['total_exposure_usd']:,.0f}")
+print(f"Positions: {current['total_positions']}")
+
+# Utilization percentages
+util = summary['utilization']
+print(f"Exposure utilization: {util['exposure_pct']:.1f}%")
+print(f"Position utilization: {util['positions_pct']:.1f}%")
+print(f"Drawdown utilization: {util['drawdown_pct']:.1f}%")
+```
+
+## File Structure
+
+**Core Components:**
+- `src/cryptosmarttrader/risk/central_risk_guard.py` - Main risk system
+- `src/cryptosmarttrader/risk/risk_integration.py` - Integration layer
+- `src/cryptosmarttrader/risk/risk_guard.py` - Updated canonical import
+- `tests/test_central_risk_guard.py` - Comprehensive test suite
+- `test_central_risk_guard_simple.py` - Simple validation tests
+
+**Persistent State:**
+- `data/risk/kill_switch_state.json` - Kill-switch state persistence
+- `logs/emergency_alerts.log` - Emergency alert history
 
 ## Risk Limits Configuration
 
-### Default Settings:
+**Default Limits (Configurable):**
 ```python
-CentralizedRiskGuard(
-    max_daily_loss_pct=5.0,        # 5% daily loss triggers block
-    max_drawdown_pct=10.0,         # 10% drawdown triggers block  
-    max_position_size_pct=2.0,     # 2% max per asset
-    max_total_exposure_pct=95.0,   # 95% max total exposure
-    min_data_quality_score=0.7,    # Min 70% data quality
-    max_data_age_minutes=5.0       # Max 5 minute data age
+RiskLimits(
+    max_day_loss_usd=10000.0,           # $10k daily loss limit
+    max_day_loss_percent=2.0,           # 2% portfolio loss limit
+    max_drawdown_percent=5.0,           # 5% maximum drawdown
+    max_total_exposure_usd=100000.0,    # $100k total exposure
+    max_single_position_percent=20.0,   # 20% max single position
+    max_total_positions=10,             # 10 total positions max
+    max_positions_per_symbol=3,         # 3 positions per symbol
+    max_data_gap_minutes=5,             # 5 minute data gap limit
+    min_data_quality_score=0.8          # 80% minimum data quality
 )
 ```
 
-### Escalation Thresholds:
-- **Day-Loss**: 3% warning → 5% block → 8% kill-switch
-- **Drawdown**: 7% warning → 10% block → 15% kill-switch
-- **Position**: Size reduction → Block if >2%
-- **Exposure**: Block if total >95%
-- **Data Quality**: Block if score <70% or age >5min
+## Benefits Achieved
 
-## Validation Results
+✅ **Centralized Control**: Single risk management system for all trades
+✅ **Hard Limits**: No trade bypasses risk validation
+✅ **Kill-Switch Protection**: Automatic emergency halt capability
+✅ **Real-Time Monitoring**: Continuous risk assessment
+✅ **Comprehensive Logging**: Full audit trail for compliance
+✅ **Position Tracking**: Portfolio-wide risk awareness
+✅ **Data Quality**: Protection against stale/missing data
+✅ **Integration Ready**: Works with existing execution systems
+✅ **Thread-Safe**: Safe for concurrent trading operations
+✅ **Persistent State**: Survives system restarts
 
-### Integration Test Results:
-- ✅ **CentralizedRiskGuard**: Successfully initialized
-- ✅ **IntegratedTradingEngine**: Risk guard hard wired  
-- ✅ **Kill-Switch Persistence**: State survives restarts
-- ✅ **Risk Limits Active**: All thresholds enforced
-- ✅ **Architecture Flow**: Signal→RiskGuard→OrderPipeline→ExecutionPolicy
+## Testing Coverage
 
-### Risk Check Performance:
-- **Processing Time**: Sub-millisecond risk assessments
-- **Memory Efficiency**: Lightweight operation tracking
-- **Thread Safety**: Multi-threaded operation support
-- **Error Handling**: Graceful failure with blocking fallback
+**Comprehensive test validation:**
+- ✅ Day loss limit enforcement with kill-switch
+- ✅ Drawdown limit with automatic halt
+- ✅ Exposure limit validation
+- ✅ Position count enforcement
+- ✅ Data gap detection and blocking
+- ✅ Kill-switch trigger and reset functionality
+- ✅ Risk summary and monitoring
+- ✅ Integration with execution policy
+- ✅ Portfolio manager integration
+- ✅ Concurrent operation safety
 
-## Enterprise Features
+## Status: PRODUCTION READY ✅
 
-### Observability:
-- **Structured Logging**: All risk decisions logged with context
-- **Metrics Collection**: Risk check counts, approval rates, violations
-- **Alert Integration**: Risk breaches trigger unified metrics alerts
-- **Status Monitoring**: Real-time risk guard status available
+The central RiskGuard system provides enterprise-grade protection with:
+- **Hard enforcement** of all risk limits
+- **Automatic kill-switch** for emergency situations
+- **Comprehensive monitoring** and alerting
+- **Full integration** with trading systems
+- **Persistent state** management
+- **Audit trail** for compliance
 
-### Compliance:
-- **Audit Trail**: All operations and decisions logged
-- **Risk Attribution**: Per-operation risk analysis
-- **Violation Tracking**: Historical breach analysis
-- **Performance Impact**: Risk budget usage tracking
-
-## Production Benefits
-
-1. **Risk Mitigation**: Comprehensive protection against large losses
-2. **Regulatory Compliance**: Systematic risk limit enforcement  
-3. **System Protection**: Kill-switch prevents catastrophic scenarios
-4. **Performance Optimization**: Risk budget management for 500% target
-5. **Operational Safety**: Data quality gates prevent poor-data trading
-6. **Recovery Capability**: Persistent state enables quick recovery
-
-## Next Steps
-
-Het Centralized RiskGuard systeem is nu **production-ready** en hard wired voor maximum safety:
-
-- ✅ Day-loss limits (5%/8%) met kill-switch
-- ✅ Max drawdown protection (10%/15%)  
-- ✅ Position size enforcement (2% per asset)
-- ✅ Total exposure caps (95% maximum)
-- ✅ Data quality gates (age + score validation)
-- ✅ Kill-switch system (persistent + recoverable)
-- ✅ Hard integration with IntegratedTradingEngine
-- ✅ Zero bypass - all operations checked
-
-**Status**: 🛡️ **CENTRALIZED RISK GUARD HARD WIRED** - Maximum protection voor 500% target achievement!
+**ALL TRADES NOW PASS THROUGH CENTRALIZED RISK VALIDATION WITH KILL-SWITCH PROTECTION**
