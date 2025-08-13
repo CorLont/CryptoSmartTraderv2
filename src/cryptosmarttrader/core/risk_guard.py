@@ -1,10 +1,10 @@
 """
-Risk Guard - Alias to canonical implementation
-This file redirects to the single source of truth in risk module
+Alias for RiskGuard
+Redirects to canonical implementation at src/cryptosmarttrader/risk/risk_guard.py
 """
 
-# Import from canonical source
-from ..risk.risk_guard import *
+# Import canonical implementation
+from ..risk.risk_guard import RiskGuard
 
-# Maintain backward compatibility
-from ..risk.risk_guard import RiskGuard as RiskGuardSystem
+# Re-export for backward compatibility
+__all__ = ['RiskGuard']

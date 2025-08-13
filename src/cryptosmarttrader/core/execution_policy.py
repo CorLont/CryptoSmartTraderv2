@@ -1,10 +1,10 @@
 """
-Execution Policy - Alias to canonical implementation
-This file redirects to the single source of truth in execution module
+Alias for ExecutionPolicy
+Redirects to canonical implementation at src/cryptosmarttrader/execution/execution_policy.py
 """
 
-# Import from canonical source
-from ..execution.execution_policy import *
+# Import canonical implementation
+from ..execution.execution_policy import ExecutionPolicy
 
-# Maintain backward compatibility
-from ..execution.execution_policy import ExecutionPolicy as ExecutionPolicySystem
+# Re-export for backward compatibility
+__all__ = ['ExecutionPolicy']
