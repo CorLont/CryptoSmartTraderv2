@@ -15,7 +15,8 @@ import threading
 import pickle
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 try:
     import torch
@@ -24,6 +25,7 @@ try:
     from torch.utils.data import Dataset, DataLoader
     from torch.optim import Adam, AdamW
     from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
@@ -31,9 +33,11 @@ except ImportError:
 
 try:
     from transformers import AutoTokenizer, AutoModel
+
     HAS_TRANSFORMERS = True
 except ImportError:
     HAS_TRANSFORMERS = False
+
 
 class ModelType(Enum):
     LSTM = "lstm"
@@ -41,6 +45,7 @@ class ModelType(Enum):
     TRANSFORMER = "transformer"
     NBEATS = "nbeats"
     MULTIMODAL_FUSION = "multimodal_fusion"
+
 
 class DataModality(Enum):
     PRICE_TIME_SERIES = "price_timeseries"
@@ -50,11 +55,15 @@ class DataModality(Enum):
     MARKET_REGIME = "market_regime"
     ORDER_BOOK = "order_book"
 
+
 @dataclass
 class DeepLearningConfig:
     """Configuration for deep learning models"""
+
     sequence_length: int = 100
-    prediction_horizons: List[int] = field(default_factory=lambda: [1, 6, 24, 168])  # 1h, 6h, 1d, 1w
+    prediction_horizons: List[int] = field(
+        default_factory=lambda: [1, 6, 24, 168]
+    )  # 1h, 6h, 1d, 1w
     hidden_dim: int = 256
     num_layers: int = 4
     dropout_rate: float = 0.2
@@ -67,7 +76,9 @@ class DeepLearningConfig:
     # Model-specific configs
     transformer_heads: int = 8
     transformer_ff_dim: int = 1024
-    nbeats_stack_types: List[str] = field(default_factory=lambda: ['trend', 'seasonality', 'generic'])
+    nbeats_stack_types: List[str] = field(
+        default_factory=lambda: ["trend", "seasonality", "generic"]
+    )
     nbeats_num_blocks: int = 3
     nbeats_num_layers: int = 4
 
@@ -76,10 +87,13 @@ class DeepLearningConfig:
     text_embedding_dim: int = 768
     enable_cross_modal_attention: bool = True
 
+
 class MultiModalDataset(Dataset):
     """Dataset for multimodal deep learning"""
 
-    def __init__(self, data_dict: Dict[str, np.ndarray], targets: np.ndarray, sequence_length: int = 100):
+    def __init__(
+        self, data_dict: Dict[str, np.ndarray], targets: np.ndarray, sequence_length: int = 100
+    ):
         self.data_dict = data_dict
         self.targets = targets
         self.sequence_length = sequence_length
@@ -99,17 +113,25 @@ class MultiModalDataset(Dataset):
 
         for modality, data in self.data_dict.items():
             if len(data.shape) == 1:
-                sample[modality] = torch.FloatTensor(data[idx:idx + self.sequence_length])
+                sample[modality] = torch.FloatTensor(data[idx : idx + self.sequence_length])
             else:
-                sample[modality] = torch.FloatTensor(data[idx:idx + self.sequence_length])
+                sample[modality] = torch.FloatTensor(data[idx : idx + self.sequence_length])
 
         target = torch.FloatTensor(self.targets[idx + self.sequence_length])
         return sample, target
 
+
 class LSTMModel(nn.Module):
     """Advanced LSTM model for sequence prediction"""
 
-    def __init__(self, input_dim: int, hidden_dim: int, num_layers: int, output_dim: int, dropout: float = 0.2):
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dim: int,
+        num_layers: int,
+        output_dim: int,
+        dropout: float = 0.2,
+    ):
         super().__init__()
 
         self.hidden_dim = hidden_dim
@@ -122,7 +144,7 @@ class LSTMModel(nn.Module):
             num_layers,
             batch_first=True,
             dropout=dropout if num_layers > 1 else 0,
-            bidirectional=True
+            bidirectional=True,
         )
 
         # Attention mechanism
@@ -130,7 +152,7 @@ class LSTMModel(nn.Module):
             embed_dim=hidden_dim * 2,  # bidirectional
             num_heads=8,
             dropout=dropout,
-            batch_first=True
+            batch_first=True,
         )
 
         # Output layers
@@ -140,7 +162,7 @@ class LSTMModel(nn.Module):
             nn.Linear(hidden_dim * 2, hidden_dim),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(hidden_dim, output_dim)
+            nn.Linear(hidden_dim, output_dim),
         )
 
     def forward(self, x):
@@ -165,10 +187,19 @@ class LSTMModel(nn.Module):
         output = self.output_projection(combined)
         return output
 
+
 class TransformerModel(nn.Module):
     """Transformer model for sequence prediction"""
 
-    def __init__(self, input_dim: int, hidden_dim: int, num_layers: int, num_heads: int, output_dim: int, dropout: float = 0.2):
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dim: int,
+        num_layers: int,
+        num_heads: int,
+        output_dim: int,
+        dropout: float = 0.2,
+    ):
         super().__init__()
 
         self.input_projection = nn.Linear(input_dim, hidden_dim)
@@ -179,8 +210,8 @@ class TransformerModel(nn.Module):
             nhead=num_heads,
             dim_feedforward=hidden_dim * 4,
             dropout=dropout,
-            activation='gelu',
-            batch_first=True
+            activation="gelu",
+            batch_first=True,
         )
 
         self.transformer = nn.TransformerEncoder(encoder_layers, num_layers)
@@ -190,7 +221,7 @@ class TransformerModel(nn.Module):
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.GELU(),
             nn.Dropout(dropout),
-            nn.Linear(hidden_dim // 2, output_dim)
+            nn.Linear(hidden_dim // 2, output_dim),
         )
 
     def forward(self, x):
@@ -208,6 +239,7 @@ class TransformerModel(nn.Module):
         output = self.output_projection(pooled)
         return output
 
+
 class PositionalEncoding(nn.Module):
     """Positional encoding for transformer"""
 
@@ -220,16 +252,24 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(max_len, 1, d_model)
         pe[:, 0, 0::2] = torch.sin(position * div_term)
         pe[:, 0, 1::2] = torch.cos(position * div_term)
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
 
     def forward(self, x):
-        x = x + self.pe[:x.size(1)].transpose(0, 1)
+        x = x + self.pe[: x.size(1)].transpose(0, 1)
         return self.dropout(x)
+
 
 class NBeatsBlock(nn.Module):
     """N-BEATS block implementation"""
 
-    def __init__(self, input_dim: int, theta_dim: int, basis_function: str, layers: int = 4, layer_width: int = 256):
+    def __init__(
+        self,
+        input_dim: int,
+        theta_dim: int,
+        basis_function: str,
+        layers: int = 4,
+        layer_width: int = 256,
+    ):
         super().__init__()
 
         self.layers = nn.ModuleList()
@@ -262,10 +302,18 @@ class NBeatsBlock(nn.Module):
 
         return backcast, forecast
 
+
 class NBeatsModel(nn.Module):
     """N-BEATS model for time series forecasting"""
 
-    def __init__(self, input_dim: int, stack_types: List[str], num_blocks: int, num_layers: int, layer_width: int = 256):
+    def __init__(
+        self,
+        input_dim: int,
+        stack_types: List[str],
+        num_blocks: int,
+        num_layers: int,
+        layer_width: int = 256,
+    ):
         super().__init__()
 
         self.stacks = nn.ModuleList()
@@ -273,9 +321,9 @@ class NBeatsModel(nn.Module):
         for stack_type in stack_types:
             stack = nn.ModuleList()
             for _ in range(num_blocks):
-                if stack_type == 'trend':
+                if stack_type == "trend":
                     theta_dim = 3  # Linear trend parameters
-                elif stack_type == 'seasonality':
+                elif stack_type == "seasonality":
                     theta_dim = 10  # Seasonal fourier components
                 else:  # generic
                     theta_dim = 8
@@ -301,6 +349,7 @@ class NBeatsModel(nn.Module):
 
         return forecast
 
+
 class MultiModalFusionModel(nn.Module):
     """Multimodal fusion model combining different data types"""
 
@@ -315,10 +364,10 @@ class MultiModalFusionModel(nn.Module):
         self.encoders = nn.ModuleDict()
 
         for modality, input_dim in modality_dims.items():
-            if 'text' in modality.lower() or 'sentiment' in modality.lower():
+            if "text" in modality.lower() or "sentiment" in modality.lower():
                 # Text encoder
                 self.encoders[modality] = self._create_text_encoder(input_dim)
-            elif 'timeseries' in modality.lower() or 'price' in modality.lower():
+            elif "timeseries" in modality.lower() or "price" in modality.lower():
                 # Time series encoder
                 self.encoders[modality] = self._create_timeseries_encoder(input_dim)
             else:
@@ -331,7 +380,7 @@ class MultiModalFusionModel(nn.Module):
                 embed_dim=self.hidden_dim,
                 num_heads=8,
                 dropout=config.dropout_rate,
-                batch_first=True
+                batch_first=True,
             )
 
         # Fusion layer
@@ -341,7 +390,7 @@ class MultiModalFusionModel(nn.Module):
             nn.LayerNorm(self.hidden_dim),
             nn.GELU(),
             nn.Dropout(config.dropout_rate),
-            nn.Linear(self.hidden_dim, output_dim)
+            nn.Linear(self.hidden_dim, output_dim),
         )
 
     def _create_text_encoder(self, input_dim: int):
@@ -351,7 +400,7 @@ class MultiModalFusionModel(nn.Module):
             nn.LayerNorm(self.hidden_dim),
             nn.GELU(),
             nn.Dropout(self.config.dropout_rate),
-            nn.Linear(self.hidden_dim, self.hidden_dim)
+            nn.Linear(self.hidden_dim, self.hidden_dim),
         )
 
     def _create_timeseries_encoder(self, input_dim: int):
@@ -359,7 +408,7 @@ class MultiModalFusionModel(nn.Module):
         return nn.Sequential(
             nn.Linear(input_dim, self.hidden_dim),
             nn.LSTM(self.hidden_dim, self.hidden_dim, batch_first=True),
-            nn.Dropout(self.config.dropout_rate)
+            nn.Dropout(self.config.dropout_rate),
         )
 
     def _create_generic_encoder(self, input_dim: int):
@@ -369,7 +418,7 @@ class MultiModalFusionModel(nn.Module):
             nn.LayerNorm(self.hidden_dim),
             nn.ReLU(),
             nn.Dropout(self.config.dropout_rate),
-            nn.Linear(self.hidden_dim, self.hidden_dim)
+            nn.Linear(self.hidden_dim, self.hidden_dim),
         )
 
     def forward(self, inputs: Dict[str, torch.Tensor]):
@@ -413,6 +462,7 @@ class MultiModalFusionModel(nn.Module):
         output = self.fusion_layer(fused_representation)
         return output
 
+
 class DeepLearningEngine:
     """Core deep learning engine for CryptoSmartTrader"""
 
@@ -444,12 +494,18 @@ class DeepLearningEngine:
         self._lock = threading.RLock()
 
         # Device configuration
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.logger.info(f"Deep Learning Engine initialized on {self.device}")
 
-    def create_model(self, model_type: ModelType, model_id: str, input_dims: Union[int, Dict[str, int]],
-                    output_dim: int, **kwargs) -> bool:
+    def create_model(
+        self,
+        model_type: ModelType,
+        model_id: str,
+        input_dims: Union[int, Dict[str, int]],
+        output_dim: int,
+        **kwargs,
+    ) -> bool:
         """
         Create a new deep learning model
 
@@ -476,7 +532,7 @@ class DeepLearningEngine:
                         self.config.hidden_dim,
                         self.config.num_layers,
                         output_dim,
-                        self.config.dropout_rate
+                        self.config.dropout_rate,
                     )
 
                 elif model_type == ModelType.TRANSFORMER:
@@ -486,7 +542,7 @@ class DeepLearningEngine:
                         self.config.num_layers,
                         self.config.transformer_heads,
                         output_dim,
-                        self.config.dropout_rate
+                        self.config.dropout_rate,
                     )
 
                 elif model_type == ModelType.NBEATS:
@@ -494,7 +550,7 @@ class DeepLearningEngine:
                         input_dims if isinstance(input_dims, int) else sum(input_dims.values()),
                         self.config.nbeats_stack_types,
                         self.config.nbeats_num_blocks,
-                        self.config.nbeats_num_layers
+                        self.config.nbeats_num_layers,
                     )
 
                 elif model_type == ModelType.MULTIMODAL_FUSION:
@@ -510,27 +566,34 @@ class DeepLearningEngine:
 
                 # Store model
                 self.models[model_id] = {
-                    'model': model,
-                    'type': model_type,
-                    'input_dims': input_dims,
-                    'output_dim': output_dim,
-                    'created_at': datetime.now(),
-                    'trained': False,
-                    'performance': {}
+                    "model": model,
+                    "type": model_type,
+                    "input_dims": input_dims,
+                    "output_dim": output_dim,
+                    "created_at": datetime.now(),
+                    "trained": False,
+                    "performance": {},
                 }
 
                 self.active_models[model_id] = model
 
-                self.logger.info(f"Created {model_type.value} model '{model_id}' with {sum(p.numel() for p in model.parameters())} parameters")
+                self.logger.info(
+                    f"Created {model_type.value} model '{model_id}' with {sum(p.numel() for p in model.parameters())} parameters"
+                )
                 return True
 
             except Exception as e:
                 self.logger.error(f"Failed to create model {model_id}: {e}")
                 return False
 
-    def train_model(self, model_id: str, train_data: Dict[str, np.ndarray],
-                   targets: np.ndarray, val_data: Optional[Dict[str, np.ndarray]] = None,
-                   val_targets: Optional[np.ndarray] = None) -> Dict[str, Any]:
+    def train_model(
+        self,
+        model_id: str,
+        train_data: Dict[str, np.ndarray],
+        targets: np.ndarray,
+        val_data: Optional[Dict[str, np.ndarray]] = None,
+        val_targets: Optional[np.ndarray] = None,
+    ) -> Dict[str, Any]:
         """
         Train a deep learning model
 
@@ -550,39 +613,33 @@ class DeepLearningEngine:
                     raise ValueError(f"Model {model_id} not found")
 
                 model_info = self.models[model_id]
-                model = model_info['model']
-                model_type = model_info['type']
+                model = model_info["model"]
+                model_type = model_info["type"]
 
                 # Prepare data loaders
                 train_dataset = self._prepare_dataset(train_data, targets, model_type)
                 train_loader = DataLoader(
-                    train_dataset,
-                    batch_size=self.config.batch_size,
-                    shuffle=True
+                    train_dataset, batch_size=self.config.batch_size, shuffle=True
                 )
 
                 val_loader = None
                 if val_data is not None and val_targets is not None:
                     val_dataset = self._prepare_dataset(val_data, val_targets, model_type)
                     val_loader = DataLoader(
-                        val_dataset,
-                        batch_size=self.config.batch_size,
-                        shuffle=False
+                        val_dataset, batch_size=self.config.batch_size, shuffle=False
                     )
 
                 # Setup training components
                 criterion = nn.MSELoss()
-                optimizer = AdamW(model.parameters(), lr=self.config.learning_rate, weight_decay=1e-5)
-                scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.5)
+                optimizer = AdamW(
+                    model.parameters(), lr=self.config.learning_rate, weight_decay=1e-5
+                )
+                scheduler = ReduceLROnPlateau(optimizer, mode="min", patience=5, factor=0.5)
 
                 # Training history
-                history = {
-                    'train_loss': [],
-                    'val_loss': [],
-                    'learning_rates': []
-                }
+                history = {"train_loss": [], "val_loss": [], "learning_rates": []}
 
-                best_val_loss = float('inf')
+                best_val_loss = float("inf")
                 patience_counter = 0
 
                 # Training loop
@@ -609,14 +666,16 @@ class DeepLearningEngine:
 
                         # Backward pass
                         loss.backward()
-                        torch.nn.utils.clip_grad_norm_(model.parameters(), self.config.gradient_clip_norm)
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), self.config.gradient_clip_norm
+                        )
                         optimizer.step()
 
                         train_loss += loss.item()
 
                     avg_train_loss = train_loss / len(train_loader)
-                    history['train_loss'].append(avg_train_loss)
-                    history['learning_rates'].append(optimizer.param_groups[0]['lr'])
+                    history["train_loss"].append(avg_train_loss)
+                    history["learning_rates"].append(optimizer.param_groups[0]["lr"])
 
                     # Validation phase
                     if val_loader is not None:
@@ -626,7 +685,9 @@ class DeepLearningEngine:
                         with torch.no_grad():
                             for batch_data, batch_targets in val_loader:
                                 if isinstance(batch_data, dict):
-                                    batch_data = {k: v.to(self.device) for k, v in batch_data.items()}
+                                    batch_data = {
+                                        k: v.to(self.device) for k, v in batch_data.items()
+                                    }
                                 else:
                                     batch_data = batch_data.to(self.device)
 
@@ -636,7 +697,7 @@ class DeepLearningEngine:
                                 val_loss += loss.item()
 
                         avg_val_loss = val_loss / len(val_loader)
-                        history['val_loss'].append(avg_val_loss)
+                        history["val_loss"].append(avg_val_loss)
 
                         # Learning rate scheduling
                         scheduler.step(avg_val_loss)
@@ -655,36 +716,44 @@ class DeepLearningEngine:
                             break
 
                         if epoch % 10 == 0:
-                            self.logger.info(f"Epoch {epoch}: Train Loss={avg_train_loss:.6f}, Val Loss={avg_val_loss:.6f}")
+                            self.logger.info(
+                                f"Epoch {epoch}: Train Loss={avg_train_loss:.6f}, Val Loss={avg_val_loss:.6f}"
+                            )
                     else:
                         if epoch % 10 == 0:
                             self.logger.info(f"Epoch {epoch}: Train Loss={avg_train_loss:.6f}")
 
                 # Update model info
-                model_info['trained'] = True
-                model_info['training_history'] = history
+                model_info["trained"] = True
+                model_info["training_history"] = history
                 self.training_history[model_id] = history
 
                 # Calculate final performance metrics
-                performance = self._calculate_model_performance(model, val_loader if val_loader else train_loader)
-                model_info['performance'] = performance
+                performance = self._calculate_model_performance(
+                    model, val_loader if val_loader else train_loader
+                )
+                model_info["performance"] = performance
                 self.model_performance[model_id] = performance
 
                 self.logger.info(f"Training completed for model {model_id}")
                 return {
-                    'success': True,
-                    'final_train_loss': history['train_loss'][-1],
-                    'final_val_loss': history['val_loss'][-1] if history['val_loss'] else None,
-                    'epochs_trained': len(history['train_loss']),
-                    'performance': performance
+                    "success": True,
+                    "final_train_loss": history["train_loss"][-1],
+                    "final_val_loss": history["val_loss"][-1] if history["val_loss"] else None,
+                    "epochs_trained": len(history["train_loss"]),
+                    "performance": performance,
                 }
 
             except Exception as e:
                 self.logger.error(f"Training failed for model {model_id}: {e}")
-                return {'success': False, 'error': str(e)}
+                return {"success": False, "error": str(e)}
 
-    def _prepare_dataset(self, data: Union[Dict[str, np.ndarray], np.ndarray],
-                        targets: np.ndarray, model_type: ModelType) -> Dataset:
+    def _prepare_dataset(
+        self,
+        data: Union[Dict[str, np.ndarray], np.ndarray],
+        targets: np.ndarray,
+        model_type: ModelType,
+    ) -> Dataset:
         """Prepare dataset for training"""
         if model_type == ModelType.MULTIMODAL_FUSION:
             if not isinstance(data, dict):
@@ -698,9 +767,11 @@ class DeepLearningEngine:
             else:
                 data_array = data
 
-            return MultiModalDataset({'main': data_array}, targets, self.config.sequence_length)
+            return MultiModalDataset({"main": data_array}, targets, self.config.sequence_length)
 
-    def predict(self, model_id: str, input_data: Union[Dict[str, np.ndarray], np.ndarray]) -> Optional[np.ndarray]:
+    def predict(
+        self, model_id: str, input_data: Union[Dict[str, np.ndarray], np.ndarray]
+    ) -> Optional[np.ndarray]:
         """
         Make predictions with a trained model
 
@@ -721,8 +792,10 @@ class DeepLearningEngine:
             with torch.no_grad():
                 # Prepare input
                 if isinstance(input_data, dict):
-                    batch_data = {k: torch.FloatTensor(v).unsqueeze(0).to(self.device)
-                                for k, v in input_data.items()}
+                    batch_data = {
+                        k: torch.FloatTensor(v).unsqueeze(0).to(self.device)
+                        for k, v in input_data.items()
+                    }
                 else:
                     batch_data = torch.FloatTensor(input_data).unsqueeze(0).to(self.device)
 
@@ -736,7 +809,9 @@ class DeepLearningEngine:
             self.logger.error(f"Prediction failed for model {model_id}: {e}")
             return None
 
-    def _calculate_model_performance(self, model: nn.Module, data_loader: DataLoader) -> Dict[str, float]:
+    def _calculate_model_performance(
+        self, model: nn.Module, data_loader: DataLoader
+    ) -> Dict[str, float]:
         """Calculate comprehensive model performance metrics"""
         model.eval()
         total_loss = 0.0
@@ -780,23 +855,23 @@ class DeepLearningEngine:
         directional_accuracy = np.mean(actual_direction == pred_direction)
 
         return {
-            'mse': float(mse),
-            'mae': float(mae),
-            'rmse': float(rmse),
-            'r2': float(r2),
-            'directional_accuracy': float(directional_accuracy),
-            'avg_loss': total_loss / len(data_loader)
+            "mse": float(mse),
+            "mae": float(mae),
+            "rmse": float(rmse),
+            "r2": float(r2),
+            "directional_accuracy": float(directional_accuracy),
+            "avg_loss": total_loss / len(data_loader),
         }
 
     def _save_model_checkpoint(self, model_id: str, model: nn.Module, epoch: int, val_loss: float):
         """Save model checkpoint"""
         try:
             checkpoint = {
-                'model_state_dict': model.state_dict(),
-                'epoch': epoch,
-                'val_loss': val_loss,
-                'config': self.config.__dict__,
-                'timestamp': datetime.now().isoformat()
+                "model_state_dict": model.state_dict(),
+                "epoch": epoch,
+                "val_loss": val_loss,
+                "config": self.config.__dict__,
+                "timestamp": datetime.now().isoformat(),
             }
 
             checkpoint_path = self.model_dir / f"{model_id}_best.pt"
@@ -817,7 +892,7 @@ class DeepLearningEngine:
             checkpoint = torch.load(checkpoint_path, map_location=self.device)
 
             if model_id in self.active_models:
-                self.active_models[model_id].load_state_dict(checkpoint['model_state_dict'])
+                self.active_models[model_id].load_state_dict(checkpoint["model_state_dict"])
                 self.logger.info(f"Loaded model {model_id} from checkpoint")
                 return True
 
@@ -831,20 +906,22 @@ class DeepLearningEngine:
         """Get summary of all models"""
         with self._lock:
             summary = {
-                'total_models': len(self.models),
-                'trained_models': len([m for m in self.models.values() if m.get('trained', False)]),
-                'device': str(self.device),
-                'pytorch_available': HAS_TORCH,
-                'models': {}
+                "total_models": len(self.models),
+                "trained_models": len([m for m in self.models.values() if m.get("trained", False)]),
+                "device": str(self.device),
+                "pytorch_available": HAS_TORCH,
+                "models": {},
             }
 
             for model_id, model_info in self.models.items():
-                summary['models'][model_id] = {
-                    'type': model_info['type'].value,
-                    'trained': model_info.get('trained', False),
-                    'created_at': model_info['created_at'].isoformat(),
-                    'performance': model_info.get('performance', {}),
-                    'parameters': sum(p.numel() for p in model_info['model'].parameters()) if HAS_TORCH else 0
+                summary["models"][model_id] = {
+                    "type": model_info["type"].value,
+                    "trained": model_info.get("trained", False),
+                    "created_at": model_info["created_at"].isoformat(),
+                    "performance": model_info.get("performance", {}),
+                    "parameters": sum(p.numel() for p in model_info["model"].parameters())
+                    if HAS_TORCH
+                    else 0,
                 }
 
             return summary
@@ -854,11 +931,11 @@ class DeepLearningEngine:
         if model_id in self.training_history:
             history = self.training_history[model_id]
             return {
-                'epochs_completed': len(history['train_loss']),
-                'current_train_loss': history['train_loss'][-1] if history['train_loss'] else 0,
-                'current_val_loss': history['val_loss'][-1] if history['val_loss'] else 0,
-                'learning_rate': history['learning_rates'][-1] if history['learning_rates'] else 0,
-                'best_val_loss': min(history['val_loss']) if history['val_loss'] else None
+                "epochs_completed": len(history["train_loss"]),
+                "current_train_loss": history["train_loss"][-1] if history["train_loss"] else 0,
+                "current_val_loss": history["val_loss"][-1] if history["val_loss"] else 0,
+                "learning_rate": history["learning_rates"][-1] if history["learning_rates"] else 0,
+                "best_val_loss": min(history["val_loss"]) if history["val_loss"] else None,
             }
         return None
 
@@ -866,6 +943,7 @@ class DeepLearningEngine:
 # Singleton deep learning engine
 _deep_learning_engine = None
 _dl_lock = threading.Lock()
+
 
 def get_deep_learning_engine(config: Optional[DeepLearningConfig] = None) -> DeepLearningEngine:
     """Get the singleton deep learning engine"""
@@ -875,6 +953,7 @@ def get_deep_learning_engine(config: Optional[DeepLearningConfig] = None) -> Dee
         if _deep_learning_engine is None:
             _deep_learning_engine = DeepLearningEngine(config)
         return _deep_learning_engine
+
 
 def create_multimodal_model(model_id: str, modality_dims: Dict[str, int], output_dim: int) -> bool:
     """Convenient function to create multimodal model"""

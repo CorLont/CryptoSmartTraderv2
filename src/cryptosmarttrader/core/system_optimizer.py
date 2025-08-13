@@ -20,6 +20,7 @@ import logging
 # Cross-platform imports with fallbacks
 try:
     import psutil
+
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
@@ -27,19 +28,22 @@ except ImportError:
 try:
     from ..core.consolidated_logging_manager import get_consolidated_logger
 except ImportError:
+
     def get_consolidated_logger(name: str) -> logging.Logger:
         logger = logging.getLogger(name)
         if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             logger.addHandler(handler)
             logger.setLevel(logging.INFO)
         return logger
 
+
 @dataclass
 class OptimizationResult:
     """Result of optimization operation"""
+
     operation: str
     success: bool
     items_processed: int = 0
@@ -48,9 +52,11 @@ class OptimizationResult:
     message: str = ""
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class OptimizationReport:
     """Complete optimization cycle report"""
+
     timestamp: datetime
     cycle_duration_seconds: float
     operations: List[OptimizationResult]
@@ -60,6 +66,7 @@ class OptimizationReport:
     errors: List[str] = field(default_factory=list)
     system_metrics_before: Dict[str, float] = field(default_factory=dict)
     system_metrics_after: Dict[str, float] = field(default_factory=dict)
+
 
 class SystemOptimizer:
     """
@@ -117,65 +124,46 @@ class SystemOptimizer:
         default_config = {
             # Optimization intervals
             "intervals": {
-                "optimization_minutes": 30,     # Main optimization cycle
-                "cache_cleanup_hours": 6,       # Cache cleanup frequency
-                "log_rotation_days": 1,         # Log rotation frequency
-                "model_archive_days": 7         # Model archiving frequency
+                "optimization_minutes": 30,  # Main optimization cycle
+                "cache_cleanup_hours": 6,  # Cache cleanup frequency
+                "log_rotation_days": 1,  # Log rotation frequency
+                "model_archive_days": 7,  # Model archiving frequency
             },
-
             # Cache management
             "cache": {
-                "max_size_mb": 1000,           # Maximum cache size
-                "cleanup_threshold": 0.8,      # Cleanup when 80% full
-                "preserve_recent_hours": 2,    # Keep recent cache files
-                "cache_directories": [
-                    "cache",
-                    "data/cache",
-                    ".cache",
-                    "logs/cache"
-                ]
+                "max_size_mb": 1000,  # Maximum cache size
+                "cleanup_threshold": 0.8,  # Cleanup when 80% full
+                "preserve_recent_hours": 2,  # Keep recent cache files
+                "cache_directories": ["cache", "data/cache", ".cache", "logs/cache"],
             },
-
             # Log management
             "logs": {
-                "max_file_size_mb": 100,       # Maximum log file size
-                "max_files_per_logger": 5,     # Maximum rotated files
-                "compress_old_logs": True,     # Compress rotated logs
-                "log_directories": [
-                    "logs",
-                    "data/logs",
-                    ".logs"
-                ]
+                "max_file_size_mb": 100,  # Maximum log file size
+                "max_files_per_logger": 5,  # Maximum rotated files
+                "compress_old_logs": True,  # Compress rotated logs
+                "log_directories": ["logs", "data/logs", ".logs"],
             },
-
             # Model management - SAFE ARCHIVING
             "models": {
-                "archive_after_days": 7,       # Archive models after 7 days
-                "max_archived_models": 10,     # Maximum archived models
-                "model_directories": [
-                    "models",
-                    "ml/models",
-                    "data/models",
-                    "cache/models"
-                ],
-                "safe_archiving": True         # Archive instead of delete
+                "archive_after_days": 7,  # Archive models after 7 days
+                "max_archived_models": 10,  # Maximum archived models
+                "model_directories": ["models", "ml/models", "data/models", "cache/models"],
+                "safe_archiving": True,  # Archive instead of delete
             },
-
             # System optimization
             "system": {
                 "garbage_collection": True,
                 "process_optimization": True,
                 "memory_threshold_percent": 85,
-                "enable_agent_optimization": True  # AUTHENTIC optimization flag
+                "enable_agent_optimization": True,  # AUTHENTIC optimization flag
             },
-
             # Error handling
             "error_handling": {
                 "max_consecutive_failures": 3,
                 "backoff_multiplier": 2.0,
-                "max_interval_minutes": 240,   # 4 hours max
-                "reset_after_success": True
-            }
+                "max_interval_minutes": 240,  # 4 hours max
+                "reset_after_success": True,
+            },
         }
 
         if config:
@@ -192,7 +180,11 @@ class SystemOptimizer:
         """
 
         with self.optimization_lock:
-            if self.auto_optimization_enabled and self.optimization_thread and self.optimization_thread.is_alive():
+            if (
+                self.auto_optimization_enabled
+                and self.optimization_thread
+                and self.optimization_thread.is_alive()
+            ):
                 self.logger.warning("Auto-optimization already running")
                 return False
 
@@ -203,13 +195,15 @@ class SystemOptimizer:
             self.optimization_thread = threading.Thread(
                 target=self._optimization_loop,
                 name="SystemOptimizer",
-                daemon=False  # Proper cleanup on shutdown
+                daemon=False,  # Proper cleanup on shutdown
             )
 
             self.auto_optimization_enabled = True
             self.optimization_thread.start()
 
-            self.logger.info(f"Auto-optimization started (interval: {self.current_interval} minutes)")
+            self.logger.info(
+                f"Auto-optimization started (interval: {self.current_interval} minutes)"
+            )
             return True
 
     def stop_auto_optimization(self, timeout: float = 10.0) -> bool:
@@ -237,7 +231,9 @@ class SystemOptimizer:
                 self.optimization_thread.join(timeout=timeout)
 
                 if self.optimization_thread.is_alive():
-                    self.logger.warning(f"Optimization thread did not stop within {timeout}s timeout")
+                    self.logger.warning(
+                        f"Optimization thread did not stop within {timeout}s timeout"
+                    )
                     return False
 
             self.logger.info("Auto-optimization stopped successfully")
@@ -272,8 +268,10 @@ class SystemOptimizer:
                 self.total_items_processed += report.total_items_processed
 
                 cycle_duration = time.time() - start_time
-                self.logger.info(f"Optimization cycle completed in {cycle_duration:.1f}s "
-                               f"(success rate: {report.success_rate:.1%})")
+                self.logger.info(
+                    f"Optimization cycle completed in {cycle_duration:.1f}s "
+                    f"(success rate: {report.success_rate:.1%})"
+                )
 
             except Exception as e:
                 self.logger.error(f"Optimization cycle failed: {e}")
@@ -294,11 +292,13 @@ class SystemOptimizer:
         old_interval = self.current_interval
         self.current_interval = min(
             self.current_interval * self.backoff_multiplier,
-            self.config["error_handling"]["max_interval_minutes"]
+            self.config["error_handling"]["max_interval_minutes"],
         )
 
-        self.logger.warning(f"Applied backoff after {self.consecutive_failures} failures: "
-                          f"{old_interval} → {self.current_interval} minutes")
+        self.logger.warning(
+            f"Applied backoff after {self.consecutive_failures} failures: "
+            f"{old_interval} → {self.current_interval} minutes"
+        )
 
     def perform_optimization_cycle(self) -> OptimizationReport:
         """
@@ -368,7 +368,7 @@ class SystemOptimizer:
             success_rate=success_rate,
             errors=errors,
             system_metrics_before=metrics_before,
-            system_metrics_after=metrics_after
+            system_metrics_after=metrics_after,
         )
 
         # Update state
@@ -385,13 +385,13 @@ class SystemOptimizer:
 
         try:
             # Get initial object counts
-            objects_before = len(gc.get_objects()) if hasattr(gc, 'get_objects') else 0
+            objects_before = len(gc.get_objects()) if hasattr(gc, "get_objects") else 0
 
             # Force garbage collection
             collected = gc.collect()
 
             # Get final object counts
-            objects_after = len(gc.get_objects()) if hasattr(gc, 'get_objects') else 0
+            objects_after = len(gc.get_objects()) if hasattr(gc, "get_objects") else 0
             objects_freed = max(0, objects_before - objects_after)
 
             duration = time.time() - start_time
@@ -406,8 +406,8 @@ class SystemOptimizer:
                 metadata={
                     "objects_before": objects_before,
                     "objects_after": objects_after,
-                    "gc_counts": gc.get_count() if hasattr(gc, 'get_count') else []
-                }
+                    "gc_counts": gc.get_count() if hasattr(gc, "get_count") else [],
+                },
             )
 
         except Exception as e:
@@ -415,7 +415,7 @@ class SystemOptimizer:
                 operation="garbage_collection",
                 success=False,
                 duration_seconds=time.time() - start_time,
-                message=f"Garbage collection failed: {e}"
+                message=f"Garbage collection failed: {e}",
             )
 
     def _cleanup_caches(self) -> OptimizationResult:
@@ -434,14 +434,16 @@ class SystemOptimizer:
                     continue
 
                 # Calculate current cache size
-                cache_size = sum(f.stat().st_size for f in cache_path.rglob('*') if f.is_file())
+                cache_size = sum(f.stat().st_size for f in cache_path.rglob("*") if f.is_file())
                 max_size = cache_config["max_size_mb"] * 1024 * 1024
 
                 if cache_size > max_size * cache_config["cleanup_threshold"]:
                     # Cleanup needed
-                    preserve_time = datetime.now() - timedelta(hours=cache_config["preserve_recent_hours"])
+                    preserve_time = datetime.now() - timedelta(
+                        hours=cache_config["preserve_recent_hours"]
+                    )
 
-                    for cache_file in cache_path.rglob('*'):
+                    for cache_file in cache_path.rglob("*"):
                         if cache_file.is_file():
                             file_time = datetime.fromtimestamp(cache_file.stat().st_mtime)
 
@@ -452,7 +454,9 @@ class SystemOptimizer:
                                     total_bytes_freed += file_size
                                     files_cleaned += 1
                                 except OSError as e:
-                                    self.logger.debug(f"Could not delete cache file {cache_file}: {e}")
+                                    self.logger.debug(
+                                        f"Could not delete cache file {cache_file}: {e}"
+                                    )
 
             duration = time.time() - start_time
 
@@ -465,8 +469,8 @@ class SystemOptimizer:
                 message=f"Cleaned {files_cleaned} cache files, freed {total_bytes_freed / 1024 / 1024:.1f}MB",
                 metadata={
                     "directories_processed": len(cache_config["cache_directories"]),
-                    "size_threshold_mb": cache_config["max_size_mb"]
-                }
+                    "size_threshold_mb": cache_config["max_size_mb"],
+                },
             )
 
         except Exception as e:
@@ -474,7 +478,7 @@ class SystemOptimizer:
                 operation="cache_cleanup",
                 success=False,
                 duration_seconds=time.time() - start_time,
-                message=f"Cache cleanup failed: {e}"
+                message=f"Cache cleanup failed: {e}",
             )
 
     def _rotate_logs(self) -> OptimizationResult:
@@ -506,8 +510,9 @@ class SystemOptimizer:
 
                             if log_config["compress_old_logs"]:
                                 import gzip
-                                with open(log_file, 'rb') as f_in:
-                                    with gzip.open(rotated_path, 'wb') as f_out:
+
+                                with open(log_file, "rb") as f_in:
+                                    with gzip.open(rotated_path, "wb") as f_out:
                                         shutil.copyfileobj(f_in, f_out)
 
                                 original_size = log_file.stat().st_size
@@ -536,8 +541,8 @@ class SystemOptimizer:
                 message=f"Rotated {files_rotated} log files, saved {total_bytes_freed / 1024 / 1024:.1f}MB",
                 metadata={
                     "max_size_mb": log_config["max_file_size_mb"],
-                    "compression_enabled": log_config["compress_old_logs"]
-                }
+                    "compression_enabled": log_config["compress_old_logs"],
+                },
             )
 
         except Exception as e:
@@ -545,7 +550,7 @@ class SystemOptimizer:
                 operation="log_rotation",
                 success=False,
                 duration_seconds=time.time() - start_time,
-                message=f"Log rotation failed: {e}"
+                message=f"Log rotation failed: {e}",
             )
 
     def _archive_old_models(self) -> OptimizationResult:
@@ -580,10 +585,15 @@ class SystemOptimizer:
                         try:
                             if models_config["safe_archiving"]:
                                 # SAFE ARCHIVING: move to archive directory
-                                archive_path = archive_dir / f"{model_file.stem}_{file_time.strftime('%Y%m%d')}.pkl"
+                                archive_path = (
+                                    archive_dir
+                                    / f"{model_file.stem}_{file_time.strftime('%Y%m%d')}.pkl"
+                                )
                                 shutil.move(str(model_file), str(archive_path))
 
-                                self.logger.debug(f"Archived model: {model_file.name} → {archive_path.name}")
+                                self.logger.debug(
+                                    f"Archived model: {model_file.name} → {archive_path.name}"
+                                )
                             else:
                                 # Legacy behavior: direct deletion (not recommended)
                                 file_size = model_file.stat().st_size
@@ -598,7 +608,9 @@ class SystemOptimizer:
                             self.logger.debug(f"Could not archive model {model_file}: {e}")
 
                 # Cleanup old archived models
-                archived_models = sorted(archive_dir.glob("*.pkl"), key=lambda x: x.stat().st_mtime, reverse=True)
+                archived_models = sorted(
+                    archive_dir.glob("*.pkl"), key=lambda x: x.stat().st_mtime, reverse=True
+                )
                 max_archived = models_config["max_archived_models"]
 
                 for old_archive in archived_models[max_archived:]:
@@ -621,8 +633,8 @@ class SystemOptimizer:
                 metadata={
                     "archive_after_days": models_config["archive_after_days"],
                     "safe_archiving": models_config["safe_archiving"],
-                    "max_archived_models": models_config["max_archived_models"]
-                }
+                    "max_archived_models": models_config["max_archived_models"],
+                },
             )
 
         except Exception as e:
@@ -630,7 +642,7 @@ class SystemOptimizer:
                 operation="model_archiving",
                 success=False,
                 duration_seconds=time.time() - start_time,
-                message=f"Model archiving failed: {e}"
+                message=f"Model archiving failed: {e}",
             )
 
     def _optimize_agent_performance(self) -> OptimizationResult:
@@ -644,10 +656,10 @@ class SystemOptimizer:
             # 1. Check for agent processes and optimize their intervals
             agent_processes = []
             if PSUTIL_AVAILABLE:
-                for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                for proc in psutil.process_iter(["pid", "name", "cmdline"]):
                     try:
-                        cmdline = proc.info.get('cmdline', [])
-                        if any('agent' in arg.lower() for arg in cmdline if isinstance(arg, str)):
+                        cmdline = proc.info.get("cmdline", [])
+                        if any("agent" in arg.lower() for arg in cmdline if isinstance(arg, str)):
                             agent_processes.append(proc.info)
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
                         continue
@@ -658,7 +670,9 @@ class SystemOptimizer:
                 gc.collect()
                 optimizations_applied += 1
 
-                self.logger.debug(f"Found {len(agent_processes)} agent processes, applied memory optimization")
+                self.logger.debug(
+                    f"Found {len(agent_processes)} agent processes, applied memory optimization"
+                )
 
             # 3. Check system load and adjust recommendations
             system_load_optimization = False
@@ -666,10 +680,15 @@ class SystemOptimizer:
                 cpu_percent = psutil.cpu_percent(interval=0.1)
                 memory_percent = psutil.virtual_memory().percent
 
-                if cpu_percent > 80 or memory_percent > self.config["system"]["memory_threshold_percent"]:
+                if (
+                    cpu_percent > 80
+                    or memory_percent > self.config["system"]["memory_threshold_percent"]
+                ):
                     # System under load - actual optimization recommendation
-                    self.logger.info(f"High system load detected (CPU: {cpu_percent:.1f}%, Memory: {memory_percent:.1f}%) - "
-                                   "recommended to reduce agent update frequencies")
+                    self.logger.info(
+                        f"High system load detected (CPU: {cpu_percent:.1f}%, Memory: {memory_percent:.1f}%) - "
+                        "recommended to reduce agent update frequencies"
+                    )
                     system_load_optimization = True
                     optimizations_applied += 1
 
@@ -685,8 +704,8 @@ class SystemOptimizer:
                 metadata={
                     "agent_processes_found": len(agent_processes),
                     "system_load_optimization": system_load_optimization,
-                    "memory_threshold": self.config["system"]["memory_threshold_percent"]
-                }
+                    "memory_threshold": self.config["system"]["memory_threshold_percent"],
+                },
             )
 
         except Exception as e:
@@ -694,7 +713,7 @@ class SystemOptimizer:
                 operation="agent_optimization",
                 success=False,
                 duration_seconds=time.time() - start_time,
-                message=f"Agent optimization failed: {e}"
+                message=f"Agent optimization failed: {e}",
             )
 
     def _optimize_processes(self) -> OptimizationResult:
@@ -710,11 +729,11 @@ class SystemOptimizer:
                 high_cpu_processes = []
                 high_memory_processes = []
 
-                for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
+                for proc in psutil.process_iter(["pid", "name", "cpu_percent", "memory_percent"]):
                     try:
-                        if proc.info['cpu_percent'] > 50:  # High CPU usage
+                        if proc.info["cpu_percent"] > 50:  # High CPU usage
                             high_cpu_processes.append(proc.info)
-                        if proc.info['memory_percent'] > 10:  # High memory usage
+                        if proc.info["memory_percent"] > 10:  # High memory usage
                             high_memory_processes.append(proc.info)
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
                         continue
@@ -740,8 +759,8 @@ class SystemOptimizer:
                 metadata={
                     "psutil_available": PSUTIL_AVAILABLE,
                     "high_cpu_processes": len(high_cpu_processes) if PSUTIL_AVAILABLE else 0,
-                    "high_memory_processes": len(high_memory_processes) if PSUTIL_AVAILABLE else 0
-                }
+                    "high_memory_processes": len(high_memory_processes) if PSUTIL_AVAILABLE else 0,
+                },
             )
 
         except Exception as e:
@@ -749,7 +768,7 @@ class SystemOptimizer:
                 operation="process_optimization",
                 success=False,
                 duration_seconds=time.time() - start_time,
-                message=f"Process optimization failed: {e}"
+                message=f"Process optimization failed: {e}",
             )
 
     def _collect_system_metrics(self) -> Dict[str, float]:
@@ -764,7 +783,7 @@ class SystemOptimizer:
                 metrics["memory_percent"] = memory.percent
                 metrics["memory_available_gb"] = memory.available / (1024**3)
 
-                disk = psutil.disk_usage('.')
+                disk = psutil.disk_usage(".")
                 metrics["disk_percent"] = (disk.used / disk.total) * 100
                 metrics["disk_free_gb"] = disk.free / (1024**3)
         except Exception as e:
@@ -795,23 +814,30 @@ class SystemOptimizer:
 
         return {
             "optimizer_status": "active" if self.auto_optimization_enabled else "stopped",
-            "thread_alive": self.optimization_thread.is_alive() if self.optimization_thread else False,
+            "thread_alive": self.optimization_thread.is_alive()
+            if self.optimization_thread
+            else False,
             "current_interval_minutes": self.current_interval,
             "consecutive_failures": self.consecutive_failures,
             "total_cycles": self.cycle_count,
             "total_bytes_freed": self.total_bytes_freed,
             "total_items_processed": self.total_items_processed,
-            "last_optimization": self.last_optimization.timestamp.isoformat() if self.last_optimization else None,
-            "average_success_rate": sum(r.success_rate for r in self.optimization_history) / max(1, len(self.optimization_history))
+            "last_optimization": self.last_optimization.timestamp.isoformat()
+            if self.last_optimization
+            else None,
+            "average_success_rate": sum(r.success_rate for r in self.optimization_history)
+            / max(1, len(self.optimization_history)),
         }
 
     def __del__(self):
         """Ensure proper cleanup on destruction"""
 
-        if hasattr(self, 'auto_optimization_enabled') and self.auto_optimization_enabled:
+        if hasattr(self, "auto_optimization_enabled") and self.auto_optimization_enabled:
             self.stop_auto_optimization(timeout=2.0)
 
+
 # Utility functions
+
 
 def quick_optimization() -> OptimizationReport:
     """Perform quick system optimization"""
@@ -819,11 +845,13 @@ def quick_optimization() -> OptimizationReport:
     optimizer = SystemOptimizer(auto_start=False)
     return optimizer.perform_optimization_cycle()
 
+
 def start_background_optimizer(config: Optional[Dict[str, Any]] = None) -> SystemOptimizer:
     """Start background system optimizer"""
 
     optimizer = SystemOptimizer(config=config, auto_start=True)
     return optimizer
+
 
 if __name__ == "__main__":
     # Test system optimization

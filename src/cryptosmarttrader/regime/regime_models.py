@@ -21,28 +21,32 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 class MarketRegime(Enum):
     """Market regime classifications"""
-    TREND_UP = "trend_up"           # Strong uptrend with momentum
-    TREND_DOWN = "trend_down"       # Strong downtrend with momentum
+
+    TREND_UP = "trend_up"  # Strong uptrend with momentum
+    TREND_DOWN = "trend_down"  # Strong downtrend with momentum
     MEAN_REVERSION = "mean_reversion"  # Range-bound, mean-reverting
-    HIGH_VOL_CHOP = "high_vol_chop"    # High volatility, no clear trend
-    LOW_VOL_DRIFT = "low_vol_drift"    # Low volatility, weak trend
-    RISK_OFF = "risk_off"              # Flight to safety, correlation breakdown
+    HIGH_VOL_CHOP = "high_vol_chop"  # High volatility, no clear trend
+    LOW_VOL_DRIFT = "low_vol_drift"  # Low volatility, weak trend
+    RISK_OFF = "risk_off"  # Flight to safety, correlation breakdown
 
     @classmethod
-    def get_trading_regimes(cls) -> List['MarketRegime']:
+    def get_trading_regimes(cls) -> List["MarketRegime"]:
         """Get regimes suitable for active trading"""
         return [cls.TREND_UP, cls.TREND_DOWN, cls.MEAN_REVERSION]
 
     @classmethod
-    def get_no_trade_regimes(cls) -> List['MarketRegime']:
+    def get_no_trade_regimes(cls) -> List["MarketRegime"]:
         """Get regimes where trading should be avoided"""
         return [cls.HIGH_VOL_CHOP, cls.RISK_OFF]
+
 
 @dataclass
 class RegimeClassification:
     """Container for regime classification results"""
+
     primary_regime: MarketRegime
     confidence: float
     probabilities: Dict[MarketRegime, float]
@@ -83,24 +87,24 @@ class RegimeClassifier:
         ]
 
         # Add derived features
-        features.extend([
-            # Trend vs mean reversion signal
-            (feature_set.hurst_exponent - 0.5) * feature_set.adx,
-
-            # Volatility momentum
-            feature_set.realized_vol * (1 if feature_set.volatility_regime == 'high' else -1),
-
-            # Market structure health
-            feature_set.btc_dominance * feature_set.alt_breadth / 100,
-
-            # Derivatives sentiment
-            feature_set.funding_impulse + feature_set.oi_impulse,
-        ])
+        features.extend(
+            [
+                # Trend vs mean reversion signal
+                (feature_set.hurst_exponent - 0.5) * feature_set.adx,
+                # Volatility momentum
+                feature_set.realized_vol * (1 if feature_set.volatility_regime == "high" else -1),
+                # Market structure health
+                feature_set.btc_dominance * feature_set.alt_breadth / 100,
+                # Derivatives sentiment
+                feature_set.funding_impulse + feature_set.oi_impulse,
+            ]
+        )
 
         return np.array(features).reshape(1, -1)
 
-    def _create_labels_from_returns(self, returns: pd.Series,
-                                   features_df: pd.DataFrame) -> List[MarketRegime]:
+    def _create_labels_from_returns(
+        self, returns: pd.Series, features_df: pd.DataFrame
+    ) -> List[MarketRegime]:
         """
         Create regime labels based on market behavior patterns
         """
@@ -112,7 +116,7 @@ class RegimeClassifier:
                 continue
 
             # Look at recent window
-            window_returns = returns.iloc[i-20:i]
+            window_returns = returns.iloc[i - 20 : i]
             window_features = features_df.iloc[i] if i < len(features_df) else None
 
             # Calculate metrics
@@ -132,10 +136,14 @@ class RegimeClassifier:
                 elif total_return < -0.1:
                     labels.append(MarketRegime.RISK_OFF)
                 else:
-                    labels.append(MarketRegime.TREND_UP if total_return > 0 else MarketRegime.TREND_DOWN)
+                    labels.append(
+                        MarketRegime.TREND_UP if total_return > 0 else MarketRegime.TREND_DOWN
+                    )
 
             elif hurst > 0.55 and adx > 25:  # Strong trend
-                labels.append(MarketRegime.TREND_UP if total_return > 0 else MarketRegime.TREND_DOWN)
+                labels.append(
+                    MarketRegime.TREND_UP if total_return > 0 else MarketRegime.TREND_DOWN
+                )
 
             elif hurst < 0.45:  # Mean reverting
                 labels.append(MarketRegime.MEAN_REVERSION)
@@ -178,16 +186,21 @@ class RegimeClassifier:
             X = np.array(X)
 
             # Create feature DataFrame for labeling
-            features_df = pd.DataFrame([{
-                'hurst_exponent': f.hurst_exponent,
-                'adx': f.adx,
-                'realized_vol': f.realized_vol,
-                'atr_normalized': f.atr_normalized,
-                'btc_dominance': f.btc_dominance,
-                'alt_breadth': f.alt_breadth,
-                'funding_impulse': f.funding_impulse,
-                'oi_impulse': f.oi_impulse,
-            } for f in feature_objects])
+            features_df = pd.DataFrame(
+                [
+                    {
+                        "hurst_exponent": f.hurst_exponent,
+                        "adx": f.adx,
+                        "realized_vol": f.realized_vol,
+                        "atr_normalized": f.atr_normalized,
+                        "btc_dominance": f.btc_dominance,
+                        "alt_breadth": f.alt_breadth,
+                        "funding_impulse": f.funding_impulse,
+                        "oi_impulse": f.oi_impulse,
+                    }
+                    for f in feature_objects
+                ]
+            )
 
             # Generate labels based on market behavior
             y = self._create_labels_from_returns(returns_data, features_df)
@@ -213,8 +226,8 @@ class RegimeClassifier:
                 max_depth=10,
                 min_samples_split=5,
                 min_samples_leaf=2,
-                class_weight='balanced',
-                random_state=42
+                class_weight="balanced",
+                random_state=42,
             )
 
             # Cross-validation scores
@@ -233,9 +246,18 @@ class RegimeClassifier:
 
             # Feature importance
             feature_names = [
-                'hurst_exponent', 'adx', 'realized_vol', 'atr_normalized',
-                'btc_dominance', 'alt_breadth', 'funding_impulse', 'oi_impulse',
-                'trend_strength', 'volatility_momentum', 'market_health', 'derivatives_sentiment'
+                "hurst_exponent",
+                "adx",
+                "realized_vol",
+                "atr_normalized",
+                "btc_dominance",
+                "alt_breadth",
+                "funding_impulse",
+                "oi_impulse",
+                "trend_strength",
+                "volatility_momentum",
+                "market_health",
+                "derivatives_sentiment",
             ]
 
             self.feature_names = feature_names
@@ -246,13 +268,13 @@ class RegimeClassifier:
             self.is_trained = True
 
             training_metrics = {
-                'cv_scores': cv_scores,
-                'mean_cv_score': np.mean(cv_scores),
-                'std_cv_score': np.std(cv_scores),
-                'feature_importance': feature_importance,
-                'n_samples': len(X),
-                'n_features': X.shape[1],
-                'regime_distribution': dict(zip(unique_labels, counts))
+                "cv_scores": cv_scores,
+                "mean_cv_score": np.mean(cv_scores),
+                "std_cv_score": np.std(cv_scores),
+                "feature_importance": feature_importance,
+                "n_samples": len(X),
+                "n_features": X.shape[1],
+                "regime_distribution": dict(zip(unique_labels, counts)),
             }
 
             logger.info(f"Training completed. Mean CV score: {np.mean(cv_scores):.3f}")
@@ -305,8 +327,8 @@ class RegimeClassifier:
 
             # Trading decision
             should_trade = (
-                primary_regime in MarketRegime.get_trading_regimes() and
-                confidence > self.min_confidence_threshold
+                primary_regime in MarketRegime.get_trading_regimes()
+                and confidence > self.min_confidence_threshold
             )
 
             classification = RegimeClassification(
@@ -315,13 +337,13 @@ class RegimeClassifier:
                 probabilities=regime_probs,
                 feature_importance=feature_importance,
                 timestamp=pd.Timestamp.now(),
-                should_trade=should_trade
+                should_trade=should_trade,
             )
 
             # Update history
             self.regime_history.append(classification)
             if len(self.regime_history) > self.lookback_window:
-                self.regime_history = self.regime_history[-self.lookback_window:]
+                self.regime_history = self.regime_history[-self.lookback_window :]
 
             return classification
 
@@ -347,7 +369,7 @@ class RegimeClassifier:
         stability = 1.0 - (len(unique_regimes) - 1) / len(recent)
 
         # Transition rate
-        transitions = sum(1 for i in range(1, len(regimes)) if regimes[i] != regimes[i-1])
+        transitions = sum(1 for i in range(1, len(regimes)) if regimes[i] != regimes[i - 1])
         transition_rate = transitions / (len(regimes) - 1)
 
         # Confidence trend
@@ -359,7 +381,7 @@ class RegimeClassifier:
             "transition_rate": transition_rate,
             "confidence_trend": confidence_trend,
             "current_regime": regimes[-1].value,
-            "avg_confidence": np.mean(confidences)
+            "avg_confidence": np.mean(confidences),
         }
 
     def save_model(self) -> bool:
@@ -368,10 +390,10 @@ class RegimeClassifier:
             self.model_path.parent.mkdir(parents=True, exist_ok=True)
 
             model_data = {
-                'model': self.model,
-                'scaler': self.scaler,
-                'feature_names': self.feature_names,
-                'is_trained': self.is_trained
+                "model": self.model,
+                "scaler": self.scaler,
+                "feature_names": self.feature_names,
+                "is_trained": self.is_trained,
             }
 
             joblib.dump(model_data, self.model_path)
@@ -391,10 +413,10 @@ class RegimeClassifier:
 
             model_data = joblib.load(self.model_path)
 
-            self.model = model_data['model']
-            self.scaler = model_data['scaler']
-            self.feature_names = model_data.get('feature_names', [])
-            self.is_trained = model_data.get('is_trained', False)
+            self.model = model_data["model"]
+            self.scaler = model_data["scaler"]
+            self.feature_names = model_data.get("feature_names", [])
+            self.is_trained = model_data.get("is_trained", False)
 
             logger.info(f"Model loaded from {self.model_path}")
             return True
@@ -411,5 +433,5 @@ class RegimeClassifier:
             probabilities={MarketRegime.LOW_VOL_DRIFT: 0.5},
             feature_importance={},
             timestamp=pd.Timestamp.now(),
-            should_trade=False
+            should_trade=False,
         )

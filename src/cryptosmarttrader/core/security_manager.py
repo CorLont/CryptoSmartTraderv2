@@ -16,13 +16,16 @@ import threading
 
 try:
     import hvac
+
     HAS_VAULT = True
 except ImportError:
     HAS_VAULT = False
 
+
 @dataclass
 class SecurityConfig:
     """Security configuration with strict validation"""
+
     vault_url: Optional[str] = None
     vault_token: Optional[str] = None
     vault_mount_path: str = "secret"
@@ -33,6 +36,7 @@ class SecurityConfig:
     lockout_duration: int = 300  # 5 minutes in seconds
     enable_audit_logging: bool = True
     require_encryption_at_rest: bool = True
+
 
 class SecurityManager:
     """Enterprise-grade security manager for API keys and secrets"""
@@ -64,8 +68,7 @@ class SecurityManager:
         """Initialize HashiCorp Vault client"""
         try:
             self.vault_client = hvac.Client(
-                url=self.config.vault_url,
-                token=self.config.vault_token
+                url=self.config.vault_url, token=self.config.vault_token
             )
 
             if self.vault_client.is_authenticated():
@@ -92,7 +95,7 @@ class SecurityManager:
         # Create file handler for audit log
         audit_handler = logging.FileHandler(audit_path)
         audit_formatter = logging.Formatter(
-            '%(asctime)s - SECURITY_AUDIT - %(levelname)s - %(message)s'
+            "%(asctime)s - SECURITY_AUDIT - %(levelname)s - %(message)s"
         )
         audit_handler.setFormatter(audit_formatter)
         self.audit_logger.addHandler(audit_handler)
@@ -103,26 +106,31 @@ class SecurityManager:
             # Load from .env file if exists
             env_path = Path(self.config.env_file_path)
             if env_path.exists():
-                with open(env_path, 'r') as f:
+                with open(env_path, "r") as f:
                     for line in f:
-                        if '=' in line and not line.strip().startswith('#'):
-                            key, value = line.strip().split('=', 1)
-                            os.environ[key] = value.strip('"\'')
+                        if "=" in line and not line.strip().startswith("#"):
+                            key, value = line.strip().split("=", 1)
+                            os.environ[key] = value.strip("\"'")
 
             # Cache common secrets
             common_secrets = [
-                'OPENAI_API_KEY', 'KRAKEN_API_KEY', 'KRAKEN_SECRET_KEY',
-                'BINANCE_API_KEY', 'BINANCE_SECRET_KEY', 'TELEGRAM_BOT_TOKEN',
-                'DISCORD_WEBHOOK_URL', 'SLACK_WEBHOOK_URL', 'EMAIL_PASSWORD'
+                "OPENAI_API_KEY",
+                "KRAKEN_API_KEY",
+                "KRAKEN_SECRET_KEY",
+                "BINANCE_API_KEY",
+                "BINANCE_SECRET_KEY",
+                "TELEGRAM_BOT_TOKEN",
+                "DISCORD_WEBHOOK_URL",
+                "SLACK_WEBHOOK_URL",
+                "EMAIL_PASSWORD",
             ]
 
             for secret_name in common_secrets:
                 if secret_name in os.environ:
                     self._secrets_cache[secret_name] = os.environ[secret_name]
-                    self._audit_log("secret_loaded", {
-                        "secret_name": secret_name,
-                        "source": "environment"
-                    })
+                    self._audit_log(
+                        "secret_loaded", {"secret_name": secret_name, "source": "environment"}
+                    )
 
             self.logger.info(f"Loaded {len(self._secrets_cache)} secrets from environment")
 
@@ -144,10 +152,10 @@ class SecurityManager:
         with self._lock:
             # Check if caller is locked out
             if self._is_locked_out(secret_name):
-                self._audit_log("access_denied_lockout", {
-                    "secret_name": secret_name,
-                    "reason": "too_many_failed_attempts"
-                })
+                self._audit_log(
+                    "access_denied_lockout",
+                    {"secret_name": secret_name, "reason": "too_many_failed_attempts"},
+                )
                 return None
 
             try:
@@ -159,14 +167,19 @@ class SecurityManager:
 
                 # Fallback to environment if not found in Vault
                 if not secret_value and source in ("env", "auto"):
-                    secret_value = self._secrets_cache.get(secret_name) or os.environ.get(secret_name)
+                    secret_value = self._secrets_cache.get(secret_name) or os.environ.get(
+                        secret_name
+                    )
 
                 if secret_value:
-                    self._audit_log("secret_accessed", {
-                        "secret_name": secret_name,
-                        "source": "vault" if source == "vault" else "environment",
-                        "hash": hashlib.sha256(secret_value.encode()).hexdigest()[:8]
-                    })
+                    self._audit_log(
+                        "secret_accessed",
+                        {
+                            "secret_name": secret_name,
+                            "source": "vault" if source == "vault" else "environment",
+                            "hash": hashlib.sha256(secret_value.encode()).hexdigest()[:8],
+                        },
+                    )
                     # Reset failed attempts on successful access
                     self._failed_attempts.pop(secret_name, None)
                     return secret_value
@@ -178,10 +191,9 @@ class SecurityManager:
             except Exception as e:
                 self._record_failed_attempt(secret_name)
                 self.logger.error(f"Error retrieving secret {secret_name}: {e}")
-                self._audit_log("secret_access_error", {
-                    "secret_name": secret_name,
-                    "error": str(e)
-                })
+                self._audit_log(
+                    "secret_access_error", {"secret_name": secret_name, "error": str(e)}
+                )
                 return None
 
     def _get_secret_from_vault(self, secret_name: str) -> Optional[str]:
@@ -191,10 +203,9 @@ class SecurityManager:
 
         try:
             response = self.vault_client.secrets.kv.v2.read_secret_version(
-                path=f"cryptotrader/{secret_name}",
-                mount_point=self.config.vault_mount_path
+                path=f"cryptotrader/{secret_name}", mount_point=self.config.vault_mount_path
             )
-            return response['data']['data'].get('value')
+            return response["data"]["data"].get("value")
         except Exception as e:
             self.logger.debug(f"Vault secret retrieval failed for {secret_name}: {e}")
             return None
@@ -223,25 +234,24 @@ class SecurityManager:
                     success = False
 
                 if success:
-                    self._audit_log("secret_stored", {
-                        "secret_name": secret_name,
-                        "source": source,
-                        "hash": hashlib.sha256(secret_value.encode()).hexdigest()[:8]
-                    })
+                    self._audit_log(
+                        "secret_stored",
+                        {
+                            "secret_name": secret_name,
+                            "source": source,
+                            "hash": hashlib.sha256(secret_value.encode()).hexdigest()[:8],
+                        },
+                    )
                 else:
-                    self._audit_log("secret_store_failed", {
-                        "secret_name": secret_name,
-                        "source": source
-                    })
+                    self._audit_log(
+                        "secret_store_failed", {"secret_name": secret_name, "source": source}
+                    )
 
                 return success
 
             except Exception as e:
                 self.logger.error(f"Error storing secret {secret_name}: {e}")
-                self._audit_log("secret_store_error", {
-                    "secret_name": secret_name,
-                    "error": str(e)
-                })
+                self._audit_log("secret_store_error", {"secret_name": secret_name, "error": str(e)})
                 return False
 
     def _store_secret_in_vault(self, secret_name: str, secret_value: str) -> bool:
@@ -252,8 +262,8 @@ class SecurityManager:
         try:
             self.vault_client.secrets.kv.v2.create_or_update_secret(
                 path=f"cryptotrader/{secret_name}",
-                secret={'value': secret_value},
-                mount_point=self.config.vault_mount_path
+                secret={"value": secret_value},
+                mount_point=self.config.vault_mount_path,
             )
             return True
         except Exception as e:
@@ -280,10 +290,10 @@ class SecurityManager:
 
         if self._failed_attempts[secret_name] >= self.config.max_failed_attempts:
             self._lockouts[secret_name] = datetime.now()
-            self._audit_log("secret_lockout_triggered", {
-                "secret_name": secret_name,
-                "failed_attempts": self._failed_attempts[secret_name]
-            })
+            self._audit_log(
+                "secret_lockout_triggered",
+                {"secret_name": secret_name, "failed_attempts": self._failed_attempts[secret_name]},
+            )
 
     def _audit_log(self, event: str, details: Dict[str, Any]):
         """Log security audit event"""
@@ -294,12 +304,12 @@ class SecurityManager:
             "timestamp": datetime.now().isoformat(),
             "event": event,
             "details": details,
-            "process_id": os.getpid()
+            "process_id": os.getpid(),
         }
 
         self._access_log.append(audit_entry)
 
-        if hasattr(self, 'audit_logger'):
+        if hasattr(self, "audit_logger"):
             self.audit_logger.info(json.dumps(audit_entry))
 
     def get_audit_log(self) -> List[Dict]:
@@ -315,11 +325,11 @@ class SecurityManager:
             "failed_attempts": dict(self._failed_attempts),
             "active_lockouts": len(self._lockouts),
             "audit_entries": len(self._access_log),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         # Test critical secrets availability
-        critical_secrets = ['OPENAI_API_KEY', 'KRAKEN_API_KEY', 'BINANCE_API_KEY']
+        critical_secrets = ["OPENAI_API_KEY", "KRAKEN_API_KEY", "BINANCE_API_KEY"]
         health_report["critical_secrets_available"] = {}
 
         for secret_name in critical_secrets:
@@ -333,7 +343,8 @@ class SecurityManager:
         with self._lock:
             current_time = datetime.now()
             expired_lockouts = [
-                secret for secret, lockout_time in self._lockouts.items()
+                secret
+                for secret, lockout_time in self._lockouts.items()
                 if (current_time - lockout_time).total_seconds() > self.config.lockout_duration
             ]
 
@@ -350,6 +361,7 @@ class SecurityManager:
 _security_manager = None
 _security_lock = threading.Lock()
 
+
 def get_security_manager(config: Optional[SecurityConfig] = None) -> SecurityManager:
     """Get the singleton security manager instance"""
     global _security_manager
@@ -358,6 +370,7 @@ def get_security_manager(config: Optional[SecurityConfig] = None) -> SecurityMan
         if _security_manager is None:
             _security_manager = SecurityManager(config)
         return _security_manager
+
 
 def secure_get_secret(secret_name: str) -> Optional[str]:
     """Convenient function to securely get a secret"""

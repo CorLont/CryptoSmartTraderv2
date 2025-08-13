@@ -16,13 +16,15 @@ import warnings
 import itertools
 from pathlib import Path
 import pickle
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 try:
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
     from torch.utils.data import DataLoader, TensorDataset
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
@@ -33,16 +35,19 @@ try:
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.model_selection import cross_val_score
     from sklearn.metrics import mean_squared_error
+
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
 
 try:
     import shap
+
     HAS_SHAP = True
 except ImportError:
     HAS_SHAP = False
     shap = None
+
 
 class FeatureType(Enum):
     NUMERICAL = "numerical"
@@ -54,6 +59,7 @@ class FeatureType(Enum):
     PRICE = "price"
     CROSS_FEATURE = "cross_feature"
     SYNTHETIC = "synthetic"
+
 
 class TransformationType(Enum):
     IDENTITY = "identity"
@@ -73,6 +79,7 @@ class TransformationType(Enum):
     MACD = "macd"
     STOCHASTIC = "stochastic"
 
+
 class FeatureImportanceMethod(Enum):
     SHAP = "shap"
     PERMUTATION = "permutation"
@@ -81,9 +88,11 @@ class FeatureImportanceMethod(Enum):
     MUTUAL_INFO = "mutual_info"
     ATTENTION_WEIGHTS = "attention_weights"
 
+
 @dataclass
 class FeatureSpec:
     """Specification for a generated feature"""
+
     name: str
     feature_type: FeatureType
     source_columns: List[str]
@@ -94,9 +103,11 @@ class FeatureSpec:
     usage_count: int = 0
     performance_impact: float = 0.0
 
+
 @dataclass
 class FeatureEngineeringConfig:
     """Configuration for automated feature engineering"""
+
     # Feature generation
     max_features_per_iteration: int = 50
     max_total_features: int = 1000
@@ -108,11 +119,13 @@ class FeatureEngineeringConfig:
     ema_spans: List[int] = field(default_factory=lambda: [12, 26, 50])
 
     # Feature importance
-    importance_methods: List[FeatureImportanceMethod] = field(default_factory=lambda: [
-        FeatureImportanceMethod.SHAP,
-        FeatureImportanceMethod.TREE_IMPORTANCE,
-        FeatureImportanceMethod.MUTUAL_INFO
-    ])
+    importance_methods: List[FeatureImportanceMethod] = field(
+        default_factory=lambda: [
+            FeatureImportanceMethod.SHAP,
+            FeatureImportanceMethod.TREE_IMPORTANCE,
+            FeatureImportanceMethod.MUTUAL_INFO,
+        ]
+    )
 
     # Feature pruning
     correlation_threshold: float = 0.95
@@ -129,15 +142,18 @@ class FeatureEngineeringConfig:
     parallel_processing: bool = True
     gpu_acceleration: bool = True
 
+
 @dataclass
 class FeatureImportanceResult:
     """Result of feature importance analysis"""
+
     feature_name: str
     importance_score: float
     method: FeatureImportanceMethod
     confidence: float
     regime_specific: Dict[str, float] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
+
 
 class AttentionBasedFeaturePruner:
     """Neural attention mechanism for feature importance and pruning"""
@@ -158,23 +174,17 @@ class AttentionBasedFeaturePruner:
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
             nn.Linear(hidden_dim // 2, input_dim),
-            nn.Softmax(dim=-1)
+            nn.Softmax(dim=-1),
         )
 
         # Feature interaction attention
         self.interaction_attention = nn.MultiheadAttention(
-            embed_dim=input_dim,
-            num_heads=8,
-            dropout=0.1,
-            batch_first=True
+            embed_dim=input_dim, num_heads=8, dropout=0.1, batch_first=True
         )
 
         # Output layers
         self.output_layer = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(hidden_dim, 1)
+            nn.Linear(input_dim, hidden_dim), nn.ReLU(), nn.Dropout(0.2), nn.Linear(hidden_dim, 1)
         )
 
     def forward(self, x) -> Tuple[Any, Any]:
@@ -215,6 +225,7 @@ class AttentionBasedFeaturePruner:
             _, attention_weights = self.forward(x)
             return attention_weights.mean(dim=0)
 
+
 class DeepFeatureSynthesizer:
     """Deep feature synthesis for automatic feature generation"""
 
@@ -235,7 +246,7 @@ class DeepFeatureSynthesizer:
             TransformationType.IDENTITY: lambda x, **kwargs: x,
             TransformationType.LOG: lambda x, **kwargs: np.log1p(np.abs(x)),
             TransformationType.SQRT: lambda x, **kwargs: np.sqrt(np.abs(x)),
-            TransformationType.SQUARE: lambda x, **kwargs: x ** 2,
+            TransformationType.SQUARE: lambda x, **kwargs: x**2,
             TransformationType.RECIPROCAL: lambda x, **kwargs: 1 / (x + 1e-8),
             TransformationType.DIFF: lambda x, **kwargs: x.diff().fillna(0),
             TransformationType.PCT_CHANGE: lambda x, **kwargs: x.pct_change().fillna(0),
@@ -252,7 +263,7 @@ class DeepFeatureSynthesizer:
                 numeric_cols.remove(target_col)
 
             for col in numeric_cols:
-                series = data[col].fillna(method='ffill').fillna(0)
+                series = data[col].fillna(method="ffill").fillna(0)
 
                 # Rolling statistics
                 for window in self.config.rolling_windows:
@@ -266,21 +277,21 @@ class DeepFeatureSynthesizer:
                         features_df[f"{col}_rolling_kurt_{window}"] = series.rolling(window).kurt()
 
                         # Technical indicators
-                        if 'price' in col.lower() or 'close' in col.lower():
+                        if "price" in col.lower() or "close" in col.lower():
                             features_df[f"{col}_rsi_{window}"] = self._calculate_rsi(series, window)
                             bb_upper, bb_lower = self._calculate_bollinger_bands(series, window)
                             features_df[f"{col}_bollinger_upper_{window}"] = bb_upper
                             features_df[f"{col}_bollinger_lower_{window}"] = bb_lower
 
                         # Register feature specs
-                        for suffix in ['mean', 'std', 'min', 'max', 'skew', 'kurt']:
+                        for suffix in ["mean", "std", "min", "max", "skew", "kurt"]:
                             feature_name = f"{col}_rolling_{suffix}_{window}"
                             self.feature_specs[feature_name] = FeatureSpec(
                                 name=feature_name,
                                 feature_type=FeatureType.TECHNICAL,
                                 source_columns=[col],
                                 transformation=TransformationType.ROLLING_MEAN,
-                                parameters={'window': window, 'suffix': suffix}
+                                parameters={"window": window, "suffix": suffix},
                             )
 
                 # Exponential moving averages
@@ -293,7 +304,7 @@ class DeepFeatureSynthesizer:
                         feature_type=FeatureType.TECHNICAL,
                         source_columns=[col],
                         transformation=TransformationType.EMA,
-                        parameters={'span': span}
+                        parameters={"span": span},
                     )
 
                 # Lag features
@@ -306,7 +317,7 @@ class DeepFeatureSynthesizer:
                         feature_type=FeatureType.TEMPORAL,
                         source_columns=[col],
                         transformation=TransformationType.IDENTITY,
-                        parameters={'lag': lag}
+                        parameters={"lag": lag},
                     )
 
             return features_df.fillna(0)
@@ -315,7 +326,9 @@ class DeepFeatureSynthesizer:
             self.logger.error(f"Temporal feature generation failed: {e}")
             return data
 
-    def generate_cross_features(self, data: pd.DataFrame, target_col: str, max_depth: int = 2) -> pd.DataFrame:
+    def generate_cross_features(
+        self, data: pd.DataFrame, target_col: str, max_depth: int = 2
+    ) -> pd.DataFrame:
         """Generate cross features using feature interactions"""
         try:
             features_df = data.copy()
@@ -327,7 +340,9 @@ class DeepFeatureSynthesizer:
             # Limit to most important columns to avoid explosion
             if len(numeric_cols) > 20:
                 # Select top correlated features with target
-                correlations = data[numeric_cols].corrwith(data[target_col]).abs().sort_values(ascending=False)
+                correlations = (
+                    data[numeric_cols].corrwith(data[target_col]).abs().sort_values(ascending=False)
+                )
                 numeric_cols = correlations.head(20).index.tolist()
 
             generated_count = 0
@@ -358,13 +373,18 @@ class DeepFeatureSynthesizer:
                 features_df[diff_col] = series1 - series2
 
                 # Register cross feature specs
-                for op, op_name in [(mult_col, "multiply"), (div_col, "divide"), (ratio_col, "ratio"), (diff_col, "difference")]:
+                for op, op_name in [
+                    (mult_col, "multiply"),
+                    (div_col, "divide"),
+                    (ratio_col, "ratio"),
+                    (diff_col, "difference"),
+                ]:
                     self.feature_specs[op] = FeatureSpec(
                         name=op,
                         feature_type=FeatureType.CROSS_FEATURE,
                         source_columns=[str(col1), str(col2)],
                         transformation=TransformationType.IDENTITY,
-                        parameters={'operation': op_name}
+                        parameters={"operation": op_name},
                     )
 
                 generated_count += 4
@@ -390,7 +410,7 @@ class DeepFeatureSynthesizer:
                         feature_type=FeatureType.CROSS_FEATURE,
                         source_columns=[str(col1), str(col2), str(col3)],
                         transformation=TransformationType.IDENTITY,
-                        parameters={'operation': 'triple_multiply'}
+                        parameters={"operation": "triple_multiply"},
                     )
 
                     generated_count += 1
@@ -401,7 +421,9 @@ class DeepFeatureSynthesizer:
             self.logger.error(f"Cross feature generation failed: {e}")
             return data
 
-    def generate_polynomial_features(self, data: pd.DataFrame, target_col: str, degree: int = 2) -> pd.DataFrame:
+    def generate_polynomial_features(
+        self, data: pd.DataFrame, target_col: str, degree: int = 2
+    ) -> pd.DataFrame:
         """Generate polynomial features"""
         try:
             features_df = data.copy()
@@ -412,7 +434,9 @@ class DeepFeatureSynthesizer:
 
             # Limit to most important features
             if len(numeric_cols) > 15:
-                correlations = data[numeric_cols].corrwith(data[target_col]).abs().sort_values(ascending=False)
+                correlations = (
+                    data[numeric_cols].corrwith(data[target_col]).abs().sort_values(ascending=False)
+                )
                 numeric_cols = correlations.head(15).index.tolist()
 
             for col in numeric_cols:
@@ -421,35 +445,39 @@ class DeepFeatureSynthesizer:
                 # Polynomial degrees
                 for deg in range(2, degree + 1):
                     poly_col = f"{col}_poly_{deg}"
-                    features_df[poly_col] = series ** deg
+                    features_df[poly_col] = series**deg
 
                     self.feature_specs[poly_col] = FeatureSpec(
                         name=poly_col,
                         feature_type=FeatureType.SYNTHETIC,
                         source_columns=[col],
-                        transformation=TransformationType.SQUARE if deg == 2 else TransformationType.IDENTITY,
-                        parameters={'degree': deg}
+                        transformation=TransformationType.SQUARE
+                        if deg == 2
+                        else TransformationType.IDENTITY,
+                        parameters={"degree": deg},
                     )
 
                 # Non-linear transformations
                 transformations = [
                     (TransformationType.LOG, np.log1p(np.abs(series))),
                     (TransformationType.SQRT, np.sqrt(np.abs(series))),
-                    (TransformationType.RECIPROCAL, 1 / (series + 1e-8))
+                    (TransformationType.RECIPROCAL, 1 / (series + 1e-8)),
                 ]
 
                 for transform_type, transformed_data in transformations:
                     transform_col = f"{col}_{transform_type.value}"
-                    if hasattr(transformed_data, 'fillna'):
+                    if hasattr(transformed_data, "fillna"):
                         features_df[transform_col] = transformed_data.fillna(0)
                     else:
-                        features_df[transform_col] = pd.Series(transformed_data, index=features_df.index).fillna(0)
+                        features_df[transform_col] = pd.Series(
+                            transformed_data, index=features_df.index
+                        ).fillna(0)
 
                     self.feature_specs[transform_col] = FeatureSpec(
                         name=transform_col,
                         feature_type=FeatureType.SYNTHETIC,
                         source_columns=[col],
-                        transformation=transform_type
+                        transformation=transform_type,
                     )
 
             return features_df.fillna(0)
@@ -470,7 +498,9 @@ class DeepFeatureSynthesizer:
         except Exception:
             return pd.Series(50, index=series.index)
 
-    def _calculate_bollinger_bands(self, series: pd.Series, window: int = 20, num_std: float = 2) -> Tuple[pd.Series, pd.Series]:
+    def _calculate_bollinger_bands(
+        self, series: pd.Series, window: int = 20, num_std: float = 2
+    ) -> Tuple[pd.Series, pd.Series]:
         """Calculate Bollinger Bands"""
         try:
             rolling_mean = series.rolling(window=window).mean()
@@ -480,6 +510,7 @@ class DeepFeatureSynthesizer:
             return upper_band.fillna(series), lower_band.fillna(series)
         except Exception:
             return pd.Series(series), pd.Series(series)
+
 
 class SHAPFeatureAnalyzer:
     """SHAP-based feature importance analyzer with regime-specific analysis"""
@@ -499,14 +530,21 @@ class SHAPFeatureAnalyzer:
         self.regime_importance: Dict[str, Dict[str, float]] = {}
         self.global_importance: Dict[str, float] = {}
 
-    def analyze_feature_importance(self, features: pd.DataFrame, target: pd.Series,
-                                 model: Optional[Any] = None, regime_column: Optional[str] = None) -> List[FeatureImportanceResult]:
+    def analyze_feature_importance(
+        self,
+        features: pd.DataFrame,
+        target: pd.Series,
+        model: Optional[Any] = None,
+        regime_column: Optional[str] = None,
+    ) -> List[FeatureImportanceResult]:
         """Comprehensive feature importance analysis using multiple methods"""
         try:
             results = []
 
             if not HAS_SHAP or not HAS_SKLEARN:
-                self.logger.warning("Required libraries not available for feature importance analysis")
+                self.logger.warning(
+                    "Required libraries not available for feature importance analysis"
+                )
                 return results
 
             # Prepare data
@@ -550,7 +588,9 @@ class SHAPFeatureAnalyzer:
             if regime_column and regime_column in features.columns:
                 regime_series = features[regime_column]
                 if isinstance(regime_series, pd.Series):
-                    regime_results = self._analyze_regime_specific_importance(X, y, model, regime_series)
+                    regime_results = self._analyze_regime_specific_importance(
+                        X, y, model, regime_series
+                    )
                     results.extend(regime_results)
 
             # Update global importance scores
@@ -562,7 +602,9 @@ class SHAPFeatureAnalyzer:
             self.logger.error(f"Feature importance analysis failed: {e}")
             return []
 
-    def _analyze_with_shap(self, X: pd.DataFrame, y: pd.Series, model) -> List[FeatureImportanceResult]:
+    def _analyze_with_shap(
+        self, X: pd.DataFrame, y: pd.Series, model
+    ) -> List[FeatureImportanceResult]:
         """SHAP-based feature importance"""
         try:
             results = []
@@ -583,13 +625,13 @@ class SHAPFeatureAnalyzer:
                     feature_name=feature,
                     importance_score=importance_scores[i],
                     method=FeatureImportanceMethod.SHAP,
-                    confidence=0.9  # SHAP typically has high confidence
+                    confidence=0.9,  # SHAP typically has high confidence
                 )
                 results.append(result)
 
             # Store for later use
-            self.shap_values['global'] = shap_values
-            self.explainers['global'] = explainer
+            self.shap_values["global"] = shap_values
+            self.explainers["global"] = explainer
 
             return results
 
@@ -597,12 +639,14 @@ class SHAPFeatureAnalyzer:
             self.logger.error(f"SHAP analysis failed: {e}")
             return []
 
-    def _analyze_tree_importance(self, X: pd.DataFrame, y: pd.Series, model) -> List[FeatureImportanceResult]:
+    def _analyze_tree_importance(
+        self, X: pd.DataFrame, y: pd.Series, model
+    ) -> List[FeatureImportanceResult]:
         """Tree-based feature importance"""
         try:
             results = []
 
-            if hasattr(model, 'feature_importances_'):
+            if hasattr(model, "feature_importances_"):
                 importances = model.feature_importances_
 
                 for i, feature in enumerate(X.columns):
@@ -610,7 +654,7 @@ class SHAPFeatureAnalyzer:
                         feature_name=feature,
                         importance_score=importances[i],
                         method=FeatureImportanceMethod.TREE_IMPORTANCE,
-                        confidence=0.7
+                        confidence=0.7,
                     )
                     results.append(result)
 
@@ -620,13 +664,16 @@ class SHAPFeatureAnalyzer:
             self.logger.error(f"Tree importance analysis failed: {e}")
             return []
 
-    def _analyze_mutual_information(self, X: pd.DataFrame, y: pd.Series) -> List[FeatureImportanceResult]:
+    def _analyze_mutual_information(
+        self, X: pd.DataFrame, y: pd.Series
+    ) -> List[FeatureImportanceResult]:
         """Mutual information feature importance"""
         try:
             results = []
 
             # Calculate mutual information
             from sklearn.feature_selection import mutual_info_regression
+
             mi_scores = mutual_info_regression(X, y, random_state=42)
 
             for i, feature in enumerate(X.columns):
@@ -634,7 +681,7 @@ class SHAPFeatureAnalyzer:
                     feature_name=feature,
                     importance_score=mi_scores[i],
                     method=FeatureImportanceMethod.MUTUAL_INFO,
-                    confidence=0.6
+                    confidence=0.6,
                 )
                 results.append(result)
 
@@ -644,7 +691,9 @@ class SHAPFeatureAnalyzer:
             self.logger.error(f"Mutual information analysis failed: {e}")
             return []
 
-    def _analyze_permutation_importance(self, X: pd.DataFrame, y: pd.Series, model) -> List[FeatureImportanceResult]:
+    def _analyze_permutation_importance(
+        self, X: pd.DataFrame, y: pd.Series, model
+    ) -> List[FeatureImportanceResult]:
         """Permutation-based feature importance"""
         try:
             from sklearn.inspection import permutation_importance
@@ -655,14 +704,22 @@ class SHAPFeatureAnalyzer:
             perm_importance = permutation_importance(model, X, y, n_repeats=5, random_state=42)
 
             for i, feature in enumerate(X.columns):
-                mean_importance = perm_importance.importances_mean[i] if hasattr(perm_importance, 'importances_mean') else 0.0
-                std_importance = perm_importance.importances_std[i] if hasattr(perm_importance, 'importances_std') else 0.0
+                mean_importance = (
+                    perm_importance.importances_mean[i]
+                    if hasattr(perm_importance, "importances_mean")
+                    else 0.0
+                )
+                std_importance = (
+                    perm_importance.importances_std[i]
+                    if hasattr(perm_importance, "importances_std")
+                    else 0.0
+                )
 
                 result = FeatureImportanceResult(
                     feature_name=feature,
                     importance_score=mean_importance,
                     method=FeatureImportanceMethod.PERMUTATION,
-                    confidence=1.0 - std_importance / (mean_importance + 1e-8)
+                    confidence=1.0 - std_importance / (mean_importance + 1e-8),
                 )
                 results.append(result)
 
@@ -672,8 +729,9 @@ class SHAPFeatureAnalyzer:
             self.logger.error(f"Permutation importance analysis failed: {e}")
             return []
 
-    def _analyze_regime_specific_importance(self, X: pd.DataFrame, y: pd.Series,
-                                          model, regime_series: pd.Series) -> List[FeatureImportanceResult]:
+    def _analyze_regime_specific_importance(
+        self, X: pd.DataFrame, y: pd.Series, model, regime_series: pd.Series
+    ) -> List[FeatureImportanceResult]:
         """Analyze feature importance for specific market regimes"""
         try:
             results = []
@@ -694,7 +752,7 @@ class SHAPFeatureAnalyzer:
                 regime_model.fit(X_regime, y_regime)
 
                 # Calculate regime-specific importance
-                if hasattr(regime_model, 'feature_importances_'):
+                if hasattr(regime_model, "feature_importances_"):
                     importances = regime_model.feature_importances_
 
                     for i, feature in enumerate(X.columns):
@@ -703,7 +761,7 @@ class SHAPFeatureAnalyzer:
                             importance_score=importances[i],
                             method=FeatureImportanceMethod.TREE_IMPORTANCE,
                             confidence=0.7,
-                            regime_specific={str(regime): importances[i]}
+                            regime_specific={str(regime): importances[i]},
                         )
                         results.append(result)
 
@@ -727,7 +785,7 @@ class SHAPFeatureAnalyzer:
             feature_scores = {}
 
             for result in results:
-                base_feature = result.feature_name.split('_regime_')[0]  # Remove regime suffix
+                base_feature = result.feature_name.split("_regime_")[0]  # Remove regime suffix
 
                 if base_feature not in feature_scores:
                     feature_scores[base_feature] = []
@@ -762,6 +820,7 @@ class SHAPFeatureAnalyzer:
             self.logger.error(f"Top features retrieval failed: {e}")
             return []
 
+
 class AutomatedFeatureEngineer:
     """Main automated feature engineering system"""
 
@@ -786,14 +845,18 @@ class AutomatedFeatureEngineer:
         self.current_regime: Optional[str] = None
 
         if HAS_TORCH:
-            self.device = torch.device('cuda' if torch.cuda.is_available() and self.config.gpu_acceleration else 'cpu')
+            self.device = torch.device(
+                "cuda" if torch.cuda.is_available() and self.config.gpu_acceleration else "cpu"
+            )
         else:
-            self.device = 'cpu'
+            self.device = "cpu"
         self._lock = threading.RLock()
 
         self.logger.info(f"Automated Feature Engineer initialized on {self.device}")
 
-    def fit(self, data: pd.DataFrame, target_column: str, regime_column: Optional[str] = None) -> 'AutomatedFeatureEngineer':
+    def fit(
+        self, data: pd.DataFrame, target_column: str, regime_column: Optional[str] = None
+    ) -> "AutomatedFeatureEngineer":
         """Fit the feature engineering pipeline"""
         with self._lock:
             try:
@@ -817,7 +880,9 @@ class AutomatedFeatureEngineer:
                 # Update feature specs with importance scores
                 for result in importance_results:
                     if result.feature_name in self.synthesizer.feature_specs:
-                        self.synthesizer.feature_specs[result.feature_name].importance_score = result.importance_score
+                        self.synthesizer.feature_specs[
+                            result.feature_name
+                        ].importance_score = result.importance_score
 
                 # Initialize attention-based pruner
                 if HAS_TORCH and len(features.columns) > 0:
@@ -826,7 +891,7 @@ class AutomatedFeatureEngineer:
                             input_dim=len(features.columns)
                         )
 
-                        if hasattr(self.attention_pruner, 'to'):
+                        if hasattr(self.attention_pruner, "to"):
                             self.attention_pruner = self.attention_pruner.to(self.device)
 
                         self._train_attention_pruner(features, target)
@@ -836,16 +901,22 @@ class AutomatedFeatureEngineer:
 
                 # Create regime-specific feature sets
                 if regime_column:
-                    self._create_regime_feature_sets(engineered_features, target_column, regime_column)
+                    self._create_regime_feature_sets(
+                        engineered_features, target_column, regime_column
+                    )
 
-                self.logger.info(f"Feature engineering pipeline fitted with {len(features.columns)} features")
+                self.logger.info(
+                    f"Feature engineering pipeline fitted with {len(features.columns)} features"
+                )
                 return self
 
             except Exception as e:
                 self.logger.error(f"Feature engineering fit failed: {e}")
                 return self
 
-    def transform(self, data: pd.DataFrame, target_column: str, regime: Optional[str] = None) -> pd.DataFrame:
+    def transform(
+        self, data: pd.DataFrame, target_column: str, regime: Optional[str] = None
+    ) -> pd.DataFrame:
         """Transform data using fitted feature engineering pipeline"""
         with self._lock:
             try:
@@ -856,7 +927,9 @@ class AutomatedFeatureEngineer:
                 if regime and regime in self.regime_feature_sets:
                     selected_features = self.regime_feature_sets[regime]
                     # Include target column
-                    selected_features = [f for f in selected_features if f in engineered_features.columns]
+                    selected_features = [
+                        f for f in selected_features if f in engineered_features.columns
+                    ]
                     if target_column not in selected_features:
                         selected_features.append(target_column)
 
@@ -864,11 +937,15 @@ class AutomatedFeatureEngineer:
                 else:
                     # Use top features from global importance
                     top_features = self.shap_analyzer.get_top_features(
-                        n_features=min(self.config.max_total_features, len(engineered_features.columns) - 1)
+                        n_features=min(
+                            self.config.max_total_features, len(engineered_features.columns) - 1
+                        )
                     )
 
                     # Include available top features plus target
-                    available_features = [f for f in top_features if f in engineered_features.columns]
+                    available_features = [
+                        f for f in top_features if f in engineered_features.columns
+                    ]
                     if target_column not in available_features:
                         available_features.append(target_column)
 
@@ -891,8 +968,9 @@ class AutomatedFeatureEngineer:
             features = self.synthesizer.generate_temporal_features(features, target_column)
 
             # Generate cross features
-            features = self.synthesizer.generate_cross_features(features, target_column,
-                                                               self.config.cross_feature_max_depth)
+            features = self.synthesizer.generate_cross_features(
+                features, target_column, self.config.cross_feature_max_depth
+            )
 
             # Generate polynomial features
             features = self.synthesizer.generate_polynomial_features(features, target_column)
@@ -929,7 +1007,8 @@ class AutomatedFeatureEngineer:
 
             # Find features to remove
             to_remove = [
-                column for column in upper_triangle.columns
+                column
+                for column in upper_triangle.columns
                 if any(upper_triangle[column] > self.config.correlation_threshold)
             ]
 
@@ -964,7 +1043,11 @@ class AutomatedFeatureEngineer:
 
             # Fit and transform
             selected_data = selector.fit_transform(data[numeric_cols])
-            selected_features = [numeric_cols[i] for i in range(len(numeric_cols)) if selector.variances_[i] > self.config.variance_threshold]
+            selected_features = [
+                numeric_cols[i]
+                for i in range(len(numeric_cols))
+                if selector.variances_[i] > self.config.variance_threshold
+            ]
 
             # Reconstruct dataframe
             result_data = data[[target_column]].copy()
@@ -1006,6 +1089,7 @@ class AutomatedFeatureEngineer:
 
             # Create dataset and dataloader
             from torch.utils.data import TensorDataset, DataLoader
+
             dataset = TensorDataset(X_tensor, y_tensor)
             dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
@@ -1031,14 +1115,18 @@ class AutomatedFeatureEngineer:
 
                 if epoch % 10 == 0:
                     avg_loss = total_loss / len(dataloader)
-                    self.logger.debug(f"Attention pruner training epoch {epoch}, loss: {avg_loss:.4f}")
+                    self.logger.debug(
+                        f"Attention pruner training epoch {epoch}, loss: {avg_loss:.4f}"
+                    )
 
             self.logger.info("Attention-based feature pruner trained successfully")
 
         except Exception as e:
             self.logger.error(f"Attention pruner training failed: {e}")
 
-    def _create_regime_feature_sets(self, data: pd.DataFrame, target_column: str, regime_column: str):
+    def _create_regime_feature_sets(
+        self, data: pd.DataFrame, target_column: str, regime_column: str
+    ):
         """Create regime-specific feature sets"""
         try:
             regimes = data[regime_column].unique()
@@ -1052,19 +1140,25 @@ class AutomatedFeatureEngineer:
 
                 # Get regime-specific top features
                 regime_features = self.shap_analyzer.get_top_features(
-                    n_features=int(self.config.max_total_features * self.config.regime_feature_ratio),
-                    regime=str(regime)
+                    n_features=int(
+                        self.config.max_total_features * self.config.regime_feature_ratio
+                    ),
+                    regime=str(regime),
                 )
 
                 # Ensure we have some features
                 if not regime_features:
                     # Fallback to global top features
                     regime_features = self.shap_analyzer.get_top_features(
-                        n_features=int(self.config.max_total_features * self.config.regime_feature_ratio)
+                        n_features=int(
+                            self.config.max_total_features * self.config.regime_feature_ratio
+                        )
                     )
 
                 self.regime_feature_sets[str(regime)] = regime_features
-                self.logger.info(f"Created feature set for regime {regime}: {len(regime_features)} features")
+                self.logger.info(
+                    f"Created feature set for regime {regime}: {len(regime_features)} features"
+                )
 
         except Exception as e:
             self.logger.error(f"Regime feature set creation failed: {e}")
@@ -1073,14 +1167,16 @@ class AutomatedFeatureEngineer:
         """Get comprehensive feature importance summary"""
         with self._lock:
             return {
-                'total_features_generated': len(self.synthesizer.feature_specs),
-                'global_importance_scores': dict(list(self.shap_analyzer.global_importance.items())[:20]),
-                'regime_specific_sets': {
+                "total_features_generated": len(self.synthesizer.feature_specs),
+                "global_importance_scores": dict(
+                    list(self.shap_analyzer.global_importance.items())[:20]
+                ),
+                "regime_specific_sets": {
                     regime: len(features) for regime, features in self.regime_feature_sets.items()
                 },
-                'feature_types_distribution': self._get_feature_type_distribution(),
-                'attention_pruner_available': self.attention_pruner is not None,
-                'top_features_by_type': self._get_top_features_by_type()
+                "feature_types_distribution": self._get_feature_type_distribution(),
+                "attention_pruner_available": self.attention_pruner is not None,
+                "top_features_by_type": self._get_top_features_by_type(),
             }
 
     def _get_feature_type_distribution(self) -> Dict[str, int]:
@@ -1107,7 +1203,9 @@ class AutomatedFeatureEngineer:
         # Sort and limit each type
         for feature_type in features_by_type:
             features_by_type[feature_type].sort(key=lambda x: x[1], reverse=True)
-            features_by_type[feature_type] = [name for name, _ in features_by_type[feature_type][:5]]
+            features_by_type[feature_type] = [
+                name for name, _ in features_by_type[feature_type][:5]
+            ]
 
         return features_by_type
 
@@ -1116,7 +1214,10 @@ class AutomatedFeatureEngineer:
 _automated_feature_engineer = None
 _afe_lock = threading.Lock()
 
-def get_automated_feature_engineer(config: Optional[FeatureEngineeringConfig] = None) -> AutomatedFeatureEngineer:
+
+def get_automated_feature_engineer(
+    config: Optional[FeatureEngineeringConfig] = None,
+) -> AutomatedFeatureEngineer:
     """Get the singleton automated feature engineer"""
     global _automated_feature_engineer
 
@@ -1125,7 +1226,10 @@ def get_automated_feature_engineer(config: Optional[FeatureEngineeringConfig] = 
             _automated_feature_engineer = AutomatedFeatureEngineer(config)
         return _automated_feature_engineer
 
-def engineer_features_for_coin(data: pd.DataFrame, target_column: str, regime_column: Optional[str] = None) -> pd.DataFrame:
+
+def engineer_features_for_coin(
+    data: pd.DataFrame, target_column: str, regime_column: Optional[str] = None
+) -> pd.DataFrame:
     """Convenient function to engineer features for cryptocurrency data"""
     engineer = get_automated_feature_engineer()
     return engineer.fit(data, target_column, regime_column).transform(data, target_column)

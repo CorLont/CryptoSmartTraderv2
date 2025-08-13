@@ -11,22 +11,28 @@ from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass
 from enum import Enum
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 # Import core components
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from ..core.structured_logger import get_logger
 
+
 class TradingMode(Enum):
     """Trading mode enumeration"""
+
     LIVE = "live"
     PAPER = "paper"
     DISABLED = "disabled"
 
+
 class DisableReason(Enum):
     """Reasons for disabling live trading"""
+
     LOW_HEALTH_SCORE = "low_health_score"
     SYSTEM_ERROR = "system_error"
     DRIFT_DETECTED = "drift_detected"
@@ -36,9 +42,11 @@ class DisableReason(Enum):
     API_FAILURE = "api_failure"
     RISK_THRESHOLD_EXCEEDED = "risk_threshold_exceeded"
 
+
 @dataclass
 class TradingStatusChange:
     """Trading status change record"""
+
     timestamp: datetime
     previous_mode: TradingMode
     new_mode: TradingMode
@@ -48,12 +56,15 @@ class TradingStatusChange:
     description: str
     auto_generated: bool
 
+
 @dataclass
 class HealthThreshold:
     """Health score threshold configuration"""
+
     disable_threshold: float = 60.0  # Below this: disable live trading
-    enable_threshold: float = 85.0   # Above this: can enable live trading
+    enable_threshold: float = 85.0  # Above this: can enable live trading
     critical_threshold: float = 30.0  # Below this: disable all trading
+
 
 class AutoDisableSystem:
     """Automatic trading disable system based on health scores"""
@@ -63,21 +74,21 @@ class AutoDisableSystem:
 
         # Default configuration
         self.config = {
-            'health_thresholds': HealthThreshold(),
-            'check_interval_seconds': 60,  # Check every minute
-            'grace_period_minutes': 5,     # Wait before auto-enable
-            'max_consecutive_failures': 3,
-            'notification_enabled': True,
-            'auto_enable': True,           # Automatically re-enable when health improves
-            'require_manual_enable': False, # Require manual intervention for critical failures
+            "health_thresholds": HealthThreshold(),
+            "check_interval_seconds": 60,  # Check every minute
+            "grace_period_minutes": 5,  # Wait before auto-enable
+            "max_consecutive_failures": 3,
+            "notification_enabled": True,
+            "auto_enable": True,  # Automatically re-enable when health improves
+            "require_manual_enable": False,  # Require manual intervention for critical failures
         }
 
         if config:
-            if 'health_thresholds' in config:
+            if "health_thresholds" in config:
                 # Update thresholds
-                threshold_config = config.pop('health_thresholds')
+                threshold_config = config.pop("health_thresholds")
                 for key, value in threshold_config.items():
-                    setattr(self.config['health_thresholds'], key, value)
+                    setattr(self.config["health_thresholds"], key, value)
             self.config.update(config)
 
         # Current state
@@ -102,7 +113,7 @@ class AutoDisableSystem:
             new_mode=TradingMode.PAPER,
             reason=DisableReason.MANUAL_DISABLE,
             description="System initialized in paper trading mode",
-            auto_generated=True
+            auto_generated=True,
         )
 
     def add_status_change_callback(self, callback: Callable[[TradingStatusChange], None]) -> None:
@@ -110,15 +121,16 @@ class AutoDisableSystem:
         self.status_change_callbacks.append(callback)
         self.logger.info("Added status change callback")
 
-    def check_health_and_update_status(self, health_score: float,
-                                     additional_context: Optional[Dict[str, Any]] = None) -> bool:
+    def check_health_and_update_status(
+        self, health_score: float, additional_context: Optional[Dict[str, Any]] = None
+    ) -> bool:
         """Check health score and update trading status accordingly"""
 
         with self.lock:
             self.last_health_score = health_score
             self.last_check_time = datetime.now()
 
-            thresholds = self.config['health_thresholds']
+            thresholds = self.config["health_thresholds"]
             status_changed = False
 
             try:
@@ -132,8 +144,8 @@ class AutoDisableSystem:
                             trigger_value=health_score,
                             threshold=thresholds.critical_threshold,
                             description=f"Critical health score {health_score:.1f} < {thresholds.critical_threshold}. "
-                                      f"All trading disabled.",
-                            auto_generated=True
+                            f"All trading disabled.",
+                            auto_generated=True,
                         )
                         status_changed = True
                         self.consecutive_failures += 1
@@ -147,8 +159,8 @@ class AutoDisableSystem:
                             trigger_value=health_score,
                             threshold=thresholds.disable_threshold,
                             description=f"Health score {health_score:.1f} < {thresholds.disable_threshold}. "
-                                      f"Switched to paper trading only.",
-                            auto_generated=True
+                            f"Switched to paper trading only.",
+                            auto_generated=True,
                         )
                         status_changed = True
                         self.consecutive_failures += 1
@@ -160,17 +172,18 @@ class AutoDisableSystem:
                             trigger_value=health_score,
                             threshold=thresholds.critical_threshold,
                             description=f"Health score {health_score:.1f} improved above critical. "
-                                      f"Enabled paper trading.",
-                            auto_generated=True
+                            f"Enabled paper trading.",
+                            auto_generated=True,
                         )
                         status_changed = True
 
                 elif health_score >= thresholds.enable_threshold:
                     # Good health: can enable live trading (if auto-enable is on)
-                    if (self.config['auto_enable'] and
-                        self.current_mode in [TradingMode.PAPER, TradingMode.DISABLED] and
-                        not self.config['require_manual_enable']):
-
+                    if (
+                        self.config["auto_enable"]
+                        and self.current_mode in [TradingMode.PAPER, TradingMode.DISABLED]
+                        and not self.config["require_manual_enable"]
+                    ):
                         # Check grace period
                         if self._check_grace_period():
                             self._change_trading_mode(
@@ -179,8 +192,8 @@ class AutoDisableSystem:
                                 trigger_value=health_score,
                                 threshold=thresholds.enable_threshold,
                                 description=f"Health score {health_score:.1f} >= {thresholds.enable_threshold}. "
-                                          f"Auto-enabled live trading.",
-                                auto_generated=True
+                                f"Auto-enabled live trading.",
+                                auto_generated=True,
                             )
                             status_changed = True
                             self.consecutive_failures = 0
@@ -188,12 +201,16 @@ class AutoDisableSystem:
                             # Start grace period if not already started
                             if self.grace_period_start is None:
                                 self.grace_period_start = datetime.now()
-                                self.logger.info(f"Health score improved to {health_score:.1f}. "
-                                               f"Starting grace period before auto-enable.")
+                                self.logger.info(
+                                    f"Health score improved to {health_score:.1f}. "
+                                    f"Starting grace period before auto-enable."
+                                )
 
                 # Log health check
-                self.logger.debug(f"Health check: score={health_score:.1f}, mode={self.current_mode.value}, "
-                                f"consecutive_failures={self.consecutive_failures}")
+                self.logger.debug(
+                    f"Health check: score={health_score:.1f}, mode={self.current_mode.value}, "
+                    f"consecutive_failures={self.consecutive_failures}"
+                )
 
                 # Add to context if additional info provided
                 if additional_context:
@@ -216,7 +233,7 @@ class AutoDisableSystem:
                     new_mode=new_mode,
                     reason=DisableReason.MANUAL_DISABLE,
                     description=f"Manual disable: {reason}",
-                    auto_generated=False
+                    auto_generated=False,
                 )
 
                 self.logger.info(f"Trading manually disabled: {reason}")
@@ -231,11 +248,14 @@ class AutoDisableSystem:
             # Check if manual enable is allowed
             if not force:
                 # Verify health score is acceptable
-                if (self.last_health_score is not None and
-                    self.last_health_score < self.config['health_thresholds'].disable_threshold):
-
-                    self.logger.warning(f"Manual enable rejected: health score {self.last_health_score:.1f} "
-                                      f"below threshold {self.config['health_thresholds'].disable_threshold}")
+                if (
+                    self.last_health_score is not None
+                    and self.last_health_score < self.config["health_thresholds"].disable_threshold
+                ):
+                    self.logger.warning(
+                        f"Manual enable rejected: health score {self.last_health_score:.1f} "
+                        f"below threshold {self.config['health_thresholds'].disable_threshold}"
+                    )
                     return False
 
             if self.current_mode != TradingMode.LIVE:
@@ -243,7 +263,7 @@ class AutoDisableSystem:
                     new_mode=TradingMode.LIVE,
                     reason=DisableReason.MANUAL_DISABLE,  # Resolution of manual disable
                     description="Manual enable of live trading" + (" (forced)" if force else ""),
-                    auto_generated=False
+                    auto_generated=False,
                 )
 
                 self.consecutive_failures = 0
@@ -254,8 +274,13 @@ class AutoDisableSystem:
 
             return False
 
-    def disable_for_reason(self, reason: DisableReason, description: str,
-                          disable_all: bool = False, trigger_value: Optional[float] = None) -> bool:
+    def disable_for_reason(
+        self,
+        reason: DisableReason,
+        description: str,
+        disable_all: bool = False,
+        trigger_value: Optional[float] = None,
+    ) -> bool:
         """Disable trading for specific reason"""
 
         with self.lock:
@@ -267,7 +292,7 @@ class AutoDisableSystem:
                     reason=reason,
                     trigger_value=trigger_value,
                     description=description,
-                    auto_generated=True
+                    auto_generated=True,
                 )
 
                 self.consecutive_failures += 1
@@ -276,9 +301,15 @@ class AutoDisableSystem:
 
             return False
 
-    def _change_trading_mode(self, new_mode: TradingMode, reason: DisableReason,
-                           trigger_value: Optional[float] = None, threshold: Optional[float] = None,
-                           description: str = "", auto_generated: bool = True) -> None:
+    def _change_trading_mode(
+        self,
+        new_mode: TradingMode,
+        reason: DisableReason,
+        trigger_value: Optional[float] = None,
+        threshold: Optional[float] = None,
+        description: str = "",
+        auto_generated: bool = True,
+    ) -> None:
         """Internal method to change trading mode"""
 
         previous_mode = self.current_mode
@@ -292,7 +323,7 @@ class AutoDisableSystem:
             trigger_value=trigger_value,
             threshold=threshold,
             description=description,
-            auto_generated=auto_generated
+            auto_generated=auto_generated,
         )
 
         # Reset grace period if transitioning to worse state
@@ -308,16 +339,26 @@ class AutoDisableSystem:
 
         # Log the change
         if new_mode != TradingMode.LIVE:
-            self.logger.warning(f"Trading mode changed: {previous_mode.value} → {new_mode.value} "
-                              f"(reason: {reason.value})")
+            self.logger.warning(
+                f"Trading mode changed: {previous_mode.value} → {new_mode.value} "
+                f"(reason: {reason.value})"
+            )
         else:
-            self.logger.info(f"Trading mode changed: {previous_mode.value} → {new_mode.value} "
-                           f"(reason: {reason.value})")
+            self.logger.info(
+                f"Trading mode changed: {previous_mode.value} → {new_mode.value} "
+                f"(reason: {reason.value})"
+            )
 
-    def _record_status_change(self, previous_mode: TradingMode, new_mode: TradingMode,
-                            reason: DisableReason, trigger_value: Optional[float] = None,
-                            threshold: Optional[float] = None, description: str = "",
-                            auto_generated: bool = True) -> TradingStatusChange:
+    def _record_status_change(
+        self,
+        previous_mode: TradingMode,
+        new_mode: TradingMode,
+        reason: DisableReason,
+        trigger_value: Optional[float] = None,
+        threshold: Optional[float] = None,
+        description: str = "",
+        auto_generated: bool = True,
+    ) -> TradingStatusChange:
         """Record a status change"""
 
         change = TradingStatusChange(
@@ -328,7 +369,7 @@ class AutoDisableSystem:
             trigger_value=trigger_value,
             threshold=threshold,
             description=description,
-            auto_generated=auto_generated
+            auto_generated=auto_generated,
         )
 
         self.status_history.append(change)
@@ -346,7 +387,7 @@ class AutoDisableSystem:
             return False
 
         elapsed = datetime.now() - self.grace_period_start
-        grace_period = timedelta(minutes=self.config['grace_period_minutes'])
+        grace_period = timedelta(minutes=self.config["grace_period_minutes"])
 
         return elapsed >= grace_period
 
@@ -355,31 +396,33 @@ class AutoDisableSystem:
 
         with self.lock:
             status = {
-                'current_mode': self.current_mode.value,
-                'last_health_score': self.last_health_score,
-                'last_check_time': self.last_check_time.isoformat() if self.last_check_time else None,
-                'consecutive_failures': self.consecutive_failures,
-                'grace_period_active': self.grace_period_start is not None,
-                'grace_period_remaining': None,
-                'thresholds': {
-                    'disable_threshold': self.config['health_thresholds'].disable_threshold,
-                    'enable_threshold': self.config['health_thresholds'].enable_threshold,
-                    'critical_threshold': self.config['health_thresholds'].critical_threshold
+                "current_mode": self.current_mode.value,
+                "last_health_score": self.last_health_score,
+                "last_check_time": self.last_check_time.isoformat()
+                if self.last_check_time
+                else None,
+                "consecutive_failures": self.consecutive_failures,
+                "grace_period_active": self.grace_period_start is not None,
+                "grace_period_remaining": None,
+                "thresholds": {
+                    "disable_threshold": self.config["health_thresholds"].disable_threshold,
+                    "enable_threshold": self.config["health_thresholds"].enable_threshold,
+                    "critical_threshold": self.config["health_thresholds"].critical_threshold,
                 },
-                'auto_enable': self.config['auto_enable'],
-                'require_manual_enable': self.config['require_manual_enable']
+                "auto_enable": self.config["auto_enable"],
+                "require_manual_enable": self.config["require_manual_enable"],
             }
 
             # Calculate grace period remaining
             if self.grace_period_start:
                 elapsed = datetime.now() - self.grace_period_start
-                grace_period = timedelta(minutes=self.config['grace_period_minutes'])
+                grace_period = timedelta(minutes=self.config["grace_period_minutes"])
                 remaining = grace_period - elapsed
 
                 if remaining.total_seconds() > 0:
-                    status['grace_period_remaining'] = remaining.total_seconds()
+                    status["grace_period_remaining"] = remaining.total_seconds()
                 else:
-                    status['grace_period_remaining'] = 0
+                    status["grace_period_remaining"] = 0
 
             return status
 
@@ -390,14 +433,14 @@ class AutoDisableSystem:
 
         recent_changes = [
             {
-                'timestamp': change.timestamp.isoformat(),
-                'previous_mode': change.previous_mode.value,
-                'new_mode': change.new_mode.value,
-                'reason': change.reason.value,
-                'trigger_value': change.trigger_value,
-                'threshold': change.threshold,
-                'description': change.description,
-                'auto_generated': change.auto_generated
+                "timestamp": change.timestamp.isoformat(),
+                "previous_mode": change.previous_mode.value,
+                "new_mode": change.new_mode.value,
+                "reason": change.reason.value,
+                "trigger_value": change.trigger_value,
+                "threshold": change.threshold,
+                "description": change.description,
+                "auto_generated": change.auto_generated,
             }
             for change in self.status_history
             if change.timestamp > cutoff_time
@@ -413,7 +456,7 @@ class AutoDisableSystem:
         # Count changes by reason
         reason_counts = {}
         for change in recent_changes:
-            reason = change['reason']
+            reason = change["reason"]
             reason_counts[reason] = reason_counts.get(reason, 0) + 1
 
         # Calculate uptime percentage (time in live mode)
@@ -427,15 +470,18 @@ class AutoDisableSystem:
                 # Calculate duration of this mode
                 if i < len(recent_changes) - 1:
                     next_change = recent_changes[i + 1]
-                    duration = (datetime.fromisoformat(next_change['timestamp']) -
-                              datetime.fromisoformat(change['timestamp'])).total_seconds()
+                    duration = (
+                        datetime.fromisoformat(next_change["timestamp"])
+                        - datetime.fromisoformat(change["timestamp"])
+                    ).total_seconds()
                 else:
                     # Current mode duration
-                    duration = (datetime.now() -
-                              datetime.fromisoformat(change['timestamp'])).total_seconds()
+                    duration = (
+                        datetime.now() - datetime.fromisoformat(change["timestamp"])
+                    ).total_seconds()
 
                 total_time += duration
-                if change['new_mode'] == 'live':
+                if change["new_mode"] == "live":
                     live_time += duration
 
             uptime_percentage = (live_time / max(total_time, 1)) * 100
@@ -443,21 +489,23 @@ class AutoDisableSystem:
             uptime_percentage = 0
 
         summary = {
-            'current_status': self.get_current_status(),
-            'changes_24h': len(recent_changes),
-            'uptime_percentage_24h': uptime_percentage,
-            'reason_breakdown': reason_counts,
-            'total_status_changes': len(self.status_history),
-            'system_health': {
-                'consecutive_failures': self.consecutive_failures,
-                'max_consecutive_failures': self.config['max_consecutive_failures'],
-                'grace_period_enabled': self.config['grace_period_minutes'] > 0
-            }
+            "current_status": self.get_current_status(),
+            "changes_24h": len(recent_changes),
+            "uptime_percentage_24h": uptime_percentage,
+            "reason_breakdown": reason_counts,
+            "total_status_changes": len(self.status_history),
+            "system_health": {
+                "consecutive_failures": self.consecutive_failures,
+                "max_consecutive_failures": self.config["max_consecutive_failures"],
+                "grace_period_enabled": self.config["grace_period_minutes"] > 0,
+            },
         }
 
         return summary
 
+
 if __name__ == "__main__":
+
     def test_auto_disable_system():
         """Test auto-disable system"""
 
@@ -470,8 +518,10 @@ if __name__ == "__main__":
         print("📊 Initial status:")
         status = auto_disable.get_current_status()
         print(f"   Mode: {status['current_mode']}")
-        print(f"   Thresholds: disable={status['thresholds']['disable_threshold']}, "
-              f"enable={status['thresholds']['enable_threshold']}")
+        print(
+            f"   Thresholds: disable={status['thresholds']['disable_threshold']}, "
+            f"enable={status['thresholds']['enable_threshold']}"
+        )
 
         # Test health score scenarios
         print("\n🧪 Testing health score scenarios...")
@@ -521,7 +571,7 @@ if __name__ == "__main__":
         auto_disable.disable_for_reason(
             DisableReason.DRIFT_DETECTED,
             "Model drift detected in sentiment analyzer",
-            trigger_value=0.8
+            trigger_value=0.8,
         )
         print(f"   After drift detection: {auto_disable.get_current_status()['current_mode']}")
 
@@ -529,8 +579,10 @@ if __name__ == "__main__":
         print("\n📈 Recent status changes:")
         recent_changes = auto_disable.get_recent_changes(1)  # Last hour
         for change in recent_changes[-5:]:  # Show last 5
-            print(f"   {change['timestamp']}: {change['previous_mode']} → {change['new_mode']} "
-                  f"({change['reason']})")
+            print(
+                f"   {change['timestamp']}: {change['previous_mode']} → {change['new_mode']} "
+                f"({change['reason']})"
+            )
 
         # System summary
         print("\n📊 System summary:")
@@ -541,7 +593,7 @@ if __name__ == "__main__":
         print(f"   Consecutive failures: {summary['system_health']['consecutive_failures']}")
 
         print("\n📊 Reason breakdown:")
-        for reason, count in summary['reason_breakdown'].items():
+        for reason, count in summary["reason_breakdown"].items():
             print(f"   {reason}: {count}")
 
         print("\n✅ AUTO-DISABLE SYSTEM TEST COMPLETED")

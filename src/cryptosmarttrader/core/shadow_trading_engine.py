@@ -15,35 +15,44 @@ import json
 import uuid
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 from ..core.logging_manager import get_logger
 from ..core.data_quality_manager import get_data_quality_manager
 
+
 class TradingMode(str, Enum):
     """Trading mode types"""
-    SHADOW = "shadow"          # Paper trading only
+
+    SHADOW = "shadow"  # Paper trading only
     LIVE_AUTHORIZED = "live_authorized"  # Passed shadow testing
-    LIVE_DISABLED = "live_disabled"      # Failed shadow testing
-    EMERGENCY_HALT = "emergency_halt"    # Emergency stop
+    LIVE_DISABLED = "live_disabled"  # Failed shadow testing
+    EMERGENCY_HALT = "emergency_halt"  # Emergency stop
+
 
 class TradeStatus(str, Enum):
     """Shadow trade status"""
+
     PENDING = "pending"
     FILLED = "filled"
     CANCELLED = "cancelled"
     EXPIRED = "expired"
 
+
 class SoakStatus(str, Enum):
     """Soak period validation status"""
+
     IN_PROGRESS = "in_progress"
     PASSED = "passed"
     FAILED = "failed"
     INSUFFICIENT_DATA = "insufficient_data"
 
+
 @dataclass
 class ShadowTrade:
     """Individual shadow trade record"""
+
     trade_id: str
     symbol: str
     side: str  # 'buy' or 'sell'
@@ -58,24 +67,28 @@ class ShadowTrade:
     confidence_score: float = 0.8
     strategy_id: str = "default"
     slippage_applied: float = 0.001  # 0.1% default slippage
-    fees_applied: float = 0.0025     # 0.25% fees
+    fees_applied: float = 0.0025  # 0.25% fees
     metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass
 class SoakPeriodConfig:
     """Configuration for soak period validation"""
-    minimum_duration_days: int = 28      # 4 weeks minimum
-    target_duration_days: int = 56       # 8 weeks target
-    minimum_trades: int = 100            # Minimum trades for statistical significance
+
+    minimum_duration_days: int = 28  # 4 weeks minimum
+    target_duration_days: int = 56  # 8 weeks target
+    minimum_trades: int = 100  # Minimum trades for statistical significance
     max_false_positive_ratio: float = 0.15  # 15% max false positive rate
-    min_sharpe_ratio: float = 1.5        # Minimum Sharpe ratio
-    max_drawdown_percent: float = 0.10   # 10% max drawdown
-    min_win_rate: float = 0.55           # 55% minimum win rate
-    required_market_regimes: int = 3     # Must trade in 3+ different market conditions
+    min_sharpe_ratio: float = 1.5  # Minimum Sharpe ratio
+    max_drawdown_percent: float = 0.10  # 10% max drawdown
+    min_win_rate: float = 0.55  # 55% minimum win rate
+    required_market_regimes: int = 3  # Must trade in 3+ different market conditions
+
 
 @dataclass
 class SoakValidationResult:
     """Result from soak period validation"""
+
     validation_id: str
     start_date: datetime
     end_date: datetime
@@ -93,6 +106,7 @@ class SoakValidationResult:
     passed_criteria: List[str]
     failed_criteria: List[str]
 
+
 class MarketRegimeDetector:
     """Detect market regimes for soak period validation"""
 
@@ -104,8 +118,8 @@ class MarketRegimeDetector:
 
         try:
             # Simple regime detection based on volatility and trend
-            btc_change = market_data.get('BTC/USD', {}).get('change_24h', 0)
-            eth_change = market_data.get('ETH/USD', {}).get('change_24h', 0)
+            btc_change = market_data.get("BTC/USD", {}).get("change_24h", 0)
+            eth_change = market_data.get("ETH/USD", {}).get("change_24h", 0)
 
             avg_change = (btc_change + eth_change) / 2
             volatility = abs(btc_change - eth_change)
@@ -124,6 +138,7 @@ class MarketRegimeDetector:
         except Exception as e:
             self.logger.warning(f"Regime detection failed: {e}")
             return "unknown"
+
 
 class ShadowTradingEngine:
     """Main shadow trading engine with soak period validation"""
@@ -158,8 +173,8 @@ class ShadowTradingEngine:
                 "mode": self.current_mode.value,
                 "soak_start_date": self.soak_start_date.isoformat(),
                 "minimum_duration_days": self.config.minimum_duration_days,
-                "virtual_capital": self.shadow_portfolio["cash"]
-            }
+                "virtual_capital": self.shadow_portfolio["cash"],
+            },
         )
 
     async def execute_shadow_trade(
@@ -168,7 +183,7 @@ class ShadowTradingEngine:
         side: str,
         quantity: float,
         confidence_score: float,
-        strategy_id: str = "default"
+        strategy_id: str = "default",
     ) -> ShadowTrade:
         """Execute a shadow trade with realistic market simulation"""
 
@@ -203,8 +218,8 @@ class ShadowTradingEngine:
                 metadata={
                     "market_price_at_entry": market_price,
                     "market_regime": self.regime_detector.detect_regime({}),
-                    "confidence_score": confidence_score
-                }
+                    "confidence_score": confidence_score,
+                },
             )
 
             # Validate portfolio has sufficient funds/positions
@@ -234,8 +249,8 @@ class ShadowTradingEngine:
                     "quantity": quantity,
                     "entry_price": entry_price,
                     "confidence_score": confidence_score,
-                    "slippage": slippage
-                }
+                    "slippage": slippage,
+                },
             )
 
             return shadow_trade
@@ -254,7 +269,7 @@ class ShadowTradingEngine:
                 status=TradeStatus.CANCELLED,
                 confidence_score=confidence_score,
                 strategy_id=strategy_id,
-                metadata={"error": str(e)}
+                metadata={"error": str(e)},
             )
 
             self.shadow_trades.append(failed_trade)
@@ -271,7 +286,7 @@ class ShadowTradingEngine:
                 "ETH/USD": 3000.0,
                 "ADA/USD": 0.50,
                 "SOL/USD": 100.0,
-                "DOT/USD": 7.50
+                "DOT/USD": 7.50,
             }
 
             base_price = base_prices.get(symbol, 1.0)
@@ -286,7 +301,9 @@ class ShadowTradingEngine:
             self.logger.error(f"Failed to get market price for {symbol}: {e}")
             return None
 
-    def _calculate_realistic_slippage(self, symbol: str, quantity: float, market_price: float) -> float:
+    def _calculate_realistic_slippage(
+        self, symbol: str, quantity: float, market_price: float
+    ) -> float:
         """Calculate realistic slippage based on market conditions"""
 
         # Base slippage by market cap tier
@@ -330,7 +347,7 @@ class ShadowTradingEngine:
 
         if trade.side == "buy":
             # Deduct cash, add position
-            self.shadow_portfolio["cash"] -= (trade_value + fees)
+            self.shadow_portfolio["cash"] -= trade_value + fees
 
             if trade.symbol not in self.shadow_portfolio["positions"]:
                 self.shadow_portfolio["positions"][trade.symbol] = 0.0
@@ -338,7 +355,7 @@ class ShadowTradingEngine:
 
         else:  # sell
             # Add cash, reduce position
-            self.shadow_portfolio["cash"] += (trade_value - fees)
+            self.shadow_portfolio["cash"] += trade_value - fees
             self.shadow_portfolio["positions"][trade.symbol] -= trade.quantity
 
             # Remove position if zero
@@ -356,23 +373,35 @@ class ShadowTradingEngine:
                     current_price = await self._get_current_market_price(symbol)
                     if current_price:
                         # Find average entry price for this position
-                        symbol_trades = [t for t in self.shadow_trades
-                                       if t.symbol == symbol and t.status == TradeStatus.FILLED]
+                        symbol_trades = [
+                            t
+                            for t in self.shadow_trades
+                            if t.symbol == symbol and t.status == TradeStatus.FILLED
+                        ]
 
                         if symbol_trades:
                             # Calculate weighted average entry price
                             total_qty = sum(t.quantity for t in symbol_trades if t.side == "buy")
                             if total_qty > 0:
-                                avg_entry = sum(t.entry_price * t.quantity for t in symbol_trades if t.side == "buy") / total_qty
+                                avg_entry = (
+                                    sum(
+                                        t.entry_price * t.quantity
+                                        for t in symbol_trades
+                                        if t.side == "buy"
+                                    )
+                                    / total_qty
+                                )
                                 position_pnl = (current_price - avg_entry) * quantity
                                 total_unrealized += position_pnl
 
             # Update daily P&L tracking
-            self.daily_pnl_history.append({
-                "date": datetime.now().date(),
-                "unrealized_pnl": total_unrealized,
-                "portfolio_value": self._calculate_portfolio_value()
-            })
+            self.daily_pnl_history.append(
+                {
+                    "date": datetime.now().date(),
+                    "unrealized_pnl": total_unrealized,
+                    "portfolio_value": self._calculate_portfolio_value(),
+                }
+            )
 
         except Exception as e:
             self.logger.error(f"Failed to update unrealized P&L: {e}")
@@ -415,7 +444,7 @@ class ShadowTradingEngine:
                     market_regimes_traded=len(self.market_regimes_encountered),
                     validation_details={"error": "Insufficient trades for validation"},
                     passed_criteria=[],
-                    failed_criteria=["minimum_trades"]
+                    failed_criteria=["minimum_trades"],
                 )
 
             # Calculate performance metrics
@@ -495,7 +524,7 @@ class ShadowTradingEngine:
                 market_regimes_traded=len(self.market_regimes_encountered),
                 validation_details=metrics,
                 passed_criteria=passed_criteria,
-                failed_criteria=failed_criteria
+                failed_criteria=failed_criteria,
             )
 
             # Store validation result
@@ -514,8 +543,8 @@ class ShadowTradingEngine:
                     "win_rate": metrics["win_rate"],
                     "sharpe_ratio": metrics["sharpe_ratio"],
                     "passed_criteria": len(passed_criteria),
-                    "failed_criteria": len(failed_criteria)
-                }
+                    "failed_criteria": len(failed_criteria),
+                },
             )
 
             return validation_result
@@ -540,7 +569,7 @@ class ShadowTradingEngine:
                 market_regimes_traded=0,
                 validation_details={"error": str(e)},
                 passed_criteria=[],
-                failed_criteria=["validation_error"]
+                failed_criteria=["validation_error"],
             )
 
     def _calculate_performance_metrics(self, trades: List[ShadowTrade]) -> Dict[str, Any]:
@@ -583,7 +612,9 @@ class ShadowTradingEngine:
             # False positive ratio (trades with high confidence that lost)
             high_conf_trades = [t for t in trades if t.confidence_score > 0.8]
             high_conf_losses = [t for t in losing_trades if t.confidence_score > 0.8]
-            false_positive_ratio = len(high_conf_losses) / len(high_conf_trades) if high_conf_trades else 0.0
+            false_positive_ratio = (
+                len(high_conf_losses) / len(high_conf_trades) if high_conf_trades else 0.0
+            )
 
             # Sharpe ratio
             if daily_returns:
@@ -613,10 +644,18 @@ class ShadowTradingEngine:
                 "max_drawdown": max_drawdown,
                 "total_pnl": total_pnl,
                 "total_return_percent": total_return_percent,
-                "average_win": np.mean([np.random.normal(0, 1) for _ in winning_trades]) if winning_trades else 0.0,
-                "average_loss": np.mean([np.random.normal(0, 1) for _ in losing_trades]) if losing_trades else 0.0,
-                "profit_factor": abs(sum([np.random.normal(0, 1) for _ in winning_trades]) /
-                                    sum([np.random.normal(0, 1) for _ in losing_trades])) if losing_trades else float('inf')
+                "average_win": np.mean([np.random.normal(0, 1) for _ in winning_trades])
+                if winning_trades
+                else 0.0,
+                "average_loss": np.mean([np.random.normal(0, 1) for _ in losing_trades])
+                if losing_trades
+                else 0.0,
+                "profit_factor": abs(
+                    sum([np.random.normal(0, 1) for _ in winning_trades])
+                    / sum([np.random.normal(0, 1) for _ in losing_trades])
+                )
+                if losing_trades
+                else float("inf"),
             }
 
         except Exception as e:
@@ -628,7 +667,7 @@ class ShadowTradingEngine:
                 "sharpe_ratio": 0.0,
                 "max_drawdown": 1.0,
                 "total_pnl": 0.0,
-                "total_return_percent": 0.0
+                "total_return_percent": 0.0,
             }
 
     def get_soak_status_summary(self) -> Dict[str, Any]:
@@ -644,43 +683,51 @@ class ShadowTradingEngine:
             "current_mode": self.current_mode.value,
             "soak_status": self.current_soak_status.value,
             "live_trading_authorized": self.live_trading_authorized,
-            "authorization_date": self.authorization_date.isoformat() if self.authorization_date else None,
+            "authorization_date": self.authorization_date.isoformat()
+            if self.authorization_date
+            else None,
             "soak_period": {
                 "start_date": self.soak_start_date.isoformat(),
                 "current_duration_days": current_duration,
                 "minimum_required_days": self.config.minimum_duration_days,
                 "target_duration_days": self.config.target_duration_days,
                 "progress_percentage": progress_percentage,
-                "days_remaining": max(0, self.config.minimum_duration_days - current_duration)
+                "days_remaining": max(0, self.config.minimum_duration_days - current_duration),
             },
             "trading_statistics": {
                 "total_trades": len(self.shadow_trades),
                 "filled_trades": len(filled_trades),
                 "minimum_required_trades": self.config.minimum_trades,
-                "trades_remaining": max(0, self.config.minimum_trades - len(filled_trades))
+                "trades_remaining": max(0, self.config.minimum_trades - len(filled_trades)),
             },
             "portfolio_status": {
                 "virtual_capital": 100000.0,
                 "current_cash": self.shadow_portfolio["cash"],
                 "positions_count": len(self.shadow_portfolio["positions"]),
-                "portfolio_value": self._calculate_portfolio_value()
+                "portfolio_value": self._calculate_portfolio_value(),
             },
             "market_exposure": {
                 "regimes_encountered": list(self.market_regimes_encountered),
                 "regimes_required": self.config.required_market_regimes,
-                "regimes_remaining": max(0, self.config.required_market_regimes - len(self.market_regimes_encountered))
+                "regimes_remaining": max(
+                    0, self.config.required_market_regimes - len(self.market_regimes_encountered)
+                ),
             },
             "validation_criteria": {
                 "max_false_positive_ratio": self.config.max_false_positive_ratio,
                 "min_sharpe_ratio": self.config.min_sharpe_ratio,
                 "max_drawdown_percent": self.config.max_drawdown_percent,
-                "min_win_rate": self.config.min_win_rate
+                "min_win_rate": self.config.min_win_rate,
             },
-            "last_validation": self.last_validation_result.__dict__ if self.last_validation_result else None
+            "last_validation": self.last_validation_result.__dict__
+            if self.last_validation_result
+            else None,
         }
+
 
 # Global instance
 _shadow_trading_engine = None
+
 
 def get_shadow_trading_engine(config: Optional[SoakPeriodConfig] = None) -> ShadowTradingEngine:
     """Get global shadow trading engine instance"""

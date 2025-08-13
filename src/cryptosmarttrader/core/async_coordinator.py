@@ -17,6 +17,7 @@ from enum import Enum
 import weakref
 import traceback
 
+
 class TaskStatus(Enum):
     PENDING = "pending"
     RUNNING = "running"
@@ -25,9 +26,11 @@ class TaskStatus(Enum):
     CANCELLED = "cancelled"
     TIMEOUT = "timeout"
 
+
 @dataclass
 class AsyncTask:
     """Async task with comprehensive tracking"""
+
     task_id: str
     name: str
     coroutine: Optional[Coroutine] = None
@@ -47,9 +50,11 @@ class AsyncTask:
     error: Optional[Exception] = None
     dependencies: List[str] = field(default_factory=list)
 
+
 @dataclass
 class CoordinatorConfig:
     """Configuration for async coordinator"""
+
     max_concurrent_tasks: int = 100
     max_thread_pool_workers: int = 20
     default_timeout: float = 30.0
@@ -59,6 +64,7 @@ class CoordinatorConfig:
     rate_limit_requests_per_second: float = 50.0
     circuit_breaker_failure_threshold: int = 5
     circuit_breaker_recovery_timeout: int = 60
+
 
 class AsyncCoordinator:
     """Enterprise async coordination manager for true non-blocking operations"""
@@ -87,7 +93,7 @@ class AsyncCoordinator:
             "average_task_duration": 0.0,
             "current_concurrent_tasks": 0,
             "peak_concurrent_tasks": 0,
-            "last_cleanup": datetime.now()
+            "last_cleanup": datetime.now(),
         }
 
         # Rate limiting
@@ -103,7 +109,9 @@ class AsyncCoordinator:
         # Start background tasks
         self._start_background_tasks()
 
-        self.logger.info(f"Async Coordinator initialized with {self.config.max_concurrent_tasks} max concurrent tasks")
+        self.logger.info(
+            f"Async Coordinator initialized with {self.config.max_concurrent_tasks} max concurrent tasks"
+        )
 
     def _ensure_event_loop(self):
         """Ensure we have a running event loop"""
@@ -116,9 +124,7 @@ class AsyncCoordinator:
 
             # Start event loop in separate thread
             self.loop_thread = threading.Thread(
-                target=self._run_event_loop,
-                daemon=True,
-                name="AsyncCoordinatorEventLoop"
+                target=self._run_event_loop, daemon=True, name="AsyncCoordinatorEventLoop"
             )
             self.loop_thread.start()
             time.sleep(0.1)  # Allow loop to start
@@ -134,17 +140,11 @@ class AsyncCoordinator:
         """Start background maintenance tasks"""
         if self.loop and not self.loop.is_closed():
             # Schedule periodic cleanup
-            asyncio.run_coroutine_threadsafe(
-                self._periodic_cleanup(),
-                self.loop
-            )
+            asyncio.run_coroutine_threadsafe(self._periodic_cleanup(), self.loop)
 
             # Schedule performance monitoring
             if self.config.enable_performance_monitoring:
-                asyncio.run_coroutine_threadsafe(
-                    self._performance_monitor(),
-                    self.loop
-                )
+                asyncio.run_coroutine_threadsafe(self._performance_monitor(), self.loop)
 
     async def _periodic_cleanup(self):
         """Periodic cleanup of completed tasks and metrics"""
@@ -176,13 +176,13 @@ class AsyncCoordinator:
             connector = aiohttp.TCPConnector(
                 limit=self.config.max_concurrent_tasks,
                 limit_per_host=20,
-                enable_cleanup_closed=True
+                enable_cleanup_closed=True,
             )
 
             self.session = aiohttp.ClientSession(
                 timeout=timeout,
                 connector=connector,
-                headers={'User-Agent': 'CryptoSmartTrader/2.0 (Async)'}
+                headers={"User-Agent": "CryptoSmartTrader/2.0 (Async)"},
             )
 
         return self.session
@@ -197,7 +197,7 @@ class AsyncCoordinator:
         priority: int = 5,
         timeout: Optional[float] = None,
         max_retries: int = 3,
-        dependencies: List[str] = None
+        dependencies: List[str] = None,
     ) -> str:
         """
         Submit a task for async execution
@@ -230,7 +230,7 @@ class AsyncCoordinator:
                 priority=priority,
                 timeout=timeout or self.config.default_timeout,
                 max_retries=max_retries,
-                dependencies=dependencies or []
+                dependencies=dependencies or [],
             )
 
             self.tasks[task_id] = task
@@ -238,10 +238,7 @@ class AsyncCoordinator:
 
             # Schedule task execution
             if self.loop and not self.loop.is_closed():
-                asyncio.run_coroutine_threadsafe(
-                    self._execute_task(task),
-                    self.loop
-                )
+                asyncio.run_coroutine_threadsafe(self._execute_task(task), self.loop)
 
             self.logger.debug(f"Submitted task {task_id}: {task_name}")
             return task_id
@@ -273,14 +270,10 @@ class AsyncCoordinator:
 
                 try:
                     if task.coroutine:
-                        result = await asyncio.wait_for(
-                            task.coroutine,
-                            timeout=task.timeout
-                        )
+                        result = await asyncio.wait_for(task.coroutine, timeout=task.timeout)
                     elif task.function:
                         result = await asyncio.wait_for(
-                            self._run_in_thread_pool(task),
-                            timeout=task.timeout
+                            self._run_in_thread_pool(task), timeout=task.timeout
                         )
                     else:
                         raise ValueError("No coroutine or function provided")
@@ -330,14 +323,13 @@ class AsyncCoordinator:
             # Move to history
             self.task_history.append(task)
             if len(self.task_history) > self.config.max_task_history:
-                self.task_history = self.task_history[-self.config.max_task_history:]
+                self.task_history = self.task_history[-self.config.max_task_history :]
 
     async def _run_in_thread_pool(self, task: AsyncTask):
         """Run sync function in thread pool"""
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
-            self.thread_pool,
-            lambda: task.function(*task.args, **task.kwargs)
+            self.thread_pool, lambda: task.function(*task.args, **task.kwargs)
         )
 
     async def _check_dependencies(self, task: AsyncTask) -> bool:
@@ -357,10 +349,7 @@ class AsyncCoordinator:
         current_time = time.time()
 
         # Clean old timestamps
-        self.request_timestamps = [
-            ts for ts in self.request_timestamps
-            if current_time - ts < 1.0
-        ]
+        self.request_timestamps = [ts for ts in self.request_timestamps if current_time - ts < 1.0]
 
         # Check if we need to wait
         if len(self.request_timestamps) >= self.config.rate_limit_requests_per_second:
@@ -391,7 +380,7 @@ class AsyncCoordinator:
             self.circuit_breakers[service_name] = {
                 "failure_count": 0,
                 "last_failure": 0,
-                "state": "closed"
+                "state": "closed",
             }
 
         cb = self.circuit_breakers[service_name]
@@ -414,7 +403,8 @@ class AsyncCoordinator:
         """Clean up completed tasks to prevent memory leaks"""
         with self._lock:
             completed_tasks = [
-                task_id for task_id, task in self.tasks.items()
+                task_id
+                for task_id, task in self.tasks.items()
                 if task.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED)
                 and task.completed_at
                 and (datetime.now() - task.completed_at).total_seconds() > 300  # 5 minutes
@@ -431,7 +421,9 @@ class AsyncCoordinator:
         current_time = time.time()
 
         for service_name, cb in list(self.circuit_breakers.items()):
-            if (current_time - cb["last_failure"]) > (self.config.circuit_breaker_recovery_timeout * 2):
+            if (current_time - cb["last_failure"]) > (
+                self.config.circuit_breaker_recovery_timeout * 2
+            ):
                 if cb["state"] == "closed" and cb["failure_count"] == 0:
                     del self.circuit_breakers[service_name]
 
@@ -439,10 +431,9 @@ class AsyncCoordinator:
         """Update performance metrics"""
         with self._lock:
             # Update current concurrent tasks
-            self.performance_metrics["current_concurrent_tasks"] = len([
-                task for task in self.tasks.values()
-                if task.status == TaskStatus.RUNNING
-            ])
+            self.performance_metrics["current_concurrent_tasks"] = len(
+                [task for task in self.tasks.values() if task.status == TaskStatus.RUNNING]
+            )
 
             # Update peak concurrent tasks
             current_concurrent = self.performance_metrics["current_concurrent_tasks"]
@@ -451,7 +442,8 @@ class AsyncCoordinator:
 
             # Calculate average task duration
             completed_tasks = [
-                task for task in self.task_history
+                task
+                for task in self.task_history
                 if task.status == TaskStatus.COMPLETED and task.started_at and task.completed_at
             ]
 
@@ -460,7 +452,9 @@ class AsyncCoordinator:
                     (task.completed_at - task.started_at).total_seconds()
                     for task in completed_tasks
                 )
-                self.performance_metrics["average_task_duration"] = total_duration / len(completed_tasks)
+                self.performance_metrics["average_task_duration"] = total_duration / len(
+                    completed_tasks
+                )
 
             self.performance_metrics["last_cleanup"] = datetime.now()
 
@@ -499,15 +493,18 @@ class AsyncCoordinator:
                 "thread_pool_active": not self.thread_pool._shutdown,
                 "http_session_active": self.session is not None and not self.session.closed,
                 "total_tasks": len(self.tasks),
-                "running_tasks": len([t for t in self.tasks.values() if t.status == TaskStatus.RUNNING]),
-                "failed_tasks": len([t for t in self.tasks.values() if t.status == TaskStatus.FAILED]),
+                "running_tasks": len(
+                    [t for t in self.tasks.values() if t.status == TaskStatus.RUNNING]
+                ),
+                "failed_tasks": len(
+                    [t for t in self.tasks.values() if t.status == TaskStatus.FAILED]
+                ),
                 "circuit_breakers": len(self.circuit_breakers),
-                "open_circuit_breakers": len([
-                    cb for cb in self.circuit_breakers.values()
-                    if cb["state"] == "open"
-                ]),
+                "open_circuit_breakers": len(
+                    [cb for cb in self.circuit_breakers.values() if cb["state"] == "open"]
+                ),
                 "performance_metrics": self.performance_metrics,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
             return health
@@ -522,10 +519,7 @@ class AsyncCoordinator:
 
         # Wait for running tasks to complete (with timeout)
         try:
-            await asyncio.wait_for(
-                self._wait_for_tasks_completion(),
-                timeout=30.0
-            )
+            await asyncio.wait_for(self._wait_for_tasks_completion(), timeout=30.0)
         except asyncio.TimeoutError:
             self.logger.warning("Shutdown timeout, forcing termination")
 
@@ -552,6 +546,7 @@ class AsyncCoordinator:
 _async_coordinator = None
 _coordinator_lock = threading.Lock()
 
+
 def get_async_coordinator(config: Optional[CoordinatorConfig] = None) -> AsyncCoordinator:
     """Get the singleton async coordinator instance"""
     global _async_coordinator
@@ -561,20 +556,16 @@ def get_async_coordinator(config: Optional[CoordinatorConfig] = None) -> AsyncCo
             _async_coordinator = AsyncCoordinator(config)
         return _async_coordinator
 
+
 async def submit_async_task(
-    task_name: str,
-    coroutine: Coroutine,
-    priority: int = 5,
-    timeout: Optional[float] = None
+    task_name: str, coroutine: Coroutine, priority: int = 5, timeout: Optional[float] = None
 ) -> str:
     """Convenient function to submit async task"""
     coordinator = get_async_coordinator()
     return coordinator.submit_task(
-        task_name=task_name,
-        coroutine=coroutine,
-        priority=priority,
-        timeout=timeout
+        task_name=task_name, coroutine=coroutine, priority=priority, timeout=timeout
     )
+
 
 def submit_sync_task(
     task_name: str,
@@ -582,7 +573,7 @@ def submit_sync_task(
     args: tuple = (),
     kwargs: dict = None,
     priority: int = 5,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = None,
 ) -> str:
     """Convenient function to submit sync task"""
     coordinator = get_async_coordinator()
@@ -592,5 +583,5 @@ def submit_sync_task(
         args=args,
         kwargs=kwargs or {},
         priority=priority,
-        timeout=timeout
+        timeout=timeout,
     )

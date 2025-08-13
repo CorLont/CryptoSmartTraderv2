@@ -21,8 +21,10 @@ from great_expectations.exceptions import ValidationError
 
 # Import core components
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from ..core.structured_logger import get_logger
+
 
 class FeatureValidator:
     """Great Expectations based data validation for features"""
@@ -71,100 +73,67 @@ class FeatureValidator:
             # No null values in critical columns
             {
                 "expectation_type": "expect_column_values_to_not_be_null",
-                "kwargs": {"column": "symbol"}
+                "kwargs": {"column": "symbol"},
             },
             {
                 "expectation_type": "expect_column_values_to_not_be_null",
-                "kwargs": {"column": "timestamp"}
+                "kwargs": {"column": "timestamp"},
             },
             {
                 "expectation_type": "expect_column_values_to_not_be_null",
-                "kwargs": {"column": "price"}
+                "kwargs": {"column": "price"},
             },
-
             # Value range validations
             {
                 "expectation_type": "expect_column_values_to_be_between",
-                "kwargs": {
-                    "column": "price",
-                    "min_value": 0.0000001,
-                    "max_value": 10000000
-                }
+                "kwargs": {"column": "price", "min_value": 0.0000001, "max_value": 10000000},
             },
             {
                 "expectation_type": "expect_column_values_to_be_between",
-                "kwargs": {
-                    "column": "volume_24h",
-                    "min_value": 0,
-                    "max_value": 1e12
-                }
+                "kwargs": {"column": "volume_24h", "min_value": 0, "max_value": 1e12},
             },
             {
                 "expectation_type": "expect_column_values_to_be_between",
-                "kwargs": {
-                    "column": "sentiment_score",
-                    "min_value": -1,
-                    "max_value": 1
-                }
+                "kwargs": {"column": "sentiment_score", "min_value": -1, "max_value": 1},
             },
             {
                 "expectation_type": "expect_column_values_to_be_between",
-                "kwargs": {
-                    "column": "sentiment_confidence",
-                    "min_value": 0,
-                    "max_value": 1
-                }
+                "kwargs": {"column": "sentiment_confidence", "min_value": 0, "max_value": 1},
             },
-
             # Timestamp ordering
             {
                 "expectation_type": "expect_column_values_to_be_increasing",
-                "kwargs": {"column": "timestamp"}
+                "kwargs": {"column": "timestamp"},
             },
-
             # Symbol format validation
             {
                 "expectation_type": "expect_column_values_to_match_regex",
-                "kwargs": {
-                    "column": "symbol",
-                    "regex": "^[A-Z]{2,10}$"
-                }
+                "kwargs": {"column": "symbol", "regex": "^[A-Z]{2,10}$"},
             },
-
             # Technical indicators ranges
             {
                 "expectation_type": "expect_column_values_to_be_between",
-                "kwargs": {
-                    "column": "rsi",
-                    "min_value": 0,
-                    "max_value": 100
-                }
+                "kwargs": {"column": "rsi", "min_value": 0, "max_value": 100},
             },
             {
                 "expectation_type": "expect_column_values_to_be_between",
-                "kwargs": {
-                    "column": "bb_position",
-                    "min_value": 0,
-                    "max_value": 1
-                }
+                "kwargs": {"column": "bb_position", "min_value": 0, "max_value": 1},
             },
-
             # No NaN values
             {
                 "expectation_type": "expect_column_values_to_not_be_null",
-                "kwargs": {"column": "ta_score"}
+                "kwargs": {"column": "ta_score"},
             },
             {
                 "expectation_type": "expect_column_values_to_not_be_null",
-                "kwargs": {"column": "momentum_score"}
-            }
+                "kwargs": {"column": "momentum_score"},
+            },
         ]
 
         # Add expectations to suite
         for exp_config in expectations:
             expectation = ExpectationConfiguration(
-                expectation_type=exp_config["expectation_type"],
-                kwargs=exp_config["kwargs"]
+                expectation_type=exp_config["expectation_type"], kwargs=exp_config["kwargs"]
             )
             suite.add_expectation(expectation)
 
@@ -186,8 +155,12 @@ class FeatureValidator:
 
             # Calculate success metrics
             total_expectations = len(validation_result.results)
-            successful_expectations = sum(1 for result in validation_result.results if result.success)
-            success_rate = successful_expectations / total_expectations if total_expectations > 0 else 0
+            successful_expectations = sum(
+                1 for result in validation_result.results if result.success
+            )
+            success_rate = (
+                successful_expectations / total_expectations if total_expectations > 0 else 0
+            )
 
             # Check if validation passes threshold
             validation_passed = success_rate >= self.success_threshold
@@ -198,9 +171,10 @@ class FeatureValidator:
                     "expectation": result.expectation_config.expectation_type,
                     "column": result.expectation_config.kwargs.get("column", "unknown"),
                     "partial_unexpected_count": result.result.get("partial_unexpected_count", 0),
-                    "unexpected_percent": result.result.get("unexpected_percent", 0)
+                    "unexpected_percent": result.result.get("unexpected_percent", 0),
                 }
-                for result in validation_result.results if not result.success
+                for result in validation_result.results
+                if not result.success
             ]
 
             validation_summary = {
@@ -210,13 +184,15 @@ class FeatureValidator:
                 "successful_expectations": successful_expectations,
                 "failed_expectations": failed_expectations,
                 "total_rows": len(df),
-                "validation_time": datetime.now().isoformat()
+                "validation_time": datetime.now().isoformat(),
             }
 
-            self.logger.info(f"Validation completed",
-                           success_rate=success_rate,
-                           passed_threshold=validation_passed,
-                           failed_count=len(failed_expectations))
+            self.logger.info(
+                f"Validation completed",
+                success_rate=success_rate,
+                passed_threshold=validation_passed,
+                failed_count=len(failed_expectations),
+            )
 
             return validation_passed, validation_summary
 
@@ -224,7 +200,9 @@ class FeatureValidator:
             self.logger.error(f"Validation failed: {e}")
             return False, {"error": str(e)}
 
-    def quarantine_failed_rows(self, df: pd.DataFrame, validation_summary: Dict[str, Any]) -> pd.DataFrame:
+    def quarantine_failed_rows(
+        self, df: pd.DataFrame, validation_summary: Dict[str, Any]
+    ) -> pd.DataFrame:
         """Quarantine rows that fail validation"""
 
         if validation_summary.get("success", True):
@@ -255,7 +233,9 @@ class FeatureValidator:
 
                 quarantined_df.to_parquet(quarantine_file)
 
-                self.logger.warning(f"Quarantined {quarantine_mask.sum()} rows to {quarantine_file}")
+                self.logger.warning(
+                    f"Quarantined {quarantine_mask.sum()} rows to {quarantine_file}"
+                )
 
                 # Return clean data
                 return df[~quarantine_mask].copy()
@@ -265,6 +245,7 @@ class FeatureValidator:
         except Exception as e:
             self.logger.error(f"Quarantine operation failed: {e}")
             return df
+
 
 class FeatureMerger:
     """Merges multiple data sources into unified feature set"""
@@ -279,7 +260,7 @@ class FeatureMerger:
             "technical_analysis": Path("data/technical_analysis"),
             "sentiment": Path("data/sentiment"),
             "on_chain": Path("data/on_chain"),
-            "orderbook": Path("data/orderbook")
+            "orderbook": Path("data/orderbook"),
         }
 
         # Output path
@@ -311,17 +292,23 @@ class FeatureMerger:
             for symbol in symbols:
                 for i in range(720):  # 30 days * 24 hours
                     timestamp = base_time + timedelta(hours=i)
-                    price = 100 + np.random.normal(0, 1)  # REMOVED: Mock data pattern not allowed in production
-                    volume = np.random.exponential(1000000)  # REMOVED: Mock data pattern not allowed in production
+                    price = 100 + np.random.normal(
+                        0, 1
+                    )  # REMOVED: Mock data pattern not allowed in production
+                    volume = np.random.exponential(
+                        1000000
+                    )  # REMOVED: Mock data pattern not allowed in production
 
-                    data.append({
-                        "symbol": symbol,
-                        "timestamp": timestamp,
-                        "price": max(price, 0.01),  # Ensure positive price
-                        "volume_24h": volume,
-                        "market_cap": price * 1000000,  # Mock market cap
-                        "price_change_24h": np.random.normal(0, 1)
-                    })
+                    data.append(
+                        {
+                            "symbol": symbol,
+                            "timestamp": timestamp,
+                            "price": max(price, 0.01),  # Ensure positive price
+                            "volume_24h": volume,
+                            "market_cap": price * 1000000,  # Mock market cap
+                            "price_change_24h": np.random.normal(0, 1),
+                        }
+                    )
 
             df = pd.DataFrame(data)
             df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -345,17 +332,19 @@ class FeatureMerger:
                 for i in range(720):
                     timestamp = base_time + timedelta(hours=i)
 
-                    data.append({
-                        "symbol": symbol,
-                        "timestamp": timestamp,
-                        "rsi": np.random.normal(0, 1),
-                        "macd": np.random.normal(0, 1),
-                        "bb_position": np.random.normal(0, 1),
-                        "sma_20": 100 + np.random.normal(0, 1),
-                        "ema_12": 100 + np.random.normal(0, 1),
-                        "ta_score": np.random.normal(0, 1),
-                        "momentum_score": np.random.normal(0, 1)
-                    })
+                    data.append(
+                        {
+                            "symbol": symbol,
+                            "timestamp": timestamp,
+                            "rsi": np.random.normal(0, 1),
+                            "macd": np.random.normal(0, 1),
+                            "bb_position": np.random.normal(0, 1),
+                            "sma_20": 100 + np.random.normal(0, 1),
+                            "ema_12": 100 + np.random.normal(0, 1),
+                            "ta_score": np.random.normal(0, 1),
+                            "momentum_score": np.random.normal(0, 1),
+                        }
+                    )
 
             df = pd.DataFrame(data)
             df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -379,15 +368,17 @@ class FeatureMerger:
                 for i in range(0, 720, 6):  # Every 6 hours
                     timestamp = base_time + timedelta(hours=i)
 
-                    data.append({
-                        "symbol": symbol,
-                        "timestamp": timestamp,
-                        "sentiment_score": np.random.normal(0, 1),
-                        "sentiment_confidence": np.random.normal(0, 1),
-                        "sentiment_volume": np.random.normal(0, 1),
-                        "sentiment_trend_1h": np.random.normal(0, 1),
-                        "sentiment_trend_24h": np.random.normal(0, 1)
-                    })
+                    data.append(
+                        {
+                            "symbol": symbol,
+                            "timestamp": timestamp,
+                            "sentiment_score": np.random.normal(0, 1),
+                            "sentiment_confidence": np.random.normal(0, 1),
+                            "sentiment_volume": np.random.normal(0, 1),
+                            "sentiment_trend_1h": np.random.normal(0, 1),
+                            "sentiment_trend_24h": np.random.normal(0, 1),
+                        }
+                    )
 
             df = pd.DataFrame(data)
             df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -411,15 +402,17 @@ class FeatureMerger:
                 for i in range(0, 720, 24):  # Daily data
                     timestamp = base_time + timedelta(hours=i)
 
-                    data.append({
-                        "symbol": symbol,
-                        "timestamp": timestamp,
-                        "active_addresses": np.random.normal(0, 1),
-                        "transaction_count": np.random.normal(0, 1),
-                        "whale_activity": np.random.normal(0, 1),
-                        "exchange_inflow": np.random.exponential(1000000),
-                        "exchange_outflow": np.random.exponential(1000000)
-                    })
+                    data.append(
+                        {
+                            "symbol": symbol,
+                            "timestamp": timestamp,
+                            "active_addresses": np.random.normal(0, 1),
+                            "transaction_count": np.random.normal(0, 1),
+                            "whale_activity": np.random.normal(0, 1),
+                            "exchange_inflow": np.random.exponential(1000000),
+                            "exchange_outflow": np.random.exponential(1000000),
+                        }
+                    )
 
             df = pd.DataFrame(data)
             df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -443,19 +436,23 @@ class FeatureMerger:
                 for i in range(0, 168, 1):  # Hourly for 7 days
                     timestamp = base_time + timedelta(hours=i)
 
-                    data.append({
-                        "symbol": symbol,
-                        "timestamp": timestamp,
-                        "bid_ask_spread": np.random.normal(0, 1),
-                        "order_book_depth": np.random.normal(0, 1),
-                        "large_orders_ratio": np.random.normal(0, 1)
-                    })
+                    data.append(
+                        {
+                            "symbol": symbol,
+                            "timestamp": timestamp,
+                            "bid_ask_spread": np.random.normal(0, 1),
+                            "order_book_depth": np.random.normal(0, 1),
+                            "large_orders_ratio": np.random.normal(0, 1),
+                        }
+                    )
 
             if data:
                 df = pd.DataFrame(data)
                 df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-                self.logger.info(f"Loaded orderbook data: {len(df)} rows, {len(symbols[:5])} symbols")
+                self.logger.info(
+                    f"Loaded orderbook data: {len(df)} rows, {len(symbols[:5])} symbols"
+                )
                 return df
             else:
                 return pd.DataFrame()
@@ -471,8 +468,21 @@ class FeatureMerger:
             # Mock Kraken symbols for development
             # In production, would fetch from Kraken API
             kraken_symbols = [
-                "BTC", "ETH", "ADA", "SOL", "DOT", "MATIC", "LINK", "UNI",
-                "AVAX", "ATOM", "ALGO", "XTZ", "FIL", "ETC", "LTC"
+                "BTC",
+                "ETH",
+                "ADA",
+                "SOL",
+                "DOT",
+                "MATIC",
+                "LINK",
+                "UNI",
+                "AVAX",
+                "ATOM",
+                "ALGO",
+                "XTZ",
+                "FIL",
+                "ETC",
+                "LTC",
             ]
 
             self.logger.info(f"Retrieved {len(kraken_symbols)} Kraken symbols")
@@ -482,12 +492,14 @@ class FeatureMerger:
             self.logger.error(f"Failed to get Kraken symbols: {e}")
             return []
 
-    def merge_features(self,
-                      price_df: pd.DataFrame,
-                      ta_df: pd.DataFrame,
-                      sentiment_df: pd.DataFrame,
-                      onchain_df: pd.DataFrame,
-                      orderbook_df: pd.DataFrame) -> pd.DataFrame:
+    def merge_features(
+        self,
+        price_df: pd.DataFrame,
+        ta_df: pd.DataFrame,
+        sentiment_df: pd.DataFrame,
+        onchain_df: pd.DataFrame,
+        orderbook_df: pd.DataFrame,
+    ) -> pd.DataFrame:
         """Merge all feature datasets"""
 
         try:
@@ -500,23 +512,22 @@ class FeatureMerger:
             # Merge technical analysis
             if not ta_df.empty:
                 merged_df = merged_df.merge(
-                    ta_df,
-                    on=["symbol", "timestamp"],
-                    how="left",
-                    suffixes=("", "_ta")
+                    ta_df, on=["symbol", "timestamp"], how="left", suffixes=("", "_ta")
                 )
 
             # Merge sentiment (forward fill for missing timestamps)
             if not sentiment_df.empty:
                 merged_df = merged_df.merge(
-                    sentiment_df,
-                    on=["symbol", "timestamp"],
-                    how="left",
-                    suffixes=("", "_sent")
+                    sentiment_df, on=["symbol", "timestamp"], how="left", suffixes=("", "_sent")
                 )
                 # Forward fill sentiment data
-                sentiment_cols = ["sentiment_score", "sentiment_confidence", "sentiment_volume",
-                                "sentiment_trend_1h", "sentiment_trend_24h"]
+                sentiment_cols = [
+                    "sentiment_score",
+                    "sentiment_confidence",
+                    "sentiment_volume",
+                    "sentiment_trend_1h",
+                    "sentiment_trend_24h",
+                ]
                 for col in sentiment_cols:
                     if col in merged_df.columns:
                         merged_df[col] = merged_df.groupby("symbol")[col].fillna(method="ffill")
@@ -524,14 +535,16 @@ class FeatureMerger:
             # Merge on-chain (forward fill for missing timestamps)
             if not onchain_df.empty:
                 merged_df = merged_df.merge(
-                    onchain_df,
-                    on=["symbol", "timestamp"],
-                    how="left",
-                    suffixes=("", "_chain")
+                    onchain_df, on=["symbol", "timestamp"], how="left", suffixes=("", "_chain")
                 )
                 # Forward fill on-chain data
-                onchain_cols = ["active_addresses", "transaction_count", "whale_activity",
-                              "exchange_inflow", "exchange_outflow"]
+                onchain_cols = [
+                    "active_addresses",
+                    "transaction_count",
+                    "whale_activity",
+                    "exchange_inflow",
+                    "exchange_outflow",
+                ]
                 for col in onchain_cols:
                     if col in merged_df.columns:
                         merged_df[col] = merged_df.groupby("symbol")[col].fillna(method="ffill")
@@ -539,16 +552,15 @@ class FeatureMerger:
             # Merge orderbook (optional)
             if not orderbook_df.empty:
                 merged_df = merged_df.merge(
-                    orderbook_df,
-                    on=["symbol", "timestamp"],
-                    how="left",
-                    suffixes=("", "_ob")
+                    orderbook_df, on=["symbol", "timestamp"], how="left", suffixes=("", "_ob")
                 )
 
             # Sort by symbol and timestamp
             merged_df = merged_df.sort_values(["symbol", "timestamp"]).reset_index(drop=True)
 
-            self.logger.info(f"Merged features: {len(merged_df)} rows, {len(merged_df.columns)} columns")
+            self.logger.info(
+                f"Merged features: {len(merged_df)} rows, {len(merged_df.columns)} columns"
+            )
 
             return merged_df
 
@@ -556,7 +568,9 @@ class FeatureMerger:
             self.logger.error(f"Feature merging failed: {e}")
             return pd.DataFrame()
 
-    def calculate_coverage(self, merged_df: pd.DataFrame, kraken_symbols: List[str]) -> Dict[str, Any]:
+    def calculate_coverage(
+        self, merged_df: pd.DataFrame, kraken_symbols: List[str]
+    ) -> Dict[str, Any]:
         """Calculate coverage against Kraken symbol list"""
 
         try:
@@ -571,17 +585,21 @@ class FeatureMerger:
             covered_symbols = available_symbols.intersection(kraken_symbols_set)
             missing_symbols = kraken_symbols_set - available_symbols
 
-            coverage_percentage = len(covered_symbols) / len(kraken_symbols_set) if kraken_symbols_set else 0
+            coverage_percentage = (
+                len(covered_symbols) / len(kraken_symbols_set) if kraken_symbols_set else 0
+            )
 
             coverage_report = {
                 "coverage_percentage": coverage_percentage,
                 "total_kraken_symbols": len(kraken_symbols_set),
                 "covered_symbols": len(covered_symbols),
                 "missing_symbols": list(missing_symbols),
-                "extra_symbols": list(available_symbols - kraken_symbols_set)
+                "extra_symbols": list(available_symbols - kraken_symbols_set),
             }
 
-            self.logger.info(f"Coverage analysis: {coverage_percentage:.1%} of Kraken symbols covered")
+            self.logger.info(
+                f"Coverage analysis: {coverage_percentage:.1%} of Kraken symbols covered"
+            )
 
             return coverage_report
 
@@ -633,7 +651,9 @@ class FeatureMerger:
             coverage_report = self.calculate_coverage(merged_df, kraken_symbols)
 
             # Check coverage threshold
-            coverage_passed = coverage_report["coverage_percentage"] >= self.validator.coverage_threshold
+            coverage_passed = (
+                coverage_report["coverage_percentage"] >= self.validator.coverage_threshold
+            )
 
             # Save features atomically
             if validation_passed and coverage_passed:
@@ -644,7 +664,9 @@ class FeatureMerger:
                 merged_df.to_parquet(temp_path, index=False)
                 temp_path.rename(self.output_path)
 
-                self.logger.info(f"Features saved: {len(merged_df)} rows, {len(merged_df.columns)} columns")
+                self.logger.info(
+                    f"Features saved: {len(merged_df)} rows, {len(merged_df.columns)} columns"
+                )
             else:
                 self.logger.warning("Features not saved due to validation or coverage failures")
 
@@ -659,16 +681,20 @@ class FeatureMerger:
                 "symbols_processed": len(symbols),
                 "validation_results": validation_summary,
                 "coverage_results": coverage_report,
-                "output_file": str(self.output_path) if validation_passed and coverage_passed else None,
-                "timestamp": datetime.now().isoformat()
+                "output_file": str(self.output_path)
+                if validation_passed and coverage_passed
+                else None,
+                "timestamp": datetime.now().isoformat(),
             }
 
             # Log final results
-            self.logger.info(f"Feature building completed",
-                           success=results["success"],
-                           validation_passed=validation_passed,
-                           coverage_passed=coverage_passed,
-                           processing_time=processing_time)
+            self.logger.info(
+                f"Feature building completed",
+                success=results["success"],
+                validation_passed=validation_passed,
+                coverage_passed=coverage_passed,
+                processing_time=processing_time,
+            )
 
             return results
 
@@ -678,11 +704,12 @@ class FeatureMerger:
                 "success": False,
                 "error": str(e),
                 "processing_time": processing_time,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
             self.logger.error(f"Feature building failed: {e}")
             return error_result
+
 
 # Convenience functions
 async def build_crypto_features(symbols: Optional[List[str]] = None) -> Dict[str, Any]:
@@ -691,6 +718,7 @@ async def build_crypto_features(symbols: Optional[List[str]] = None) -> Dict[str
     merger = FeatureMerger()
     await merger.initialize()
     return await merger.build_features(symbols)
+
 
 async def validate_existing_features(file_path: str) -> Dict[str, Any]:
     """Validate existing feature file"""
@@ -708,15 +736,12 @@ async def validate_existing_features(file_path: str) -> Dict[str, Any]:
             "validation_passed": validation_passed,
             "validation_summary": validation_summary,
             "rows": len(df),
-            "columns": len(df.columns)
+            "columns": len(df.columns),
         }
 
     except Exception as e:
-        return {
-            "file_path": file_path,
-            "error": str(e),
-            "validation_passed": False
-        }
+        return {"file_path": file_path, "error": str(e), "validation_passed": False}
+
 
 if __name__ == "__main__":
     # Test feature building

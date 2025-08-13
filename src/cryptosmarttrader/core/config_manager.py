@@ -66,16 +66,19 @@ class ConfigManager:
         """Load configuration from environment and files."""
         try:
             # Load from environment variables first
-            self._config.update({
-                "database": DatabaseConfig().model_dump(),
-                "api": ApiConfig().model_dump(),
-                "trading": TradingConfig().model_dump(),
-            })
+            self._config.update(
+                {
+                    "database": DatabaseConfig().model_dump(),
+                    "api": ApiConfig().model_dump(),
+                    "trading": TradingConfig().model_dump(),
+                }
+            )
 
             # Load from file if exists
             if self.config_path.exists():
                 import json
-                with open(self.config_path, 'r', encoding='utf-8') as f:
+
+                with open(self.config_path, "r", encoding="utf-8") as f:
                     file_config = json.load(f)
                     self._merge_configs(file_config)
 
@@ -154,7 +157,7 @@ class ConfigManager:
             raise RuntimeError("Configuration not validated - cannot save")
 
         try:
-            with open(self.config_path, 'w', encoding='utf-8') as f:
+            with open(self.config_path, "w", encoding="utf-8") as f:
                 json.dump(self._config, f, indent=2, default=str)
             logger.info(f"Configuration saved to {self.config_path}")
 
@@ -180,18 +183,17 @@ class ConfigManager:
 
             # Check critical directories
             required_dirs = ["data", "logs", "models"]
-            validation_results["directories_exist"] = all(
-                Path(d).exists() for d in required_dirs
-            )
+            validation_results["directories_exist"] = all(Path(d).exists() for d in required_dirs)
 
             # Check port availability (simplified)
             import socket
+
             ports_to_check = [5000, 8000, 8001]
             available_ports = []
 
             for port in ports_to_check:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    result = sock.connect_ex(('localhost', port))
+                    result = sock.connect_ex(("localhost", port))
                     available_ports.append(result != 0)  # Port is available if connection fails
 
             validation_results["ports_available"] = all(available_ports)

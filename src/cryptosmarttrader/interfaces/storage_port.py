@@ -12,48 +12,63 @@ from datetime import datetime, timedelta
 from enum import Enum
 import json
 
+
 class StorageType(Enum):
     """Types of storage backends"""
+
     MEMORY_CACHE = "memory_cache"
     REDIS_CACHE = "redis_cache"
     FILE_SYSTEM = "file_system"
     DATABASE = "database"
     OBJECT_STORAGE = "object_storage"
 
+
 class DataFormat(Enum):
     """Supported data formats"""
+
     JSON = "json"
     PARQUET = "parquet"
     CSV = "csv"
     PICKLE = "pickle"
     ARROW = "arrow"
 
+
 class CachePolicy(Enum):
     """Cache eviction policies"""
+
     LRU = "lru"  # Least Recently Used
     TTL = "ttl"  # Time To Live
     LFU = "lfu"  # Least Frequently Used
     FIFO = "fifo"  # First In First Out
 
+
 class StorageRequest:
     """Request object for storage operations"""
 
-    def __init__(self, key: str, data: Any = None, ttl: Optional[int] = None,
-                 metadata: Optional[Dict] = None):
+    def __init__(
+        self, key: str, data: Any = None, ttl: Optional[int] = None, metadata: Optional[Dict] = None
+    ):
         self.key = key
         self.data = data
         self.ttl = ttl  # Time to live in seconds
         self.metadata = metadata or {}
 
+
 class StorageResponse:
     """Response object for storage operations"""
 
-    def __init__(self, success: bool, data: Any = None, metadata: Optional[Dict] = None,
-                 error: Optional[str] = None):
+    def __init__(
+        self,
+        success: bool,
+        data: Any = None,
+        metadata: Optional[Dict] = None,
+        error: Optional[str] = None,
+    ):
         self.success = success
         self.data = data
         self.metadata = metadata or {}
         self.error = error
+
 
 class StoragePort(ABC):
     """
@@ -64,8 +79,9 @@ class StoragePort(ABC):
     """
 
     @abstractmethod
-    def store(self, key: str, data: Any, ttl: Optional[int] = None,
-              metadata: Optional[Dict] = None) -> StorageResponse:
+    def store(
+        self, key: str, data: Any, ttl: Optional[int] = None, metadata: Optional[Dict] = None
+    ) -> StorageResponse:
         """
         Store data with optional TTL and metadata
 
@@ -155,12 +171,14 @@ class StoragePort(ABC):
         """
         pass
 
+
 class CachePort(StoragePort):
     """Extended interface specifically for cache implementations"""
 
     @abstractmethod
-    def get_or_compute(self, key: str, compute_func: callable,
-                      ttl: Optional[int] = None) -> StorageResponse:
+    def get_or_compute(
+        self, key: str, compute_func: callable, ttl: Optional[int] = None
+    ) -> StorageResponse:
         """
         Get cached value or compute and cache it
 
@@ -214,12 +232,14 @@ class CachePort(StoragePort):
         """
         pass
 
+
 class DatabasePort(StoragePort):
     """Extended interface specifically for database implementations"""
 
     @abstractmethod
-    def store_dataframe(self, table_name: str, df: pd.DataFrame,
-                       if_exists: str = 'replace') -> StorageResponse:
+    def store_dataframe(
+        self, table_name: str, df: pd.DataFrame, if_exists: str = "replace"
+    ) -> StorageResponse:
         """
         Store DataFrame in database table
 
@@ -261,12 +281,14 @@ class DatabasePort(StoragePort):
         """
         pass
 
+
 class TimeSeriesStoragePort(StoragePort):
     """Interface for time-series optimized storage"""
 
     @abstractmethod
-    def store_timeseries(self, symbol: str, timeframe: str, df: pd.DataFrame,
-                        start_time: Optional[datetime] = None) -> StorageResponse:
+    def store_timeseries(
+        self, symbol: str, timeframe: str, df: pd.DataFrame, start_time: Optional[datetime] = None
+    ) -> StorageResponse:
         """
         Store time-series data optimized for temporal queries
 
@@ -282,9 +304,13 @@ class TimeSeriesStoragePort(StoragePort):
         pass
 
     @abstractmethod
-    def retrieve_timeseries(self, symbol: str, timeframe: str,
-                           start_time: Optional[datetime] = None,
-                           end_time: Optional[datetime] = None) -> StorageResponse:
+    def retrieve_timeseries(
+        self,
+        symbol: str,
+        timeframe: str,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+    ) -> StorageResponse:
         """
         Retrieve time-series data with temporal filtering
 
@@ -299,14 +325,17 @@ class TimeSeriesStoragePort(StoragePort):
         """
         pass
 
+
 class StorageError(Exception):
     """Exception raised by storage implementations"""
 
-    def __init__(self, message: str, error_code: Optional[str] = None,
-                 operation: Optional[str] = None):
+    def __init__(
+        self, message: str, error_code: Optional[str] = None, operation: Optional[str] = None
+    ):
         super().__init__(message)
         self.error_code = error_code
         self.operation = operation
+
 
 class StorageRegistry:
     """Registry for managing multiple storage implementations"""
@@ -332,8 +361,10 @@ class StorageRegistry:
         """Get list of registered storage names"""
         return list(self._storages.keys())
 
+
 # Global registry instance
 storage_registry = StorageRegistry()
+
 
 # Utility functions for common storage patterns
 def create_cache_key(prefix: str, *args, **kwargs) -> str:
@@ -344,15 +375,16 @@ def create_cache_key(prefix: str, *args, **kwargs) -> str:
         key_parts.extend([f"{k}={v}" for k, v in sorted_kwargs])
     return ":".join(key_parts)
 
+
 def get_ttl_for_timeframe(timeframe: str) -> int:
     """Get appropriate TTL based on data timeframe"""
     ttl_mapping = {
-        '1m': 60,        # 1 minute
-        '5m': 300,       # 5 minutes
-        '15m': 900,      # 15 minutes
-        '1h': 3600,      # 1 hour
-        '4h': 14400,     # 4 hours
-        '1d': 86400,     # 1 day
-        '1w': 604800,    # 1 week
+        "1m": 60,  # 1 minute
+        "5m": 300,  # 5 minutes
+        "15m": 900,  # 15 minutes
+        "1h": 3600,  # 1 hour
+        "4h": 14400,  # 4 hours
+        "1d": 86400,  # 1 day
+        "1w": 604800,  # 1 week
     }
     return ttl_mapping.get(timeframe, 3600)  # Default 1 hour

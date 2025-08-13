@@ -12,6 +12,7 @@ from ..api.schemas.common import BaseResponse
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 
+
 @router.get("/active", summary="Get active trading signals")
 @limiter.limit("30/minute")
 async def get_signals(request) -> BaseResponse:

@@ -10,7 +10,9 @@ from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 from typing import Dict, Any, List, Tuple
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 class MarketRegimeDetector:
     """Detect market regimes for adaptive modeling"""
@@ -24,7 +26,7 @@ class MarketRegimeDetector:
             0: "Low_Volatility_Bull",
             1: "High_Volatility_Bull",
             2: "Low_Volatility_Bear",
-            3: "High_Volatility_Bear"
+            3: "High_Volatility_Bear",
         }
 
     def fit(self, market_data: pd.DataFrame) -> Dict[str, Any]:
@@ -50,9 +52,11 @@ class MarketRegimeDetector:
         return {
             "success": True,
             "regimes_detected": len(np.unique(regimes)),
-            "regime_distribution": {self.regime_names.get(i, f"Regime_{i}"):
-                                  (regimes == i).sum() for i in range(self.n_regimes)},
-            "regime_analysis": regime_analysis
+            "regime_distribution": {
+                self.regime_names.get(i, f"Regime_{i}"): (regimes == i).sum()
+                for i in range(self.n_regimes)
+            },
+            "regime_analysis": regime_analysis,
         }
 
     def predict_regime(self, market_data: pd.DataFrame) -> np.ndarray:
@@ -72,26 +76,26 @@ class MarketRegimeDetector:
         features_list = []
 
         # Price momentum features
-        if 'price' in data.columns:
-            data['price_return_1d'] = data['price'].pct_change()
-            data['price_return_7d'] = data['price'].pct_change(7)
-            features_list.extend(['price_return_1d', 'price_return_7d'])
+        if "price" in data.columns:
+            data["price_return_1d"] = data["price"].pct_change()
+            data["price_return_7d"] = data["price"].pct_change(7)
+            features_list.extend(["price_return_1d", "price_return_7d"])
 
         # Volatility features
-        if 'price' in data.columns:
-            data['volatility_10d'] = data['price'].pct_change().rolling(10).std()
-            data['volatility_30d'] = data['price'].pct_change().rolling(30).std()
-            features_list.extend(['volatility_10d', 'volatility_30d'])
+        if "price" in data.columns:
+            data["volatility_10d"] = data["price"].pct_change().rolling(10).std()
+            data["volatility_30d"] = data["price"].pct_change().rolling(30).std()
+            features_list.extend(["volatility_10d", "volatility_30d"])
 
         # Volume features
-        if 'volume_24h' in data.columns:
-            data['volume_ratio'] = data['volume_24h'] / data['volume_24h'].rolling(30).mean()
-            features_list.append('volume_ratio')
+        if "volume_24h" in data.columns:
+            data["volume_ratio"] = data["volume_24h"] / data["volume_24h"].rolling(30).mean()
+            features_list.append("volume_ratio")
 
         # Market stress indicators
-        if 'change_24h' in data.columns:
-            data['market_stress'] = data['change_24h'].rolling(7).std()
-            features_list.append('market_stress')
+        if "change_24h" in data.columns:
+            data["market_stress"] = data["change_24h"].rolling(7).std()
+            features_list.append("market_stress")
 
         # Select valid features
         valid_features = [f for f in features_list if f in data.columns]
@@ -118,21 +122,24 @@ class MarketRegimeDetector:
             regime_stats = {}
 
             # Price statistics
-            if 'price' in regime_data.columns:
-                returns = regime_data['price'].pct_change().dropna()
-                regime_stats.update({
-                    'avg_return': returns.mean(),
-                    'volatility': returns.std(),
-                    'sharpe_ratio': returns.mean() / returns.std() if returns.std() > 0 else 0
-                })
+            if "price" in regime_data.columns:
+                returns = regime_data["price"].pct_change().dropna()
+                regime_stats.update(
+                    {
+                        "avg_return": returns.mean(),
+                        "volatility": returns.std(),
+                        "sharpe_ratio": returns.mean() / returns.std() if returns.std() > 0 else 0,
+                    }
+                )
 
             # Volume statistics
-            if 'volume_24h' in regime_data.columns:
-                regime_stats['avg_volume'] = regime_data['volume_24h'].mean()
+            if "volume_24h" in regime_data.columns:
+                regime_stats["avg_volume"] = regime_data["volume_24h"].mean()
 
             analysis[self.regime_names.get(regime_id, f"Regime_{regime_id}")] = regime_stats
 
         return analysis
+
 
 class RegimeAdaptiveModel:
     """Model that adapts predictions based on market regime"""
@@ -143,9 +150,7 @@ class RegimeAdaptiveModel:
         self.current_regime = None
         self.performance_by_regime = {}
 
-    def train_regime_models(self,
-                           features: pd.DataFrame,
-                           targets: pd.DataFrame) -> Dict[str, Any]:
+    def train_regime_models(self, features: pd.DataFrame, targets: pd.DataFrame) -> Dict[str, Any]:
         """Train separate models for each regime"""
 
         # Detect regimes
@@ -169,31 +174,32 @@ class RegimeAdaptiveModel:
 
             # Simple linear model for each regime (can be replaced with sophisticated models)
             from sklearn.linear_model import LinearRegression
+
             model = LinearRegression()
 
             try:
-                model.fit(regime_features.select_dtypes(include=[np.number]),
-                         regime_targets.iloc[:, 0] if isinstance(regime_targets, pd.DataFrame) else regime_targets)
+                model.fit(
+                    regime_features.select_dtypes(include=[np.number]),
+                    regime_targets.iloc[:, 0]
+                    if isinstance(regime_targets, pd.DataFrame)
+                    else regime_targets,
+                )
 
-                regime_name = self.regime_detector.regime_names.get(regime_id, f"Regime_{regime_id}")
+                regime_name = self.regime_detector.regime_names.get(
+                    regime_id, f"Regime_{regime_id}"
+                )
                 self.regime_models[regime_name] = model
 
-                training_results[regime_name] = {
-                    "samples": len(regime_features),
-                    "success": True
-                }
+                training_results[regime_name] = {"samples": len(regime_features), "success": True}
 
             except Exception as e:
-                training_results[f"Regime_{regime_id}"] = {
-                    "success": False,
-                    "error": str(e)
-                }
+                training_results[f"Regime_{regime_id}"] = {"success": False, "error": str(e)}
 
         return {
             "success": True,
             "models_trained": len(self.regime_models),
             "training_results": training_results,
-            "regime_fit": regime_fit_result
+            "regime_fit": regime_fit_result,
         }
 
     def predict_adaptive(self, features: pd.DataFrame) -> np.ndarray:

@@ -12,10 +12,13 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 class TimeframeType(Enum):
     """Supported timeframe types"""
+
     MINUTE_1 = "1m"
     MINUTE_5 = "5m"
     MINUTE_15 = "15m"
@@ -24,9 +27,11 @@ class TimeframeType(Enum):
     DAY_1 = "1d"
     WEEK_1 = "1w"
 
+
 @dataclass
 class TimeAlignment:
     """Timestamp alignment result"""
+
     original_timestamp: datetime
     aligned_timestamp: datetime
     timeframe: TimeframeType
@@ -35,9 +40,11 @@ class TimeAlignment:
     alignment_offset_seconds: float
     is_perfectly_aligned: bool
 
+
 @dataclass
 class SynchronizationReport:
     """Agent synchronization report"""
+
     agent_name: str
     total_timestamps: int
     aligned_timestamps: int
@@ -47,6 +54,7 @@ class SynchronizationReport:
     utc_compliance: bool
     candle_boundary_violations: List[datetime]
     synchronization_quality: float  # 0-1 score
+
 
 class TimestampSynchronizer:
     """Synchronizes timestamps across all agents to exact UTC candle boundaries"""
@@ -63,7 +71,7 @@ class TimestampSynchronizer:
             TimeframeType.HOUR_1: 3600,
             TimeframeType.HOUR_4: 14400,
             TimeframeType.DAY_1: 86400,
-            TimeframeType.WEEK_1: 604800
+            TimeframeType.WEEK_1: 604800,
         }
 
         # UTC reference epoch (2000-01-01 00:00:00 UTC)
@@ -73,7 +81,7 @@ class TimestampSynchronizer:
         self,
         timestamp: Union[datetime, str, int, float],
         timeframe: TimeframeType,
-        alignment_mode: str = "floor"  # "floor", "ceil", "nearest"
+        alignment_mode: str = "floor",  # "floor", "ceil", "nearest"
     ) -> TimeAlignment:
         """Align timestamp to exact candle boundary"""
 
@@ -118,14 +126,14 @@ class TimestampSynchronizer:
             candle_start=candle_start,
             candle_end=candle_end,
             alignment_offset_seconds=alignment_offset,
-            is_perfectly_aligned=is_perfectly_aligned
+            is_perfectly_aligned=is_perfectly_aligned,
         )
 
     def synchronize_agent_timestamps(
         self,
         agent_data: Dict[str, pd.DataFrame],
         timeframe: TimeframeType = None,
-        strict_mode: bool = True
+        strict_mode: bool = True,
     ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, SynchronizationReport]]:
         """Synchronize timestamps across all agents"""
 
@@ -136,36 +144,28 @@ class TimestampSynchronizer:
         sync_reports = {}
 
         for agent_name, df in agent_data.items():
-            sync_df, report = self._synchronize_single_agent(
-                df, agent_name, timeframe, strict_mode
-            )
+            sync_df, report = self._synchronize_single_agent(df, agent_name, timeframe, strict_mode)
 
             synchronized_data[agent_name] = sync_df
             sync_reports[agent_name] = report
 
         # Validate cross-agent alignment
-        alignment_validation = self._validate_cross_agent_alignment(
-            synchronized_data, timeframe
-        )
+        alignment_validation = self._validate_cross_agent_alignment(synchronized_data, timeframe)
 
-        if strict_mode and not alignment_validation['all_aligned']:
-            misaligned_agents = alignment_validation['misaligned_agents']
+        if strict_mode and not alignment_validation["all_aligned"]:
+            misaligned_agents = alignment_validation["misaligned_agents"]
             raise ValueError(f"Cross-agent alignment failed: {misaligned_agents}")
 
         return synchronized_data, sync_reports
 
     def _synchronize_single_agent(
-        self,
-        df: pd.DataFrame,
-        agent_name: str,
-        timeframe: TimeframeType,
-        strict_mode: bool
+        self, df: pd.DataFrame, agent_name: str, timeframe: TimeframeType, strict_mode: bool
     ) -> Tuple[pd.DataFrame, SynchronizationReport]:
         """Synchronize timestamps for single agent"""
 
-        if 'timestamp' not in df.columns:
+        if "timestamp" not in df.columns:
             # Try common timestamp column names
-            timestamp_cols = ['timestamp', 'time', 'datetime', 'date']
+            timestamp_cols = ["timestamp", "time", "datetime", "date"]
             timestamp_col = None
 
             for col in timestamp_cols:
@@ -176,7 +176,7 @@ class TimestampSynchronizer:
             if timestamp_col is None:
                 raise ValueError(f"No timestamp column found in {agent_name} data")
         else:
-            timestamp_col = 'timestamp'
+            timestamp_col = "timestamp"
 
         sync_df = df.copy()
         alignments = []
@@ -216,16 +216,14 @@ class TimestampSynchronizer:
             perfect_alignments = sum(1 for a in valid_alignments if a.is_perfectly_aligned)
             sync_quality = perfect_alignments / len(valid_alignments)
         else:
-            max_misalignment = float('inf')
+            max_misalignment = float("inf")
             sync_quality = 0.0
 
         # Check UTC compliance
         utc_compliance = self._check_utc_compliance(sync_df[timestamp_col])
 
         # Check timeframe consistency
-        timeframe_consistency = self._check_timeframe_consistency(
-            sync_df[timestamp_col], timeframe
-        )
+        timeframe_consistency = self._check_timeframe_consistency(sync_df[timestamp_col], timeframe)
 
         report = SynchronizationReport(
             agent_name=agent_name,
@@ -236,7 +234,7 @@ class TimestampSynchronizer:
             timeframe_consistency=timeframe_consistency,
             utc_compliance=utc_compliance,
             candle_boundary_violations=candle_violations,
-            synchronization_quality=sync_quality
+            synchronization_quality=sync_quality,
         )
 
         return sync_df, report
@@ -255,7 +253,7 @@ class TimestampSynchronizer:
             # Parse string timestamp
             try:
                 # Try ISO format first
-                dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
                 return dt.astimezone(timezone.utc)
             except Exception:
                 # Try pandas parsing
@@ -284,9 +282,7 @@ class TimestampSynchronizer:
         return True
 
     def _check_timeframe_consistency(
-        self,
-        timestamps: pd.Series,
-        expected_timeframe: TimeframeType
+        self, timestamps: pd.Series, expected_timeframe: TimeframeType
     ) -> bool:
         """Check if timestamps are consistent with expected timeframe"""
 
@@ -297,7 +293,7 @@ class TimestampSynchronizer:
 
         # Check intervals between consecutive timestamps
         for i in range(1, len(timestamps)):
-            prev_ts = timestamps.iloc[i-1]
+            prev_ts = timestamps.iloc[i - 1]
             curr_ts = timestamps.iloc[i]
 
             if isinstance(prev_ts, datetime) and isinstance(curr_ts, datetime):
@@ -310,35 +306,33 @@ class TimestampSynchronizer:
         return True
 
     def _validate_cross_agent_alignment(
-        self,
-        agent_data: Dict[str, pd.DataFrame],
-        timeframe: TimeframeType
+        self, agent_data: Dict[str, pd.DataFrame], timeframe: TimeframeType
     ) -> Dict[str, Any]:
         """Validate that all agents have aligned timestamps"""
 
         if len(agent_data) < 2:
-            return {'all_aligned': True, 'misaligned_agents': []}
+            return {"all_aligned": True, "misaligned_agents": []}
 
         # Get reference timestamps from first agent
         agent_names = list(agent_data.keys())
         reference_agent = agent_names[0]
         reference_df = agent_data[reference_agent]
 
-        if 'timestamp' not in reference_df.columns:
-            return {'all_aligned': False, 'error': 'No timestamp column in reference agent'}
+        if "timestamp" not in reference_df.columns:
+            return {"all_aligned": False, "error": "No timestamp column in reference agent"}
 
-        reference_timestamps = set(reference_df['timestamp'])
+        reference_timestamps = set(reference_df["timestamp"])
         misaligned_agents = []
 
         # Compare with other agents
         for agent_name in agent_names[1:]:
             agent_df = agent_data[agent_name]
 
-            if 'timestamp' not in agent_df.columns:
+            if "timestamp" not in agent_df.columns:
                 misaligned_agents.append(f"{agent_name}: No timestamp column")
                 continue
 
-            agent_timestamps = set(agent_df['timestamp'])
+            agent_timestamps = set(agent_df["timestamp"])
 
             # Check for timestamp mismatches
             if reference_timestamps != agent_timestamps:
@@ -351,17 +345,14 @@ class TimestampSynchronizer:
                     )
 
         return {
-            'all_aligned': len(misaligned_agents) == 0,
-            'misaligned_agents': misaligned_agents,
-            'reference_agent': reference_agent,
-            'total_agents': len(agent_names)
+            "all_aligned": len(misaligned_agents) == 0,
+            "misaligned_agents": misaligned_agents,
+            "reference_agent": reference_agent,
+            "total_agents": len(agent_names),
         }
 
     def create_synchronized_candle_index(
-        self,
-        start_time: datetime,
-        end_time: datetime,
-        timeframe: TimeframeType
+        self, start_time: datetime, end_time: datetime, timeframe: TimeframeType
     ) -> pd.DatetimeIndex:
         """Create perfectly aligned candle index for given time range"""
 
@@ -377,7 +368,7 @@ class TimestampSynchronizer:
             TimeframeType.HOUR_1: "1H",
             TimeframeType.HOUR_4: "4H",
             TimeframeType.DAY_1: "1D",
-            TimeframeType.WEEK_1: "1W"
+            TimeframeType.WEEK_1: "1W",
         }
 
         freq = freq_map[timeframe]
@@ -387,15 +378,13 @@ class TimestampSynchronizer:
             start=start_alignment.aligned_timestamp,
             end=end_alignment.aligned_timestamp,
             freq=freq,
-            tz='UTC'
+            tz="UTC",
         )
 
         return candle_index
 
     def validate_temporal_integrity(
-        self,
-        agent_data: Dict[str, pd.DataFrame],
-        timeframe: TimeframeType = None
+        self, agent_data: Dict[str, pd.DataFrame], timeframe: TimeframeType = None
     ) -> Dict[str, Any]:
         """Comprehensive temporal integrity validation"""
 
@@ -403,12 +392,12 @@ class TimestampSynchronizer:
             timeframe = self.primary_timeframe
 
         validation_results = {
-            'overall_status': 'unknown',
-            'critical_violations': [],
-            'warnings': [],
-            'agent_reports': {},
-            'cross_agent_alignment': {},
-            'temporal_integrity_score': 0.0
+            "overall_status": "unknown",
+            "critical_violations": [],
+            "warnings": [],
+            "agent_reports": {},
+            "cross_agent_alignment": {},
+            "temporal_integrity_score": 0.0,
         }
 
         try:
@@ -418,13 +407,13 @@ class TimestampSynchronizer:
             )
 
             # Store individual agent reports
-            validation_results['agent_reports'] = {
+            validation_results["agent_reports"] = {
                 name: {
-                    'sync_quality': report.synchronization_quality,
-                    'utc_compliance': report.utc_compliance,
-                    'timeframe_consistency': report.timeframe_consistency,
-                    'violations': len(report.candle_boundary_violations),
-                    'max_misalignment_sec': report.max_misalignment_seconds
+                    "sync_quality": report.synchronization_quality,
+                    "utc_compliance": report.utc_compliance,
+                    "timeframe_consistency": report.timeframe_consistency,
+                    "violations": len(report.candle_boundary_violations),
+                    "max_misalignment_sec": report.max_misalignment_seconds,
                 }
                 for name, report in sync_reports.items()
             }
@@ -433,7 +422,7 @@ class TimestampSynchronizer:
             alignment_validation = self._validate_cross_agent_alignment(
                 synchronized_data, timeframe
             )
-            validation_results['cross_agent_alignment'] = alignment_validation
+            validation_results["cross_agent_alignment"] = alignment_validation
 
             # Identify critical violations
             critical_violations = []
@@ -461,49 +450,54 @@ class TimestampSynchronizer:
                     )
 
             # Cross-agent critical violations
-            if not alignment_validation['all_aligned']:
-                critical_violations.extend([
-                    f"Cross-agent misalignment: {agent}"
-                    for agent in alignment_validation['misaligned_agents']
-                ])
+            if not alignment_validation["all_aligned"]:
+                critical_violations.extend(
+                    [
+                        f"Cross-agent misalignment: {agent}"
+                        for agent in alignment_validation["misaligned_agents"]
+                    ]
+                )
 
             # Calculate overall temporal integrity score
-            individual_scores = [
-                report.synchronization_quality for report in sync_reports.values()
-            ]
-            cross_agent_score = 1.0 if alignment_validation['all_aligned'] else 0.0
+            individual_scores = [report.synchronization_quality for report in sync_reports.values()]
+            cross_agent_score = 1.0 if alignment_validation["all_aligned"] else 0.0
 
             if individual_scores:
                 temporal_integrity_score = (
-                    np.mean(individual_scores) * 0.7 +  # Individual agent quality
-                    cross_agent_score * 0.3             # Cross-agent alignment
+                    np.mean(individual_scores) * 0.7  # Individual agent quality
+                    + cross_agent_score * 0.3  # Cross-agent alignment
                 )
             else:
                 temporal_integrity_score = 0.0
 
             # Overall status
             if critical_violations:
-                overall_status = 'critical_violations'
+                overall_status = "critical_violations"
             elif warnings:
-                overall_status = 'warnings'
+                overall_status = "warnings"
             else:
-                overall_status = 'passed'
+                overall_status = "passed"
 
-            validation_results.update({
-                'overall_status': overall_status,
-                'critical_violations': critical_violations,
-                'warnings': warnings,
-                'temporal_integrity_score': temporal_integrity_score
-            })
+            validation_results.update(
+                {
+                    "overall_status": overall_status,
+                    "critical_violations": critical_violations,
+                    "warnings": warnings,
+                    "temporal_integrity_score": temporal_integrity_score,
+                }
+            )
 
         except Exception as e:
-            validation_results.update({
-                'overall_status': 'error',
-                'critical_violations': [f"Validation error: {str(e)}"],
-                'temporal_integrity_score': 0.0
-            })
+            validation_results.update(
+                {
+                    "overall_status": "error",
+                    "critical_violations": [f"Validation error: {str(e)}"],
+                    "temporal_integrity_score": 0.0,
+                }
+            )
 
         return validation_results
+
 
 def create_timestamp_synchronizer(timeframe: str = "1h") -> TimestampSynchronizer:
     """Create timestamp synchronizer with specified timeframe"""
@@ -515,16 +509,15 @@ def create_timestamp_synchronizer(timeframe: str = "1h") -> TimestampSynchronize
         "1h": TimeframeType.HOUR_1,
         "4h": TimeframeType.HOUR_4,
         "1d": TimeframeType.DAY_1,
-        "1w": TimeframeType.WEEK_1
+        "1w": TimeframeType.WEEK_1,
     }
 
     tf = timeframe_map.get(timeframe, TimeframeType.HOUR_1)
     return TimestampSynchronizer(primary_timeframe=tf)
 
+
 def align_agents_to_candles(
-    agent_data: Dict[str, pd.DataFrame],
-    timeframe: str = "1h",
-    strict_mode: bool = True
+    agent_data: Dict[str, pd.DataFrame], timeframe: str = "1h", strict_mode: bool = True
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any]]:
     """High-level function to align all agents to candle boundaries"""
 
@@ -538,7 +531,7 @@ def align_agents_to_candles(
         "1h": TimeframeType.HOUR_1,
         "4h": TimeframeType.HOUR_4,
         "1d": TimeframeType.DAY_1,
-        "1w": TimeframeType.WEEK_1
+        "1w": TimeframeType.WEEK_1,
     }
     tf = timeframe_map.get(timeframe, TimeframeType.HOUR_1)
 
@@ -548,8 +541,6 @@ def align_agents_to_candles(
     )
 
     # Validate temporal integrity
-    validation_results = synchronizer.validate_temporal_integrity(
-        synchronized_data, tf
-    )
+    validation_results = synchronizer.validate_temporal_integrity(synchronized_data, tf)
 
     return synchronized_data, validation_results

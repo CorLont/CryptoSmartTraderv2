@@ -12,6 +12,7 @@ from datetime import datetime
 from ..core.structured_logger import get_logger
 from .model import SentimentModel
 
+
 class SentimentProcessor:
     """Core sentiment processing with FinBERT and calibration"""
 
@@ -52,7 +53,7 @@ class SentimentProcessor:
                     "negative_prob": result.prob_neg,
                     "neutral_prob": result.prob_neutral,
                     "sarcasm_detected": result.sarcasm > 0.5,
-                    "processing_time": result.processing_time
+                    "processing_time": result.processing_time,
                 }
                 results.append(processed_result)
 
@@ -62,7 +63,9 @@ class SentimentProcessor:
             self.logger.error(f"Text processing failed: {e}")
             return []
 
-    async def analyze_market_sentiment(self, news_data: List[Dict], social_data: List[Dict] = None) -> Dict[str, Any]:
+    async def analyze_market_sentiment(
+        self, news_data: List[Dict], social_data: List[Dict] = None
+    ) -> Dict[str, Any]:
         """Analyze market sentiment from news and social media"""
 
         try:
@@ -71,25 +74,25 @@ class SentimentProcessor:
 
             # Collect news texts
             for news_item in news_data:
-                text = news_item.get('title', '') + ' ' + news_item.get('summary', '')
+                text = news_item.get("title", "") + " " + news_item.get("summary", "")
                 if text.strip():
                     all_texts.append(text.strip())
-                    text_sources.append({'type': 'news', 'data': news_item})
+                    text_sources.append({"type": "news", "data": news_item})
 
             # Collect social media texts
             if social_data:
                 for social_item in social_data:
-                    text = social_item.get('text', '')
+                    text = social_item.get("text", "")
                     if text.strip():
                         all_texts.append(text.strip())
-                        text_sources.append({'type': 'social', 'data': social_item})
+                        text_sources.append({"type": "social", "data": social_item})
 
             if not all_texts:
                 return {
                     "overall_sentiment": 0.0,
                     "confidence": 0.0,
                     "total_analyzed": 0,
-                    "sentiment_distribution": {"positive": 0, "negative": 0, "neutral": 0}
+                    "sentiment_distribution": {"positive": 0, "negative": 0, "neutral": 0},
                 }
 
             # Process all texts
@@ -115,7 +118,7 @@ class SentimentProcessor:
                 sentiment_distribution = {
                     "positive": positive_count / len(scores),
                     "negative": negative_count / len(scores),
-                    "neutral": neutral_count / len(scores)
+                    "neutral": neutral_count / len(scores),
                 }
 
                 return {
@@ -123,14 +126,14 @@ class SentimentProcessor:
                     "confidence": average_confidence,
                     "total_analyzed": len(sentiment_results),
                     "sentiment_distribution": sentiment_distribution,
-                    "detailed_results": sentiment_results
+                    "detailed_results": sentiment_results,
                 }
             else:
                 return {
                     "overall_sentiment": 0.0,
                     "confidence": 0.0,
                     "total_analyzed": 0,
-                    "sentiment_distribution": {"positive": 0, "negative": 0, "neutral": 0}
+                    "sentiment_distribution": {"positive": 0, "negative": 0, "neutral": 0},
                 }
 
         except Exception as e:
@@ -140,5 +143,5 @@ class SentimentProcessor:
                 "confidence": 0.0,
                 "total_analyzed": 0,
                 "sentiment_distribution": {"positive": 0, "negative": 0, "neutral": 0},
-                "error": str(e)
+                "error": str(e),
             }

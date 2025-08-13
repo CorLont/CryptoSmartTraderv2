@@ -19,9 +19,11 @@ import hashlib
 
 from utils.daily_logger import get_daily_logger
 
+
 @dataclass
 class SentimentResult:
     """Enhanced sentiment result with confidence and metadata"""
+
     coin: str
     sentiment_score: float  # -1 to 1
     confidence: float  # 0 to 1
@@ -32,14 +34,15 @@ class SentimentResult:
     raw_mentions: int
     filtered_mentions: int
 
+
 class AntiDetectionManager:
     """Manages anti-detection techniques for web scraping"""
 
     def __init__(self):
         self.user_agents = [
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
         ]
         self.proxies = []  # Add proxy list if available
         self.request_intervals = {}
@@ -48,12 +51,12 @@ class AntiDetectionManager:
     def get_headers(self) -> Dict[str, str]:
         """Generate realistic headers"""
         return {
-            'User-Agent': random.choice,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
+            "User-Agent": random.choice,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
         }
 
     async def rate_limit_wait(self, domain: str, min_interval: float = 1.0):
@@ -67,15 +70,16 @@ class AntiDetectionManager:
 
         self.request_intervals[domain] = time.time()
 
+
 class BotDetectionEngine:
     """Detects coordinated bot activity and spam"""
 
     def __init__(self):
         self.suspicious_patterns = [
-            r'🚀+.*moon',  # Pump patterns
-            r'buy.*now.*urgent',  # Urgency spam
-            r'guaranteed.*profit',  # Scam indicators
-            r'(\w)\1{3,}',  # Excessive repetition
+            r"🚀+.*moon",  # Pump patterns
+            r"buy.*now.*urgent",  # Urgency spam
+            r"guaranteed.*profit",  # Scam indicators
+            r"(\w)\1{3,}",  # Excessive repetition
         ]
         self.account_cache = {}
 
@@ -90,7 +94,7 @@ class BotDetectionEngine:
         # Check for repetitive content
         content_hashes = []
         for post in posts:
-            content = post.get('text', '')
+            content = post.get("text", "")
             content_hash = hashlib.md5(content.encode()).hexdigest()
             content_hashes.append(content_hash)
 
@@ -101,11 +105,11 @@ class BotDetectionEngine:
         total_checks += 1
 
         # Check posting frequency
-        timestamps = [post.get('timestamp') for post in posts if post.get('timestamp')]
+        timestamps = [post.get("timestamp") for post in posts if post.get("timestamp")]
         if len(timestamps) > 1:
             intervals = []
             for i in range(1, len(timestamps)):
-                interval = abs(timestamps[i] - timestamps[i-1])
+                interval = abs(timestamps[i] - timestamps[i - 1])
                 intervals.append(interval)
 
             # Very regular intervals suggest automation
@@ -119,7 +123,7 @@ class BotDetectionEngine:
         # Check for suspicious patterns
         suspicious_count = 0
         for post in posts:
-            content = post.get('text', '').lower()
+            content = post.get("text", "").lower()
             for pattern in self.suspicious_patterns:
                 if re.search(pattern, content):
                     suspicious_count += 1
@@ -141,7 +145,7 @@ class BotDetectionEngine:
 
         for post in posts:
             # Quick content-based filtering
-            content = post.get('text', '').lower()
+            content = post.get("text", "").lower()
             is_suspicious = False
 
             for pattern in self.suspicious_patterns:
@@ -157,25 +161,26 @@ class BotDetectionEngine:
         bot_ratio = bot_count / len(posts)
         return filtered_posts, bot_ratio
 
+
 class CoinEntityRecognition:
     """Advanced coin symbol disambiguation"""
 
     def __init__(self):
         self.coin_aliases = {
-            'BTC': ['bitcoin', 'btc', '$btc'],
-            'ETH': ['ethereum', 'eth', '$eth', 'ether'],
-            'SOL': ['solana', 'sol', '$sol'],
-            'ADA': ['cardano', 'ada', '$ada'],
-            'DOT': ['polkadot', 'dot', '$dot'],
-            'MATIC': ['polygon', 'matic', '$matic'],
-            'AVAX': ['avalanche', 'avax', '$avax'],
+            "BTC": ["bitcoin", "btc", "$btc"],
+            "ETH": ["ethereum", "eth", "$eth", "ether"],
+            "SOL": ["solana", "sol", "$sol"],
+            "ADA": ["cardano", "ada", "$ada"],
+            "DOT": ["polkadot", "dot", "$dot"],
+            "MATIC": ["polygon", "matic", "$matic"],
+            "AVAX": ["avalanche", "avax", "$avax"],
         }
 
         # Ambiguous symbols that need context
         self.ambiguous_symbols = {
-            'SOL': ['solana', 'solvent', 'solution'],
-            'DOT': ['polkadot', 'department of transportation'],
-            'ADA': ['cardano', 'ada programming language', 'americans with disabilities act'],
+            "SOL": ["solana", "solvent", "solution"],
+            "DOT": ["polkadot", "department of transportation"],
+            "ADA": ["cardano", "ada programming language", "americans with disabilities act"],
         }
 
     def extract_coin_mentions(self, text: str, target_coin: str) -> int:
@@ -192,7 +197,7 @@ class CoinEntityRecognition:
 
         # Apply disambiguation for ambiguous symbols
         if target_coin.upper() in self.ambiguous_symbols:
-            crypto_keywords = ['crypto', 'trading', 'price', 'moon', 'hodl', 'buy', 'sell']
+            crypto_keywords = ["crypto", "trading", "price", "moon", "hodl", "buy", "sell"]
             has_crypto_context = any(keyword in text_lower for keyword in crypto_keywords)
 
             if not has_crypto_context:
@@ -200,11 +205,12 @@ class CoinEntityRecognition:
 
         return count
 
+
 class EnhancedSentimentAgent:
     """Professional sentiment analysis with anti-bot measures"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('sentiment')
+        self.logger = get_daily_logger().get_logger("sentiment")
         self.anti_detection = AntiDetectionManager()
         self.bot_detector = BotDetectionEngine()
         self.entity_recognizer = CoinEntityRecognition()
@@ -215,7 +221,8 @@ class EnhancedSentimentAgent:
         try:
             import openai
             import os
-            self.openai_client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+            self.openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             self.openai_available = True
         except Exception:
             self.openai_available = False
@@ -246,7 +253,7 @@ class EnhancedSentimentAgent:
                 bot_ratio=0.0,
                 timestamp=datetime.now(),
                 raw_mentions=0,
-                filtered_mentions=0
+                filtered_mentions=0,
             )
 
         # Filter bot content
@@ -263,17 +270,19 @@ class EnhancedSentimentAgent:
             sentiment_score=sentiment_score,
             confidence=confidence,
             data_completeness=data_completeness,
-            source_count=len(set(post.get('source', '') for post in filtered_posts)),
+            source_count=len(set(post.get("source", "") for post in filtered_posts)),
             bot_ratio=bot_ratio,
             timestamp=datetime.now(),
             raw_mentions=len(raw_posts),
-            filtered_mentions=len(filtered_posts)
+            filtered_mentions=len(filtered_posts),
         )
 
         # Cache result
         self.cache[cache_key] = (result, time.time())
 
-        self.logger.info(f"Sentiment analysis complete for {coin}: score={sentiment_score:.3f}, confidence={confidence:.3f}")
+        self.logger.info(
+            f"Sentiment analysis complete for {coin}: score={sentiment_score:.3f}, confidence={confidence:.3f}"
+        )
 
         return result
 
@@ -283,7 +292,7 @@ class EnhancedSentimentAgent:
 
         # REMOVED: Mock data pattern not allowed in production
         # In production, this would include Reddit, Twitter, Telegram, Discord
-        sources = ['reddit', 'twitter', 'telegram']
+        sources = ["reddit", "twitter", "telegram"]
 
         for source in sources:
             try:
@@ -308,17 +317,21 @@ class EnhancedSentimentAgent:
         posts = []
         for i in range(random.choice):
             # Generate realistic mock data for demonstration
-            posts.append({
-                'text': f"Sample {coin} discussion post {i}",
-                'timestamp': time.time() - random.choice,
-                'source': source,
-                'author': f"user_{random.choice}",
-                'engagement': random.choice
-            })
+            posts.append(
+                {
+                    "text": f"Sample {coin} discussion post {i}",
+                    "timestamp": time.time() - random.choice,
+                    "source": source,
+                    "author": f"user_{random.choice}",
+                    "engagement": random.choice,
+                }
+            )
 
         return posts
 
-    async def _calculate_advanced_sentiment(self, posts: List[Dict], coin: str) -> Tuple[float, float]:
+    async def _calculate_advanced_sentiment(
+        self, posts: List[Dict], coin: str
+    ) -> Tuple[float, float]:
         """Calculate sentiment with confidence using multiple methods"""
 
         if not posts:
@@ -328,7 +341,7 @@ class EnhancedSentimentAgent:
         confidences = []
 
         for post in posts:
-            text = post.get('text', '')
+            text = post.get("text", "")
 
             # Count coin mentions for relevance
             mentions = self.entity_recognizer.extract_coin_mentions(text, coin)
@@ -362,13 +375,14 @@ class EnhancedSentimentAgent:
     def get_status(self) -> Dict:
         """Get agent status"""
         return {
-            'agent': 'enhanced_sentiment',
-            'status': 'operational',
-            'cache_size': len(self.cache),
-            'openai_available': self.openai_available,
-            'anti_detection_active': True,
-            'bot_detection_active': True
+            "agent": "enhanced_sentiment",
+            "status": "operational",
+            "cache_size": len(self.cache),
+            "openai_available": self.openai_available,
+            "anti_detection_active": True,
+            "bot_detection_active": True,
         }
+
 
 # Global instance
 sentiment_agent = EnhancedSentimentAgent()

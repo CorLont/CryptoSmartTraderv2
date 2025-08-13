@@ -24,8 +24,10 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 logger = logging.getLogger(__name__)
 
+
 class SecretType(Enum):
     """Types of secrets"""
+
     API_KEY = "api_key"
     API_SECRET = "api_secret"
     WEBHOOK_SECRET = "webhook_secret"
@@ -36,6 +38,7 @@ class SecretType(Enum):
 
 class SecurityLevel(Enum):
     """Security levels for secrets"""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -45,6 +48,7 @@ class SecurityLevel(Enum):
 @dataclass
 class SecretMetadata:
     """Metadata for managed secrets"""
+
     secret_id: str
     secret_type: SecretType
     security_level: SecurityLevel
@@ -81,6 +85,7 @@ class SecretMetadata:
 @dataclass
 class SecurityAuditEvent:
     """Security audit event"""
+
     event_id: str
     event_type: str
     timestamp: datetime
@@ -108,11 +113,12 @@ class SecurityManager:
     Enterprise security management system
     """
 
-    def __init__(self,
-                 vault_path: str = ".vault",
-                 master_key: Optional[str] = None,
-                 environment: str = "development"):
-
+    def __init__(
+        self,
+        vault_path: str = ".vault",
+        master_key: Optional[str] = None,
+        environment: str = "development",
+    ):
         self.vault_path = Path(vault_path)
         self.vault_path.mkdir(exist_ok=True, mode=0o700)  # Restricted permissions
 
@@ -141,14 +147,11 @@ class SecurityManager:
             "require_lowercase": True,
             "require_digits": True,
             "require_special": True,
-            "forbidden_patterns": ["password", "123456", "qwerty"]
+            "forbidden_patterns": ["password", "123456", "qwerty"],
         }
 
         # Rate limiting
-        self.access_limits = {
-            "secret_access_per_minute": 100,
-            "failed_auth_per_hour": 5
-        }
+        self.access_limits = {"secret_access_per_minute": 100, "failed_auth_per_hour": 5}
 
         self._setup_security_monitoring()
 
@@ -163,12 +166,12 @@ class SecurityManager:
                 key = master_key.encode()
             elif key_file.exists():
                 # Load existing key
-                with open(key_file, 'rb') as f:
+                with open(key_file, "rb") as f:
                     key = f.read()
             else:
                 # Generate new key
                 key = Fernet.generate_key()
-                with open(key_file, 'wb') as f:
+                with open(key_file, "wb") as f:
                     f.write(key)
                 os.chmod(key_file, 0o600)  # Owner read/write only
 
@@ -187,7 +190,7 @@ class SecurityManager:
             if not self.secrets_file.exists():
                 return {}
 
-            with open(self.secrets_file, 'rb') as f:
+            with open(self.secrets_file, "rb") as f:
                 encrypted_data = f.read()
 
             if not encrypted_data:
@@ -211,8 +214,8 @@ class SecurityManager:
             encrypted_data = self.cipher_suite.encrypt(secrets_json.encode())
 
             # Atomic write
-            temp_file = self.secrets_file.with_suffix('.tmp')
-            with open(temp_file, 'wb') as f:
+            temp_file = self.secrets_file.with_suffix(".tmp")
+            with open(temp_file, "wb") as f:
                 f.write(encrypted_data)
 
             temp_file.replace(self.secrets_file)
@@ -231,7 +234,7 @@ class SecurityManager:
             if not self.metadata_file.exists():
                 return {}
 
-            with open(self.metadata_file, 'r') as f:
+            with open(self.metadata_file, "r") as f:
                 data = json.load(f)
 
             metadata_dict = {}
@@ -241,13 +244,19 @@ class SecurityManager:
                     secret_type=SecretType(meta_data["secret_type"]),
                     security_level=SecurityLevel(meta_data["security_level"]),
                     created_at=datetime.fromisoformat(meta_data["created_at"]),
-                    last_rotated=datetime.fromisoformat(meta_data["last_rotated"]) if meta_data.get("last_rotated") else None,
-                    expires_at=datetime.fromisoformat(meta_data["expires_at"]) if meta_data.get("expires_at") else None,
+                    last_rotated=datetime.fromisoformat(meta_data["last_rotated"])
+                    if meta_data.get("last_rotated")
+                    else None,
+                    expires_at=datetime.fromisoformat(meta_data["expires_at"])
+                    if meta_data.get("expires_at")
+                    else None,
                     rotation_interval_days=meta_data.get("rotation_interval_days", 90),
                     allowed_environments=meta_data.get("allowed_environments", ["development"]),
                     allowed_components=meta_data.get("allowed_components", []),
                     access_count=meta_data.get("access_count", 0),
-                    last_accessed=datetime.fromisoformat(meta_data["last_accessed"]) if meta_data.get("last_accessed") else None
+                    last_accessed=datetime.fromisoformat(meta_data["last_accessed"])
+                    if meta_data.get("last_accessed")
+                    else None,
                 )
 
             return metadata_dict
@@ -267,16 +276,20 @@ class SecurityManager:
                     "secret_type": metadata.secret_type.value,
                     "security_level": metadata.security_level.value,
                     "created_at": metadata.created_at.isoformat(),
-                    "last_rotated": metadata.last_rotated.isoformat() if metadata.last_rotated else None,
+                    "last_rotated": metadata.last_rotated.isoformat()
+                    if metadata.last_rotated
+                    else None,
                     "expires_at": metadata.expires_at.isoformat() if metadata.expires_at else None,
                     "rotation_interval_days": metadata.rotation_interval_days,
                     "allowed_environments": metadata.allowed_environments,
                     "allowed_components": metadata.allowed_components,
                     "access_count": metadata.access_count,
-                    "last_accessed": metadata.last_accessed.isoformat() if metadata.last_accessed else None
+                    "last_accessed": metadata.last_accessed.isoformat()
+                    if metadata.last_accessed
+                    else None,
                 }
 
-            with open(self.metadata_file, 'w') as f:
+            with open(self.metadata_file, "w") as f:
                 json.dump(data, f, indent=2)
 
             os.chmod(self.metadata_file, 0o600)
@@ -285,13 +298,15 @@ class SecurityManager:
             logger.error(f"Failed to save metadata: {e}")
             raise
 
-    def store_secret(self,
-                    secret_id: str,
-                    secret_value: str,
-                    secret_type: SecretType,
-                    security_level: SecurityLevel = SecurityLevel.MEDIUM,
-                    allowed_environments: Optional[List[str]] = None,
-                    rotation_interval_days: int = 90) -> bool:
+    def store_secret(
+        self,
+        secret_id: str,
+        secret_value: str,
+        secret_type: SecretType,
+        security_level: SecurityLevel = SecurityLevel.MEDIUM,
+        allowed_environments: Optional[List[str]] = None,
+        rotation_interval_days: int = 90,
+    ) -> bool:
         """Store a secret securely"""
 
         try:
@@ -306,7 +321,7 @@ class SecurityManager:
                 security_level=security_level,
                 created_at=datetime.now(),
                 rotation_interval_days=rotation_interval_days,
-                allowed_environments=allowed_environments or [self.environment]
+                allowed_environments=allowed_environments or [self.environment],
             )
 
             # Store secret and metadata
@@ -339,18 +354,26 @@ class SecurityManager:
 
             metadata = self.metadata.get(secret_id)
             if not metadata:
-                self._audit_log("secret_access", secret_id, result="no_metadata", component=component)
+                self._audit_log(
+                    "secret_access", secret_id, result="no_metadata", component=component
+                )
                 return None
 
             # Check environment access
             if self.environment not in metadata.allowed_environments:
-                self._audit_log("secret_access", secret_id, result="environment_denied", component=component)
-                logger.warning(f"Secret {secret_id} access denied for environment {self.environment}")
+                self._audit_log(
+                    "secret_access", secret_id, result="environment_denied", component=component
+                )
+                logger.warning(
+                    f"Secret {secret_id} access denied for environment {self.environment}"
+                )
                 return None
 
             # Check component access
             if metadata.allowed_components and component not in metadata.allowed_components:
-                self._audit_log("secret_access", secret_id, result="component_denied", component=component)
+                self._audit_log(
+                    "secret_access", secret_id, result="component_denied", component=component
+                )
                 logger.warning(f"Secret {secret_id} access denied for component {component}")
                 return None
 
@@ -372,7 +395,13 @@ class SecurityManager:
 
         except Exception as e:
             logger.error(f"Failed to retrieve secret {secret_id}: {e}")
-            self._audit_log("secret_access", secret_id, result="error", component=component, metadata={"error": str(e)})
+            self._audit_log(
+                "secret_access",
+                secret_id,
+                result="error",
+                component=component,
+                metadata={"error": str(e)},
+            )
             return None
 
     def rotate_secret(self, secret_id: str, new_secret_value: Optional[str] = None) -> bool:
@@ -445,19 +474,25 @@ class SecurityManager:
         secrets_list = []
 
         for secret_id, metadata in self.metadata.items():
-            secrets_list.append({
-                "secret_id": secret_id,
-                "secret_type": metadata.secret_type.value,
-                "security_level": metadata.security_level.value,
-                "created_at": metadata.created_at.isoformat(),
-                "last_rotated": metadata.last_rotated.isoformat() if metadata.last_rotated else None,
-                "expires_at": metadata.expires_at.isoformat() if metadata.expires_at else None,
-                "needs_rotation": metadata.needs_rotation,
-                "is_expired": metadata.is_expired,
-                "access_count": metadata.access_count,
-                "last_accessed": metadata.last_accessed.isoformat() if metadata.last_accessed else None,
-                "allowed_environments": metadata.allowed_environments
-            })
+            secrets_list.append(
+                {
+                    "secret_id": secret_id,
+                    "secret_type": metadata.secret_type.value,
+                    "security_level": metadata.security_level.value,
+                    "created_at": metadata.created_at.isoformat(),
+                    "last_rotated": metadata.last_rotated.isoformat()
+                    if metadata.last_rotated
+                    else None,
+                    "expires_at": metadata.expires_at.isoformat() if metadata.expires_at else None,
+                    "needs_rotation": metadata.needs_rotation,
+                    "is_expired": metadata.is_expired,
+                    "access_count": metadata.access_count,
+                    "last_accessed": metadata.last_accessed.isoformat()
+                    if metadata.last_accessed
+                    else None,
+                    "allowed_environments": metadata.allowed_environments,
+                }
+            )
 
         return secrets_list
 
@@ -507,7 +542,7 @@ class SecurityManager:
 
         elif secret_type == SecretType.DATABASE_URL:
             # Basic URL validation
-            return secret_value.startswith(('postgresql://', 'mysql://', 'sqlite://'))
+            return secret_value.startswith(("postgresql://", "mysql://", "sqlite://"))
 
         elif secret_type in [SecretType.API_SECRET, SecretType.WEBHOOK_SECRET]:
             # Apply password policy
@@ -525,13 +560,13 @@ class SecurityManager:
             return False
 
         # Character requirements
-        if policy["require_uppercase"] and not re.search(r'[A-Z]', password):
+        if policy["require_uppercase"] and not re.search(r"[A-Z]", password):
             return False
 
-        if policy["require_lowercase"] and not re.search(r'[a-z]', password):
+        if policy["require_lowercase"] and not re.search(r"[a-z]", password):
             return False
 
-        if policy["require_digits"] and not re.search(r'\d', password):
+        if policy["require_digits"] and not re.search(r"\d", password):
             return False
 
         if policy["require_special"] and not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
@@ -555,24 +590,26 @@ class SecurityManager:
         elif secret_type in [SecretType.API_SECRET, SecretType.WEBHOOK_SECRET]:
             # Generate strong password
             chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*"
-            return ''.join(secrets.choice(chars) for _ in range(32))
+            return "".join(secrets.choice(chars) for _ in range(32))
 
         elif secret_type == SecretType.OAUTH_TOKEN:
             # Generate OAuth-style token
-            return base64.urlsafe_b64encode(secrets.token_bytes(32)).decode().rstrip('=')
+            return base64.urlsafe_b64encode(secrets.token_bytes(32)).decode().rstrip("=")
 
         else:
             # Default: random hex string
             return secrets.token_hex(32)
 
-    def _audit_log(self,
-                   event_type: str,
-                   resource: Optional[str] = None,
-                   action: Optional[str] = None,
-                   result: str = "success",
-                   component: Optional[str] = None,
-                   user_id: Optional[str] = None,
-                   metadata: Optional[Dict[str, Any]] = None):
+    def _audit_log(
+        self,
+        event_type: str,
+        resource: Optional[str] = None,
+        action: Optional[str] = None,
+        result: str = "success",
+        component: Optional[str] = None,
+        user_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
         """Log security audit event"""
 
         try:
@@ -586,14 +623,14 @@ class SecurityManager:
                 resource=resource,
                 action=action,
                 result=result,
-                metadata=metadata or {}
+                metadata=metadata or {},
             )
 
             self.audit_events.append(event)
 
             # Limit audit events in memory
             if len(self.audit_events) > self.max_audit_events:
-                self.audit_events = self.audit_events[-self.max_audit_events//2:]
+                self.audit_events = self.audit_events[-self.max_audit_events // 2 :]
 
             # Write to audit log file
             audit_line = {
@@ -604,11 +641,11 @@ class SecurityManager:
                 "resource": resource,
                 "component": component,
                 "environment": self.environment,
-                "metadata": metadata
+                "metadata": metadata,
             }
 
-            with open(self.audit_file, 'a') as f:
-                f.write(json.dumps(audit_line) + '\n')
+            with open(self.audit_file, "a") as f:
+                f.write(json.dumps(audit_line) + "\n")
 
         except Exception as e:
             logger.error(f"Audit logging failed: {e}")
@@ -627,7 +664,9 @@ class SecurityManager:
         expired_secrets = sum(1 for metadata in self.metadata.values() if metadata.is_expired)
 
         # Recent audit events
-        recent_events = [e for e in self.audit_events if e.timestamp > datetime.now() - timedelta(hours=24)]
+        recent_events = [
+            e for e in self.audit_events if e.timestamp > datetime.now() - timedelta(hours=24)
+        ]
         failed_events = [e for e in recent_events if e.result != "success"]
 
         return {
@@ -638,11 +677,14 @@ class SecurityManager:
             "recent_failed_events": len(failed_events),
             "vault_path": str(self.vault_path),
             "environment": self.environment,
-            "security_health": "healthy" if rotation_needed == 0 and expired_secrets == 0 else "needs_attention"
+            "security_health": "healthy"
+            if rotation_needed == 0 and expired_secrets == 0
+            else "needs_attention",
         }
 
-    def export_audit_log(self, start_date: Optional[datetime] = None,
-                        end_date: Optional[datetime] = None) -> List[Dict[str, Any]]:
+    def export_audit_log(
+        self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None
+    ) -> List[Dict[str, Any]]:
         """Export audit log for compliance"""
 
         events = self.audit_events
@@ -663,7 +705,7 @@ class SecurityManager:
                 "result": event.result,
                 "component": event.component,
                 "environment": event.environment,
-                "metadata": event.metadata
+                "metadata": event.metadata,
             }
             for event in events
         ]
@@ -675,9 +717,12 @@ class SecurityManager:
             "development": ["KRAKEN_API_KEY", "KRAKEN_SECRET", "OPENAI_API_KEY"],
             "staging": ["KRAKEN_API_KEY", "KRAKEN_SECRET", "OPENAI_API_KEY"],
             "production": [
-                "KRAKEN_API_KEY", "KRAKEN_SECRET", "OPENAI_API_KEY",
-                "SLACK_BOT_TOKEN", "SLACK_CHANNEL_ID"
-            ]
+                "KRAKEN_API_KEY",
+                "KRAKEN_SECRET",
+                "OPENAI_API_KEY",
+                "SLACK_BOT_TOKEN",
+                "SLACK_CHANNEL_ID",
+            ],
         }
 
         required = required_secrets.get(self.environment, [])
@@ -689,6 +734,8 @@ class SecurityManager:
             if not secret_value:
                 secret_value = os.getenv(secret_id)
 
-            validation_results[secret_id] = secret_value is not None and len(secret_value.strip()) > 0
+            validation_results[secret_id] = (
+                secret_value is not None and len(secret_value.strip()) > 0
+            )
 
         return validation_results

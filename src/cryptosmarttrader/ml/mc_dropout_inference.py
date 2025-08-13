@@ -10,9 +10,13 @@ import torch.nn.functional as F
 import numpy as np
 from typing import Tuple, Optional, List
 import warnings
-warnings.filterwarnings('ignore')
 
-def mc_dropout_predict(model: nn.Module, x: torch.Tensor, passes: int = 30) -> Tuple[np.ndarray, np.ndarray]:
+warnings.filterwarnings("ignore")
+
+
+def mc_dropout_predict(
+    model: nn.Module, x: torch.Tensor, passes: int = 30
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Monte Carlo Dropout inference for uncertainty quantification
 
@@ -41,8 +45,10 @@ def mc_dropout_predict(model: nn.Module, x: torch.Tensor, passes: int = 30) -> T
 
     return mu, sigma
 
-def mc_dropout_predict_with_confidence(model: nn.Module, x: torch.Tensor,
-                                     passes: int = 30, confidence_level: float = 0.95) -> dict:
+
+def mc_dropout_predict_with_confidence(
+    model: nn.Module, x: torch.Tensor, passes: int = 30, confidence_level: float = 0.95
+) -> dict:
     """
     MC Dropout with confidence intervals
     """
@@ -73,21 +79,28 @@ def mc_dropout_predict_with_confidence(model: nn.Module, x: torch.Tensor,
     confidence_score = 1.0 / (1.0 + sigma / (np.abs(mu) + 1e-8))
 
     return {
-        'mean': mu,
-        'std': sigma,
-        'confidence': confidence_score,
-        'lower_bound': lower_bound,
-        'upper_bound': upper_bound,
-        'n_passes': passes
+        "mean": mu,
+        "std": sigma,
+        "confidence": confidence_score,
+        "lower_bound": lower_bound,
+        "upper_bound": upper_bound,
+        "n_passes": passes,
     }
+
 
 class MCDropoutLSTM(nn.Module):
     """
     LSTM with Monte Carlo Dropout for uncertainty quantification
     """
 
-    def __init__(self, input_size: int, hidden_size: int, num_layers: int = 2,
-                 dropout_rate: float = 0.2, output_size: int = 1):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        num_layers: int = 2,
+        dropout_rate: float = 0.2,
+        output_size: int = 1,
+    ):
         super(MCDropoutLSTM, self).__init__()
 
         self.input_size = input_size
@@ -101,7 +114,7 @@ class MCDropoutLSTM(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             dropout=dropout_rate if num_layers > 1 else 0,
-            batch_first=True
+            batch_first=True,
         )
 
         # Dropout layers
@@ -133,14 +146,19 @@ class MCDropoutLSTM(nn.Module):
         """
         return mc_dropout_predict_with_confidence(self, x, passes)
 
+
 class BayesianCryptoPredictor:
     """
     Bayesian crypto predictor with MC Dropout uncertainty
     """
 
-    def __init__(self, input_size: int = 20, hidden_size: int = 128,
-                 dropout_rate: float = 0.2, mc_passes: int = 30):
-
+    def __init__(
+        self,
+        input_size: int = 20,
+        hidden_size: int = 128,
+        dropout_rate: float = 0.2,
+        mc_passes: int = 30,
+    ):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.dropout_rate = dropout_rate
@@ -148,15 +166,14 @@ class BayesianCryptoPredictor:
 
         # Create model
         self.model = MCDropoutLSTM(
-            input_size=input_size,
-            hidden_size=hidden_size,
-            dropout_rate=dropout_rate
+            input_size=input_size, hidden_size=hidden_size, dropout_rate=dropout_rate
         )
 
         self.is_trained = False
 
-    def train_model(self, X_train: np.ndarray, y_train: np.ndarray,
-                   epochs: int = 100, lr: float = 0.001) -> dict:
+    def train_model(
+        self, X_train: np.ndarray, y_train: np.ndarray, epochs: int = 100, lr: float = 0.001
+    ) -> dict:
         """
         Train the Bayesian model
         """
@@ -190,14 +207,9 @@ class BayesianCryptoPredictor:
 
         self.is_trained = True
 
-        return {
-            'final_loss': losses[-1],
-            'training_losses': losses,
-            'epochs': epochs
-        }
+        return {"final_loss": losses[-1], "training_losses": losses, "epochs": epochs}
 
-    def predict_with_uncertainty(self, X: np.ndarray,
-                               confidence_threshold: float = 0.8) -> dict:
+    def predict_with_uncertainty(self, X: np.ndarray, confidence_threshold: float = 0.8) -> dict:
         """
         Make predictions with uncertainty quantification
         """
@@ -211,21 +223,22 @@ class BayesianCryptoPredictor:
         results = self.model.predict_with_uncertainty(X_tensor, self.mc_passes)
 
         # Filter by confidence
-        high_confidence_mask = results['confidence'].flatten() >= confidence_threshold
+        high_confidence_mask = results["confidence"].flatten() >= confidence_threshold
 
         predictions = {
-            'predictions': results['mean'].flatten(),
-            'uncertainty': results['std'].flatten(),
-            'confidence': results['confidence'].flatten(),
-            'lower_bound': results['lower_bound'].flatten(),
-            'upper_bound': results['upper_bound'].flatten(),
-            'high_confidence_mask': high_confidence_mask,
-            'high_confidence_count': np.sum(high_confidence_mask),
-            'confidence_threshold': confidence_threshold,
-            'mc_passes': self.mc_passes
+            "predictions": results["mean"].flatten(),
+            "uncertainty": results["std"].flatten(),
+            "confidence": results["confidence"].flatten(),
+            "lower_bound": results["lower_bound"].flatten(),
+            "upper_bound": results["upper_bound"].flatten(),
+            "high_confidence_mask": high_confidence_mask,
+            "high_confidence_count": np.sum(high_confidence_mask),
+            "confidence_threshold": confidence_threshold,
+            "mc_passes": self.mc_passes,
         }
 
         return predictions
+
 
 if __name__ == "__main__":
     print("🧠 TESTING MC DROPOUT INFERENCE")
@@ -247,30 +260,20 @@ if __name__ == "__main__":
 
     # Create Bayesian predictor
     predictor = BayesianCryptoPredictor(
-        input_size=input_size,
-        hidden_size=64,
-        dropout_rate=0.3,
-        mc_passes=50
+        input_size=input_size, hidden_size=64, dropout_rate=0.3, mc_passes=50
     )
 
     # Train model
     print("\n🔄 Training Bayesian model...")
 
-    train_results = predictor.train_model(
-        X[:800], y[:800],
-        epochs=50,
-        lr=0.001
-    )
+    train_results = predictor.train_model(X[:800], y[:800], epochs=50, lr=0.001)
 
     print(f"   Final training loss: {train_results['final_loss']:.6f}")
 
     # Test predictions with uncertainty
     print("\n🎯 Testing MC Dropout predictions...")
 
-    test_results = predictor.predict_with_uncertainty(
-        X[800:850],
-        confidence_threshold=0.8
-    )
+    test_results = predictor.predict_with_uncertainty(X[800:850], confidence_threshold=0.8)
 
     print(f"   Test predictions: {len(test_results['predictions'])}")
     print(f"   Mean uncertainty: {np.mean(test_results['uncertainty']):.4f}")
@@ -280,11 +283,11 @@ if __name__ == "__main__":
     # Show sample predictions with uncertainty
     print(f"\n📈 Sample predictions with uncertainty:")
     for i in range(5):
-        pred = test_results['predictions'][i]
-        unc = test_results['uncertainty'][i]
-        conf = test_results['confidence'][i]
+        pred = test_results["predictions"][i]
+        unc = test_results["uncertainty"][i]
+        conf = test_results["confidence"][i]
         actual = y[800 + i]
 
-        print(f"   Sample {i+1}: Pred={pred:.4f}±{unc:.4f}, Actual={actual:.4f}, Conf={conf:.3f}")
+        print(f"   Sample {i + 1}: Pred={pred:.4f}±{unc:.4f}, Actual={actual:.4f}, Conf={conf:.3f}")
 
     print("\n✅ MC Dropout test completed")

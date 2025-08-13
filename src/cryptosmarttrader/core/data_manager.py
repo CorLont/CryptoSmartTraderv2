@@ -10,6 +10,7 @@ import ccxt
 from concurrent.futures import ThreadPoolExecutor
 import logging
 
+
 class DataManager:
     """Centralized data management with real-time feeds and monitoring"""
 
@@ -43,7 +44,7 @@ class DataManager:
             "kraken": ccxt.kraken,
             "binance": ccxt.binance,
             "kucoin": ccxt.kucoin,
-            "huobi": ccxt.huobi
+            "huobi": ccxt.huobi,
         }
 
         for exchange_name in enabled_exchanges:
@@ -52,16 +53,20 @@ class DataManager:
                 if exchange_class:
                     # Get API keys from config
                     api_key = self.config_manager.get("api_keys", {}).get(exchange_name, "")
-                    secret = self.config_manager.get("api_keys", {}).get(f"{exchange_name}_secret", "")
+                    secret = self.config_manager.get("api_keys", {}).get(
+                        f"{exchange_name}_secret", ""
+                    )
 
-                    self.exchanges[exchange_name] = exchange_class({
-                        'apiKey': api_key,
-                        'secret': secret,
-                        'timeout': self.config_manager.get("timeout_seconds", 30) * 1000,
-                        'rateLimit': 60000 / self.config_manager.get("api_rate_limit", 100),
-                        'enableRateLimit': True,
-                        'sandbox': False
-                    })
+                    self.exchanges[exchange_name] = exchange_class(
+                        {
+                            "apiKey": api_key,
+                            "secret": secret,
+                            "timeout": self.config_manager.get("timeout_seconds", 30) * 1000,
+                            "rateLimit": 60000 / self.config_manager.get("api_rate_limit", 100),
+                            "enableRateLimit": True,
+                            "sandbox": False,
+                        }
+                    )
 
                     self.logger.info(f"Initialized {exchange_name} exchange")
 
@@ -124,26 +129,28 @@ class DataManager:
         for symbol, ticker in tickers.items():
             try:
                 # Extract base currency (e.g., BTC from BTC/USD)
-                if '/' in symbol:
-                    base_currency = symbol.split('/')[0]
+                if "/" in symbol:
+                    base_currency = symbol.split("/")[0]
                 else:
                     continue
 
                 processed_ticker = {
-                    'symbol': symbol,
-                    'base_currency': base_currency,
-                    'exchange': exchange_name,
-                    'timestamp': timestamp.isoformat(),
-                    'price': ticker.get('last', 0),
-                    'volume': ticker.get('baseVolume', 0),
-                    'high': ticker.get('high', 0),
-                    'low': ticker.get('low', 0),
-                    'open': ticker.get('open', 0),
-                    'change': ticker.get('change', 0),
-                    'change_percent': ticker.get('percentage', 0),
-                    'bid': ticker.get('bid', 0),
-                    'ask': ticker.get('ask', 0),
-                    'spread': (ticker.get('ask', 0) - ticker.get('bid', 0)) if ticker.get('ask') and ticker.get('bid') else 0
+                    "symbol": symbol,
+                    "base_currency": base_currency,
+                    "exchange": exchange_name,
+                    "timestamp": timestamp.isoformat(),
+                    "price": ticker.get("last", 0),
+                    "volume": ticker.get("baseVolume", 0),
+                    "high": ticker.get("high", 0),
+                    "low": ticker.get("low", 0),
+                    "open": ticker.get("open", 0),
+                    "change": ticker.get("change", 0),
+                    "change_percent": ticker.get("percentage", 0),
+                    "bid": ticker.get("bid", 0),
+                    "ask": ticker.get("ask", 0),
+                    "spread": (ticker.get("ask", 0) - ticker.get("bid", 0))
+                    if ticker.get("ask") and ticker.get("bid")
+                    else 0,
                 }
 
                 processed.append(processed_ticker)
@@ -175,7 +182,9 @@ class DataManager:
             if file_path.exists():
                 existing_df = pd.read_csv(file_path)
                 combined_df = pd.concat([existing_df, df], ignore_index=True)
-                combined_df.drop_duplicates(subset=['symbol', 'timestamp'], keep='last').to_csv(file_path, index=False)
+                combined_df.drop_duplicates(subset=["symbol", "timestamp"], keep="last").to_csv(
+                    file_path, index=False
+                )
             else:
                 df.to_csv(file_path, index=False)
 
@@ -188,11 +197,15 @@ class DataManager:
             quality_score = (collected_count / max_expected) * 100 if max_expected > 0 else 0
 
             self.data_quality[exchange_name] = {
-                'timestamp': datetime.now().isoformat(),
-                'collected_count': collected_count,
-                'expected_count': max_expected,
-                'quality_score': quality_score,
-                'status': 'good' if quality_score >= 90 else 'poor' if quality_score < 50 else 'fair'
+                "timestamp": datetime.now().isoformat(),
+                "collected_count": collected_count,
+                "expected_count": max_expected,
+                "quality_score": quality_score,
+                "status": "good"
+                if quality_score >= 90
+                else "poor"
+                if quality_score < 50
+                else "fair",
             }
 
     def _update_freshness_tracking(self):
@@ -204,34 +217,36 @@ class DataManager:
 
                 if cached_data is not None:
                     self.data_freshness[exchange_name] = {
-                        'last_update': datetime.now().isoformat(),
-                        'status': 'fresh',
-                        'age_minutes': 0
+                        "last_update": datetime.now().isoformat(),
+                        "status": "fresh",
+                        "age_minutes": 0,
                     }
                 else:
                     # Calculate age from last known update
-                    last_update = self.data_freshness.get(exchange_name, {}).get('last_update')
+                    last_update = self.data_freshness.get(exchange_name, {}).get("last_update")
                     if last_update:
                         try:
                             last_time = datetime.fromisoformat(last_update)
                             age_minutes = (datetime.now() - last_time).total_seconds() / 60
 
                             self.data_freshness[exchange_name] = {
-                                'last_update': last_update,
-                                'status': 'stale' if age_minutes > 10 else 'fresh',
-                                'age_minutes': age_minutes
+                                "last_update": last_update,
+                                "status": "stale" if age_minutes > 10 else "fresh",
+                                "age_minutes": age_minutes,
                             }
                         except Exception:
                             pass
 
-    def get_market_data(self, exchange: Optional[str] = None, symbol: Optional[str] = None) -> Optional[pd.DataFrame]:
+    def get_market_data(
+        self, exchange: Optional[str] = None, symbol: Optional[str] = None
+    ) -> Optional[pd.DataFrame]:
         """Get current market data"""
         if exchange:
             cache_key = f"market_data_{exchange}"
             data = self.cache_manager.get(cache_key)
 
             if data is not None and symbol:
-                return data[data['symbol'] == symbol]
+                return data[data["symbol"] == symbol]
             return data
         else:
             # Aggregate data from all exchanges
@@ -245,7 +260,7 @@ class DataManager:
             if all_data:
                 combined = pd.concat(all_data, ignore_index=True)
                 if symbol:
-                    return combined[combined['symbol'] == symbol]
+                    return combined[combined["symbol"] == symbol]
                 return combined
 
             return None
@@ -268,7 +283,7 @@ class DataManager:
                     if file_path.exists():
                         try:
                             df = pd.read_csv(file_path)
-                            symbol_data = df[df['symbol'] == symbol]
+                            symbol_data = df[df["symbol"] == symbol]
                             if not symbol_data.empty:
                                 historical_data.append(symbol_data)
                         except Exception as e:
@@ -278,8 +293,8 @@ class DataManager:
 
             if historical_data:
                 combined = pd.concat(historical_data, ignore_index=True)
-                combined['timestamp'] = pd.to_datetime(combined['timestamp'])
-                return combined.sort_values('timestamp')
+                combined["timestamp"] = pd.to_datetime(combined["timestamp"])
+                return combined.sort_values("timestamp")
 
             return None
 
@@ -291,10 +306,10 @@ class DataManager:
         """Get comprehensive data status"""
         with self._lock:
             return {
-                'freshness': self.data_freshness.copy(),
-                'quality': self.data_quality.copy(),
-                'exchanges': list(self.exchanges.keys()),
-                'collection_active': self.collection_active
+                "freshness": self.data_freshness.copy(),
+                "quality": self.data_quality.copy(),
+                "exchanges": list(self.exchanges.keys()),
+                "collection_active": self.collection_active,
             }
 
     def get_supported_symbols(self, exchange: Optional[str] = None) -> List[str]:
@@ -305,14 +320,14 @@ class DataManager:
             cache_key = f"market_data_{exchange}"
             data = self.cache_manager.get(cache_key)
             if data is not None:
-                symbols.update(data['symbol'].unique())
+                symbols.update(data["symbol"].unique())
         else:
             # Get symbols from all exchanges
             for exchange_name in self.exchanges.keys():
                 cache_key = f"market_data_{exchange_name}"
                 data = self.cache_manager.get(cache_key)
                 if data is not None:
-                    symbols.update(data['symbol'].unique())
+                    symbols.update(data["symbol"].unique())
 
         return sorted(list(symbols))
 
@@ -327,7 +342,7 @@ class DataManager:
             for file_path in self.data_path.glob("market_*.csv"):
                 # Extract date from filename
                 filename = file_path.stem
-                date_part = filename.split('_')[-1]
+                date_part = filename.split("_")[-1]
 
                 try:
                     file_date = datetime.strptime(date_part, "%Y-%m-%d").date()

@@ -29,10 +29,12 @@ class MockOrchestrator:
             "total_count": 0,
             "last_updated": "2025-01-11T12:00:00Z",
             "data_source": "kraken",
-            "confidence_score": 0.95
+            "confidence_score": 0.95,
         }
 
-    async def get_trading_signals(self, limit: int = 50, min_confidence: float = 0.7, symbol: Optional[str] = None):
+    async def get_trading_signals(
+        self, limit: int = 50, min_confidence: float = 0.7, symbol: Optional[str] = None
+    ):
         """Mock trading signals"""
         return []
 
@@ -45,7 +47,7 @@ class MockOrchestrator:
             "unrealized_pnl": 0.0,
             "unrealized_pnl_percent": 0.0,
             "positions": [],
-            "last_updated": "2025-01-11T12:00:00Z"
+            "last_updated": "2025-01-11T12:00:00Z",
         }
 
     async def get_all_agent_status(self):

@@ -14,57 +14,66 @@ from enum import Enum
 import json
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 from scipy import stats
 import sklearn.metrics as metrics
 
 from ..core.logging_manager import get_logger
 
+
 class SignalHorizon(str, Enum):
     """Signal prediction horizons"""
+
     H1 = "1H"
     H24 = "24H"
     D7 = "7D"
     D30 = "30D"
 
+
 class ValidationStatus(str, Enum):
     """Signal quality validation status"""
+
     PASSED = "passed"
     FAILED = "failed"
     INSUFFICIENT_DATA = "insufficient_data"
     ERROR = "error"
 
+
 @dataclass
 class SignalQualityConfig:
     """Configuration for signal quality validation"""
+
     # Precision metrics
-    minimum_precision_at_k: float = 0.60    # 60% precision@K
-    top_k_candidates: int = 10               # Top-K for precision calculation
+    minimum_precision_at_k: float = 0.60  # 60% precision@K
+    top_k_candidates: int = 10  # Top-K for precision calculation
 
     # Hit rate requirements
-    minimum_hit_rate: float = 0.55           # 55% hit rate
+    minimum_hit_rate: float = 0.55  # 55% hit rate
     minimum_confidence_threshold: float = 0.80  # 80% confidence threshold
 
     # Calibration requirements
-    maximum_mae_ratio: float = 0.25          # MAE ≤ 0.25 × median(|pred|)
+    maximum_mae_ratio: float = 0.25  # MAE ≤ 0.25 × median(|pred|)
     calibration_confidence_threshold: float = 0.80  # 80% confidence
-    calibration_success_rate: float = 0.70   # 70% success rate
+    calibration_success_rate: float = 0.70  # 70% success rate
 
     # Strategy performance requirements
-    minimum_sharpe_ratio: float = 1.0        # Sharpe ≥ 1.0
-    maximum_drawdown: float = 0.15           # Max 15% drawdown
+    minimum_sharpe_ratio: float = 1.0  # Sharpe ≥ 1.0
+    maximum_drawdown: float = 0.15  # Max 15% drawdown
 
     # Transaction costs
     transaction_cost_percent: float = 0.0025  # 0.25% transaction costs
-    slippage_percent: float = 0.001          # 0.1% slippage
+    slippage_percent: float = 0.001  # 0.1% slippage
 
     # Data requirements
-    minimum_out_of_sample_days: int = 28     # 4 weeks minimum
-    target_out_of_sample_days: int = 56      # 8 weeks target
+    minimum_out_of_sample_days: int = 28  # 4 weeks minimum
+    target_out_of_sample_days: int = 56  # 8 weeks target
+
 
 @dataclass
 class HorizonSignalMetrics:
     """Signal quality metrics for specific horizon"""
+
     horizon: SignalHorizon
     total_signals: int
     high_confidence_signals: int
@@ -101,9 +110,11 @@ class HorizonSignalMetrics:
     failed_criteria: List[str]
     passed_criteria: List[str]
 
+
 @dataclass
 class SignalQualityReport:
     """Comprehensive signal quality validation report"""
+
     validation_id: str
     timestamp: datetime
     out_of_sample_period_days: int
@@ -128,6 +139,7 @@ class SignalQualityReport:
     recommendations: List[str]
     critical_issues: List[str]
 
+
 class SignalQualityValidator:
     """Multi-horizon signal quality validator"""
 
@@ -136,9 +148,7 @@ class SignalQualityValidator:
         self.logger = get_logger()
 
     async def validate_signal_quality(
-        self,
-        historical_signals: Dict[str, Any],
-        market_data: Dict[str, Any]
+        self, historical_signals: Dict[str, Any], market_data: Dict[str, Any]
     ) -> SignalQualityReport:
         """Validate signal quality across all horizons"""
 
@@ -150,7 +160,9 @@ class SignalQualityValidator:
         try:
             # Determine out-of-sample period
             out_of_sample_end = validation_start
-            out_of_sample_start = out_of_sample_end - timedelta(days=self.config.target_out_of_sample_days)
+            out_of_sample_start = out_of_sample_end - timedelta(
+                days=self.config.target_out_of_sample_days
+            )
             out_of_sample_days = (out_of_sample_end - out_of_sample_start).days
 
             # Validate each horizon
@@ -187,7 +199,9 @@ class SignalQualityValidator:
             overall_stats = self._calculate_overall_statistics(horizon_metrics)
 
             # Determine overall status
-            overall_status = ValidationStatus.PASSED if horizons_failed == 0 else ValidationStatus.FAILED
+            overall_status = (
+                ValidationStatus.PASSED if horizons_failed == 0 else ValidationStatus.FAILED
+            )
             if not horizon_metrics:
                 overall_status = ValidationStatus.INSUFFICIENT_DATA
 
@@ -210,7 +224,7 @@ class SignalQualityValidator:
                 average_sharpe_ratio=overall_stats["average_sharpe_ratio"],
                 worst_max_drawdown=overall_stats["worst_max_drawdown"],
                 recommendations=recommendations,
-                critical_issues=critical_issues
+                critical_issues=critical_issues,
             )
 
             # Store validation report
@@ -223,8 +237,8 @@ class SignalQualityValidator:
                     "overall_status": overall_status.value,
                     "horizons_passed": horizons_passed,
                     "horizons_failed": horizons_failed,
-                    "out_of_sample_days": out_of_sample_days
-                }
+                    "out_of_sample_days": out_of_sample_days,
+                },
             )
 
             return report
@@ -247,7 +261,7 @@ class SignalQualityValidator:
                 average_sharpe_ratio=0.0,
                 worst_max_drawdown=1.0,
                 recommendations=[],
-                critical_issues=[f"Validation error: {e}"]
+                critical_issues=[f"Validation error: {e}"],
             )
 
     def _extract_horizon_signals(
@@ -255,7 +269,7 @@ class SignalQualityValidator:
         historical_signals: Dict[str, Any],
         horizon: SignalHorizon,
         start_date: datetime,
-        end_date: datetime
+        end_date: datetime,
     ) -> List[Dict[str, Any]]:
         """Extract signals for specific horizon and time period"""
 
@@ -267,19 +281,19 @@ class SignalQualityValidator:
                 signal_timestamp = datetime.fromisoformat(signal_data.get("timestamp", ""))
                 signal_horizon = signal_data.get("horizon", "")
 
-                if (signal_horizon == horizon.value and
-                    start_date <= signal_timestamp <= end_date):
-
-                    horizon_signals.append({
-                        "signal_id": signal_id,
-                        "timestamp": signal_timestamp,
-                        "symbol": signal_data.get("symbol", ""),
-                        "predicted_return": signal_data.get("predicted_return", 0.0),
-                        "confidence": signal_data.get("confidence", 0.0),
-                        "actual_return": signal_data.get("actual_return"),  # May be None
-                        "realized": signal_data.get("realized", False),
-                        "metadata": signal_data.get("metadata", {})
-                    })
+                if signal_horizon == horizon.value and start_date <= signal_timestamp <= end_date:
+                    horizon_signals.append(
+                        {
+                            "signal_id": signal_id,
+                            "timestamp": signal_timestamp,
+                            "symbol": signal_data.get("symbol", ""),
+                            "predicted_return": signal_data.get("predicted_return", 0.0),
+                            "confidence": signal_data.get("confidence", 0.0),
+                            "actual_return": signal_data.get("actual_return"),  # May be None
+                            "realized": signal_data.get("realized", False),
+                            "metadata": signal_data.get("metadata", {}),
+                        }
+                    )
 
             return horizon_signals
 
@@ -288,18 +302,14 @@ class SignalQualityValidator:
             return []
 
     async def _calculate_horizon_metrics(
-        self,
-        horizon: SignalHorizon,
-        signals: List[Dict[str, Any]],
-        market_data: Dict[str, Any]
+        self, horizon: SignalHorizon, signals: List[Dict[str, Any]], market_data: Dict[str, Any]
     ) -> HorizonSignalMetrics:
         """Calculate comprehensive metrics for horizon"""
 
         try:
             # Filter for high-confidence signals
             high_conf_signals = [
-                s for s in signals
-                if s["confidence"] >= self.config.minimum_confidence_threshold
+                s for s in signals if s["confidence"] >= self.config.minimum_confidence_threshold
             ]
 
             # Calculate precision@K
@@ -358,7 +368,9 @@ class SignalQualityValidator:
                 failed_criteria.append("max_drawdown")
 
             # Determine overall status
-            status = ValidationStatus.PASSED if len(failed_criteria) == 0 else ValidationStatus.FAILED
+            status = (
+                ValidationStatus.PASSED if len(failed_criteria) == 0 else ValidationStatus.FAILED
+            )
 
             if len(signals) < 10:  # Minimum signal count
                 status = ValidationStatus.INSUFFICIENT_DATA
@@ -387,7 +399,7 @@ class SignalQualityValidator:
                 volatility=strategy_metrics["volatility"],
                 validation_status=status,
                 failed_criteria=failed_criteria,
-                passed_criteria=passed_criteria
+                passed_criteria=passed_criteria,
             )
 
         except Exception as e:
@@ -470,10 +482,10 @@ class SignalQualityValidator:
 
             if not predictions:
                 return {
-                    "mae_actual": float('inf'),
+                    "mae_actual": float("inf"),
                     "mae_threshold": 0.0,
-                    "mae_ratio": float('inf'),
-                    "median_magnitude": 0.0
+                    "mae_ratio": float("inf"),
+                    "median_magnitude": 0.0,
                 }
 
             # Calculate MAE
@@ -484,22 +496,22 @@ class SignalQualityValidator:
 
             # Calculate threshold and ratio
             mae_threshold = self.config.maximum_mae_ratio * median_magnitude
-            mae_ratio = mae_actual / median_magnitude if median_magnitude > 0 else float('inf')
+            mae_ratio = mae_actual / median_magnitude if median_magnitude > 0 else float("inf")
 
             return {
                 "mae_actual": mae_actual,
                 "mae_threshold": mae_threshold,
                 "mae_ratio": mae_ratio,
-                "median_magnitude": median_magnitude
+                "median_magnitude": median_magnitude,
             }
 
         except Exception as e:
             self.logger.error(f"MAE calculation failed: {e}")
             return {
-                "mae_actual": float('inf'),
+                "mae_actual": float("inf"),
                 "mae_threshold": 0.0,
-                "mae_ratio": float('inf'),
-                "median_magnitude": 0.0
+                "mae_ratio": float("inf"),
+                "median_magnitude": 0.0,
             }
 
     def _calculate_calibration_metrics(self, signals: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -508,7 +520,8 @@ class SignalQualityValidator:
         try:
             # Filter for high-confidence predictions
             high_conf_signals = [
-                s for s in signals
+                s
+                for s in signals
                 if s["confidence"] >= self.config.calibration_confidence_threshold
             ]
 
@@ -530,21 +543,15 @@ class SignalQualityValidator:
             return {
                 "total_predictions": total_predictions,
                 "successes": successes,
-                "success_rate": success_rate
+                "success_rate": success_rate,
             }
 
         except Exception as e:
             self.logger.error(f"Calibration calculation failed: {e}")
-            return {
-                "total_predictions": 0,
-                "successes": 0,
-                "success_rate": 0.0
-            }
+            return {"total_predictions": 0, "successes": 0, "success_rate": 0.0}
 
     async def _calculate_strategy_performance(
-        self,
-        signals: List[Dict[str, Any]],
-        market_data: Dict[str, Any]
+        self, signals: List[Dict[str, Any]], market_data: Dict[str, Any]
     ) -> Dict[str, float]:
         """Calculate strategy performance with transaction costs"""
 
@@ -559,16 +566,17 @@ class SignalQualityValidator:
                 actual_return = signal.get("actual_return")
                 confidence = signal.get("confidence", 0)
 
-                if (predicted_return > 0 and
-                    confidence >= self.config.minimum_confidence_threshold and
-                    actual_return is not None):
-
+                if (
+                    predicted_return > 0
+                    and confidence >= self.config.minimum_confidence_threshold
+                    and actual_return is not None
+                ):
                     # Apply transaction costs and slippage
                     total_cost = self.config.transaction_cost_percent + self.config.slippage_percent
                     net_return = actual_return - (2 * total_cost)  # Entry + exit costs
 
                     returns.append(net_return)
-                    portfolio_value *= (1 + net_return)
+                    portfolio_value *= 1 + net_return
                     portfolio_history.append(portfolio_value)
 
             if not returns:
@@ -576,7 +584,7 @@ class SignalQualityValidator:
                     "sharpe_ratio": 0.0,
                     "max_drawdown": 1.0,
                     "total_return": 0.0,
-                    "volatility": 0.0
+                    "volatility": 0.0,
                 }
 
             # Calculate performance metrics
@@ -598,7 +606,7 @@ class SignalQualityValidator:
                 "sharpe_ratio": sharpe_ratio,
                 "max_drawdown": max_drawdown,
                 "total_return": total_return,
-                "volatility": volatility
+                "volatility": volatility,
             }
 
         except Exception as e:
@@ -607,10 +615,12 @@ class SignalQualityValidator:
                 "sharpe_ratio": 0.0,
                 "max_drawdown": 1.0,
                 "total_return": 0.0,
-                "volatility": 0.0
+                "volatility": 0.0,
             }
 
-    def _create_empty_horizon_metrics(self, horizon: SignalHorizon, error: str = "") -> HorizonSignalMetrics:
+    def _create_empty_horizon_metrics(
+        self, horizon: SignalHorizon, error: str = ""
+    ) -> HorizonSignalMetrics:
         """Create empty metrics for horizon with insufficient data"""
 
         failed_criteria = ["insufficient_data"]
@@ -626,9 +636,9 @@ class SignalQualityValidator:
             hit_rate=0.0,
             total_predictions=0,
             successful_predictions=0,
-            mae_actual=float('inf'),
+            mae_actual=float("inf"),
             mae_threshold=0.0,
-            mae_ratio=float('inf'),
+            mae_ratio=float("inf"),
             median_prediction_magnitude=0.0,
             calibration_confidence_threshold=self.config.calibration_confidence_threshold,
             calibration_predictions=0,
@@ -640,10 +650,12 @@ class SignalQualityValidator:
             volatility=0.0,
             validation_status=ValidationStatus.INSUFFICIENT_DATA,
             failed_criteria=failed_criteria,
-            passed_criteria=[]
+            passed_criteria=[],
         )
 
-    def _calculate_overall_statistics(self, horizon_metrics: Dict[SignalHorizon, HorizonSignalMetrics]) -> Dict[str, float]:
+    def _calculate_overall_statistics(
+        self, horizon_metrics: Dict[SignalHorizon, HorizonSignalMetrics]
+    ) -> Dict[str, float]:
         """Calculate overall statistics across all horizons"""
 
         if not horizon_metrics:
@@ -651,29 +663,32 @@ class SignalQualityValidator:
                 "average_precision_at_k": 0.0,
                 "average_hit_rate": 0.0,
                 "average_sharpe_ratio": 0.0,
-                "worst_max_drawdown": 1.0
+                "worst_max_drawdown": 1.0,
             }
 
-        valid_metrics = [m for m in horizon_metrics.values() if m.validation_status != ValidationStatus.INSUFFICIENT_DATA]
+        valid_metrics = [
+            m
+            for m in horizon_metrics.values()
+            if m.validation_status != ValidationStatus.INSUFFICIENT_DATA
+        ]
 
         if not valid_metrics:
             return {
                 "average_precision_at_k": 0.0,
                 "average_hit_rate": 0.0,
                 "average_sharpe_ratio": 0.0,
-                "worst_max_drawdown": 1.0
+                "worst_max_drawdown": 1.0,
             }
 
         return {
             "average_precision_at_k": np.mean([m.precision_at_k for m in valid_metrics]),
             "average_hit_rate": np.mean([m.hit_rate for m in valid_metrics]),
             "average_sharpe_ratio": np.mean([m.sharpe_ratio for m in valid_metrics]),
-            "worst_max_drawdown": max([m.max_drawdown for m in valid_metrics])
+            "worst_max_drawdown": max([m.max_drawdown for m in valid_metrics]),
         }
 
     def _generate_recommendations(
-        self,
-        horizon_metrics: Dict[SignalHorizon, HorizonSignalMetrics]
+        self, horizon_metrics: Dict[SignalHorizon, HorizonSignalMetrics]
     ) -> Tuple[List[str], List[str]]:
         """Generate recommendations and critical issues"""
 
@@ -683,29 +698,46 @@ class SignalQualityValidator:
         # Analyze each horizon
         for horizon, metrics in horizon_metrics.items():
             if metrics.validation_status == ValidationStatus.FAILED:
-
                 if "precision_at_k" in metrics.failed_criteria:
-                    critical_issues.append(f"{horizon.value}: Precision@{metrics.top_k_used} = {metrics.precision_at_k:.1%} < {self.config.minimum_precision_at_k:.1%}")
-                    recommendations.append(f"Improve {horizon.value} model accuracy - current precision too low")
+                    critical_issues.append(
+                        f"{horizon.value}: Precision@{metrics.top_k_used} = {metrics.precision_at_k:.1%} < {self.config.minimum_precision_at_k:.1%}"
+                    )
+                    recommendations.append(
+                        f"Improve {horizon.value} model accuracy - current precision too low"
+                    )
 
                 if "hit_rate" in metrics.failed_criteria:
-                    critical_issues.append(f"{horizon.value}: Hit rate = {metrics.hit_rate:.1%} < {self.config.minimum_hit_rate:.1%}")
-                    recommendations.append(f"Review {horizon.value} confidence thresholds - too many false positives")
+                    critical_issues.append(
+                        f"{horizon.value}: Hit rate = {metrics.hit_rate:.1%} < {self.config.minimum_hit_rate:.1%}"
+                    )
+                    recommendations.append(
+                        f"Review {horizon.value} confidence thresholds - too many false positives"
+                    )
 
                 if "mae_calibration" in metrics.failed_criteria:
-                    critical_issues.append(f"{horizon.value}: MAE ratio = {metrics.mae_ratio:.2f} > {self.config.maximum_mae_ratio:.2f}")
-                    recommendations.append(f"Recalibrate {horizon.value} predictions - poor magnitude estimation")
+                    critical_issues.append(
+                        f"{horizon.value}: MAE ratio = {metrics.mae_ratio:.2f} > {self.config.maximum_mae_ratio:.2f}"
+                    )
+                    recommendations.append(
+                        f"Recalibrate {horizon.value} predictions - poor magnitude estimation"
+                    )
 
                 if "sharpe_ratio" in metrics.failed_criteria:
-                    critical_issues.append(f"{horizon.value}: Sharpe = {metrics.sharpe_ratio:.2f} < {self.config.minimum_sharpe_ratio:.2f}")
+                    critical_issues.append(
+                        f"{horizon.value}: Sharpe = {metrics.sharpe_ratio:.2f} < {self.config.minimum_sharpe_ratio:.2f}"
+                    )
                     recommendations.append(f"Improve {horizon.value} risk-adjusted returns")
 
                 if "max_drawdown" in metrics.failed_criteria:
-                    critical_issues.append(f"{horizon.value}: Max drawdown = {metrics.max_drawdown:.1%} > {self.config.maximum_drawdown:.1%}")
+                    critical_issues.append(
+                        f"{horizon.value}: Max drawdown = {metrics.max_drawdown:.1%} > {self.config.maximum_drawdown:.1%}"
+                    )
                     recommendations.append(f"Implement better risk management for {horizon.value}")
 
         # Overall recommendations
-        failed_horizons = sum(1 for m in horizon_metrics.values() if m.validation_status == ValidationStatus.FAILED)
+        failed_horizons = sum(
+            1 for m in horizon_metrics.values() if m.validation_status == ValidationStatus.FAILED
+        )
 
         if failed_horizons > len(horizon_metrics) / 2:
             recommendations.append("Consider fundamental model architecture review")
@@ -731,7 +763,7 @@ class SignalQualityValidator:
                 "out_of_sample_period": {
                     "days": report.out_of_sample_period_days,
                     "start": report.out_of_sample_start.isoformat(),
-                    "end": report.out_of_sample_end.isoformat()
+                    "end": report.out_of_sample_end.isoformat(),
                 },
                 "overall_status": report.overall_status.value,
                 "summary": {
@@ -740,7 +772,7 @@ class SignalQualityValidator:
                     "average_precision_at_k": report.average_precision_at_k,
                     "average_hit_rate": report.average_hit_rate,
                     "average_sharpe_ratio": report.average_sharpe_ratio,
-                    "worst_max_drawdown": report.worst_max_drawdown
+                    "worst_max_drawdown": report.worst_max_drawdown,
                 },
                 "horizon_metrics": {
                     horizon.value: {
@@ -754,23 +786,23 @@ class SignalQualityValidator:
                         "sharpe_ratio": metrics.sharpe_ratio,
                         "max_drawdown": metrics.max_drawdown,
                         "failed_criteria": metrics.failed_criteria,
-                        "passed_criteria": metrics.passed_criteria
+                        "passed_criteria": metrics.passed_criteria,
                     }
                     for horizon, metrics in report.horizon_metrics.items()
                 },
                 "recommendations": report.recommendations,
-                "critical_issues": report.critical_issues
+                "critical_issues": report.critical_issues,
             }
 
             # Write to file
             report_file = reports_dir / f"signal_quality_report_{report.validation_id}.json"
 
-            with open(report_file, 'w') as f:
+            with open(report_file, "w") as f:
                 json.dump(report_data, f, indent=2)
 
             # Also store as latest
             latest_file = reports_dir / "latest_signal_quality_report.json"
-            with open(latest_file, 'w') as f:
+            with open(latest_file, "w") as f:
                 json.dump(report_data, f, indent=2)
 
             self.logger.info(f"Signal quality report stored: {report_file}")
@@ -778,10 +810,14 @@ class SignalQualityValidator:
         except Exception as e:
             self.logger.error(f"Failed to store signal quality report: {e}")
 
+
 # Global instance
 _signal_quality_validator = None
 
-def get_signal_quality_validator(config: Optional[SignalQualityConfig] = None) -> SignalQualityValidator:
+
+def get_signal_quality_validator(
+    config: Optional[SignalQualityConfig] = None,
+) -> SignalQualityValidator:
     """Get global signal quality validator instance"""
     global _signal_quality_validator
     if _signal_quality_validator is None:

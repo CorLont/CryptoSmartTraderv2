@@ -12,6 +12,7 @@ from ..api.schemas.common import BaseResponse
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 
+
 @router.get("/latest", summary="Get latest predictions")
 @limiter.limit("50/minute")
 async def get_predictions(request) -> BaseResponse:

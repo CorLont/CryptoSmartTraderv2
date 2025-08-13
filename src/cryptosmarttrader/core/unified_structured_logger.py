@@ -13,6 +13,7 @@ from typing import Dict, Any, Optional
 import threading
 import time
 
+
 class JSONFormatter(logging.Formatter):
     """JSON formatter for structured logging - prevents double-JSON encoding"""
 
@@ -21,36 +22,56 @@ class JSONFormatter(logging.Formatter):
 
         # Create clean log entry
         log_entry = {
-            'timestamp': datetime.utcnow().isoformat() + 'Z',
-            'level': record.levelname,
-            'logger': record.name,
-            'message': record.getMessage(),
-            'module': record.module,
-            'function': record.funcName,
-            'line': record.lineno
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
         }
 
         # Add correlation ID if available
-        if hasattr(record, 'correlation_id'):
-            log_entry['correlation_id'] = getattr(record, 'correlation_id', None)
+        if hasattr(record, "correlation_id"):
+            log_entry["correlation_id"] = getattr(record, "correlation_id", None)
 
         # Add extra fields if present
-        if hasattr(record, '__dict__'):
+        if hasattr(record, "__dict__"):
             for key, value in record.__dict__.items():
-                if key not in ['name', 'msg', 'args', 'levelname', 'levelno', 'pathname',
-                              'filename', 'module', 'lineno', 'funcName', 'created',
-                              'msecs', 'relativeCreated', 'thread', 'threadName',
-                              'processName', 'process', 'getMessage', 'exc_info',
-                              'exc_text', 'stack_info', 'correlation_id']:
-                    if not key.startswith('_'):
+                if key not in [
+                    "name",
+                    "msg",
+                    "args",
+                    "levelname",
+                    "levelno",
+                    "pathname",
+                    "filename",
+                    "module",
+                    "lineno",
+                    "funcName",
+                    "created",
+                    "msecs",
+                    "relativeCreated",
+                    "thread",
+                    "threadName",
+                    "processName",
+                    "process",
+                    "getMessage",
+                    "exc_info",
+                    "exc_text",
+                    "stack_info",
+                    "correlation_id",
+                ]:
+                    if not key.startswith("_"):
                         log_entry[key] = value
 
         # Handle exception info
         if record.exc_info:
-            log_entry['exception'] = self.formatException(record.exc_info)
+            log_entry["exception"] = self.formatException(record.exc_info)
 
         # Return clean JSON - never double-encode
         return json.dumps(log_entry, default=str, ensure_ascii=False)
+
 
 class UnifiedStructuredLogger:
     """Unified structured logger preventing double-JSON issues"""
@@ -83,7 +104,7 @@ class UnifiedStructuredLogger:
             log_dir.mkdir(parents=True, exist_ok=True)
 
             log_file = log_dir / f"{self.name.lower()}.jsonl"
-            file_handler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
+            file_handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
             file_handler.setFormatter(JSONFormatter())
             self.logger.addHandler(file_handler)
 
@@ -103,7 +124,7 @@ class UnifiedStructuredLogger:
 
         extra = kwargs.copy()
         if self.correlation_id:
-            extra['correlation_id'] = self.correlation_id
+            extra["correlation_id"] = self.correlation_id
 
         self.logger.log(level, message, extra=extra)
 
@@ -129,29 +150,36 @@ class UnifiedStructuredLogger:
 
     def log_performance_metric(self, metric_name: str, value: float, unit: str = "", **kwargs):
         """Log performance metric"""
-        self.info(f"Performance metric: {metric_name}",
-                 metric_name=metric_name,
-                 metric_value=value,
-                 metric_unit=unit,
-                 metric_type="performance",
-                 **kwargs)
+        self.info(
+            f"Performance metric: {metric_name}",
+            metric_name=metric_name,
+            metric_value=value,
+            metric_unit=unit,
+            metric_type="performance",
+            **kwargs,
+        )
 
     def log_system_check(self, check_name: str, passed: bool, details: str = "", **kwargs):
         """Log system check result"""
-        self.info(f"System check: {check_name}",
-                 check_name=check_name,
-                 check_passed=passed,
-                 check_details=details,
-                 check_type="system_validation",
-                 **kwargs)
+        self.info(
+            f"System check: {check_name}",
+            check_name=check_name,
+            check_passed=passed,
+            check_details=details,
+            check_type="system_validation",
+            **kwargs,
+        )
 
     def log_error_with_context(self, error: Exception, context: Dict[str, Any]):
         """Log error with full context"""
-        self.error(f"Error occurred: {str(error)}",
-                  error_type=type(error).__name__,
-                  error_message=str(error),
-                  context=context,
-                  log_type="error_with_context")
+        self.error(
+            f"Error occurred: {str(error)}",
+            error_type=type(error).__name__,
+            error_message=str(error),
+            context=context,
+            log_type="error_with_context",
+        )
+
 
 def get_unified_logger(name: str) -> UnifiedStructuredLogger:
     """Get or create unified structured logger instance"""
@@ -161,10 +189,12 @@ def get_unified_logger(name: str) -> UnifiedStructuredLogger:
             UnifiedStructuredLogger._instances[name] = UnifiedStructuredLogger(name)
         return UnifiedStructuredLogger._instances[name]
 
+
 # Alias for compatibility
 def get_logger(name: str) -> UnifiedStructuredLogger:
     """Compatibility alias for get_unified_logger"""
     return get_unified_logger(name)
+
 
 # Configure root logger to prevent interference
 def configure_root_logger():
@@ -182,9 +212,10 @@ def configure_root_logger():
     # Add single handler for critical issues only
     handler = logging.StreamHandler(sys.stderr)
     handler.setLevel(logging.ERROR)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     root_logger.addHandler(handler)
+
 
 # Auto-configure on import
 configure_root_logger()

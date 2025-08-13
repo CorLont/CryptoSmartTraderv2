@@ -28,6 +28,7 @@ try:
     from sklearn.decomposition import PCA
     from sklearn.metrics import mean_squared_error, mean_absolute_error
     import xgboost as xgb
+
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
@@ -38,6 +39,7 @@ try:
     import torch
     import torch.nn as nn
     from torch.utils.data import DataLoader, TensorDataset
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
@@ -45,6 +47,7 @@ except ImportError:
 # SHAP for explainability
 try:
     import shap
+
     HAS_SHAP = True
 except ImportError:
     HAS_SHAP = False
@@ -52,6 +55,7 @@ except ImportError:
 # TextBlob for basic sentiment
 try:
     from textblob import TextBlob
+
     HAS_TEXTBLOB = True
 except ImportError:
     HAS_TEXTBLOB = False
@@ -59,9 +63,11 @@ except ImportError:
 # OpenAI for advanced analysis
 try:
     import openai
+
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
+
 
 @dataclass
 class MLDifferentiatorConfig:
@@ -101,9 +107,16 @@ class MLDifferentiatorConfig:
     def __post_init__(self):
         if self.feature_sources is None:
             self.feature_sources = [
-                "price", "volume", "sentiment", "whale",
-                "news", "orderbook", "social", "onchain"
+                "price",
+                "volume",
+                "sentiment",
+                "whale",
+                "news",
+                "orderbook",
+                "social",
+                "onchain",
             ]
+
 
 class DeepTimeSeriesModel:
     """Deep learning models for time series prediction"""
@@ -127,8 +140,7 @@ class DeepTimeSeriesModel:
                 self.num_layers = num_layers
 
                 self.lstm = nn.LSTM(
-                    input_size, hidden_size, num_layers,
-                    batch_first=True, dropout=dropout
+                    input_size, hidden_size, num_layers, batch_first=True, dropout=dropout
                 )
                 self.dropout = nn.Dropout(dropout)
                 self.fc = nn.Linear(hidden_size, 1)
@@ -144,10 +156,7 @@ class DeepTimeSeriesModel:
 
                 return prediction, uncertainty
 
-        return LSTMModel(
-            input_shape[1],
-            self.config.lstm_hidden_size
-        )
+        return LSTMModel(input_shape[1], self.config.lstm_hidden_size)
 
     def _build_xgboost_fallback(self):
         """Fallback to XGBoost when deep learning not available"""
@@ -160,7 +169,7 @@ class DeepTimeSeriesModel:
             learning_rate=0.1,
             subsample=0.8,
             colsample_bytree=0.8,
-            random_state=42
+            random_state=42,
         )
 
     def train(self, X: np.ndarray, y: np.ndarray) -> Dict[str, float]:
@@ -182,10 +191,7 @@ class DeepTimeSeriesModel:
 
     def _train_pytorch_model(self, X: np.ndarray, y: np.ndarray) -> Dict[str, float]:
         """Train PyTorch LSTM model"""
-        dataset = TensorDataset(
-            torch.FloatTensor(X),
-            torch.FloatTensor(y.reshape(-1, 1))
-        )
+        dataset = TensorDataset(torch.FloatTensor(X), torch.FloatTensor(y.reshape(-1, 1)))
         dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
         optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
@@ -256,6 +262,7 @@ class DeepTimeSeriesModel:
             logging.error(f"Prediction failed: {e}")
             return np.zeros(X.shape[0]), np.ones(X.shape[0])
 
+
 class MultiModalFeatureFusion:
     """Advanced feature fusion from multiple data sources"""
 
@@ -272,8 +279,7 @@ class MultiModalFeatureFusion:
         # Ensure all features have same length
         min_length = min(len(features) for features in feature_dict.values())
         aligned_features = {
-            source: features[:min_length]
-            for source, features in feature_dict.items()
+            source: features[:min_length] for source, features in feature_dict.items()
         }
 
         if self.config.attention_mechanism:
@@ -338,6 +344,7 @@ class MultiModalFeatureFusion:
 
         return np.concatenate(feature_arrays, axis=1)
 
+
 class ConfidenceFilter:
     """Filter predictions based on confidence/uncertainty"""
 
@@ -346,10 +353,7 @@ class ConfidenceFilter:
         self.threshold = config.confidence_threshold
 
     def filter_high_confidence(
-        self,
-        predictions: np.ndarray,
-        uncertainties: np.ndarray,
-        symbols: List[str]
+        self, predictions: np.ndarray, uncertainties: np.ndarray, symbols: List[str]
     ) -> Tuple[np.ndarray, np.ndarray, List[str]]:
         """Filter to only high-confidence predictions"""
 
@@ -365,6 +369,7 @@ class ConfidenceFilter:
 
         return filtered_predictions, filtered_confidences, filtered_symbols
 
+
 class SelfLearningLoop:
     """Continuous learning from prediction results"""
 
@@ -375,44 +380,43 @@ class SelfLearningLoop:
         self.last_retrain = datetime.now()
 
     def record_prediction(
-        self,
-        symbol: str,
-        prediction: float,
-        confidence: float,
-        timestamp: datetime
+        self, symbol: str, prediction: float, confidence: float, timestamp: datetime
     ):
         """Record a prediction for later evaluation"""
-        self.prediction_history.append({
-            'symbol': symbol,
-            'prediction': prediction,
-            'confidence': confidence,
-            'timestamp': timestamp,
-            'actual': None  # To be filled when actual data available
-        })
+        self.prediction_history.append(
+            {
+                "symbol": symbol,
+                "prediction": prediction,
+                "confidence": confidence,
+                "timestamp": timestamp,
+                "actual": None,  # To be filled when actual data available
+            }
+        )
 
     def update_actual_results(self, symbol: str, actual_price: float, timestamp: datetime):
         """Update prediction history with actual results"""
         # Find predictions for this symbol within reasonable time window
         for record in self.prediction_history:
-            if (record['symbol'] == symbol and
-                record['actual'] is None and
-                abs((record['timestamp'] - timestamp).total_seconds()) < 3600):  # 1 hour window
-                record['actual'] = actual_price
+            if (
+                record["symbol"] == symbol
+                and record["actual"] is None
+                and abs((record["timestamp"] - timestamp).total_seconds()) < 3600
+            ):  # 1 hour window
+                record["actual"] = actual_price
                 break
 
     def evaluate_performance(self) -> Dict[str, float]:
         """Evaluate model performance based on historical predictions"""
         completed_predictions = [
-            record for record in self.prediction_history
-            if record['actual'] is not None
+            record for record in self.prediction_history if record["actual"] is not None
         ]
 
         if len(completed_predictions) < 10:
             return {"insufficient_data": True}
 
-        predictions = np.array([r['prediction'] for r in completed_predictions])
-        actuals = np.array([r['actual'] for r in completed_predictions])
-        confidences = np.array([r['confidence'] for r in completed_predictions])
+        predictions = np.array([r["prediction"] for r in completed_predictions])
+        actuals = np.array([r["actual"] for r in completed_predictions])
+        confidences = np.array([r["confidence"] for r in completed_predictions])
 
         # Calculate metrics
         if HAS_SKLEARN:
@@ -441,7 +445,7 @@ class SelfLearningLoop:
             "mae": mae,
             "directional_accuracy": directional_accuracy,
             "high_confidence_accuracy": high_conf_accuracy,
-            "total_predictions": len(completed_predictions)
+            "total_predictions": len(completed_predictions),
         }
 
         self.performance_metrics = metrics
@@ -456,11 +460,12 @@ class SelfLearningLoop:
 
         # Performance-based retraining
         if self.performance_metrics:
-            accuracy = self.performance_metrics.get('directional_accuracy', 1.0)
+            accuracy = self.performance_metrics.get("directional_accuracy", 1.0)
             if accuracy < (1.0 - self.config.concept_drift_threshold):
                 return True
 
         return False
+
 
 class ExplainabilityEngine:
     """Provide explanations for ML predictions using SHAP"""
@@ -479,13 +484,13 @@ class ExplainabilityEngine:
 
         try:
             # Use TreeExplainer for XGBoost models
-            if hasattr(model, 'predict'):
+            if hasattr(model, "predict"):
                 self.explainer = shap.Explainer(model)
             else:
                 # For custom models, use sampling
                 self.explainer = shap.KernelExplainer(
-                    model.predict if hasattr(model, 'predict') else lambda x: x,
-                    X_train[:100]  # Sample for efficiency
+                    model.predict if hasattr(model, "predict") else lambda x: x,
+                    X_train[:100],  # Sample for efficiency
                 )
 
             self.feature_names = feature_names
@@ -494,12 +499,7 @@ class ExplainabilityEngine:
             logging.error(f"Failed to setup SHAP explainer: {e}")
             self.explainer = None
 
-    def explain_prediction(
-        self,
-        X: np.ndarray,
-        prediction: float,
-        symbol: str
-    ) -> Dict[str, Any]:
+    def explain_prediction(self, X: np.ndarray, prediction: float, symbol: str) -> Dict[str, Any]:
         """Explain why a specific prediction was made"""
 
         if self.explainer and HAS_SHAP:
@@ -517,23 +517,25 @@ class ExplainabilityEngine:
 
             # Get top contributing features
             feature_importance = np.abs(shap_values.flatten())
-            top_indices = np.argsort(feature_importance)[-self.config.explanation_features:]
+            top_indices = np.argsort(feature_importance)[-self.config.explanation_features :]
 
             explanations = []
             for idx in reversed(top_indices):
                 if idx < len(self.feature_names):
-                    explanations.append({
-                        'feature': self.feature_names[idx],
-                        'contribution': float(shap_values.flatten()[idx]),
-                        'importance': float(feature_importance[idx])
-                    })
+                    explanations.append(
+                        {
+                            "feature": self.feature_names[idx],
+                            "contribution": float(shap_values.flatten()[idx]),
+                            "importance": float(feature_importance[idx]),
+                        }
+                    )
 
             return {
-                'symbol': symbol,
-                'prediction': prediction,
-                'explanation_method': 'SHAP',
-                'top_features': explanations,
-                'total_features': len(self.feature_names)
+                "symbol": symbol,
+                "prediction": prediction,
+                "explanation_method": "SHAP",
+                "top_features": explanations,
+                "total_features": len(self.feature_names),
             }
 
         except Exception as e:
@@ -544,32 +546,35 @@ class ExplainabilityEngine:
         """Simple feature importance explanation"""
         if not self.feature_names:
             return {
-                'symbol': symbol,
-                'prediction': prediction,
-                'explanation': 'Feature names not available',
-                'method': 'simple'
+                "symbol": symbol,
+                "prediction": prediction,
+                "explanation": "Feature names not available",
+                "method": "simple",
             }
 
         # Simple heuristic: features with highest absolute values
         feature_values = X.flatten()
         importance = np.abs(feature_values)
-        top_indices = np.argsort(importance)[-self.config.explanation_features:]
+        top_indices = np.argsort(importance)[-self.config.explanation_features :]
 
         explanations = []
         for idx in reversed(top_indices):
             if idx < len(self.feature_names):
-                explanations.append({
-                    'feature': self.feature_names[idx],
-                    'value': float(feature_values[idx]),
-                    'relative_importance': float(importance[idx] / np.max(importance))
-                })
+                explanations.append(
+                    {
+                        "feature": self.feature_names[idx],
+                        "value": float(feature_values[idx]),
+                        "relative_importance": float(importance[idx] / np.max(importance)),
+                    }
+                )
 
         return {
-            'symbol': symbol,
-            'prediction': prediction,
-            'explanation_method': 'simple_importance',
-            'top_features': explanations
+            "symbol": symbol,
+            "prediction": prediction,
+            "explanation_method": "simple_importance",
+            "top_features": explanations,
         }
+
 
 class AnomalyDetector:
     """Detect market anomalies and regime changes"""
@@ -582,8 +587,7 @@ class AnomalyDetector:
 
         if HAS_SKLEARN:
             self.isolation_forest = IsolationForest(
-                contamination=config.isolation_forest_contamination,
-                random_state=42
+                contamination=config.isolation_forest_contamination, random_state=42
             )
             self.dbscan = DBSCAN(eps=0.5, min_samples=5)
 
@@ -611,7 +615,9 @@ class AnomalyDetector:
 
         return anomaly_scores, is_anomaly.astype(int)
 
-    def detect_regime_change(self, recent_data: np.ndarray, window_size: int = 50) -> Dict[str, Any]:
+    def detect_regime_change(
+        self, recent_data: np.ndarray, window_size: int = 50
+    ) -> Dict[str, Any]:
         """Detect if market regime has changed"""
         if not HAS_SKLEARN or self.baseline_data is None or len(recent_data) < window_size:
             return {"regime_change": False, "confidence": 0.0}
@@ -640,12 +646,13 @@ class AnomalyDetector:
                 "regime_score": float(regime_score),
                 "confidence": min(regime_score / threshold, 1.0) if threshold > 0 else 0.0,
                 "mean_distance": float(mean_distance),
-                "std_distance": float(std_distance)
+                "std_distance": float(std_distance),
             }
 
         except Exception as e:
             logging.error(f"Regime change detection failed: {e}")
             return {"regime_change": False, "confidence": 0.0, "error": str(e)}
+
 
 class MLDifferentiatorsCoordinator:
     """Main coordinator for all ML/AI differentiators"""
@@ -666,10 +673,7 @@ class MLDifferentiatorsCoordinator:
         logging.info("ML Differentiators Coordinator initialized with all 8 capabilities")
 
     def train_system(
-        self,
-        multi_modal_features: Dict[str, np.ndarray],
-        targets: np.ndarray,
-        symbols: List[str]
+        self, multi_modal_features: Dict[str, np.ndarray], targets: np.ndarray, symbols: List[str]
     ) -> Dict[str, Any]:
         """Train the entire ML differentiator system"""
 
@@ -689,7 +693,7 @@ class MLDifferentiatorsCoordinator:
                     y_sequences = []
 
                     for i in range(seq_len, fused_features.shape[0]):
-                        X_sequences.append(fused_features[i-seq_len:i])
+                        X_sequences.append(fused_features[i - seq_len : i])
                         y_sequences.append(targets[i])
 
                     if X_sequences:
@@ -707,11 +711,9 @@ class MLDifferentiatorsCoordinator:
 
                 # 4. Setup explainability
                 feature_names = self._generate_feature_names(multi_modal_features)
-                if hasattr(self.deep_model, 'model') and self.deep_model.model:
+                if hasattr(self.deep_model, "model") and self.deep_model.model:
                     self.explainer.setup_explainer(
-                        self.deep_model.model,
-                        X_train.reshape(X_train.shape[0], -1),
-                        feature_names
+                        self.deep_model.model, X_train.reshape(X_train.shape[0], -1), feature_names
                     )
 
                 # 5. Fit anomaly detector
@@ -721,8 +723,8 @@ class MLDifferentiatorsCoordinator:
                     "success": True,
                     "training_results": training_results,
                     "features_used": len(feature_names),
-                    "sequences_created": len(X_sequences) if 'X_sequences' in locals() else 0,
-                    "anomaly_baseline_samples": X_train.shape[0]
+                    "sequences_created": len(X_sequences) if "X_sequences" in locals() else 0,
+                    "anomaly_baseline_samples": X_train.shape[0],
                 }
 
             except Exception as e:
@@ -730,9 +732,7 @@ class MLDifferentiatorsCoordinator:
                 return {"error": str(e)}
 
     def predict_with_differentiators(
-        self,
-        multi_modal_features: Dict[str, np.ndarray],
-        symbols: List[str]
+        self, multi_modal_features: Dict[str, np.ndarray], symbols: List[str]
     ) -> Dict[str, Any]:
         """Make predictions using all differentiators"""
 
@@ -744,9 +744,14 @@ class MLDifferentiatorsCoordinator:
                 return {"error": "No features available for prediction"}
 
             # 2. Prepare for prediction
-            if len(fused_features.shape) == 2 and fused_features.shape[0] >= self.config.sequence_length:
+            if (
+                len(fused_features.shape) == 2
+                and fused_features.shape[0] >= self.config.sequence_length
+            ):
                 # Use last sequence for prediction
-                X_pred = fused_features[-self.config.sequence_length:].reshape(1, self.config.sequence_length, -1)
+                X_pred = fused_features[-self.config.sequence_length :].reshape(
+                    1, self.config.sequence_length, -1
+                )
             else:
                 X_pred = fused_features.reshape(1, -1)
 
@@ -754,8 +759,10 @@ class MLDifferentiatorsCoordinator:
             predictions, uncertainties = self.deep_model.predict_with_uncertainty(X_pred)
 
             # 4. Confidence filtering
-            filtered_preds, confidences, filtered_symbols = self.confidence_filter.filter_high_confidence(
-                predictions, uncertainties, symbols[:len(predictions)]
+            filtered_preds, confidences, filtered_symbols = (
+                self.confidence_filter.filter_high_confidence(
+                    predictions, uncertainties, symbols[: len(predictions)]
+                )
             )
 
             # 5. Anomaly detection
@@ -764,7 +771,9 @@ class MLDifferentiatorsCoordinator:
 
             # 6. Generate explanations for high-confidence predictions
             explanations = []
-            for i, (pred, conf, symbol) in enumerate(zip(filtered_preds, confidences, filtered_symbols)):
+            for i, (pred, conf, symbol) in enumerate(
+                zip(filtered_preds, confidences, filtered_symbols)
+            ):
                 if i < len(X_flat):
                     explanation = self.explainer.explain_prediction(X_flat[i], pred, symbol)
                     explanations.append(explanation)
@@ -779,26 +788,23 @@ class MLDifferentiatorsCoordinator:
                 "high_confidence_predictions": {
                     "symbols": filtered_symbols,
                     "predictions": filtered_preds.tolist(),
-                    "confidences": confidences.tolist()
+                    "confidences": confidences.tolist(),
                 },
                 "anomaly_detection": {
                     "scores": anomaly_scores.tolist(),
-                    "is_anomaly": is_anomaly.tolist()
+                    "is_anomaly": is_anomaly.tolist(),
                 },
                 "explanations": explanations,
                 "attention_weights": self.feature_fusion.attention_weights,
                 "total_filtered": len(filtered_symbols),
-                "original_count": len(symbols)
+                "original_count": len(symbols),
             }
 
         except Exception as e:
             logging.error(f"ML differentiators prediction failed: {e}")
             return {"error": str(e)}
 
-    def update_and_evaluate(
-        self,
-        symbol_results: Dict[str, float]
-    ) -> Dict[str, Any]:
+    def update_and_evaluate(self, symbol_results: Dict[str, float]) -> Dict[str, Any]:
         """Update system with actual results and evaluate performance"""
 
         timestamp = datetime.now()
@@ -816,7 +822,7 @@ class MLDifferentiatorsCoordinator:
         return {
             "performance_metrics": performance,
             "needs_retraining": needs_retrain,
-            "update_timestamp": timestamp.isoformat()
+            "update_timestamp": timestamp.isoformat(),
         }
 
     def get_system_status(self) -> Dict[str, Any]:
@@ -825,37 +831,37 @@ class MLDifferentiatorsCoordinator:
         return {
             "deep_learning": {
                 "model_trained": self.deep_model.is_trained,
-                "model_type": "LSTM" if HAS_TORCH else "XGBoost"
+                "model_type": "LSTM" if HAS_TORCH else "XGBoost",
             },
             "feature_fusion": {
                 "sources_configured": len(self.config.feature_sources),
                 "attention_enabled": self.config.attention_mechanism,
-                "last_attention_weights": self.feature_fusion.attention_weights
+                "last_attention_weights": self.feature_fusion.attention_weights,
             },
             "confidence_filtering": {
                 "threshold": self.config.confidence_threshold,
-                "method": self.config.uncertainty_method
+                "method": self.config.uncertainty_method,
             },
             "self_learning": {
                 "prediction_history_size": len(self.self_learning.prediction_history),
                 "last_performance": self.self_learning.performance_metrics,
-                "needs_retrain": self.self_learning.needs_retraining()
+                "needs_retrain": self.self_learning.needs_retraining(),
             },
             "explainability": {
                 "shap_available": HAS_SHAP,
-                "explainer_ready": self.explainer.explainer is not None
+                "explainer_ready": self.explainer.explainer is not None,
             },
             "anomaly_detection": {
                 "baseline_fitted": self.anomaly_detector.baseline_data is not None,
-                "contamination_rate": self.config.isolation_forest_contamination
+                "contamination_rate": self.config.isolation_forest_contamination,
             },
             "dependencies": {
                 "pytorch": HAS_TORCH,
                 "sklearn": HAS_SKLEARN,
                 "shap": HAS_SHAP,
                 "textblob": HAS_TEXTBLOB,
-                "openai": HAS_OPENAI
-            }
+                "openai": HAS_OPENAI,
+            },
         }
 
     def _generate_feature_names(self, multi_modal_features: Dict[str, np.ndarray]) -> List[str]:
@@ -871,11 +877,15 @@ class MLDifferentiatorsCoordinator:
 
         return feature_names
 
+
 # Singleton coordinator instance
 _ml_differentiators_coordinator = None
 _coordinator_lock = threading.Lock()
 
-def get_ml_differentiators_coordinator(config: Optional[MLDifferentiatorConfig] = None) -> MLDifferentiatorsCoordinator:
+
+def get_ml_differentiators_coordinator(
+    config: Optional[MLDifferentiatorConfig] = None,
+) -> MLDifferentiatorsCoordinator:
     """Get the singleton ML differentiators coordinator"""
     global _ml_differentiators_coordinator
 
@@ -885,6 +895,7 @@ def get_ml_differentiators_coordinator(config: Optional[MLDifferentiatorConfig] 
 
         return _ml_differentiators_coordinator
 
+
 # Test function
 def test_ml_differentiators():
     """Test the ML differentiators system"""
@@ -892,9 +903,7 @@ def test_ml_differentiators():
 
     # Create test configuration
     config = MLDifferentiatorConfig(
-        confidence_threshold=0.7,
-        enable_feedback_loop=True,
-        enable_shap=True
+        confidence_threshold=0.7, enable_feedback_loop=True, enable_shap=True
     )
 
     # Get coordinator
@@ -905,7 +914,7 @@ def test_ml_differentiators():
     test_features = {
         "price": np.random.randn(100, 5),
         "volume": np.random.randn(100, 3),
-        "sentiment": np.random.randn(100, 2)
+        "sentiment": np.random.randn(100, 2),
     }
     test_targets = np.random.randn(100)
     test_symbols = [f"COIN{i}" for i in range(100)]
@@ -925,6 +934,7 @@ def test_ml_differentiators():
     print(f"System status: {status}")
 
     print("ML/AI Differentiators test completed!")
+
 
 if __name__ == "__main__":
     test_ml_differentiators()

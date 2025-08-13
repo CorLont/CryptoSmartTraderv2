@@ -8,9 +8,4 @@ from .regime_router import RegimeRouter
 from .regime_models import RegimeSpecificModels
 from .transition_smoother import TransitionSmoother
 
-__all__ = [
-    'RegimeDetector',
-    'RegimeRouter',
-    'RegimeSpecificModels',
-    'TransitionSmoother'
-]
+__all__ = ["RegimeDetector", "RegimeRouter", "RegimeSpecificModels", "TransitionSmoother"]

@@ -27,5 +27,5 @@ __all__ = [
     "BlendingConfig",
     "SignalDecayManager",
     "DecayConfig",
-    "DecayFunction"
+    "DecayFunction",
 ]

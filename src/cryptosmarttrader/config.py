@@ -25,12 +25,16 @@ class Settings(BaseSettings):
     DASHBOARD_PORT: int = Field(default=5000, description="Streamlit dashboard port")
     API_PORT: int = Field(default=8001, description="FastAPI service port")
     METRICS_PORT: int = Field(default=8000, description="Prometheus metrics port")
-    DASH_PORT: int = Field(default=5000, description="Poort voor dashboard (alias)")  # PR2 compatibility
+    DASH_PORT: int = Field(
+        default=5000, description="Poort voor dashboard (alias)"
+    )  # PR2 compatibility
 
     # === API Keys (Required for Production) ===
     KRAKEN_API_KEY: Optional[str] = Field(default=None, description="Kraken exchange API key")
     KRAKEN_SECRET: Optional[str] = Field(default=None, description="Kraken exchange secret")
-    OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API key for sentiment analysis")
+    OPENAI_API_KEY: Optional[str] = Field(
+        default=None, description="OpenAI API key for sentiment analysis"
+    )
 
     # === Data & Storage ===
     DATA_DIR: Path = Field(default=Path("data"), description="Data storage directory")
@@ -39,7 +43,9 @@ class Settings(BaseSettings):
     LOGS_DIR: Path = Field(default=Path("logs"), description="Logs directory")
 
     # === Trading Configuration ===
-    CONFIDENCE_THRESHOLD: float = Field(default=0.8, description="Minimum confidence threshold (80%)")
+    CONFIDENCE_THRESHOLD: float = Field(
+        default=0.8, description="Minimum confidence threshold (80%)"
+    )
     MAX_POSITIONS: int = Field(default=10, description="Maximum concurrent positions")
     RISK_LIMIT_PERCENT: float = Field(default=2.0, description="Maximum risk per trade (%)")
 
@@ -65,7 +71,7 @@ class Settings(BaseSettings):
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
         "validate_assignment": True,
-        "extra": "ignore"
+        "extra": "ignore",
     }
 
     # === Validators ===
@@ -126,7 +132,7 @@ class Settings(BaseSettings):
             ("DATA_DIR", self.DATA_DIR),
             ("CACHE_DIR", self.CACHE_DIR),
             ("MODELS_DIR", self.MODELS_DIR),
-            ("LOGS_DIR", self.LOGS_DIR)
+            ("LOGS_DIR", self.LOGS_DIR),
         ]:
             if not dir_path.exists():
                 issues.append(f"{dir_name} does not exist: {dir_path}")
@@ -135,30 +141,28 @@ class Settings(BaseSettings):
 
         # Check port availability
         import socket
+
         for port_name, port in [
             ("DASHBOARD_PORT", self.DASHBOARD_PORT),
             ("API_PORT", self.API_PORT),
-            ("METRICS_PORT", self.METRICS_PORT)
+            ("METRICS_PORT", self.METRICS_PORT),
         ]:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                if sock.connect_ex(('localhost', port)) == 0:
+                if sock.connect_ex(("localhost", port)) == 0:
                     warnings.append(f"{port_name} {port} is already in use")
 
         # Check system resources
         import psutil
+
         memory_gb = psutil.virtual_memory().total / (1024**3)
         if memory_gb < 4:
             warnings.append(f"Low system memory: {memory_gb:.1f}GB (recommended: 8GB+)")
 
-        disk_gb = psutil.disk_usage('.').free / (1024**3)
+        disk_gb = psutil.disk_usage(".").free / (1024**3)
         if disk_gb < 10:
             warnings.append(f"Low disk space: {disk_gb:.1f}GB (recommended: 50GB+)")
 
-        return {
-            "critical_issues": issues,
-            "warnings": warnings,
-            "startup_ready": len(issues) == 0
-        }
+        return {"critical_issues": issues, "warnings": warnings, "startup_ready": len(issues) == 0}
 
     def get_summary(self) -> Dict[str, Any]:
         """Get configuration summary for logging"""
@@ -168,20 +172,20 @@ class Settings(BaseSettings):
             "services": {
                 "dashboard": self.DASHBOARD_PORT,
                 "api": self.API_PORT,
-                "metrics": self.METRICS_PORT
+                "metrics": self.METRICS_PORT,
             },
             "features": {
                 "prometheus": self.ENABLE_PROMETHEUS,
                 "sentiment": self.ENABLE_SENTIMENT,
                 "whale_detection": self.ENABLE_WHALE_DETECTION,
                 "ml_predictions": self.ENABLE_ML_PREDICTIONS,
-                "paper_trading": self.ENABLE_PAPER_TRADING
+                "paper_trading": self.ENABLE_PAPER_TRADING,
             },
             "thresholds": {
                 "confidence": self.CONFIDENCE_THRESHOLD,
                 "risk_limit": self.RISK_LIMIT_PERCENT,
-                "max_positions": self.MAX_POSITIONS
-            }
+                "max_positions": self.MAX_POSITIONS,
+            },
         }
 
 

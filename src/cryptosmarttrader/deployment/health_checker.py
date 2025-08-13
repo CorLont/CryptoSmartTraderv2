@@ -22,8 +22,10 @@ import subprocess
 
 logger = logging.getLogger(__name__)
 
+
 class DependencyType(Enum):
     """Types of dependencies to check"""
+
     API_ENDPOINT = "api_endpoint"
     DATABASE = "database"
     FILE_SYSTEM = "file_system"
@@ -31,16 +33,20 @@ class DependencyType(Enum):
     SYSTEM_RESOURCE = "system_resource"
     NETWORK_PORT = "network_port"
 
+
 class HealthLevel(Enum):
     """Health levels"""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
     CRITICAL = "critical"
 
+
 @dataclass
 class DependencyCheck:
     """Configuration for a dependency health check"""
+
     name: str
     type: DependencyType
     description: str
@@ -65,9 +71,11 @@ class DependencyCheck:
     max_cpu_percent: Optional[float] = None
     max_disk_percent: Optional[float] = None
 
+
 @dataclass
 class HealthCheckResult:
     """Result of a health check"""
+
     dependency_name: str
     status: HealthLevel
     response_time_ms: float
@@ -78,6 +86,7 @@ class HealthCheckResult:
     @property
     def is_healthy(self) -> bool:
         return self.status in [HealthLevel.HEALTHY, HealthLevel.DEGRADED]
+
 
 class HealthChecker:
     """
@@ -100,38 +109,46 @@ class HealthChecker:
         """Setup default system health checks"""
 
         # System resources
-        self.add_dependency_check(DependencyCheck(
-            name="system_memory",
-            type=DependencyType.SYSTEM_RESOURCE,
-            description="System memory usage",
-            critical=True,
-            max_memory_percent=90.0
-        ))
+        self.add_dependency_check(
+            DependencyCheck(
+                name="system_memory",
+                type=DependencyType.SYSTEM_RESOURCE,
+                description="System memory usage",
+                critical=True,
+                max_memory_percent=90.0,
+            )
+        )
 
-        self.add_dependency_check(DependencyCheck(
-            name="system_cpu",
-            type=DependencyType.SYSTEM_RESOURCE,
-            description="System CPU usage",
-            critical=False,
-            max_cpu_percent=80.0
-        ))
+        self.add_dependency_check(
+            DependencyCheck(
+                name="system_cpu",
+                type=DependencyType.SYSTEM_RESOURCE,
+                description="System CPU usage",
+                critical=False,
+                max_cpu_percent=80.0,
+            )
+        )
 
-        self.add_dependency_check(DependencyCheck(
-            name="system_disk",
-            type=DependencyType.SYSTEM_RESOURCE,
-            description="System disk usage",
-            critical=True,
-            max_disk_percent=85.0
-        ))
+        self.add_dependency_check(
+            DependencyCheck(
+                name="system_disk",
+                type=DependencyType.SYSTEM_RESOURCE,
+                description="System disk usage",
+                critical=True,
+                max_disk_percent=85.0,
+            )
+        )
 
         # File system write access
-        self.add_dependency_check(DependencyCheck(
-            name="write_directory",
-            type=DependencyType.FILE_SYSTEM,
-            description="Write directory access",
-            critical=True,
-            path="./data"
-        ))
+        self.add_dependency_check(
+            DependencyCheck(
+                name="write_directory",
+                type=DependencyType.FILE_SYSTEM,
+                description="Write directory access",
+                critical=True,
+                path="./data",
+            )
+        )
 
     def add_dependency_check(self, check: DependencyCheck):
         """Add a dependency check"""
@@ -146,7 +163,7 @@ class HealthChecker:
             description=f"API endpoint: {url}",
             critical=critical,
             url=url,
-            timeout_seconds=timeout
+            timeout_seconds=timeout,
         )
         self.add_dependency_check(check)
 
@@ -158,7 +175,7 @@ class HealthChecker:
             description=f"Network port: {host}:{port}",
             critical=critical,
             host=host,
-            port=port
+            port=port,
         )
         self.add_dependency_check(check)
 
@@ -169,7 +186,7 @@ class HealthChecker:
             type=DependencyType.DATABASE,
             description=f"Database: {name}",
             critical=critical,
-            url=connection_string
+            url=connection_string,
         )
         self.add_dependency_check(check)
 
@@ -181,7 +198,7 @@ class HealthChecker:
             response = requests.get(
                 check.url,
                 timeout=check.timeout_seconds,
-                headers={'User-Agent': 'CryptoSmartTrader-HealthCheck/1.0'}
+                headers={"User-Agent": "CryptoSmartTrader-HealthCheck/1.0"},
             )
 
             response_time = (time.time() - start_time) * 1000
@@ -212,10 +229,10 @@ class HealthChecker:
                 response_time_ms=response_time,
                 message=message,
                 details={
-                    'status_code': response.status_code,
-                    'url': check.url,
-                    'headers': dict(response.headers)
-                }
+                    "status_code": response.status_code,
+                    "url": check.url,
+                    "headers": dict(response.headers),
+                },
             )
 
         except requests.Timeout:
@@ -224,7 +241,7 @@ class HealthChecker:
                 status=HealthLevel.UNHEALTHY,
                 response_time_ms=(time.time() - start_time) * 1000,
                 message=f"API timeout after {check.timeout_seconds}s",
-                details={'url': check.url, 'error': 'timeout'}
+                details={"url": check.url, "error": "timeout"},
             )
         except requests.ConnectionError as e:
             return HealthCheckResult(
@@ -232,7 +249,7 @@ class HealthChecker:
                 status=HealthLevel.CRITICAL,
                 response_time_ms=(time.time() - start_time) * 1000,
                 message=f"API connection failed: {str(e)}",
-                details={'url': check.url, 'error': 'connection_error'}
+                details={"url": check.url, "error": "connection_error"},
             )
         except Exception as e:
             return HealthCheckResult(
@@ -240,7 +257,7 @@ class HealthChecker:
                 status=HealthLevel.CRITICAL,
                 response_time_ms=(time.time() - start_time) * 1000,
                 message=f"API check error: {str(e)}",
-                details={'url': check.url, 'error': str(e)}
+                details={"url": check.url, "error": str(e)},
             )
 
     def check_network_port(self, check: DependencyCheck) -> HealthCheckResult:
@@ -268,7 +285,7 @@ class HealthChecker:
                 status=status,
                 response_time_ms=response_time,
                 message=message,
-                details={'host': check.host, 'port': check.port}
+                details={"host": check.host, "port": check.port},
             )
 
         except Exception as e:
@@ -277,7 +294,7 @@ class HealthChecker:
                 status=HealthLevel.CRITICAL,
                 response_time_ms=(time.time() - start_time) * 1000,
                 message=f"Port check error: {str(e)}",
-                details={'host': check.host, 'port': check.port, 'error': str(e)}
+                details={"host": check.host, "port": check.port, "error": str(e)},
             )
 
     def check_file_system(self, check: DependencyCheck) -> HealthCheckResult:
@@ -290,7 +307,7 @@ class HealthChecker:
                     dependency_name=check.name,
                     status=HealthLevel.CRITICAL,
                     response_time_ms=0,
-                    message="No path specified for file system check"
+                    message="No path specified for file system check",
                 )
 
             path = Path(check.path)
@@ -305,17 +322,17 @@ class HealthChecker:
                         status=HealthLevel.CRITICAL,
                         response_time_ms=(time.time() - start_time) * 1000,
                         message=f"Cannot create directory: {str(e)}",
-                        details={'path': str(path)}
+                        details={"path": str(path)},
                     )
 
             # Test write access
             test_file = path / f".health_check_{int(time.time())}"
             try:
-                with open(test_file, 'w') as f:
+                with open(test_file, "w") as f:
                     f.write("health_check_test")
 
                 # Test read access
-                with open(test_file, 'r') as f:
+                with open(test_file, "r") as f:
                     content = f.read()
 
                 if content != "health_check_test":
@@ -331,7 +348,7 @@ class HealthChecker:
                     status=HealthLevel.HEALTHY,
                     response_time_ms=response_time,
                     message=f"File system accessible ({response_time:.0f}ms)",
-                    details={'path': str(path), 'writable': True}
+                    details={"path": str(path), "writable": True},
                 )
 
             except Exception as e:
@@ -340,7 +357,7 @@ class HealthChecker:
                     status=HealthLevel.CRITICAL,
                     response_time_ms=(time.time() - start_time) * 1000,
                     message=f"File system write test failed: {str(e)}",
-                    details={'path': str(path), 'error': str(e)}
+                    details={"path": str(path), "error": str(e)},
                 )
 
         except Exception as e:
@@ -349,7 +366,7 @@ class HealthChecker:
                 status=HealthLevel.CRITICAL,
                 response_time_ms=(time.time() - start_time) * 1000,
                 message=f"File system check error: {str(e)}",
-                details={'error': str(e)}
+                details={"error": str(e)},
             )
 
     def check_system_resources(self, check: DependencyCheck) -> HealthCheckResult:
@@ -365,8 +382,8 @@ class HealthChecker:
             if check.max_memory_percent:
                 memory = psutil.virtual_memory()
                 memory_percent = memory.percent
-                details['memory_percent'] = memory_percent
-                details['memory_available_gb'] = memory.available / (1024**3)
+                details["memory_percent"] = memory_percent
+                details["memory_available_gb"] = memory.available / (1024**3)
 
                 if memory_percent > check.max_memory_percent:
                     overall_status = HealthLevel.CRITICAL
@@ -380,8 +397,8 @@ class HealthChecker:
             # CPU check
             if check.max_cpu_percent:
                 cpu_percent = psutil.cpu_percent(interval=1)
-                details['cpu_percent'] = cpu_percent
-                details['cpu_count'] = psutil.cpu_count()
+                details["cpu_percent"] = cpu_percent
+                details["cpu_count"] = psutil.cpu_count()
 
                 if cpu_percent > check.max_cpu_percent:
                     overall_status = max(overall_status, HealthLevel.DEGRADED)
@@ -391,10 +408,10 @@ class HealthChecker:
 
             # Disk check
             if check.max_disk_percent:
-                disk = psutil.disk_usage('/')
+                disk = psutil.disk_usage("/")
                 disk_percent = (disk.used / disk.total) * 100
-                details['disk_percent'] = disk_percent
-                details['disk_free_gb'] = disk.free / (1024**3)
+                details["disk_percent"] = disk_percent
+                details["disk_free_gb"] = disk.free / (1024**3)
 
                 if disk_percent > check.max_disk_percent:
                     overall_status = max(overall_status, HealthLevel.CRITICAL)
@@ -412,7 +429,7 @@ class HealthChecker:
                 status=overall_status,
                 response_time_ms=response_time,
                 message="; ".join(messages),
-                details=details
+                details=details,
             )
 
         except Exception as e:
@@ -421,7 +438,7 @@ class HealthChecker:
                 status=HealthLevel.CRITICAL,
                 response_time_ms=(time.time() - start_time) * 1000,
                 message=f"System resource check error: {str(e)}",
-                details={'error': str(e)}
+                details={"error": str(e)},
             )
 
     def check_database(self, check: DependencyCheck) -> HealthCheckResult:
@@ -432,9 +449,9 @@ class HealthChecker:
             # This is a simplified database check
             # In practice, you'd use specific database connectors
 
-            if 'postgresql' in check.url.lower():
+            if "postgresql" in check.url.lower():
                 return self._check_postgresql(check, start_time)
-            elif 'mysql' in check.url.lower():
+            elif "mysql" in check.url.lower():
                 return self._check_mysql(check, start_time)
             else:
                 # Generic database check via command
@@ -446,7 +463,7 @@ class HealthChecker:
                 status=HealthLevel.CRITICAL,
                 response_time_ms=(time.time() - start_time) * 1000,
                 message=f"Database check error: {str(e)}",
-                details={'error': str(e)}
+                details={"error": str(e)},
             )
 
     def _check_postgresql(self, check: DependencyCheck, start_time: float) -> HealthCheckResult:
@@ -454,10 +471,7 @@ class HealthChecker:
         try:
             import psycopg2
 
-            conn = psycopg2.connect(
-                check.url,
-                connect_timeout=int(check.timeout_seconds)
-            )
+            conn = psycopg2.connect(check.url, connect_timeout=int(check.timeout_seconds))
 
             cursor = conn.cursor()
             cursor.execute("SELECT 1")
@@ -473,14 +487,14 @@ class HealthChecker:
                     status=HealthLevel.HEALTHY,
                     response_time_ms=response_time,
                     message=f"PostgreSQL healthy ({response_time:.0f}ms)",
-                    details={'database_type': 'postgresql'}
+                    details={"database_type": "postgresql"},
                 )
             else:
                 return HealthCheckResult(
                     dependency_name=check.name,
                     status=HealthLevel.UNHEALTHY,
                     response_time_ms=response_time,
-                    message="PostgreSQL query failed"
+                    message="PostgreSQL query failed",
                 )
 
         except ImportError:
@@ -488,17 +502,19 @@ class HealthChecker:
                 dependency_name=check.name,
                 status=HealthLevel.CRITICAL,
                 response_time_ms=(time.time() - start_time) * 1000,
-                message="psycopg2 not available for PostgreSQL check"
+                message="psycopg2 not available for PostgreSQL check",
             )
         except Exception as e:
             return HealthCheckResult(
                 dependency_name=check.name,
                 status=HealthLevel.UNHEALTHY,
                 response_time_ms=(time.time() - start_time) * 1000,
-                message=f"PostgreSQL connection failed: {str(e)}"
+                message=f"PostgreSQL connection failed: {str(e)}",
             )
 
-    def _check_database_generic(self, check: DependencyCheck, start_time: float) -> HealthCheckResult:
+    def _check_database_generic(
+        self, check: DependencyCheck, start_time: float
+    ) -> HealthCheckResult:
         """Generic database check using command"""
         try:
             if check.command:
@@ -506,7 +522,7 @@ class HealthChecker:
                     check.command.split(),
                     timeout=check.timeout_seconds,
                     capture_output=True,
-                    text=True
+                    text=True,
                 )
 
                 response_time = (time.time() - start_time) * 1000
@@ -516,21 +532,21 @@ class HealthChecker:
                         dependency_name=check.name,
                         status=HealthLevel.HEALTHY,
                         response_time_ms=response_time,
-                        message=f"Database command successful ({response_time:.0f}ms)"
+                        message=f"Database command successful ({response_time:.0f}ms)",
                     )
                 else:
                     return HealthCheckResult(
                         dependency_name=check.name,
                         status=HealthLevel.UNHEALTHY,
                         response_time_ms=response_time,
-                        message=f"Database command failed: {result.stderr}"
+                        message=f"Database command failed: {result.stderr}",
                     )
             else:
                 return HealthCheckResult(
                     dependency_name=check.name,
                     status=HealthLevel.CRITICAL,
                     response_time_ms=(time.time() - start_time) * 1000,
-                    message="No database check command specified"
+                    message="No database check command specified",
                 )
 
         except Exception as e:
@@ -538,7 +554,7 @@ class HealthChecker:
                 dependency_name=check.name,
                 status=HealthLevel.CRITICAL,
                 response_time_ms=(time.time() - start_time) * 1000,
-                message=f"Database command error: {str(e)}"
+                message=f"Database command error: {str(e)}",
             )
 
     def check_dependency(self, name: str, use_cache: bool = True) -> Optional[HealthCheckResult]:
@@ -572,7 +588,7 @@ class HealthChecker:
                 dependency_name=name,
                 status=HealthLevel.CRITICAL,
                 response_time_ms=0,
-                message=f"Unknown dependency type: {check.type}"
+                message=f"Unknown dependency type: {check.type}",
             )
 
         # Cache and store result
@@ -585,7 +601,9 @@ class HealthChecker:
 
         return result
 
-    def check_all_dependencies(self, include_non_critical: bool = True) -> Dict[str, HealthCheckResult]:
+    def check_all_dependencies(
+        self, include_non_critical: bool = True
+    ) -> Dict[str, HealthCheckResult]:
         """Check all dependencies"""
         results = {}
 
@@ -609,7 +627,8 @@ class HealthChecker:
 
         # Check critical dependencies first
         critical_unhealthy = any(
-            not result.is_healthy for name, result in results.items()
+            not result.is_healthy
+            for name, result in results.items()
             if self.dependencies[name].critical
         )
 
@@ -629,36 +648,36 @@ class HealthChecker:
         overall_health = self.get_overall_health()
 
         report = {
-            'overall_status': overall_health.value,
-            'timestamp': datetime.now().isoformat(),
-            'dependencies': {},
-            'summary': {
-                'total_checks': len(results),
-                'healthy': 0,
-                'degraded': 0,
-                'unhealthy': 0,
-                'critical': 0
-            }
+            "overall_status": overall_health.value,
+            "timestamp": datetime.now().isoformat(),
+            "dependencies": {},
+            "summary": {
+                "total_checks": len(results),
+                "healthy": 0,
+                "degraded": 0,
+                "unhealthy": 0,
+                "critical": 0,
+            },
         }
 
         for name, result in results.items():
-            report['dependencies'][name] = {
-                'status': result.status.value,
-                'response_time_ms': result.response_time_ms,
-                'message': result.message,
-                'critical': self.dependencies[name].critical,
-                'details': result.details
+            report["dependencies"][name] = {
+                "status": result.status.value,
+                "response_time_ms": result.response_time_ms,
+                "message": result.message,
+                "critical": self.dependencies[name].critical,
+                "details": result.details,
             }
 
             # Update summary
             if result.status == HealthLevel.HEALTHY:
-                report['summary']['healthy'] += 1
+                report["summary"]["healthy"] += 1
             elif result.status == HealthLevel.DEGRADED:
-                report['summary']['degraded'] += 1
+                report["summary"]["degraded"] += 1
             elif result.status == HealthLevel.UNHEALTHY:
-                report['summary']['unhealthy'] += 1
+                report["summary"]["unhealthy"] += 1
             else:
-                report['summary']['critical'] += 1
+                report["summary"]["critical"] += 1
 
         return report
 
@@ -669,12 +688,12 @@ class HealthChecker:
         # RPO: Maximum tolerable data loss
 
         return {
-            'rto_target_seconds': 30,  # Target: 0-to-healthy < 30s
-            'rpo_target_seconds': 60,  # Target: < 1 minute data loss
-            'current_uptime_seconds': self._get_current_uptime(),
-            'last_recovery_time_seconds': self._get_last_recovery_time(),
-            'backup_frequency_seconds': 300,  # 5 minutes
-            'checkpoint_frequency_seconds': 60  # 1 minute
+            "rto_target_seconds": 30,  # Target: 0-to-healthy < 30s
+            "rpo_target_seconds": 60,  # Target: < 1 minute data loss
+            "current_uptime_seconds": self._get_current_uptime(),
+            "last_recovery_time_seconds": self._get_last_recovery_time(),
+            "backup_frequency_seconds": 300,  # 5 minutes
+            "checkpoint_frequency_seconds": 60,  # 1 minute
         }
 
     def _get_current_uptime(self) -> float:

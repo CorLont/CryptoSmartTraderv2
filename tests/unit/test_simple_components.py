@@ -23,14 +23,14 @@ class TestRiskGuard:
         """Test RiskGuard can be created with defaults"""
         risk_guard = RiskGuard()
         assert risk_guard is not None
-        assert hasattr(risk_guard, 'limits')
-        
+        assert hasattr(risk_guard, "limits")
+
     def test_risk_levels_enum(self):
         """Test RiskLevel enum values"""
         assert RiskLevel.NORMAL.value == "normal"
         assert RiskLevel.EMERGENCY.value == "emergency"
         assert RiskLevel.SHUTDOWN.value == "shutdown"
-        
+
     def test_risk_limits_creation(self):
         """Test RiskLimits with default values"""
         limits = RiskLimits()
@@ -46,12 +46,12 @@ class TestExecutionPolicy:
         """Test ExecutionPolicy can be created"""
         policy = ExecutionPolicy()
         assert policy is not None
-        
+
     def test_execution_policy_has_methods(self):
         """Test ExecutionPolicy has required methods"""
         policy = ExecutionPolicy()
-        assert hasattr(policy, 'check_order_validity')
-        assert hasattr(policy, 'generate_client_order_id')
+        assert hasattr(policy, "check_order_validity")
+        assert hasattr(policy, "generate_client_order_id")
 
 
 class TestUnifiedMetrics:
@@ -62,29 +62,29 @@ class TestUnifiedMetrics:
         metrics = UnifiedMetrics("test_service")
         assert metrics is not None
         assert metrics.service_name == "test_service"
-        
+
     def test_metrics_summary(self):
         """Test metrics summary generation"""
         metrics = UnifiedMetrics("test")
         summary = metrics.get_metrics_summary()
-        
-        assert 'service_name' in summary
-        assert 'alert_rules_count' in summary
-        assert summary['service_name'] == "test"
-        
+
+        assert "service_name" in summary
+        assert "alert_rules_count" in summary
+        assert summary["service_name"] == "test"
+
     def test_trading_metrics(self):
         """Test basic trading metrics recording"""
         metrics = UnifiedMetrics("test")
-        
+
         # Should not raise exceptions
         metrics.record_order("filled", "BTC/USD", "buy")
         metrics.record_slippage("BTC/USD", "market", 25.0)
         metrics.update_drawdown(3.5)
         metrics.record_signal("test_agent", 0.85)
-        
+
         # Basic validation
         summary = metrics.get_metrics_summary()
-        assert summary['service_name'] == "test"
+        assert summary["service_name"] == "test"
 
 
 class TestPackageImports:
@@ -94,14 +94,15 @@ class TestPackageImports:
         """Test core package imports work"""
         from src.cryptosmarttrader import RiskGuard
         from src.cryptosmarttrader import ExecutionPolicy
-        
+
         assert RiskGuard is not None
         assert ExecutionPolicy is not None
-        
+
     def test_no_experimental_imports(self):
         """Test that experimental modules don't interfere"""
         # Should be able to import without issues
         from src.cryptosmarttrader.core.structured_logger import get_logger
+
         logger = get_logger("test")
         assert logger is not None
 
@@ -109,20 +110,20 @@ class TestPackageImports:
 # Simple integration test
 def test_basic_system_integration():
     """Test basic system components work together"""
-    
+
     # Create components
     risk_guard = RiskGuard()
     execution_policy = ExecutionPolicy()
     metrics = UnifiedMetrics("integration_test")
-    
+
     # Basic interactions
     metrics.record_order("pending", "BTC/USD", "buy")
     metrics.update_drawdown(2.5)
-    
+
     # Should complete without errors
     summary = metrics.get_metrics_summary()
-    assert summary['service_name'] == "integration_test"
-    assert summary['alert_rules_count'] > 0
+    assert summary["service_name"] == "integration_test"
+    assert summary["alert_rules_count"] > 0
 
 
 if __name__ == "__main__":

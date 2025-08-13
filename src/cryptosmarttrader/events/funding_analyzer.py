@@ -15,26 +15,30 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class FundingDirection(Enum):
     """Funding rate direction"""
-    POSITIVE = "positive"     # Longs pay shorts
-    NEGATIVE = "negative"     # Shorts pay longs
-    NEUTRAL = "neutral"       # Near zero funding
+
+    POSITIVE = "positive"  # Longs pay shorts
+    NEGATIVE = "negative"  # Shorts pay longs
+    NEUTRAL = "neutral"  # Near zero funding
 
 
 class FundingRegime(Enum):
     """Funding rate regime classification"""
-    EXTREME_LONG = "extreme_long"       # Very high positive funding
-    HIGH_LONG = "high_long"             # High positive funding
-    NORMAL_LONG = "normal_long"         # Normal positive funding
-    NEUTRAL = "neutral"                 # Balanced funding
-    NORMAL_SHORT = "normal_short"       # Normal negative funding
-    HIGH_SHORT = "high_short"           # High negative funding
-    EXTREME_SHORT = "extreme_short"     # Very high negative funding
+
+    EXTREME_LONG = "extreme_long"  # Very high positive funding
+    HIGH_LONG = "high_long"  # High positive funding
+    NORMAL_LONG = "normal_long"  # Normal positive funding
+    NEUTRAL = "neutral"  # Balanced funding
+    NORMAL_SHORT = "normal_short"  # Normal negative funding
+    HIGH_SHORT = "high_short"  # High negative funding
+    EXTREME_SHORT = "extreme_short"  # Very high negative funding
 
 
 class FlipType(Enum):
     """Types of funding flips"""
+
     POSITIVE_TO_NEGATIVE = "pos_to_neg"
     NEGATIVE_TO_POSITIVE = "neg_to_pos"
     EXTREME_TO_NORMAL = "extreme_to_normal"
@@ -44,15 +48,16 @@ class FlipType(Enum):
 @dataclass
 class FundingEvent:
     """Individual funding rate event"""
+
     timestamp: datetime
     pair: str
     exchange: str
 
     # Funding data
-    current_rate: float         # Current funding rate (8hr annualized)
-    previous_rate: float        # Previous funding rate
-    rate_change: float          # Absolute change in funding
-    rate_change_pct: float      # Percentage change
+    current_rate: float  # Current funding rate (8hr annualized)
+    previous_rate: float  # Previous funding rate
+    rate_change: float  # Absolute change in funding
+    rate_change_pct: float  # Percentage change
 
     # Classification
     regime: FundingRegime
@@ -64,7 +69,7 @@ class FundingEvent:
     open_interest: Optional[float] = None
 
     # Derived metrics
-    funding_velocity: float = 0.0    # Rate of change acceleration
+    funding_velocity: float = 0.0  # Rate of change acceleration
     cross_exchange_basis: float = 0.0  # Basis vs other exchanges
 
     @property
@@ -81,6 +86,7 @@ class FundingEvent:
 @dataclass
 class FundingFlip:
     """Funding rate flip event"""
+
     flip_id: str
     timestamp: datetime
     pair: str
@@ -94,12 +100,12 @@ class FundingFlip:
     # Rates
     pre_flip_rate: float
     post_flip_rate: float
-    flip_magnitude: float       # Absolute change
+    flip_magnitude: float  # Absolute change
 
     # Market context
     price_before: float
     price_after: float
-    volume_spike: float         # Volume increase during flip
+    volume_spike: float  # Volume increase during flip
 
     # Timing
     flip_duration_hours: float  # How long the flip took
@@ -123,9 +129,9 @@ class FundingAnalyzer:
         self.flip_history = []
 
         # Configuration
-        self.extreme_funding_threshold = 0.5    # 50% annualized
-        self.high_funding_threshold = 0.2       # 20% annualized
-        self.neutral_threshold = 0.05            # 5% annualized
+        self.extreme_funding_threshold = 0.5  # 50% annualized
+        self.high_funding_threshold = 0.2  # 20% annualized
+        self.neutral_threshold = 0.05  # 5% annualized
 
         # Pattern tracking
         self.regime_transitions = {}
@@ -134,10 +140,9 @@ class FundingAnalyzer:
         # Performance tracking
         self.signal_performance = {}
 
-    def analyze_funding_data(self,
-                           exchange: str,
-                           pair: str,
-                           funding_data: List[Dict[str, Any]]) -> List[FundingEvent]:
+    def analyze_funding_data(
+        self, exchange: str, pair: str, funding_data: List[Dict[str, Any]]
+    ) -> List[FundingEvent]:
         """Analyze funding rate data and detect events"""
         try:
             events = []
@@ -146,19 +151,17 @@ class FundingAnalyzer:
                 return events
 
             # Sort by timestamp
-            funding_data = sorted(funding_data, key=lambda x: x.get('timestamp', datetime.min))
+            funding_data = sorted(funding_data, key=lambda x: x.get("timestamp", datetime.min))
 
             # Process each funding period
             for i, current_data in enumerate(funding_data):
                 if i == 0:
                     continue  # Skip first record (no previous to compare)
 
-                previous_data = funding_data[i-1]
+                previous_data = funding_data[i - 1]
 
                 # Create funding event
-                event = self._create_funding_event(
-                    exchange, pair, current_data, previous_data
-                )
+                event = self._create_funding_event(exchange, pair, current_data, previous_data)
 
                 if event:
                     events.append(event)
@@ -170,7 +173,9 @@ class FundingAnalyzer:
                     flip = self._detect_funding_flip(exchange, pair, event)
                     if flip:
                         self.flip_history.append(flip)
-                        logger.info(f"Funding flip detected: {flip.flip_type.value} for {pair} on {exchange}")
+                        logger.info(
+                            f"Funding flip detected: {flip.flip_type.value} for {pair} on {exchange}"
+                        )
 
             return events
 
@@ -178,10 +183,9 @@ class FundingAnalyzer:
             logger.error(f"Funding analysis failed for {exchange} {pair}: {e}")
             return []
 
-    def get_current_funding_signals(self,
-                                   exchange: str,
-                                   pair: str,
-                                   current_price: float) -> Dict[str, Any]:
+    def get_current_funding_signals(
+        self, exchange: str, pair: str, current_price: float
+    ) -> Dict[str, Any]:
         """Get current funding-based trading signals"""
         try:
             # Get recent funding events
@@ -201,10 +205,9 @@ class FundingAnalyzer:
             logger.error(f"Funding signal generation failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def detect_funding_anomalies(self,
-                                exchange: str,
-                                pair: str,
-                                lookback_hours: int = 168) -> List[Dict[str, Any]]:
+    def detect_funding_anomalies(
+        self, exchange: str, pair: str, lookback_hours: int = 168
+    ) -> List[Dict[str, Any]]:
         """Detect funding rate anomalies and patterns"""
         try:
             events = self._get_recent_events(exchange, pair, hours_back=lookback_hours)
@@ -229,7 +232,7 @@ class FundingAnalyzer:
                         "funding_rate": event.current_rate,
                         "z_score": z_score,
                         "regime": event.regime.value,
-                        "severity": min(1.0, abs(z_score) / 5.0)  # Max severity at 5 sigma
+                        "severity": min(1.0, abs(z_score) / 5.0),  # Max severity at 5 sigma
                     }
                     anomalies.append(anomaly)
 
@@ -243,9 +246,7 @@ class FundingAnalyzer:
             logger.error(f"Funding anomaly detection failed: {e}")
             return []
 
-    def get_cross_exchange_analysis(self,
-                                  pair: str,
-                                  exchanges: List[str]) -> Dict[str, Any]:
+    def get_cross_exchange_analysis(self, pair: str, exchanges: List[str]) -> Dict[str, Any]:
         """Analyze funding rates across exchanges for arbitrage opportunities"""
         try:
             cross_analysis = {
@@ -253,7 +254,7 @@ class FundingAnalyzer:
                 "timestamp": datetime.now(),
                 "exchanges_analyzed": exchanges,
                 "funding_rates": {},
-                "arbitrage_opportunities": []
+                "arbitrage_opportunities": [],
             }
 
             # Get latest funding for each exchange
@@ -265,7 +266,7 @@ class FundingAnalyzer:
                     latest_rates[exchange] = {
                         "rate": latest_event.current_rate,
                         "regime": latest_event.regime.value,
-                        "timestamp": latest_event.timestamp
+                        "timestamp": latest_event.timestamp,
                     }
                     cross_analysis["funding_rates"][exchange] = latest_rates[exchange]
 
@@ -288,7 +289,7 @@ class FundingAnalyzer:
                     "short_exchange": highest_exchange,
                     "rate_spread": rate_spread,
                     "profit_potential_bp": rate_spread * 10000,
-                    "confidence": min(1.0, abs(rate_spread) / 0.5)
+                    "confidence": min(1.0, abs(rate_spread) / 0.5),
                 }
                 cross_analysis["arbitrage_opportunities"].append(opportunity)
 
@@ -299,7 +300,9 @@ class FundingAnalyzer:
                     "mean": np.mean(all_rates),
                     "std": np.std(all_rates),
                     "range": max(all_rates) - min(all_rates),
-                    "coefficient_of_variation": np.std(all_rates) / abs(np.mean(all_rates)) if np.mean(all_rates) != 0 else 0
+                    "coefficient_of_variation": np.std(all_rates) / abs(np.mean(all_rates))
+                    if np.mean(all_rates) != 0
+                    else 0,
                 }
 
             return cross_analysis
@@ -308,10 +311,9 @@ class FundingAnalyzer:
             logger.error(f"Cross-exchange funding analysis failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def get_funding_analytics(self,
-                            exchange: Optional[str] = None,
-                            pair: Optional[str] = None,
-                            days_back: int = 30) -> Dict[str, Any]:
+    def get_funding_analytics(
+        self, exchange: Optional[str] = None, pair: Optional[str] = None, days_back: int = 30
+    ) -> Dict[str, Any]:
         """Get comprehensive funding analytics"""
         try:
             cutoff_time = datetime.now() - timedelta(days=days_back)
@@ -325,7 +327,8 @@ class FundingAnalyzer:
                     if pair and p != pair:
                         continue
                     events = [
-                        event for event in self.funding_history[ex][p]
+                        event
+                        for event in self.funding_history[ex][p]
                         if event.timestamp >= cutoff_time
                     ]
                     all_events.extend(events)
@@ -337,10 +340,11 @@ class FundingAnalyzer:
 
             # Add flip analysis
             recent_flips = [
-                flip for flip in self.flip_history
-                if flip.timestamp >= cutoff_time and
-                   (exchange is None or flip.exchange == exchange) and
-                   (pair is None or flip.pair == pair)
+                flip
+                for flip in self.flip_history
+                if flip.timestamp >= cutoff_time
+                and (exchange is None or flip.exchange == exchange)
+                and (pair is None or flip.pair == pair)
             ]
 
             analytics["flip_analysis"] = self._analyze_funding_flips(recent_flips)
@@ -351,11 +355,9 @@ class FundingAnalyzer:
             logger.error(f"Funding analytics failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _create_funding_event(self,
-                            exchange: str,
-                            pair: str,
-                            current_data: Dict[str, Any],
-                            previous_data: Dict[str, Any]) -> Optional[FundingEvent]:
+    def _create_funding_event(
+        self, exchange: str, pair: str, current_data: Dict[str, Any], previous_data: Dict[str, Any]
+    ) -> Optional[FundingEvent]:
         """Create funding event from data"""
         try:
             current_rate = current_data.get("funding_rate", 0.0)
@@ -382,7 +384,7 @@ class FundingAnalyzer:
                 direction=direction,
                 price_at_event=current_data.get("price", 0.0),
                 volume_24h=current_data.get("volume_24h", 0.0),
-                open_interest=current_data.get("open_interest")
+                open_interest=current_data.get("open_interest"),
             )
 
             # Calculate derived metrics
@@ -416,10 +418,9 @@ class FundingAnalyzer:
         else:
             return FundingDirection.NEUTRAL
 
-    def _detect_funding_flip(self,
-                           exchange: str,
-                           pair: str,
-                           current_event: FundingEvent) -> Optional[FundingFlip]:
+    def _detect_funding_flip(
+        self, exchange: str, pair: str, current_event: FundingEvent
+    ) -> Optional[FundingFlip]:
         """Detect funding rate flips"""
         try:
             recent_events = self._get_recent_events(exchange, pair, hours_back=48)
@@ -446,11 +447,13 @@ class FundingAnalyzer:
                         to_regime=current_event.regime,
                         pre_flip_rate=previous_event.current_rate,
                         post_flip_rate=current_event.current_rate,
-                        flip_magnitude=abs(current_event.current_rate - previous_event.current_rate),
+                        flip_magnitude=abs(
+                            current_event.current_rate - previous_event.current_rate
+                        ),
                         price_before=previous_event.price_at_event,
                         price_after=current_event.price_at_event,
                         volume_spike=current_event.volume_24h / max(previous_event.volume_24h, 1),
-                        flip_duration_hours=8.0  # Standard funding period
+                        flip_duration_hours=8.0,  # Standard funding period
                     )
 
                     # Calculate time since last flip
@@ -468,36 +471,58 @@ class FundingAnalyzer:
             logger.error(f"Funding flip detection failed: {e}")
             return None
 
-    def _determine_flip_type(self,
-                           from_regime: FundingRegime,
-                           to_regime: FundingRegime) -> Optional[FlipType]:
+    def _determine_flip_type(
+        self, from_regime: FundingRegime, to_regime: FundingRegime
+    ) -> Optional[FlipType]:
         """Determine type of funding flip"""
         # Positive to negative transitions
-        if (from_regime in [FundingRegime.NORMAL_LONG, FundingRegime.HIGH_LONG, FundingRegime.EXTREME_LONG] and
-            to_regime in [FundingRegime.NORMAL_SHORT, FundingRegime.HIGH_SHORT, FundingRegime.EXTREME_SHORT]):
+        if from_regime in [
+            FundingRegime.NORMAL_LONG,
+            FundingRegime.HIGH_LONG,
+            FundingRegime.EXTREME_LONG,
+        ] and to_regime in [
+            FundingRegime.NORMAL_SHORT,
+            FundingRegime.HIGH_SHORT,
+            FundingRegime.EXTREME_SHORT,
+        ]:
             return FlipType.POSITIVE_TO_NEGATIVE
 
         # Negative to positive transitions
-        if (from_regime in [FundingRegime.NORMAL_SHORT, FundingRegime.HIGH_SHORT, FundingRegime.EXTREME_SHORT] and
-            to_regime in [FundingRegime.NORMAL_LONG, FundingRegime.HIGH_LONG, FundingRegime.EXTREME_LONG]):
+        if from_regime in [
+            FundingRegime.NORMAL_SHORT,
+            FundingRegime.HIGH_SHORT,
+            FundingRegime.EXTREME_SHORT,
+        ] and to_regime in [
+            FundingRegime.NORMAL_LONG,
+            FundingRegime.HIGH_LONG,
+            FundingRegime.EXTREME_LONG,
+        ]:
             return FlipType.NEGATIVE_TO_POSITIVE
 
         # Extreme to normal transitions
-        if (from_regime in [FundingRegime.EXTREME_LONG, FundingRegime.EXTREME_SHORT] and
-            to_regime in [FundingRegime.NORMAL_LONG, FundingRegime.NORMAL_SHORT, FundingRegime.NEUTRAL]):
+        if from_regime in [
+            FundingRegime.EXTREME_LONG,
+            FundingRegime.EXTREME_SHORT,
+        ] and to_regime in [
+            FundingRegime.NORMAL_LONG,
+            FundingRegime.NORMAL_SHORT,
+            FundingRegime.NEUTRAL,
+        ]:
             return FlipType.EXTREME_TO_NORMAL
 
         # Normal to extreme transitions
-        if (from_regime in [FundingRegime.NORMAL_LONG, FundingRegime.NORMAL_SHORT, FundingRegime.NEUTRAL] and
-            to_regime in [FundingRegime.EXTREME_LONG, FundingRegime.EXTREME_SHORT]):
+        if from_regime in [
+            FundingRegime.NORMAL_LONG,
+            FundingRegime.NORMAL_SHORT,
+            FundingRegime.NEUTRAL,
+        ] and to_regime in [FundingRegime.EXTREME_LONG, FundingRegime.EXTREME_SHORT]:
             return FlipType.NORMAL_TO_EXTREME
 
         return None
 
-    def _generate_funding_signals(self,
-                                latest_event: FundingEvent,
-                                recent_events: List[FundingEvent],
-                                current_price: float) -> Dict[str, Any]:
+    def _generate_funding_signals(
+        self, latest_event: FundingEvent, recent_events: List[FundingEvent], current_price: float
+    ) -> Dict[str, Any]:
         """Generate trading signals based on funding analysis"""
         try:
             signals = {
@@ -506,7 +531,7 @@ class FundingAnalyzer:
                 "exchange": latest_event.exchange,
                 "current_funding_rate": latest_event.current_rate,
                 "funding_regime": latest_event.regime.value,
-                "signals": []
+                "signals": [],
             }
 
             # Mean reversion signals on extreme funding
@@ -520,7 +545,7 @@ class FundingAnalyzer:
                     "rationale": f"Extreme funding ({latest_event.current_rate:.2%}) suggests mean reversion",
                     "target_hold_hours": 24,  # Hold until next funding period
                     "stop_loss_bp": 200,
-                    "take_profit_bp": 100
+                    "take_profit_bp": 100,
                 }
                 signals["signals"].append(signal)
 
@@ -536,7 +561,7 @@ class FundingAnalyzer:
                         "rationale": f"Recent funding flip to negative suggests continued selling pressure",
                         "target_hold_hours": 48,
                         "stop_loss_bp": 150,
-                        "take_profit_bp": 300
+                        "take_profit_bp": 300,
                     }
                     signals["signals"].append(signal)
                 elif recent_flip.flip_type == FlipType.NEGATIVE_TO_POSITIVE:
@@ -548,7 +573,7 @@ class FundingAnalyzer:
                         "rationale": f"Recent funding flip to positive suggests continued buying pressure",
                         "target_hold_hours": 48,
                         "stop_loss_bp": 150,
-                        "take_profit_bp": 300
+                        "take_profit_bp": 300,
                     }
                     signals["signals"].append(signal)
 
@@ -565,7 +590,7 @@ class FundingAnalyzer:
                         "rationale": f"Funding velocity acceleration ({velocity_trend:.2%}) suggests reversal",
                         "target_hold_hours": 16,
                         "stop_loss_bp": 100,
-                        "take_profit_bp": 150
+                        "take_profit_bp": 150,
                     }
                     signals["signals"].append(signal)
 
@@ -575,10 +600,7 @@ class FundingAnalyzer:
             logger.error(f"Funding signal generation failed: {e}")
             return {"status": "error"}
 
-    def _get_recent_events(self,
-                          exchange: str,
-                          pair: str,
-                          hours_back: int) -> List[FundingEvent]:
+    def _get_recent_events(self, exchange: str, pair: str, hours_back: int) -> List[FundingEvent]:
         """Get recent funding events"""
         try:
             if exchange not in self.funding_history or pair not in self.funding_history[exchange]:
@@ -607,17 +629,15 @@ class FundingAnalyzer:
             # Keep only recent history (30 days)
             cutoff_time = datetime.now() - timedelta(days=30)
             self.funding_history[exchange][pair] = [
-                e for e in self.funding_history[exchange][pair]
-                if e.timestamp >= cutoff_time
+                e for e in self.funding_history[exchange][pair] if e.timestamp >= cutoff_time
             ]
 
         except Exception as e:
             logger.error(f"Failed to store funding event: {e}")
 
-    def _calculate_funding_velocity(self,
-                                  exchange: str,
-                                  pair: str,
-                                  current_event: FundingEvent) -> float:
+    def _calculate_funding_velocity(
+        self, exchange: str, pair: str, current_event: FundingEvent
+    ) -> float:
         """Calculate funding rate velocity (acceleration)"""
         try:
             recent_events = self._get_recent_events(exchange, pair, hours_back=24)
@@ -630,7 +650,7 @@ class FundingAnalyzer:
 
             if len(rates) >= 3:
                 # Simple finite difference approximation
-                acceleration = (rates[-1] - 2*rates[-2] + rates[-3]) / 2
+                acceleration = (rates[-1] - 2 * rates[-2] + rates[-3]) / 2
                 return acceleration
 
             return 0.0
@@ -643,7 +663,8 @@ class FundingAnalyzer:
         """Get last funding flip for pair"""
         try:
             matching_flips = [
-                flip for flip in self.flip_history
+                flip
+                for flip in self.flip_history
                 if flip.exchange == exchange and flip.pair == pair
             ]
 
@@ -664,7 +685,7 @@ class FundingAnalyzer:
 
             velocities = []
             for i in range(1, len(events)):
-                velocity = events[i].current_rate - events[i-1].current_rate
+                velocity = events[i].current_rate - events[i - 1].current_rate
                 velocities.append(velocity)
 
             if len(velocities) >= 2:
@@ -689,7 +710,7 @@ class FundingAnalyzer:
             # Detect rapid oscillations
             regime_changes = 0
             for i in range(1, len(events)):
-                if events[i].regime != events[i-1].regime:
+                if events[i].regime != events[i - 1].regime:
                     regime_changes += 1
 
             if regime_changes > len(events) * 0.3:  # More than 30% regime changes
@@ -697,7 +718,7 @@ class FundingAnalyzer:
                     "timestamp": events[-1].timestamp,
                     "type": "excessive_oscillation",
                     "regime_change_rate": regime_changes / len(events),
-                    "severity": min(1.0, regime_changes / len(events) / 0.5)
+                    "severity": min(1.0, regime_changes / len(events) / 0.5),
                 }
                 anomalies.append(anomaly)
 
@@ -708,7 +729,7 @@ class FundingAnalyzer:
                     "timestamp": events[-1].timestamp,
                     "type": "sustained_extreme_funding",
                     "extreme_periods": extreme_count,
-                    "severity": min(1.0, extreme_count / 10)
+                    "severity": min(1.0, extreme_count / 10),
                 }
                 anomalies.append(anomaly)
 
@@ -735,11 +756,11 @@ class FundingAnalyzer:
                     "min": np.min(rates),
                     "max": np.max(rates),
                     "skewness": self._calculate_skewness(rates),
-                    "kurtosis": self._calculate_kurtosis(rates)
+                    "kurtosis": self._calculate_kurtosis(rates),
                 },
                 "regime_distribution": {},
                 "extreme_periods": sum(1 for event in events if event.is_extreme),
-                "average_funding_pressure": np.mean([event.funding_pressure for event in events])
+                "average_funding_pressure": np.mean([event.funding_pressure for event in events]),
             }
 
             # Regime distribution
@@ -747,7 +768,7 @@ class FundingAnalyzer:
                 count = sum(1 for event in events if event.regime == regime)
                 analytics["regime_distribution"][regime.value] = {
                     "count": count,
-                    "percentage": count / len(events)
+                    "percentage": count / len(events),
                 }
 
             return analytics
@@ -767,7 +788,7 @@ class FundingAnalyzer:
                 "flip_types": {},
                 "average_magnitude": np.mean([flip.flip_magnitude for flip in flips]),
                 "average_price_impact_bp": np.mean([abs(flip.price_impact_bp) for flip in flips]),
-                "flip_frequency_hours": 0
+                "flip_frequency_hours": 0,
             }
 
             # Flip type distribution

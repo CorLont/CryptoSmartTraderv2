@@ -8,9 +8,4 @@ from .uncertainty_ensemble import UncertaintyEnsemble
 from .bayesian_ensemble import BayesianEnsemble
 from .quantile_ensemble import QuantileEnsemble
 
-__all__ = [
-    'EnsembleManager',
-    'UncertaintyEnsemble', 
-    'BayesianEnsemble',
-    'QuantileEnsemble'
-]
+__all__ = ["EnsembleManager", "UncertaintyEnsemble", "BayesianEnsemble", "QuantileEnsemble"]

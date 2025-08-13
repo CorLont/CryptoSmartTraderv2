@@ -16,7 +16,8 @@ import json
 from pathlib import Path
 import pickle
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 from ..core.logging_manager import get_logger
 from ..core.data_quality_manager import get_data_quality_manager
@@ -24,26 +25,34 @@ from ..core.hard_data_filter import get_hard_data_filter
 from ..core.async_data_manager import get_async_data_manager
 from ..core.ml_slo_monitor import get_slo_monitor
 
+
 class InferenceStatus(str, Enum):
     """Batch inference status"""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
     PARTIAL = "partial"
 
+
 class HorizonType(str, Enum):
     """Time horizons for predictions"""
+
     H1 = "1h"
     H4 = "4h"
     H24 = "24h"
     D7 = "7d"
     D30 = "30d"
 
+
 @dataclass
 class BatchInferenceConfig:
     """Configuration for batch inference"""
-    horizons: List[HorizonType] = field(default_factory=lambda: [HorizonType.H1, HorizonType.H24, HorizonType.D7])
+
+    horizons: List[HorizonType] = field(
+        default_factory=lambda: [HorizonType.H1, HorizonType.H24, HorizonType.D7]
+    )
     batch_size: int = 100
     max_parallel_coins: int = 50
     model_timeout_seconds: int = 30
@@ -52,9 +61,11 @@ class BatchInferenceConfig:
     retry_attempts: int = 3
     completeness_threshold: float = 0.8
 
+
 @dataclass
 class CoinPrediction:
     """Single coin prediction across all horizons"""
+
     symbol: str
     timestamp: datetime
     predictions: Dict[HorizonType, float]  # horizon -> prediction
@@ -64,9 +75,11 @@ class CoinPrediction:
     inference_latency_ms: float
     data_completeness: float
 
+
 @dataclass
 class BatchInferenceResult:
     """Complete batch inference result"""
+
     batch_id: str
     timestamp: datetime
     config: BatchInferenceConfig
@@ -79,6 +92,7 @@ class BatchInferenceResult:
     average_latency_ms: float
     completeness_stats: Dict[str, float]
     error_summary: Dict[str, int]
+
 
 class FeatureEngineering:
     """Unified feature engineering for all horizons"""
@@ -140,21 +154,27 @@ class FeatureEngineering:
         if ohlcv_data:
             for horizon, data in ohlcv_data.items():
                 if data and len(data) >= 20:  # At least 20 periods
-                    df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+                    df = pd.DataFrame(
+                        data, columns=["timestamp", "open", "high", "low", "close", "volume"]
+                    )
 
                     # Price momentum features
-                    returns = df['close'].pct_change().dropna()
+                    returns = df["close"].pct_change().dropna()
                     features[f"returns_mean_{horizon}"] = returns.mean()
                     features[f"returns_std_{horizon}"] = returns.std()
                     features[f"returns_skew_{horizon}"] = returns.skew()
                     features[f"returns_kurt_{horizon}"] = returns.kurtosis()
 
                     # Price level features
-                    features[f"price_vs_high_{horizon}"] = (current_price - df['high'].max()) / df['high'].max()
-                    features[f"price_vs_low_{horizon}"] = (current_price - df['low'].min()) / df['low'].min()
+                    features[f"price_vs_high_{horizon}"] = (current_price - df["high"].max()) / df[
+                        "high"
+                    ].max()
+                    features[f"price_vs_low_{horizon}"] = (current_price - df["low"].min()) / df[
+                        "low"
+                    ].min()
 
                     # Volatility features
-                    high_low_vol = ((df['high'] - df['low']) / df['close']).mean()
+                    high_low_vol = ((df["high"] - df["low"]) / df["close"]).mean()
                     features[f"hl_volatility_{horizon}"] = high_low_vol
 
         return features
@@ -173,25 +193,33 @@ class FeatureEngineering:
         if ohlcv_data:
             for horizon, data in ohlcv_data.items():
                 if data and len(data) >= 10:
-                    df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+                    df = pd.DataFrame(
+                        data, columns=["timestamp", "open", "high", "low", "close", "volume"]
+                    )
 
                     # Volume statistics
-                    vol_mean = df['volume'].mean()
-                    vol_std = df['volume'].std()
+                    vol_mean = df["volume"].mean()
+                    vol_std = df["volume"].std()
 
                     features[f"volume_mean_{horizon}"] = np.log(vol_mean) if vol_mean > 0 else 0
                     features[f"volume_cv_{horizon}"] = vol_std / vol_mean if vol_mean > 0 else 0
-                    features[f"volume_trend_{horizon}"] = np.corrcoef(range(len(df)), df['volume'])[0, 1]
+                    features[f"volume_trend_{horizon}"] = np.corrcoef(range(len(df)), df["volume"])[
+                        0, 1
+                    ]
 
                     # Volume-price relationship
                     if len(df) > 1:
-                        price_change = df['close'].pct_change().dropna()
-                        volume_change = df['volume'].pct_change().dropna()
+                        price_change = df["close"].pct_change().dropna()
+                        volume_change = df["volume"].pct_change().dropna()
 
                         if len(price_change) > 1 and len(volume_change) > 1:
                             min_len = min(len(price_change), len(volume_change))
-                            corr = np.corrcoef(price_change[-min_len:], volume_change[-min_len:])[0, 1]
-                            features[f"price_volume_corr_{horizon}"] = corr if not np.isnan(corr) else 0
+                            corr = np.corrcoef(price_change[-min_len:], volume_change[-min_len:])[
+                                0, 1
+                            ]
+                            features[f"price_volume_corr_{horizon}"] = (
+                                corr if not np.isnan(corr) else 0
+                            )
 
         return features
 
@@ -215,16 +243,18 @@ class FeatureEngineering:
         if ohlcv_data:
             for horizon, data in ohlcv_data.items():
                 if data and len(data) >= 50:  # Need enough data for indicators
-                    df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+                    df = pd.DataFrame(
+                        data, columns=["timestamp", "open", "high", "low", "close", "volume"]
+                    )
 
                     # RSI
-                    rsi = self._calculate_rsi(df['close'], 14)
+                    rsi = self._calculate_rsi(df["close"], 14)
                     features[f"rsi_{horizon}"] = rsi
 
                     # Moving averages
-                    sma_20 = df['close'].rolling(20).mean().iloc[-1]
-                    sma_50 = df['close'].rolling(50).mean().iloc[-1]
-                    current_price = df['close'].iloc[-1]
+                    sma_20 = df["close"].rolling(20).mean().iloc[-1]
+                    sma_50 = df["close"].rolling(50).mean().iloc[-1]
+                    current_price = df["close"].iloc[-1]
 
                     if sma_20 > 0 and sma_50 > 0:
                         features[f"price_vs_sma20_{horizon}"] = (current_price - sma_20) / sma_20
@@ -232,13 +262,17 @@ class FeatureEngineering:
                         features[f"sma20_vs_sma50_{horizon}"] = (sma_20 - sma_50) / sma_50
 
                     # Bollinger Bands
-                    sma = df['close'].rolling(20).mean()
-                    std = df['close'].rolling(20).std()
+                    sma = df["close"].rolling(20).mean()
+                    std = df["close"].rolling(20).std()
                     upper_band = sma + (std * 2)
                     lower_band = sma - (std * 2)
 
-                    bb_position = (current_price - lower_band.iloc[-1]) / (upper_band.iloc[-1] - lower_band.iloc[-1])
-                    features[f"bb_position_{horizon}"] = bb_position if not np.isnan(bb_position) else 0.5
+                    bb_position = (current_price - lower_band.iloc[-1]) / (
+                        upper_band.iloc[-1] - lower_band.iloc[-1]
+                    )
+                    features[f"bb_position_{horizon}"] = (
+                        bb_position if not np.isnan(bb_position) else 0.5
+                    )
 
         return features
 
@@ -268,7 +302,11 @@ class FeatureEngineering:
 
                 features["bid_depth"] = np.log(bid_depth) if bid_depth > 0 else 0
                 features["ask_depth"] = np.log(ask_depth) if ask_depth > 0 else 0
-                features["order_book_imbalance"] = (bid_depth - ask_depth) / (bid_depth + ask_depth) if (bid_depth + ask_depth) > 0 else 0
+                features["order_book_imbalance"] = (
+                    (bid_depth - ask_depth) / (bid_depth + ask_depth)
+                    if (bid_depth + ask_depth) > 0
+                    else 0
+                )
 
         return features
 
@@ -338,8 +376,9 @@ class FeatureEngineering:
             "returns_mean_1d": 0.0,
             "returns_std_1d": 0.01,
             "market_tier": 0.1,
-            "volatility_regime": 0.1
+            "volatility_regime": 0.1,
         }
+
 
 class ModelInference:
     """Multi-horizon model inference engine"""
@@ -357,7 +396,7 @@ class ModelInference:
                 model_path = Path(f"models/ml_model_{horizon.value}.pkl")
 
                 if model_path.exists():
-                    with open(model_path, 'rb') as f:
+                    with open(model_path, "rb") as f:
                         self.models[horizon] = pickle.load(f)
                         self.model_versions[horizon] = f"v1.0_{datetime.now().strftime('%Y%m%d')}"
 
@@ -376,9 +415,7 @@ class ModelInference:
             return False
 
     def predict_all_horizons(
-        self,
-        features: Dict[str, float],
-        horizons: List[HorizonType]
+        self, features: Dict[str, float], horizons: List[HorizonType]
     ) -> Tuple[Dict[HorizonType, float], Dict[HorizonType, float]]:
         """Generate predictions for all horizons simultaneously"""
 
@@ -386,9 +423,13 @@ class ModelInference:
         confidence_scores = {}
 
         # Convert features to array
-        feature_array = np.array([features.get(f"returns_mean_1d", 0),
-                                 features.get("volume_log", 0),
-                                 features.get("market_tier", 0.1)])
+        feature_array = np.array(
+            [
+                features.get(f"returns_mean_1d", 0),
+                features.get("volume_log", 0),
+                features.get("market_tier", 0.1),
+            ]
+        )
 
         for horizon in horizons:
             try:
@@ -426,6 +467,7 @@ class ModelInference:
 
         return model
 
+
 class BatchInferenceEngine:
     """Main batch inference engine"""
 
@@ -444,7 +486,9 @@ class BatchInferenceEngine:
         self.current_batch = None
         self.batch_history = []
 
-    async def run_batch_inference(self, target_coins: Optional[Set[str]] = None) -> BatchInferenceResult:
+    async def run_batch_inference(
+        self, target_coins: Optional[Set[str]] = None
+    ) -> BatchInferenceResult:
         """Run complete batch inference for all coins across all horizons"""
 
         batch_start = datetime.now()
@@ -477,7 +521,7 @@ class BatchInferenceEngine:
             coin_symbols = list(coin_data.keys())
 
             for i in range(0, len(coin_symbols), self.config.batch_size):
-                batch_symbols = coin_symbols[i:i + self.config.batch_size]
+                batch_symbols = coin_symbols[i : i + self.config.batch_size]
 
                 # Process batch
                 batch_predictions = await self._process_coin_batch(
@@ -491,10 +535,14 @@ class BatchInferenceEngine:
                         latencies.append(prediction.inference_latency_ms)
                     else:
                         failed_count += 1
-                        error_summary["prediction_failed"] = error_summary.get("prediction_failed", 0) + 1
+                        error_summary["prediction_failed"] = (
+                            error_summary.get("prediction_failed", 0) + 1
+                        )
 
                 # Log progress
-                self.logger.info(f"Processed batch {i//self.config.batch_size + 1}/{(len(coin_symbols) + self.config.batch_size - 1)//self.config.batch_size}")
+                self.logger.info(
+                    f"Processed batch {i // self.config.batch_size + 1}/{(len(coin_symbols) + self.config.batch_size - 1) // self.config.batch_size}"
+                )
 
             # Calculate statistics
             execution_time = (datetime.now() - batch_start).total_seconds()
@@ -505,7 +553,7 @@ class BatchInferenceEngine:
                 "mean": np.mean(completeness_scores) if completeness_scores else 0.0,
                 "median": np.median(completeness_scores) if completeness_scores else 0.0,
                 "min": np.min(completeness_scores) if completeness_scores else 0.0,
-                "max": np.max(completeness_scores) if completeness_scores else 0.0
+                "max": np.max(completeness_scores) if completeness_scores else 0.0,
             }
 
             # Determine status
@@ -529,7 +577,7 @@ class BatchInferenceEngine:
                 execution_time_seconds=execution_time,
                 average_latency_ms=avg_latency,
                 completeness_stats=completeness_stats,
-                error_summary=error_summary
+                error_summary=error_summary,
             )
 
             # Store result atomically
@@ -553,8 +601,8 @@ class BatchInferenceEngine:
                     "successful_predictions": successful_count,
                     "failed_predictions": failed_count,
                     "execution_time_seconds": execution_time,
-                    "average_latency_ms": avg_latency
-                }
+                    "average_latency_ms": avg_latency,
+                },
             )
 
             return result
@@ -575,7 +623,7 @@ class BatchInferenceEngine:
                 execution_time_seconds=execution_time,
                 average_latency_ms=0.0,
                 completeness_stats={},
-                error_summary={"batch_failure": 1}
+                error_summary={"batch_failure": 1},
             )
 
             self.batch_history.append(failed_result)
@@ -585,7 +633,9 @@ class BatchInferenceEngine:
 
             return failed_result
 
-    async def _get_filtered_coin_data(self, target_coins: Optional[Set[str]] = None) -> Dict[str, Any]:
+    async def _get_filtered_coin_data(
+        self, target_coins: Optional[Set[str]] = None
+    ) -> Dict[str, Any]:
         """Get filtered coin data using hard data filter"""
 
         # Get raw coin data
@@ -606,7 +656,9 @@ class BatchInferenceEngine:
 
         # Filter by target coins if specified
         if target_coins:
-            all_coin_data = {symbol: data for symbol, data in all_coin_data.items() if symbol in target_coins}
+            all_coin_data = {
+                symbol: data for symbol, data in all_coin_data.items() if symbol in target_coins
+            }
 
         # Apply hard data filter
         filtered_data, filter_stats = self.hard_data_filter.apply_hard_filter(all_coin_data)
@@ -617,8 +669,10 @@ class BatchInferenceEngine:
                 "total_processed": filter_stats.total_coins_processed,
                 "passed": filter_stats.coins_passed,
                 "blocked": filter_stats.coins_blocked,
-                "pass_rate": filter_stats.coins_passed / filter_stats.total_coins_processed if filter_stats.total_coins_processed > 0 else 0
-            }
+                "pass_rate": filter_stats.coins_passed / filter_stats.total_coins_processed
+                if filter_stats.total_coins_processed > 0
+                else 0,
+            },
         )
 
         return filtered_data
@@ -630,8 +684,7 @@ class BatchInferenceEngine:
 
         # Process coins in parallel
         tasks = [
-            self._process_single_coin(symbol, coin_data)
-            for symbol, coin_data in coin_batch.items()
+            self._process_single_coin(symbol, coin_data) for symbol, coin_data in coin_batch.items()
         ]
 
         # Limit concurrency
@@ -642,8 +695,7 @@ class BatchInferenceEngine:
                 return await task
 
         results = await asyncio.gather(
-            *[process_with_semaphore(task) for task in tasks],
-            return_exceptions=True
+            *[process_with_semaphore(task) for task in tasks], return_exceptions=True
         )
 
         # Collect results
@@ -655,7 +707,9 @@ class BatchInferenceEngine:
 
         return predictions
 
-    async def _process_single_coin(self, symbol: str, coin_data: Dict[str, Any]) -> Optional[CoinPrediction]:
+    async def _process_single_coin(
+        self, symbol: str, coin_data: Dict[str, Any]
+    ) -> Optional[CoinPrediction]:
         """Process single coin for multi-horizon predictions"""
 
         start_time = datetime.now()
@@ -681,9 +735,12 @@ class BatchInferenceEngine:
                 predictions=predictions,
                 confidence_scores=confidence_scores,
                 features=features,
-                model_versions={h: self.model_inference.model_versions.get(h, "unknown") for h in self.config.horizons},
+                model_versions={
+                    h: self.model_inference.model_versions.get(h, "unknown")
+                    for h in self.config.horizons
+                },
                 inference_latency_ms=inference_latency,
-                data_completeness=data_completeness
+                data_completeness=data_completeness,
             )
 
         except Exception as e:
@@ -731,14 +788,16 @@ class BatchInferenceEngine:
                         "symbol": p.symbol,
                         "timestamp": p.timestamp.isoformat(),
                         "predictions": {h.value: pred for h, pred in p.predictions.items()},
-                        "confidence_scores": {h.value: conf for h, conf in p.confidence_scores.items()},
+                        "confidence_scores": {
+                            h.value: conf for h, conf in p.confidence_scores.items()
+                        },
                         "features": p.features,
                         "model_versions": {h.value: ver for h, ver in p.model_versions.items()},
                         "inference_latency_ms": p.inference_latency_ms,
-                        "data_completeness": p.data_completeness
+                        "data_completeness": p.data_completeness,
                     }
                     for p in result.predictions
-                ]
+                ],
             }
 
             # Create directories
@@ -749,7 +808,7 @@ class BatchInferenceEngine:
             temp_file = batch_dir / f"{result.batch_id}.tmp"
             final_file = batch_dir / f"{result.batch_id}.json"
 
-            with open(temp_file, 'w') as f:
+            with open(temp_file, "w") as f:
                 json.dump(storage_data, f, indent=2)
 
             # Atomic rename
@@ -759,7 +818,7 @@ class BatchInferenceEngine:
             latest_file = batch_dir / "latest_batch.json"
             temp_latest = batch_dir / "latest_batch.tmp"
 
-            with open(temp_latest, 'w') as f:
+            with open(temp_latest, "w") as f:
                 json.dump(storage_data, f, indent=2)
 
             temp_latest.rename(latest_file)
@@ -785,7 +844,7 @@ class BatchInferenceEngine:
                         model_version=prediction.model_versions.get(horizon, "unknown"),
                         predictions=[pred_value],
                         actuals=[0.0],  # Would be populated with actual returns later
-                        confidence_scores=[confidence]
+                        confidence_scores=[confidence],
                     )
 
         except Exception as e:
@@ -797,7 +856,9 @@ class BatchInferenceEngine:
         if not self.current_batch:
             return {"error": "No batch data available"}
 
-        recent_batches = self.batch_history[-10:] if len(self.batch_history) >= 10 else self.batch_history
+        recent_batches = (
+            self.batch_history[-10:] if len(self.batch_history) >= 10 else self.batch_history
+        )
 
         return {
             "timestamp": datetime.now().isoformat(),
@@ -806,28 +867,41 @@ class BatchInferenceEngine:
                 "status": self.current_batch.status.value,
                 "total_coins": self.current_batch.total_coins,
                 "successful_predictions": self.current_batch.successful_predictions,
-                "success_rate": self.current_batch.successful_predictions / self.current_batch.total_coins if self.current_batch.total_coins > 0 else 0,
+                "success_rate": self.current_batch.successful_predictions
+                / self.current_batch.total_coins
+                if self.current_batch.total_coins > 0
+                else 0,
                 "average_latency_ms": self.current_batch.average_latency_ms,
-                "completeness_stats": self.current_batch.completeness_stats
+                "completeness_stats": self.current_batch.completeness_stats,
             },
             "trends": {
                 "total_batches_run": len(self.batch_history),
-                "recent_success_rate": np.mean([b.successful_predictions / b.total_coins for b in recent_batches if b.total_coins > 0]),
+                "recent_success_rate": np.mean(
+                    [
+                        b.successful_predictions / b.total_coins
+                        for b in recent_batches
+                        if b.total_coins > 0
+                    ]
+                ),
                 "recent_avg_latency": np.mean([b.average_latency_ms for b in recent_batches]),
-                "recent_avg_coins": np.mean([b.total_coins for b in recent_batches])
+                "recent_avg_coins": np.mean([b.total_coins for b in recent_batches]),
             },
             "configuration": {
                 "horizons": [h.value for h in self.config.horizons],
                 "batch_size": self.config.batch_size,
                 "max_parallel_coins": self.config.max_parallel_coins,
-                "completeness_threshold": self.config.completeness_threshold
-            }
+                "completeness_threshold": self.config.completeness_threshold,
+            },
         }
+
 
 # Global instance
 _batch_inference_engine = None
 
-def get_batch_inference_engine(config: Optional[BatchInferenceConfig] = None) -> BatchInferenceEngine:
+
+def get_batch_inference_engine(
+    config: Optional[BatchInferenceConfig] = None,
+) -> BatchInferenceEngine:
     """Get global batch inference engine instance"""
     global _batch_inference_engine
     if _batch_inference_engine is None:

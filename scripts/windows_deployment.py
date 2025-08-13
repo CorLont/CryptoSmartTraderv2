@@ -11,12 +11,13 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
+
 def create_antivirus_exceptions() -> bool:
     """Create Windows Defender exceptions for CryptoSmartTrader"""
-    
+
     print("🛡️ CONFIGURING ANTIVIRUS EXCEPTIONS")
     print("=" * 50)
-    
+
     # Paths to exclude from Windows Defender
     exclusion_paths = [
         os.getcwd(),  # Current project directory
@@ -25,147 +26,151 @@ def create_antivirus_exceptions() -> bool:
         os.path.join(os.getcwd(), "logs"),
         os.path.join(os.getcwd(), "data"),
         os.path.join(os.getcwd(), "mlruns"),
-        os.path.join(os.getcwd(), "cache")
+        os.path.join(os.getcwd(), "cache"),
     ]
-    
+
     # Processes to exclude
-    exclusion_processes = [
-        "python.exe",
-        "streamlit.exe",
-        "uvicorn.exe"
-    ]
-    
+    exclusion_processes = ["python.exe", "streamlit.exe", "uvicorn.exe"]
+
     try:
         print("📁 Adding folder exclusions...")
-        
+
         for path in exclusion_paths:
             if os.path.exists(path):
                 # PowerShell command to add folder exclusion
                 ps_command = f'Add-MpPreference -ExclusionPath "{path}"'
-                
+
                 try:
-                    result = subprocess.run([
-                        "powershell", "-Command", ps_command
-                    ], capture_output=True, text=True, check=True)
-                    
+                    result = subprocess.run(
+                        ["powershell", "-Command", ps_command],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
+
                     print(f"   ✅ Added exclusion: {path}")
-                    
+
                 except subprocess.CalledProcessError as e:
                     print(f"   ⚠️ Failed to add exclusion for {path}: {e}")
-        
+
         print("\n🔄 Adding process exclusions...")
-        
+
         for process in exclusion_processes:
             ps_command = f'Add-MpPreference -ExclusionProcess "{process}"'
-            
+
             try:
-                result = subprocess.run([
-                    "powershell", "-Command", ps_command
-                ], capture_output=True, text=True, check=True)
-                
+                result = subprocess.run(
+                    ["powershell", "-Command", ps_command],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+
                 print(f"   ✅ Added process exclusion: {process}")
-                
+
             except subprocess.CalledProcessError as e:
                 print(f"   ⚠️ Failed to add process exclusion for {process}: {e}")
-        
+
         print("\n✅ Antivirus exceptions configured")
         return True
-        
+
     except Exception as e:
         print(f"❌ Failed to configure antivirus exceptions: {e}")
         print("💡 Run as Administrator for antivirus configuration")
         return False
 
+
 def configure_firewall_rules() -> bool:
     """Configure Windows Firewall rules for required ports"""
-    
+
     print("\n🔥 CONFIGURING FIREWALL RULES")
     print("=" * 50)
-    
+
     # Ports used by CryptoSmartTrader
     firewall_rules = [
         {
-            'name': 'CryptoSmartTrader-Dashboard',
-            'port': '5000',
-            'protocol': 'TCP',
-            'direction': 'in',
-            'action': 'allow',
-            'description': 'CryptoSmartTrader Streamlit Dashboard'
+            "name": "CryptoSmartTrader-Dashboard",
+            "port": "5000",
+            "protocol": "TCP",
+            "direction": "in",
+            "action": "allow",
+            "description": "CryptoSmartTrader Streamlit Dashboard",
         },
         {
-            'name': 'CryptoSmartTrader-TestApp',
-            'port': '5001',
-            'protocol': 'TCP',
-            'direction': 'in',
-            'action': 'allow',
-            'description': 'CryptoSmartTrader Test Application'
+            "name": "CryptoSmartTrader-TestApp",
+            "port": "5001",
+            "protocol": "TCP",
+            "direction": "in",
+            "action": "allow",
+            "description": "CryptoSmartTrader Test Application",
         },
         {
-            'name': 'CryptoSmartTrader-API',
-            'port': '8000',
-            'protocol': 'TCP',
-            'direction': 'in',
-            'action': 'allow',
-            'description': 'CryptoSmartTrader API Server'
+            "name": "CryptoSmartTrader-API",
+            "port": "8000",
+            "protocol": "TCP",
+            "direction": "in",
+            "action": "allow",
+            "description": "CryptoSmartTrader API Server",
         },
         {
-            'name': 'CryptoSmartTrader-Metrics',
-            'port': '8090',
-            'protocol': 'TCP',
-            'direction': 'in',
-            'action': 'allow',
-            'description': 'CryptoSmartTrader Prometheus Metrics'
+            "name": "CryptoSmartTrader-Metrics",
+            "port": "8090",
+            "protocol": "TCP",
+            "direction": "in",
+            "action": "allow",
+            "description": "CryptoSmartTrader Prometheus Metrics",
         },
         {
-            'name': 'CryptoSmartTrader-MLflow',
-            'port': '5555',
-            'protocol': 'TCP',
-            'direction': 'in',
-            'action': 'allow',
-            'description': 'CryptoSmartTrader MLflow Tracking'
-        }
+            "name": "CryptoSmartTrader-MLflow",
+            "port": "5555",
+            "protocol": "TCP",
+            "direction": "in",
+            "action": "allow",
+            "description": "CryptoSmartTrader MLflow Tracking",
+        },
     ]
-    
+
     try:
         for rule in firewall_rules:
             print(f"🔓 Adding firewall rule: {rule['name']} (port {rule['port']})")
-            
+
             # Remove existing rule if exists
             remove_command = f'netsh advfirewall firewall delete rule name="{rule["name"]}"'
             subprocess.run(remove_command, shell=True, capture_output=True)
-            
+
             # Add new rule
             add_command = (
-                f'netsh advfirewall firewall add rule '
+                f"netsh advfirewall firewall add rule "
                 f'name="{rule["name"]}" '
-                f'dir={rule["direction"]} '
-                f'action={rule["action"]} '
-                f'protocol={rule["protocol"]} '
-                f'localport={rule["port"]} '
+                f"dir={rule['direction']} "
+                f"action={rule['action']} "
+                f"protocol={rule['protocol']} "
+                f"localport={rule['port']} "
                 f'description="{rule["description"]}"'
             )
-            
+
             result = subprocess.run(add_command, shell=True, capture_output=True, text=True)
-            
+
             if result.returncode == 0:
                 print(f"   ✅ Rule added successfully")
             else:
                 print(f"   ⚠️ Failed to add rule: {result.stderr}")
-        
+
         print("\n✅ Firewall rules configured")
         return True
-        
+
     except Exception as e:
         print(f"❌ Failed to configure firewall rules: {e}")
         print("💡 Run as Administrator for firewall configuration")
         return False
 
+
 def create_bat_runners() -> bool:
     """Create Windows batch file runners"""
-    
+
     print("\n📝 CREATING BATCH FILE RUNNERS")
     print("=" * 50)
-    
+
     # Installation batch file
     install_bat_content = """@echo off
 echo ==========================================
@@ -221,7 +226,7 @@ echo.
 echo 🚀 To start the system, run: start_dashboard.bat
 pause
 """
-    
+
     # Dashboard starter batch file
     start_dashboard_bat_content = """@echo off
 echo ==========================================
@@ -252,7 +257,7 @@ python -m streamlit run app_minimal.py --server.port 5000 --server.headless true
 
 pause
 """
-    
+
     # Evaluation runner batch file
     start_eval_bat_content = """@echo off
 echo ==========================================
@@ -316,7 +321,7 @@ echo 📊 Check logs/ directory for detailed logs
 echo.
 pause
 """
-    
+
     # One-click comprehensive runner
     oneclick_runner_bat_content = """@echo off
 title CryptoSmartTrader V2 - One-Click Runner
@@ -358,7 +363,7 @@ echo 🚀 To view results, run: start_dashboard.bat
 echo.
 pause
 """
-    
+
     # Backup runner
     backup_bat_content = """@echo off
 echo ==========================================
@@ -380,26 +385,26 @@ echo 📁 Backup location: backups/
 echo.
 pause
 """
-    
+
     # Write batch files
     batch_files = {
-        '1_install_all_dependencies.bat': install_bat_content,
-        '2_start_background_services.bat': start_dashboard_bat_content,
-        '3_start_dashboard.bat': start_dashboard_bat_content,
-        'start_evaluation.bat': start_eval_bat_content,
-        'oneclick_runner.bat': oneclick_runner_bat_content,
-        'create_backup.bat': backup_bat_content
+        "1_install_all_dependencies.bat": install_bat_content,
+        "2_start_background_services.bat": start_dashboard_bat_content,
+        "3_start_dashboard.bat": start_dashboard_bat_content,
+        "start_evaluation.bat": start_eval_bat_content,
+        "oneclick_runner.bat": oneclick_runner_bat_content,
+        "create_backup.bat": backup_bat_content,
     }
-    
+
     try:
         for filename, content in batch_files.items():
             bat_file = Path(filename)
-            
-            with open(bat_file, 'w', newline='\r\n') as f:
+
+            with open(bat_file, "w", newline="\r\n") as f:
                 f.write(content)
-            
+
             print(f"   ✅ Created: {filename}")
-        
+
         print(f"\n✅ All batch files created successfully")
         print(f"\n📋 Available runners:")
         print(f"   1_install_all_dependencies.bat  - Install system dependencies")
@@ -407,19 +412,20 @@ pause
         print(f"   start_evaluation.bat            - Run evaluation pipeline")
         print(f"   oneclick_runner.bat             - Complete one-click pipeline")
         print(f"   create_backup.bat               - Create system backup")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Failed to create batch files: {e}")
         return False
 
+
 def create_oneclick_pipeline_script() -> bool:
     """Create the one-click pipeline Python script"""
-    
+
     print("\n🐍 CREATING ONE-CLICK PIPELINE SCRIPT")
     print("=" * 50)
-    
+
     pipeline_content = """#!/usr/bin/env python3
 \"\"\"
 One-Click Pipeline Script
@@ -591,61 +597,62 @@ if __name__ == "__main__":
     success = asyncio.run(run_oneclick_pipeline())
     sys.exit(0 if success else 1)
 """
-    
+
     try:
         script_file = Path("scripts/oneclick_pipeline.py")
         script_file.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(script_file, 'w', encoding='utf-8') as f:
+
+        with open(script_file, "w", encoding="utf-8") as f:
             f.write(pipeline_content)
-        
+
         print(f"   ✅ Created: {script_file}")
         return True
-        
+
     except Exception as e:
         print(f"   ❌ Failed to create pipeline script: {e}")
         return False
 
+
 def main():
     """Main deployment function"""
-    
+
     print("🚀 CRYPTOSMARTTRADER V2 - WINDOWS DEPLOYMENT")
     print("=" * 60)
     print()
-    
+
     if len(sys.argv) > 1:
         # Handle command line arguments
-        if '--antivirus' in sys.argv:
+        if "--antivirus" in sys.argv:
             return create_antivirus_exceptions()
-        elif '--firewall' in sys.argv:
+        elif "--firewall" in sys.argv:
             return configure_firewall_rules()
-        elif '--batch-files' in sys.argv:
+        elif "--batch-files" in sys.argv:
             return create_bat_runners()
-    
+
     # Full deployment
     success_count = 0
     total_steps = 4
-    
+
     # Step 1: Antivirus exceptions
     if create_antivirus_exceptions():
         success_count += 1
-    
+
     # Step 2: Firewall rules
     if configure_firewall_rules():
         success_count += 1
-    
+
     # Step 3: Batch file runners
     if create_bat_runners():
         success_count += 1
-    
+
     # Step 4: One-click pipeline script
     if create_oneclick_pipeline_script():
         success_count += 1
-    
+
     print(f"\n🏁 DEPLOYMENT SUMMARY")
     print("=" * 60)
     print(f"✅ Completed: {success_count}/{total_steps} steps")
-    
+
     if success_count == total_steps:
         print("\n🎉 Windows deployment completed successfully!")
         print("\n📋 Next steps:")
@@ -655,8 +662,9 @@ def main():
     else:
         print("\n⚠️ Some deployment steps failed")
         print("💡 Try running as Administrator")
-    
+
     return success_count == total_steps
+
 
 if __name__ == "__main__":
     main()

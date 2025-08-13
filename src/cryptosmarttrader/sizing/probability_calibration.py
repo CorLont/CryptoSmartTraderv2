@@ -21,15 +21,17 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class CalibrationMetrics:
     """Container for calibration quality metrics"""
-    brier_score: float          # Lower is better (0 = perfect)
-    reliability: float          # How close predicted probs are to actual frequencies
-    resolution: float           # Ability to separate positive/negative cases
-    ece: float                  # Expected Calibration Error
-    mce: float                  # Maximum Calibration Error
-    log_loss: float            # Logarithmic loss
+
+    brier_score: float  # Lower is better (0 = perfect)
+    reliability: float  # How close predicted probs are to actual frequencies
+    resolution: float  # Ability to separate positive/negative cases
+    ece: float  # Expected Calibration Error
+    mce: float  # Maximum Calibration Error
+    log_loss: float  # Logarithmic loss
 
 
 class ProbabilityCalibrator:
@@ -90,16 +92,17 @@ class ProbabilityCalibrator:
             self.platt_calibrator = self._fit_platt_scaling(predicted_probs, actual_outcomes)
 
             # Fit Isotonic regression (monotonic calibration)
-            self.isotonic_calibrator = self._fit_isotonic_regression(predicted_probs, actual_outcomes)
+            self.isotonic_calibrator = self._fit_isotonic_regression(
+                predicted_probs, actual_outcomes
+            )
 
             # Evaluate both methods
             platt_metrics = self._evaluate_calibration(predicted_probs, actual_outcomes, "platt")
-            isotonic_metrics = self._evaluate_calibration(predicted_probs, actual_outcomes, "isotonic")
+            isotonic_metrics = self._evaluate_calibration(
+                predicted_probs, actual_outcomes, "isotonic"
+            )
 
-            self.calibration_metrics = {
-                "platt": platt_metrics,
-                "isotonic": isotonic_metrics
-            }
+            self.calibration_metrics = {"platt": platt_metrics, "isotonic": isotonic_metrics}
 
             # Choose best method
             if self.method == "auto":
@@ -108,8 +111,7 @@ class ProbabilityCalibrator:
                 self.best_method = self.method
 
             self.best_calibrator = (
-                self.platt_calibrator if self.best_method == "platt"
-                else self.isotonic_calibrator
+                self.platt_calibrator if self.best_method == "platt" else self.isotonic_calibrator
             )
 
             self.is_fitted = True
@@ -121,7 +123,7 @@ class ProbabilityCalibrator:
                 "platt_metrics": platt_metrics,
                 "isotonic_metrics": isotonic_metrics,
                 "n_samples": len(predicted_probs),
-                "win_rate": np.mean(actual_outcomes)
+                "win_rate": np.mean(actual_outcomes),
             }
 
         except Exception as e:
@@ -152,9 +154,9 @@ class ProbabilityCalibrator:
             logger.error(f"Calibration failed: {e}")
             return predicted_probs
 
-    def get_calibration_curve(self, predicted_probs: np.ndarray,
-                             actual_outcomes: np.ndarray,
-                             n_bins: int = 10) -> Tuple[np.ndarray, np.ndarray]:
+    def get_calibration_curve(
+        self, predicted_probs: np.ndarray, actual_outcomes: np.ndarray, n_bins: int = 10
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Generate reliability diagram data
 
@@ -167,28 +169,32 @@ class ProbabilityCalibrator:
             logger.error(f"Calibration curve generation failed: {e}")
             return np.array([]), np.array([])
 
-    def _fit_platt_scaling(self, predicted_probs: np.ndarray,
-                          actual_outcomes: np.ndarray) -> LogisticRegression:
+    def _fit_platt_scaling(
+        self, predicted_probs: np.ndarray, actual_outcomes: np.ndarray
+    ) -> LogisticRegression:
         """Fit Platt scaling (logistic regression on probabilities)"""
         calibrator = LogisticRegression()
         calibrator.fit(predicted_probs.reshape(-1, 1), actual_outcomes)
         return calibrator
 
-    def _fit_isotonic_regression(self, predicted_probs: np.ndarray,
-                                actual_outcomes: np.ndarray) -> IsotonicRegression:
+    def _fit_isotonic_regression(
+        self, predicted_probs: np.ndarray, actual_outcomes: np.ndarray
+    ) -> IsotonicRegression:
         """Fit isotonic regression for monotonic calibration"""
-        calibrator = IsotonicRegression(out_of_bounds='clip')
+        calibrator = IsotonicRegression(out_of_bounds="clip")
         calibrator.fit(predicted_probs, actual_outcomes)
         return calibrator
 
-    def _evaluate_calibration(self, predicted_probs: np.ndarray,
-                             actual_outcomes: np.ndarray,
-                             method: str) -> CalibrationMetrics:
+    def _evaluate_calibration(
+        self, predicted_probs: np.ndarray, actual_outcomes: np.ndarray, method: str
+    ) -> CalibrationMetrics:
         """Evaluate calibration quality"""
         try:
             # Get calibrated probabilities
             if method == "platt":
-                cal_probs = self.platt_calibrator.predict_proba(predicted_probs.reshape(-1, 1))[:, 1]
+                cal_probs = self.platt_calibrator.predict_proba(predicted_probs.reshape(-1, 1))[
+                    :, 1
+                ]
             else:
                 cal_probs = self.isotonic_calibrator.predict(predicted_probs)
 
@@ -207,8 +213,8 @@ class ProbabilityCalibrator:
             epsilon = 1e-15  # Prevent log(0)
             cal_probs_clipped = np.clip(cal_probs, epsilon, 1 - epsilon)
             log_loss = -np.mean(
-                actual_outcomes * np.log(cal_probs_clipped) +
-                (1 - actual_outcomes) * np.log(1 - cal_probs_clipped)
+                actual_outcomes * np.log(cal_probs_clipped)
+                + (1 - actual_outcomes) * np.log(1 - cal_probs_clipped)
             )
 
             return CalibrationMetrics(
@@ -217,16 +223,16 @@ class ProbabilityCalibrator:
                 resolution=resolution,
                 ece=ece,
                 mce=mce,
-                log_loss=log_loss
+                log_loss=log_loss,
             )
 
         except Exception as e:
             logger.error(f"Calibration evaluation failed: {e}")
             return CalibrationMetrics(1.0, 1.0, 0.0, 1.0, 1.0, 10.0)  # Worst case
 
-    def _compute_reliability_resolution(self, cal_probs: np.ndarray,
-                                       actual_outcomes: np.ndarray,
-                                       n_bins: int = 10) -> Tuple[float, float]:
+    def _compute_reliability_resolution(
+        self, cal_probs: np.ndarray, actual_outcomes: np.ndarray, n_bins: int = 10
+    ) -> Tuple[float, float]:
         """Compute reliability and resolution components"""
         try:
             # Bin predictions
@@ -262,9 +268,9 @@ class ProbabilityCalibrator:
             logger.error(f"Reliability/resolution computation failed: {e}")
             return 1.0, 0.0
 
-    def _compute_calibration_errors(self, cal_probs: np.ndarray,
-                                   actual_outcomes: np.ndarray,
-                                   n_bins: int = 10) -> Tuple[float, float]:
+    def _compute_calibration_errors(
+        self, cal_probs: np.ndarray, actual_outcomes: np.ndarray, n_bins: int = 10
+    ) -> Tuple[float, float]:
         """Compute Expected and Maximum Calibration Error"""
         try:
             bin_boundaries = np.linspace(0, 1, n_bins + 1)
@@ -297,8 +303,9 @@ class ProbabilityCalibrator:
             logger.error(f"Calibration error computation failed: {e}")
             return 1.0, 1.0
 
-    def _select_best_method(self, platt_metrics: CalibrationMetrics,
-                           isotonic_metrics: CalibrationMetrics) -> str:
+    def _select_best_method(
+        self, platt_metrics: CalibrationMetrics, isotonic_metrics: CalibrationMetrics
+    ) -> str:
         """Select best calibration method based on metrics"""
         try:
             # Primary criterion: Expected Calibration Error (lower is better)
@@ -308,10 +315,16 @@ class ProbabilityCalibrator:
                 primary_winner = "isotonic"
             else:
                 # Tie-breaker: Brier Score
-                primary_winner = "platt" if platt_metrics.brier_score <= isotonic_metrics.brier_score else "isotonic"
+                primary_winner = (
+                    "platt"
+                    if platt_metrics.brier_score <= isotonic_metrics.brier_score
+                    else "isotonic"
+                )
 
-            logger.info(f"Selected {primary_winner} based on ECE: "
-                       f"Platt={platt_metrics.ece:.4f}, Isotonic={isotonic_metrics.ece:.4f}")
+            logger.info(
+                f"Selected {primary_winner} based on ECE: "
+                f"Platt={platt_metrics.ece:.4f}, Isotonic={isotonic_metrics.ece:.4f}"
+            )
 
             return primary_winner
 
@@ -331,7 +344,7 @@ class ProbabilityCalibrator:
                 "calibration_metrics": self.calibration_metrics,
                 "is_fitted": self.is_fitted,
                 "method": self.method,
-                "cv_folds": self.cv_folds
+                "cv_folds": self.cv_folds,
             }
 
             joblib.dump(calibrator_data, path)
@@ -360,8 +373,7 @@ class ProbabilityCalibrator:
             self.cv_folds = calibrator_data.get("cv_folds", 5)
 
             self.best_calibrator = (
-                self.platt_calibrator if self.best_method == "platt"
-                else self.isotonic_calibrator
+                self.platt_calibrator if self.best_method == "platt" else self.isotonic_calibrator
             )
 
             logger.info(f"Calibrator loaded from {path}")
@@ -387,7 +399,7 @@ class ProbabilityCalibrator:
                 "log_loss": best_metrics.log_loss if best_metrics else None,
                 "reliability": best_metrics.reliability if best_metrics else None,
                 "resolution": best_metrics.resolution if best_metrics else None,
-                "available_methods": list(self.calibration_metrics.keys())
+                "available_methods": list(self.calibration_metrics.keys()),
             }
 
         except Exception as e:

@@ -16,9 +16,11 @@ import hashlib
 
 from utils.daily_logger import get_daily_logger
 
+
 @dataclass
 class WhaleTransaction:
     """Enhanced whale transaction with context"""
+
     tx_hash: str
     from_address: str
     to_address: str
@@ -32,9 +34,11 @@ class WhaleTransaction:
     labels: Dict[str, str]  # address labels
     false_positive_score: float  # 0 to 1, higher = more likely false positive
 
+
 @dataclass
 class OnChainEvent:
     """Important on-chain event detection"""
+
     event_type: str  # unlock, governance, exploit, large_mint
     token: str
     description: str
@@ -42,6 +46,7 @@ class OnChainEvent:
     timestamp: datetime
     related_addresses: List[str]
     confidence: float
+
 
 class AddressLabeling:
     """Advanced address labeling and classification"""
@@ -56,9 +61,18 @@ class AddressLabeling:
         # This would integrate with services like Etherscan, DeBank, etc.
         self.known_labels = {
             # Exchange addresses (examples)
-            '0x28c6c06298d514db089934071355e5743bf21d60': {'type': 'exchange', 'name': 'Binance 14'},
-            '0x21a31ee1afc51d94c2efccaa2092ad1028285549': {'type': 'exchange', 'name': 'Binance 15'},
-            '0xdfd5293d8e347dfe59e90efd55b2956a1343963d': {'type': 'exchange', 'name': 'Binance 16'},
+            "0x28c6c06298d514db089934071355e5743bf21d60": {
+                "type": "exchange",
+                "name": "Binance 14",
+            },
+            "0x21a31ee1afc51d94c2efccaa2092ad1028285549": {
+                "type": "exchange",
+                "name": "Binance 15",
+            },
+            "0xdfd5293d8e347dfe59e90efd55b2956a1343963d": {
+                "type": "exchange",
+                "name": "Binance 16",
+            },
             # Add more known addresses
         }
 
@@ -89,13 +103,14 @@ class AddressLabeling:
         # - Interaction patterns
 
         # For now, return unknown
-        return {'type': 'unknown', 'name': f'Unknown_{address[:8]}'}
+        return {"type": "unknown", "name": f"Unknown_{address[:8]}"}
+
 
 class EventDetector:
     """Detect important on-chain events"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('whale')
+        self.logger = get_daily_logger().get_logger("whale")
 
     async def detect_events(self, token: str, timeframe_hours: int = 24) -> List[OnChainEvent]:
         """Detect important events for a token"""
@@ -131,37 +146,39 @@ class EventDetector:
         # Implement governance event detection
         return []
 
+
 class FalsePositiveFilter:
     """Filter out false positive whale movements"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('whale')
+        self.logger = get_daily_logger().get_logger("whale")
 
-    def calculate_false_positive_score(self,
-                                     transaction: Dict,
-                                     from_label: Dict[str, str],
-                                     to_label: Dict[str, str]) -> float:
+    def calculate_false_positive_score(
+        self, transaction: Dict, from_label: Dict[str, str], to_label: Dict[str, str]
+    ) -> float:
         """Calculate probability that this is a false positive"""
 
         score = 0.0
 
         # Internal exchange movements are often false positives
-        if (from_label.get('type') == 'exchange' and
-            to_label.get('type') == 'exchange' and
-            from_label.get('name', '').split()[0] == to_label.get('name', '').split()[0]):
+        if (
+            from_label.get("type") == "exchange"
+            and to_label.get("type") == "exchange"
+            and from_label.get("name", "").split()[0] == to_label.get("name", "").split()[0]
+        ):
             score += 0.8  # Same exchange
 
         # Contract interactions might be automated
-        if to_label.get('type') == 'contract':
+        if to_label.get("type") == "contract":
             score += 0.3
 
         # Round number amounts are often operational
-        amount = transaction.get('amount', 0)
+        amount = transaction.get("amount", 0)
         if self._is_round_number(amount):
             score += 0.2
 
         # Frequent small transactions from same address
-        if self._is_frequent_trader(transaction.get('from_address', '')):
+        if self._is_frequent_trader(transaction.get("from_address", "")):
             score += 0.4
 
         return min(score, 1.0)
@@ -181,6 +198,7 @@ class FalsePositiveFilter:
         # For now, return False
         return False
 
+
 class AsyncOnChainPipeline:
     """High-performance async on-chain data pipeline"""
 
@@ -188,12 +206,8 @@ class AsyncOnChainPipeline:
         self.max_concurrent = max_concurrent
         self.semaphore = asyncio.Semaphore(max_concurrent)
         self.session = None
-        self.logger = get_daily_logger().get_logger('whale')
-        self.retry_config = {
-            'max_retries': 3,
-            'base_delay': 1.0,
-            'max_delay': 10.0
-        }
+        self.logger = get_daily_logger().get_logger("whale")
+        self.retry_config = {"max_retries": 3, "base_delay": 1.0, "max_delay": 10.0}
 
     async def __aenter__(self):
         """Async context manager entry"""
@@ -206,9 +220,9 @@ class AsyncOnChainPipeline:
         if self.session:
             await self.session.close()
 
-    async def fetch_transactions(self,
-                                addresses: List[str],
-                                min_value_usd: float = 100000) -> List[Dict]:
+    async def fetch_transactions(
+        self, addresses: List[str], min_value_usd: float = 100000
+    ) -> List[Dict]:
         """Fetch transactions for multiple addresses concurrently"""
 
         tasks = []
@@ -230,13 +244,11 @@ class AsyncOnChainPipeline:
 
         return all_transactions
 
-    async def _fetch_address_transactions(self,
-                                        address: str,
-                                        min_value_usd: float) -> List[Dict]:
+    async def _fetch_address_transactions(self, address: str, min_value_usd: float) -> List[Dict]:
         """Fetch transactions for single address with retry logic"""
 
         async with self.semaphore:
-            for attempt in range(self.retry_config['max_retries']):
+            for attempt in range(self.retry_config["max_retries"]):
                 try:
                     # REMOVED: Mock data pattern not allowed in production
                     await asyncio.sleep(0.1)  # REMOVED: Mock data pattern not allowed in production
@@ -245,50 +257,55 @@ class AsyncOnChainPipeline:
                     transactions = []
                     if attempt == 0:  # REMOVED: Mock data pattern not allowed in production
                         import random
+
                         if random.random() < 0.1:  # 10% failure rate
                             raise aiohttp.ClientError("Simulated API error")
 
                     # REMOVED: Mock data pattern not allowed in production
                     for i in range(random.choice):
-                        transactions.append({
-                            'hash': f"0x{''.join(random.choices('0123456789abcdef', k=64))}",
-                            'from_address': address,
-                            'to': "0xdeadbeef",
-                            'amount': random.choice,
-                            'timestamp': time.time() - random.choice,
-                            'token': 'ETH'
-                        })
+                        transactions.append(
+                            {
+                                "hash": f"0x{''.join(random.choices('0123456789abcdef', k=64))}",
+                                "from_address": address,
+                                "to": "0xdeadbeef",
+                                "amount": random.choice,
+                                "timestamp": time.time() - random.choice,
+                                "token": "ETH",
+                            }
+                        )
 
                     return transactions
 
                 except Exception as e:
-                    if attempt == self.retry_config['max_retries'] - 1:
-                        self.logger.error(f"Failed to fetch transactions for {address} after {self.retry_config['max_retries']} attempts: {e}")
+                    if attempt == self.retry_config["max_retries"] - 1:
+                        self.logger.error(
+                            f"Failed to fetch transactions for {address} after {self.retry_config['max_retries']} attempts: {e}"
+                        )
                         return []
 
                     delay = min(
-                        self.retry_config['base_delay'] * (2 ** attempt),
-                        self.retry_config['max_delay']
+                        self.retry_config["base_delay"] * (2**attempt),
+                        self.retry_config["max_delay"],
                     )
                     await asyncio.sleep(delay)
 
         return []
 
+
 class EnhancedWhaleAgent:
     """Professional whale detection with context awareness"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('whale')
+        self.logger = get_daily_logger().get_logger("whale")
         self.address_labeler = AddressLabeling()
         self.event_detector = EventDetector()
         self.fp_filter = FalsePositiveFilter()
         self.cache = {}
         self.cache_ttl = 300  # 5 minutes
 
-    async def analyze_whale_activity(self,
-                                   tokens: List[str],
-                                   min_value_usd: float = 100000,
-                                   timeframe_hours: int = 24) -> Dict[str, List[WhaleTransaction]]:
+    async def analyze_whale_activity(
+        self, tokens: List[str], min_value_usd: float = 100000, timeframe_hours: int = 24
+    ) -> Dict[str, List[WhaleTransaction]]:
         """Comprehensive whale activity analysis"""
 
         results = {}
@@ -320,7 +337,9 @@ class EnhancedWhaleAgent:
 
             results[token] = whale_transactions
 
-            self.logger.info(f"Found {len(whale_transactions)} significant whale transactions for {token}")
+            self.logger.info(
+                f"Found {len(whale_transactions)} significant whale transactions for {token}"
+            )
 
         return results
 
@@ -342,23 +361,19 @@ class EnhancedWhaleAgent:
 
         return addresses
 
-    async def _enrich_transaction(self,
-                                tx: Dict,
-                                token: str) -> Optional[WhaleTransaction]:
+    async def _enrich_transaction(self, tx: Dict, token: str) -> Optional[WhaleTransaction]:
         """Enrich transaction with labels and context"""
 
         try:
             # Label addresses
-            from_label = await self.address_labeler.label_address(tx['from'])
-            to_label = await self.address_labeler.label_address(tx['to'])
+            from_label = await self.address_labeler.label_address(tx["from"])
+            to_label = await self.address_labeler.label_address(tx["to"])
 
             # Determine transaction type
             tx_type = self._classify_transaction_type(from_label, to_label)
 
             # Calculate false positive score
-            fp_score = self.fp_filter.calculate_false_positive_score(
-                tx, from_label, to_label
-            )
+            fp_score = self.fp_filter.calculate_false_positive_score(tx, from_label, to_label)
 
             # Generate context
             context = self._generate_context(tx, from_label, to_label, tx_type)
@@ -367,57 +382,55 @@ class EnhancedWhaleAgent:
             confidence = 1.0 - fp_score
 
             return WhaleTransaction(
-                tx_hash=tx['hash'],
-                from_address=tx['from'],
-                to_address=tx['to'],
-                amount=tx['amount'],
+                tx_hash=tx["hash"],
+                from_address=tx["from"],
+                to_address=tx["to"],
+                amount=tx["amount"],
                 token=token,
-                usd_value=tx['amount'],  # Simplified
-                timestamp=datetime.fromtimestamp(tx['timestamp']),
+                usd_value=tx["amount"],  # Simplified
+                timestamp=datetime.fromtimestamp(tx["timestamp"]),
                 transaction_type=tx_type,
                 confidence=confidence,
                 context=context,
-                labels={'from_address': from_label, 'to': to_label},
-                false_positive_score=fp_score
+                labels={"from_address": from_label, "to": to_label},
+                false_positive_score=fp_score,
             )
 
         except Exception as e:
             self.logger.error(f"Error enriching transaction {tx.get('hash', 'unknown')}: {e}")
             return None
 
-    def _classify_transaction_type(self,
-                                 from_label: Dict[str, str],
-                                 to_label: Dict[str, str]) -> str:
+    def _classify_transaction_type(
+        self, from_label: Dict[str, str], to_label: Dict[str, str]
+    ) -> str:
         """Classify transaction type based on labels"""
 
-        from_type = from_label.get('type', 'unknown')
-        to_type = to_label.get('type', 'unknown')
+        from_type = from_label.get("type", "unknown")
+        to_type = to_label.get("type", "unknown")
 
-        if from_type == 'exchange' and to_type != 'exchange':
-            return 'exchange_withdrawal'
-        elif from_type != 'exchange' and to_type == 'exchange':
-            return 'exchange_deposit'
-        elif 'defi' in from_type or 'defi' in to_type:
-            return 'defi_interaction'
+        if from_type == "exchange" and to_type != "exchange":
+            return "exchange_withdrawal"
+        elif from_type != "exchange" and to_type == "exchange":
+            return "exchange_deposit"
+        elif "defi" in from_type or "defi" in to_type:
+            return "defi_interaction"
         else:
-            return 'transfer'
+            return "transfer"
 
-    def _generate_context(self,
-                         tx: Dict,
-                         from_label: Dict[str, str],
-                         to_label: Dict[str, str],
-                         tx_type: str) -> str:
+    def _generate_context(
+        self, tx: Dict, from_label: Dict[str, str], to_label: Dict[str, str], tx_type: str
+    ) -> str:
         """Generate human-readable context"""
 
-        from_name = from_label.get('name', 'Unknown')
-        to_name = to_label.get('name', 'Unknown')
-        amount = tx['amount']
+        from_name = from_label.get("name", "Unknown")
+        to_name = to_label.get("name", "Unknown")
+        amount = tx["amount"]
 
-        if tx_type == 'exchange_withdrawal':
+        if tx_type == "exchange_withdrawal":
             return f"Large withdrawal of {amount:,.0f} from {from_name}"
-        elif tx_type == 'exchange_deposit':
+        elif tx_type == "exchange_deposit":
             return f"Large deposit of {amount:,.0f} to {to_name}"
-        elif tx_type == 'defi_interaction':
+        elif tx_type == "defi_interaction":
             return f"DeFi interaction: {amount:,.0f} between {from_name} and {to_name}"
         else:
             return f"Large transfer of {amount:,.0f} from {from_name} to {to_name}"
@@ -425,14 +438,15 @@ class EnhancedWhaleAgent:
     def get_status(self) -> Dict:
         """Get agent status"""
         return {
-            'agent': 'enhanced_whale',
-            'status': 'operational',
-            'address_labels_cached': len(self.address_labeler.label_cache),
-            'async_pipeline': True,
-            'event_detection': True,
-            'false_positive_filtering': True,
-            'cache_size': len(self.cache)
+            "agent": "enhanced_whale",
+            "status": "operational",
+            "address_labels_cached": len(self.address_labeler.label_cache),
+            "async_pipeline": True,
+            "event_detection": True,
+            "false_positive_filtering": True,
+            "cache_size": len(self.cache),
         }
+
 
 # Global instance
 whale_agent = EnhancedWhaleAgent()

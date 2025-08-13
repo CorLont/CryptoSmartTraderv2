@@ -8,9 +8,4 @@ from .meta_learner import MetaLearner
 from .drift_detector import DriftDetector
 from .online_updater import OnlineUpdater
 
-__all__ = [
-    'ContinualLearner',
-    'MetaLearner',
-    'DriftDetector',
-    'OnlineUpdater'
-]
+__all__ = ["ContinualLearner", "MetaLearner", "DriftDetector", "OnlineUpdater"]

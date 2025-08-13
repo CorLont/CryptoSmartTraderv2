@@ -7,7 +7,10 @@ import pandas as pd
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Union
 
-def normalize_timestamp(timestamp: Union[str, datetime, pd.Timestamp], target_timezone: str = "UTC") -> pd.Timestamp:
+
+def normalize_timestamp(
+    timestamp: Union[str, datetime, pd.Timestamp], target_timezone: str = "UTC"
+) -> pd.Timestamp:
     """Normalize timestamp to UTC"""
 
     if pd.isna(timestamp):
@@ -23,11 +26,12 @@ def normalize_timestamp(timestamp: Union[str, datetime, pd.Timestamp], target_ti
 
     # Convert to UTC if not already
     if ts.tz is None:
-        ts = ts.tz_localize('UTC')
+        ts = ts.tz_localize("UTC")
     else:
-        ts = ts.tz_convert('UTC')
+        ts = ts.tz_convert("UTC")
 
     return ts
+
 
 def validate_timestamp_sequence(timestamps: pd.Series) -> Dict[str, Any]:
     """Validate timestamp sequence for temporal integrity"""
@@ -63,5 +67,5 @@ def validate_timestamp_sequence(timestamps: pd.Series) -> Dict[str, Any]:
         "issues": issues,
         "total_timestamps": len(timestamps),
         "missing_timestamps": missing_count,
-        "duplicate_timestamps": duplicate_count
+        "duplicate_timestamps": duplicate_count,
     }

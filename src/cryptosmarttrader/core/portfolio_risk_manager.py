@@ -12,42 +12,51 @@ from datetime import datetime, timedelta
 from enum import Enum
 import json
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 from ..core.logging_manager import get_logger
 from ..core.data_quality_manager import get_data_quality_manager
 
+
 class RiskStatus(str, Enum):
     """Risk management status levels"""
-    GREEN = "green"      # Normal operations
-    YELLOW = "yellow"    # Warning - increased monitoring
-    ORANGE = "orange"    # Caution - restricted operations
-    RED = "red"          # Critical - emergency actions required
-    BLACK = "black"      # Kill switch - all positions flat
+
+    GREEN = "green"  # Normal operations
+    YELLOW = "yellow"  # Warning - increased monitoring
+    ORANGE = "orange"  # Caution - restricted operations
+    RED = "red"  # Critical - emergency actions required
+    BLACK = "black"  # Kill switch - all positions flat
+
 
 class PositionAction(str, Enum):
     """Available position management actions"""
+
     ALLOW = "allow"
     RESTRICT = "restrict"
     REDUCE = "reduce"
     FLATTEN = "flatten"
     KILL = "kill"
 
+
 @dataclass
 class CoinLimits:
     """Per-coin position and risk limits"""
+
     symbol: str
     max_position_value_usd: float
     max_position_percent_adv: float  # Percentage of Average Daily Volume
-    max_portfolio_weight: float      # Percentage of total portfolio
-    min_liquidity_usd: float        # Minimum required liquidity
-    correlation_limit: float        # Max correlation with other positions
-    data_quality_threshold: float   # Minimum data quality score
+    max_portfolio_weight: float  # Percentage of total portfolio
+    min_liquidity_usd: float  # Minimum required liquidity
+    correlation_limit: float  # Max correlation with other positions
+    data_quality_threshold: float  # Minimum data quality score
     enabled: bool = True
+
 
 @dataclass
 class PositionLimit:
     """Current position limits with dynamic adjustments"""
+
     symbol: str
     current_limit_usd: float
     current_limit_shares: float
@@ -55,9 +64,11 @@ class PositionLimit:
     limit_reason: str
     last_updated: datetime
 
+
 @dataclass
 class RiskMetrics:
     """Current portfolio risk metrics"""
+
     timestamp: datetime
     total_portfolio_value: float
     total_exposure: float
@@ -71,9 +82,11 @@ class RiskMetrics:
     liquidity_risk: float
     data_quality_score: float
 
+
 @dataclass
 class RiskAlert:
     """Risk alert record"""
+
     alert_id: str
     symbol: Optional[str]
     alert_type: str
@@ -85,9 +98,11 @@ class RiskAlert:
     timestamp: datetime
     resolved: bool = False
 
+
 @dataclass
 class Position:
     """Enhanced position tracking with risk metrics"""
+
     symbol: str
     size: float
     market_value: float
@@ -101,6 +116,7 @@ class Position:
     data_quality_score: float
     liquidity_score: float
     last_updated: datetime
+
 
 class LiquidityAnalyzer:
     """Analyzes market liquidity and ADV for position sizing"""
@@ -120,18 +136,15 @@ class LiquidityAnalyzer:
 
         # Cache result
         self.volume_history[symbol] = {
-            'adv': adv,
-            'last_updated': datetime.now(),
-            'sample_size': len(recent_volumes)
+            "adv": adv,
+            "last_updated": datetime.now(),
+            "sample_size": len(recent_volumes),
         }
 
         return adv
 
     def estimate_market_impact(
-        self,
-        symbol: str,
-        position_size_usd: float,
-        adv_usd: float
+        self, symbol: str, position_size_usd: float, adv_usd: float
     ) -> float:
         """Estimate market impact for position size"""
 
@@ -152,7 +165,7 @@ class LiquidityAnalyzer:
         current_volume: float,
         adv: float,
         bid_ask_spread: float,
-        order_book_depth: float
+        order_book_depth: float,
     ) -> float:
         """Calculate comprehensive liquidity score (0-1)"""
 
@@ -166,13 +179,10 @@ class LiquidityAnalyzer:
         # Depth component (30% weight)
         depth_score = min(order_book_depth / 100000, 1.0)  # Normalize to $100k depth
 
-        liquidity_score = (
-            volume_score * 0.3 +
-            spread_score * 0.4 +
-            depth_score * 0.3
-        )
+        liquidity_score = volume_score * 0.3 + spread_score * 0.4 + depth_score * 0.3
 
         return max(0, min(1, liquidity_score))
+
 
 class CorrelationMonitor:
     """Monitors portfolio correlations and concentration risk"""
@@ -192,10 +202,9 @@ class CorrelationMonitor:
         self.correlation_matrix = returns_data.corr()
 
         # Store correlation snapshot
-        self.correlation_history.append({
-            'timestamp': datetime.now(),
-            'correlations': self.correlation_matrix.to_dict()
-        })
+        self.correlation_history.append(
+            {"timestamp": datetime.now(), "correlations": self.correlation_matrix.to_dict()}
+        )
 
         # Keep last 100 snapshots
         if len(self.correlation_history) > 100:
@@ -208,7 +217,7 @@ class CorrelationMonitor:
             return 0.0
 
         # Get correlations with other symbols (exclude self)
-        correlations = self.correlation_matrix[symbol].drop(symbol, errors='ignore')
+        correlations = self.correlation_matrix[symbol].drop(symbol, errors="ignore")
 
         if correlations.empty:
             return 0.0
@@ -235,6 +244,7 @@ class CorrelationMonitor:
         concentration_risk = (hhi - min_hhi) / (max_hhi - min_hhi)
 
         return concentration_risk
+
 
 class PortfolioRiskManager:
     """Main portfolio risk management engine"""
@@ -266,15 +276,15 @@ class PortfolioRiskManager:
         """Initialize portfolio-level risk limits"""
 
         return {
-            'max_portfolio_value': 10000000,  # $10M max portfolio
-            'max_gross_leverage': 3.0,        # 3x gross leverage
-            'max_net_leverage': 2.0,          # 2x net leverage
-            'max_concentration': 0.25,        # 25% max single position
-            'max_correlation': 0.8,           # 80% max correlation
-            'min_data_quality': 0.7,          # 70% min data quality
-            'max_var_95': 0.05,              # 5% daily VaR limit
-            'min_liquidity_score': 0.3,      # 30% min liquidity score
-            'max_adv_utilization': 0.2       # 20% max ADV utilization
+            "max_portfolio_value": 10000000,  # $10M max portfolio
+            "max_gross_leverage": 3.0,  # 3x gross leverage
+            "max_net_leverage": 2.0,  # 2x net leverage
+            "max_concentration": 0.25,  # 25% max single position
+            "max_correlation": 0.8,  # 80% max correlation
+            "min_data_quality": 0.7,  # 70% min data quality
+            "max_var_95": 0.05,  # 5% daily VaR limit
+            "min_liquidity_score": 0.3,  # 30% min liquidity score
+            "max_adv_utilization": 0.2,  # 20% max ADV utilization
         }
 
     def set_coin_limits(self, symbol: str, limits: CoinLimits):
@@ -285,44 +295,44 @@ class PortfolioRiskManager:
         self.logger.info(
             f"Coin limits set for {symbol}",
             extra={
-                'symbol': symbol,
-                'max_value_usd': limits.max_position_value_usd,
-                'max_adv_percent': limits.max_position_percent_adv,
-                'max_portfolio_weight': limits.max_portfolio_weight
-            }
+                "symbol": symbol,
+                "max_value_usd": limits.max_position_value_usd,
+                "max_adv_percent": limits.max_position_percent_adv,
+                "max_portfolio_weight": limits.max_portfolio_weight,
+            },
         )
 
     def initialize_default_limits(self):
         """Initialize default limits for major cryptocurrencies"""
 
         major_coins = {
-            'BTC/USD': CoinLimits(
-                symbol='BTC/USD',
+            "BTC/USD": CoinLimits(
+                symbol="BTC/USD",
                 max_position_value_usd=2000000,  # $2M max
-                max_position_percent_adv=0.15,   # 15% of ADV
-                max_portfolio_weight=0.30,       # 30% of portfolio
-                min_liquidity_usd=10000000,      # $10M min liquidity
-                correlation_limit=0.7,           # 70% max correlation
-                data_quality_threshold=0.8       # 80% data quality
+                max_position_percent_adv=0.15,  # 15% of ADV
+                max_portfolio_weight=0.30,  # 30% of portfolio
+                min_liquidity_usd=10000000,  # $10M min liquidity
+                correlation_limit=0.7,  # 70% max correlation
+                data_quality_threshold=0.8,  # 80% data quality
             ),
-            'ETH/USD': CoinLimits(
-                symbol='ETH/USD',
+            "ETH/USD": CoinLimits(
+                symbol="ETH/USD",
                 max_position_value_usd=1500000,  # $1.5M max
-                max_position_percent_adv=0.20,   # 20% of ADV
-                max_portfolio_weight=0.25,       # 25% of portfolio
-                min_liquidity_usd=5000000,       # $5M min liquidity
+                max_position_percent_adv=0.20,  # 20% of ADV
+                max_portfolio_weight=0.25,  # 25% of portfolio
+                min_liquidity_usd=5000000,  # $5M min liquidity
                 correlation_limit=0.7,
-                data_quality_threshold=0.8
+                data_quality_threshold=0.8,
             ),
-            'ADA/USD': CoinLimits(
-                symbol='ADA/USD',
-                max_position_value_usd=500000,   # $500k max
-                max_position_percent_adv=0.25,   # 25% of ADV
-                max_portfolio_weight=0.10,       # 10% of portfolio
-                min_liquidity_usd=1000000,       # $1M min liquidity
+            "ADA/USD": CoinLimits(
+                symbol="ADA/USD",
+                max_position_value_usd=500000,  # $500k max
+                max_position_percent_adv=0.25,  # 25% of ADV
+                max_portfolio_weight=0.10,  # 10% of portfolio
+                min_liquidity_usd=1000000,  # $1M min liquidity
                 correlation_limit=0.6,
-                data_quality_threshold=0.7
-            )
+                data_quality_threshold=0.7,
+            ),
         }
 
         for symbol, limits in major_coins.items():
@@ -334,7 +344,7 @@ class PortfolioRiskManager:
         proposed_size: float,
         current_price: float,
         market_data: Dict[str, Any],
-        current_positions: Dict[str, Position]
+        current_positions: Dict[str, Position],
     ) -> Tuple[PositionAction, List[RiskAlert]]:
         """Comprehensive position validation with all risk checks"""
 
@@ -346,110 +356,126 @@ class PortfolioRiskManager:
             # Create conservative default limits
             self.coin_limits[symbol] = CoinLimits(
                 symbol=symbol,
-                max_position_value_usd=100000,   # $100k default
-                max_position_percent_adv=0.10,   # 10% of ADV
-                max_portfolio_weight=0.05,       # 5% of portfolio
-                min_liquidity_usd=500000,        # $500k min liquidity
+                max_position_value_usd=100000,  # $100k default
+                max_position_percent_adv=0.10,  # 10% of ADV
+                max_portfolio_weight=0.05,  # 5% of portfolio
+                min_liquidity_usd=500000,  # $500k min liquidity
                 correlation_limit=0.5,
-                data_quality_threshold=0.6
+                data_quality_threshold=0.6,
             )
 
         coin_limits = self.coin_limits[symbol]
 
         # 1. Position value check
         if proposed_value > coin_limits.max_position_value_usd:
-            alerts.append(RiskAlert(
-                alert_id=f"value_limit_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                symbol=symbol,
-                alert_type="position_value_limit",
-                severity=RiskStatus.RED,
-                message=f"Position value ${proposed_value:,.0f} exceeds limit ${coin_limits.max_position_value_usd:,.0f}",
-                current_value=proposed_value,
-                limit_value=coin_limits.max_position_value_usd,
-                action_required=PositionAction.RESTRICT,
-                timestamp=datetime.now()
-            ))
+            alerts.append(
+                RiskAlert(
+                    alert_id=f"value_limit_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                    symbol=symbol,
+                    alert_type="position_value_limit",
+                    severity=RiskStatus.RED,
+                    message=f"Position value ${proposed_value:,.0f} exceeds limit ${coin_limits.max_position_value_usd:,.0f}",
+                    current_value=proposed_value,
+                    limit_value=coin_limits.max_position_value_usd,
+                    action_required=PositionAction.RESTRICT,
+                    timestamp=datetime.now(),
+                )
+            )
 
         # 2. ADV utilization check
-        adv_usd = market_data.get('adv_usd', 0)
+        adv_usd = market_data.get("adv_usd", 0)
         if adv_usd > 0:
             adv_utilization = proposed_value / adv_usd
             if adv_utilization > coin_limits.max_position_percent_adv:
-                alerts.append(RiskAlert(
-                    alert_id=f"adv_limit_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                    symbol=symbol,
-                    alert_type="adv_utilization_limit",
-                    severity=RiskStatus.ORANGE,
-                    message=f"ADV utilization {adv_utilization:.1%} exceeds limit {coin_limits.max_position_percent_adv:.1%}",
-                    current_value=adv_utilization,
-                    limit_value=coin_limits.max_position_percent_adv,
-                    action_required=PositionAction.REDUCE,
-                    timestamp=datetime.now()
-                ))
+                alerts.append(
+                    RiskAlert(
+                        alert_id=f"adv_limit_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                        symbol=symbol,
+                        alert_type="adv_utilization_limit",
+                        severity=RiskStatus.ORANGE,
+                        message=f"ADV utilization {adv_utilization:.1%} exceeds limit {coin_limits.max_position_percent_adv:.1%}",
+                        current_value=adv_utilization,
+                        limit_value=coin_limits.max_position_percent_adv,
+                        action_required=PositionAction.REDUCE,
+                        timestamp=datetime.now(),
+                    )
+                )
 
         # 3. Portfolio weight check
-        total_portfolio_value = sum(pos.market_value for pos in current_positions.values()) + proposed_value
-        portfolio_weight = proposed_value / total_portfolio_value if total_portfolio_value > 0 else 0
+        total_portfolio_value = (
+            sum(pos.market_value for pos in current_positions.values()) + proposed_value
+        )
+        portfolio_weight = (
+            proposed_value / total_portfolio_value if total_portfolio_value > 0 else 0
+        )
 
         if portfolio_weight > coin_limits.max_portfolio_weight:
-            alerts.append(RiskAlert(
-                alert_id=f"weight_limit_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                symbol=symbol,
-                alert_type="portfolio_weight_limit",
-                severity=RiskStatus.ORANGE,
-                message=f"Portfolio weight {portfolio_weight:.1%} exceeds limit {coin_limits.max_portfolio_weight:.1%}",
-                current_value=portfolio_weight,
-                limit_value=coin_limits.max_portfolio_weight,
-                action_required=PositionAction.REDUCE,
-                timestamp=datetime.now()
-            ))
+            alerts.append(
+                RiskAlert(
+                    alert_id=f"weight_limit_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                    symbol=symbol,
+                    alert_type="portfolio_weight_limit",
+                    severity=RiskStatus.ORANGE,
+                    message=f"Portfolio weight {portfolio_weight:.1%} exceeds limit {coin_limits.max_portfolio_weight:.1%}",
+                    current_value=portfolio_weight,
+                    limit_value=coin_limits.max_portfolio_weight,
+                    action_required=PositionAction.REDUCE,
+                    timestamp=datetime.now(),
+                )
+            )
 
         # 4. Data quality check
         data_quality_summary = self.data_quality_manager.get_quality_summary()
-        current_quality = data_quality_summary.get('overall_completeness', 0)
+        current_quality = data_quality_summary.get("overall_completeness", 0)
 
         if current_quality < coin_limits.data_quality_threshold:
-            alerts.append(RiskAlert(
-                alert_id=f"data_quality_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                symbol=symbol,
-                alert_type="data_quality_breach",
-                severity=RiskStatus.RED,
-                message=f"Data quality {current_quality:.1%} below threshold {coin_limits.data_quality_threshold:.1%}",
-                current_value=current_quality,
-                limit_value=coin_limits.data_quality_threshold,
-                action_required=PositionAction.KILL,
-                timestamp=datetime.now()
-            ))
+            alerts.append(
+                RiskAlert(
+                    alert_id=f"data_quality_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                    symbol=symbol,
+                    alert_type="data_quality_breach",
+                    severity=RiskStatus.RED,
+                    message=f"Data quality {current_quality:.1%} below threshold {coin_limits.data_quality_threshold:.1%}",
+                    current_value=current_quality,
+                    limit_value=coin_limits.data_quality_threshold,
+                    action_required=PositionAction.KILL,
+                    timestamp=datetime.now(),
+                )
+            )
 
         # 5. Liquidity check
-        liquidity_score = market_data.get('liquidity_score', 0)
-        if liquidity_score < self.portfolio_limits['min_liquidity_score']:
-            alerts.append(RiskAlert(
-                alert_id=f"liquidity_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                symbol=symbol,
-                alert_type="liquidity_insufficient",
-                severity=RiskStatus.YELLOW,
-                message=f"Liquidity score {liquidity_score:.2f} below minimum {self.portfolio_limits['min_liquidity_score']:.2f}",
-                current_value=liquidity_score,
-                limit_value=self.portfolio_limits['min_liquidity_score'],
-                action_required=PositionAction.RESTRICT,
-                timestamp=datetime.now()
-            ))
+        liquidity_score = market_data.get("liquidity_score", 0)
+        if liquidity_score < self.portfolio_limits["min_liquidity_score"]:
+            alerts.append(
+                RiskAlert(
+                    alert_id=f"liquidity_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                    symbol=symbol,
+                    alert_type="liquidity_insufficient",
+                    severity=RiskStatus.YELLOW,
+                    message=f"Liquidity score {liquidity_score:.2f} below minimum {self.portfolio_limits['min_liquidity_score']:.2f}",
+                    current_value=liquidity_score,
+                    limit_value=self.portfolio_limits["min_liquidity_score"],
+                    action_required=PositionAction.RESTRICT,
+                    timestamp=datetime.now(),
+                )
+            )
 
         # 6. Correlation check
         max_correlation = self._calculate_position_correlation(symbol, current_positions)
         if max_correlation > coin_limits.correlation_limit:
-            alerts.append(RiskAlert(
-                alert_id=f"correlation_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                symbol=symbol,
-                alert_type="correlation_limit",
-                severity=RiskStatus.YELLOW,
-                message=f"Max correlation {max_correlation:.2f} exceeds limit {coin_limits.correlation_limit:.2f}",
-                current_value=max_correlation,
-                limit_value=coin_limits.correlation_limit,
-                action_required=PositionAction.RESTRICT,
-                timestamp=datetime.now()
-            ))
+            alerts.append(
+                RiskAlert(
+                    alert_id=f"correlation_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                    symbol=symbol,
+                    alert_type="correlation_limit",
+                    severity=RiskStatus.YELLOW,
+                    message=f"Max correlation {max_correlation:.2f} exceeds limit {coin_limits.correlation_limit:.2f}",
+                    current_value=max_correlation,
+                    limit_value=coin_limits.correlation_limit,
+                    action_required=PositionAction.RESTRICT,
+                    timestamp=datetime.now(),
+                )
+            )
 
         # Determine overall action
         action = self._determine_position_action(alerts)
@@ -461,9 +487,7 @@ class PortfolioRiskManager:
         return action, alerts
 
     def _calculate_position_correlation(
-        self,
-        symbol: str,
-        current_positions: Dict[str, Position]
+        self, symbol: str, current_positions: Dict[str, Position]
     ) -> float:
         """Calculate maximum correlation with existing positions"""
 
@@ -497,9 +521,7 @@ class PortfolioRiskManager:
             return PositionAction.ALLOW
 
     def check_kill_switch_conditions(
-        self,
-        current_positions: Dict[str, Position],
-        market_data: Dict[str, Any]
+        self, current_positions: Dict[str, Position], market_data: Dict[str, Any]
     ) -> bool:
         """Check if kill switch should be activated"""
 
@@ -507,7 +529,7 @@ class PortfolioRiskManager:
 
         # 1. Data quality kill switch
         data_quality_summary = self.data_quality_manager.get_quality_summary()
-        overall_quality = data_quality_summary.get('overall_completeness', 0)
+        overall_quality = data_quality_summary.get("overall_completeness", 0)
 
         if overall_quality < 0.5:  # Less than 50% data quality
             kill_conditions.append(f"Data quality critical: {overall_quality:.1%}")
@@ -523,8 +545,8 @@ class PortfolioRiskManager:
             kill_conditions.append(f"Liquidity critical: {avg_liquidity:.1%}")
 
         # 4. Data gap kill switch
-        problematic_coins = data_quality_summary.get('problematic_coins_count', 0)
-        total_coins = data_quality_summary.get('total_coins_tracked', 1)
+        problematic_coins = data_quality_summary.get("problematic_coins_count", 0)
+        total_coins = data_quality_summary.get("total_coins_tracked", 1)
         if problematic_coins / total_coins > 0.5:  # More than 50% problematic
             kill_conditions.append(f"Data gaps critical: {problematic_coins}/{total_coins}")
 
@@ -535,10 +557,7 @@ class PortfolioRiskManager:
         if kill_conditions:
             self.logger.critical(
                 "KILL SWITCH ACTIVATED",
-                extra={
-                    'kill_conditions': kill_conditions,
-                    'action': 'flatten_all_positions'
-                }
+                extra={"kill_conditions": kill_conditions, "action": "flatten_all_positions"},
             )
 
             # Create emergency alert
@@ -551,7 +570,7 @@ class PortfolioRiskManager:
                 current_value=0,
                 limit_value=0,
                 action_required=PositionAction.KILL,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
 
             self.risk_alerts.append(emergency_alert)
@@ -563,9 +582,7 @@ class PortfolioRiskManager:
         return False
 
     def calculate_risk_metrics(
-        self,
-        current_positions: Dict[str, Position],
-        market_data: Dict[str, Any]
+        self, current_positions: Dict[str, Position], market_data: Dict[str, Any]
     ) -> RiskMetrics:
         """Calculate comprehensive portfolio risk metrics"""
 
@@ -582,31 +599,43 @@ class PortfolioRiskManager:
                 max_correlation=0,
                 concentration_risk=0,
                 liquidity_risk=0,
-                data_quality_score=1.0
+                data_quality_score=1.0,
             )
 
         # Portfolio values
         long_exposure = sum(pos.market_value for pos in current_positions.values() if pos.size > 0)
-        short_exposure = sum(abs(pos.market_value) for pos in current_positions.values() if pos.size < 0)
+        short_exposure = sum(
+            abs(pos.market_value) for pos in current_positions.values() if pos.size < 0
+        )
         total_exposure = long_exposure + short_exposure
         net_exposure = long_exposure - short_exposure
         total_portfolio_value = sum(pos.market_value for pos in current_positions.values())
 
         # Leverage calculations
-        gross_leverage = total_exposure / abs(total_portfolio_value) if total_portfolio_value != 0 else 0
-        net_leverage = abs(net_exposure) / abs(total_portfolio_value) if total_portfolio_value != 0 else 0
+        gross_leverage = (
+            total_exposure / abs(total_portfolio_value) if total_portfolio_value != 0 else 0
+        )
+        net_leverage = (
+            abs(net_exposure) / abs(total_portfolio_value) if total_portfolio_value != 0 else 0
+        )
 
         # VaR calculation (simplified)
         position_values = [pos.market_value for pos in current_positions.values()]
-        portfolio_volatility = np.std(position_values) / np.mean(position_values) if position_values else 0
+        portfolio_volatility = (
+            np.std(position_values) / np.mean(position_values) if position_values else 0
+        )
         var_1d_95 = 1.645 * portfolio_volatility  # 95% confidence
         var_1d_99 = 2.326 * portfolio_volatility  # 99% confidence
 
         # Correlation risk
-        max_correlation = max([pos.correlation_max for pos in current_positions.values()], default=0)
+        max_correlation = max(
+            [pos.correlation_max for pos in current_positions.values()], default=0
+        )
 
         # Concentration risk
-        concentration_risk = self.correlation_monitor.calculate_concentration_risk(current_positions)
+        concentration_risk = self.correlation_monitor.calculate_concentration_risk(
+            current_positions
+        )
 
         # Liquidity risk
         liquidity_scores = [pos.liquidity_score for pos in current_positions.values()]
@@ -628,7 +657,7 @@ class PortfolioRiskManager:
             max_correlation=max_correlation,
             concentration_risk=concentration_risk,
             liquidity_risk=liquidity_risk,
-            data_quality_score=data_quality_score
+            data_quality_score=data_quality_score,
         )
 
         # Store metrics history
@@ -639,8 +668,7 @@ class PortfolioRiskManager:
         return metrics
 
     def get_position_recommendations(
-        self,
-        current_positions: Dict[str, Position]
+        self, current_positions: Dict[str, Position]
     ) -> Dict[str, Dict[str, Any]]:
         """Get position recommendations based on current risk analysis"""
 
@@ -648,11 +676,11 @@ class PortfolioRiskManager:
 
         for symbol, position in current_positions.items():
             recommendation = {
-                'action': 'hold',
-                'reason': 'position within limits',
-                'urgency': 'low',
-                'max_increase': 0.0,
-                'suggested_target': position.market_value
+                "action": "hold",
+                "reason": "position within limits",
+                "urgency": "low",
+                "max_increase": 0.0,
+                "suggested_target": position.market_value,
             }
 
             # Check against limits
@@ -661,30 +689,36 @@ class PortfolioRiskManager:
 
                 # Value limit check
                 if position.market_value > limits.max_position_value_usd * 0.9:  # 90% of limit
-                    recommendation.update({
-                        'action': 'reduce',
-                        'reason': 'approaching value limit',
-                        'urgency': 'medium',
-                        'suggested_target': limits.max_position_value_usd * 0.8
-                    })
+                    recommendation.update(
+                        {
+                            "action": "reduce",
+                            "reason": "approaching value limit",
+                            "urgency": "medium",
+                            "suggested_target": limits.max_position_value_usd * 0.8,
+                        }
+                    )
 
                 # Data quality check
                 if position.data_quality_score < limits.data_quality_threshold:
-                    recommendation.update({
-                        'action': 'flatten',
-                        'reason': 'data quality below threshold',
-                        'urgency': 'high',
-                        'suggested_target': 0.0
-                    })
+                    recommendation.update(
+                        {
+                            "action": "flatten",
+                            "reason": "data quality below threshold",
+                            "urgency": "high",
+                            "suggested_target": 0.0,
+                        }
+                    )
 
                 # Correlation check
                 if position.correlation_max > limits.correlation_limit:
-                    recommendation.update({
-                        'action': 'reduce',
-                        'reason': 'high correlation risk',
-                        'urgency': 'medium',
-                        'suggested_target': position.market_value * 0.7
-                    })
+                    recommendation.update(
+                        {
+                            "action": "reduce",
+                            "reason": "high correlation risk",
+                            "urgency": "medium",
+                            "suggested_target": position.market_value * 0.7,
+                        }
+                    )
 
             recommendations[symbol] = recommendation
 
@@ -694,28 +728,32 @@ class PortfolioRiskManager:
         """Get comprehensive risk dashboard data"""
 
         return {
-            'timestamp': datetime.now().isoformat(),
-            'risk_status': self.current_risk_status.value,
-            'kill_switch_active': self.kill_switch_active,
-            'active_alerts': len([a for a in self.risk_alerts if not a.resolved]),
-            'portfolio_limits': self.portfolio_limits,
-            'coin_limits_count': len(self.coin_limits),
-            'recent_alerts': [
+            "timestamp": datetime.now().isoformat(),
+            "risk_status": self.current_risk_status.value,
+            "kill_switch_active": self.kill_switch_active,
+            "active_alerts": len([a for a in self.risk_alerts if not a.resolved]),
+            "portfolio_limits": self.portfolio_limits,
+            "coin_limits_count": len(self.coin_limits),
+            "recent_alerts": [
                 {
-                    'symbol': alert.symbol,
-                    'type': alert.alert_type,
-                    'severity': alert.severity.value,
-                    'message': alert.message,
-                    'timestamp': alert.timestamp.isoformat()
+                    "symbol": alert.symbol,
+                    "type": alert.alert_type,
+                    "severity": alert.severity.value,
+                    "message": alert.message,
+                    "timestamp": alert.timestamp.isoformat(),
                 }
                 for alert in self.risk_alerts[-10:]  # Last 10 alerts
             ],
-            'risk_metrics': self.risk_metrics_history[-1].__dict__ if self.risk_metrics_history else {},
-            'data_quality_status': self.data_quality_manager.get_quality_summary()
+            "risk_metrics": self.risk_metrics_history[-1].__dict__
+            if self.risk_metrics_history
+            else {},
+            "data_quality_status": self.data_quality_manager.get_quality_summary(),
         }
+
 
 # Global instance
 _portfolio_risk_manager = None
+
 
 def get_portfolio_risk_manager() -> PortfolioRiskManager:
     """Get global portfolio risk manager instance"""

@@ -12,14 +12,16 @@ from datetime import datetime, timedelta
 
 from ..core.structured_logger import get_logger
 
+
 class TripleBarrierLabeler:
     """Meta-labeling system using triple barrier method for signal quality"""
 
-    def __init__(self,
-                 profit_target: float = 0.02,  # 2% profit target
-                 stop_loss: float = 0.01,      # 1% stop loss
-                 max_hold_days: int = 5):      # Max 5 days holding period
-
+    def __init__(
+        self,
+        profit_target: float = 0.02,  # 2% profit target
+        stop_loss: float = 0.01,  # 1% stop loss
+        max_hold_days: int = 5,
+    ):  # Max 5 days holding period
         self.logger = get_logger("TripleBarrierLabeler")
         self.profit_target = profit_target
         self.stop_loss = stop_loss
@@ -32,8 +34,8 @@ class TripleBarrierLabeler:
 
         try:
             # Ensure price data is sorted by timestamp
-            price_data = price_data.sort_values('timestamp').reset_index(drop=True)
-            price_data['timestamp'] = pd.to_datetime(price_data['timestamp'])
+            price_data = price_data.sort_values("timestamp").reset_index(drop=True)
+            price_data["timestamp"] = pd.to_datetime(price_data["timestamp"])
 
             labeled_signals = []
 
@@ -53,27 +55,29 @@ class TripleBarrierLabeler:
             self.logger.error(f"Triple barrier labeling failed: {e}")
             return pd.DataFrame()
 
-    def _evaluate_signal_quality(self, price_data: pd.DataFrame, signal: pd.Series) -> Optional[Dict[str, Any]]:
+    def _evaluate_signal_quality(
+        self, price_data: pd.DataFrame, signal: pd.Series
+    ) -> Optional[Dict[str, Any]]:
         """Evaluate quality of a single signal using triple barrier"""
 
         try:
-            signal_time = pd.to_datetime(signal['timestamp'])
-            symbol = signal['symbol']
-            direction = signal.get('direction', 'BUY')
-            confidence = signal.get('confidence', 0.5)
+            signal_time = pd.to_datetime(signal["timestamp"])
+            symbol = signal["symbol"]
+            direction = signal.get("direction", "BUY")
+            confidence = signal.get("confidence", 0.5)
 
             # Find signal entry point
             entry_idx = self._find_entry_point(price_data, signal_time, symbol)
             if entry_idx is None:
                 return None
 
-            entry_price = price_data.iloc[entry_idx]['close']
+            entry_price = price_data.iloc[entry_idx]["close"]
 
             # Define barriers
-            if direction == 'BUY':
+            if direction == "BUY":
                 profit_barrier = entry_price * (1 + self.profit_target)
                 loss_barrier = entry_price * (1 - self.stop_loss)
-            elif direction == 'SELL':
+            elif direction == "SELL":
                 profit_barrier = entry_price * (1 - self.profit_target)
                 loss_barrier = entry_price * (1 + self.stop_loss)
             else:
@@ -98,74 +102,85 @@ class TripleBarrierLabeler:
             )
 
             return {
-                'signal_id': f"{symbol}_{signal_time.strftime('%Y%m%d_%H%M%S')}",
-                'symbol': symbol,
-                'entry_time': signal_time.isoformat(),
-                'entry_price': entry_price,
-                'exit_time': price_data.iloc[exit_idx]['timestamp'].isoformat(),
-                'exit_price': exit_price,
-                'exit_reason': exit_reason,
-                'direction': direction,
-                'actual_return': actual_return,
-                'original_confidence': confidence,
-                'signal_quality_score': quality_metrics['quality_score'],
-                'trade_outcome': quality_metrics['outcome'],
-                'hold_duration_hours': quality_metrics['hold_duration_hours'],
-                'risk_adjusted_return': quality_metrics['risk_adjusted_return']
+                "signal_id": f"{symbol}_{signal_time.strftime('%Y%m%d_%H%M%S')}",
+                "symbol": symbol,
+                "entry_time": signal_time.isoformat(),
+                "entry_price": entry_price,
+                "exit_time": price_data.iloc[exit_idx]["timestamp"].isoformat(),
+                "exit_price": exit_price,
+                "exit_reason": exit_reason,
+                "direction": direction,
+                "actual_return": actual_return,
+                "original_confidence": confidence,
+                "signal_quality_score": quality_metrics["quality_score"],
+                "trade_outcome": quality_metrics["outcome"],
+                "hold_duration_hours": quality_metrics["hold_duration_hours"],
+                "risk_adjusted_return": quality_metrics["risk_adjusted_return"],
             }
 
         except Exception as e:
             self.logger.error(f"Signal evaluation failed: {e}")
             return None
 
-    def _find_entry_point(self, price_data: pd.DataFrame, signal_time: pd.Timestamp, symbol: str) -> Optional[int]:
+    def _find_entry_point(
+        self, price_data: pd.DataFrame, signal_time: pd.Timestamp, symbol: str
+    ) -> Optional[int]:
         """Find the entry point closest to signal time"""
 
-        symbol_data = price_data[price_data['symbol'] == symbol].copy()
-        symbol_data['time_diff'] = abs(symbol_data['timestamp'] - signal_time)
+        symbol_data = price_data[price_data["symbol"] == symbol].copy()
+        symbol_data["time_diff"] = abs(symbol_data["timestamp"] - signal_time)
 
         if len(symbol_data) == 0:
             return None
 
-        closest_idx = symbol_data['time_diff'].idxmin()
+        closest_idx = symbol_data["time_diff"].idxmin()
         return symbol_data.index.get_loc(closest_idx) if closest_idx in symbol_data.index else None
 
-    def _find_exit_point(self, price_data: pd.DataFrame, entry_idx: int, profit_barrier: float,
-                        loss_barrier: float, max_exit_time: pd.Timestamp, symbol: str) -> Optional[Tuple]:
+    def _find_exit_point(
+        self,
+        price_data: pd.DataFrame,
+        entry_idx: int,
+        profit_barrier: float,
+        loss_barrier: float,
+        max_exit_time: pd.Timestamp,
+        symbol: str,
+    ) -> Optional[Tuple]:
         """Find exit point based on triple barrier"""
 
         try:
             # Get subsequent price data
-            future_data = price_data[entry_idx + 1:].copy()
-            future_data = future_data[future_data['symbol'] == symbol]
-            future_data = future_data[future_data['timestamp'] <= max_exit_time]
+            future_data = price_data[entry_idx + 1 :].copy()
+            future_data = future_data[future_data["symbol"] == symbol]
+            future_data = future_data[future_data["timestamp"] <= max_exit_time]
 
             if len(future_data) == 0:
                 return None
 
-            entry_price = price_data.iloc[entry_idx]['close']
+            entry_price = price_data.iloc[entry_idx]["close"]
 
             for idx, row in future_data.iterrows():
-                current_price = row['close']
+                current_price = row["close"]
 
                 # Check profit barrier
-                if ((profit_barrier > entry_price and current_price >= profit_barrier) or
-                    (profit_barrier < entry_price and current_price <= profit_barrier)):
+                if (profit_barrier > entry_price and current_price >= profit_barrier) or (
+                    profit_barrier < entry_price and current_price <= profit_barrier
+                ):
                     actual_return = (current_price - entry_price) / entry_price
-                    return (idx, 'PROFIT_TARGET', current_price, actual_return)
+                    return (idx, "PROFIT_TARGET", current_price, actual_return)
 
                 # Check loss barrier
-                if ((loss_barrier < entry_price and current_price <= loss_barrier) or
-                    (loss_barrier > entry_price and current_price >= loss_barrier)):
+                if (loss_barrier < entry_price and current_price <= loss_barrier) or (
+                    loss_barrier > entry_price and current_price >= loss_barrier
+                ):
                     actual_return = (current_price - entry_price) / entry_price
-                    return (idx, 'STOP_LOSS', current_price, actual_return)
+                    return (idx, "STOP_LOSS", current_price, actual_return)
 
             # Time barrier reached
             if len(future_data) > 0:
                 last_row = future_data.iloc[-1]
-                last_price = last_row['close']
+                last_price = last_row["close"]
                 actual_return = (last_price - entry_price) / entry_price
-                return (last_row.name, 'TIME_LIMIT', last_price, actual_return)
+                return (last_row.name, "TIME_LIMIT", last_price, actual_return)
 
             return None
 
@@ -173,24 +188,30 @@ class TripleBarrierLabeler:
             self.logger.error(f"Exit point finding failed: {e}")
             return None
 
-    def _calculate_quality_metrics(self, entry_price: float, exit_price: float,
-                                 actual_return: float, exit_reason: str,
-                                 confidence: float, direction: str) -> Dict[str, Any]:
+    def _calculate_quality_metrics(
+        self,
+        entry_price: float,
+        exit_price: float,
+        actual_return: float,
+        exit_reason: str,
+        confidence: float,
+        direction: str,
+    ) -> Dict[str, Any]:
         """Calculate signal quality metrics"""
 
         # Basic outcome classification
-        if exit_reason == 'PROFIT_TARGET':
-            outcome = 'WIN'
+        if exit_reason == "PROFIT_TARGET":
+            outcome = "WIN"
             quality_boost = 0.3
-        elif exit_reason == 'STOP_LOSS':
-            outcome = 'LOSS'
+        elif exit_reason == "STOP_LOSS":
+            outcome = "LOSS"
             quality_boost = -0.5
         else:  # TIME_LIMIT
             if actual_return > 0:
-                outcome = 'SMALL_WIN'
+                outcome = "SMALL_WIN"
                 quality_boost = 0.1
             else:
-                outcome = 'SMALL_LOSS'
+                outcome = "SMALL_LOSS"
                 quality_boost = -0.2
 
         # Calculate base quality score
@@ -210,22 +231,25 @@ class TripleBarrierLabeler:
         risk_adjusted_return = actual_return / max(abs(actual_return), 0.01)
 
         return {
-            'quality_score': quality_score,
-            'outcome': outcome,
-            'hold_duration_hours': 24 * self.max_hold_days,  # Simplified
-            'risk_adjusted_return': risk_adjusted_return
+            "quality_score": quality_score,
+            "outcome": outcome,
+            "hold_duration_hours": 24 * self.max_hold_days,  # Simplified
+            "risk_adjusted_return": risk_adjusted_return,
         }
 
-    def filter_high_quality_signals(self, labeled_signals: pd.DataFrame,
-                                   min_quality_score: float = 0.7) -> pd.DataFrame:
+    def filter_high_quality_signals(
+        self, labeled_signals: pd.DataFrame, min_quality_score: float = 0.7
+    ) -> pd.DataFrame:
         """Filter signals based on historical quality score"""
 
         if len(labeled_signals) == 0:
             return labeled_signals
 
-        high_quality = labeled_signals[labeled_signals['signal_quality_score'] >= min_quality_score]
+        high_quality = labeled_signals[labeled_signals["signal_quality_score"] >= min_quality_score]
 
-        self.logger.info(f"Filtered to {len(high_quality)}/{len(labeled_signals)} high quality signals")
+        self.logger.info(
+            f"Filtered to {len(high_quality)}/{len(labeled_signals)} high quality signals"
+        )
 
         return high_quality
 
@@ -233,28 +257,36 @@ class TripleBarrierLabeler:
         """Calculate meta-learning scores for signal quality prediction"""
 
         if len(labeled_signals) == 0:
-            return {'meta_accuracy': 0.0, 'precision': 0.0, 'recall': 0.0}
+            return {"meta_accuracy": 0.0, "precision": 0.0, "recall": 0.0}
 
         # Define "good" signals
-        good_signals = labeled_signals['signal_quality_score'] >= 0.7
-        predicted_good = labeled_signals['original_confidence'] >= 0.8
+        good_signals = labeled_signals["signal_quality_score"] >= 0.7
+        predicted_good = labeled_signals["original_confidence"] >= 0.8
 
         # Calculate meta-learning metrics
         true_positives = sum(good_signals & predicted_good)
         false_positives = sum(~good_signals & predicted_good)
         false_negatives = sum(good_signals & ~predicted_good)
 
-        precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
-        recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
+        precision = (
+            true_positives / (true_positives + false_positives)
+            if (true_positives + false_positives) > 0
+            else 0
+        )
+        recall = (
+            true_positives / (true_positives + false_negatives)
+            if (true_positives + false_negatives) > 0
+            else 0
+        )
 
         # Overall meta-accuracy
         correct_predictions = sum(good_signals == predicted_good)
         meta_accuracy = correct_predictions / len(labeled_signals)
 
         return {
-            'meta_accuracy': meta_accuracy,
-            'precision': precision,
-            'recall': recall,
-            'total_signals_evaluated': len(labeled_signals),
-            'high_quality_signals': sum(good_signals)
+            "meta_accuracy": meta_accuracy,
+            "precision": precision,
+            "recall": recall,
+            "total_signals_evaluated": len(labeled_signals),
+            "high_quality_signals": sum(good_signals),
         }

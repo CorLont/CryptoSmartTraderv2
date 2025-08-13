@@ -16,18 +16,22 @@ import time
 
 from utils.daily_logger import get_daily_logger
 
+
 @dataclass
 class OrderBookLevel:
     """Single order book level"""
+
     price: float
     size: float
     side: str  # 'bid' or 'ask'
     exchange: str
     timestamp: datetime
 
+
 @dataclass
 class OrderBookSnapshot:
     """Complete order book snapshot"""
+
     symbol: str
     bids: List[OrderBookLevel]
     asks: List[OrderBookLevel]
@@ -36,9 +40,11 @@ class OrderBookSnapshot:
     timestamp: datetime
     exchange: str
 
+
 @dataclass
 class LiquidityMetrics:
     """Comprehensive liquidity analysis"""
+
     symbol: str
     bid_ask_spread: float
     spread_percentage: float
@@ -52,17 +58,18 @@ class LiquidityMetrics:
     wall_size: float
     timestamp: datetime
 
+
 class SpoofingDetector:
     """Detect order book manipulation and spoofing"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('api_calls')
+        self.logger = get_daily_logger().get_logger("api_calls")
         self.order_history = {}
         self.detection_window = 60  # 1 minute
 
-    def detect_spoofing(self,
-                       current_snapshot: OrderBookSnapshot,
-                       historical_snapshots: List[OrderBookSnapshot]) -> float:
+    def detect_spoofing(
+        self, current_snapshot: OrderBookSnapshot, historical_snapshots: List[OrderBookSnapshot]
+    ) -> float:
         """Detect spoofing patterns in order book"""
 
         spoofing_score = 0.0
@@ -103,9 +110,10 @@ class SpoofingDetector:
             for bid in current.bids[:5]:  # Top 5 levels
                 if bid.size > 10000:  # Large order
                     # Check if order disappeared in next snapshot
-                    found = any(abs(next_bid.price - bid.price) < 0.001 and
-                              next_bid.size > bid.size * 0.5
-                              for next_bid in next_snapshot.bids[:5])
+                    found = any(
+                        abs(next_bid.price - bid.price) < 0.001 and next_bid.size > bid.size * 0.5
+                        for next_bid in next_snapshot.bids[:5]
+                    )
 
                     if not found:
                         phantom_score += 0.2  # Phantom wall detected
@@ -113,18 +121,19 @@ class SpoofingDetector:
             # Check asks
             for ask in current.asks[:5]:
                 if ask.size > 10000:  # Large order
-                    found = any(abs(next_ask.price - ask.price) < 0.001 and
-                              next_ask.size > ask.size * 0.5
-                              for next_ask in next_snapshot.asks[:5])
+                    found = any(
+                        abs(next_ask.price - ask.price) < 0.001 and next_ask.size > ask.size * 0.5
+                        for next_ask in next_snapshot.asks[:5]
+                    )
 
                     if not found:
                         phantom_score += 0.2
 
         return min(phantom_score, 1.0)
 
-    def _detect_coordinated_orders(self,
-                                 current: OrderBookSnapshot,
-                                 historical: List[OrderBookSnapshot]) -> float:
+    def _detect_coordinated_orders(
+        self, current: OrderBookSnapshot, historical: List[OrderBookSnapshot]
+    ) -> float:
         """Detect coordinated bidding/asking patterns"""
 
         if len(historical) < 5:
@@ -199,15 +208,16 @@ class SpoofingDetector:
 
         return min(rapid_changes / max(len(snapshots) - 1, 1), 1.0)
 
+
 class LiquidityAnalyzer:
     """Comprehensive liquidity analysis"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('api_calls')
+        self.logger = get_daily_logger().get_logger("api_calls")
 
-    def analyze_liquidity(self,
-                         order_book: OrderBookSnapshot,
-                         volume_24h: float = 0) -> LiquidityMetrics:
+    def analyze_liquidity(
+        self, order_book: OrderBookSnapshot, volume_24h: float = 0
+    ) -> LiquidityMetrics:
         """Comprehensive liquidity analysis"""
 
         # Basic spread metrics
@@ -241,12 +251,10 @@ class LiquidityAnalyzer:
             large_wall_detected=wall_detected,
             wall_price=wall_price,
             wall_size=wall_size,
-            timestamp=order_book.timestamp
+            timestamp=order_book.timestamp,
         )
 
-    def _calculate_market_depth(self,
-                              order_book: OrderBookSnapshot,
-                              target_amount: float) -> float:
+    def _calculate_market_depth(self, order_book: OrderBookSnapshot, target_amount: float) -> float:
         """Calculate market depth for given order size"""
 
         # Calculate bid side depth
@@ -297,8 +305,9 @@ class LiquidityAnalyzer:
 
         return imbalance
 
-    def _detect_large_walls(self,
-                          order_book: OrderBookSnapshot) -> Tuple[bool, Optional[float], float]:
+    def _detect_large_walls(
+        self, order_book: OrderBookSnapshot
+    ) -> Tuple[bool, Optional[float], float]:
         """Detect large walls in order book"""
 
         all_levels = order_book.bids + order_book.asks
@@ -319,12 +328,14 @@ class LiquidityAnalyzer:
 
         return False, None, 0.0
 
-    def _calculate_liquidity_score(self,
-                                 spread_pct: float,
-                                 depth_1000: float,
-                                 depth_10000: float,
-                                 imbalance: float,
-                                 volume_24h: float) -> float:
+    def _calculate_liquidity_score(
+        self,
+        spread_pct: float,
+        depth_1000: float,
+        depth_10000: float,
+        imbalance: float,
+        volume_24h: float,
+    ) -> float:
         """Calculate overall liquidity score (0 to 1)"""
 
         score = 0.0
@@ -366,13 +377,14 @@ class LiquidityAnalyzer:
 
         return score / weight_sum if weight_sum > 0 else 0.5
 
+
 class OrderBookDataProvider:
     """Provides real-time order book data from multiple exchanges"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('api_calls')
+        self.logger = get_daily_logger().get_logger("api_calls")
         self.session = None
-        self.supported_exchanges = ['kraken', 'coinbase']
+        self.supported_exchanges = ["kraken", "coinbase"]
         self.cache = {}
         self.cache_ttl = 5  # 5 seconds
 
@@ -387,10 +399,9 @@ class OrderBookDataProvider:
         if self.session:
             await self.session.close()
 
-    async def get_order_book(self,
-                           symbol: str,
-                           exchange: str = 'kraken',
-                           depth: int = 20) -> Optional[OrderBookSnapshot]:
+    async def get_order_book(
+        self, symbol: str, exchange: str = "kraken", depth: int = 20
+    ) -> Optional[OrderBookSnapshot]:
         """Get order book snapshot"""
 
         # Check cache
@@ -401,9 +412,9 @@ class OrderBookDataProvider:
                 return cached_data
 
         try:
-            if exchange == 'kraken':
+            if exchange == "kraken":
                 snapshot = await self._get_kraken_order_book(symbol, depth)
-            elif exchange == 'coinbase':
+            elif exchange == "coinbase":
                 snapshot = await self._get_coinbase_order_book(symbol, depth)
             else:
                 self.logger.warning(f"Unsupported exchange: {exchange}")
@@ -423,14 +434,11 @@ class OrderBookDataProvider:
         """Get order book from Kraken"""
 
         # Convert symbol format for Kraken
-        kraken_symbol = symbol.replace('/', '')
+        kraken_symbol = symbol.replace("/", "")
 
         try:
             url = f"https://api.kraken.com/0/public/Depth"
-            params = {
-                'pair': kraken_symbol,
-                'count': depth
-            }
+            params = {"pair": kraken_symbol, "count": depth}
 
             if not self.session:
                 return None
@@ -441,35 +449,39 @@ class OrderBookDataProvider:
 
                 data = await response.json()
 
-                if 'error' in data and data['error']:
+                if "error" in data and data["error"]:
                     self.logger.error(f"Kraken API error: {data['error']}")
                     return None
 
-                if 'result' not in data:
+                if "result" not in data:
                     return None
 
                 # Parse order book data
-                pair_data = list(data['result'].values())[0]
+                pair_data = list(data["result"].values())[0]
 
                 bids = []
-                for bid_data in pair_data.get('bids', []):
-                    bids.append(OrderBookLevel(
-                        price=float(bid_data[0]),
-                        size=float(bid_data[1]),
-                        side='bid',
-                        exchange='kraken',
-                        timestamp=datetime.now()
-                    ))
+                for bid_data in pair_data.get("bids", []):
+                    bids.append(
+                        OrderBookLevel(
+                            price=float(bid_data[0]),
+                            size=float(bid_data[1]),
+                            side="bid",
+                            exchange="kraken",
+                            timestamp=datetime.now(),
+                        )
+                    )
 
                 asks = []
-                for ask_data in pair_data.get('asks', []):
-                    asks.append(OrderBookLevel(
-                        price=float(ask_data[0]),
-                        size=float(ask_data[1]),
-                        side='ask',
-                        exchange='kraken',
-                        timestamp=datetime.now()
-                    ))
+                for ask_data in pair_data.get("asks", []):
+                    asks.append(
+                        OrderBookLevel(
+                            price=float(ask_data[0]),
+                            size=float(ask_data[1]),
+                            side="ask",
+                            exchange="kraken",
+                            timestamp=datetime.now(),
+                        )
+                    )
 
                 # Calculate spread and mid price
                 if bids and asks:
@@ -488,37 +500,39 @@ class OrderBookDataProvider:
                     spread=spread,
                     mid_price=mid_price,
                     timestamp=datetime.now(),
-                    exchange='kraken'
+                    exchange="kraken",
                 )
 
         except Exception as e:
             self.logger.error(f"Error fetching Kraken order book: {e}")
             return None
 
-    async def _get_coinbase_order_book(self, symbol: str, depth: int) -> Optional[OrderBookSnapshot]:
+    async def _get_coinbase_order_book(
+        self, symbol: str, depth: int
+    ) -> Optional[OrderBookSnapshot]:
         """Get order book from Coinbase"""
 
         # For now, return None (would implement actual Coinbase API)
         return None
 
+
 class OrderBookAnalyzer:
     """Main order book analysis coordinator"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('api_calls')
+        self.logger = get_daily_logger().get_logger("api_calls")
         self.data_provider = OrderBookDataProvider()
         self.liquidity_analyzer = LiquidityAnalyzer()
         self.spoofing_detector = SpoofingDetector()
         self.historical_snapshots = {}
 
-    async def analyze_symbol_liquidity(self,
-                                     symbol: str,
-                                     exchanges: List[str] = None,
-                                     volume_24h: float = 0) -> Dict[str, LiquidityMetrics]:
+    async def analyze_symbol_liquidity(
+        self, symbol: str, exchanges: List[str] = None, volume_24h: float = 0
+    ) -> Dict[str, LiquidityMetrics]:
         """Analyze liquidity across multiple exchanges"""
 
         if exchanges is None:
-            exchanges = ['kraken']
+            exchanges = ["kraken"]
 
         results = {}
 
@@ -541,9 +555,7 @@ class OrderBookAnalyzer:
                     )
 
                     # Detect spoofing
-                    spoofing_risk = self.spoofing_detector.detect_spoofing(
-                        order_book, historical
-                    )
+                    spoofing_risk = self.spoofing_detector.detect_spoofing(order_book, historical)
                     liquidity_metrics.spoofing_risk = spoofing_risk
 
                     results[exchange] = liquidity_metrics
@@ -564,13 +576,14 @@ class OrderBookAnalyzer:
     def get_status(self) -> Dict:
         """Get analyzer status"""
         return {
-            'component': 'order_book_analyzer',
-            'status': 'operational',
-            'supported_exchanges': self.data_provider.supported_exchanges,
-            'spoofing_detection': True,
-            'liquidity_analysis': True,
-            'cached_symbols': len(self.historical_snapshots)
+            "component": "order_book_analyzer",
+            "status": "operational",
+            "supported_exchanges": self.data_provider.supported_exchanges,
+            "spoofing_detection": True,
+            "liquidity_analysis": True,
+            "cached_symbols": len(self.historical_snapshots),
         }
+
 
 # Global instance
 order_book_analyzer = OrderBookAnalyzer()

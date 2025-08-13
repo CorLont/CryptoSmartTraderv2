@@ -11,36 +11,48 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 # Import core components
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from ..core.structured_logger import get_logger
 from ..core.orderbook_simulator import (
-    OrderBookSimulator, OrderSide, OrderType, TimeInForce,
-    OrderStatus, ExchangeConfig
+    OrderBookSimulator,
+    OrderSide,
+    OrderType,
+    TimeInForce,
+    OrderStatus,
+    ExchangeConfig,
 )
 from ..core.slippage_estimator import SlippageEstimator
 
+
 class TradingSession(Enum):
     """Trading session status"""
+
     PENDING = "pending"
     ACTIVE = "active"
     COMPLETED = "completed"
     FAILED = "failed"
 
+
 class ValidationStatus(Enum):
     """Paper trading validation status"""
+
     IN_PROGRESS = "in_progress"
     PASSED = "passed"
     FAILED = "failed"
     INSUFFICIENT_DATA = "insufficient_data"
 
+
 @dataclass
 class PaperTrade:
     """Paper trading record"""
+
     trade_id: str
     timestamp: datetime
     symbol: str
@@ -57,9 +69,11 @@ class PaperTrade:
     pnl: float = 0.0
     status: str = "open"
 
+
 @dataclass
 class PaperTradingMetrics:
     """Paper trading performance metrics"""
+
     session_id: str
     start_date: datetime
     end_date: Optional[datetime]
@@ -76,9 +90,11 @@ class PaperTradingMetrics:
     average_latency_ms: float
     risk_metrics: Dict[str, Any]
 
+
 @dataclass
 class ValidationCriteria:
     """Paper trading validation criteria"""
+
     minimum_duration_days: int = 28  # 4 weeks
     minimum_trades: int = 100
     minimum_sharpe_ratio: float = 0.5
@@ -91,6 +107,7 @@ class ValidationCriteria:
         if self.required_symbols is None:
             self.required_symbols = ["BTC/USD", "ETH/USD"]
 
+
 class PaperTradingEngine:
     """Complete paper trading engine with 4-week validation"""
 
@@ -99,30 +116,30 @@ class PaperTradingEngine:
 
         # Configuration
         self.config = {
-            'validation_criteria': ValidationCriteria(),
-            'starting_balance': 100000.0,  # $100k starting balance
-            'max_position_size': 0.1,  # 10% max position
-            'enable_slippage_simulation': True,
-            'enable_latency_simulation': True,
-            'log_directory': 'logs/paper_trading',
-            'session_backup_interval': 3600,  # 1 hour
+            "validation_criteria": ValidationCriteria(),
+            "starting_balance": 100000.0,  # $100k starting balance
+            "max_position_size": 0.1,  # 10% max position
+            "enable_slippage_simulation": True,
+            "enable_latency_simulation": True,
+            "log_directory": "logs/paper_trading",
+            "session_backup_interval": 3600,  # 1 hour
         }
 
         if config:
-            if 'validation_criteria' in config:
-                criteria_config = config.pop('validation_criteria')
-                if hasattr(criteria_config, '__dict__'):
+            if "validation_criteria" in config:
+                criteria_config = config.pop("validation_criteria")
+                if hasattr(criteria_config, "__dict__"):
                     # If it's a ValidationCriteria object
-                    self.config['validation_criteria'] = criteria_config
+                    self.config["validation_criteria"] = criteria_config
                 else:
                     # If it's a dict
                     for key, value in criteria_config.items():
-                        setattr(self.config['validation_criteria'], key, value)
+                        setattr(self.config["validation_criteria"], key, value)
             self.config.update(config)
 
         # Trading state
         self.current_session_id: Optional[str] = None
-        self.current_balance = self.config['starting_balance']
+        self.current_balance = self.config["starting_balance"]
         self.positions: Dict[str, float] = {}  # symbol -> quantity
         self.open_trades: Dict[str, PaperTrade] = {}
         self.completed_trades: List[PaperTrade] = []
@@ -138,7 +155,7 @@ class PaperTradingEngine:
         self.lock = threading.Lock()
 
         # Create log directory
-        log_dir = Path(self.config['log_directory'])
+        log_dir = Path(self.config["log_directory"])
         log_dir.mkdir(parents=True, exist_ok=True)
 
     def start_paper_trading_session(self, session_name: str = None) -> str:
@@ -151,25 +168,27 @@ class PaperTradingEngine:
 
             # Generate session ID
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            session_id = f"paper_{session_name}_{timestamp}" if session_name else f"paper_{timestamp}"
+            session_id = (
+                f"paper_{session_name}_{timestamp}" if session_name else f"paper_{timestamp}"
+            )
 
             # Initialize session
             session_data = {
-                'session_id': session_id,
-                'start_time': datetime.now(),
-                'end_time': None,
-                'status': TradingSession.ACTIVE,
-                'starting_balance': self.config['starting_balance'],
-                'validation_status': ValidationStatus.IN_PROGRESS,
-                'trades': [],
-                'metrics': None
+                "session_id": session_id,
+                "start_time": datetime.now(),
+                "end_time": None,
+                "status": TradingSession.ACTIVE,
+                "starting_balance": self.config["starting_balance"],
+                "validation_status": ValidationStatus.IN_PROGRESS,
+                "trades": [],
+                "metrics": None,
             }
 
             self.sessions[session_id] = session_data
             self.current_session_id = session_id
 
             # Reset trading state
-            self.current_balance = self.config['starting_balance']
+            self.current_balance = self.config["starting_balance"]
             self.positions = {}
             self.open_trades = {}
             self.completed_trades = []
@@ -196,26 +215,29 @@ class PaperTradingEngine:
             metrics = self._calculate_session_metrics(session_id)
 
             # Update session
-            session['end_time'] = datetime.now()
-            session['status'] = TradingSession.COMPLETED
-            session['trades'] = [asdict(trade) for trade in self.completed_trades]
-            session['metrics'] = asdict(metrics)
+            session["end_time"] = datetime.now()
+            session["status"] = TradingSession.COMPLETED
+            session["trades"] = [asdict(trade) for trade in self.completed_trades]
+            session["metrics"] = asdict(metrics)
 
             # Validate session
             validation_status = self._validate_session(metrics)
-            session['validation_status'] = validation_status
+            session["validation_status"] = validation_status
 
             # Save session to disk
             self._save_session_to_disk(session_id)
 
             self.current_session_id = None
 
-            self.logger.info(f"Ended paper trading session: {session_id} - "
-                           f"Status: {validation_status.value}")
+            self.logger.info(
+                f"Ended paper trading session: {session_id} - Status: {validation_status.value}"
+            )
 
             return session_id
 
-    def register_symbol(self, symbol: str, exchange_config: Optional[ExchangeConfig] = None) -> None:
+    def register_symbol(
+        self, symbol: str, exchange_config: Optional[ExchangeConfig] = None
+    ) -> None:
         """Register symbol for paper trading"""
 
         if symbol not in self.simulators:
@@ -224,8 +246,9 @@ class PaperTradingEngine:
 
             self.logger.info(f"Registered symbol for paper trading: {symbol}")
 
-    def update_market_data(self, symbol: str, bid_price: float, ask_price: float,
-                          volume: float = 1000.0) -> None:
+    def update_market_data(
+        self, symbol: str, bid_price: float, ask_price: float, volume: float = 1000.0
+    ) -> None:
         """Update market data for symbol"""
 
         if symbol not in self.simulators:
@@ -245,9 +268,14 @@ class PaperTradingEngine:
 
         self.logger.debug(f"Updated market data for {symbol}: {bid_price:.6f}/{ask_price:.6f}")
 
-    def submit_paper_trade(self, symbol: str, side: OrderSide, quantity: float,
-                          order_type: OrderType = OrderType.MARKET,
-                          limit_price: Optional[float] = None) -> Optional[str]:
+    def submit_paper_trade(
+        self,
+        symbol: str,
+        side: OrderSide,
+        quantity: float,
+        order_type: OrderType = OrderType.MARKET,
+        limit_price: Optional[float] = None,
+    ) -> Optional[str]:
         """Submit paper trade"""
 
         if not self.current_session_id:
@@ -266,8 +294,10 @@ class PaperTradingEngine:
                     self.logger.error(f"No market data available for {symbol}")
                     return None
 
-                intended_price = limit_price if limit_price else (
-                    simulator.ask_price if side == OrderSide.BUY else simulator.bid_price
+                intended_price = (
+                    limit_price
+                    if limit_price
+                    else (simulator.ask_price if side == OrderSide.BUY else simulator.bid_price)
                 )
 
                 # Submit order to simulator
@@ -276,17 +306,19 @@ class PaperTradingEngine:
                     order_type=order_type,
                     quantity=quantity,
                     price=limit_price,
-                    time_in_force=TimeInForce.IOC if order_type == OrderType.MARKET else TimeInForce.GTC
+                    time_in_force=TimeInForce.IOC
+                    if order_type == OrderType.MARKET
+                    else TimeInForce.GTC,
                 )
 
                 # Check order execution
                 order_status = simulator.get_order_status(order_id)
-                if not order_status or order_status['status'] == 'rejected':
+                if not order_status or order_status["status"] == "rejected":
                     self.logger.warning(f"Paper trade rejected: {symbol} {side.value} {quantity}")
                     return None
 
                 # Create paper trade record
-                if order_status['filled_quantity'] > 0:
+                if order_status["filled_quantity"] > 0:
                     trade = self._create_paper_trade_record(
                         symbol, side, order_status, intended_price
                     )
@@ -295,8 +327,10 @@ class PaperTradingEngine:
                         self.open_trades[trade.trade_id] = trade
                         self._update_position(symbol, side, trade.quantity)
 
-                        self.logger.info(f"Paper trade executed: {trade.trade_id} - "
-                                       f"{side.value} {trade.quantity} {symbol} at {trade.entry_price:.6f}")
+                        self.logger.info(
+                            f"Paper trade executed: {trade.trade_id} - "
+                            f"{side.value} {trade.quantity} {symbol} at {trade.entry_price:.6f}"
+                        )
 
                         return trade.trade_id
 
@@ -344,29 +378,34 @@ class PaperTradingEngine:
 
             # Check position size limits
             current_position = self.positions.get(symbol, 0.0)
-            max_position_value = self.current_balance * self.config['max_position_size']
+            max_position_value = self.current_balance * self.config["max_position_size"]
 
             simulator = self.simulators[symbol]
             estimated_value = quantity * simulator.mid_price
 
             if estimated_value > max_position_value:
-                self.logger.warning(f"Trade size {estimated_value:.2f} exceeds max position "
-                                  f"{max_position_value:.2f}")
+                self.logger.warning(
+                    f"Trade size {estimated_value:.2f} exceeds max position "
+                    f"{max_position_value:.2f}"
+                )
                 return False
 
             # Check sufficient balance for buy orders
             if side == OrderSide.BUY:
                 required_balance = estimated_value * 1.01  # Include buffer for fees
                 if required_balance > self.current_balance:
-                    self.logger.warning(f"Insufficient balance: required {required_balance:.2f}, "
-                                      f"available {self.current_balance:.2f}")
+                    self.logger.warning(
+                        f"Insufficient balance: required {required_balance:.2f}, "
+                        f"available {self.current_balance:.2f}"
+                    )
                     return False
 
             # Check sufficient position for sell orders
             if side == OrderSide.SELL:
                 if current_position < quantity:
-                    self.logger.warning(f"Insufficient position: required {quantity}, "
-                                      f"available {current_position}")
+                    self.logger.warning(
+                        f"Insufficient position: required {quantity}, available {current_position}"
+                    )
                     return False
 
             return True
@@ -375,15 +414,16 @@ class PaperTradingEngine:
             self.logger.error(f"Trade validation failed: {e}")
             return False
 
-    def _create_paper_trade_record(self, symbol: str, side: OrderSide,
-                                 order_status: Dict[str, Any], intended_price: float) -> Optional[PaperTrade]:
+    def _create_paper_trade_record(
+        self, symbol: str, side: OrderSide, order_status: Dict[str, Any], intended_price: float
+    ) -> Optional[PaperTrade]:
         """Create paper trade record from order execution"""
 
         try:
             trade_id = f"trade_{symbol}_{int(datetime.now().timestamp())}"
 
             # Get fill information
-            fills = self.simulators[symbol].get_fill_history(order_status['order_id'])
+            fills = self.simulators[symbol].get_fill_history(order_status["order_id"])
 
             if not fills:
                 return None
@@ -395,9 +435,9 @@ class PaperTradingEngine:
             total_latency = 0.0
 
             for fill in fills:
-                fill_qty = fill['quantity']
-                fill_price = fill['price']
-                fill_fee = fill['fee']
+                fill_qty = fill["quantity"]
+                fill_price = fill["price"]
+                fill_fee = fill["fee"]
 
                 total_quantity += fill_qty
                 total_cost += fill_qty * fill_price
@@ -406,7 +446,9 @@ class PaperTradingEngine:
                 # REMOVED: Mock data pattern not allowed in production
                 total_latency += 50.0  # Average 50ms
 
-            avg_execution_price = total_cost / total_quantity if total_quantity > 0 else intended_price
+            avg_execution_price = (
+                total_cost / total_quantity if total_quantity > 0 else intended_price
+            )
             avg_latency = total_latency / len(fills) if fills else 50.0
 
             # Calculate slippage
@@ -425,7 +467,7 @@ class PaperTradingEngine:
                 order_size=total_quantity,
                 intended_price=intended_price,
                 executed_price=avg_execution_price,
-                latency_ms=avg_latency
+                latency_ms=avg_latency,
             )
 
             trade = PaperTrade(
@@ -438,7 +480,7 @@ class PaperTradingEngine:
                 intended_entry_price=intended_price,
                 slippage_bps=slippage_bps,
                 fees_paid=total_fees,
-                latency_ms=avg_latency
+                latency_ms=avg_latency,
             )
 
             return trade
@@ -481,8 +523,8 @@ class PaperTradingEngine:
         """Calculate comprehensive session metrics"""
 
         session = self.sessions[session_id]
-        start_time = session['start_time']
-        end_time = session.get('end_time', datetime.now())
+        start_time = session["start_time"]
+        end_time = session.get("end_time", datetime.now())
 
         # Trade statistics
         total_trades = len(self.completed_trades)
@@ -523,9 +565,17 @@ class PaperTradingEngine:
             max_drawdown = 0.0
 
         # Average metrics
-        avg_trade_size = np.mean([t.quantity for t in self.completed_trades]) if self.completed_trades else 0.0
-        avg_slippage = np.mean([t.slippage_bps for t in self.completed_trades]) if self.completed_trades else 0.0
-        avg_latency = np.mean([t.latency_ms for t in self.completed_trades]) if self.completed_trades else 0.0
+        avg_trade_size = (
+            np.mean([t.quantity for t in self.completed_trades]) if self.completed_trades else 0.0
+        )
+        avg_slippage = (
+            np.mean([t.slippage_bps for t in self.completed_trades])
+            if self.completed_trades
+            else 0.0
+        )
+        avg_latency = (
+            np.mean([t.latency_ms for t in self.completed_trades]) if self.completed_trades else 0.0
+        )
 
         return PaperTradingMetrics(
             session_id=session_id,
@@ -543,10 +593,10 @@ class PaperTradingEngine:
             average_slippage_bps=avg_slippage,
             average_latency_ms=avg_latency,
             risk_metrics={
-                'total_return_pct': total_pnl / self.config['starting_balance'] * 100,
-                'number_of_symbols_traded': len(set(t.symbol for t in self.completed_trades)),
-                'average_holding_period_hours': self._calculate_avg_holding_period()
-            }
+                "total_return_pct": total_pnl / self.config["starting_balance"] * 100,
+                "number_of_symbols_traded": len(set(t.symbol for t in self.completed_trades)),
+                "average_holding_period_hours": self._calculate_avg_holding_period(),
+            },
         )
 
     def _calculate_avg_holding_period(self) -> float:
@@ -567,7 +617,7 @@ class PaperTradingEngine:
     def _validate_session(self, metrics: PaperTradingMetrics) -> ValidationStatus:
         """Validate paper trading session against criteria"""
 
-        criteria = self.config['validation_criteria']
+        criteria = self.config["validation_criteria"]
 
         try:
             # Check duration
@@ -576,26 +626,37 @@ class PaperTradingEngine:
             else:
                 session_duration = 0
             if session_duration < criteria.minimum_duration_days:
-                self.logger.warning(f"Session duration {session_duration} days < minimum "
-                                  f"{criteria.minimum_duration_days} days")
+                self.logger.warning(
+                    f"Session duration {session_duration} days < minimum "
+                    f"{criteria.minimum_duration_days} days"
+                )
                 return ValidationStatus.INSUFFICIENT_DATA
 
             # Check number of trades
             if metrics.total_trades < criteria.minimum_trades:
-                self.logger.warning(f"Total trades {metrics.total_trades} < minimum "
-                                  f"{criteria.minimum_trades}")
+                self.logger.warning(
+                    f"Total trades {metrics.total_trades} < minimum {criteria.minimum_trades}"
+                )
                 return ValidationStatus.INSUFFICIENT_DATA
 
             # Check performance criteria
             validation_checks = [
-                (metrics.sharpe_ratio >= criteria.minimum_sharpe_ratio,
-                 f"Sharpe ratio {metrics.sharpe_ratio:.2f} < {criteria.minimum_sharpe_ratio}"),
-                (metrics.max_drawdown <= criteria.maximum_drawdown,
-                 f"Max drawdown {metrics.max_drawdown:.2%} > {criteria.maximum_drawdown:.2%}"),
-                (metrics.win_rate >= criteria.minimum_win_rate,
-                 f"Win rate {metrics.win_rate:.2%} < {criteria.minimum_win_rate:.2%}"),
-                (metrics.average_slippage_bps <= criteria.maximum_average_slippage_bps,
-                 f"Average slippage {metrics.average_slippage_bps:.1f} bps > {criteria.maximum_average_slippage_bps} bps")
+                (
+                    metrics.sharpe_ratio >= criteria.minimum_sharpe_ratio,
+                    f"Sharpe ratio {metrics.sharpe_ratio:.2f} < {criteria.minimum_sharpe_ratio}",
+                ),
+                (
+                    metrics.max_drawdown <= criteria.maximum_drawdown,
+                    f"Max drawdown {metrics.max_drawdown:.2%} > {criteria.maximum_drawdown:.2%}",
+                ),
+                (
+                    metrics.win_rate >= criteria.minimum_win_rate,
+                    f"Win rate {metrics.win_rate:.2%} < {criteria.minimum_win_rate:.2%}",
+                ),
+                (
+                    metrics.average_slippage_bps <= criteria.maximum_average_slippage_bps,
+                    f"Average slippage {metrics.average_slippage_bps:.1f} bps > {criteria.maximum_average_slippage_bps} bps",
+                ),
             ]
 
             failed_checks = [msg for passed, msg in validation_checks if not passed]
@@ -623,17 +684,17 @@ class PaperTradingEngine:
         """Save session data to disk"""
 
         try:
-            session_file = Path(self.config['log_directory']) / f"{session_id}.json"
+            session_file = Path(self.config["log_directory"]) / f"{session_id}.json"
 
             session_data = self.sessions[session_id].copy()
 
             # Convert datetime objects to ISO strings
-            if 'start_time' in session_data:
-                session_data['start_time'] = session_data['start_time'].isoformat()
-            if 'end_time' in session_data and session_data['end_time']:
-                session_data['end_time'] = session_data['end_time'].isoformat()
+            if "start_time" in session_data:
+                session_data["start_time"] = session_data["start_time"].isoformat()
+            if "end_time" in session_data and session_data["end_time"]:
+                session_data["end_time"] = session_data["end_time"].isoformat()
 
-            with open(session_file, 'w') as f:
+            with open(session_file, "w") as f:
                 json.dump(session_data, f, indent=2, default=str)
 
             self.logger.info(f"Saved session data to {session_file}")
@@ -652,24 +713,26 @@ class PaperTradingEngine:
         session = self.sessions[target_session]
 
         # Calculate current metrics if session is active
-        if session['status'] == TradingSession.ACTIVE:
+        if session["status"] == TradingSession.ACTIVE:
             current_metrics = self._calculate_session_metrics(target_session)
-            session['current_metrics'] = asdict(current_metrics)
+            session["current_metrics"] = asdict(current_metrics)
 
         return {
-            'session_id': target_session,
-            'status': session['status'].value,
-            'validation_status': session['validation_status'].value,
-            'start_time': session['start_time'].isoformat(),
-            'end_time': session['end_time'].isoformat() if session['end_time'] else None,
-            'current_balance': self.current_balance,
-            'open_positions': dict(self.positions),
-            'total_trades': len(self.completed_trades),
-            'current_metrics': session.get('current_metrics'),
-            'final_metrics': session.get('metrics')
+            "session_id": target_session,
+            "status": session["status"].value,
+            "validation_status": session["validation_status"].value,
+            "start_time": session["start_time"].isoformat(),
+            "end_time": session["end_time"].isoformat() if session["end_time"] else None,
+            "current_balance": self.current_balance,
+            "open_positions": dict(self.positions),
+            "total_trades": len(self.completed_trades),
+            "current_metrics": session.get("current_metrics"),
+            "final_metrics": session.get("metrics"),
         }
 
+
 if __name__ == "__main__":
+
     async def test_paper_trading_engine():
         """Test paper trading engine"""
 
@@ -729,8 +792,8 @@ if __name__ == "__main__":
             print(f"   Open positions: {status['open_positions']}")
             print(f"   Total trades: {status['total_trades']}")
 
-            if 'current_metrics' in status:
-                metrics = status['current_metrics']
+            if "current_metrics" in status:
+                metrics = status["current_metrics"]
                 print(f"   Win rate: {metrics['win_rate']:.1%}")
                 print(f"   Total P&L: ${metrics['total_pnl']:.2f}")
                 print(f"   Average slippage: {metrics['average_slippage_bps']:.2f} bps")
@@ -748,8 +811,8 @@ if __name__ == "__main__":
 
         if ended_session:
             final_status = engine.get_session_status(ended_session)
-            if final_status and 'final_metrics' in final_status:
-                metrics = final_status['final_metrics']
+            if final_status and "final_metrics" in final_status:
+                metrics = final_status["final_metrics"]
                 print(f"   Final validation: {final_status['validation_status']}")
                 print(f"   Total trades: {metrics['total_trades']}")
                 print(f"   Win rate: {metrics['win_rate']:.1%}")
@@ -763,5 +826,6 @@ if __name__ == "__main__":
     # Run test
     import asyncio
     import numpy as np
+
     success = asyncio.run(test_paper_trading_engine())
     print(f"\nTest result: {'PASSED' if success else 'FAILED'}")

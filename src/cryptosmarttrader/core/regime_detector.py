@@ -16,32 +16,35 @@ from .structured_logger import get_logger
 
 class MarketRegime(Enum):
     """Market regime classifications."""
-    BULL_TRENDING = "bull_trending"      # Strong upward trend
-    BEAR_TRENDING = "bear_trending"      # Strong downward trend
-    SIDEWAYS_LOW_VOL = "sideways_low_vol"    # Range-bound, low volatility
+
+    BULL_TRENDING = "bull_trending"  # Strong upward trend
+    BEAR_TRENDING = "bear_trending"  # Strong downward trend
+    SIDEWAYS_LOW_VOL = "sideways_low_vol"  # Range-bound, low volatility
     SIDEWAYS_HIGH_VOL = "sideways_high_vol"  # Range-bound, high volatility
-    BREAKOUT = "breakout"                # Momentum breakout phase
-    REVERSAL = "reversal"                # Trend reversal phase
+    BREAKOUT = "breakout"  # Momentum breakout phase
+    REVERSAL = "reversal"  # Trend reversal phase
 
 
 @dataclass
 class RegimeMetrics:
     """Quantitative metrics for regime classification."""
-    trend_strength: float           # -1 (bear) to +1 (bull)
-    volatility_percentile: float    # 0 to 100
-    momentum_score: float           # -1 to +1
-    mean_reversion_score: float     # 0 to 1
-    volume_profile: float           # Relative volume strength
-    hurst_exponent: float           # 0 to 1 (0.5 = random walk)
-    adx_strength: float             # 0 to 100 (trend strength)
-    rsi_divergence: float           # RSI vs price divergence
-    correlation_breakdown: float    # Cross-asset correlation change
+
+    trend_strength: float  # -1 (bear) to +1 (bull)
+    volatility_percentile: float  # 0 to 100
+    momentum_score: float  # -1 to +1
+    mean_reversion_score: float  # 0 to 1
+    volume_profile: float  # Relative volume strength
+    hurst_exponent: float  # 0 to 1 (0.5 = random walk)
+    adx_strength: float  # 0 to 100 (trend strength)
+    rsi_divergence: float  # RSI vs price divergence
+    correlation_breakdown: float  # Cross-asset correlation change
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass
 class RegimeTransition:
     """Record of regime transition."""
+
     from_regime: MarketRegime
     to_regime: MarketRegime
     confidence: float
@@ -70,60 +73,60 @@ class RegimeDetector:
 
         # Regime detection parameters
         self.regime_thresholds = {
-            'trend_strength_bull': 0.3,
-            'trend_strength_bear': -0.3,
-            'volatility_high': 75.0,  # 75th percentile
-            'volatility_low': 25.0,   # 25th percentile
-            'momentum_threshold': 0.2,
-            'hurst_trend_threshold': 0.6,
-            'adx_trending_threshold': 25.0,
-            'min_confidence': 0.7
+            "trend_strength_bull": 0.3,
+            "trend_strength_bear": -0.3,
+            "volatility_high": 75.0,  # 75th percentile
+            "volatility_low": 25.0,  # 25th percentile
+            "momentum_threshold": 0.2,
+            "hurst_trend_threshold": 0.6,
+            "adx_trending_threshold": 25.0,
+            "min_confidence": 0.7,
         }
 
         # Regime-specific strategy mappings
         self.regime_strategies = {
             MarketRegime.BULL_TRENDING: {
-                'primary_strategy': 'momentum_long',
-                'secondary_strategy': 'breakout_continuation',
-                'position_sizing': 1.0,
-                'risk_multiplier': 1.2,
-                'rebalance_frequency': 'daily'
+                "primary_strategy": "momentum_long",
+                "secondary_strategy": "breakout_continuation",
+                "position_sizing": 1.0,
+                "risk_multiplier": 1.2,
+                "rebalance_frequency": "daily",
             },
             MarketRegime.BEAR_TRENDING: {
-                'primary_strategy': 'momentum_short',
-                'secondary_strategy': 'breakdown_continuation',
-                'position_sizing': 0.8,
-                'risk_multiplier': 0.8,
-                'rebalance_frequency': 'daily'
+                "primary_strategy": "momentum_short",
+                "secondary_strategy": "breakdown_continuation",
+                "position_sizing": 0.8,
+                "risk_multiplier": 0.8,
+                "rebalance_frequency": "daily",
             },
             MarketRegime.SIDEWAYS_LOW_VOL: {
-                'primary_strategy': 'mean_reversion',
-                'secondary_strategy': 'range_trading',
-                'position_sizing': 0.6,
-                'risk_multiplier': 0.7,
-                'rebalance_frequency': 'weekly'
+                "primary_strategy": "mean_reversion",
+                "secondary_strategy": "range_trading",
+                "position_sizing": 0.6,
+                "risk_multiplier": 0.7,
+                "rebalance_frequency": "weekly",
             },
             MarketRegime.SIDEWAYS_HIGH_VOL: {
-                'primary_strategy': 'volatility_capture',
-                'secondary_strategy': 'short_gamma',
-                'position_sizing': 0.5,
-                'risk_multiplier': 0.6,
-                'rebalance_frequency': 'intraday'
+                "primary_strategy": "volatility_capture",
+                "secondary_strategy": "short_gamma",
+                "position_sizing": 0.5,
+                "risk_multiplier": 0.6,
+                "rebalance_frequency": "intraday",
             },
             MarketRegime.BREAKOUT: {
-                'primary_strategy': 'breakout_momentum',
-                'secondary_strategy': 'trend_following',
-                'position_sizing': 1.3,
-                'risk_multiplier': 1.5,
-                'rebalance_frequency': 'hourly'
+                "primary_strategy": "breakout_momentum",
+                "secondary_strategy": "trend_following",
+                "position_sizing": 1.3,
+                "risk_multiplier": 1.5,
+                "rebalance_frequency": "hourly",
             },
             MarketRegime.REVERSAL: {
-                'primary_strategy': 'contrarian',
-                'secondary_strategy': 'mean_reversion_aggressive',
-                'position_sizing': 0.4,
-                'risk_multiplier': 0.5,
-                'rebalance_frequency': 'hourly'
-            }
+                "primary_strategy": "contrarian",
+                "secondary_strategy": "mean_reversion_aggressive",
+                "position_sizing": 0.4,
+                "risk_multiplier": 0.5,
+                "rebalance_frequency": "hourly",
+            },
         }
 
         # Thread safety
@@ -133,16 +136,19 @@ class RegimeDetector:
         self.data_path = Path("data/regime_detection")
         self.data_path.mkdir(parents=True, exist_ok=True)
 
-        self.logger.info("Regime detector initialized",
-                        lookback_periods=lookback_periods,
-                        current_regime=self.current_regime.value)
+        self.logger.info(
+            "Regime detector initialized",
+            lookback_periods=lookback_periods,
+            current_regime=self.current_regime.value,
+        )
 
-    def update_market_data(self, symbol: str, price_data: pd.DataFrame,
-                          volume_data: Optional[pd.DataFrame] = None) -> None:
+    def update_market_data(
+        self, symbol: str, price_data: pd.DataFrame, volume_data: Optional[pd.DataFrame] = None
+    ) -> None:
         """Update market data for regime analysis."""
         with self._lock:
             # Ensure data has required columns
-            required_columns = ['open', 'high', 'low', 'close', 'timestamp']
+            required_columns = ["open", "high", "low", "close", "timestamp"]
             if not all(col in price_data.columns for col in required_columns):
                 self.logger.warning(f"Missing required columns for {symbol}")
                 return
@@ -153,9 +159,11 @@ class RegimeDetector:
             if volume_data is not None:
                 self.volume_history[symbol] = volume_data.tail(self.lookback_periods).copy()
 
-            self.logger.debug(f"Updated market data for {symbol}",
-                            records=len(price_data),
-                            latest_price=price_data['close'].iloc[-1])
+            self.logger.debug(
+                f"Updated market data for {symbol}",
+                records=len(price_data),
+                latest_price=price_data["close"].iloc[-1],
+            )
 
     def calculate_regime_metrics(self, symbol: str) -> Optional[RegimeMetrics]:
         """Calculate comprehensive regime metrics for a symbol."""
@@ -168,45 +176,45 @@ class RegimeDetector:
 
         try:
             # Calculate technical indicators
-            df['returns'] = df['close'].pct_change()
-            df['log_returns'] = np.log(df['close'] / df['close'].shift(1))
-            df['volatility'] = df['returns'].rolling(20).std() * np.sqrt(252)
+            df["returns"] = df["close"].pct_change()
+            df["log_returns"] = np.log(df["close"] / df["close"].shift(1))
+            df["volatility"] = df["returns"].rolling(20).std() * np.sqrt(252)
 
             # Trend strength (slope of linear regression)
             x = np.arange(len(df))
-            trend_slope = np.polyfit(x[-50:], df['close'].iloc[-50:], 1)[0]
-            trend_strength = np.tanh(trend_slope / df['close'].iloc[-1] * 100)
+            trend_slope = np.polyfit(x[-50:], df["close"].iloc[-50:], 1)[0]
+            trend_strength = np.tanh(trend_slope / df["close"].iloc[-1] * 100)
 
             # Volatility percentile
-            current_vol = df['volatility'].iloc[-1]
-            vol_percentile = (df['volatility'].rank(pct=True).iloc[-1] * 100)
+            current_vol = df["volatility"].iloc[-1]
+            vol_percentile = df["volatility"].rank(pct=True).iloc[-1] * 100
 
             # Momentum score (rate of change)
-            momentum_20 = (df['close'].iloc[-1] / df['close'].iloc[-21] - 1)
+            momentum_20 = df["close"].iloc[-1] / df["close"].iloc[-21] - 1
             momentum_score = np.tanh(momentum_20 * 10)
 
             # Mean reversion score (distance from moving average)
-            ma_50 = df['close'].rolling(50).mean().iloc[-1]
-            mean_reversion = abs(df['close'].iloc[-1] - ma_50) / ma_50
+            ma_50 = df["close"].rolling(50).mean().iloc[-1]
+            mean_reversion = abs(df["close"].iloc[-1] - ma_50) / ma_50
 
             # Volume profile (relative volume strength)
             if symbol in self.volume_history:
                 vol_df = self.volume_history[symbol]
-                avg_volume = vol_df['volume'].rolling(20).mean().iloc[-1]
-                current_volume = vol_df['volume'].iloc[-1]
+                avg_volume = vol_df["volume"].rolling(20).mean().iloc[-1]
+                current_volume = vol_df["volume"].iloc[-1]
                 volume_profile = current_volume / avg_volume if avg_volume > 0 else 1.0
             else:
                 volume_profile = 1.0
 
             # Hurst exponent calculation
-            hurst_exponent = self._calculate_hurst_exponent(df['log_returns'].dropna())
+            hurst_exponent = self._calculate_hurst_exponent(df["log_returns"].dropna())
 
             # ADX calculation (simplified)
             adx_strength = self._calculate_adx(df)
 
             # RSI divergence
-            rsi = self._calculate_rsi(df['close'])
-            price_change = (df['close'].iloc[-1] / df['close'].iloc[-21] - 1)
+            rsi = self._calculate_rsi(df["close"])
+            price_change = df["close"].iloc[-1] / df["close"].iloc[-21] - 1
             rsi_change = (rsi.iloc[-1] - rsi.iloc[-21]) / 100
             rsi_divergence = abs(price_change - rsi_change)
 
@@ -222,7 +230,7 @@ class RegimeDetector:
                 hurst_exponent=hurst_exponent,
                 adx_strength=adx_strength,
                 rsi_divergence=rsi_divergence,
-                correlation_breakdown=correlation_breakdown
+                correlation_breakdown=correlation_breakdown,
             )
 
         except Exception as e:
@@ -246,7 +254,7 @@ class RegimeDetector:
 
             for lag in lags:
                 # Split series into chunks
-                chunks = [returns[i:i+lag] for i in range(0, len(returns), lag)]
+                chunks = [returns[i : i + lag] for i in range(0, len(returns), lag)]
                 chunks = [chunk for chunk in chunks if len(chunk) == lag]
 
                 if len(chunks) < 2:
@@ -268,7 +276,7 @@ class RegimeDetector:
                 return 0.5
 
             # Linear regression to find Hurst exponent
-            log_lags = np.log(lags[:len(rs_values)])
+            log_lags = np.log(lags[: len(rs_values)])
             log_rs = np.log(rs_values)
             hurst = np.polyfit(log_lags, log_rs, 1)[0]
 
@@ -281,9 +289,9 @@ class RegimeDetector:
     def _calculate_adx(self, df: pd.DataFrame, period: int = 14) -> float:
         """Calculate Average Directional Index."""
         try:
-            high = df['high']
-            low = df['low']
-            close = df['close']
+            high = df["high"]
+            low = df["low"]
+            close = df["close"]
 
             # True Range
             tr1 = high - low
@@ -332,13 +340,13 @@ class RegimeDetector:
 
         # Bull trending conditions
         bull_score = 0.0
-        if metrics.trend_strength > self.regime_thresholds['trend_strength_bull']:
+        if metrics.trend_strength > self.regime_thresholds["trend_strength_bull"]:
             bull_score += 0.3
-        if metrics.momentum_score > self.regime_thresholds['momentum_threshold']:
+        if metrics.momentum_score > self.regime_thresholds["momentum_threshold"]:
             bull_score += 0.2
-        if metrics.hurst_exponent > self.regime_thresholds['hurst_trend_threshold']:
+        if metrics.hurst_exponent > self.regime_thresholds["hurst_trend_threshold"]:
             bull_score += 0.2
-        if metrics.adx_strength > self.regime_thresholds['adx_trending_threshold']:
+        if metrics.adx_strength > self.regime_thresholds["adx_trending_threshold"]:
             bull_score += 0.2
         if metrics.volume_profile > 1.2:  # Above average volume
             bull_score += 0.1
@@ -346,13 +354,13 @@ class RegimeDetector:
 
         # Bear trending conditions
         bear_score = 0.0
-        if metrics.trend_strength < self.regime_thresholds['trend_strength_bear']:
+        if metrics.trend_strength < self.regime_thresholds["trend_strength_bear"]:
             bear_score += 0.3
-        if metrics.momentum_score < -self.regime_thresholds['momentum_threshold']:
+        if metrics.momentum_score < -self.regime_thresholds["momentum_threshold"]:
             bear_score += 0.2
-        if metrics.hurst_exponent > self.regime_thresholds['hurst_trend_threshold']:
+        if metrics.hurst_exponent > self.regime_thresholds["hurst_trend_threshold"]:
             bear_score += 0.2
-        if metrics.adx_strength > self.regime_thresholds['adx_trending_threshold']:
+        if metrics.adx_strength > self.regime_thresholds["adx_trending_threshold"]:
             bear_score += 0.2
         if metrics.volume_profile > 1.2:
             bear_score += 0.1
@@ -360,8 +368,10 @@ class RegimeDetector:
 
         # Sideways low volatility
         sideways_low_score = 0.0
-        if (abs(metrics.trend_strength) < 0.1 and
-            metrics.volatility_percentile < self.regime_thresholds['volatility_low']):
+        if (
+            abs(metrics.trend_strength) < 0.1
+            and metrics.volatility_percentile < self.regime_thresholds["volatility_low"]
+        ):
             sideways_low_score += 0.4
         if metrics.mean_reversion_score > 0.3:
             sideways_low_score += 0.2
@@ -373,8 +383,10 @@ class RegimeDetector:
 
         # Sideways high volatility
         sideways_high_score = 0.0
-        if (abs(metrics.trend_strength) < 0.1 and
-            metrics.volatility_percentile > self.regime_thresholds['volatility_high']):
+        if (
+            abs(metrics.trend_strength) < 0.1
+            and metrics.volatility_percentile > self.regime_thresholds["volatility_high"]
+        ):
             sideways_high_score += 0.4
         if metrics.rsi_divergence > 0.5:
             sideways_high_score += 0.2
@@ -402,8 +414,9 @@ class RegimeDetector:
             reversal_score += 0.3
         if metrics.correlation_breakdown > 0.6:
             reversal_score += 0.2
-        if (metrics.trend_strength > 0.4 and metrics.momentum_score < -0.2) or \
-           (metrics.trend_strength < -0.4 and metrics.momentum_score > 0.2):
+        if (metrics.trend_strength > 0.4 and metrics.momentum_score < -0.2) or (
+            metrics.trend_strength < -0.4 and metrics.momentum_score > 0.2
+        ):
             reversal_score += 0.3
         if metrics.volume_profile > 1.8:
             reversal_score += 0.2
@@ -424,7 +437,7 @@ class RegimeDetector:
         new_regime, confidence = self.classify_regime(metrics)
 
         # Only update if confidence is high enough
-        if confidence < self.regime_thresholds['min_confidence']:
+        if confidence < self.regime_thresholds["min_confidence"]:
             return self.current_regime
 
         # Check for regime transition
@@ -434,20 +447,22 @@ class RegimeDetector:
                 to_regime=new_regime,
                 confidence=confidence,
                 trigger_metrics={
-                    'trend_strength': metrics.trend_strength,
-                    'volatility_percentile': metrics.volatility_percentile,
-                    'momentum_score': metrics.momentum_score,
-                    'adx_strength': metrics.adx_strength
+                    "trend_strength": metrics.trend_strength,
+                    "volatility_percentile": metrics.volatility_percentile,
+                    "momentum_score": metrics.momentum_score,
+                    "adx_strength": metrics.adx_strength,
                 },
                 timestamp=datetime.now(),
-                duration_hours=(datetime.now() - self.regime_start_time).total_seconds() / 3600
+                duration_hours=(datetime.now() - self.regime_start_time).total_seconds() / 3600,
             )
 
             self.regime_history.append(transition)
 
-            self.logger.info(f"Regime transition: {self.current_regime.value} → {new_regime.value}",
-                           confidence=confidence,
-                           duration_hours=transition.duration_hours)
+            self.logger.info(
+                f"Regime transition: {self.current_regime.value} → {new_regime.value}",
+                confidence=confidence,
+                duration_hours=transition.duration_hours,
+            )
 
             self.current_regime = new_regime
             self.regime_confidence = confidence
@@ -460,8 +475,9 @@ class RegimeDetector:
 
     def get_current_strategy_config(self) -> Dict[str, Any]:
         """Get strategy configuration for current regime."""
-        return self.regime_strategies.get(self.current_regime,
-                                        self.regime_strategies[MarketRegime.SIDEWAYS_LOW_VOL])
+        return self.regime_strategies.get(
+            self.current_regime, self.regime_strategies[MarketRegime.SIDEWAYS_LOW_VOL]
+        )
 
     def get_regime_transition_history(self, hours: int = 168) -> List[RegimeTransition]:
         """Get regime transitions from last N hours."""
@@ -492,10 +508,12 @@ class RegimeDetector:
                 confidences = [t.confidence for t in regime_transitions]
 
                 regime_stats[regime.value] = {
-                    'occurrences': len(regime_transitions),
-                    'avg_duration_hours': np.mean(durations) if durations else 0.0,
-                    'avg_confidence': np.mean(confidences),
-                    'total_time_percentage': sum(durations) / (24 * 7) * 100 if durations else 0.0  # % of week
+                    "occurrences": len(regime_transitions),
+                    "avg_duration_hours": np.mean(durations) if durations else 0.0,
+                    "avg_confidence": np.mean(confidences),
+                    "total_time_percentage": sum(durations) / (24 * 7) * 100
+                    if durations
+                    else 0.0,  # % of week
                 }
 
         return regime_stats
@@ -503,24 +521,24 @@ class RegimeDetector:
     def save_regime_state(self) -> None:
         """Save current regime state and history."""
         state = {
-            'current_regime': self.current_regime.value,
-            'regime_confidence': self.regime_confidence,
-            'regime_start_time': self.regime_start_time.isoformat(),
-            'regime_history': [
+            "current_regime": self.current_regime.value,
+            "regime_confidence": self.regime_confidence,
+            "regime_start_time": self.regime_start_time.isoformat(),
+            "regime_history": [
                 {
-                    'from_regime': t.from_regime.value,
-                    'to_regime': t.to_regime.value,
-                    'confidence': t.confidence,
-                    'trigger_metrics': t.trigger_metrics,
-                    'timestamp': t.timestamp.isoformat(),
-                    'duration_hours': t.duration_hours
+                    "from_regime": t.from_regime.value,
+                    "to_regime": t.to_regime.value,
+                    "confidence": t.confidence,
+                    "trigger_metrics": t.trigger_metrics,
+                    "timestamp": t.timestamp.isoformat(),
+                    "duration_hours": t.duration_hours,
                 }
                 for t in self.regime_history[-100:]  # Keep last 100 transitions
-            ]
+            ],
         }
 
         try:
-            with open(self.data_path / "regime_state.json", 'w') as f:
+            with open(self.data_path / "regime_state.json", "w") as f:
                 json.dump(state, f, indent=2)
         except Exception as e:
             self.logger.error(f"Failed to save regime state: {e}")
@@ -530,23 +548,23 @@ class RegimeDetector:
         try:
             state_file = self.data_path / "regime_state.json"
             if state_file.exists():
-                with open(state_file, 'r') as f:
+                with open(state_file, "r") as f:
                     state = json.load(f)
 
-                self.current_regime = MarketRegime(state['current_regime'])
-                self.regime_confidence = state['regime_confidence']
-                self.regime_start_time = datetime.fromisoformat(state['regime_start_time'])
+                self.current_regime = MarketRegime(state["current_regime"])
+                self.regime_confidence = state["regime_confidence"]
+                self.regime_start_time = datetime.fromisoformat(state["regime_start_time"])
 
                 # Reconstruct regime history
                 self.regime_history = []
-                for t_data in state['regime_history']:
+                for t_data in state["regime_history"]:
                     transition = RegimeTransition(
-                        from_regime=MarketRegime(t_data['from_regime']),
-                        to_regime=MarketRegime(t_data['to_regime']),
-                        confidence=t_data['confidence'],
-                        trigger_metrics=t_data['trigger_metrics'],
-                        timestamp=datetime.fromisoformat(t_data['timestamp']),
-                        duration_hours=t_data['duration_hours']
+                        from_regime=MarketRegime(t_data["from_regime"]),
+                        to_regime=MarketRegime(t_data["to_regime"]),
+                        confidence=t_data["confidence"],
+                        trigger_metrics=t_data["trigger_metrics"],
+                        timestamp=datetime.fromisoformat(t_data["timestamp"]),
+                        duration_hours=t_data["duration_hours"],
                     )
                     self.regime_history.append(transition)
 

@@ -11,18 +11,22 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
 from collections import deque
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 # Import core components
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from ..core.structured_logger import get_logger
 from ..core.orderbook_simulator import OrderBookSimulator, OrderSide, OrderType, OrderBookSnapshot
 
+
 @dataclass
 class SlippageObservation:
     """Single slippage observation"""
+
     timestamp: datetime
     symbol: str
     side: OrderSide
@@ -33,9 +37,11 @@ class SlippageObservation:
     market_impact_bps: float
     latency_ms: float
 
+
 @dataclass
 class SlippageEstimate:
     """Slippage estimate with confidence intervals"""
+
     symbol: str
     side: OrderSide
     order_size_bucket: str
@@ -48,6 +54,7 @@ class SlippageEstimate:
     confidence_interval_95: Tuple[float, float]
     last_updated: datetime
 
+
 class SlippageEstimator:
     """Real-time slippage estimation and prediction system"""
 
@@ -56,12 +63,12 @@ class SlippageEstimator:
 
         # Configuration
         self.config = {
-            'max_observations': 10000,
-            'min_observations_for_estimate': 20,
-            'size_buckets': [0.01, 0.1, 0.5, 1.0, 5.0, 10.0],  # Order size buckets
-            'lookback_hours': 168,  # 1 week
-            'update_interval_minutes': 15,
-            'outlier_threshold_std': 3.0
+            "max_observations": 10000,
+            "min_observations_for_estimate": 20,
+            "size_buckets": [0.01, 0.1, 0.5, 1.0, 5.0, 10.0],  # Order size buckets
+            "lookback_hours": 168,  # 1 week
+            "update_interval_minutes": 15,
+            "outlier_threshold_std": 3.0,
         }
 
         if config:
@@ -76,9 +83,16 @@ class SlippageEstimator:
         # Market data for slippage calculation
         self.orderbook_snapshots: Dict[str, OrderBookSnapshot] = {}
 
-    def record_execution(self, symbol: str, side: OrderSide, order_size: float,
-                        intended_price: float, executed_price: float,
-                        latency_ms: float = 0.0, timestamp: Optional[datetime] = None) -> None:
+    def record_execution(
+        self,
+        symbol: str,
+        side: OrderSide,
+        order_size: float,
+        intended_price: float,
+        executed_price: float,
+        latency_ms: float = 0.0,
+        timestamp: Optional[datetime] = None,
+    ) -> None:
         """Record actual execution for slippage calculation"""
 
         if timestamp is None:
@@ -109,17 +123,18 @@ class SlippageEstimator:
                 executed_price=executed_price,
                 slippage_bps=slippage_bps,
                 market_impact_bps=market_impact_bps,
-                latency_ms=latency_ms
+                latency_ms=latency_ms,
             )
 
             # Store observation
             if symbol not in self.observations:
-                self.observations[symbol] = deque(maxlen=self.config['max_observations'])
+                self.observations[symbol] = deque(maxlen=self.config["max_observations"])
 
             self.observations[symbol].append(observation)
 
-            self.logger.debug(f"Recorded slippage: {symbol} {side.value} {order_size} - "
-                            f"{slippage_bps:.2f} bps")
+            self.logger.debug(
+                f"Recorded slippage: {symbol} {side.value} {order_size} - {slippage_bps:.2f} bps"
+            )
 
         except Exception as e:
             self.logger.error(f"Failed to record execution: {e}")
@@ -171,11 +186,10 @@ class SlippageEstimator:
 
         try:
             # Get recent observations
-            cutoff_time = datetime.now() - timedelta(hours=self.config['lookback_hours'])
-            recent_obs = [obs for obs in self.observations[symbol]
-                         if obs.timestamp > cutoff_time]
+            cutoff_time = datetime.now() - timedelta(hours=self.config["lookback_hours"])
+            recent_obs = [obs for obs in self.observations[symbol] if obs.timestamp > cutoff_time]
 
-            if len(recent_obs) < self.config['min_observations_for_estimate']:
+            if len(recent_obs) < self.config["min_observations_for_estimate"]:
                 self.logger.debug(f"Insufficient observations for {symbol}: {len(recent_obs)}")
                 return {}
 
@@ -188,17 +202,16 @@ class SlippageEstimator:
             for side in [OrderSide.BUY, OrderSide.SELL]:
                 side_obs = [obs for obs in filtered_obs if obs.side == side]
 
-                if len(side_obs) < self.config['min_observations_for_estimate']:
+                if len(side_obs) < self.config["min_observations_for_estimate"]:
                     continue
 
                 # Calculate estimates by size bucket
-                for i, bucket_size in enumerate(self.config['size_buckets']):
+                for i, bucket_size in enumerate(self.config["size_buckets"]):
                     # Define bucket range
-                    min_size = self.config['size_buckets'][i-1] if i > 0 else 0
+                    min_size = self.config["size_buckets"][i - 1] if i > 0 else 0
                     max_size = bucket_size
 
-                    bucket_obs = [obs for obs in side_obs
-                                if min_size < obs.order_size <= max_size]
+                    bucket_obs = [obs for obs in side_obs if min_size < obs.order_size <= max_size]
 
                     if len(bucket_obs) < 5:  # Minimum for meaningful estimate
                         continue
@@ -217,7 +230,7 @@ class SlippageEstimator:
                         std_slippage_bps=float(np.std(slippages)),
                         sample_count=len(slippages),
                         confidence_interval_95=self._calculate_confidence_interval(slippages),
-                        last_updated=datetime.now()
+                        last_updated=datetime.now(),
                     )
 
                     key = f"{side.value}_{min_size}_{max_size}"
@@ -234,7 +247,9 @@ class SlippageEstimator:
             self.logger.error(f"Slippage estimation failed for {symbol}: {e}")
             return {}
 
-    def _remove_outliers(self, observations: List[SlippageObservation]) -> List[SlippageObservation]:
+    def _remove_outliers(
+        self, observations: List[SlippageObservation]
+    ) -> List[SlippageObservation]:
         """Remove statistical outliers from observations"""
 
         try:
@@ -245,10 +260,11 @@ class SlippageEstimator:
             mean_slippage = np.mean(slippages)
             std_slippage = np.std(slippages)
 
-            threshold = self.config['outlier_threshold_std'] * std_slippage
+            threshold = self.config["outlier_threshold_std"] * std_slippage
 
-            filtered = [obs for obs in observations
-                       if abs(obs.slippage_bps - mean_slippage) <= threshold]
+            filtered = [
+                obs for obs in observations if abs(obs.slippage_bps - mean_slippage) <= threshold
+            ]
 
             removed_count = len(observations) - len(filtered)
             if removed_count > 0:
@@ -260,7 +276,9 @@ class SlippageEstimator:
             self.logger.error(f"Outlier removal failed: {e}")
             return observations
 
-    def _calculate_confidence_interval(self, values: List[float], confidence: float = 0.95) -> Tuple[float, float]:
+    def _calculate_confidence_interval(
+        self, values: List[float], confidence: float = 0.95
+    ) -> Tuple[float, float]:
         """Calculate confidence interval for values"""
 
         try:
@@ -286,8 +304,9 @@ class SlippageEstimator:
             self.logger.error(f"Confidence interval calculation failed: {e}")
             return (0.0, 0.0)
 
-    def predict_slippage(self, symbol: str, side: OrderSide, order_size: float,
-                        percentile: int = 90) -> Optional[float]:
+    def predict_slippage(
+        self, symbol: str, side: OrderSide, order_size: float, percentile: int = 90
+    ) -> Optional[float]:
         """Predict slippage for given order"""
 
         if symbol not in self.estimates:
@@ -300,8 +319,8 @@ class SlippageEstimator:
         try:
             # Find appropriate size bucket
             bucket_key = None
-            for i, bucket_size in enumerate(self.config['size_buckets']):
-                min_size = self.config['size_buckets'][i-1] if i > 0 else 0
+            for i, bucket_size in enumerate(self.config["size_buckets"]):
+                min_size = self.config["size_buckets"][i - 1] if i > 0 else 0
 
                 if min_size < order_size <= bucket_size:
                     bucket_key = f"{side.value}_{min_size}_{bucket_size}"
@@ -322,7 +341,9 @@ class SlippageEstimator:
                         return estimate.p50_slippage_bps * (percentile / 50)
                     else:
                         ratio = (percentile - 50) / 40  # 50 to 90
-                        return estimate.p50_slippage_bps + ratio * (estimate.p90_slippage_bps - estimate.p50_slippage_bps)
+                        return estimate.p50_slippage_bps + ratio * (
+                            estimate.p90_slippage_bps - estimate.p50_slippage_bps
+                        )
 
             # Fallback: interpolate from available buckets
             return self._interpolate_slippage_estimate(symbol, side, order_size, percentile)
@@ -331,14 +352,16 @@ class SlippageEstimator:
             self.logger.error(f"Slippage prediction failed: {e}")
             return None
 
-    def _interpolate_slippage_estimate(self, symbol: str, side: OrderSide, order_size: float,
-                                     percentile: int) -> Optional[float]:
+    def _interpolate_slippage_estimate(
+        self, symbol: str, side: OrderSide, order_size: float, percentile: int
+    ) -> Optional[float]:
         """Interpolate slippage estimate from available data"""
 
         try:
             # Get all estimates for this side
-            side_estimates = {k: v for k, v in self.estimates[symbol].items()
-                            if k.startswith(side.value)}
+            side_estimates = {
+                k: v for k, v in self.estimates[symbol].items() if k.startswith(side.value)
+            }
 
             if not side_estimates:
                 return None
@@ -348,7 +371,7 @@ class SlippageEstimator:
             bucket_slippages = []
 
             for key, estimate in side_estimates.items():
-                parts = key.split('_')
+                parts = key.split("_")
                 max_size = float(parts[2])
                 bucket_sizes.append(max_size)
 
@@ -387,10 +410,10 @@ class SlippageEstimator:
             self.calculate_slippage_estimates(symbol)
 
         summary = {
-            'symbol': symbol,
-            'last_updated': datetime.now().isoformat(),
-            'total_observations': len(self.observations.get(symbol, [])),
-            'estimates_available': len(self.estimates.get(symbol, {}))
+            "symbol": symbol,
+            "last_updated": datetime.now().isoformat(),
+            "total_observations": len(self.observations.get(symbol, [])),
+            "estimates_available": len(self.estimates.get(symbol, {})),
         }
 
         if symbol in self.estimates:
@@ -401,27 +424,31 @@ class SlippageEstimator:
             all_p90 = [est.p90_slippage_bps for est in estimates.values()]
 
             if all_p50:
-                summary.update({
-                    'overall_p50_range': [float(np.min(all_p50)), float(np.max(all_p50))],
-                    'overall_p90_range': [float(np.min(all_p90)), float(np.max(all_p90))],
-                    'average_p50': float(np.mean(all_p50)),
-                    'average_p90': float(np.mean(all_p90))
-                })
+                summary.update(
+                    {
+                        "overall_p50_range": [float(np.min(all_p50)), float(np.max(all_p50))],
+                        "overall_p90_range": [float(np.min(all_p90)), float(np.max(all_p90))],
+                        "average_p50": float(np.mean(all_p50)),
+                        "average_p90": float(np.mean(all_p90)),
+                    }
+                )
 
             # Detailed estimates by bucket
-            summary['detailed_estimates'] = {}
+            summary["detailed_estimates"] = {}
             for key, estimate in estimates.items():
-                summary['detailed_estimates'][key] = {
-                    'order_size_bucket': estimate.order_size_bucket,
-                    'p50_slippage_bps': estimate.p50_slippage_bps,
-                    'p90_slippage_bps': estimate.p90_slippage_bps,
-                    'p95_slippage_bps': estimate.p95_slippage_bps,
-                    'sample_count': estimate.sample_count
+                summary["detailed_estimates"][key] = {
+                    "order_size_bucket": estimate.order_size_bucket,
+                    "p50_slippage_bps": estimate.p50_slippage_bps,
+                    "p90_slippage_bps": estimate.p90_slippage_bps,
+                    "p95_slippage_bps": estimate.p95_slippage_bps,
+                    "sample_count": estimate.sample_count,
                 }
 
         return summary
 
+
 if __name__ == "__main__":
+
     async def test_slippage_estimator():
         """Test slippage estimator"""
 
@@ -464,7 +491,7 @@ if __name__ == "__main__":
                 order_size=order_size,
                 intended_price=intended_price,
                 executed_price=executed_price,
-                latency_ms=latency_ms
+                latency_ms=latency_ms,
             )
 
         print(f"   Generated 200 execution records")
@@ -482,7 +509,7 @@ if __name__ == "__main__":
             (OrderSide.BUY, 0.1, 90),
             (OrderSide.BUY, 1.0, 90),
             (OrderSide.SELL, 0.5, 90),
-            (OrderSide.SELL, 2.0, 95)
+            (OrderSide.SELL, 2.0, 95),
         ]
 
         for side, size, percentile in test_cases:
@@ -499,21 +526,24 @@ if __name__ == "__main__":
         print(f"   Total observations: {summary['total_observations']}")
         print(f"   Estimates available: {summary['estimates_available']}")
 
-        if 'average_p50' in summary:
+        if "average_p50" in summary:
             print(f"   Average p50 slippage: {summary['average_p50']:.2f} bps")
             print(f"   Average p90 slippage: {summary['average_p90']:.2f} bps")
 
         print("\n📊 Detailed estimates by size bucket:")
-        for key, estimate in summary.get('detailed_estimates', {}).items():
-            print(f"   {key}: p50={estimate['p50_slippage_bps']:.2f}, "
-                  f"p90={estimate['p90_slippage_bps']:.2f} bps "
-                  f"(n={estimate['sample_count']})")
+        for key, estimate in summary.get("detailed_estimates", {}).items():
+            print(
+                f"   {key}: p50={estimate['p50_slippage_bps']:.2f}, "
+                f"p90={estimate['p90_slippage_bps']:.2f} bps "
+                f"(n={estimate['sample_count']})"
+            )
 
         print("\n✅ SLIPPAGE ESTIMATOR TEST COMPLETED")
 
-        return len(estimates) > 0 and summary['total_observations'] > 0
+        return len(estimates) > 0 and summary["total_observations"] > 0
 
     # Run test
     import asyncio
+
     success = asyncio.run(test_slippage_estimator())
     print(f"\nTest result: {'PASSED' if success else 'FAILED'}")

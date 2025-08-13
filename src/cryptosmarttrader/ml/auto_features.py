@@ -8,13 +8,16 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Any
 
+
 def create_auto_features(df: pd.DataFrame) -> pd.DataFrame:
     """Placeholder for auto feature generation"""
     return df
 
+
 def get_feature_importance() -> Dict[str, float]:
     """Placeholder for feature importance"""
     return {}
+
 
 class AutoFeatureGenerator:
     """Placeholder auto feature generator"""

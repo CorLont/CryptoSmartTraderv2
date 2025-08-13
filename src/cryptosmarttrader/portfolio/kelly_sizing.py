@@ -15,20 +15,25 @@ import logging
 from scipy.optimize import minimize_scalar
 from scipy.stats import norm
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 logger = logging.getLogger(__name__)
 
+
 class KellyMode(Enum):
     """Kelly calculation modes"""
+
     FULL = "full"
     FRACTIONAL = "fractional"
     CONSTRAINED = "constrained"
     CONSERVATIVE = "conservative"
 
+
 @dataclass
 class KellyParameters:
     """Kelly sizing parameters"""
+
     win_rate: float = 0.55
     avg_win: float = 0.02
     avg_loss: float = 0.015
@@ -54,11 +59,13 @@ class KellyParameters:
         """Calculate profit factor"""
         gross_profit = self.win_rate * self.avg_win
         gross_loss = (1 - self.win_rate) * self.avg_loss
-        return gross_profit / gross_loss if gross_loss > 0 else float('inf')
+        return gross_profit / gross_loss if gross_loss > 0 else float("inf")
+
 
 @dataclass
 class KellySizingResult:
     """Result of Kelly sizing calculation"""
+
     recommended_size: float
     full_kelly_size: float
     fractional_kelly_size: float
@@ -81,28 +88,32 @@ class KellySizingResult:
     @property
     def is_valid(self) -> bool:
         """Check if sizing result is valid"""
-        return (0 <= self.final_size <= 1.0 and
-                self.recommended_size > 0 and
-                not np.isnan(self.final_size))
+        return (
+            0 <= self.final_size <= 1.0
+            and self.recommended_size > 0
+            and not np.isnan(self.final_size)
+        )
+
 
 class FractionalKellySizer:
     """
     Advanced Kelly sizing system with fractional approach and volatility targeting
     """
 
-    def __init__(self,
-                 default_kelly_fraction: float = 0.25,
-                 target_volatility: float = 0.15,
-                 confidence_threshold: float = 0.6):
-
+    def __init__(
+        self,
+        default_kelly_fraction: float = 0.25,
+        target_volatility: float = 0.15,
+        confidence_threshold: float = 0.6,
+    ):
         self.default_kelly_fraction = default_kelly_fraction
         self.target_volatility = target_volatility
         self.confidence_threshold = confidence_threshold
 
         # Risk management parameters
         self.max_single_position = 0.05  # 5% max per position
-        self.min_position_size = 0.001   # 0.1% min position
-        self.max_total_exposure = 0.25   # 25% max total crypto exposure
+        self.min_position_size = 0.001  # 0.1% min position
+        self.max_total_exposure = 0.25  # 25% max total crypto exposure
 
         # Overconfidence corrections
         self.overconfidence_penalty = 0.2  # Reduce size by 20% for overconfidence
@@ -140,7 +151,9 @@ class FractionalKellySizer:
             logger.error(f"Full Kelly calculation failed: {e}")
             return 0.0
 
-    def apply_confidence_adjustment(self, kelly_size: float, confidence: float) -> Tuple[float, float]:
+    def apply_confidence_adjustment(
+        self, kelly_size: float, confidence: float
+    ) -> Tuple[float, float]:
         """Apply confidence-based adjustments to Kelly size"""
 
         try:
@@ -149,17 +162,21 @@ class FractionalKellySizer:
             # Low confidence penalty
             if confidence < self.confidence_threshold:
                 confidence_adjustment *= self.low_confidence_multiplier
-                logger.info(f"Low confidence adjustment: {confidence:.2f} < {self.confidence_threshold:.2f}")
+                logger.info(
+                    f"Low confidence adjustment: {confidence:.2f} < {self.confidence_threshold:.2f}"
+                )
 
             # Overconfidence detection (very high confidence may be unrealistic)
             elif confidence > 0.9:
-                confidence_adjustment *= (1 - self.overconfidence_penalty)
+                confidence_adjustment *= 1 - self.overconfidence_penalty
                 logger.info(f"Overconfidence penalty applied: {confidence:.2f} > 0.9")
 
             # Smooth confidence scaling
             else:
                 # Scale between 0.8 and 1.0 based on confidence
-                confidence_adjustment = 0.8 + 0.2 * ((confidence - self.confidence_threshold) / (0.9 - self.confidence_threshold))
+                confidence_adjustment = 0.8 + 0.2 * (
+                    (confidence - self.confidence_threshold) / (0.9 - self.confidence_threshold)
+                )
 
             adjusted_size = kelly_size * confidence_adjustment
 
@@ -169,10 +186,9 @@ class FractionalKellySizer:
             logger.error(f"Confidence adjustment failed: {e}")
             return kelly_size, 1.0
 
-    def apply_volatility_targeting(self,
-                                  position_size: float,
-                                  asset_volatility: float,
-                                  current_portfolio_vol: float) -> Tuple[float, float]:
+    def apply_volatility_targeting(
+        self, position_size: float, asset_volatility: float, current_portfolio_vol: float
+    ) -> Tuple[float, float]:
         """Apply volatility targeting adjustments"""
 
         try:
@@ -202,10 +218,12 @@ class FractionalKellySizer:
 
             adjusted_size = position_size * total_vol_adjustment
 
-            logger.debug(f"Vol targeting: target={self.target_volatility:.1%}, "
-                        f"portfolio={current_portfolio_vol:.1%}, "
-                        f"asset={asset_volatility:.1%}, "
-                        f"adjustment={total_vol_adjustment:.2f}")
+            logger.debug(
+                f"Vol targeting: target={self.target_volatility:.1%}, "
+                f"portfolio={current_portfolio_vol:.1%}, "
+                f"asset={asset_volatility:.1%}, "
+                f"adjustment={total_vol_adjustment:.2f}"
+            )
 
             return adjusted_size, total_vol_adjustment
 
@@ -213,7 +231,9 @@ class FractionalKellySizer:
             logger.error(f"Volatility targeting failed: {e}")
             return position_size, 1.0
 
-    def calculate_max_drawdown_estimate(self, kelly_size: float, win_rate: float, avg_loss: float) -> float:
+    def calculate_max_drawdown_estimate(
+        self, kelly_size: float, win_rate: float, avg_loss: float
+    ) -> float:
         """Estimate maximum drawdown for given Kelly size"""
 
         try:
@@ -232,9 +252,9 @@ class FractionalKellySizer:
             logger.error(f"Drawdown estimation failed: {e}")
             return 0.1
 
-    def calculate_fractional_kelly(self,
-                                  params: KellyParameters,
-                                  mode: KellyMode = KellyMode.FRACTIONAL) -> KellySizingResult:
+    def calculate_fractional_kelly(
+        self, params: KellyParameters, mode: KellyMode = KellyMode.FRACTIONAL
+    ) -> KellySizingResult:
         """Calculate fractional Kelly position size with all adjustments"""
 
         try:
@@ -251,7 +271,7 @@ class FractionalKellySizer:
                     confidence_adjustment=0.0,
                     volatility_ratio=1.0,
                     max_dd_estimate=0.0,
-                    kelly_mode=mode
+                    kelly_mode=mode,
                 )
 
             # Step 2: Apply fractional scaling
@@ -273,7 +293,9 @@ class FractionalKellySizer:
             )
 
             # Step 5: Apply size constraints
-            constrained_size = np.clip(vol_adjusted, params.min_position_size, params.max_position_size)
+            constrained_size = np.clip(
+                vol_adjusted, params.min_position_size, params.max_position_size
+            )
 
             # Step 6: Final size determination
             final_size = constrained_size
@@ -281,16 +303,16 @@ class FractionalKellySizer:
             # Track constraints applied
             applied_caps = []
             size_constraints = {
-                'min_constraint': params.min_position_size,
-                'max_constraint': params.max_position_size,
-                'original_size': vol_adjusted,
-                'final_size': final_size
+                "min_constraint": params.min_position_size,
+                "max_constraint": params.max_position_size,
+                "original_size": vol_adjusted,
+                "final_size": final_size,
             }
 
             if vol_adjusted < params.min_position_size:
-                applied_caps.append('minimum_size')
+                applied_caps.append("minimum_size")
             elif vol_adjusted > params.max_position_size:
-                applied_caps.append('maximum_size')
+                applied_caps.append("maximum_size")
 
             # Calculate estimated max drawdown
             max_dd_estimate = self.calculate_max_drawdown_estimate(
@@ -308,14 +330,16 @@ class FractionalKellySizer:
                 max_dd_estimate=max_dd_estimate,
                 size_constraints=size_constraints,
                 applied_caps=applied_caps,
-                kelly_mode=mode
+                kelly_mode=mode,
             )
 
             # Log sizing details
-            logger.info(f"Kelly sizing: Full={full_kelly:.3f}, "
-                       f"Fractional={fractional_kelly:.3f}, "
-                       f"Final={final_size:.3f}, "
-                       f"Constraints={applied_caps}")
+            logger.info(
+                f"Kelly sizing: Full={full_kelly:.3f}, "
+                f"Fractional={fractional_kelly:.3f}, "
+                f"Final={final_size:.3f}, "
+                f"Constraints={applied_caps}"
+            )
 
             return result
 
@@ -330,12 +354,12 @@ class FractionalKellySizer:
                 confidence_adjustment=0.0,
                 volatility_ratio=1.0,
                 max_dd_estimate=0.0,
-                kelly_mode=mode
+                kelly_mode=mode,
             )
 
-    def optimize_kelly_fraction(self,
-                               historical_params: List[KellyParameters],
-                               lookback_trades: int = 100) -> float:
+    def optimize_kelly_fraction(
+        self, historical_params: List[KellyParameters], lookback_trades: int = 100
+    ) -> float:
         """Optimize Kelly fraction based on historical performance"""
 
         try:
@@ -391,10 +415,9 @@ class FractionalKellySizer:
             logger.error(f"Kelly fraction optimization failed: {e}")
             return self.default_kelly_fraction
 
-    def get_regime_adjusted_kelly(self,
-                                 base_params: KellyParameters,
-                                 regime: str,
-                                 regime_confidence: float) -> KellyParameters:
+    def get_regime_adjusted_kelly(
+        self, base_params: KellyParameters, regime: str, regime_confidence: float
+    ) -> KellyParameters:
         """Adjust Kelly parameters based on market regime"""
 
         try:
@@ -408,7 +431,7 @@ class FractionalKellySizer:
                 max_position_size=base_params.max_position_size,
                 min_position_size=base_params.min_position_size,
                 target_volatility=base_params.target_volatility,
-                current_portfolio_vol=base_params.current_portfolio_vol
+                current_portfolio_vol=base_params.current_portfolio_vol,
             )
 
             # Regime-specific adjustments
@@ -441,10 +464,9 @@ class FractionalKellySizer:
             logger.error(f"Regime Kelly adjustment failed: {e}")
             return base_params
 
-    def update_performance_tracking(self,
-                                  kelly_result: KellySizingResult,
-                                  actual_trade_return: float,
-                                  trade_symbol: str):
+    def update_performance_tracking(
+        self, kelly_result: KellySizingResult, actual_trade_return: float, trade_symbol: str
+    ):
         """Update Kelly sizing performance tracking"""
 
         try:
@@ -456,19 +478,20 @@ class FractionalKellySizer:
 
             # Update running accuracy
             alpha = 0.1  # Exponential smoothing factor
-            self.kelly_accuracy_score = (alpha * accuracy_score +
-                                       (1 - alpha) * self.kelly_accuracy_score)
+            self.kelly_accuracy_score = (
+                alpha * accuracy_score + (1 - alpha) * self.kelly_accuracy_score
+            )
 
             # Store performance record
             perf_record = {
-                'timestamp': datetime.now().isoformat(),
-                'symbol': trade_symbol,
-                'kelly_size': kelly_result.final_size,
-                'expected_return': expected_return,
-                'actual_return': actual_trade_return,
-                'prediction_error': prediction_error,
-                'accuracy_score': accuracy_score,
-                'kelly_mode': kelly_result.kelly_mode.value
+                "timestamp": datetime.now().isoformat(),
+                "symbol": trade_symbol,
+                "kelly_size": kelly_result.final_size,
+                "expected_return": expected_return,
+                "actual_return": actual_trade_return,
+                "prediction_error": prediction_error,
+                "accuracy_score": accuracy_score,
+                "kelly_mode": kelly_result.kelly_mode.value,
             }
 
             self.sizing_performance.append(perf_record)
@@ -489,43 +512,44 @@ class FractionalKellySizer:
             cutoff_time = datetime.now() - timedelta(days=days_back)
 
             recent_performance = [
-                p for p in self.sizing_performance
-                if datetime.fromisoformat(p['timestamp']) >= cutoff_time
+                p
+                for p in self.sizing_performance
+                if datetime.fromisoformat(p["timestamp"]) >= cutoff_time
             ]
 
             if not recent_performance:
                 return {"status": "no_data"}
 
             # Calculate statistics
-            avg_kelly_size = np.mean([p['kelly_size'] for p in recent_performance])
-            avg_prediction_error = np.mean([p['prediction_error'] for p in recent_performance])
-            accuracy_trend = np.mean([p['accuracy_score'] for p in recent_performance])
+            avg_kelly_size = np.mean([p["kelly_size"] for p in recent_performance])
+            avg_prediction_error = np.mean([p["prediction_error"] for p in recent_performance])
+            accuracy_trend = np.mean([p["accuracy_score"] for p in recent_performance])
 
             # Size distribution
             size_buckets = {
-                'small': sum(1 for p in recent_performance if p['kelly_size'] < 0.01),
-                'medium': sum(1 for p in recent_performance if 0.01 <= p['kelly_size'] < 0.03),
-                'large': sum(1 for p in recent_performance if p['kelly_size'] >= 0.03)
+                "small": sum(1 for p in recent_performance if p["kelly_size"] < 0.01),
+                "medium": sum(1 for p in recent_performance if 0.01 <= p["kelly_size"] < 0.03),
+                "large": sum(1 for p in recent_performance if p["kelly_size"] >= 0.03),
             }
 
             return {
-                'period_days': days_back,
-                'total_trades': len(recent_performance),
-                'avg_kelly_size': avg_kelly_size,
-                'avg_prediction_error': avg_prediction_error,
-                'accuracy_score': accuracy_trend,
-                'kelly_accuracy_score': self.kelly_accuracy_score,
-                'size_distribution': size_buckets,
-                'current_kelly_fraction': self.default_kelly_fraction
+                "period_days": days_back,
+                "total_trades": len(recent_performance),
+                "avg_kelly_size": avg_kelly_size,
+                "avg_prediction_error": avg_prediction_error,
+                "accuracy_score": accuracy_trend,
+                "kelly_accuracy_score": self.kelly_accuracy_score,
+                "size_distribution": size_buckets,
+                "current_kelly_fraction": self.default_kelly_fraction,
             }
 
         except Exception as e:
             logger.error(f"Sizing statistics failed: {e}")
             return {"status": "error", "message": str(e)}
 
-    def stress_test_kelly_sizing(self,
-                                base_params: KellyParameters,
-                                stress_scenarios: List[Dict[str, float]]) -> Dict[str, Any]:
+    def stress_test_kelly_sizing(
+        self, base_params: KellyParameters, stress_scenarios: List[Dict[str, float]]
+    ) -> Dict[str, Any]:
         """Stress test Kelly sizing under various market conditions"""
 
         try:
@@ -534,25 +558,27 @@ class FractionalKellySizer:
             for scenario_name, adjustments in stress_scenarios:
                 # Create stressed parameters
                 stressed_params = KellyParameters(
-                    win_rate=base_params.win_rate * adjustments.get('win_rate_multiplier', 1.0),
-                    avg_win=base_params.avg_win * adjustments.get('avg_win_multiplier', 1.0),
-                    avg_loss=base_params.avg_loss * adjustments.get('avg_loss_multiplier', 1.0),
-                    confidence=base_params.confidence * adjustments.get('confidence_multiplier', 1.0),
-                    volatility=base_params.volatility * adjustments.get('volatility_multiplier', 1.0),
+                    win_rate=base_params.win_rate * adjustments.get("win_rate_multiplier", 1.0),
+                    avg_win=base_params.avg_win * adjustments.get("avg_win_multiplier", 1.0),
+                    avg_loss=base_params.avg_loss * adjustments.get("avg_loss_multiplier", 1.0),
+                    confidence=base_params.confidence
+                    * adjustments.get("confidence_multiplier", 1.0),
+                    volatility=base_params.volatility
+                    * adjustments.get("volatility_multiplier", 1.0),
                     kelly_fraction=base_params.kelly_fraction,
                     target_volatility=base_params.target_volatility,
-                    current_portfolio_vol=base_params.current_portfolio_vol
+                    current_portfolio_vol=base_params.current_portfolio_vol,
                 )
 
                 # Calculate sizing under stress
                 stress_result = self.calculate_fractional_kelly(stressed_params)
 
                 stress_results[scenario_name] = {
-                    'final_size': stress_result.final_size,
-                    'full_kelly': stress_result.full_kelly_size,
-                    'max_dd_estimate': stress_result.max_dd_estimate,
-                    'constraints_applied': stress_result.applied_caps,
-                    'volatility_ratio': stress_result.volatility_ratio
+                    "final_size": stress_result.final_size,
+                    "full_kelly": stress_result.full_kelly_size,
+                    "max_dd_estimate": stress_result.max_dd_estimate,
+                    "constraints_applied": stress_result.applied_caps,
+                    "volatility_ratio": stress_result.volatility_ratio,
                 }
 
             return stress_results

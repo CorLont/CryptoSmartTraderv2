@@ -13,30 +13,36 @@ from datetime import datetime, timedelta
 import threading
 import re
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 try:
     import torch
     from transformers import AutoTokenizer, AutoModel
+
     HAS_TRANSFORMERS = True
 except ImportError:
     HAS_TRANSFORMERS = False
 
 try:
     from textblob import TextBlob
+
     HAS_TEXTBLOB = True
 except ImportError:
     HAS_TEXTBLOB = False
 
 try:
     import networkx as nx
+
     HAS_NETWORKX = True
 except ImportError:
     HAS_NETWORKX = False
 
+
 @dataclass
 class MultimodalConfig:
     """Configuration for multimodal processing"""
+
     # Text processing
     max_text_length: int = 512
     text_model_name: str = "distilbert-base-uncased"
@@ -44,8 +50,10 @@ class MultimodalConfig:
 
     # Time series processing
     sequence_length: int = 100
-    time_features: List[str] = field(default_factory=lambda: ['hour', 'day_of_week', 'month'])
-    technical_indicators: List[str] = field(default_factory=lambda: ['sma', 'ema', 'rsi', 'macd', 'bollinger'])
+    time_features: List[str] = field(default_factory=lambda: ["hour", "day_of_week", "month"])
+    technical_indicators: List[str] = field(
+        default_factory=lambda: ["sma", "ema", "rsi", "macd", "bollinger"]
+    )
 
     # Graph processing
     max_graph_nodes: int = 1000
@@ -55,6 +63,7 @@ class MultimodalConfig:
     # Feature scaling
     normalize_features: bool = True
     feature_scaling_method: str = "standard"  # standard, minmax, robust
+
 
 class TextProcessor:
     """Advanced text processing for sentiment and news analysis"""
@@ -79,10 +88,14 @@ class TextProcessor:
                 self.text_model = None
 
         # Text preprocessing patterns
-        self.url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
-        self.mention_pattern = re.compile(r'@[A-Za-z0-9_]+')
-        self.hashtag_pattern = re.compile(r'#[A-Za-z0-9_]+')
-        self.emoji_pattern = re.compile(r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]+')
+        self.url_pattern = re.compile(
+            r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+        )
+        self.mention_pattern = re.compile(r"@[A-Za-z0-9_]+")
+        self.hashtag_pattern = re.compile(r"#[A-Za-z0-9_]+")
+        self.emoji_pattern = re.compile(
+            r"[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]+"
+        )
 
     def process_text_data(self, text_data: List[str]) -> Dict[str, np.ndarray]:
         """
@@ -111,7 +124,7 @@ class TextProcessor:
             # Extract embeddings if transformer model available
             if self.text_model is not None:
                 embeddings = self._extract_text_embeddings(cleaned_texts)
-                processed_features['text_embeddings'] = embeddings
+                processed_features["text_embeddings"] = embeddings
 
             # Extract keyword features
             keyword_features = self._extract_keyword_features(cleaned_texts)
@@ -132,17 +145,17 @@ class TextProcessor:
         text = text.lower()
 
         # Remove URLs
-        text = self.url_pattern.sub(' [URL] ', text)
+        text = self.url_pattern.sub(" [URL] ", text)
 
         # Replace mentions and hashtags
-        text = self.mention_pattern.sub(' [MENTION] ', text)
-        text = self.hashtag_pattern.sub(' [HASHTAG] ', text)
+        text = self.mention_pattern.sub(" [MENTION] ", text)
+        text = self.hashtag_pattern.sub(" [HASHTAG] ", text)
 
         # Remove emojis (or replace with [EMOJI])
-        text = self.emoji_pattern.sub(' [EMOJI] ', text)
+        text = self.emoji_pattern.sub(" [EMOJI] ", text)
 
         # Clean up whitespace
-        text = re.sub(r'\s+', ' ', text).strip()
+        text = re.sub(r"\s+", " ", text).strip()
 
         return text
 
@@ -154,25 +167,37 @@ class TextProcessor:
         char_counts = np.array([len(text) for text in texts], dtype=np.float32)
         word_counts = np.array([len(text.split()) for text in texts], dtype=np.float32)
 
-        features['text_char_count'] = char_counts
-        features['text_word_count'] = word_counts
-        features['text_avg_word_length'] = np.array([
-            np.mean([len(word) for word in text.split()]) if text.split() else 0
-            for text in texts
-        ], dtype=np.float32)
+        features["text_char_count"] = char_counts
+        features["text_word_count"] = word_counts
+        features["text_avg_word_length"] = np.array(
+            [
+                np.mean([len(word) for word in text.split()]) if text.split() else 0
+                for text in texts
+            ],
+            dtype=np.float32,
+        )
 
         # Special token counts
-        features['url_count'] = np.array([text.count('[URL]') for text in texts], dtype=np.float32)
-        features['mention_count'] = np.array([text.count('[MENTION]') for text in texts], dtype=np.float32)
-        features['hashtag_count'] = np.array([text.count('[HASHTAG]') for text in texts], dtype=np.float32)
-        features['emoji_count'] = np.array([text.count('[EMOJI]') for text in texts], dtype=np.float32)
+        features["url_count"] = np.array([text.count("[URL]") for text in texts], dtype=np.float32)
+        features["mention_count"] = np.array(
+            [text.count("[MENTION]") for text in texts], dtype=np.float32
+        )
+        features["hashtag_count"] = np.array(
+            [text.count("[HASHTAG]") for text in texts], dtype=np.float32
+        )
+        features["emoji_count"] = np.array(
+            [text.count("[EMOJI]") for text in texts], dtype=np.float32
+        )
 
         # Punctuation features
-        features['exclamation_count'] = np.array([text.count('!') for text in texts], dtype=np.float32)
-        features['question_count'] = np.array([text.count('?') for text in texts], dtype=np.float32)
-        features['uppercase_ratio'] = np.array([
-            sum(1 for c in text if c.isupper()) / max(len(text), 1) for text in texts
-        ], dtype=np.float32)
+        features["exclamation_count"] = np.array(
+            [text.count("!") for text in texts], dtype=np.float32
+        )
+        features["question_count"] = np.array([text.count("?") for text in texts], dtype=np.float32)
+        features["uppercase_ratio"] = np.array(
+            [sum(1 for c in text if c.isupper()) / max(len(text), 1) for text in texts],
+            dtype=np.float32,
+        )
 
         return features
 
@@ -193,27 +218,39 @@ class TextProcessor:
                     sentiments.append(0.0)
                     subjectivities.append(0.0)
 
-            features['sentiment_polarity'] = np.array(sentiments, dtype=np.float32)
-            features['sentiment_subjectivity'] = np.array(subjectivities, dtype=np.float32)
+            features["sentiment_polarity"] = np.array(sentiments, dtype=np.float32)
+            features["sentiment_subjectivity"] = np.array(subjectivities, dtype=np.float32)
 
         # Rule-based sentiment indicators
-        bullish_keywords = ['moon', 'pump', 'bull', 'buy', 'bullish', 'up', 'rise', 'gain', 'profit']
-        bearish_keywords = ['dump', 'bear', 'sell', 'bearish', 'down', 'fall', 'loss', 'crash']
+        bullish_keywords = [
+            "moon",
+            "pump",
+            "bull",
+            "buy",
+            "bullish",
+            "up",
+            "rise",
+            "gain",
+            "profit",
+        ]
+        bearish_keywords = ["dump", "bear", "sell", "bearish", "down", "fall", "loss", "crash"]
 
-        bullish_scores = np.array([
-            sum(keyword in text.lower() for keyword in bullish_keywords) for text in texts
-        ], dtype=np.float32)
+        bullish_scores = np.array(
+            [sum(keyword in text.lower() for keyword in bullish_keywords) for text in texts],
+            dtype=np.float32,
+        )
 
-        bearish_scores = np.array([
-            sum(keyword in text.lower() for keyword in bearish_keywords) for text in texts
-        ], dtype=np.float32)
+        bearish_scores = np.array(
+            [sum(keyword in text.lower() for keyword in bearish_keywords) for text in texts],
+            dtype=np.float32,
+        )
 
-        features['bullish_keyword_count'] = bullish_scores
-        features['bearish_keyword_count'] = bearish_scores
-        features['sentiment_ratio'] = np.where(
+        features["bullish_keyword_count"] = bullish_scores
+        features["bearish_keyword_count"] = bearish_scores
+        features["sentiment_ratio"] = np.where(
             bullish_scores + bearish_scores > 0,
             (bullish_scores - bearish_scores) / (bullish_scores + bearish_scores),
-            0.0
+            0.0,
         )
 
         return features
@@ -230,7 +267,7 @@ class TextProcessor:
                     max_length=self.config.max_text_length,
                     truncation=True,
                     padding=True,
-                    return_tensors='pt'
+                    return_tensors="pt",
                 )
 
                 # Generate embeddings
@@ -250,32 +287,56 @@ class TextProcessor:
     def _extract_keyword_features(self, texts: List[str]) -> Dict[str, np.ndarray]:
         """Extract cryptocurrency and trading keyword features"""
         crypto_keywords = [
-            'bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'blockchain', 'defi',
-            'nft', 'altcoin', 'hodl', 'whale', 'mining', 'staking'
+            "bitcoin",
+            "btc",
+            "ethereum",
+            "eth",
+            "crypto",
+            "blockchain",
+            "defi",
+            "nft",
+            "altcoin",
+            "hodl",
+            "whale",
+            "mining",
+            "staking",
         ]
 
         trading_keywords = [
-            'trade', 'trading', 'buy', 'sell', 'order', 'market', 'limit',
-            'stop', 'portfolio', 'investment', 'exchange', 'volume'
+            "trade",
+            "trading",
+            "buy",
+            "sell",
+            "order",
+            "market",
+            "limit",
+            "stop",
+            "portfolio",
+            "investment",
+            "exchange",
+            "volume",
         ]
 
         features = {}
 
-        crypto_counts = np.array([
-            sum(keyword in text.lower() for keyword in crypto_keywords) for text in texts
-        ], dtype=np.float32)
+        crypto_counts = np.array(
+            [sum(keyword in text.lower() for keyword in crypto_keywords) for text in texts],
+            dtype=np.float32,
+        )
 
-        trading_counts = np.array([
-            sum(keyword in text.lower() for keyword in trading_keywords) for text in texts
-        ], dtype=np.float32)
+        trading_counts = np.array(
+            [sum(keyword in text.lower() for keyword in trading_keywords) for text in texts],
+            dtype=np.float32,
+        )
 
-        features['crypto_keyword_count'] = crypto_counts
-        features['trading_keyword_count'] = trading_counts
-        features['total_keyword_density'] = (crypto_counts + trading_counts) / np.maximum(
+        features["crypto_keyword_count"] = crypto_counts
+        features["trading_keyword_count"] = trading_counts
+        features["total_keyword_density"] = (crypto_counts + trading_counts) / np.maximum(
             np.array([len(text.split()) for text in texts]), 1
         )
 
         return features
+
 
 class TimeSeriesProcessor:
     """Advanced time series processing for price and indicator data"""
@@ -284,7 +345,9 @@ class TimeSeriesProcessor:
         self.config = config
         self.logger = logging.getLogger(f"{__name__}.TimeSeriesProcessor")
 
-    def process_timeseries_data(self, price_data: pd.DataFrame, volume_data: Optional[pd.DataFrame] = None) -> Dict[str, np.ndarray]:
+    def process_timeseries_data(
+        self, price_data: pd.DataFrame, volume_data: Optional[pd.DataFrame] = None
+    ) -> Dict[str, np.ndarray]:
         """
         Process time series data into features
 
@@ -335,7 +398,7 @@ class TimeSeriesProcessor:
 
         # Determine price column
         price_col = None
-        for col in ['close', 'price', 'Close', 'Price']:
+        for col in ["close", "price", "Close", "Price"]:
             if col in price_data.columns:
                 price_col = col
                 break
@@ -360,11 +423,11 @@ class TimeSeriesProcessor:
         price_ma20 = pd.Series(prices).rolling(20, min_periods=1).mean().values
         price_ma50 = pd.Series(prices).rolling(50, min_periods=1).mean().values
 
-        features['prices'] = prices.astype(np.float32)
-        features['returns'] = returns.astype(np.float32)
-        features['log_returns'] = log_returns.astype(np.float32)
-        features['price_ma20_ratio'] = (prices / price_ma20).astype(np.float32)
-        features['price_ma50_ratio'] = (prices / price_ma50).astype(np.float32)
+        features["prices"] = prices.astype(np.float32)
+        features["returns"] = returns.astype(np.float32)
+        features["log_returns"] = log_returns.astype(np.float32)
+        features["price_ma20_ratio"] = (prices / price_ma20).astype(np.float32)
+        features["price_ma50_ratio"] = (prices / price_ma50).astype(np.float32)
 
         return features
 
@@ -374,7 +437,7 @@ class TimeSeriesProcessor:
 
         # Determine price column
         price_col = None
-        for col in ['close', 'price', 'Close', 'Price']:
+        for col in ["close", "price", "Close", "Price"]:
             if col in price_data.columns:
                 price_col = col
                 break
@@ -385,36 +448,38 @@ class TimeSeriesProcessor:
         prices = pd.Series(price_data[price_col].values)
 
         # Simple Moving Averages
-        if 'sma' in self.config.technical_indicators:
-            features['sma_5'] = prices.rolling(5, min_periods=1).mean().values.astype(np.float32)
-            features['sma_10'] = prices.rolling(10, min_periods=1).mean().values.astype(np.float32)
-            features['sma_20'] = prices.rolling(20, min_periods=1).mean().values.astype(np.float32)
+        if "sma" in self.config.technical_indicators:
+            features["sma_5"] = prices.rolling(5, min_periods=1).mean().values.astype(np.float32)
+            features["sma_10"] = prices.rolling(10, min_periods=1).mean().values.astype(np.float32)
+            features["sma_20"] = prices.rolling(20, min_periods=1).mean().values.astype(np.float32)
 
         # Exponential Moving Averages
-        if 'ema' in self.config.technical_indicators:
-            features['ema_5'] = prices.ewm(span=5).mean().values.astype(np.float32)
-            features['ema_10'] = prices.ewm(span=10).mean().values.astype(np.float32)
-            features['ema_20'] = prices.ewm(span=20).mean().values.astype(np.float32)
+        if "ema" in self.config.technical_indicators:
+            features["ema_5"] = prices.ewm(span=5).mean().values.astype(np.float32)
+            features["ema_10"] = prices.ewm(span=10).mean().values.astype(np.float32)
+            features["ema_20"] = prices.ewm(span=20).mean().values.astype(np.float32)
 
         # RSI
-        if 'rsi' in self.config.technical_indicators:
+        if "rsi" in self.config.technical_indicators:
             rsi = self._calculate_rsi(prices)
-            features['rsi'] = rsi.astype(np.float32)
+            features["rsi"] = rsi.astype(np.float32)
 
         # MACD
-        if 'macd' in self.config.technical_indicators:
+        if "macd" in self.config.technical_indicators:
             macd_line, macd_signal, macd_histogram = self._calculate_macd(prices)
-            features['macd_line'] = macd_line.astype(np.float32)
-            features['macd_signal'] = macd_signal.astype(np.float32)
-            features['macd_histogram'] = macd_histogram.astype(np.float32)
+            features["macd_line"] = macd_line.astype(np.float32)
+            features["macd_signal"] = macd_signal.astype(np.float32)
+            features["macd_histogram"] = macd_histogram.astype(np.float32)
 
         # Bollinger Bands
-        if 'bollinger' in self.config.technical_indicators:
+        if "bollinger" in self.config.technical_indicators:
             bb_upper, bb_middle, bb_lower = self._calculate_bollinger_bands(prices)
-            features['bb_upper'] = bb_upper.astype(np.float32)
-            features['bb_middle'] = bb_middle.astype(np.float32)
-            features['bb_lower'] = bb_lower.astype(np.float32)
-            features['bb_position'] = ((prices - bb_lower) / (bb_upper - bb_lower)).fillna(0.5).values.astype(np.float32)
+            features["bb_upper"] = bb_upper.astype(np.float32)
+            features["bb_middle"] = bb_middle.astype(np.float32)
+            features["bb_lower"] = bb_lower.astype(np.float32)
+            features["bb_position"] = (
+                ((prices - bb_lower) / (bb_upper - bb_lower)).fillna(0.5).values.astype(np.float32)
+            )
 
         return features
 
@@ -430,7 +495,9 @@ class TimeSeriesProcessor:
         except Exception:
             return np.full(len(prices), 50.0)
 
-    def _calculate_macd(self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _calculate_macd(
+        self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Calculate MACD indicator"""
         try:
             ema_fast = prices.ewm(span=fast).mean()
@@ -442,16 +509,14 @@ class TimeSeriesProcessor:
             return (
                 macd_line.fillna(0).values,
                 macd_signal.fillna(0).values,
-                macd_histogram.fillna(0).values
+                macd_histogram.fillna(0).values,
             )
         except Exception:
-            return (
-                np.zeros(len(prices)),
-                np.zeros(len(prices)),
-                np.zeros(len(prices))
-            )
+            return (np.zeros(len(prices)), np.zeros(len(prices)), np.zeros(len(prices)))
 
-    def _calculate_bollinger_bands(self, prices: pd.Series, period: int = 20, std_dev: float = 2) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _calculate_bollinger_bands(
+        self, prices: pd.Series, period: int = 20, std_dev: float = 2
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Calculate Bollinger Bands"""
         try:
             middle = prices.rolling(window=period, min_periods=1).mean()
@@ -462,51 +527,49 @@ class TimeSeriesProcessor:
             return (
                 upper.fillna(prices).values,
                 middle.fillna(prices).values,
-                lower.fillna(prices).values
+                lower.fillna(prices).values,
             )
         except Exception:
-            return (
-                prices.values,
-                prices.values,
-                prices.values
-            )
+            return (prices.values, prices.values, prices.values)
 
     def _extract_time_features(self, price_data: pd.DataFrame) -> Dict[str, np.ndarray]:
         """Extract time-based features"""
         features = {}
 
-        if price_data.index.dtype.kind in ['M', 'datetime64']:
+        if price_data.index.dtype.kind in ["M", "datetime64"]:
             timestamps = price_data.index
-        elif 'timestamp' in price_data.columns:
-            timestamps = pd.to_datetime(price_data['timestamp'])
+        elif "timestamp" in price_data.columns:
+            timestamps = pd.to_datetime(price_data["timestamp"])
         else:
             # Create dummy timestamps
-            timestamps = pd.date_range('2020-01-01', periods=len(price_data), freq='H')
+            timestamps = pd.date_range("2020-01-01", periods=len(price_data), freq="H")
 
-        if 'hour' in self.config.time_features:
-            features['hour'] = timestamps.hour.values.astype(np.float32)
-            features['hour_sin'] = np.sin(2 * np.pi * timestamps.hour / 24).astype(np.float32)
-            features['hour_cos'] = np.cos(2 * np.pi * timestamps.hour / 24).astype(np.float32)
+        if "hour" in self.config.time_features:
+            features["hour"] = timestamps.hour.values.astype(np.float32)
+            features["hour_sin"] = np.sin(2 * np.pi * timestamps.hour / 24).astype(np.float32)
+            features["hour_cos"] = np.cos(2 * np.pi * timestamps.hour / 24).astype(np.float32)
 
-        if 'day_of_week' in self.config.time_features:
-            features['day_of_week'] = timestamps.dayofweek.values.astype(np.float32)
-            features['dow_sin'] = np.sin(2 * np.pi * timestamps.dayofweek / 7).astype(np.float32)
-            features['dow_cos'] = np.cos(2 * np.pi * timestamps.dayofweek / 7).astype(np.float32)
+        if "day_of_week" in self.config.time_features:
+            features["day_of_week"] = timestamps.dayofweek.values.astype(np.float32)
+            features["dow_sin"] = np.sin(2 * np.pi * timestamps.dayofweek / 7).astype(np.float32)
+            features["dow_cos"] = np.cos(2 * np.pi * timestamps.dayofweek / 7).astype(np.float32)
 
-        if 'month' in self.config.time_features:
-            features['month'] = timestamps.month.values.astype(np.float32)
-            features['month_sin'] = np.sin(2 * np.pi * timestamps.month / 12).astype(np.float32)
-            features['month_cos'] = np.cos(2 * np.pi * timestamps.month / 12).astype(np.float32)
+        if "month" in self.config.time_features:
+            features["month"] = timestamps.month.values.astype(np.float32)
+            features["month_sin"] = np.sin(2 * np.pi * timestamps.month / 12).astype(np.float32)
+            features["month_cos"] = np.cos(2 * np.pi * timestamps.month / 12).astype(np.float32)
 
         return features
 
-    def _extract_volume_features(self, volume_data: pd.DataFrame, price_data: pd.DataFrame) -> Dict[str, np.ndarray]:
+    def _extract_volume_features(
+        self, volume_data: pd.DataFrame, price_data: pd.DataFrame
+    ) -> Dict[str, np.ndarray]:
         """Extract volume-based features"""
         features = {}
 
         # Determine volume column
         volume_col = None
-        for col in ['volume', 'Volume', 'vol']:
+        for col in ["volume", "Volume", "vol"]:
             if col in volume_data.columns:
                 volume_col = col
                 break
@@ -523,15 +586,15 @@ class TimeSeriesProcessor:
         volume_ma10 = pd.Series(volume).rolling(10, min_periods=1).mean().values
         volume_ma20 = pd.Series(volume).rolling(20, min_periods=1).mean().values
 
-        features['volume'] = volume.astype(np.float32)
-        features['volume_ma10'] = volume_ma10.astype(np.float32)
-        features['volume_ma20'] = volume_ma20.astype(np.float32)
-        features['volume_ratio'] = (volume / volume_ma20).astype(np.float32)
+        features["volume"] = volume.astype(np.float32)
+        features["volume_ma10"] = volume_ma10.astype(np.float32)
+        features["volume_ma20"] = volume_ma20.astype(np.float32)
+        features["volume_ratio"] = (volume / volume_ma20).astype(np.float32)
 
         # Price-volume features
         if len(price_data) == len(volume_data):
             price_col = None
-            for col in ['close', 'price', 'Close', 'Price']:
+            for col in ["close", "price", "Close", "Price"]:
                 if col in price_data.columns:
                     price_col = col
                     break
@@ -542,10 +605,14 @@ class TimeSeriesProcessor:
                 returns = np.concatenate([[0], returns])
 
                 # Volume-weighted price features
-                features['vwap'] = (prices * volume).astype(np.float32)
-                features['price_volume_correlation'] = pd.Series(returns).rolling(20, min_periods=1).corr(
-                    pd.Series(volume)
-                ).fillna(0).values.astype(np.float32)
+                features["vwap"] = (prices * volume).astype(np.float32)
+                features["price_volume_correlation"] = (
+                    pd.Series(returns)
+                    .rolling(20, min_periods=1)
+                    .corr(pd.Series(volume))
+                    .fillna(0)
+                    .values.astype(np.float32)
+                )
 
         return features
 
@@ -554,7 +621,7 @@ class TimeSeriesProcessor:
         features = {}
 
         price_col = None
-        for col in ['close', 'price', 'Close', 'Price']:
+        for col in ["close", "price", "Close", "Price"]:
             if col in price_data.columns:
                 price_col = col
                 break
@@ -569,18 +636,30 @@ class TimeSeriesProcessor:
 
         for window in windows:
             # Rolling mean
-            features[f'rolling_mean_{window}'] = prices.rolling(window, min_periods=1).mean().values.astype(np.float32)
+            features[f"rolling_mean_{window}"] = (
+                prices.rolling(window, min_periods=1).mean().values.astype(np.float32)
+            )
 
             # Rolling std
-            features[f'rolling_std_{window}'] = prices.rolling(window, min_periods=1).std().fillna(0).values.astype(np.float32)
+            features[f"rolling_std_{window}"] = (
+                prices.rolling(window, min_periods=1).std().fillna(0).values.astype(np.float32)
+            )
 
             # Rolling min/max
-            features[f'rolling_min_{window}'] = prices.rolling(window, min_periods=1).min().values.astype(np.float32)
-            features[f'rolling_max_{window}'] = prices.rolling(window, min_periods=1).max().values.astype(np.float32)
+            features[f"rolling_min_{window}"] = (
+                prices.rolling(window, min_periods=1).min().values.astype(np.float32)
+            )
+            features[f"rolling_max_{window}"] = (
+                prices.rolling(window, min_periods=1).max().values.astype(np.float32)
+            )
 
             # Rolling quantiles
-            features[f'rolling_q25_{window}'] = prices.rolling(window, min_periods=1).quantile(0.25).values.astype(np.float32)
-            features[f'rolling_q75_{window}'] = prices.rolling(window, min_periods=1).quantile(0.75).values.astype(np.float32)
+            features[f"rolling_q25_{window}"] = (
+                prices.rolling(window, min_periods=1).quantile(0.25).values.astype(np.float32)
+            )
+            features[f"rolling_q75_{window}"] = (
+                prices.rolling(window, min_periods=1).quantile(0.75).values.astype(np.float32)
+            )
 
         return features
 
@@ -589,7 +668,7 @@ class TimeSeriesProcessor:
         features = {}
 
         price_col = None
-        for col in ['close', 'price', 'Close', 'Price']:
+        for col in ["close", "price", "Close", "Price"]:
             if col in price_data.columns:
                 price_col = col
                 break
@@ -604,20 +683,21 @@ class TimeSeriesProcessor:
         windows = [10, 20, 30]
         for window in windows:
             vol = returns.rolling(window, min_periods=1).std() * np.sqrt(252)  # Annualized
-            features[f'volatility_{window}'] = vol.fillna(0).values.astype(np.float32)
+            features[f"volatility_{window}"] = vol.fillna(0).values.astype(np.float32)
 
         # GARCH-like volatility
-        squared_returns = returns ** 2
-        features['garch_volatility'] = squared_returns.ewm(span=20).mean().values.astype(np.float32)
+        squared_returns = returns**2
+        features["garch_volatility"] = squared_returns.ewm(span=20).mean().values.astype(np.float32)
 
         # Parkinson volatility (if high/low available)
-        if all(col in price_data.columns for col in ['high', 'low']):
-            high = price_data['high'].values
-            low = price_data['low'].values
+        if all(col in price_data.columns for col in ["high", "low"]):
+            high = price_data["high"].values
+            low = price_data["low"].values
             parkinson_vol = np.sqrt(np.log(high / low) ** 2 / (4 * np.log(2)))
-            features['parkinson_volatility'] = parkinson_vol.astype(np.float32)
+            features["parkinson_volatility"] = parkinson_vol.astype(np.float32)
 
         return features
+
 
 class GraphProcessor:
     """Graph processing for network-based features"""
@@ -669,20 +749,20 @@ class GraphProcessor:
             G = nx.Graph()
 
             # Add nodes
-            if 'nodes' in graph_data:
-                for node_data in graph_data['nodes']:
+            if "nodes" in graph_data:
+                for node_data in graph_data["nodes"]:
                     if isinstance(node_data, dict):
-                        node_id = node_data.get('id', len(G.nodes()))
+                        node_id = node_data.get("id", len(G.nodes()))
                         G.add_node(node_id, **node_data)
                     else:
                         G.add_node(node_data)
 
             # Add edges
-            if 'edges' in graph_data:
-                for edge_data in graph_data['edges']:
+            if "edges" in graph_data:
+                for edge_data in graph_data["edges"]:
                     if isinstance(edge_data, dict):
-                        source = edge_data.get('source')
-                        target = edge_data.get('target')
+                        source = edge_data.get("source")
+                        target = edge_data.get("target")
                         if source is not None and target is not None:
                             G.add_edge(source, target, **edge_data)
                     elif len(edge_data) >= 2:
@@ -701,27 +781,27 @@ class GraphProcessor:
         try:
             # Degree centrality
             degree_centrality = nx.degree_centrality(G)
-            features['node_degree_centrality'] = np.array([
-                degree_centrality.get(node, 0) for node in G.nodes()
-            ], dtype=np.float32)
+            features["node_degree_centrality"] = np.array(
+                [degree_centrality.get(node, 0) for node in G.nodes()], dtype=np.float32
+            )
 
             # Betweenness centrality
             betweenness_centrality = nx.betweenness_centrality(G)
-            features['node_betweenness_centrality'] = np.array([
-                betweenness_centrality.get(node, 0) for node in G.nodes()
-            ], dtype=np.float32)
+            features["node_betweenness_centrality"] = np.array(
+                [betweenness_centrality.get(node, 0) for node in G.nodes()], dtype=np.float32
+            )
 
             # Closeness centrality
             closeness_centrality = nx.closeness_centrality(G)
-            features['node_closeness_centrality'] = np.array([
-                closeness_centrality.get(node, 0) for node in G.nodes()
-            ], dtype=np.float32)
+            features["node_closeness_centrality"] = np.array(
+                [closeness_centrality.get(node, 0) for node in G.nodes()], dtype=np.float32
+            )
 
             # Clustering coefficient
             clustering = nx.clustering(G)
-            features['node_clustering'] = np.array([
-                clustering.get(node, 0) for node in G.nodes()
-            ], dtype=np.float32)
+            features["node_clustering"] = np.array(
+                [clustering.get(node, 0) for node in G.nodes()], dtype=np.float32
+            )
 
         except Exception as e:
             self.logger.error(f"Node feature extraction failed: {e}")
@@ -734,26 +814,31 @@ class GraphProcessor:
 
         try:
             # Basic graph properties
-            features['graph_num_nodes'] = np.array([len(G.nodes())], dtype=np.float32)
-            features['graph_num_edges'] = np.array([len(G.edges())], dtype=np.float32)
-            features['graph_density'] = np.array([nx.density(G)], dtype=np.float32)
+            features["graph_num_nodes"] = np.array([len(G.nodes())], dtype=np.float32)
+            features["graph_num_edges"] = np.array([len(G.edges())], dtype=np.float32)
+            features["graph_density"] = np.array([nx.density(G)], dtype=np.float32)
 
             # Connectivity measures
             if nx.is_connected(G):
-                features['graph_diameter'] = np.array([nx.diameter(G)], dtype=np.float32)
-                features['graph_avg_shortest_path'] = np.array([nx.average_shortest_path_length(G)], dtype=np.float32)
+                features["graph_diameter"] = np.array([nx.diameter(G)], dtype=np.float32)
+                features["graph_avg_shortest_path"] = np.array(
+                    [nx.average_shortest_path_length(G)], dtype=np.float32
+                )
             else:
-                features['graph_diameter'] = np.array([0.0], dtype=np.float32)
-                features['graph_avg_shortest_path'] = np.array([0.0], dtype=np.float32)
+                features["graph_diameter"] = np.array([0.0], dtype=np.float32)
+                features["graph_avg_shortest_path"] = np.array([0.0], dtype=np.float32)
 
             # Clustering
-            features['graph_avg_clustering'] = np.array([nx.average_clustering(G)], dtype=np.float32)
-            features['graph_transitivity'] = np.array([nx.transitivity(G)], dtype=np.float32)
+            features["graph_avg_clustering"] = np.array(
+                [nx.average_clustering(G)], dtype=np.float32
+            )
+            features["graph_transitivity"] = np.array([nx.transitivity(G)], dtype=np.float32)
 
         except Exception as e:
             self.logger.error(f"Graph feature extraction failed: {e}")
 
         return features
+
 
 class MultimodalProcessor:
     """Main multimodal data processor"""
@@ -788,23 +873,25 @@ class MultimodalProcessor:
             all_features = {}
 
             # Process text data
-            if 'text' in data_dict or 'sentiment' in data_dict:
-                text_data = data_dict.get('text', data_dict.get('sentiment', []))
+            if "text" in data_dict or "sentiment" in data_dict:
+                text_data = data_dict.get("text", data_dict.get("sentiment", []))
                 if text_data:
                     text_features = self.text_processor.process_text_data(text_data)
                     all_features.update({f"text_{k}": v for k, v in text_features.items()})
 
             # Process time series data
-            if 'price_data' in data_dict:
-                price_data = data_dict['price_data']
-                volume_data = data_dict.get('volume_data')
+            if "price_data" in data_dict:
+                price_data = data_dict["price_data"]
+                volume_data = data_dict.get("volume_data")
 
-                ts_features = self.timeseries_processor.process_timeseries_data(price_data, volume_data)
+                ts_features = self.timeseries_processor.process_timeseries_data(
+                    price_data, volume_data
+                )
                 all_features.update({f"ts_{k}": v for k, v in ts_features.items()})
 
             # Process graph data
-            if 'graph_data' in data_dict:
-                graph_data = data_dict['graph_data']
+            if "graph_data" in data_dict:
+                graph_data = data_dict["graph_data"]
                 graph_features = self.graph_processor.process_graph_data(graph_data)
                 all_features.update({f"graph_{k}": v for k, v in graph_features.items()})
 
@@ -820,9 +907,9 @@ class MultimodalProcessor:
             from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
             scaler_class = {
-                'standard': StandardScaler,
-                'minmax': MinMaxScaler,
-                'robust': RobustScaler
+                "standard": StandardScaler,
+                "minmax": MinMaxScaler,
+                "robust": RobustScaler,
             }.get(self.config.feature_scaling_method, StandardScaler)
 
             normalized_features = {}
@@ -835,7 +922,9 @@ class MultimodalProcessor:
                 values_reshaped = feature_values.reshape(-1, 1)
 
                 # Fit and transform
-                normalized_values = self.feature_scalers[feature_name].fit_transform(values_reshaped)
+                normalized_values = self.feature_scalers[feature_name].fit_transform(
+                    values_reshaped
+                )
                 normalized_features[feature_name] = normalized_values.flatten().astype(np.float32)
 
             return normalized_features
@@ -847,31 +936,32 @@ class MultimodalProcessor:
     def get_processor_summary(self) -> Dict[str, Any]:
         """Get summary of processor capabilities"""
         return {
-            'text_processing': {
-                'transformers_available': HAS_TRANSFORMERS,
-                'textblob_available': HAS_TEXTBLOB,
-                'model_name': self.config.text_model_name if HAS_TRANSFORMERS else None
+            "text_processing": {
+                "transformers_available": HAS_TRANSFORMERS,
+                "textblob_available": HAS_TEXTBLOB,
+                "model_name": self.config.text_model_name if HAS_TRANSFORMERS else None,
             },
-            'timeseries_processing': {
-                'technical_indicators': self.config.technical_indicators,
-                'time_features': self.config.time_features,
-                'sequence_length': self.config.sequence_length
+            "timeseries_processing": {
+                "technical_indicators": self.config.technical_indicators,
+                "time_features": self.config.time_features,
+                "sequence_length": self.config.sequence_length,
             },
-            'graph_processing': {
-                'networkx_available': HAS_NETWORKX,
-                'max_nodes': self.config.max_graph_nodes
+            "graph_processing": {
+                "networkx_available": HAS_NETWORKX,
+                "max_nodes": self.config.max_graph_nodes,
             },
-            'feature_scaling': {
-                'enabled': self.config.normalize_features,
-                'method': self.config.feature_scaling_method,
-                'fitted_scalers': len(self.feature_scalers)
-            }
+            "feature_scaling": {
+                "enabled": self.config.normalize_features,
+                "method": self.config.feature_scaling_method,
+                "fitted_scalers": len(self.feature_scalers),
+            },
         }
 
 
 # Singleton multimodal processor
 _multimodal_processor = None
 _processor_lock = threading.Lock()
+
 
 def get_multimodal_processor(config: Optional[MultimodalConfig] = None) -> MultimodalProcessor:
     """Get the singleton multimodal processor"""
@@ -881,6 +971,7 @@ def get_multimodal_processor(config: Optional[MultimodalConfig] = None) -> Multi
         if _multimodal_processor is None:
             _multimodal_processor = MultimodalProcessor(config)
         return _multimodal_processor
+
 
 def process_multimodal_data(data_dict: Dict[str, Any]) -> Dict[str, np.ndarray]:
     """Convenient function to process multimodal data"""

@@ -15,8 +15,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class OITrend(Enum):
     """Open interest trend direction"""
+
     INCREASING = "increasing"
     DECREASING = "decreasing"
     STABLE = "stable"
@@ -24,24 +26,27 @@ class OITrend(Enum):
 
 class OIDivergenceType(Enum):
     """Types of OI-price divergences"""
-    BULLISH_DIVERGENCE = "bullish_divergence"     # Price down, OI up
-    BEARISH_DIVERGENCE = "bearish_divergence"     # Price up, OI down
-    CONFIRMING_TREND = "confirming_trend"         # Price and OI same direction
-    NEUTRAL = "neutral"                           # No clear divergence
+
+    BULLISH_DIVERGENCE = "bullish_divergence"  # Price down, OI up
+    BEARISH_DIVERGENCE = "bearish_divergence"  # Price up, OI down
+    CONFIRMING_TREND = "confirming_trend"  # Price and OI same direction
+    NEUTRAL = "neutral"  # No clear divergence
 
 
 class OIRegime(Enum):
     """Open interest regime classification"""
-    ACCUMULATION = "accumulation"     # Rising OI, stable/rising price
-    DISTRIBUTION = "distribution"     # Falling OI, stable/falling price
-    BREAKOUT = "breakout"            # Rising OI, rising price
-    BREAKDOWN = "breakdown"          # Rising OI, falling price
+
+    ACCUMULATION = "accumulation"  # Rising OI, stable/rising price
+    DISTRIBUTION = "distribution"  # Falling OI, stable/falling price
+    BREAKOUT = "breakout"  # Rising OI, rising price
+    BREAKDOWN = "breakdown"  # Rising OI, falling price
     CONSOLIDATION = "consolidation"  # Stable OI, stable price
 
 
 @dataclass
 class OIEvent:
     """Open interest event"""
+
     timestamp: datetime
     pair: str
     exchange: str
@@ -66,7 +71,7 @@ class OIEvent:
     regime: OIRegime
 
     # Derived metrics
-    oi_momentum: float = 0.0        # Rate of OI change acceleration
+    oi_momentum: float = 0.0  # Rate of OI change acceleration
     institutional_flow: float = 0.0  # Estimated institutional positioning
 
     @property
@@ -83,6 +88,7 @@ class OIEvent:
 @dataclass
 class OIDivergence:
     """OI-Price divergence event"""
+
     divergence_id: str
     timestamp: datetime
     pair: str
@@ -90,13 +96,13 @@ class OIDivergence:
 
     # Divergence details
     divergence_type: OIDivergenceType
-    strength: float                 # Divergence strength (0-1)
-    duration_hours: float          # How long divergence has persisted
+    strength: float  # Divergence strength (0-1)
+    duration_hours: float  # How long divergence has persisted
 
     # Data points
     price_change_pct: float
     oi_change_pct: float
-    correlation: float             # Price-OI correlation over period
+    correlation: float  # Price-OI correlation over period
 
     # Context
     volume_during_divergence: float
@@ -119,13 +125,13 @@ class OpenInterestTracker:
     """
 
     def __init__(self):
-        self.oi_history = {}        # exchange -> pair -> List[OIEvent]
+        self.oi_history = {}  # exchange -> pair -> List[OIEvent]
         self.divergence_history = []
 
         # Configuration
-        self.significant_change_threshold = 0.05    # 5%
-        self.divergence_strength_threshold = 0.3    # 30%
-        self.regime_window_hours = 24               # Hours for regime analysis
+        self.significant_change_threshold = 0.05  # 5%
+        self.divergence_strength_threshold = 0.3  # 30%
+        self.regime_window_hours = 24  # Hours for regime analysis
 
         # Pattern tracking
         self.regime_transitions = {}
@@ -134,10 +140,9 @@ class OpenInterestTracker:
         # Performance tracking
         self.signal_performance = {}
 
-    def analyze_oi_data(self,
-                       exchange: str,
-                       pair: str,
-                       oi_data: List[Dict[str, Any]]) -> List[OIEvent]:
+    def analyze_oi_data(
+        self, exchange: str, pair: str, oi_data: List[Dict[str, Any]]
+    ) -> List[OIEvent]:
         """Analyze open interest data and detect events"""
         try:
             events = []
@@ -146,19 +151,17 @@ class OpenInterestTracker:
                 return events
 
             # Sort by timestamp
-            oi_data = sorted(oi_data, key=lambda x: x.get('timestamp', datetime.min))
+            oi_data = sorted(oi_data, key=lambda x: x.get("timestamp", datetime.min))
 
             # Process each OI period
             for i, current_data in enumerate(oi_data):
                 if i == 0:
                     continue  # Skip first record
 
-                previous_data = oi_data[i-1]
+                previous_data = oi_data[i - 1]
 
                 # Create OI event
-                event = self._create_oi_event(
-                    exchange, pair, current_data, previous_data
-                )
+                event = self._create_oi_event(exchange, pair, current_data, previous_data)
 
                 if event:
                     events.append(event)
@@ -170,7 +173,9 @@ class OpenInterestTracker:
                     divergence = self._detect_oi_divergence(exchange, pair, event)
                     if divergence:
                         self.divergence_history.append(divergence)
-                        logger.info(f"OI divergence detected: {divergence.divergence_type.value} for {pair} on {exchange}")
+                        logger.info(
+                            f"OI divergence detected: {divergence.divergence_type.value} for {pair} on {exchange}"
+                        )
 
             return events
 
@@ -178,10 +183,9 @@ class OpenInterestTracker:
             logger.error(f"OI analysis failed for {exchange} {pair}: {e}")
             return []
 
-    def get_current_oi_signals(self,
-                              exchange: str,
-                              pair: str,
-                              current_price: float) -> Dict[str, Any]:
+    def get_current_oi_signals(
+        self, exchange: str, pair: str, current_price: float
+    ) -> Dict[str, Any]:
         """Get current OI-based trading signals"""
         try:
             # Get recent OI events
@@ -201,10 +205,9 @@ class OpenInterestTracker:
             logger.error(f"OI signal generation failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def detect_oi_flow_patterns(self,
-                               exchange: str,
-                               pair: str,
-                               lookback_hours: int = 168) -> Dict[str, Any]:
+    def detect_oi_flow_patterns(
+        self, exchange: str, pair: str, lookback_hours: int = 168
+    ) -> Dict[str, Any]:
         """Detect institutional flow patterns from OI data"""
         try:
             events = self._get_recent_oi_events(exchange, pair, hours_back=lookback_hours)
@@ -216,7 +219,7 @@ class OpenInterestTracker:
                 "pair": pair,
                 "exchange": exchange,
                 "analysis_period_hours": lookback_hours,
-                "patterns": []
+                "patterns": [],
             }
 
             # Detect accumulation/distribution patterns
@@ -240,9 +243,7 @@ class OpenInterestTracker:
             logger.error(f"OI flow pattern detection failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def get_cross_exchange_oi_analysis(self,
-                                      pair: str,
-                                      exchanges: List[str]) -> Dict[str, Any]:
+    def get_cross_exchange_oi_analysis(self, pair: str, exchanges: List[str]) -> Dict[str, Any]:
         """Analyze OI patterns across exchanges"""
         try:
             cross_analysis = {
@@ -250,7 +251,7 @@ class OpenInterestTracker:
                 "timestamp": datetime.now(),
                 "exchanges_analyzed": exchanges,
                 "oi_data": {},
-                "flow_divergences": []
+                "flow_divergences": [],
             }
 
             # Get latest OI for each exchange
@@ -263,7 +264,7 @@ class OpenInterestTracker:
                         "oi": latest_event.current_oi,
                         "oi_change_pct": latest_event.oi_change_pct,
                         "regime": latest_event.regime.value,
-                        "timestamp": latest_event.timestamp
+                        "timestamp": latest_event.timestamp,
                     }
                     cross_analysis["oi_data"][exchange] = latest_oi[exchange]
 
@@ -283,10 +284,10 @@ class OpenInterestTracker:
                     "positive_flow_exchanges": positive_flow_exchanges,
                     "negative_flow_exchanges": negative_flow_exchanges,
                     "divergence_strength": abs(
-                        np.mean([change for _, change in oi_changes if change > 0]) -
-                        np.mean([change for _, change in oi_changes if change < 0])
+                        np.mean([change for _, change in oi_changes if change > 0])
+                        - np.mean([change for _, change in oi_changes if change < 0])
                     ),
-                    "interpretation": "Institutional disagreement on direction"
+                    "interpretation": "Institutional disagreement on direction",
                 }
                 cross_analysis["flow_divergences"].append(divergence)
 
@@ -296,7 +297,7 @@ class OpenInterestTracker:
                 cross_analysis["market_oi_momentum"] = {
                     "mean_change": np.mean(all_changes),
                     "consistency": 1 - np.std(all_changes) / (abs(np.mean(all_changes)) + 0.01),
-                    "direction": "increasing" if np.mean(all_changes) > 0 else "decreasing"
+                    "direction": "increasing" if np.mean(all_changes) > 0 else "decreasing",
                 }
 
             return cross_analysis
@@ -305,10 +306,9 @@ class OpenInterestTracker:
             logger.error(f"Cross-exchange OI analysis failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def get_oi_analytics(self,
-                        exchange: Optional[str] = None,
-                        pair: Optional[str] = None,
-                        days_back: int = 30) -> Dict[str, Any]:
+    def get_oi_analytics(
+        self, exchange: Optional[str] = None, pair: Optional[str] = None, days_back: int = 30
+    ) -> Dict[str, Any]:
         """Get comprehensive OI analytics"""
         try:
             cutoff_time = datetime.now() - timedelta(days=days_back)
@@ -322,8 +322,7 @@ class OpenInterestTracker:
                     if pair and p != pair:
                         continue
                     events = [
-                        event for event in self.oi_history[ex][p]
-                        if event.timestamp >= cutoff_time
+                        event for event in self.oi_history[ex][p] if event.timestamp >= cutoff_time
                     ]
                     all_events.extend(events)
 
@@ -334,10 +333,11 @@ class OpenInterestTracker:
 
             # Add divergence analysis
             recent_divergences = [
-                div for div in self.divergence_history
-                if div.timestamp >= cutoff_time and
-                   (exchange is None or div.exchange == exchange) and
-                   (pair is None or div.pair == pair)
+                div
+                for div in self.divergence_history
+                if div.timestamp >= cutoff_time
+                and (exchange is None or div.exchange == exchange)
+                and (pair is None or div.pair == pair)
             ]
 
             analytics["divergence_analysis"] = self._analyze_oi_divergences(recent_divergences)
@@ -348,11 +348,9 @@ class OpenInterestTracker:
             logger.error(f"OI analytics failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _create_oi_event(self,
-                        exchange: str,
-                        pair: str,
-                        current_data: Dict[str, Any],
-                        previous_data: Dict[str, Any]) -> Optional[OIEvent]:
+    def _create_oi_event(
+        self, exchange: str, pair: str, current_data: Dict[str, Any], previous_data: Dict[str, Any]
+    ) -> Optional[OIEvent]:
         """Create OI event from data"""
         try:
             current_oi = current_data.get("open_interest", 0.0)
@@ -368,7 +366,9 @@ class OpenInterestTracker:
             # Price context
             current_price = current_data.get("price", 0.0)
             previous_price = previous_data.get("price", 0.0)
-            price_change_pct = (current_price - previous_price) / previous_price if previous_price > 0 else 0
+            price_change_pct = (
+                (current_price - previous_price) / previous_price if previous_price > 0 else 0
+            )
 
             # Volume context
             volume_24h = current_data.get("volume_24h", 0.0)
@@ -394,7 +394,7 @@ class OpenInterestTracker:
                 volume_oi_ratio=volume_oi_ratio,
                 oi_trend=oi_trend,
                 divergence_type=divergence_type,
-                regime=regime
+                regime=regime,
             )
 
             # Calculate derived metrics
@@ -416,7 +416,9 @@ class OpenInterestTracker:
         else:
             return OITrend.STABLE
 
-    def _classify_divergence_type(self, oi_change_pct: float, price_change_pct: float) -> OIDivergenceType:
+    def _classify_divergence_type(
+        self, oi_change_pct: float, price_change_pct: float
+    ) -> OIDivergenceType:
         """Classify OI-price divergence"""
         # Threshold for significant moves
         oi_threshold = 0.02  # 2%
@@ -459,16 +461,19 @@ class OpenInterestTracker:
         else:
             return OIRegime.CONSOLIDATION
 
-    def _detect_oi_divergence(self,
-                             exchange: str,
-                             pair: str,
-                             current_event: OIEvent) -> Optional[OIDivergence]:
+    def _detect_oi_divergence(
+        self, exchange: str, pair: str, current_event: OIEvent
+    ) -> Optional[OIDivergence]:
         """Detect significant OI divergences"""
         try:
-            if current_event.divergence_type in [OIDivergenceType.BULLISH_DIVERGENCE, OIDivergenceType.BEARISH_DIVERGENCE]:
-
+            if current_event.divergence_type in [
+                OIDivergenceType.BULLISH_DIVERGENCE,
+                OIDivergenceType.BEARISH_DIVERGENCE,
+            ]:
                 # Calculate divergence strength
-                strength = min(1.0, abs(current_event.oi_change_pct) + abs(current_event.price_change_pct))
+                strength = min(
+                    1.0, abs(current_event.oi_change_pct) + abs(current_event.price_change_pct)
+                )
 
                 if strength > self.divergence_strength_threshold:
                     divergence_id = f"{exchange}_{pair}_{current_event.timestamp.timestamp()}"
@@ -478,7 +483,9 @@ class OpenInterestTracker:
                     correlation = self._calculate_oi_price_correlation(recent_events)
 
                     # Predict resolution
-                    expected_direction, confidence = self._predict_divergence_resolution(current_event, recent_events)
+                    expected_direction, confidence = self._predict_divergence_resolution(
+                        current_event, recent_events
+                    )
 
                     divergence = OIDivergence(
                         divergence_id=divergence_id,
@@ -495,7 +502,7 @@ class OpenInterestTracker:
                         volatility_during_divergence=abs(current_event.price_change_pct),
                         expected_resolution_direction=expected_direction,
                         confidence=confidence,
-                        time_to_resolution_hours=24.0  # Estimated resolution time
+                        time_to_resolution_hours=24.0,  # Estimated resolution time
                     )
 
                     return divergence
@@ -506,10 +513,9 @@ class OpenInterestTracker:
             logger.error(f"OI divergence detection failed: {e}")
             return None
 
-    def _generate_oi_signals(self,
-                            latest_event: OIEvent,
-                            recent_events: List[OIEvent],
-                            current_price: float) -> Dict[str, Any]:
+    def _generate_oi_signals(
+        self, latest_event: OIEvent, recent_events: List[OIEvent], current_price: float
+    ) -> Dict[str, Any]:
         """Generate trading signals based on OI analysis"""
         try:
             signals = {
@@ -518,7 +524,7 @@ class OpenInterestTracker:
                 "exchange": latest_event.exchange,
                 "current_oi": latest_event.current_oi,
                 "oi_regime": latest_event.regime.value,
-                "signals": []
+                "signals": [],
             }
 
             # Divergence-based signals
@@ -530,7 +536,7 @@ class OpenInterestTracker:
                     "rationale": f"Bullish OI divergence: OI +{latest_event.oi_change_pct:.1%}, Price {latest_event.price_change_pct:.1%}",
                     "target_hold_hours": 48,
                     "stop_loss_bp": 150,
-                    "take_profit_bp": 300
+                    "take_profit_bp": 300,
                 }
                 signals["signals"].append(signal)
 
@@ -542,7 +548,7 @@ class OpenInterestTracker:
                     "rationale": f"Bearish OI divergence: OI {latest_event.oi_change_pct:.1%}, Price +{latest_event.price_change_pct:.1%}",
                     "target_hold_hours": 48,
                     "stop_loss_bp": 150,
-                    "take_profit_bp": 300
+                    "take_profit_bp": 300,
                 }
                 signals["signals"].append(signal)
 
@@ -555,7 +561,7 @@ class OpenInterestTracker:
                     "rationale": f"OI breakout regime with {latest_event.oi_change_pct:.1%} OI increase",
                     "target_hold_hours": 72,
                     "stop_loss_bp": 200,
-                    "take_profit_bp": 400
+                    "take_profit_bp": 400,
                 }
                 signals["signals"].append(signal)
 
@@ -567,7 +573,7 @@ class OpenInterestTracker:
                     "rationale": f"OI breakdown regime with {latest_event.oi_change_pct:.1%} OI increase",
                     "target_hold_hours": 72,
                     "stop_loss_bp": 200,
-                    "take_profit_bp": 400
+                    "take_profit_bp": 400,
                 }
                 signals["signals"].append(signal)
 
@@ -575,7 +581,9 @@ class OpenInterestTracker:
             if len(recent_events) >= 5:
                 flow_reversal = self._detect_recent_flow_reversal(recent_events)
                 if flow_reversal:
-                    direction = "buy" if flow_reversal["new_direction"] == "accumulation" else "sell"
+                    direction = (
+                        "buy" if flow_reversal["new_direction"] == "accumulation" else "sell"
+                    )
 
                     signal = {
                         "type": "oi_flow_reversal",
@@ -584,7 +592,7 @@ class OpenInterestTracker:
                         "rationale": f"OI flow reversal detected: {flow_reversal['description']}",
                         "target_hold_hours": 96,
                         "stop_loss_bp": 250,
-                        "take_profit_bp": 500
+                        "take_profit_bp": 500,
                     }
                     signals["signals"].append(signal)
 
@@ -594,10 +602,7 @@ class OpenInterestTracker:
             logger.error(f"OI signal generation failed: {e}")
             return {"status": "error"}
 
-    def _get_recent_oi_events(self,
-                             exchange: str,
-                             pair: str,
-                             hours_back: int) -> List[OIEvent]:
+    def _get_recent_oi_events(self, exchange: str, pair: str, hours_back: int) -> List[OIEvent]:
         """Get recent OI events"""
         try:
             if exchange not in self.oi_history or pair not in self.oi_history[exchange]:
@@ -626,17 +631,13 @@ class OpenInterestTracker:
             # Keep only recent history (30 days)
             cutoff_time = datetime.now() - timedelta(days=30)
             self.oi_history[exchange][pair] = [
-                e for e in self.oi_history[exchange][pair]
-                if e.timestamp >= cutoff_time
+                e for e in self.oi_history[exchange][pair] if e.timestamp >= cutoff_time
             ]
 
         except Exception as e:
             logger.error(f"Failed to store OI event: {e}")
 
-    def _calculate_oi_momentum(self,
-                              exchange: str,
-                              pair: str,
-                              current_event: OIEvent) -> float:
+    def _calculate_oi_momentum(self, exchange: str, pair: str, current_event: OIEvent) -> float:
         """Calculate OI momentum (acceleration)"""
         try:
             recent_events = self._get_recent_oi_events(exchange, pair, hours_back=24)
@@ -648,7 +649,7 @@ class OpenInterestTracker:
             oi_changes = [event.oi_change_pct for event in recent_events[-3:]]
 
             if len(oi_changes) >= 3:
-                acceleration = (oi_changes[-1] - 2*oi_changes[-2] + oi_changes[-3]) / 2
+                acceleration = (oi_changes[-1] - 2 * oi_changes[-2] + oi_changes[-3]) / 2
                 return acceleration
 
             return 0.0
@@ -690,9 +691,9 @@ class OpenInterestTracker:
             logger.error(f"OI-price correlation calculation failed: {e}")
             return 0.0
 
-    def _predict_divergence_resolution(self,
-                                     event: OIEvent,
-                                     recent_events: List[OIEvent]) -> Tuple[str, float]:
+    def _predict_divergence_resolution(
+        self, event: OIEvent, recent_events: List[OIEvent]
+    ) -> Tuple[str, float]:
         """Predict how divergence will resolve"""
         try:
             if event.divergence_type == OIDivergenceType.BULLISH_DIVERGENCE:
@@ -717,11 +718,13 @@ class OpenInterestTracker:
             window_size = 6  # 6 period window
 
             for i in range(window_size, len(events)):
-                window_events = events[i-window_size:i]
+                window_events = events[i - window_size : i]
 
                 # Check for accumulation pattern
                 oi_increases = sum(1 for event in window_events if event.oi_change_pct > 0.01)
-                price_stability = sum(1 for event in window_events if abs(event.price_change_pct) < 0.02)
+                price_stability = sum(
+                    1 for event in window_events if abs(event.price_change_pct) < 0.02
+                )
 
                 if oi_increases >= window_size * 0.7 and price_stability >= window_size * 0.5:
                     period = {
@@ -729,8 +732,10 @@ class OpenInterestTracker:
                         "start_time": window_events[0].timestamp,
                         "end_time": window_events[-1].timestamp,
                         "oi_increase_pct": sum(event.oi_change_pct for event in window_events),
-                        "avg_price_change": np.mean([event.price_change_pct for event in window_events]),
-                        "strength": min(1.0, oi_increases / window_size)
+                        "avg_price_change": np.mean(
+                            [event.price_change_pct for event in window_events]
+                        ),
+                        "strength": min(1.0, oi_increases / window_size),
                     }
                     accumulation_periods.append(period)
 
@@ -749,7 +754,7 @@ class OpenInterestTracker:
             window_size = 6
 
             for i in range(window_size, len(events)):
-                window_events = events[i-window_size:i]
+                window_events = events[i - window_size : i]
 
                 # Check for distribution pattern
                 oi_decreases = sum(1 for event in window_events if event.oi_change_pct < -0.01)
@@ -760,8 +765,10 @@ class OpenInterestTracker:
                         "start_time": window_events[0].timestamp,
                         "end_time": window_events[-1].timestamp,
                         "oi_decrease_pct": sum(event.oi_change_pct for event in window_events),
-                        "avg_price_change": np.mean([event.price_change_pct for event in window_events]),
-                        "strength": min(1.0, oi_decreases / window_size)
+                        "avg_price_change": np.mean(
+                            [event.price_change_pct for event in window_events]
+                        ),
+                        "strength": min(1.0, oi_decreases / window_size),
                     }
                     distribution_periods.append(period)
 
@@ -775,21 +782,22 @@ class OpenInterestTracker:
         """Calculate net institutional flow"""
         try:
             institutional_events = [
-                event for event in events
-                if abs(event.institutional_flow) > 0.3
+                event for event in events if abs(event.institutional_flow) > 0.3
             ]
 
             if not institutional_events:
                 return {"net_flow": 0.0, "confidence": 0.0}
 
             net_flow = sum(event.institutional_flow for event in institutional_events)
-            avg_confidence = np.mean([abs(event.institutional_flow) for event in institutional_events])
+            avg_confidence = np.mean(
+                [abs(event.institutional_flow) for event in institutional_events]
+            )
 
             return {
                 "net_flow": net_flow,
                 "confidence": avg_confidence,
                 "institutional_periods": len(institutional_events),
-                "flow_direction": "accumulation" if net_flow > 0 else "distribution"
+                "flow_direction": "accumulation" if net_flow > 0 else "distribution",
             }
 
         except Exception as e:
@@ -808,8 +816,8 @@ class OpenInterestTracker:
             window_size = 5
 
             for i in range(window_size, len(events) - window_size):
-                before_window = events[i-window_size:i]
-                after_window = events[i:i+window_size]
+                before_window = events[i - window_size : i]
+                after_window = events[i : i + window_size]
 
                 before_flow = np.mean([event.institutional_flow for event in before_window])
                 after_flow = np.mean([event.institutional_flow for event in after_window])
@@ -821,7 +829,9 @@ class OpenInterestTracker:
                         "from_flow": before_flow,
                         "to_flow": after_flow,
                         "reversal_strength": abs(before_flow - after_flow),
-                        "type": "accumulation_to_distribution" if before_flow > 0 else "distribution_to_accumulation"
+                        "type": "accumulation_to_distribution"
+                        if before_flow > 0
+                        else "distribution_to_accumulation",
                     }
                     flow_reversals.append(reversal)
 
@@ -831,7 +841,9 @@ class OpenInterestTracker:
             logger.error(f"Flow reversal detection failed: {e}")
             return []
 
-    def _detect_recent_flow_reversal(self, recent_events: List[OIEvent]) -> Optional[Dict[str, Any]]:
+    def _detect_recent_flow_reversal(
+        self, recent_events: List[OIEvent]
+    ) -> Optional[Dict[str, Any]]:
         """Detect recent flow reversal in last few periods"""
         try:
             if len(recent_events) < 6:
@@ -852,7 +864,7 @@ class OpenInterestTracker:
                 return {
                     "new_direction": new_direction,
                     "confidence": min(0.9, abs(before_flow - after_flow)),
-                    "description": f"Flow reversed from {before_flow:.2f} to {after_flow:.2f}"
+                    "description": f"Flow reversed from {before_flow:.2f} to {after_flow:.2f}",
                 }
 
             return None
@@ -876,12 +888,14 @@ class OpenInterestTracker:
                     "mean_change_pct": np.mean(oi_changes),
                     "std_change_pct": np.std(oi_changes),
                     "max_increase_pct": np.max(oi_changes),
-                    "max_decrease_pct": np.min(oi_changes)
+                    "max_decrease_pct": np.min(oi_changes),
                 },
                 "regime_distribution": {},
                 "divergence_frequency": {},
-                "correlation_with_price": np.corrcoef(oi_changes, price_changes)[0, 1] if len(oi_changes) > 1 else 0,
-                "significant_changes": sum(1 for event in events if event.is_significant_change)
+                "correlation_with_price": np.corrcoef(oi_changes, price_changes)[0, 1]
+                if len(oi_changes) > 1
+                else 0,
+                "significant_changes": sum(1 for event in events if event.is_significant_change),
             }
 
             # Regime distribution
@@ -889,7 +903,7 @@ class OpenInterestTracker:
                 count = sum(1 for event in events if event.regime == regime)
                 analytics["regime_distribution"][regime.value] = {
                     "count": count,
-                    "percentage": count / len(events)
+                    "percentage": count / len(events),
                 }
 
             # Divergence frequency
@@ -897,7 +911,7 @@ class OpenInterestTracker:
                 count = sum(1 for event in events if event.divergence_type == div_type)
                 analytics["divergence_frequency"][div_type.value] = {
                     "count": count,
-                    "percentage": count / len(events)
+                    "percentage": count / len(events),
                 }
 
             return analytics
@@ -917,7 +931,7 @@ class OpenInterestTracker:
                 "divergence_types": {},
                 "average_strength": np.mean([div.strength for div in divergences]),
                 "average_duration_hours": np.mean([div.duration_hours for div in divergences]),
-                "resolution_accuracy": 0.0  # Would track actual vs predicted
+                "resolution_accuracy": 0.0,  # Would track actual vs predicted
             }
 
             # Divergence type distribution

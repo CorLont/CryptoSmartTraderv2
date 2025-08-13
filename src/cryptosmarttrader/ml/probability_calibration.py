@@ -9,19 +9,20 @@ import numpy as np
 import pandas as pd
 from typing import Tuple, Optional
 
+
 class ConfidenceCalibrator:
     """Calibrate model confidence scores"""
 
-    def __init__(self, method='isotonic'):
+    def __init__(self, method="isotonic"):
         self.method = method
         self.calibrator = None
         self.is_fitted = False
 
-    def fit(self, probabilities: np.ndarray, true_labels: np.ndarray) -> 'ConfidenceCalibrator':
+    def fit(self, probabilities: np.ndarray, true_labels: np.ndarray) -> "ConfidenceCalibrator":
         """Fit calibration model"""
 
-        if self.method == 'isotonic':
-            self.calibrator = IsotonicRegression(out_of_bounds='clip')
+        if self.method == "isotonic":
+            self.calibrator = IsotonicRegression(out_of_bounds="clip")
         else:
             raise ValueError(f"Unknown calibration method: {self.method}")
 
@@ -38,7 +39,9 @@ class ConfidenceCalibrator:
 
         return self.calibrator.transform(probabilities)
 
-    def reliability_plot_data(self, probabilities: np.ndarray, true_labels: np.ndarray, n_bins: int = 10) -> Tuple[np.ndarray, np.ndarray]:
+    def reliability_plot_data(
+        self, probabilities: np.ndarray, true_labels: np.ndarray, n_bins: int = 10
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Generate data for reliability plot"""
 
         bin_boundaries = np.linspace(0, 1, n_bins + 1)
@@ -59,15 +62,22 @@ class ConfidenceCalibrator:
 
         return np.array(bin_centers), np.array(bin_accuracies)
 
-def validate_calibration(probabilities: np.ndarray, true_labels: np.ndarray, confidence_threshold: float = 0.8) -> bool:
+
+def validate_calibration(
+    probabilities: np.ndarray, true_labels: np.ndarray, confidence_threshold: float = 0.8
+) -> bool:
     """Validate that confidence threshold is meaningful"""
 
     calibrator = ConfidenceCalibrator()
     bin_centers, bin_accuracies = calibrator.reliability_plot_data(probabilities, true_labels)
 
     # Find bins around confidence threshold
-    threshold_bins = bin_centers[(bin_centers >= confidence_threshold - 0.1) & (bin_centers <= confidence_threshold + 0.1)]
-    threshold_accuracies = bin_accuracies[(bin_centers >= confidence_threshold - 0.1) & (bin_centers <= confidence_threshold + 0.1)]
+    threshold_bins = bin_centers[
+        (bin_centers >= confidence_threshold - 0.1) & (bin_centers <= confidence_threshold + 0.1)
+    ]
+    threshold_accuracies = bin_accuracies[
+        (bin_centers >= confidence_threshold - 0.1) & (bin_centers <= confidence_threshold + 0.1)
+    ]
 
     if len(threshold_accuracies) == 0:
         return False

@@ -10,11 +10,15 @@ from config.settings import config
 logger = logging.getLogger(__name__)
 
 # Prometheus metrics
-REQUEST_COUNT = Counter("crypto_requests_total", "Total number of API requests", ["endpoint", "method"])
+REQUEST_COUNT = Counter(
+    "crypto_requests_total", "Total number of API requests", ["endpoint", "method"]
+)
 HEALTH_GAUGE = Gauge("system_health_score", "Current system health score")
 AGENT_PERFORMANCE = Gauge("agent_performance_score", "Agent performance score", ["agent_name"])
 DATA_FRESHNESS = Gauge("data_freshness_seconds", "Age of data in seconds", ["data_type"])
-PREDICTION_ACCURACY = Gauge("prediction_accuracy", "ML prediction accuracy", ["model_name", "horizon"])
+PREDICTION_ACCURACY = Gauge(
+    "prediction_accuracy", "ML prediction accuracy", ["model_name", "horizon"]
+)
 EXCHANGE_LATENCY = Histogram("exchange_latency_seconds", "Exchange API latency", ["exchange"])
 CACHE_HITS = Counter("cache_hits_total", "Cache hit count", ["cache_type"])
 CACHE_MISSES = Counter("cache_misses_total", "Cache miss count", ["cache_type"])

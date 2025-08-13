@@ -10,6 +10,7 @@ from email.mime.multipart import MimeMultipart
 from pathlib import Path
 import logging
 
+
 class AlertsManager:
     """Multi-channel alerts and notifications system"""
 
@@ -25,10 +26,10 @@ class AlertsManager:
 
         # Alert channels
         self.alert_channels = {
-            'console': self._send_console_alert,
-            'email': self._send_email_alert,
-            'file': self._send_file_alert,
-            'webhook': self._send_webhook_alert
+            "console": self._send_console_alert,
+            "email": self._send_email_alert,
+            "file": self._send_file_alert,
+            "webhook": self._send_webhook_alert,
         }
 
         # Alert processing
@@ -48,69 +49,69 @@ class AlertsManager:
     def _setup_default_rules(self):
         """Setup default alert rules"""
         self.alert_rules = {
-            'system_health_critical': {
-                'condition': lambda data: data.get('health_score', 100) < 30,
-                'severity': 'critical',
-                'channels': ['console', 'file', 'email'],
-                'cooldown_minutes': 30,
-                'description': 'System health critically low'
+            "system_health_critical": {
+                "condition": lambda data: data.get("health_score", 100) < 30,
+                "severity": "critical",
+                "channels": ["console", "file", "email"],
+                "cooldown_minutes": 30,
+                "description": "System health critically low",
             },
-            'system_health_warning': {
-                'condition': lambda data: 30 <= data.get('health_score', 100) < 60,
-                'severity': 'warning',
-                'channels': ['console', 'file'],
-                'cooldown_minutes': 60,
-                'description': 'System health degraded'
+            "system_health_warning": {
+                "condition": lambda data: 30 <= data.get("health_score", 100) < 60,
+                "severity": "warning",
+                "channels": ["console", "file"],
+                "cooldown_minutes": 60,
+                "description": "System health degraded",
             },
-            'agent_failure': {
-                'condition': lambda data: data.get('status') == 'failed',
-                'severity': 'error',
-                'channels': ['console', 'file', 'email'],
-                'cooldown_minutes': 15,
-                'description': 'Agent failure detected'
+            "agent_failure": {
+                "condition": lambda data: data.get("status") == "failed",
+                "severity": "error",
+                "channels": ["console", "file", "email"],
+                "cooldown_minutes": 15,
+                "description": "Agent failure detected",
             },
-            'high_error_rate': {
-                'condition': lambda data: data.get('error_rate', 0) > 0.1,
-                'severity': 'warning',
-                'channels': ['console', 'file'],
-                'cooldown_minutes': 45,
-                'description': 'High error rate detected'
+            "high_error_rate": {
+                "condition": lambda data: data.get("error_rate", 0) > 0.1,
+                "severity": "warning",
+                "channels": ["console", "file"],
+                "cooldown_minutes": 45,
+                "description": "High error rate detected",
             },
-            'data_quality_issue': {
-                'condition': lambda data: data.get('data_coverage', 100) < 70,
-                'severity': 'warning',
-                'channels': ['console', 'file'],
-                'cooldown_minutes': 30,
-                'description': 'Data quality below threshold'
+            "data_quality_issue": {
+                "condition": lambda data: data.get("data_coverage", 100) < 70,
+                "severity": "warning",
+                "channels": ["console", "file"],
+                "cooldown_minutes": 30,
+                "description": "Data quality below threshold",
             },
-            'whale_activity_critical': {
-                'condition': lambda data: data.get('whale_score', 0) > 0.8,
-                'severity': 'info',
-                'channels': ['console', 'file'],
-                'cooldown_minutes': 5,
-                'description': 'Critical whale activity detected'
+            "whale_activity_critical": {
+                "condition": lambda data: data.get("whale_score", 0) > 0.8,
+                "severity": "info",
+                "channels": ["console", "file"],
+                "cooldown_minutes": 5,
+                "description": "Critical whale activity detected",
             },
-            'api_failure': {
-                'condition': lambda data: data.get('api_status') == 'failed',
-                'severity': 'error',
-                'channels': ['console', 'file'],
-                'cooldown_minutes': 20,
-                'description': 'API service failure'
+            "api_failure": {
+                "condition": lambda data: data.get("api_status") == "failed",
+                "severity": "error",
+                "channels": ["console", "file"],
+                "cooldown_minutes": 20,
+                "description": "API service failure",
             },
-            'memory_usage_high': {
-                'condition': lambda data: data.get('memory_percent', 0) > 90,
-                'severity': 'warning',
-                'channels': ['console', 'file'],
-                'cooldown_minutes': 30,
-                'description': 'High memory usage detected'
+            "memory_usage_high": {
+                "condition": lambda data: data.get("memory_percent", 0) > 90,
+                "severity": "warning",
+                "channels": ["console", "file"],
+                "cooldown_minutes": 30,
+                "description": "High memory usage detected",
             },
-            'disk_space_low': {
-                'condition': lambda data: data.get('disk_percent', 0) > 90,
-                'severity': 'critical',
-                'channels': ['console', 'file', 'email'],
-                'cooldown_minutes': 60,
-                'description': 'Low disk space warning'
-            }
+            "disk_space_low": {
+                "condition": lambda data: data.get("disk_percent", 0) > 90,
+                "severity": "critical",
+                "channels": ["console", "file", "email"],
+                "cooldown_minutes": 60,
+                "description": "Low disk space warning",
+            },
         }
 
     def start_processing(self):
@@ -151,31 +152,31 @@ class AlertsManager:
             current_time = datetime.now()
 
             for alert in list(self.alerts):
-                if alert.get('status') == 'pending':
+                if alert.get("status") == "pending":
                     try:
                         # Check if alert is ready (not in cooldown)
                         if self._is_alert_ready(alert, current_time):
                             self._send_alert(alert)
-                            alert['status'] = 'sent'
-                            alert['sent_at'] = current_time.isoformat()
+                            alert["status"] = "sent"
+                            alert["sent_at"] = current_time.isoformat()
 
                     except Exception as e:
                         self.logger.error(f"Error processing alert {alert.get('id')}: {str(e)}")
-                        alert['status'] = 'failed'
-                        alert['error'] = str(e)
+                        alert["status"] = "failed"
+                        alert["error"] = str(e)
 
     def _is_alert_ready(self, alert: Dict[str, Any], current_time: datetime) -> bool:
         """Check if alert is ready to be sent (not in cooldown)"""
-        rule_name = alert.get('rule_name')
+        rule_name = alert.get("rule_name")
         if not rule_name or rule_name not in self.alert_rules:
             return True
 
-        cooldown_minutes = self.alert_rules[rule_name].get('cooldown_minutes', 0)
+        cooldown_minutes = self.alert_rules[rule_name].get("cooldown_minutes", 0)
         if cooldown_minutes <= 0:
             return True
 
         # Check last alert of same rule
-        last_sent = self.alert_history.get(rule_name, {}).get('last_sent')
+        last_sent = self.alert_history.get(rule_name, {}).get("last_sent")
         if not last_sent:
             return True
 
@@ -188,8 +189,8 @@ class AlertsManager:
 
     def _send_alert(self, alert: Dict[str, Any]):
         """Send alert through configured channels"""
-        rule_name = alert.get('rule_name')
-        channels = alert.get('channels', ['console'])
+        rule_name = alert.get("rule_name")
+        channels = alert.get("channels", ["console"])
 
         for channel in channels:
             try:
@@ -205,22 +206,24 @@ class AlertsManager:
             if rule_name not in self.alert_history:
                 self.alert_history[rule_name] = {}
 
-            self.alert_history[rule_name]['last_sent'] = datetime.now().isoformat()
-            self.alert_history[rule_name]['count'] = self.alert_history[rule_name].get('count', 0) + 1
+            self.alert_history[rule_name]["last_sent"] = datetime.now().isoformat()
+            self.alert_history[rule_name]["count"] = (
+                self.alert_history[rule_name].get("count", 0) + 1
+            )
 
     def _send_console_alert(self, alert: Dict[str, Any]):
         """Send alert to console/log"""
-        severity = alert.get('severity', 'info')
-        title = alert.get('title', 'Alert')
-        message = alert.get('message', '')
+        severity = alert.get("severity", "info")
+        title = alert.get("title", "Alert")
+        message = alert.get("message", "")
 
         log_message = f"🚨 ALERT [{severity.upper()}]: {title} - {message}"
 
-        if severity == 'critical':
+        if severity == "critical":
             self.logger.critical(log_message)
-        elif severity == 'error':
+        elif severity == "error":
             self.logger.error(log_message)
-        elif severity == 'warning':
+        elif severity == "warning":
             self.logger.warning(log_message)
         else:
             self.logger.info(log_message)
@@ -242,13 +245,13 @@ class AlertsManager:
 
             # Create message
             msg = MimeMultipart()
-            msg['From'] = from_email
-            msg['To'] = ", ".join(to_emails)
-            msg['Subject'] = f"CryptoSmartTrader Alert: {alert.get('title', 'System Alert')}"
+            msg["From"] = from_email
+            msg["To"] = ", ".join(to_emails)
+            msg["Subject"] = f"CryptoSmartTrader Alert: {alert.get('title', 'System Alert')}"
 
             # Email body
             body = self._format_email_body(alert)
-            msg.attach(MimeText(body, 'html'))
+            msg.attach(MimeText(body, "html"))
 
             # Send email
             with smtplib.SMTP(smtp_server, smtp_port) as server:
@@ -263,20 +266,20 @@ class AlertsManager:
 
     def _format_email_body(self, alert: Dict[str, Any]) -> str:
         """Format alert for email body"""
-        severity = alert.get('severity', 'info')
-        title = alert.get('title', 'Alert')
-        message = alert.get('message', '')
-        timestamp = alert.get('created_at', datetime.now().isoformat())
-        data = alert.get('data', {})
+        severity = alert.get("severity", "info")
+        title = alert.get("title", "Alert")
+        message = alert.get("message", "")
+        timestamp = alert.get("created_at", datetime.now().isoformat())
+        data = alert.get("data", {})
 
         severity_colors = {
-            'critical': '#dc3545',
-            'error': '#fd7e14',
-            'warning': '#ffc107',
-            'info': '#17a2b8'
+            "critical": "#dc3545",
+            "error": "#fd7e14",
+            "warning": "#ffc107",
+            "info": "#17a2b8",
         }
 
-        color = severity_colors.get(severity, '#17a2b8')
+        color = severity_colors.get(severity, "#17a2b8")
 
         html_body = f"""
         <html>
@@ -323,16 +326,16 @@ class AlertsManager:
         try:
             alert_file = self.alerts_path / "alerts.log"
 
-            with open(alert_file, 'a', encoding='utf-8') as f:
+            with open(alert_file, "a", encoding="utf-8") as f:
                 alert_line = {
-                    'timestamp': alert.get('created_at', datetime.now().isoformat()),
-                    'severity': alert.get('severity'),
-                    'title': alert.get('title'),
-                    'message': alert.get('message'),
-                    'data': alert.get('data', {})
+                    "timestamp": alert.get("created_at", datetime.now().isoformat()),
+                    "severity": alert.get("severity"),
+                    "title": alert.get("title"),
+                    "message": alert.get("message"),
+                    "data": alert.get("data", {}),
                 }
 
-                f.write(json.dumps(alert_line) + '\n')
+                f.write(json.dumps(alert_line) + "\n")
 
         except Exception as e:
             self.logger.error(f"File alert failed: {str(e)}")
@@ -347,12 +350,12 @@ class AlertsManager:
                 return
 
             payload = {
-                'alert_type': 'cryptosmarttrader',
-                'severity': alert.get('severity'),
-                'title': alert.get('title'),
-                'message': alert.get('message'),
-                'timestamp': alert.get('created_at'),
-                'data': alert.get('data', {})
+                "alert_type": "cryptosmarttrader",
+                "severity": alert.get("severity"),
+                "title": alert.get("title"),
+                "message": alert.get("message"),
+                "timestamp": alert.get("created_at"),
+                "data": alert.get("data", {}),
             }
 
             response = requests.post(webhook_url, json=payload, timeout=10)
@@ -370,13 +373,20 @@ class AlertsManager:
 
             # Remove old alerts
             self.alerts = [
-                alert for alert in self.alerts
-                if datetime.fromisoformat(alert.get('created_at', '1970-01-01')) > cutoff_time
+                alert
+                for alert in self.alerts
+                if datetime.fromisoformat(alert.get("created_at", "1970-01-01")) > cutoff_time
             ]
 
-    def create_alert(self, rule_name: str, title: str, message: str,
-                    data: Dict[str, Any] = None, severity: str = None,
-                    channels: List[str] = None) -> str:
+    def create_alert(
+        self,
+        rule_name: str,
+        title: str,
+        message: str,
+        data: Dict[str, Any] = None,
+        severity: str = None,
+        channels: List[str] = None,
+    ) -> str:
         """Create a new alert"""
         alert_id = f"alert_{int(time.time() * 1000)}"
 
@@ -384,15 +394,15 @@ class AlertsManager:
         rule_config = self.alert_rules.get(rule_name, {})
 
         alert = {
-            'id': alert_id,
-            'rule_name': rule_name,
-            'title': title,
-            'message': message,
-            'severity': severity or rule_config.get('severity', 'info'),
-            'channels': channels or rule_config.get('channels', ['console']),
-            'data': data or {},
-            'created_at': datetime.now().isoformat(),
-            'status': 'pending'
+            "id": alert_id,
+            "rule_name": rule_name,
+            "title": title,
+            "message": message,
+            "severity": severity or rule_config.get("severity", "info"),
+            "channels": channels or rule_config.get("channels", ["console"]),
+            "data": data or {},
+            "created_at": datetime.now().isoformat(),
+            "status": "pending",
         }
 
         with self._lock:
@@ -407,7 +417,7 @@ class AlertsManager:
             return False
 
         rule = self.alert_rules[rule_name]
-        condition = rule.get('condition')
+        condition = rule.get("condition")
 
         if not condition or not callable(condition):
             return False
@@ -423,8 +433,8 @@ class AlertsManager:
                     title=title,
                     message=message,
                     data=data,
-                    severity=rule.get('severity'),
-                    channels=rule.get('channels')
+                    severity=rule.get("severity"),
+                    channels=rule.get("channels"),
                 )
 
                 return True
@@ -437,35 +447,42 @@ class AlertsManager:
     def _format_rule_message(self, rule_name: str, data: Dict[str, Any]) -> str:
         """Format message for rule-based alerts"""
         messages = {
-            'system_health_critical': f"System health score: {data.get('health_score', 0):.1f}%",
-            'system_health_warning': f"System health score: {data.get('health_score', 0):.1f}%",
-            'agent_failure': f"Agent {data.get('agent_name', 'unknown')} has failed",
-            'high_error_rate': f"Error rate: {data.get('error_rate', 0):.1%}",
-            'data_quality_issue': f"Data coverage: {data.get('data_coverage', 0):.1f}%",
-            'whale_activity_critical': f"Whale score: {data.get('whale_score', 0):.2f} on {data.get('symbol', 'unknown')}",
-            'api_failure': f"API {data.get('api_name', 'unknown')} is not responding",
-            'memory_usage_high': f"Memory usage: {data.get('memory_percent', 0):.1f}%",
-            'disk_space_low': f"Disk usage: {data.get('disk_percent', 0):.1f}%"
+            "system_health_critical": f"System health score: {data.get('health_score', 0):.1f}%",
+            "system_health_warning": f"System health score: {data.get('health_score', 0):.1f}%",
+            "agent_failure": f"Agent {data.get('agent_name', 'unknown')} has failed",
+            "high_error_rate": f"Error rate: {data.get('error_rate', 0):.1%}",
+            "data_quality_issue": f"Data coverage: {data.get('data_coverage', 0):.1f}%",
+            "whale_activity_critical": f"Whale score: {data.get('whale_score', 0):.2f} on {data.get('symbol', 'unknown')}",
+            "api_failure": f"API {data.get('api_name', 'unknown')} is not responding",
+            "memory_usage_high": f"Memory usage: {data.get('memory_percent', 0):.1f}%",
+            "disk_space_low": f"Disk usage: {data.get('disk_percent', 0):.1f}%",
         }
 
         return messages.get(rule_name, f"Rule {rule_name} triggered")
 
-    def add_custom_rule(self, rule_name: str, condition: Callable[[Dict], bool],
-                       severity: str = 'info', channels: List[str] = None,
-                       cooldown_minutes: int = 30, description: str = None):
+    def add_custom_rule(
+        self,
+        rule_name: str,
+        condition: Callable[[Dict], bool],
+        severity: str = "info",
+        channels: List[str] = None,
+        cooldown_minutes: int = 30,
+        description: str = None,
+    ):
         """Add custom alert rule"""
         self.alert_rules[rule_name] = {
-            'condition': condition,
-            'severity': severity,
-            'channels': channels or ['console'],
-            'cooldown_minutes': cooldown_minutes,
-            'description': description or rule_name
+            "condition": condition,
+            "severity": severity,
+            "channels": channels or ["console"],
+            "cooldown_minutes": cooldown_minutes,
+            "description": description or rule_name,
         }
 
         self.logger.info(f"Custom alert rule added: {rule_name}")
 
-    def get_alerts(self, hours: int = 24, severity: str = None,
-                  status: str = None) -> List[Dict[str, Any]]:
+    def get_alerts(
+        self, hours: int = 24, severity: str = None, status: str = None
+    ) -> List[Dict[str, Any]]:
         """Get alerts with filters"""
         cutoff_time = datetime.now() - timedelta(hours=hours)
 
@@ -474,17 +491,17 @@ class AlertsManager:
 
             for alert in self.alerts:
                 try:
-                    alert_time = datetime.fromisoformat(alert.get('created_at', '1970-01-01'))
+                    alert_time = datetime.fromisoformat(alert.get("created_at", "1970-01-01"))
                     if alert_time > cutoff_time:
-                        if severity and alert.get('severity') != severity:
+                        if severity and alert.get("severity") != severity:
                             continue
-                        if status and alert.get('status') != status:
+                        if status and alert.get("status") != status:
                             continue
                         filtered_alerts.append(alert.copy())
                 except Exception:
                     continue
 
-            return sorted(filtered_alerts, key=lambda x: x.get('created_at', ''), reverse=True)
+            return sorted(filtered_alerts, key=lambda x: x.get("created_at", ""), reverse=True)
 
     def get_alert_statistics(self) -> Dict[str, Any]:
         """Get alert system statistics"""
@@ -496,8 +513,8 @@ class AlertsManager:
             status_counts = {}
 
             for alert in self.alerts:
-                severity = alert.get('severity', 'unknown')
-                status = alert.get('status', 'unknown')
+                severity = alert.get("severity", "unknown")
+                status = alert.get("status", "unknown")
 
                 severity_counts[severity] = severity_counts.get(severity, 0) + 1
                 status_counts[status] = status_counts.get(status, 0) + 1
@@ -506,13 +523,13 @@ class AlertsManager:
             recent_alerts = self.get_alerts(hours=24)
 
             return {
-                'total_alerts': total_alerts,
-                'recent_alerts_24h': len(recent_alerts),
-                'severity_distribution': severity_counts,
-                'status_distribution': status_counts,
-                'active_rules': len(self.alert_rules),
-                'processing_active': self.processing_active,
-                'alert_history_entries': len(self.alert_history)
+                "total_alerts": total_alerts,
+                "recent_alerts_24h": len(recent_alerts),
+                "severity_distribution": severity_counts,
+                "status_distribution": status_counts,
+                "active_rules": len(self.alert_rules),
+                "processing_active": self.processing_active,
+                "alert_history_entries": len(self.alert_history),
             }
 
     def test_alert_channels(self) -> Dict[str, bool]:
@@ -520,12 +537,12 @@ class AlertsManager:
         test_results = {}
 
         test_alert = {
-            'id': 'test_alert',
-            'title': 'Test Alert',
-            'message': 'This is a test alert to verify channel functionality',
-            'severity': 'info',
-            'created_at': datetime.now().isoformat(),
-            'data': {'test': True}
+            "id": "test_alert",
+            "title": "Test Alert",
+            "message": "This is a test alert to verify channel functionality",
+            "severity": "info",
+            "created_at": datetime.now().isoformat(),
+            "data": {"test": True},
         }
 
         for channel_name, channel_func in self.alert_channels.items():
@@ -547,12 +564,12 @@ class AlertsManager:
             history = self.alert_history.get(rule_name, {})
 
             rule_status[rule_name] = {
-                'description': rule_config.get('description', rule_name),
-                'severity': rule_config.get('severity', 'info'),
-                'channels': rule_config.get('channels', []),
-                'cooldown_minutes': rule_config.get('cooldown_minutes', 0),
-                'last_triggered': history.get('last_sent'),
-                'trigger_count': history.get('count', 0)
+                "description": rule_config.get("description", rule_name),
+                "severity": rule_config.get("severity", "info"),
+                "channels": rule_config.get("channels", []),
+                "cooldown_minutes": rule_config.get("cooldown_minutes", 0),
+                "last_triggered": history.get("last_sent"),
+                "trigger_count": history.get("count", 0),
             }
 
         return rule_status
@@ -560,11 +577,11 @@ class AlertsManager:
     def disable_rule(self, rule_name: str):
         """Disable an alert rule"""
         if rule_name in self.alert_rules:
-            self.alert_rules[rule_name]['disabled'] = True
+            self.alert_rules[rule_name]["disabled"] = True
             self.logger.info(f"Alert rule disabled: {rule_name}")
 
     def enable_rule(self, rule_name: str):
         """Enable an alert rule"""
         if rule_name in self.alert_rules:
-            self.alert_rules[rule_name].pop('disabled', None)
+            self.alert_rules[rule_name].pop("disabled", None)
             self.logger.info(f"Alert rule enabled: {rule_name}")

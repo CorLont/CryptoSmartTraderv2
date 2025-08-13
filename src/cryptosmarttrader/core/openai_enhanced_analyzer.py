@@ -22,6 +22,7 @@ from openai import OpenAI
 # do not change this unless explicitly requested by the user
 OPENAI_MODEL = "gpt-4o"
 
+
 class OpenAIEnhancedAnalyzer:
     """Enhanced analyzer using OpenAI GPT-4o for advanced insights"""
 
@@ -43,23 +44,23 @@ class OpenAIEnhancedAnalyzer:
             "sentiment_analysis": {
                 "max_tokens": 1500,
                 "temperature": 0.3,
-                "system_prompt": self._get_sentiment_system_prompt()
+                "system_prompt": self._get_sentiment_system_prompt(),
             },
             "technical_analysis": {
                 "max_tokens": 2000,
                 "temperature": 0.2,
-                "system_prompt": self._get_technical_system_prompt()
+                "system_prompt": self._get_technical_system_prompt(),
             },
             "ml_enhancement": {
                 "max_tokens": 1800,
                 "temperature": 0.1,
-                "system_prompt": self._get_ml_system_prompt()
+                "system_prompt": self._get_ml_system_prompt(),
             },
             "market_insights": {
                 "max_tokens": 2500,
                 "temperature": 0.4,
-                "system_prompt": self._get_market_system_prompt()
-            }
+                "system_prompt": self._get_market_system_prompt(),
+            },
         }
 
     def _get_sentiment_system_prompt(self) -> str:
@@ -130,8 +131,7 @@ Structure output in actionable format with clear recommendations and risk parame
 
             # Get enhanced analysis from OpenAI
             response = await self._call_openai_async(
-                prompt=analysis_prompt,
-                config=self.batch_configs["sentiment_analysis"]
+                prompt=analysis_prompt, config=self.batch_configs["sentiment_analysis"]
             )
 
             # Parse and structure the response
@@ -153,8 +153,7 @@ Structure output in actionable format with clear recommendations and risk parame
             analysis_prompt = self._prepare_technical_prompt(technical_data)
 
             response = await self._call_openai_async(
-                prompt=analysis_prompt,
-                config=self.batch_configs["technical_analysis"]
+                prompt=analysis_prompt, config=self.batch_configs["technical_analysis"]
             )
 
             enhanced_results = self._parse_technical_response(response, technical_data)
@@ -175,8 +174,7 @@ Structure output in actionable format with clear recommendations and risk parame
             analysis_prompt = self._prepare_ml_prompt(ml_data)
 
             response = await self._call_openai_async(
-                prompt=analysis_prompt,
-                config=self.batch_configs["ml_enhancement"]
+                prompt=analysis_prompt, config=self.batch_configs["ml_enhancement"]
             )
 
             enhanced_results = self._parse_ml_response(response, ml_data)
@@ -197,8 +195,7 @@ Structure output in actionable format with clear recommendations and risk parame
             insight_prompt = self._prepare_market_insights_prompt(combined_data)
 
             response = await self._call_openai_async(
-                prompt=insight_prompt,
-                config=self.batch_configs["market_insights"]
+                prompt=insight_prompt, config=self.batch_configs["market_insights"]
             )
 
             market_insights = self._parse_market_insights_response(response, combined_data)
@@ -220,11 +217,11 @@ Structure output in actionable format with clear recommendations and risk parame
                 model=OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": config["system_prompt"]},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 max_tokens=config["max_tokens"],
                 temperature=config["temperature"],
-                response_format={"type": "json_object"}
+                response_format={"type": "json_object"},
             )
 
             content = response.choices[0].message.content
@@ -329,7 +326,7 @@ Format response as JSON with executive summary and detailed recommendations.
                 "enhancement_timestamp": datetime.now().isoformat(),
                 "enhancement_type": "openai_sentiment",
                 "confidence_boost": True,
-                "actionable_insights": ai_analysis.get("trading_recommendations", [])
+                "actionable_insights": ai_analysis.get("trading_recommendations", []),
             }
         except json.JSONDecodeError:
             return {"error": "Failed to parse OpenAI response", "raw_response": response}
@@ -345,7 +342,7 @@ Format response as JSON with executive summary and detailed recommendations.
                 "enhancement_timestamp": datetime.now().isoformat(),
                 "enhancement_type": "openai_technical",
                 "pattern_recognition": ai_analysis.get("patterns", []),
-                "trading_signals": ai_analysis.get("signals", [])
+                "trading_signals": ai_analysis.get("signals", []),
             }
         except json.JSONDecodeError:
             return {"error": "Failed to parse OpenAI response", "raw_response": response}
@@ -361,7 +358,7 @@ Format response as JSON with executive summary and detailed recommendations.
                 "enhancement_timestamp": datetime.now().isoformat(),
                 "enhancement_type": "openai_ml",
                 "model_insights": ai_analysis.get("model_analysis", {}),
-                "optimization_suggestions": ai_analysis.get("improvements", [])
+                "optimization_suggestions": ai_analysis.get("improvements", []),
             }
         except json.JSONDecodeError:
             return {"error": "Failed to parse OpenAI response", "raw_response": response}
@@ -378,7 +375,7 @@ Format response as JSON with executive summary and detailed recommendations.
                 "insight_type": "comprehensive_market_analysis",
                 "executive_summary": ai_insights.get("executive_summary", ""),
                 "strategic_recommendations": ai_insights.get("recommendations", []),
-                "risk_assessment": ai_insights.get("risk_framework", {})
+                "risk_assessment": ai_insights.get("risk_framework", {}),
             }
         except json.JSONDecodeError:
             return {"error": "Failed to parse OpenAI response", "raw_response": response}
@@ -391,9 +388,9 @@ Format response as JSON with executive summary and detailed recommendations.
             "fallback_analysis": {
                 "sentiment_score": sentiment_data.get("sentiment_score", 0.5),
                 "confidence": 0.6,
-                "note": "Basic analysis without OpenAI enhancement"
+                "note": "Basic analysis without OpenAI enhancement",
             },
-            "enhancement_type": "fallback_sentiment"
+            "enhancement_type": "fallback_sentiment",
         }
 
     def _fallback_technical_analysis(self, technical_data: Dict) -> Dict[str, Any]:
@@ -403,9 +400,9 @@ Format response as JSON with executive summary and detailed recommendations.
             "fallback_analysis": {
                 "signal_strength": "moderate",
                 "confidence": 0.6,
-                "note": "Basic analysis without OpenAI enhancement"
+                "note": "Basic analysis without OpenAI enhancement",
             },
-            "enhancement_type": "fallback_technical"
+            "enhancement_type": "fallback_technical",
         }
 
     def _fallback_ml_analysis(self, ml_data: Dict) -> Dict[str, Any]:
@@ -414,9 +411,9 @@ Format response as JSON with executive summary and detailed recommendations.
             "original_data": ml_data,
             "fallback_analysis": {
                 "prediction_confidence": 0.6,
-                "note": "Basic analysis without OpenAI enhancement"
+                "note": "Basic analysis without OpenAI enhancement",
             },
-            "enhancement_type": "fallback_ml"
+            "enhancement_type": "fallback_ml",
         }
 
     def _fallback_market_insights(self, combined_data: Dict) -> Dict[str, Any]:
@@ -426,9 +423,9 @@ Format response as JSON with executive summary and detailed recommendations.
             "fallback_insights": {
                 "market_trend": "neutral",
                 "confidence": 0.5,
-                "note": "Basic analysis without OpenAI enhancement"
+                "note": "Basic analysis without OpenAI enhancement",
             },
-            "insight_type": "fallback_market_analysis"
+            "insight_type": "fallback_market_analysis",
         }
 
     async def process_analysis_batch(self, batch_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -460,7 +457,7 @@ Format response as JSON with executive summary and detailed recommendations.
                 "processed_at": datetime.now().isoformat(),
                 "analysis_types": list(batch_data.keys()),
                 "enhancement_status": "openai_enhanced" if self.client else "fallback",
-                "total_processing_time": "calculated_elsewhere"
+                "total_processing_time": "calculated_elsewhere",
             }
 
             return results

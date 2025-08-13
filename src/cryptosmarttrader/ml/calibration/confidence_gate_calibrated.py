@@ -12,13 +12,20 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import warnings
 from pathlib import Path
-warnings.filterwarnings('ignore')
 
-from ml.calibration.probability_calibrator import ProbabilityCalibrator, CalibrationMethod, CalibrationMetrics
+warnings.filterwarnings("ignore")
+
+from ml.calibration.probability_calibrator import (
+    ProbabilityCalibrator,
+    CalibrationMethod,
+    CalibrationMetrics,
+)
+
 
 @dataclass
 class CalibratedPrediction:
     """Single calibrated prediction with confidence metrics"""
+
     symbol: str
     raw_prediction: float
     raw_confidence: float
@@ -32,20 +39,26 @@ class CalibratedPrediction:
     uncertainty_upper: float = 0.0
     passes_confidence_gate: bool = False
 
+
 @dataclass
 class ConfidenceGateConfig:
     """Configuration for calibrated confidence gate"""
+
     confidence_threshold: float = 0.80
     min_calibration_quality: float = 0.95  # ECE < 0.05
     min_samples_for_calibration: int = 100
     recalibration_frequency_days: int = 7
     uncertainty_estimation: bool = True
     bootstrap_samples: int = 1000
-    calibration_methods: List[str] = field(default_factory=lambda: ["platt_scaling", "isotonic_regression"])
+    calibration_methods: List[str] = field(
+        default_factory=lambda: ["platt_scaling", "isotonic_regression"]
+    )
+
 
 @dataclass
 class ConfidenceGateReport:
     """Report from confidence gate filtering"""
+
     total_predictions: int
     passed_gate: int
     failed_confidence: int
@@ -56,6 +69,7 @@ class ConfidenceGateReport:
     calibration_method_used: str
     uncertainty_coverage: float
     recommendations: List[str] = field(default_factory=list)
+
 
 class CalibratedConfidenceGate:
     """Enterprise-grade confidence gate with proper probability calibration"""
@@ -76,22 +90,20 @@ class CalibratedConfidenceGate:
 
         # Statistics tracking
         self.gate_statistics = {
-            'total_processed': 0,
-            'total_passed': 0,
-            'calibration_updates': 0,
-            'average_calibration_error': [],
-            'confidence_distributions': [],
-            'timestamp_last_update': None
+            "total_processed": 0,
+            "total_passed": 0,
+            "calibration_updates": 0,
+            "average_calibration_error": [],
+            "confidence_distributions": [],
+            "timestamp_last_update": None,
         }
 
     def update_calibration(
-        self,
-        historical_predictions: pd.DataFrame,
-        force_update: bool = False
+        self, historical_predictions: pd.DataFrame, force_update: bool = False
     ) -> bool:
         """Update probability calibration using historical data"""
 
-        required_columns = ['raw_confidence', 'actual_outcome', 'prediction_timestamp']
+        required_columns = ["raw_confidence", "actual_outcome", "prediction_timestamp"]
         if not all(col in historical_predictions.columns for col in required_columns):
             self.logger.error(f"Missing required columns: {required_columns}")
             return False
@@ -104,13 +116,15 @@ class CalibratedConfidenceGate:
         recent_data = self._filter_recent_calibration_data(historical_predictions)
 
         if len(recent_data) < self.config.min_samples_for_calibration:
-            self.logger.warning(f"Insufficient data for calibration: {len(recent_data)} < {self.config.min_samples_for_calibration}")
+            self.logger.warning(
+                f"Insufficient data for calibration: {len(recent_data)} < {self.config.min_samples_for_calibration}"
+            )
             return False
 
         try:
             # Extract probabilities and labels
-            probabilities = recent_data['raw_confidence'].values
-            true_labels = recent_data['actual_outcome'].values
+            probabilities = recent_data["raw_confidence"].values
+            true_labels = recent_data["actual_outcome"].values
 
             # Validate data quality
             if not self._validate_calibration_data(probabilities, true_labels):
@@ -125,25 +139,30 @@ class CalibratedConfidenceGate:
             )
 
             # Store calibration history
-            self.calibration_history.append({
-                'timestamp': datetime.utcnow(),
-                'data_points': len(recent_data),
-                'calibration_error': self.calibration_quality_metrics.expected_calibration_error,
-                'best_method': self.probability_calibrator.best_method.value,
-                'quality_score': 1.0 - self.calibration_quality_metrics.expected_calibration_error
-            })
+            self.calibration_history.append(
+                {
+                    "timestamp": datetime.utcnow(),
+                    "data_points": len(recent_data),
+                    "calibration_error": self.calibration_quality_metrics.expected_calibration_error,
+                    "best_method": self.probability_calibrator.best_method.value,
+                    "quality_score": 1.0
+                    - self.calibration_quality_metrics.expected_calibration_error,
+                }
+            )
 
             self.last_calibration = datetime.utcnow()
-            self.gate_statistics['calibration_updates'] += 1
-            self.gate_statistics['timestamp_last_update'] = self.last_calibration
+            self.gate_statistics["calibration_updates"] += 1
+            self.gate_statistics["timestamp_last_update"] = self.last_calibration
 
             # Log calibration results
             best_method = self.probability_calibrator.best_method
             best_result = calibration_results[best_method]
 
-            self.logger.info(f"Calibration updated: method={best_method.value}, "
-                           f"ECE={best_result.calibration_error:.4f}, "
-                           f"well_calibrated={best_result.is_well_calibrated}")
+            self.logger.info(
+                f"Calibration updated: method={best_method.value}, "
+                f"ECE={best_result.calibration_error:.4f}, "
+                f"well_calibrated={best_result.is_well_calibrated}"
+            )
 
             return True
 
@@ -152,9 +171,7 @@ class CalibratedConfidenceGate:
             return False
 
     def apply_confidence_gate(
-        self,
-        predictions: List[Dict[str, Any]],
-        require_calibration: bool = True
+        self, predictions: List[Dict[str, Any]], require_calibration: bool = True
     ) -> Tuple[List[CalibratedPrediction], ConfidenceGateReport]:
         """Apply calibrated confidence gate to predictions"""
 
@@ -180,7 +197,10 @@ class CalibratedConfidenceGate:
                 else:
                     if calibrated_pred.calibrated_confidence < self.config.confidence_threshold:
                         failed_confidence += 1
-                    if calibrated_pred.calibration_quality_score < self.config.min_calibration_quality:
+                    if (
+                        calibrated_pred.calibration_quality_score
+                        < self.config.min_calibration_quality
+                    ):
                         failed_calibration_quality += 1
 
             except Exception as e:
@@ -188,8 +208,8 @@ class CalibratedConfidenceGate:
                 continue
 
         # Update statistics
-        self.gate_statistics['total_processed'] += len(predictions)
-        self.gate_statistics['total_passed'] += passed_gate
+        self.gate_statistics["total_processed"] += len(predictions)
+        self.gate_statistics["total_passed"] += passed_gate
 
         # Create report
         report = self._create_gate_report(
@@ -197,7 +217,7 @@ class CalibratedConfidenceGate:
             passed_gate=passed_gate,
             failed_confidence=failed_confidence,
             failed_calibration_quality=failed_calibration_quality,
-            calibrated_predictions=calibrated_predictions
+            calibrated_predictions=calibrated_predictions,
         )
 
         return calibrated_predictions, report
@@ -206,21 +226,25 @@ class CalibratedConfidenceGate:
         """Create calibrated prediction from raw prediction data"""
 
         # Extract raw data
-        symbol = pred_dict.get('symbol', 'unknown')
-        raw_prediction = pred_dict.get('prediction', 0.0)
-        raw_confidence = pred_dict.get('confidence', 0.5)
-        model_name = pred_dict.get('model_name', 'unknown')
-        features_used = pred_dict.get('features', [])
+        symbol = pred_dict.get("symbol", "unknown")
+        raw_prediction = pred_dict.get("prediction", 0.0)
+        raw_confidence = pred_dict.get("confidence", 0.5)
+        model_name = pred_dict.get("model_name", "unknown")
+        features_used = pred_dict.get("features", [])
 
         # Apply calibration if available
         if self.probability_calibrator and self.probability_calibrator.fitted:
             try:
-                calibrated_confidence = self.probability_calibrator.predict(np.array([raw_confidence]))[0]
+                calibrated_confidence = self.probability_calibrator.predict(
+                    np.array([raw_confidence])
+                )[0]
                 calibration_method = self.probability_calibrator.best_method.value
 
                 # Calculate calibration quality score
                 if self.calibration_quality_metrics:
-                    calibration_quality_score = 1.0 - self.calibration_quality_metrics.expected_calibration_error
+                    calibration_quality_score = (
+                        1.0 - self.calibration_quality_metrics.expected_calibration_error
+                    )
                 else:
                     calibration_quality_score = 0.5
 
@@ -241,8 +265,8 @@ class CalibratedConfidenceGate:
 
         # Check if passes confidence gate
         passes_gate = (
-            calibrated_confidence >= self.config.confidence_threshold and
-            calibration_quality_score >= self.config.min_calibration_quality
+            calibrated_confidence >= self.config.confidence_threshold
+            and calibration_quality_score >= self.config.min_calibration_quality
         )
 
         return CalibratedPrediction(
@@ -257,13 +281,11 @@ class CalibratedConfidenceGate:
             calibration_quality_score=calibration_quality_score,
             uncertainty_lower=uncertainty_lower,
             uncertainty_upper=uncertainty_upper,
-            passes_confidence_gate=passes_gate
+            passes_confidence_gate=passes_gate,
         )
 
     def _estimate_uncertainty(
-        self,
-        raw_confidence: float,
-        calibrated_confidence: float
+        self, raw_confidence: float, calibrated_confidence: float
     ) -> Tuple[float, float]:
         """Estimate uncertainty bounds for calibrated confidence"""
 
@@ -310,19 +332,15 @@ class CalibratedConfidenceGate:
         # Use last 30 days of data for calibration
         cutoff_date = datetime.utcnow() - pd.Timedelta(days=30)
 
-        if 'prediction_timestamp' in data.columns:
-            recent_data = data[data['prediction_timestamp'] >= cutoff_date]
+        if "prediction_timestamp" in data.columns:
+            recent_data = data[data["prediction_timestamp"] >= cutoff_date]
         else:
             # If no timestamp, use most recent data
             recent_data = data.tail(self.config.min_samples_for_calibration * 2)
 
         return recent_data
 
-    def _validate_calibration_data(
-        self,
-        probabilities: np.ndarray,
-        labels: np.ndarray
-    ) -> bool:
+    def _validate_calibration_data(self, probabilities: np.ndarray, labels: np.ndarray) -> bool:
         """Validate data quality for calibration"""
 
         # Check for valid probability range
@@ -378,7 +396,7 @@ class CalibratedConfidenceGate:
         passed_gate: int,
         failed_confidence: int,
         failed_calibration_quality: int,
-        calibrated_predictions: List[CalibratedPrediction]
+        calibrated_predictions: List[CalibratedPrediction],
     ) -> ConfidenceGateReport:
         """Create comprehensive gate report"""
 
@@ -389,7 +407,9 @@ class CalibratedConfidenceGate:
             avg_calibrated_conf = np.mean([p.calibrated_confidence for p in calibrated_predictions])
 
             # Calculate uncertainty coverage
-            uncertainties = [(p.uncertainty_upper - p.uncertainty_lower) for p in calibrated_predictions]
+            uncertainties = [
+                (p.uncertainty_upper - p.uncertainty_lower) for p in calibrated_predictions
+            ]
             uncertainty_coverage = np.mean(uncertainties) if uncertainties else 0.0
         else:
             avg_calibrated_conf = 0.0
@@ -397,11 +417,17 @@ class CalibratedConfidenceGate:
 
         # Get calibration info
         if self.calibration_quality_metrics:
-            calibration_quality_score = 1.0 - self.calibration_quality_metrics.expected_calibration_error
+            calibration_quality_score = (
+                1.0 - self.calibration_quality_metrics.expected_calibration_error
+            )
         else:
             calibration_quality_score = 0.0
 
-        calibration_method = self.probability_calibrator.best_method.value if self.probability_calibrator.fitted else "none"
+        calibration_method = (
+            self.probability_calibrator.best_method.value
+            if self.probability_calibrator.fitted
+            else "none"
+        )
 
         # Generate recommendations
         recommendations = self._generate_recommendations(
@@ -418,7 +444,7 @@ class CalibratedConfidenceGate:
             calibration_quality_score=calibration_quality_score,
             calibration_method_used=calibration_method,
             uncertainty_coverage=uncertainty_coverage,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
     def _generate_recommendations(
@@ -426,30 +452,40 @@ class CalibratedConfidenceGate:
         gate_pass_rate: float,
         calibration_quality_score: float,
         failed_confidence: int,
-        failed_calibration_quality: int
+        failed_calibration_quality: int,
     ) -> List[str]:
         """Generate actionable recommendations"""
 
         recommendations = []
 
         if gate_pass_rate < 0.1:
-            recommendations.append("Very low gate pass rate - consider lowering confidence threshold or improving model performance")
+            recommendations.append(
+                "Very low gate pass rate - consider lowering confidence threshold or improving model performance"
+            )
 
         if calibration_quality_score < 0.9:
-            recommendations.append("Poor calibration quality - collect more diverse training data and retrain calibrator")
+            recommendations.append(
+                "Poor calibration quality - collect more diverse training data and retrain calibrator"
+            )
 
         if failed_confidence > failed_calibration_quality * 2:
-            recommendations.append("Most failures due to low confidence - focus on improving model confidence estimation")
+            recommendations.append(
+                "Most failures due to low confidence - focus on improving model confidence estimation"
+            )
 
         if failed_calibration_quality > failed_confidence * 2:
-            recommendations.append("Most failures due to poor calibration - focus on improving calibration quality")
+            recommendations.append(
+                "Most failures due to poor calibration - focus on improving calibration quality"
+            )
 
         if len(self.calibration_history) > 1:
-            recent_error = self.calibration_history[-1]['calibration_error']
-            previous_error = self.calibration_history[-2]['calibration_error']
+            recent_error = self.calibration_history[-1]["calibration_error"]
+            previous_error = self.calibration_history[-2]["calibration_error"]
 
             if recent_error > previous_error * 1.2:
-                recommendations.append("Calibration quality degrading - check for data drift or concept drift")
+                recommendations.append(
+                    "Calibration quality degrading - check for data drift or concept drift"
+                )
 
         if not recommendations:
             recommendations.append("Confidence gate operating within acceptable parameters")
@@ -469,46 +505,51 @@ class CalibratedConfidenceGate:
             calibration_quality_score=0.0,
             calibration_method_used="none",
             uncertainty_coverage=0.0,
-            recommendations=["Error in confidence gate processing"]
+            recommendations=["Error in confidence gate processing"],
         )
 
     def get_gate_statistics(self) -> Dict[str, Any]:
         """Get comprehensive gate statistics"""
 
-        total_processed = self.gate_statistics['total_processed']
+        total_processed = self.gate_statistics["total_processed"]
 
         stats = {
-            'total_processed': total_processed,
-            'total_passed': self.gate_statistics['total_passed'],
-            'overall_pass_rate': self.gate_statistics['total_passed'] / max(total_processed, 1),
-            'calibration_updates': self.gate_statistics['calibration_updates'],
-            'last_calibration': self.last_calibration,
-            'current_calibration_method': self.probability_calibrator.best_method.value if self.probability_calibrator.fitted else "none"
+            "total_processed": total_processed,
+            "total_passed": self.gate_statistics["total_passed"],
+            "overall_pass_rate": self.gate_statistics["total_passed"] / max(total_processed, 1),
+            "calibration_updates": self.gate_statistics["calibration_updates"],
+            "last_calibration": self.last_calibration,
+            "current_calibration_method": self.probability_calibrator.best_method.value
+            if self.probability_calibrator.fitted
+            else "none",
         }
 
         # Add calibration quality info
         if self.calibration_quality_metrics:
-            stats.update({
-                'expected_calibration_error': self.calibration_quality_metrics.expected_calibration_error,
-                'calibration_quality_score': 1.0 - self.calibration_quality_metrics.expected_calibration_error,
-                'overconfidence_error': self.calibration_quality_metrics.overconfidence_error,
-                'underconfidence_error': self.calibration_quality_metrics.underconfidence_error
-            })
+            stats.update(
+                {
+                    "expected_calibration_error": self.calibration_quality_metrics.expected_calibration_error,
+                    "calibration_quality_score": 1.0
+                    - self.calibration_quality_metrics.expected_calibration_error,
+                    "overconfidence_error": self.calibration_quality_metrics.overconfidence_error,
+                    "underconfidence_error": self.calibration_quality_metrics.underconfidence_error,
+                }
+            )
 
         # Add calibration history summary
         if self.calibration_history:
-            recent_errors = [h['calibration_error'] for h in self.calibration_history[-5:]]
-            stats['calibration_error_trend'] = {
-                'recent_avg': np.mean(recent_errors),
-                'recent_std': np.std(recent_errors),
-                'improving': len(recent_errors) > 1 and recent_errors[-1] < recent_errors[0]
+            recent_errors = [h["calibration_error"] for h in self.calibration_history[-5:]]
+            stats["calibration_error_trend"] = {
+                "recent_avg": np.mean(recent_errors),
+                "recent_std": np.std(recent_errors),
+                "improving": len(recent_errors) > 1 and recent_errors[-1] < recent_errors[0],
             }
 
         return stats
 
+
 def create_calibrated_confidence_gate(
-    confidence_threshold: float = 0.80,
-    calibration_methods: List[str] = None
+    confidence_threshold: float = 0.80, calibration_methods: List[str] = None
 ) -> CalibratedConfidenceGate:
     """Create calibrated confidence gate with specified configuration"""
 
@@ -516,16 +557,16 @@ def create_calibrated_confidence_gate(
         calibration_methods = ["platt_scaling", "isotonic_regression", "temperature_scaling"]
 
     config = ConfidenceGateConfig(
-        confidence_threshold=confidence_threshold,
-        calibration_methods=calibration_methods
+        confidence_threshold=confidence_threshold, calibration_methods=calibration_methods
     )
 
     return CalibratedConfidenceGate(config)
 
+
 def apply_calibrated_gate(
     predictions: List[Dict[str, Any]],
     historical_data: pd.DataFrame,
-    confidence_threshold: float = 0.80
+    confidence_threshold: float = 0.80,
 ) -> Tuple[List[CalibratedPrediction], ConfidenceGateReport]:
     """High-level function to apply calibrated confidence gate"""
 

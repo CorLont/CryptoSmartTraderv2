@@ -16,11 +16,14 @@ from abc import ABC, abstractmethod
 import warnings
 from scipy import stats
 import matplotlib.pyplot as plt
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 @dataclass
 class UncertaintyEstimate:
     """Comprehensive uncertainty estimate"""
+
     prediction: float
     epistemic_uncertainty: float  # Model uncertainty (reducible with more data)
     aleatoric_uncertainty: float  # Data uncertainty (irreducible noise)
@@ -32,14 +35,17 @@ class UncertaintyEstimate:
     mc_samples: int = 100
     prediction_method: str = "unknown"
 
+
 @dataclass
 class UncertaintyMetrics:
     """Model uncertainty quality metrics"""
+
     prediction_interval_coverage: float  # % of true values in predicted intervals
     interval_sharpness: float  # Average interval width
     calibration_error: float  # Difference between predicted and actual coverage
     uncertainty_correlation: float  # Correlation between uncertainty and error
     reliability_score: float  # Overall reliability of uncertainty estimates
+
 
 class MCDropoutLayer(nn.Module):
     """Monte Carlo Dropout layer for uncertainty estimation"""
@@ -51,6 +57,7 @@ class MCDropoutLayer(nn.Module):
     def forward(self, x):
         # Always apply dropout during inference for MC sampling
         return F.dropout(x, p=self.p, training=True)
+
 
 class BayesianLinear(nn.Module):
     """Bayesian linear layer with weight uncertainty"""
@@ -89,16 +96,21 @@ class BayesianLinear(nn.Module):
         bias_var = torch.exp(self.bias_logvar)
 
         weight_kl = 0.5 * torch.sum(
-            (self.weight_mean**2 + weight_var) / (self.prior_std**2) -
-            1 - torch.log(weight_var) + 2 * torch.log(torch.tensor(self.prior_std))
+            (self.weight_mean**2 + weight_var) / (self.prior_std**2)
+            - 1
+            - torch.log(weight_var)
+            + 2 * torch.log(torch.tensor(self.prior_std))
         )
 
         bias_kl = 0.5 * torch.sum(
-            (self.bias_mean**2 + bias_var) / (self.prior_std**2) -
-            1 - torch.log(bias_var) + 2 * torch.log(torch.tensor(self.prior_std))
+            (self.bias_mean**2 + bias_var) / (self.prior_std**2)
+            - 1
+            - torch.log(bias_var)
+            + 2 * torch.log(torch.tensor(self.prior_std))
         )
 
         return weight_kl + bias_kl
+
 
 class MCDropoutModel(nn.Module):
     """Neural network with MC Dropout for uncertainty estimation"""
@@ -109,7 +121,7 @@ class MCDropoutModel(nn.Module):
         hidden_sizes: List[int],
         output_size: int,
         dropout_rate: float = 0.1,
-        use_bayesian: bool = False
+        use_bayesian: bool = False,
     ):
         super(MCDropoutModel, self).__init__()
         self.use_bayesian = use_bayesian
@@ -149,6 +161,7 @@ class MCDropoutModel(nn.Module):
 
         return kl_sum
 
+
 class EnsembleModel:
     """Ensemble of models for uncertainty estimation"""
 
@@ -173,7 +186,7 @@ class EnsembleModel:
         y_val: Optional[torch.Tensor] = None,
         epochs: int = 100,
         lr: float = 0.001,
-        batch_size: int = 64
+        batch_size: int = 64,
     ):
         """Train ensemble of models with different initializations"""
 
@@ -185,7 +198,7 @@ class EnsembleModel:
             y_val = y_val.to(self.device)
 
         for i, model in enumerate(self.models):
-            self.logger.info(f"Training ensemble model {i+1}/{len(self.models)}")
+            self.logger.info(f"Training ensemble model {i + 1}/{len(self.models)}")
 
             optimizer = torch.optim.Adam(model.parameters(), lr=lr)
             criterion = nn.MSELoss()
@@ -228,15 +241,14 @@ class EnsembleModel:
                     model.train()
 
                     if epoch % 50 == 0:
-                        self.logger.debug(f"Model {i+1}, Epoch {epoch}: Val Loss = {val_loss:.4f}")
+                        self.logger.debug(
+                            f"Model {i + 1}, Epoch {epoch}: Val Loss = {val_loss:.4f}"
+                        )
 
         self.trained = True
 
     def predict_with_uncertainty(
-        self,
-        X: torch.Tensor,
-        mc_samples: int = 100,
-        confidence_level: float = 0.95
+        self, X: torch.Tensor, mc_samples: int = 100, confidence_level: float = 0.95
     ) -> UncertaintyEstimate:
         """Predict with comprehensive uncertainty estimation"""
 
@@ -296,7 +308,7 @@ class EnsembleModel:
                 prediction_variance=prediction_variance,
                 ensemble_predictions=point_predictions.tolist(),
                 mc_samples=mc_samples * len(self.models),
-                prediction_method="ensemble_mc_dropout"
+                prediction_method="ensemble_mc_dropout",
             )
 
             predictions.append(uncertainty_est)
@@ -304,9 +316,7 @@ class EnsembleModel:
         return predictions if len(predictions) > 1 else predictions[0]
 
     def _decompose_uncertainty(
-        self,
-        predictions: np.ndarray,
-        mc_samples: int
+        self, predictions: np.ndarray, mc_samples: int
     ) -> Tuple[float, float]:
         """Decompose uncertainty into epistemic and aleatoric components"""
 
@@ -329,6 +339,7 @@ class EnsembleModel:
 
         return epistemic_uncertainty, aleatoric_uncertainty
 
+
 class UncertaintyQuantifier:
     """Complete uncertainty quantification system"""
 
@@ -337,7 +348,7 @@ class UncertaintyQuantifier:
         model_type: str = "ensemble_mc_dropout",
         ensemble_size: int = 5,
         mc_samples: int = 100,
-        device: str = "cpu"
+        device: str = "cpu",
     ):
         self.model_type = model_type
         self.ensemble_size = ensemble_size
@@ -355,7 +366,7 @@ class UncertaintyQuantifier:
         input_size: int,
         hidden_sizes: List[int] = None,
         output_size: int = 1,
-        dropout_rate: float = 0.1
+        dropout_rate: float = 0.1,
     ):
         """Build uncertainty-aware model"""
 
@@ -367,11 +378,11 @@ class UncertaintyQuantifier:
             model_configs = []
             for i in range(self.ensemble_size):
                 config = {
-                    'input_size': input_size,
-                    'hidden_sizes': hidden_sizes,
-                    'output_size': output_size,
-                    'dropout_rate': dropout_rate + i * 0.02,  # Vary dropout rates
-                    'use_bayesian': i % 2 == 0  # Mix Bayesian and regular layers
+                    "input_size": input_size,
+                    "hidden_sizes": hidden_sizes,
+                    "output_size": output_size,
+                    "dropout_rate": dropout_rate + i * 0.02,  # Vary dropout rates
+                    "use_bayesian": i % 2 == 0,  # Mix Bayesian and regular layers
                 }
                 model_configs.append(config)
 
@@ -379,9 +390,9 @@ class UncertaintyQuantifier:
 
         elif self.model_type == "single_mc_dropout":
             # Single MC Dropout model
-            self.model = MCDropoutModel(
-                input_size, hidden_sizes, output_size, dropout_rate
-            ).to(self.device)
+            self.model = MCDropoutModel(input_size, hidden_sizes, output_size, dropout_rate).to(
+                self.device
+            )
 
         else:
             raise ValueError(f"Unknown model type: {self.model_type}")
@@ -394,7 +405,7 @@ class UncertaintyQuantifier:
         y_val: Optional[np.ndarray] = None,
         epochs: int = 100,
         lr: float = 0.001,
-        batch_size: int = 64
+        batch_size: int = 64,
     ):
         """Train uncertainty-aware model"""
 
@@ -410,14 +421,12 @@ class UncertaintyQuantifier:
 
         if isinstance(self.model, EnsembleModel):
             self.model.train_ensemble(
-                X_train_tensor, y_train_tensor, X_val_tensor, y_val_tensor,
-                epochs, lr, batch_size
+                X_train_tensor, y_train_tensor, X_val_tensor, y_val_tensor, epochs, lr, batch_size
             )
         else:
             # Train single model
             self._train_single_model(
-                X_train_tensor, y_train_tensor, X_val_tensor, y_val_tensor,
-                epochs, lr, batch_size
+                X_train_tensor, y_train_tensor, X_val_tensor, y_val_tensor, epochs, lr, batch_size
             )
 
         self.is_trained = True
@@ -430,7 +439,7 @@ class UncertaintyQuantifier:
         y_val: Optional[torch.Tensor],
         epochs: int,
         lr: float,
-        batch_size: int
+        batch_size: int,
     ):
         """Train single MC Dropout model"""
 
@@ -456,7 +465,7 @@ class UncertaintyQuantifier:
                 loss = criterion(outputs, y_batch.unsqueeze(1))
 
                 # Add KL divergence for Bayesian models
-                if hasattr(self.model, 'kl_loss'):
+                if hasattr(self.model, "kl_loss"):
                     kl_loss = self.model.kl_loss()
                     loss += kl_loss / len(X_batch)
 
@@ -475,9 +484,7 @@ class UncertaintyQuantifier:
                     self.logger.debug(f"Epoch {epoch}: Val Loss = {val_loss:.4f}")
 
     def predict_with_uncertainty(
-        self,
-        X: np.ndarray,
-        confidence_level: float = 0.95
+        self, X: np.ndarray, confidence_level: float = 0.95
     ) -> Union[UncertaintyEstimate, List[UncertaintyEstimate]]:
         """Predict with uncertainty quantification"""
 
@@ -487,16 +494,12 @@ class UncertaintyQuantifier:
         X_tensor = torch.FloatTensor(X)
 
         if isinstance(self.model, EnsembleModel):
-            return self.model.predict_with_uncertainty(
-                X_tensor, self.mc_samples, confidence_level
-            )
+            return self.model.predict_with_uncertainty(X_tensor, self.mc_samples, confidence_level)
         else:
             return self._predict_single_mc_dropout(X_tensor, confidence_level)
 
     def _predict_single_mc_dropout(
-        self,
-        X: torch.Tensor,
-        confidence_level: float
+        self, X: torch.Tensor, confidence_level: float
     ) -> Union[UncertaintyEstimate, List[UncertaintyEstimate]]:
         """Predict with single MC Dropout model"""
 
@@ -541,7 +544,7 @@ class UncertaintyQuantifier:
                 prediction_variance=prediction_variance,
                 ensemble_predictions=point_predictions.tolist(),
                 mc_samples=self.mc_samples,
-                prediction_method="single_mc_dropout"
+                prediction_method="single_mc_dropout",
             )
 
             results.append(uncertainty_est)
@@ -549,10 +552,7 @@ class UncertaintyQuantifier:
         return results if len(results) > 1 else results[0]
 
     def calibrate_uncertainty(
-        self,
-        X_cal: np.ndarray,
-        y_cal: np.ndarray,
-        confidence_levels: List[float] = None
+        self, X_cal: np.ndarray, y_cal: np.ndarray, confidence_levels: List[float] = None
     ) -> Dict[str, float]:
         """Calibrate uncertainty estimates using calibration data"""
 
@@ -594,20 +594,16 @@ class UncertaintyQuantifier:
             avg_interval_width = np.mean(interval_widths)
             calibration_error = abs(actual_coverage - conf_level)
 
-            calibration_results[f'coverage_{conf_level}'] = actual_coverage
-            calibration_results[f'width_{conf_level}'] = avg_interval_width
-            calibration_results[f'error_{conf_level}'] = calibration_error
+            calibration_results[f"coverage_{conf_level}"] = actual_coverage
+            calibration_results[f"width_{conf_level}"] = avg_interval_width
+            calibration_results[f"error_{conf_level}"] = calibration_error
 
         # Store calibration info
         self.uncertainty_calibration = calibration_results
 
         return calibration_results
 
-    def get_uncertainty_metrics(
-        self,
-        X_test: np.ndarray,
-        y_test: np.ndarray
-    ) -> UncertaintyMetrics:
+    def get_uncertainty_metrics(self, X_test: np.ndarray, y_test: np.ndarray) -> UncertaintyMetrics:
         """Calculate comprehensive uncertainty quality metrics"""
 
         uncertainty_predictions = self.predict_with_uncertainty(X_test)
@@ -649,9 +645,9 @@ class UncertaintyQuantifier:
 
         # Overall reliability score
         reliability_score = (
-            coverage * 0.4 +  # Good coverage
-            (1 - calibration_error) * 0.3 +  # Well calibrated
-            max(0, uncertainty_correlation) * 0.3  # Uncertainty correlates with error
+            coverage * 0.4  # Good coverage
+            + (1 - calibration_error) * 0.3  # Well calibrated
+            + max(0, uncertainty_correlation) * 0.3  # Uncertainty correlates with error
         )
 
         return UncertaintyMetrics(
@@ -659,39 +655,32 @@ class UncertaintyQuantifier:
             interval_sharpness=sharpness,
             calibration_error=calibration_error,
             uncertainty_correlation=uncertainty_correlation,
-            reliability_score=reliability_score
+            reliability_score=reliability_score,
         )
 
+
 def create_uncertainty_quantifier(
-    model_type: str = "ensemble_mc_dropout",
-    ensemble_size: int = 5,
-    mc_samples: int = 100
+    model_type: str = "ensemble_mc_dropout", ensemble_size: int = 5, mc_samples: int = 100
 ) -> UncertaintyQuantifier:
     """Create uncertainty quantifier with specified configuration"""
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     return UncertaintyQuantifier(
-        model_type=model_type,
-        ensemble_size=ensemble_size,
-        mc_samples=mc_samples,
-        device=device
+        model_type=model_type, ensemble_size=ensemble_size, mc_samples=mc_samples, device=device
     )
+
 
 def quantify_prediction_uncertainty(
     X_train: np.ndarray,
     y_train: np.ndarray,
     X_test: np.ndarray,
-    model_config: Dict[str, Any] = None
+    model_config: Dict[str, Any] = None,
 ) -> List[UncertaintyEstimate]:
     """High-level function for uncertainty quantification"""
 
     if model_config is None:
-        model_config = {
-            'model_type': 'ensemble_mc_dropout',
-            'ensemble_size': 3,
-            'mc_samples': 50
-        }
+        model_config = {"model_type": "ensemble_mc_dropout", "ensemble_size": 3, "mc_samples": 50}
 
     # Create and train model
     quantifier = create_uncertainty_quantifier(**model_config)

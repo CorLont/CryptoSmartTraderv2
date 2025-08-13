@@ -16,8 +16,10 @@ import sys
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+
 class ErrorCategory:
     """Error categorization for structured handling"""
+
     NETWORK = "network"
     API = "api"
     DATA = "data"
@@ -27,11 +29,17 @@ class ErrorCategory:
     EXTERNAL_SERVICE = "external_service"
     CRITICAL = "critical"
 
+
 class RetryStrategy:
     """Configurable retry strategies with exponential backoff"""
 
-    def __init__(self, max_attempts: int = 3, base_delay: float = 1.0,
-                 max_delay: float = 60.0, exponential_base: float = 2.0):
+    def __init__(
+        self,
+        max_attempts: int = 3,
+        base_delay: float = 1.0,
+        max_delay: float = 60.0,
+        exponential_base: float = 2.0,
+    ):
         self.max_attempts = max_attempts
         self.base_delay = base_delay
         self.max_delay = max_delay
@@ -39,8 +47,9 @@ class RetryStrategy:
 
     def get_delay(self, attempt: int) -> float:
         """Calculate delay for given attempt with exponential backoff"""
-        delay = self.base_delay * (self.exponential_base ** attempt)
+        delay = self.base_delay * (self.exponential_base**attempt)
         return min(delay, self.max_delay)
+
 
 class CentralizedErrorHandler:
     """Enterprise-grade centralized error handling system"""
@@ -55,7 +64,7 @@ class CentralizedErrorHandler:
             "errors_by_category": {},
             "errors_by_hour": {},
             "recovery_success_rate": 0.0,
-            "last_critical_error": None
+            "last_critical_error": None,
         }
 
         # Recovery strategies by error category
@@ -67,7 +76,7 @@ class CentralizedErrorHandler:
             ErrorCategory.CONFIGURATION: self._recover_config_error,
             ErrorCategory.SYSTEM: self._recover_system_error,
             ErrorCategory.EXTERNAL_SERVICE: self._recover_external_service_error,
-            ErrorCategory.CRITICAL: self._recover_critical_error
+            ErrorCategory.CRITICAL: self._recover_critical_error,
         }
 
         # Default retry strategies by category
@@ -75,8 +84,10 @@ class CentralizedErrorHandler:
             ErrorCategory.NETWORK: RetryStrategy(max_attempts=5, base_delay=2.0, max_delay=30.0),
             ErrorCategory.API: RetryStrategy(max_attempts=4, base_delay=1.5, max_delay=20.0),
             ErrorCategory.DATA: RetryStrategy(max_attempts=3, base_delay=1.0, max_delay=10.0),
-            ErrorCategory.EXTERNAL_SERVICE: RetryStrategy(max_attempts=6, base_delay=3.0, max_delay=60.0),
-            ErrorCategory.SYSTEM: RetryStrategy(max_attempts=2, base_delay=5.0, max_delay=30.0)
+            ErrorCategory.EXTERNAL_SERVICE: RetryStrategy(
+                max_attempts=6, base_delay=3.0, max_delay=60.0
+            ),
+            ErrorCategory.SYSTEM: RetryStrategy(max_attempts=2, base_delay=5.0, max_delay=30.0),
         }
 
         # Initialize error logging
@@ -95,9 +106,7 @@ class CentralizedErrorHandler:
                 error_log_dir / f"errors_{datetime.now().strftime('%Y%m%d')}.log"
             )
 
-            formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            )
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             error_handler.setFormatter(formatter)
             error_logger.addHandler(error_handler)
             error_logger.setLevel(logging.ERROR)
@@ -108,8 +117,13 @@ class CentralizedErrorHandler:
             self.logger.error(f"Failed to setup error logging: {e}")
             self.error_logger = self.logger
 
-    def handle_error(self, error: Exception, category: str, context: Dict[str, Any] = None,
-                    auto_recover: bool = True) -> Dict[str, Any]:
+    def handle_error(
+        self,
+        error: Exception,
+        category: str,
+        context: Dict[str, Any] = None,
+        auto_recover: bool = True,
+    ) -> Dict[str, Any]:
         """Centralized error handling with structured logging and recovery"""
         try:
             # Create error record
@@ -133,10 +147,12 @@ class CentralizedErrorHandler:
                 "message": str(error),
                 "severity": self._get_error_severity(category),
                 "recovery_attempted": auto_recover,
-                "recovery_successful": recovery_result.get("success", False) if recovery_result else False,
+                "recovery_successful": recovery_result.get("success", False)
+                if recovery_result
+                else False,
                 "recovery_details": recovery_result,
                 "timestamp": error_record["timestamp"],
-                "context": context or {}
+                "context": context or {},
             }
 
         except Exception as handling_error:
@@ -148,10 +164,12 @@ class CentralizedErrorHandler:
                 "message": f"Original error: {error}, Handler error: {handling_error}",
                 "severity": "critical",
                 "recovery_attempted": False,
-                "recovery_successful": False
+                "recovery_successful": False,
             }
 
-    def _create_error_record(self, error: Exception, category: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _create_error_record(
+        self, error: Exception, category: str, context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Create structured error record"""
         error_id = f"{category}_{int(time.time())}_{hash(str(error)) % 10000}"
 
@@ -164,7 +182,7 @@ class CentralizedErrorHandler:
             "traceback": traceback.format_exc(),
             "context": context or {},
             "severity": self._get_error_severity(category),
-            "stack_trace": traceback.format_stack()
+            "stack_trace": traceback.format_stack(),
         }
 
     def _log_structured_error(self, error_record: Dict[str, Any]):
@@ -176,11 +194,17 @@ class CentralizedErrorHandler:
             # Log to main application logger based on severity
             severity = error_record.get("severity", "error")
             if severity == "critical":
-                self.logger.critical(f"CRITICAL ERROR [{error_record['error_id']}]: {error_record['message']}")
+                self.logger.critical(
+                    f"CRITICAL ERROR [{error_record['error_id']}]: {error_record['message']}"
+                )
             elif severity == "high":
-                self.logger.error(f"HIGH SEVERITY [{error_record['error_id']}]: {error_record['message']}")
+                self.logger.error(
+                    f"HIGH SEVERITY [{error_record['error_id']}]: {error_record['message']}"
+                )
             else:
-                self.logger.warning(f"ERROR [{error_record['error_id']}]: {error_record['message']}")
+                self.logger.warning(
+                    f"ERROR [{error_record['error_id']}]: {error_record['message']}"
+                )
 
         except Exception as e:
             self.logger.error(f"Failed to log structured error: {e}")
@@ -195,7 +219,7 @@ class CentralizedErrorHandler:
             ErrorCategory.API: "medium",
             ErrorCategory.DATA: "medium",
             ErrorCategory.CALCULATION: "low",
-            ErrorCategory.EXTERNAL_SERVICE: "medium"
+            ErrorCategory.EXTERNAL_SERVICE: "medium",
         }
         return severity_map.get(category, "medium")
 
@@ -218,7 +242,9 @@ class CentralizedErrorHandler:
         if category == ErrorCategory.CRITICAL:
             self.error_stats["last_critical_error"] = datetime.now().isoformat()
 
-    def _attempt_recovery(self, error: Exception, category: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _attempt_recovery(
+        self, error: Exception, category: str, context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Attempt error recovery using category-specific strategies"""
         try:
             recovery_strategy = self.recovery_strategies.get(category)
@@ -229,7 +255,9 @@ class CentralizedErrorHandler:
 
             # Update recovery success rate
             total_recoveries = sum(1 for result in [recovery_result] if result.get("success"))
-            self.error_stats["recovery_success_rate"] = total_recoveries / max(1, self.error_stats["total_errors"])
+            self.error_stats["recovery_success_rate"] = total_recoveries / max(
+                1, self.error_stats["total_errors"]
+            )
 
             return recovery_result
 
@@ -237,7 +265,7 @@ class CentralizedErrorHandler:
             return {
                 "success": False,
                 "reason": f"Recovery failed: {recovery_error}",
-                "recovery_error": str(recovery_error)
+                "recovery_error": str(recovery_error),
             }
 
     # Recovery strategy implementations
@@ -247,7 +275,7 @@ class CentralizedErrorHandler:
             "success": True,
             "strategy": "network_retry",
             "recommendation": "Retry with exponential backoff",
-            "retry_strategy": self.retry_strategies[ErrorCategory.NETWORK].__dict__
+            "retry_strategy": self.retry_strategies[ErrorCategory.NETWORK].__dict__,
         }
 
     def _recover_api_error(self, error: Exception, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -256,7 +284,7 @@ class CentralizedErrorHandler:
             "success": True,
             "strategy": "api_fallback",
             "recommendation": "Use alternative data source or cached data",
-            "fallback_options": ["cached_data", "alternative_endpoint", "reduced_functionality"]
+            "fallback_options": ["cached_data", "alternative_endpoint", "reduced_functionality"],
         }
 
     def _recover_data_error(self, error: Exception, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -265,16 +293,18 @@ class CentralizedErrorHandler:
             "success": True,
             "strategy": "data_validation",
             "recommendation": "Use data validation and sanitization",
-            "recovery_actions": ["validate_input", "sanitize_data", "use_default_values"]
+            "recovery_actions": ["validate_input", "sanitize_data", "use_default_values"],
         }
 
-    def _recover_calculation_error(self, error: Exception, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _recover_calculation_error(
+        self, error: Exception, context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Recover from calculation errors"""
         return {
             "success": True,
             "strategy": "calculation_fallback",
             "recommendation": "Use alternative calculation method",
-            "fallback_methods": ["simple_average", "cached_result", "conservative_estimate"]
+            "fallback_methods": ["simple_average", "cached_result", "conservative_estimate"],
         }
 
     def _recover_config_error(self, error: Exception, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -283,7 +313,7 @@ class CentralizedErrorHandler:
             "success": True,
             "strategy": "config_rollback",
             "recommendation": "Rollback to last known good configuration",
-            "recovery_actions": ["load_backup_config", "use_defaults", "notify_admin"]
+            "recovery_actions": ["load_backup_config", "use_defaults", "notify_admin"],
         }
 
     def _recover_system_error(self, error: Exception, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -293,16 +323,18 @@ class CentralizedErrorHandler:
             "strategy": "system_restart",
             "recommendation": "System restart may be required",
             "severity": "high",
-            "requires_intervention": True
+            "requires_intervention": True,
         }
 
-    def _recover_external_service_error(self, error: Exception, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _recover_external_service_error(
+        self, error: Exception, context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Recover from external service errors"""
         return {
             "success": True,
             "strategy": "service_fallback",
             "recommendation": "Use alternative service or cached data",
-            "fallback_options": ["cached_data", "alternative_service", "degraded_mode"]
+            "fallback_options": ["cached_data", "alternative_service", "degraded_mode"],
         }
 
     def _recover_critical_error(self, error: Exception, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -313,7 +345,7 @@ class CentralizedErrorHandler:
             "recommendation": "Immediate administrator intervention required",
             "severity": "critical",
             "requires_intervention": True,
-            "alert_administrators": True
+            "alert_administrators": True,
         }
 
     def get_error_statistics(self) -> Dict[str, Any]:
@@ -321,7 +353,7 @@ class CentralizedErrorHandler:
         return {
             **self.error_stats,
             "health_score": self._calculate_health_score(),
-            "recommendations": self._get_health_recommendations()
+            "recommendations": self._get_health_recommendations(),
         }
 
     def _calculate_health_score(self) -> float:
@@ -336,8 +368,10 @@ class CentralizedErrorHandler:
 
             # Recent error frequency (last 24 hours)
             recent_errors = sum(
-                count for hour, count in self.error_stats["errors_by_hour"].items()
-                if datetime.fromisoformat(hour.replace(" ", "T") + ":00") > datetime.now() - timedelta(hours=24)
+                count
+                for hour, count in self.error_stats["errors_by_hour"].items()
+                if datetime.fromisoformat(hour.replace(" ", "T") + ":00")
+                > datetime.now() - timedelta(hours=24)
             )
 
             # Score calculation (0.0 to 1.0)
@@ -357,15 +391,21 @@ class CentralizedErrorHandler:
             health_score = self._calculate_health_score()
 
             if health_score < 0.3:
-                recommendations.append("URGENT: System health critical - immediate intervention required")
+                recommendations.append(
+                    "URGENT: System health critical - immediate intervention required"
+                )
             elif health_score < 0.6:
-                recommendations.append("WARNING: System health degraded - investigate error patterns")
+                recommendations.append(
+                    "WARNING: System health degraded - investigate error patterns"
+                )
 
             # Category-specific recommendations
             error_categories = self.error_stats["errors_by_category"]
 
             if error_categories.get(ErrorCategory.NETWORK, 0) > 10:
-                recommendations.append("High network error rate - check connectivity and API endpoints")
+                recommendations.append(
+                    "High network error rate - check connectivity and API endpoints"
+                )
 
             if error_categories.get(ErrorCategory.CRITICAL, 0) > 0:
                 recommendations.append("Critical errors detected - review system logs immediately")
@@ -374,12 +414,16 @@ class CentralizedErrorHandler:
                 recommendations.append("Low recovery success rate - review recovery strategies")
 
         except Exception:
-            recommendations.append("Unable to generate health recommendations - manual review needed")
+            recommendations.append(
+                "Unable to generate health recommendations - manual review needed"
+            )
 
         return recommendations
 
+
 def with_error_handling(category: str = ErrorCategory.SYSTEM, auto_recover: bool = True):
     """Decorator for automatic error handling with recovery"""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -387,7 +431,7 @@ def with_error_handling(category: str = ErrorCategory.SYSTEM, auto_recover: bool
                 return func(*args, **kwargs)
             except Exception as e:
                 # Get error handler instance (assuming it's available globally or in class)
-                error_handler = getattr(args[0], 'error_handler', None) if args else None
+                error_handler = getattr(args[0], "error_handler", None) if args else None
                 if not error_handler:
                     # Create temporary error handler if none available
                     error_handler = CentralizedErrorHandler()
@@ -396,35 +440,39 @@ def with_error_handling(category: str = ErrorCategory.SYSTEM, auto_recover: bool
                 context = {
                     "function": func.__name__,
                     "args": str(args)[:200],  # Limit context size
-                    "kwargs": str(kwargs)[:200]
+                    "kwargs": str(kwargs)[:200],
                 }
 
                 error_result = error_handler.handle_error(e, category, context, auto_recover)
 
                 # Re-raise if critical or not recoverable
-                if category == ErrorCategory.CRITICAL or not error_result.get("recovery_successful"):
+                if category == ErrorCategory.CRITICAL or not error_result.get(
+                    "recovery_successful"
+                ):
                     raise
 
                 # Return None or default value for recoverable errors
                 return None
 
         return wrapper
+
     return decorator
+
 
 def with_retry(category: str = ErrorCategory.NETWORK, max_attempts: int = None):
     """Decorator for automatic retry with exponential backoff"""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Get or create error handler
-            error_handler = getattr(args[0], 'error_handler', None) if args else None
+            error_handler = getattr(args[0], "error_handler", None) if args else None
             if not error_handler:
                 error_handler = CentralizedErrorHandler()
 
             # Get retry strategy
             retry_strategy = error_handler.retry_strategies.get(
-                category,
-                RetryStrategy(max_attempts=max_attempts or 3)
+                category, RetryStrategy(max_attempts=max_attempts or 3)
             )
 
             last_exception = None
@@ -443,7 +491,7 @@ def with_retry(category: str = ErrorCategory.NETWORK, max_attempts: int = None):
                         context = {
                             "function": func.__name__,
                             "attempts": attempt + 1,
-                            "final_attempt": True
+                            "final_attempt": True,
                         }
                         error_handler.handle_error(e, category, context)
                         raise
@@ -452,4 +500,5 @@ def with_retry(category: str = ErrorCategory.NETWORK, max_attempts: int = None):
             raise last_exception
 
         return wrapper
+
     return decorator

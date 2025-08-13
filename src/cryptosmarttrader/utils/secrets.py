@@ -6,6 +6,7 @@ from config.settings import config
 
 try:
     import hvac
+
     HVAC_AVAILABLE = True
 except ImportError:
     HVAC_AVAILABLE = False
@@ -23,10 +24,7 @@ class SecretManager:
         self.vault_client = None
         if config.vault_configured and HVAC_AVAILABLE:
             try:
-                self.vault_client = hvac.Client(
-                    url=config.vault_addr,
-                    token=config.vault_token
-                )
+                self.vault_client = hvac.Client(url=config.vault_addr, token=config.vault_token)
                 if not self.vault_client.is_authenticated():
                     logger.warning("Vault authentication failed, falling back to env vars")
                     self.vault_client = None
@@ -84,7 +82,8 @@ class SecretManager:
             "api_key": self.get_secret(f"exchanges/{exchange}", "api_key"),
             "secret": self.get_secret(f"exchanges/{exchange}", "secret"),
             "passphrase": self.get_secret(f"exchanges/{exchange}", "passphrase"),
-            "sandbox": self.get_secret(f"exchanges/{exchange}", "sandbox", "false").lower() == "true"
+            "sandbox": self.get_secret(f"exchanges/{exchange}", "sandbox", "false").lower()
+            == "true",
         }
 
     def get_notification_credentials(self) -> Dict[str, Optional[str]]:

@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PerformanceMetrics:
     """Performance metrics data class"""
+
     cpu_percent: float
     memory_percent: float
     memory_used_gb: float
@@ -49,10 +50,7 @@ class PerformanceOptimizer:
     def start_monitoring(self):
         """Start background performance monitoring"""
         if self.monitor_thread is None or not self.monitor_thread.is_alive():
-            self.monitor_thread = threading.Thread(
-                target=self._monitoring_loop,
-                daemon=True
-            )
+            self.monitor_thread = threading.Thread(target=self._monitoring_loop, daemon=True)
             self.monitor_thread.start()
             logger.info("Performance monitoring started")
 
@@ -81,7 +79,7 @@ class PerformanceOptimizer:
             memory = psutil.virtual_memory()
 
             # Disk usage
-            disk_usage = psutil.disk_usage('/')
+            disk_usage = psutil.disk_usage("/")
 
             # Network stats
             net_io = psutil.net_io_counters()
@@ -99,7 +97,7 @@ class PerformanceOptimizer:
                 network_bytes_recv=net_io.bytes_recv,
                 active_threads=active_threads,
                 cache_hit_ratio=0.0,  # To be implemented with cache manager
-                avg_response_time=0.0  # To be implemented with request tracking
+                avg_response_time=0.0,  # To be implemented with request tracking
             )
         except Exception as e:
             logger.error(f"Error collecting metrics: {e}")
@@ -115,10 +113,7 @@ class PerformanceOptimizer:
                     self.metrics_history[field_name] = []
 
                 value = getattr(metrics, field_name)
-                self.metrics_history[field_name].append({
-                    'timestamp': timestamp,
-                    'value': value
-                })
+                self.metrics_history[field_name].append({"timestamp": timestamp, "value": value})
 
                 # Keep only last 1000 entries
                 if len(self.metrics_history[field_name]) > 1000:
@@ -153,6 +148,7 @@ class PerformanceOptimizer:
     def _optimize_memory_usage(self):
         """Optimize memory usage"""
         import gc
+
         logger.info("Implementing memory optimization strategies")
 
         # Force garbage collection
@@ -180,24 +176,27 @@ class PerformanceOptimizer:
                 "memory_percent": round(metrics.memory_percent, 2),
                 "memory_used_gb": round(metrics.memory_used_gb, 2),
                 "disk_usage_percent": round(metrics.disk_usage_percent, 2),
-                "active_threads": metrics.active_threads
+                "active_threads": metrics.active_threads,
             },
             "status": self._get_performance_status(metrics),
-            "recommendations": self._get_optimization_recommendations(metrics)
+            "recommendations": self._get_optimization_recommendations(metrics),
         }
 
     def _get_performance_status(self, metrics: PerformanceMetrics) -> str:
         """Determine overall performance status"""
-        if (metrics.cpu_percent > 90 or
-            metrics.memory_percent > 95 or
-            metrics.disk_usage_percent > 95):
+        if (
+            metrics.cpu_percent > 90
+            or metrics.memory_percent > 95
+            or metrics.disk_usage_percent > 95
+        ):
             return "CRITICAL"
-        elif (metrics.cpu_percent > 75 or
-              metrics.memory_percent > 85 or
-              metrics.disk_usage_percent > 85):
+        elif (
+            metrics.cpu_percent > 75
+            or metrics.memory_percent > 85
+            or metrics.disk_usage_percent > 85
+        ):
             return "WARNING"
-        elif (metrics.cpu_percent > 50 or
-              metrics.memory_percent > 70):
+        elif metrics.cpu_percent > 50 or metrics.memory_percent > 70:
             return "MODERATE"
         else:
             return "OPTIMAL"
@@ -210,7 +209,9 @@ class PerformanceOptimizer:
             recommendations.append("Consider reducing parallel workers or agent update frequency")
 
         if metrics.memory_percent > 80:
-            recommendations.append("Consider reducing cache size or enabling more aggressive cleanup")
+            recommendations.append(
+                "Consider reducing cache size or enabling more aggressive cleanup"
+            )
 
         if metrics.disk_usage_percent > 80:
             recommendations.append("Consider archiving old data or reducing data retention period")

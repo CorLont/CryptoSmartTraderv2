@@ -21,6 +21,7 @@ import time
 # OpenAI for advanced analysis
 try:
     import openai
+
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
@@ -28,6 +29,7 @@ except ImportError:
 # TextBlob for basic sentiment
 try:
     from textblob import TextBlob
+
     HAS_TEXTBLOB = True
 except ImportError:
     HAS_TEXTBLOB = False
@@ -35,13 +37,16 @@ except ImportError:
 # Web scraping
 try:
     import trafilatura
+
     HAS_TRAFILATURA = True
 except ImportError:
     HAS_TRAFILATURA = False
 
+
 @dataclass
 class NewsEvent:
     """Structured news event data"""
+
     title: str
     content: str
     source: str
@@ -54,6 +59,7 @@ class NewsEvent:
     ai_analysis: Dict[str, Any]
     impact_prediction: str
     confidence: float
+
 
 @dataclass
 class EventMiningConfig:
@@ -84,7 +90,7 @@ class EventMiningConfig:
                 "coindesk.com",
                 "decrypt.co",
                 "theblock.co",
-                "bitcoinmagazine.com"
+                "bitcoinmagazine.com",
             ]
 
         if self.social_sources is None:
@@ -93,8 +99,9 @@ class EventMiningConfig:
                 "reddit.com/r/bitcoin",
                 "reddit.com/r/ethereum",
                 "twitter.com/crypto",
-                "github.com"
+                "github.com",
             ]
+
 
 class AINewsAnalyzer:
     """Advanced AI-powered news analysis using LLMs"""
@@ -106,7 +113,8 @@ class AINewsAnalyzer:
         if HAS_OPENAI:
             try:
                 import os
-                api_key = os.getenv('OPENAI_API_KEY')
+
+                api_key = os.getenv("OPENAI_API_KEY")
                 if api_key:
                     self.client = openai.OpenAI(api_key=api_key)
                     logging.info("OpenAI client initialized for AI news analysis")
@@ -131,16 +139,13 @@ class AINewsAnalyzer:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert cryptocurrency market analyst. Analyze news content and provide structured insights about market impact, sentiment, and trading implications."
+                        "content": "You are an expert cryptocurrency market analyst. Analyze news content and provide structured insights about market impact, sentiment, and trading implications.",
                     },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
+                    {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
                 max_tokens=self.config.max_tokens,
-                temperature=self.config.temperature
+                temperature=self.config.temperature,
             )
 
             result = json.loads(response.choices[0].message.content)
@@ -202,7 +207,7 @@ Focus on:
             "key_points": response.get("key_points", []),
             "market_implications": response.get("market_implications", ""),
             "time_horizon": response.get("time_horizon", "unknown"),
-            "affected_sectors": response.get("affected_sectors", [])
+            "affected_sectors": response.get("affected_sectors", []),
         }
 
         # Sanitize symbols list
@@ -230,8 +235,31 @@ Focus on:
                 pass
 
         # Simple keyword-based analysis
-        bullish_keywords = ["pump", "moon", "bullish", "buy", "surge", "rally", "gain", "up", "rise", "adoption", "partnership"]
-        bearish_keywords = ["dump", "crash", "bearish", "sell", "drop", "fall", "down", "hack", "ban", "regulation"]
+        bullish_keywords = [
+            "pump",
+            "moon",
+            "bullish",
+            "buy",
+            "surge",
+            "rally",
+            "gain",
+            "up",
+            "rise",
+            "adoption",
+            "partnership",
+        ]
+        bearish_keywords = [
+            "dump",
+            "crash",
+            "bearish",
+            "sell",
+            "drop",
+            "fall",
+            "down",
+            "hack",
+            "ban",
+            "regulation",
+        ]
 
         text_lower = (title + " " + content).lower()
 
@@ -248,11 +276,11 @@ Focus on:
         # Extract potential symbols (very basic)
         symbols = []
         crypto_patterns = [
-            r'\b(BTC|Bitcoin)\b',
-            r'\b(ETH|Ethereum)\b',
-            r'\b(ADA|Cardano)\b',
-            r'\b(SOL|Solana)\b',
-            r'\b(MATIC|Polygon)\b'
+            r"\b(BTC|Bitcoin)\b",
+            r"\b(ETH|Ethereum)\b",
+            r"\b(ADA|Cardano)\b",
+            r"\b(SOL|Solana)\b",
+            r"\b(MATIC|Polygon)\b",
         ]
 
         for pattern in crypto_patterns:
@@ -271,8 +299,9 @@ Focus on:
             "key_points": [title],
             "market_implications": "Basic analysis - limited insights available",
             "time_horizon": "unknown",
-            "affected_sectors": []
+            "affected_sectors": [],
         }
+
 
 class WebScraper:
     """Advanced web scraping for news content"""
@@ -286,9 +315,7 @@ class WebScraper:
     async def __aenter__(self):
         self.session = aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=30),
-            headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
         )
         return self
 
@@ -322,16 +349,13 @@ class WebScraper:
             try:
                 # Use trafilatura for clean content extraction
                 extracted = trafilatura.extract(
-                    html,
-                    include_comments=False,
-                    include_tables=False,
-                    include_formatting=False
+                    html, include_comments=False, include_tables=False, include_formatting=False
                 )
 
                 if extracted:
                     # Try to extract title
                     title = ""
-                    title_match = re.search(r'<title[^>]*>([^<]+)</title>', html, re.IGNORECASE)
+                    title_match = re.search(r"<title[^>]*>([^<]+)</title>", html, re.IGNORECASE)
                     if title_match:
                         title = title_match.group(1).strip()
 
@@ -339,7 +363,7 @@ class WebScraper:
                         "title": title or "No title",
                         "content": extracted,
                         "source": self._extract_domain(url),
-                        "url": url
+                        "url": url,
                     }
             except Exception as e:
                 logging.error(f"Trafilatura extraction failed: {e}")
@@ -351,27 +375,23 @@ class WebScraper:
         """Basic HTML content extraction"""
 
         # Extract title
-        title_match = re.search(r'<title[^>]*>([^<]+)</title>', html, re.IGNORECASE)
+        title_match = re.search(r"<title[^>]*>([^<]+)</title>", html, re.IGNORECASE)
         title = title_match.group(1).strip() if title_match else "No title"
 
         # Remove HTML tags and extract text
-        text = re.sub(r'<[^>]+>', ' ', html)
-        text = re.sub(r'\s+', ' ', text).strip()
+        text = re.sub(r"<[^>]+>", " ", html)
+        text = re.sub(r"\s+", " ", text).strip()
 
         # Take first 1000 characters as content
         content = text[:1000] + "..." if len(text) > 1000 else text
 
-        return {
-            "title": title,
-            "content": content,
-            "source": self._extract_domain(url),
-            "url": url
-        }
+        return {"title": title, "content": content, "source": self._extract_domain(url), "url": url}
 
     def _extract_domain(self, url: str) -> str:
         """Extract domain from URL"""
         try:
             from urllib.parse import urlparse
+
             return urlparse(url).netloc
         except Exception:
             return url
@@ -391,6 +411,7 @@ class WebScraper:
                 await asyncio.sleep(sleep_time)
 
         self.last_request_times.append(now)
+
 
 class EventDetector:
     """Detect and classify market events"""
@@ -425,7 +446,7 @@ class EventDetector:
             "technical": ["upgrade", "fork", "protocol", "network", "consensus", "blockchain"],
             "market": ["price", "volume", "trading", "exchange", "listing", "delisting"],
             "security": ["hack", "exploit", "vulnerability", "security", "breach", "attack"],
-            "development": ["development", "release", "update", "roadmap", "github", "code"]
+            "development": ["development", "release", "update", "roadmap", "github", "code"],
         }
 
         content_lower = (news.title + " " + news.content).lower()
@@ -456,7 +477,7 @@ class EventDetector:
                 "prediction": news.impact_prediction,
                 "confidence": news.confidence,
                 "time_horizon": news.ai_analysis.get("time_horizon", "unknown"),
-                "affected_sectors": news.ai_analysis.get("affected_sectors", [])
+                "affected_sectors": news.ai_analysis.get("affected_sectors", []),
             }
 
         return None
@@ -475,7 +496,7 @@ class EventDetector:
             related = [event]
             processed.add(i)
 
-            for j, other_event in enumerate(events[i+1:], i+1):
+            for j, other_event in enumerate(events[i + 1 :], i + 1):
                 if j in processed:
                     continue
 
@@ -529,16 +550,18 @@ class EventDetector:
 
         # Create merged event
         merged = base_event.copy()
-        merged.update({
-            "title": f"Multiple {base_event['event_type']} events",
-            "symbols_affected": list(all_symbols),
-            "affected_sectors": list(all_sectors),
-            "importance": min(1.0, total_importance / len(events)),
-            "sentiment": avg_sentiment / len(events),
-            "sources": sources,
-            "event_count": len(events),
-            "description": f"Grouped {len(events)} related {base_event['event_type']} events"
-        })
+        merged.update(
+            {
+                "title": f"Multiple {base_event['event_type']} events",
+                "symbols_affected": list(all_symbols),
+                "affected_sectors": list(all_sectors),
+                "importance": min(1.0, total_importance / len(events)),
+                "sentiment": avg_sentiment / len(events),
+                "sources": sources,
+                "event_count": len(events),
+                "description": f"Grouped {len(events)} related {base_event['event_type']} events",
+            }
+        )
 
         return merged
 
@@ -549,6 +572,7 @@ class EventDetector:
         ).hexdigest()[:12]
 
         return f"event_{content_hash}"
+
 
 class AINewsEventMiningCoordinator:
     """Main coordinator for AI-powered news and event mining"""
@@ -602,7 +626,7 @@ class AINewsEventMiningCoordinator:
                 "events_detected": len(market_events),
                 "high_importance_events": len([e for e in market_events if e["importance"] > 0.8]),
                 "events": market_events[:10],  # Return top 10 events
-                "processing_timestamp": datetime.now().isoformat()
+                "processing_timestamp": datetime.now().isoformat(),
             }
 
         except Exception as e:
@@ -620,9 +644,7 @@ class AINewsEventMiningCoordinator:
 
             # AI analysis
             ai_analysis = await self.ai_analyzer.analyze_news_content(
-                scraped_content["title"],
-                scraped_content["content"],
-                url
+                scraped_content["title"], scraped_content["content"], url
             )
 
             # Create NewsEvent object
@@ -638,7 +660,7 @@ class AINewsEventMiningCoordinator:
                 event_type=ai_analysis["event_type"],
                 ai_analysis=ai_analysis,
                 impact_prediction=ai_analysis["impact_prediction"],
-                confidence=ai_analysis["confidence"]
+                confidence=ai_analysis["confidence"],
             )
 
             return news_event
@@ -647,22 +669,26 @@ class AINewsEventMiningCoordinator:
             logging.error(f"Failed to process URL {url}: {e}")
             return None
 
-    def get_recent_events(self, hours: int = 24, min_importance: float = 0.5) -> List[Dict[str, Any]]:
+    def get_recent_events(
+        self, hours: int = 24, min_importance: float = 0.5
+    ) -> List[Dict[str, Any]]:
         """Get recent events filtered by time and importance"""
 
         cutoff_time = datetime.now() - timedelta(hours=hours)
 
         with self._lock:
             filtered_events = [
-                event for event in self.recent_events
-                if (event.get("timestamp", datetime.min) > cutoff_time and
-                    event.get("importance", 0) >= min_importance)
+                event
+                for event in self.recent_events
+                if (
+                    event.get("timestamp", datetime.min) > cutoff_time
+                    and event.get("importance", 0) >= min_importance
+                )
             ]
 
         # Sort by importance and timestamp
         filtered_events.sort(
-            key=lambda e: (e.get("importance", 0), e.get("timestamp", datetime.min)),
-            reverse=True
+            key=lambda e: (e.get("importance", 0), e.get("timestamp", datetime.min)), reverse=True
         )
 
         return filtered_events
@@ -674,9 +700,12 @@ class AINewsEventMiningCoordinator:
 
         with self._lock:
             symbol_events = [
-                event for event in self.recent_events
-                if (symbol in event.get("symbols_affected", []) and
-                    event.get("timestamp", datetime.min) > cutoff_time)
+                event
+                for event in self.recent_events
+                if (
+                    symbol in event.get("symbols_affected", [])
+                    and event.get("timestamp", datetime.min) > cutoff_time
+                )
             ]
 
         return sorted(symbol_events, key=lambda e: e.get("timestamp", datetime.min), reverse=True)
@@ -685,10 +714,13 @@ class AINewsEventMiningCoordinator:
         """Get system status"""
 
         with self._lock:
-            recent_count = len([
-                e for e in self.recent_events
-                if (datetime.now() - e.get("timestamp", datetime.min)).total_seconds() < 3600
-            ])
+            recent_count = len(
+                [
+                    e
+                    for e in self.recent_events
+                    if (datetime.now() - e.get("timestamp", datetime.min)).total_seconds() < 3600
+                ]
+            )
 
         return {
             "ai_analyzer_ready": self.ai_analyzer.client is not None,
@@ -701,15 +733,19 @@ class AINewsEventMiningCoordinator:
             "config": {
                 "importance_threshold": self.config.importance_threshold,
                 "max_events_per_hour": self.config.max_events_per_hour,
-                "requests_per_minute": self.config.requests_per_minute
-            }
+                "requests_per_minute": self.config.requests_per_minute,
+            },
         }
+
 
 # Singleton coordinator instance
 _ai_news_coordinator = None
 _coordinator_lock = threading.Lock()
 
-def get_ai_news_event_mining_coordinator(config: EventMiningConfig = None) -> AINewsEventMiningCoordinator:
+
+def get_ai_news_event_mining_coordinator(
+    config: EventMiningConfig = None,
+) -> AINewsEventMiningCoordinator:
     """Get the singleton AI news event mining coordinator"""
     global _ai_news_coordinator
 
@@ -718,6 +754,7 @@ def get_ai_news_event_mining_coordinator(config: EventMiningConfig = None) -> AI
             _ai_news_coordinator = AINewsEventMiningCoordinator(config)
 
         return _ai_news_coordinator
+
 
 # Test function
 async def test_ai_news_mining():
@@ -730,7 +767,7 @@ async def test_ai_news_mining():
     # Test URLs (use real crypto news URLs for testing)
     test_urls = [
         "https://cointelegraph.com/news/bitcoin-price-analysis",
-        "https://coindesk.com/markets/ethereum-update"
+        "https://coindesk.com/markets/ethereum-update",
     ]
 
     # Test mining
@@ -742,6 +779,7 @@ async def test_ai_news_mining():
     print(f"System status: {status}")
 
     print("AI News Mining test completed!")
+
 
 if __name__ == "__main__":
     asyncio.run(test_ai_news_mining())

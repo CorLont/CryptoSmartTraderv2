@@ -21,8 +21,10 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 class OptimizationObjective(Enum):
     """Optimization objectives"""
+
     SHARPE_RATIO = "sharpe_ratio"
     CALMAR_RATIO = "calmar_ratio"
     SORTINO_RATIO = "sortino_ratio"
@@ -33,6 +35,7 @@ class OptimizationObjective(Enum):
 
 class ParameterType(Enum):
     """Parameter types for optimization"""
+
     FLOAT = "float"
     INT = "int"
     CATEGORICAL = "categorical"
@@ -43,6 +46,7 @@ class ParameterType(Enum):
 @dataclass
 class ParameterSpec:
     """Parameter specification for optimization"""
+
     name: str
     param_type: ParameterType
     low: Optional[Union[int, float]] = None
@@ -63,6 +67,7 @@ class ParameterSpec:
 @dataclass
 class OptimizationMetrics:
     """Optimization performance metrics"""
+
     in_sample_sharpe: float
     out_of_sample_sharpe: float
     oos_stability_score: float
@@ -86,15 +91,16 @@ class OptimizationMetrics:
     def is_robust(self) -> bool:
         """Check if optimization is robust (low overfitting risk)"""
         return (
-            self.overfitting_risk < 0.3 and
-            self.oos_stability_score > 0.7 and
-            self.parameter_consistency > 0.6
+            self.overfitting_risk < 0.3
+            and self.oos_stability_score > 0.7
+            and self.parameter_consistency > 0.6
         )
 
 
 @dataclass
 class OptimizationResult:
     """Complete optimization result"""
+
     study_name: str
     optimization_time: datetime
 
@@ -136,14 +142,15 @@ class HyperparameterOptimizer:
     Advanced hyperparameter optimization system with robust validation
     """
 
-    def __init__(self,
-                 study_name: str = None,
-                 optimization_objective: OptimizationObjective = OptimizationObjective.STABLE_OOS_SHARPE,
-                 n_trials: int = 100,
-                 n_jobs: int = 1,
-                 storage_url: str = None,
-                 random_state: int = 42):
-
+    def __init__(
+        self,
+        study_name: str = None,
+        optimization_objective: OptimizationObjective = OptimizationObjective.STABLE_OOS_SHARPE,
+        n_trials: int = 100,
+        n_jobs: int = 1,
+        storage_url: str = None,
+        random_state: int = 42,
+    ):
         self.study_name = study_name or f"optimization_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.optimization_objective = optimization_objective
         self.n_trials = n_trials
@@ -190,7 +197,7 @@ class HyperparameterOptimizer:
                 high=param_config.get("high"),
                 choices=param_config.get("choices"),
                 step=param_config.get("step"),
-                log=param_config.get("log", False)
+                log=param_config.get("log", False),
             )
 
             self.add_parameter(param_spec)
@@ -200,11 +207,13 @@ class HyperparameterOptimizer:
         self.objective_function = objective_func
         logger.info("Objective function set")
 
-    def optimize(self,
-                 data: pd.DataFrame,
-                 target_column: str = "returns",
-                 feature_columns: List[str] = None,
-                 regime_column: str = None) -> OptimizationResult:
+    def optimize(
+        self,
+        data: pd.DataFrame,
+        target_column: str = "returns",
+        feature_columns: List[str] = None,
+        regime_column: str = None,
+    ) -> OptimizationResult:
         """
         Run hyperparameter optimization with robust validation
         """
@@ -224,7 +233,7 @@ class HyperparameterOptimizer:
                 sampler=self.sampler,
                 pruner=self.pruner,
                 storage=self.storage_url,
-                load_if_exists=True
+                load_if_exists=True,
             )
 
             # Create objective wrapper
@@ -238,7 +247,7 @@ class HyperparameterOptimizer:
                 n_trials=self.n_trials,
                 n_jobs=self.n_jobs,
                 show_progress_bar=True,
-                callbacks=[self._optimization_callback]
+                callbacks=[self._optimization_callback],
             )
 
             # Analyze results
@@ -249,7 +258,9 @@ class HyperparameterOptimizer:
             # Save results
             self._save_optimization_results(optimization_result)
 
-            logger.info(f"Optimization completed: {optimization_result.optimization_quality} quality")
+            logger.info(
+                f"Optimization completed: {optimization_result.optimization_quality} quality"
+            )
 
             return optimization_result
 
@@ -257,11 +268,9 @@ class HyperparameterOptimizer:
             logger.error(f"Optimization failed: {e}")
             raise
 
-    def _create_objective_wrapper(self,
-                                 data: pd.DataFrame,
-                                 target_column: str,
-                                 feature_columns: List[str],
-                                 regime_column: str) -> Callable:
+    def _create_objective_wrapper(
+        self, data: pd.DataFrame, target_column: str, feature_columns: List[str], regime_column: str
+    ) -> Callable:
         """Create objective function wrapper for Optuna"""
 
         def objective(trial: optuna.Trial) -> float:
@@ -280,8 +289,10 @@ class HyperparameterOptimizer:
                             )
                     elif param_spec.param_type == ParameterType.INT:
                         params[param_spec.name] = trial.suggest_int(
-                            param_spec.name, param_spec.low, param_spec.high,
-                            step=param_spec.step or 1
+                            param_spec.name,
+                            param_spec.low,
+                            param_spec.high,
+                            step=param_spec.step or 1,
                         )
                     elif param_spec.param_type == ParameterType.CATEGORICAL:
                         params[param_spec.name] = trial.suggest_categorical(
@@ -316,7 +327,9 @@ class HyperparameterOptimizer:
                 elif self.optimization_objective == OptimizationObjective.MULTI_OBJECTIVE:
                     # Weighted combination of metrics
                     oos_sharpe = np.mean(validation_scores["oos_sharpe"])
-                    stability = 1 - np.std(validation_scores["oos_sharpe"]) / (abs(oos_sharpe) + 0.01)
+                    stability = 1 - np.std(validation_scores["oos_sharpe"]) / (
+                        abs(oos_sharpe) + 0.01
+                    )
                     regime_robustness = np.mean(validation_scores.get("regime_performance", [0.5]))
 
                     objective_value = 0.6 * oos_sharpe + 0.3 * stability + 0.1 * regime_robustness
@@ -336,24 +349,28 @@ class HyperparameterOptimizer:
 
         return objective
 
-    def _walk_forward_validation(self,
-                                data: pd.DataFrame,
-                                target_column: str,
-                                feature_columns: List[str],
-                                params: Dict[str, Any],
-                                regime_column: str = None) -> Dict[str, List[float]]:
+    def _walk_forward_validation(
+        self,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str],
+        params: Dict[str, Any],
+        regime_column: str = None,
+    ) -> Dict[str, List[float]]:
         """Perform walk-forward validation"""
         try:
             validation_scores = {
                 "oos_sharpe": [],
                 "oos_returns": [],
                 "oos_volatility": [],
-                "regime_performance": []
+                "regime_performance": [],
             }
 
             # Prepare data
             if feature_columns is None:
-                feature_columns = [col for col in data.columns if col not in [target_column, regime_column]]
+                feature_columns = [
+                    col for col in data.columns if col not in [target_column, regime_column]
+                ]
 
             n_samples = len(data)
 
@@ -377,7 +394,7 @@ class HyperparameterOptimizer:
                         train_data[target_column],
                         val_data[feature_columns],
                         val_data[target_column],
-                        params
+                        params,
                     )
 
                     # Extract validation metrics
@@ -418,13 +435,12 @@ class HyperparameterOptimizer:
                 "oos_sharpe": [-1.0],
                 "oos_returns": [0.0],
                 "oos_volatility": [0.1],
-                "regime_performance": [0.0]
+                "regime_performance": [0.0],
             }
 
-    def _calculate_regime_performance(self,
-                                    data: pd.DataFrame,
-                                    returns: List[float],
-                                    regime_column: str) -> Dict[str, float]:
+    def _calculate_regime_performance(
+        self, data: pd.DataFrame, returns: List[float], regime_column: str
+    ) -> Dict[str, float]:
         """Calculate performance by market regime"""
         try:
             regime_performance = {}
@@ -455,12 +471,14 @@ class HyperparameterOptimizer:
         if trial.number % 10 == 0:
             logger.info(f"Trial {trial.number}: Best value = {study.best_value:.4f}")
 
-    def _analyze_optimization_results(self,
-                                    study: optuna.Study,
-                                    data: pd.DataFrame,
-                                    target_column: str,
-                                    feature_columns: List[str],
-                                    regime_column: str) -> OptimizationResult:
+    def _analyze_optimization_results(
+        self,
+        study: optuna.Study,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str],
+        regime_column: str,
+    ) -> OptimizationResult:
         """Analyze optimization results and calculate metrics"""
         try:
             best_params = study.best_params
@@ -490,11 +508,15 @@ class HyperparameterOptimizer:
                 best_trial_number=study.best_trial.number,
                 metrics=detailed_metrics,
                 total_trials=len(study.trials),
-                successful_trials=len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]),
-                pruned_trials=len([t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]),
+                successful_trials=len(
+                    [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+                ),
+                pruned_trials=len(
+                    [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]
+                ),
                 validation_scores=validation_scores,
                 regime_performance=regime_performance,
-                study=study
+                study=study,
             )
 
             return optimization_result
@@ -503,12 +525,14 @@ class HyperparameterOptimizer:
             logger.error(f"Result analysis failed: {e}")
             raise
 
-    def _calculate_detailed_metrics(self,
-                                   data: pd.DataFrame,
-                                   target_column: str,
-                                   feature_columns: List[str],
-                                   params: Dict[str, Any],
-                                   regime_column: str) -> OptimizationMetrics:
+    def _calculate_detailed_metrics(
+        self,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str],
+        params: Dict[str, Any],
+        regime_column: str,
+    ) -> OptimizationMetrics:
         """Calculate detailed performance metrics"""
         try:
             # Perform final validation with best parameters
@@ -537,7 +561,9 @@ class HyperparameterOptimizer:
 
             # Overfitting risk
             in_sample_sharpe = oos_sharpe_mean * 1.2  # Simplified - would calculate from in-sample
-            overfitting_risk = max(0, (in_sample_sharpe - oos_sharpe_mean) / (abs(in_sample_sharpe) + 0.01))
+            overfitting_risk = max(
+                0, (in_sample_sharpe - oos_sharpe_mean) / (abs(in_sample_sharpe) + 0.01)
+            )
 
             # Additional metrics
             returns_mean = np.mean(oos_returns) if oos_returns else 0
@@ -545,8 +571,14 @@ class HyperparameterOptimizer:
 
             # Simplified additional metrics
             max_drawdown = abs(min(np.cumsum(oos_returns))) if oos_returns else 0
-            win_rate = len([r for r in oos_returns if r > 0]) / len(oos_returns) if oos_returns else 0.5
-            profit_factor = sum([r for r in oos_returns if r > 0]) / abs(sum([r for r in oos_returns if r < 0])) if oos_returns else 1
+            win_rate = (
+                len([r for r in oos_returns if r > 0]) / len(oos_returns) if oos_returns else 0.5
+            )
+            profit_factor = (
+                sum([r for r in oos_returns if r > 0]) / abs(sum([r for r in oos_returns if r < 0]))
+                if oos_returns
+                else 1
+            )
 
             metrics = OptimizationMetrics(
                 in_sample_sharpe=in_sample_sharpe,
@@ -562,7 +594,7 @@ class HyperparameterOptimizer:
                 profit_factor=profit_factor,
                 cv_scores=oos_sharpe_scores,
                 cv_mean=oos_sharpe_mean,
-                cv_std=oos_sharpe_std
+                cv_std=oos_sharpe_std,
             )
 
             return metrics
@@ -575,24 +607,36 @@ class HyperparameterOptimizer:
         """Analyze consistency of parameters across top trials"""
         try:
             # Get top 10% of trials
-            completed_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+            completed_trials = [
+                t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
+            ]
             if len(completed_trials) < 10:
                 return 0.5  # Not enough trials
 
             n_top_trials = max(3, len(completed_trials) // 10)
-            top_trials = sorted(completed_trials, key=lambda t: t.value, reverse=True)[:n_top_trials]
+            top_trials = sorted(completed_trials, key=lambda t: t.value, reverse=True)[
+                :n_top_trials
+            ]
 
             # Calculate parameter stability
             param_consistencies = []
 
             for param_spec in self.parameter_specs:
                 param_name = param_spec.name
-                param_values = [trial.params.get(param_name) for trial in top_trials if param_name in trial.params]
+                param_values = [
+                    trial.params.get(param_name)
+                    for trial in top_trials
+                    if param_name in trial.params
+                ]
 
                 if len(param_values) < 2:
                     continue
 
-                if param_spec.param_type in [ParameterType.FLOAT, ParameterType.INT, ParameterType.LOG_UNIFORM]:
+                if param_spec.param_type in [
+                    ParameterType.FLOAT,
+                    ParameterType.INT,
+                    ParameterType.LOG_UNIFORM,
+                ]:
                     # Numerical parameters - calculate coefficient of variation
                     param_mean = np.mean(param_values)
                     param_std = np.std(param_values)
@@ -602,7 +646,9 @@ class HyperparameterOptimizer:
                     # Categorical parameters - calculate entropy
                     unique_values = len(set(param_values))
                     total_values = len(param_values)
-                    consistency = 1 - (unique_values - 1) / (total_values - 1) if total_values > 1 else 1
+                    consistency = (
+                        1 - (unique_values - 1) / (total_values - 1) if total_values > 1 else 1
+                    )
 
                 param_consistencies.append(consistency)
 
@@ -615,7 +661,9 @@ class HyperparameterOptimizer:
     def _get_validation_summary(self, study: optuna.Study) -> Dict[str, float]:
         """Get validation summary statistics"""
         try:
-            completed_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+            completed_trials = [
+                t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
+            ]
             values = [trial.value for trial in completed_trials]
 
             if not values:
@@ -626,20 +674,22 @@ class HyperparameterOptimizer:
                 "std": np.std(values),
                 "min": np.min(values),
                 "max": np.max(values),
-                "median": np.median(values)
+                "median": np.median(values),
             }
 
         except Exception as e:
             logger.error(f"Validation summary failed: {e}")
             return {"mean": 0.0, "std": 0.0, "min": 0.0, "max": 0.0, "median": 0.0}
 
-    def _analyze_regime_robustness(self,
-                                  study: optuna.Study,
-                                  data: pd.DataFrame,
-                                  target_column: str,
-                                  feature_columns: List[str],
-                                  best_params: Dict[str, Any],
-                                  regime_column: str) -> Dict[str, float]:
+    def _analyze_regime_robustness(
+        self,
+        study: optuna.Study,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str],
+        best_params: Dict[str, Any],
+        regime_column: str,
+    ) -> Dict[str, float]:
         """Analyze performance robustness across market regimes"""
         try:
             if not regime_column or regime_column not in data.columns:
@@ -699,16 +749,16 @@ class HyperparameterOptimizer:
                     "parameter_consistency": result.metrics.parameter_consistency,
                     "regime_robustness": result.metrics.regime_robustness,
                     "overfitting_risk": result.metrics.overfitting_risk,
-                    "is_robust": result.metrics.is_robust
-                }
+                    "is_robust": result.metrics.is_robust,
+                },
             }
 
-            with open(result_file, 'w') as f:
+            with open(result_file, "w") as f:
                 json.dump(serializable_result, f, indent=2)
 
             # Save study object
             study_file = self.results_path / f"{result.study_name}_study.pkl"
-            with open(study_file, 'wb') as f:
+            with open(study_file, "wb") as f:
                 pickle.dump(result.study, f)
 
             logger.info(f"Optimization results saved: {result_file}")
@@ -727,11 +777,11 @@ class HyperparameterOptimizer:
                 return None
 
             # Load main results
-            with open(result_file, 'r') as f:
+            with open(result_file, "r") as f:
                 data = json.load(f)
 
             # Load study
-            with open(study_file, 'rb') as f:
+            with open(study_file, "rb") as f:
                 study = pickle.load(f)
 
             # Reconstruct OptimizationResult (simplified)
@@ -748,22 +798,34 @@ class HyperparameterOptimizer:
 
         try:
             if result.metrics.overfitting_risk > 0.5:
-                recommendations.append("High overfitting risk detected - increase regularization or reduce model complexity")
+                recommendations.append(
+                    "High overfitting risk detected - increase regularization or reduce model complexity"
+                )
 
             if result.metrics.oos_stability_score < 0.6:
-                recommendations.append("Low out-of-sample stability - consider ensemble methods or parameter averaging")
+                recommendations.append(
+                    "Low out-of-sample stability - consider ensemble methods or parameter averaging"
+                )
 
             if result.metrics.parameter_consistency < 0.5:
-                recommendations.append("Parameter instability detected - use larger validation windows or parameter regularization")
+                recommendations.append(
+                    "Parameter instability detected - use larger validation windows or parameter regularization"
+                )
 
             if result.metrics.regime_robustness < 0.4:
-                recommendations.append("Poor regime robustness - implement regime-aware modeling or adaptive parameters")
+                recommendations.append(
+                    "Poor regime robustness - implement regime-aware modeling or adaptive parameters"
+                )
 
             if result.successful_trials / result.total_trials < 0.7:
-                recommendations.append("Many failed trials - check parameter bounds and objective function implementation")
+                recommendations.append(
+                    "Many failed trials - check parameter bounds and objective function implementation"
+                )
 
             if result.metrics.out_of_sample_sharpe < 0.5:
-                recommendations.append("Low out-of-sample Sharpe ratio - review feature engineering and model selection")
+                recommendations.append(
+                    "Low out-of-sample Sharpe ratio - review feature engineering and model selection"
+                )
 
             return recommendations
 

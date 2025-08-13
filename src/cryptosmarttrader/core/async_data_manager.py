@@ -23,11 +23,13 @@ from ..core.data_quality_manager import get_data_quality_manager
 from ..core.data_integrity_validator import get_data_integrity_validator
 from ..core.secrets_manager import get_secrets_manager, secure_function, SecretRedactor
 
+
 @dataclass
 class RateLimitConfig:
     requests_per_second: float = 10.0
     burst_size: int = 50
     cool_down_period: int = 60
+
 
 class AsyncDataManager:
     def __init__(self, rate_limit_config: Optional[RateLimitConfig] = None):
@@ -64,17 +66,17 @@ class AsyncDataManager:
             limit_per_host=20,
             ttl_dns_cache=300,
             use_dns_cache=True,
-            keepalive_timeout=30
+            keepalive_timeout=30,
         )
 
         self.session = aiohttp.ClientSession(
             timeout=timeout,
             connector=connector,
             headers={
-                'User-Agent': 'CryptoSmartTrader-AsyncClient/2.0',
-                'Accept': 'application/json',
-                'Accept-Encoding': 'gzip, deflate'
-            }
+                "User-Agent": "CryptoSmartTrader-AsyncClient/2.0",
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip, deflate",
+            },
         )
 
         # Initialize async exchanges
@@ -82,61 +84,68 @@ class AsyncDataManager:
 
         self.logger.info("Async Data Manager initialized")
 
-    @secure_function(redact_kwargs=['apiKey', 'secret'])
+    @secure_function(redact_kwargs=["apiKey", "secret"])
     async def setup_async_exchanges(self):
         """Setup async exchange connections with secure credential handling"""
         secrets_manager = get_secrets_manager()
 
         try:
             # Kraken async with secure credentials
-            kraken_key = secrets_manager.get_secret('KRAKEN_API_KEY')
-            kraken_secret = secrets_manager.get_secret('KRAKEN_SECRET')
+            kraken_key = secrets_manager.get_secret("KRAKEN_API_KEY")
+            kraken_secret = secrets_manager.get_secret("KRAKEN_SECRET")
 
             if kraken_key and kraken_secret:
-                self.exchanges['kraken'] = ccxt_async.kraken({
-                    'apiKey': kraken_key,
-                    'secret': kraken_secret,
-                    'enableRateLimit': True,
-                    'timeout': 30000,
-                    'session': self.session
-                })
+                self.exchanges["kraken"] = ccxt_async.kraken(
+                    {
+                        "apiKey": kraken_key,
+                        "secret": kraken_secret,
+                        "enableRateLimit": True,
+                        "timeout": 30000,
+                        "session": self.session,
+                    }
+                )
                 self.structured_logger.info("Kraken exchange initialized with authenticated API")
             else:
-                self.exchanges['kraken'] = ccxt_async.kraken({
-                    'enableRateLimit': True,
-                    'timeout': 30000,
-                    'session': self.session
-                })
-                self.structured_logger.warning("Kraken exchange initialized in public mode - no API credentials")
+                self.exchanges["kraken"] = ccxt_async.kraken(
+                    {"enableRateLimit": True, "timeout": 30000, "session": self.session}
+                )
+                self.structured_logger.warning(
+                    "Kraken exchange initialized in public mode - no API credentials"
+                )
 
             # Binance with secure credentials
-            binance_key = secrets_manager.get_secret('BINANCE_API_KEY')
-            binance_secret = secrets_manager.get_secret('BINANCE_SECRET')
+            binance_key = secrets_manager.get_secret("BINANCE_API_KEY")
+            binance_secret = secrets_manager.get_secret("BINANCE_SECRET")
 
             if binance_key and binance_secret:
-                self.exchanges['binance'] = ccxt_async.binance({
-                    'apiKey': binance_key,
-                    'secret': binance_secret,
-                    'enableRateLimit': True,
-                    'timeout': 30000,
-                    'session': self.session
-                })
+                self.exchanges["binance"] = ccxt_async.binance(
+                    {
+                        "apiKey": binance_key,
+                        "secret": binance_secret,
+                        "enableRateLimit": True,
+                        "timeout": 30000,
+                        "session": self.session,
+                    }
+                )
                 self.structured_logger.info("Binance exchange initialized with authenticated API")
             else:
-                self.exchanges['binance'] = ccxt_async.binance({
-                    'enableRateLimit': True,
-                    'timeout': 30000,
-                    'session': self.session
-                })
-                self.structured_logger.warning("Binance exchange initialized in public mode - no API credentials")
+                self.exchanges["binance"] = ccxt_async.binance(
+                    {"enableRateLimit": True, "timeout": 30000, "session": self.session}
+                )
+                self.structured_logger.warning(
+                    "Binance exchange initialized in public mode - no API credentials"
+                )
 
             self.structured_logger.info(
                 f"Async exchange initialization completed",
                 extra={
-                    'total_exchanges': len(self.exchanges),
-                    'authenticated_exchanges': sum(1 for name in self.exchanges.keys()
-                                                 if secrets_manager.get_secret(f'{name.upper()}_API_KEY'))
-                }
+                    "total_exchanges": len(self.exchanges),
+                    "authenticated_exchanges": sum(
+                        1
+                        for name in self.exchanges.keys()
+                        if secrets_manager.get_secret(f"{name.upper()}_API_KEY")
+                    ),
+                },
             )
 
         except Exception as e:
@@ -144,7 +153,7 @@ class AsyncDataManager:
             sanitized_error = SecretRedactor.sanitize_exception(e)
             self.structured_logger.error(
                 f"Failed to setup async exchanges: {sanitized_error}",
-                extra={'error_type': type(e).__name__}
+                extra={"error_type": type(e).__name__},
             )
 
     async def global_rate_limit(self):
@@ -154,8 +163,7 @@ class AsyncDataManager:
 
             # Clean old timestamps (older than 1 second)
             self.last_api_calls = [
-                call_time for call_time in self.last_api_calls
-                if current_time - call_time < 1.0
+                call_time for call_time in self.last_api_calls if current_time - call_time < 1.0
             ]
 
             # Check if we're within rate limits
@@ -169,7 +177,9 @@ class AsyncDataManager:
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=1, max=60, jitter=2),
-        retry=retry_if_exception_type((aiohttp.ClientError, asyncio.TimeoutError, ccxt_async.BaseError))
+        retry=retry_if_exception_type(
+            (aiohttp.ClientError, asyncio.TimeoutError, ccxt_async.BaseError)
+        ),
     )
     async def fetch_market_data_async(self, exchange_name: str) -> Dict[str, Any]:
         """Fetch market data with async retries and rate limiting"""
@@ -185,12 +195,10 @@ class AsyncDataManager:
             tasks = [
                 self.fetch_tickers_async(exchange),
                 self.fetch_ohlcv_batch_async(exchange),
-                self.fetch_order_book_async(exchange)
+                self.fetch_order_book_async(exchange),
             ]
 
-            tickers, ohlcv_data, order_books = await asyncio.gather(
-                *tasks, return_exceptions=True
-            )
+            tickers, ohlcv_data, order_books = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Handle partial failures gracefully
             result = {
@@ -199,11 +207,15 @@ class AsyncDataManager:
                 "tickers": tickers if not isinstance(tickers, Exception) else None,
                 "ohlcv": ohlcv_data if not isinstance(ohlcv_data, Exception) else None,
                 "order_books": order_books if not isinstance(order_books, Exception) else None,
-                "errors": []
+                "errors": [],
             }
 
             # Collect any errors
-            for data, name in [(tickers, "tickers"), (ohlcv_data, "ohlcv"), (order_books, "order_books")]:
+            for data, name in [
+                (tickers, "tickers"),
+                (ohlcv_data, "ohlcv"),
+                (order_books, "order_books"),
+            ]:
                 if isinstance(data, Exception):
                     result["errors"].append(f"{name}: {str(data)}")
 
@@ -221,26 +233,30 @@ class AsyncDataManager:
             # Filter for USD pairs and add enhanced data
             usd_pairs = {}
             for symbol, ticker in tickers.items():
-                if symbol.endswith('/USD'):
+                if symbol.endswith("/USD"):
                     usd_pairs[symbol] = {
-                        'price': ticker['last'],
-                        'bid': ticker['bid'],
-                        'ask': ticker['ask'],
-                        'spread': ((ticker['ask'] - ticker['bid']) / ticker['bid'] * 100) if ticker['bid'] else 0,
-                        'volume': ticker['quoteVolume'],
-                        'change': ticker['percentage'],
-                        'high': ticker['high'],
-                        'low': ticker['low'],
-                        'vwap': ticker.get('vwap'),
-                        'timestamp': ticker['timestamp']
+                        "price": ticker["last"],
+                        "bid": ticker["bid"],
+                        "ask": ticker["ask"],
+                        "spread": ((ticker["ask"] - ticker["bid"]) / ticker["bid"] * 100)
+                        if ticker["bid"]
+                        else 0,
+                        "volume": ticker["quoteVolume"],
+                        "change": ticker["percentage"],
+                        "high": ticker["high"],
+                        "low": ticker["low"],
+                        "vwap": ticker.get("vwap"),
+                        "timestamp": ticker["timestamp"],
                     }
 
             return usd_pairs
 
-    async def fetch_ohlcv_batch_async(self, exchange, timeframes: Optional[List[str]] = None) -> Dict[str, Any]:
+    async def fetch_ohlcv_batch_async(
+        self, exchange, timeframes: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
         """Fetch OHLCV data for multiple timeframes concurrently"""
-        timeframes = timeframes or ['1h', '1d']
-        symbols = ['BTC/USD', 'ETH/USD', 'ADA/USD', 'DOT/USD', 'SOL/USD']
+        timeframes = timeframes or ["1h", "1d"]
+        symbols = ["BTC/USD", "ETH/USD", "ADA/USD", "DOT/USD", "SOL/USD"]
 
         tasks = []
         for symbol in symbols:
@@ -249,10 +265,7 @@ class AsyncDataManager:
                 tasks.append((symbol, timeframe, task))
 
         # Execute all OHLCV fetches concurrently
-        results = await asyncio.gather(
-            *[task for _, _, task in tasks],
-            return_exceptions=True
-        )
+        results = await asyncio.gather(*[task for _, _, task in tasks], return_exceptions=True)
 
         # Organize results
         ohlcv_data = {}
@@ -275,10 +288,10 @@ class AsyncDataManager:
                 # Log successful API request
                 duration = time.time() - start_time
                 self.structured_logger.log_api_request(
-                    exchange=exchange.name if hasattr(exchange, 'name') else 'unknown',
+                    exchange=exchange.name if hasattr(exchange, "name") else "unknown",
                     endpoint=f"ohlcv/{symbol}/{timeframe}",
                     duration=duration,
-                    status='success'
+                    status="success",
                 )
 
                 return result
@@ -288,10 +301,10 @@ class AsyncDataManager:
 
                 # Log failed API request
                 self.structured_logger.log_api_request(
-                    exchange=exchange.name if hasattr(exchange, 'name') else 'unknown',
+                    exchange=exchange.name if hasattr(exchange, "name") else "unknown",
                     endpoint=f"ohlcv/{symbol}/{timeframe}",
                     duration=duration,
-                    status='error'
+                    status="error",
                 )
 
                 self.structured_logger.warning(
@@ -300,19 +313,16 @@ class AsyncDataManager:
                         "symbol": symbol,
                         "timeframe": timeframe,
                         "error": str(e),
-                        "duration": duration
-                    }
+                        "duration": duration,
+                    },
                 )
                 return []
 
     async def fetch_order_book_async(self, exchange) -> Dict[str, Any]:
         """Fetch order books for major pairs"""
-        major_pairs = ['BTC/USD', 'ETH/USD', 'ADA/USD']
+        major_pairs = ["BTC/USD", "ETH/USD", "ADA/USD"]
 
-        tasks = [
-            self.fetch_single_order_book_async(exchange, symbol)
-            for symbol in major_pairs
-        ]
+        tasks = [self.fetch_single_order_book_async(exchange, symbol) for symbol in major_pairs]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -329,9 +339,9 @@ class AsyncDataManager:
             try:
                 book = await exchange.fetch_order_book(symbol, limit=20)
                 return {
-                    'bids': book['bids'][:10],  # Top 10 bids
-                    'asks': book['asks'][:10],  # Top 10 asks
-                    'timestamp': book['timestamp']
+                    "bids": book["bids"][:10],  # Top 10 bids
+                    "asks": book["asks"][:10],  # Top 10 asks
+                    "timestamp": book["timestamp"],
                 }
             except Exception as e:
                 self.logger.warning(f"Failed to fetch order book for {symbol}: {e}")
@@ -344,9 +354,9 @@ class AsyncDataManager:
             file_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Write to temporary file first (atomic operation)
-            temp_path = file_path.with_suffix(file_path.suffix + '.tmp')
+            temp_path = file_path.with_suffix(file_path.suffix + ".tmp")
 
-            async with aiofiles.open(temp_path, 'w') as f:
+            async with aiofiles.open(temp_path, "w") as f:
                 await f.write(json.dumps(data, indent=2, default=str))
 
             # Atomic rename (idempotent)
@@ -361,8 +371,7 @@ class AsyncDataManager:
     async def batch_collect_all_exchanges_with_integrity_filter(self) -> Dict[str, Any]:
         """Collect data from all exchanges with HARD integrity filter - incomplete coins BLOCKED"""
         tasks = [
-            self.fetch_market_data_async(exchange_name)
-            for exchange_name in self.exchanges.keys()
+            self.fetch_market_data_async(exchange_name) for exchange_name in self.exchanges.keys()
         ]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -375,15 +384,15 @@ class AsyncDataManager:
                 "successful": 0,
                 "failed": 0,
                 "coins_blocked_incomplete": 0,
-                "coins_passed_filter": 0
-            }
+                "coins_passed_filter": 0,
+            },
         }
 
         for exchange_name, result in zip(self.exchanges.keys(), results):
             if isinstance(result, Exception):
                 collected_data["exchanges"][exchange_name] = {
                     "status": "error",
-                    "error": str(result)
+                    "error": str(result),
                 }
                 collected_data["summary"]["failed"] += 1
             else:
@@ -391,8 +400,12 @@ class AsyncDataManager:
                 filtered_result = await self._apply_hard_integrity_filter(result, exchange_name)
                 collected_data["exchanges"][exchange_name] = filtered_result
                 collected_data["summary"]["successful"] += 1
-                collected_data["summary"]["coins_blocked_incomplete"] += filtered_result.get("blocked_coins_count", 0)
-                collected_data["summary"]["coins_passed_filter"] += filtered_result.get("passed_coins_count", 0)
+                collected_data["summary"]["coins_blocked_incomplete"] += filtered_result.get(
+                    "blocked_coins_count", 0
+                )
+                collected_data["summary"]["coins_passed_filter"] += filtered_result.get(
+                    "passed_coins_count", 0
+                )
 
         return collected_data
 
@@ -400,7 +413,9 @@ class AsyncDataManager:
         """Backward compatibility wrapper - now uses hard integrity filter by default"""
         return await self.batch_collect_all_exchanges_with_integrity_filter()
 
-    async def _apply_hard_integrity_filter(self, raw_data: Dict[str, Any], exchange_name: str) -> Dict[str, Any]:
+    async def _apply_hard_integrity_filter(
+        self, raw_data: Dict[str, Any], exchange_name: str
+    ) -> Dict[str, Any]:
         """Apply HARD integrity filter - incomplete coins are BLOCKED, not passed through"""
 
         filtered_data = {
@@ -415,10 +430,10 @@ class AsyncDataManager:
                 "coins_passed_filter": 0,
                 "coins_blocked_incomplete": 0,
                 "blocked_reasons": {},
-                "completeness_threshold": 0.8  # 80% minimum completeness required
+                "completeness_threshold": 0.8,  # 80% minimum completeness required
             },
             "blocked_coins_count": 0,
-            "passed_coins_count": 0
+            "passed_coins_count": 0,
         }
 
         # Process tickers with hard filter
@@ -427,7 +442,9 @@ class AsyncDataManager:
                 filtered_data["integrity_filter_results"]["total_coins_scanned"] += 1
 
                 # Check data completeness for this coin
-                completeness_result = await self._check_coin_completeness(symbol, ticker_data, raw_data)
+                completeness_result = await self._check_coin_completeness(
+                    symbol, ticker_data, raw_data
+                )
 
                 if completeness_result["is_complete"]:
                     # Coin passes filter - include in output
@@ -440,8 +457,8 @@ class AsyncDataManager:
                         extra={
                             "symbol": symbol,
                             "completeness_score": completeness_result["completeness_score"],
-                            "exchange": exchange_name
-                        }
+                            "exchange": exchange_name,
+                        },
                     )
                 else:
                     # Coin BLOCKED - incomplete data
@@ -449,7 +466,11 @@ class AsyncDataManager:
                     filtered_data["blocked_coins_count"] += 1
 
                     # Track reason for blocking
-                    reason = completeness_result["missing_components"][0] if completeness_result["missing_components"] else "unknown"
+                    reason = (
+                        completeness_result["missing_components"][0]
+                        if completeness_result["missing_components"]
+                        else "unknown"
+                    )
                     if reason not in filtered_data["integrity_filter_results"]["blocked_reasons"]:
                         filtered_data["integrity_filter_results"]["blocked_reasons"][reason] = 0
                     filtered_data["integrity_filter_results"]["blocked_reasons"][reason] += 1
@@ -461,8 +482,8 @@ class AsyncDataManager:
                             "completeness_score": completeness_result["completeness_score"],
                             "missing_components": completeness_result["missing_components"],
                             "exchange": exchange_name,
-                            "action": "BLOCKED"
-                        }
+                            "action": "BLOCKED",
+                        },
                     )
 
         # Process OHLCV data with same hard filter
@@ -486,23 +507,27 @@ class AsyncDataManager:
                 "exchange": exchange_name,
                 "total_scanned": filtered_data["integrity_filter_results"]["total_coins_scanned"],
                 "passed_filter": filtered_data["integrity_filter_results"]["coins_passed_filter"],
-                "blocked_incomplete": filtered_data["integrity_filter_results"]["coins_blocked_incomplete"],
-                "blocked_reasons": filtered_data["integrity_filter_results"]["blocked_reasons"]
-            }
+                "blocked_incomplete": filtered_data["integrity_filter_results"][
+                    "coins_blocked_incomplete"
+                ],
+                "blocked_reasons": filtered_data["integrity_filter_results"]["blocked_reasons"],
+            },
         )
 
         return filtered_data
 
-    async def _check_coin_completeness(self, symbol: str, ticker_data: Dict[str, Any], raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _check_coin_completeness(
+        self, symbol: str, ticker_data: Dict[str, Any], raw_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Check if coin has complete data across all required components"""
 
         required_components = {
-            "price_data": 0.3,      # 30% weight
-            "volume_data": 0.2,     # 20% weight
-            "ohlcv_data": 0.2,      # 20% weight
-            "order_book_data": 0.1, # 10% weight
+            "price_data": 0.3,  # 30% weight
+            "volume_data": 0.2,  # 20% weight
+            "ohlcv_data": 0.2,  # 20% weight
+            "order_book_data": 0.1,  # 10% weight
             "sentiment_data": 0.1,  # 10% weight
-            "technical_data": 0.1   # 10% weight
+            "technical_data": 0.1,  # 10% weight
         }
 
         component_scores = {}
@@ -572,8 +597,11 @@ class AsyncDataManager:
         # 6. Technical data completeness
         technical_score = 0.0
         # Check if we have high/low/change data
-        if (ticker_data.get("high") and ticker_data.get("low") and
-            ticker_data.get("change") is not None):
+        if (
+            ticker_data.get("high")
+            and ticker_data.get("low")
+            and ticker_data.get("change") is not None
+        ):
             technical_score = 1.0
 
         if technical_score < 0.5:
@@ -595,7 +623,7 @@ class AsyncDataManager:
             "completeness_score": total_score,
             "component_scores": component_scores,
             "missing_components": missing_components,
-            "threshold": 0.8
+            "threshold": 0.8,
         }
 
     async def cleanup(self):
@@ -613,8 +641,10 @@ class AsyncDataManager:
 
         self.logger.info("Async Data Manager cleaned up")
 
+
 # Global async data manager instance
 async_data_manager = None
+
 
 async def get_async_data_manager() -> AsyncDataManager:
     """Get or create global async data manager"""

@@ -9,15 +9,18 @@ Advanced sentiment analysis from multiple sources with uncertainty quantificatio
 # from .sentiment_processor import SentimentProcessor
 # from .sentiment_models import SentimentEnsemble
 
+
 # Stubs for workstation compatibility
 class SentimentAnalysisAgent:
     def __init__(self):
         pass
 
+
 def get_sentiment_model():
     return None
 
+
 __all__ = [
-    'SentimentAnalysisAgent',
-    'get_sentiment_model',
+    "SentimentAnalysisAgent",
+    "get_sentiment_model",
 ]

@@ -17,8 +17,10 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 class Environment(Enum):
     """Deployment environments"""
+
     DEVELOPMENT = "development"
     STAGING = "staging"
     PRODUCTION = "production"
@@ -26,6 +28,7 @@ class Environment(Enum):
 
 class FeatureFlag(Enum):
     """Feature flags for gradual rollout"""
+
     CANARY_TRADING = "canary_trading"
     NEW_ML_MODEL = "new_ml_model"
     ADVANCED_RISK_MANAGEMENT = "advanced_risk_management"
@@ -37,6 +40,7 @@ class FeatureFlag(Enum):
 @dataclass
 class EnvironmentConfig:
     """Environment-specific configuration"""
+
     environment: Environment
 
     # API Configuration
@@ -129,7 +133,7 @@ class EnvironmentManager:
 
         if config_file.exists():
             try:
-                with open(config_file, 'r') as f:
+                with open(config_file, "r") as f:
                     data = json.load(f)
 
                 config = EnvironmentConfig(environment=self.current_environment)
@@ -167,7 +171,7 @@ class EnvironmentManager:
                 "daily_loss_pct": -5.0,
                 "max_drawdown_pct": -10.0,
                 "position_size_pct": 2.0,
-                "correlation_limit_pct": 70.0
+                "correlation_limit_pct": 70.0,
             }
             config.position_size_multiplier = 1.0
             config.max_positions = 20
@@ -179,7 +183,7 @@ class EnvironmentManager:
                 FeatureFlag.ADVANCED_RISK_MANAGEMENT.value: True,
                 FeatureFlag.EXPERIMENTAL_EXECUTION.value: False,
                 FeatureFlag.BETA_DASHBOARD.value: False,
-                FeatureFlag.HIGH_FREQUENCY_TRADING.value: True
+                FeatureFlag.HIGH_FREQUENCY_TRADING.value: True,
             }
             config.log_level = "WARNING"
 
@@ -189,7 +193,7 @@ class EnvironmentManager:
                 "daily_loss_pct": -2.0,  # Tighter limits for staging
                 "max_drawdown_pct": -5.0,
                 "position_size_pct": 1.0,
-                "correlation_limit_pct": 50.0
+                "correlation_limit_pct": 50.0,
             }
             config.position_size_multiplier = 0.1  # 10% of normal size
             config.max_positions = 5
@@ -201,7 +205,7 @@ class EnvironmentManager:
                 FeatureFlag.ADVANCED_RISK_MANAGEMENT.value: True,
                 FeatureFlag.EXPERIMENTAL_EXECUTION.value: True,
                 FeatureFlag.BETA_DASHBOARD.value: True,
-                FeatureFlag.HIGH_FREQUENCY_TRADING.value: False
+                FeatureFlag.HIGH_FREQUENCY_TRADING.value: False,
             }
             config.log_level = "INFO"
 
@@ -211,13 +215,15 @@ class EnvironmentManager:
                 "daily_loss_pct": -1.0,  # Very tight for dev
                 "max_drawdown_pct": -2.0,
                 "position_size_pct": 0.1,
-                "correlation_limit_pct": 30.0
+                "correlation_limit_pct": 30.0,
             }
             config.position_size_multiplier = 0.01  # 1% of normal size
             config.max_positions = 3
             config.trading_enabled = True
             config.paper_trading_only = True  # Always paper trading in dev
-            config.feature_flags = {flag.value: True for flag in FeatureFlag}  # All features enabled
+            config.feature_flags = {
+                flag.value: True for flag in FeatureFlag
+            }  # All features enabled
             config.log_level = "DEBUG"
 
         return config
@@ -280,10 +286,9 @@ class EnvironmentManager:
         """Scale position size based on environment"""
         return base_size * self.config.position_size_multiplier
 
-    def start_canary_deployment(self,
-                               deployment_name: str,
-                               risk_budget_pct: float = 1.0,
-                               duration_hours: int = 168) -> str:  # 1 week default
+    def start_canary_deployment(
+        self, deployment_name: str, risk_budget_pct: float = 1.0, duration_hours: int = 168
+    ) -> str:  # 1 week default
         """Start canary deployment with limited risk budget"""
 
         if not self.is_feature_enabled(FeatureFlag.CANARY_TRADING):
@@ -304,7 +309,7 @@ class EnvironmentManager:
             "trades_executed": 0,
             "pnl": 0.0,
             "max_drawdown": 0.0,
-            "error_count": 0
+            "error_count": 0,
         }
 
         self.canary_deployments[deployment_id] = canary_config
@@ -314,12 +319,14 @@ class EnvironmentManager:
 
         return deployment_id
 
-    def update_canary_metrics(self,
-                             deployment_id: str,
-                             trades_executed: int,
-                             pnl: float,
-                             max_drawdown: float,
-                             error_count: int):
+    def update_canary_metrics(
+        self,
+        deployment_id: str,
+        trades_executed: int,
+        pnl: float,
+        max_drawdown: float,
+        error_count: int,
+    ):
         """Update canary deployment metrics"""
 
         if deployment_id not in self.canary_deployments:
@@ -328,13 +335,15 @@ class EnvironmentManager:
 
         canary = self.canary_deployments[deployment_id]
 
-        canary.update({
-            "trades_executed": trades_executed,
-            "pnl": pnl,
-            "max_drawdown": max_drawdown,
-            "error_count": error_count,
-            "last_updated": datetime.now()
-        })
+        canary.update(
+            {
+                "trades_executed": trades_executed,
+                "pnl": pnl,
+                "max_drawdown": max_drawdown,
+                "error_count": error_count,
+                "last_updated": datetime.now(),
+            }
+        )
 
     def evaluate_canary_deployment(self, deployment_id: str) -> Dict[str, Any]:
         """Evaluate canary deployment performance"""
@@ -384,9 +393,9 @@ class EnvironmentManager:
                 "trades_executed": canary["trades_executed"],
                 "pnl": canary["pnl"],
                 "max_drawdown": canary["max_drawdown"],
-                "error_count": canary["error_count"]
+                "error_count": canary["error_count"],
             },
-            "recommendation": self._get_canary_recommendation(evaluation, canary)
+            "recommendation": self._get_canary_recommendation(evaluation, canary),
         }
 
     def _get_canary_recommendation(self, evaluation: str, canary: Dict[str, Any]) -> str:
@@ -430,8 +439,7 @@ class EnvironmentManager:
         """Get comprehensive environment status"""
 
         active_canaries = [
-            canary for canary in self.canary_deployments.values()
-            if canary["status"] == "active"
+            canary for canary in self.canary_deployments.values() if canary["status"] == "active"
         ]
 
         return {
@@ -441,18 +449,20 @@ class EnvironmentManager:
                 "paper_trading_only": self.config.paper_trading_only,
                 "position_size_multiplier": self.config.position_size_multiplier,
                 "max_positions": self.config.max_positions,
-                "risk_limits": self.config.risk_limits
+                "risk_limits": self.config.risk_limits,
             },
             "feature_flags": self.config.feature_flags,
             "canary_deployments": {
                 "active": len(active_canaries),
                 "total": len(self.canary_deployments),
-                "details": active_canaries
+                "details": active_canaries,
             },
             "deployment_info": {
                 "deployment_id": self.config.deployment_id,
-                "deployed_at": self.config.deployed_at.isoformat() if self.config.deployed_at else None
-            }
+                "deployed_at": self.config.deployed_at.isoformat()
+                if self.config.deployed_at
+                else None,
+            },
         }
 
     def _save_config(self):
@@ -473,10 +483,10 @@ class EnvironmentManager:
                 "database_url": self.config.database_url,
                 "redis_url": self.config.redis_url,
                 "monitoring_enabled": self.config.monitoring_enabled,
-                "log_level": self.config.log_level
+                "log_level": self.config.log_level,
             }
 
-            with open(config_file, 'w') as f:
+            with open(config_file, "w") as f:
                 json.dump(config_data, f, indent=2)
 
             logger.info(f"Saved configuration for {self.current_environment.value}")
@@ -490,20 +500,24 @@ class EnvironmentManager:
         required_secrets = {
             "KRAKEN_API_KEY": os.getenv("KRAKEN_API_KEY"),
             "KRAKEN_SECRET": os.getenv("KRAKEN_SECRET"),
-            "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY")
+            "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
         }
 
         if self.current_environment == Environment.PRODUCTION:
             # Additional production secrets
-            required_secrets.update({
-                "SLACK_BOT_TOKEN": os.getenv("SLACK_BOT_TOKEN"),
-                "SLACK_CHANNEL_ID": os.getenv("SLACK_CHANNEL_ID")
-            })
+            required_secrets.update(
+                {
+                    "SLACK_BOT_TOKEN": os.getenv("SLACK_BOT_TOKEN"),
+                    "SLACK_CHANNEL_ID": os.getenv("SLACK_CHANNEL_ID"),
+                }
+            )
 
         validation_results = {}
 
         for secret_name, secret_value in required_secrets.items():
-            validation_results[secret_name] = secret_value is not None and len(secret_value.strip()) > 0
+            validation_results[secret_name] = (
+                secret_value is not None and len(secret_value.strip()) > 0
+            )
 
         return validation_results
 

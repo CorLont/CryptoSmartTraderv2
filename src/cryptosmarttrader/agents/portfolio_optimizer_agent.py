@@ -11,6 +11,7 @@ from datetime import datetime
 
 from ..core.structured_logger import get_logger
 
+
 class PortfolioOptimizerAgent:
     """Agent for portfolio optimization and allocation"""
 
@@ -35,15 +36,12 @@ class PortfolioOptimizerAgent:
         """Process data and optimize portfolio allocation"""
 
         try:
-            predictions = data.get('predictions', [])
-            risk_data = data.get('risk_data', {})
+            predictions = data.get("predictions", [])
+            risk_data = data.get("risk_data", {})
 
             optimization_result = await self.optimize_portfolio(predictions, risk_data)
 
-            return {
-                "portfolio_optimization": optimization_result,
-                "status": "success"
-            }
+            return {"portfolio_optimization": optimization_result, "status": "success"}
 
         except Exception as e:
             self.logger.error(f"Portfolio optimization failed: {e}")
@@ -57,40 +55,43 @@ class PortfolioOptimizerAgent:
                 return {"allocations": {}, "total_allocation": 0.0}
 
             # Sort predictions by confidence
-            sorted_predictions = sorted(predictions, key=lambda x: x.get('confidence', 0), reverse=True)
+            sorted_predictions = sorted(
+                predictions, key=lambda x: x.get("confidence", 0), reverse=True
+            )
 
             # Take top predictions up to max_positions
-            top_predictions = sorted_predictions[:self.max_positions]
+            top_predictions = sorted_predictions[: self.max_positions]
 
             allocations = {}
-            total_confidence = sum(p.get('confidence', 0) for p in top_predictions)
+            total_confidence = sum(p.get("confidence", 0) for p in top_predictions)
 
             for prediction in top_predictions:
-                symbol = prediction.get('symbol', 'UNKNOWN')
-                confidence = prediction.get('confidence', 0.0)
-                direction = prediction.get('direction', 'HOLD')
+                symbol = prediction.get("symbol", "UNKNOWN")
+                confidence = prediction.get("confidence", 0.0)
+                direction = prediction.get("direction", "HOLD")
 
-                if direction != 'HOLD' and confidence > 0.5:
+                if direction != "HOLD" and confidence > 0.5:
                     # Calculate allocation based on confidence and risk
                     base_allocation = (confidence / total_confidence) if total_confidence > 0 else 0
 
                     # Apply risk adjustment
-                    symbol_risk = risk_data.get('symbol_risks', {}).get(symbol, {})
-                    risk_score = symbol_risk.get('risk_score', 0.5)
+                    symbol_risk = risk_data.get("symbol_risks", {}).get(symbol, {})
+                    risk_score = symbol_risk.get("risk_score", 0.5)
 
                     # Reduce allocation for higher risk
                     risk_adjusted_allocation = base_allocation * (1 - risk_score * 0.5)
 
                     # Apply min/max constraints
-                    final_allocation = max(self.min_allocation,
-                                         min(self.max_allocation, risk_adjusted_allocation))
+                    final_allocation = max(
+                        self.min_allocation, min(self.max_allocation, risk_adjusted_allocation)
+                    )
 
                     allocations[symbol] = {
                         "allocation": final_allocation,
                         "confidence": confidence,
                         "direction": direction,
                         "risk_score": risk_score,
-                        "recommended_action": direction.lower()
+                        "recommended_action": direction.lower(),
                     }
 
             # Normalize allocations to sum to 1.0 (or target allocation)
@@ -107,10 +108,12 @@ class PortfolioOptimizerAgent:
                 "total_allocation": total_allocation,
                 "number_of_positions": len(allocations),
                 "optimization_timestamp": datetime.utcnow().isoformat(),
-                "optimization_method": "confidence_risk_weighted"
+                "optimization_method": "confidence_risk_weighted",
             }
 
-            self.logger.info(f"Portfolio optimized: {len(allocations)} positions, {total_allocation:.2%} allocated")
+            self.logger.info(
+                f"Portfolio optimized: {len(allocations)} positions, {total_allocation:.2%} allocated"
+            )
 
             return optimization_result
 

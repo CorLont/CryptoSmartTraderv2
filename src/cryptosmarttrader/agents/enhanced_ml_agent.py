@@ -14,7 +14,8 @@ import json
 import pickle
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 # Try to import advanced ML libraries
 try:
@@ -24,15 +25,18 @@ try:
     from sklearn.preprocessing import StandardScaler, RobustScaler
     from sklearn.model_selection import TimeSeriesSplit
     from sklearn.metrics import mean_squared_error, mean_absolute_error
+
     ADVANCED_ML_AVAILABLE = True
 except ImportError:
     ADVANCED_ML_AVAILABLE = False
 
 from utils.daily_logger import get_daily_logger
 
+
 @dataclass
 class MLPrediction:
     """Enhanced ML prediction with uncertainty"""
+
     coin: str
     horizon: str  # 1h, 4h, 1d, 7d
     prediction: float
@@ -45,9 +49,11 @@ class MLPrediction:
     model_version: str
     explanation: Dict[str, Any]
 
+
 @dataclass
 class ModelPerformance:
     """Model performance tracking"""
+
     model_name: str
     horizon: str
     mse: float
@@ -57,23 +63,23 @@ class ModelPerformance:
     last_updated: datetime
     training_samples: int
 
+
 class FeatureEngineer:
     """Advanced feature engineering with adaptivity"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('ml_predictions')
+        self.logger = get_daily_logger().get_logger("ml_predictions")
         self.feature_importance_cache = {}
         self.regime_weights = {
-            'bull': {'momentum': 1.5, 'trend': 1.3, 'volume': 1.1},
-            'bear': {'momentum': 1.2, 'trend': 1.4, 'volatility': 1.3},
-            'sideways': {'mean_reversion': 1.4, 'volatility': 1.2, 'volume': 0.9},
-            'volatile': {'volatility': 1.5, 'momentum': 1.3, 'trend': 0.8}
+            "bull": {"momentum": 1.5, "trend": 1.3, "volume": 1.1},
+            "bear": {"momentum": 1.2, "trend": 1.4, "volatility": 1.3},
+            "sideways": {"mean_reversion": 1.4, "volatility": 1.2, "volume": 0.9},
+            "volatile": {"volatility": 1.5, "momentum": 1.3, "trend": 0.8},
         }
 
-    def engineer_features(self,
-                         df: pd.DataFrame,
-                         regime: str = 'bull',
-                         lookback_periods: List[int] = [5, 10, 20, 50]) -> pd.DataFrame:
+    def engineer_features(
+        self, df: pd.DataFrame, regime: str = "bull", lookback_periods: List[int] = [5, 10, 20, 50]
+    ) -> pd.DataFrame:
         """Create adaptive features based on market regime"""
 
         features_df = df.copy()
@@ -108,17 +114,19 @@ class FeatureEngineer:
 
         for period in periods:
             # Returns
-            df[f'return_{period}'] = df['close'].pct_change(period)
+            df[f"return_{period}"] = df["close"].pct_change(period)
 
             # Moving averages
-            df[f'sma_{period}'] = df['close'].rolling(period).mean()
-            df[f'ema_{period}'] = df['close'].ewm(span=period).mean()
+            df[f"sma_{period}"] = df["close"].rolling(period).mean()
+            df[f"ema_{period}"] = df["close"].ewm(span=period).mean()
 
             # Price ratios
-            df[f'price_sma_ratio_{period}'] = df['close'] / df[f'sma_{period}']
+            df[f"price_sma_ratio_{period}"] = df["close"] / df[f"sma_{period}"]
 
             # High/Low ratios
-            df[f'hl_ratio_{period}'] = df['high'].rolling(period).max() / df['low'].rolling(period).min()
+            df[f"hl_ratio_{period}"] = (
+                df["high"].rolling(period).max() / df["low"].rolling(period).min()
+            )
 
         return df
 
@@ -127,19 +135,21 @@ class FeatureEngineer:
 
         # RSI
         for period in [14, 21]:
-            df[f'rsi_{period}'] = self._calculate_rsi(df['close'], period)
+            df[f"rsi_{period}"] = self._calculate_rsi(df["close"], period)
 
         # MACD
-        df['macd'], df['macd_signal'] = self._calculate_macd(df['close'])
-        df['macd_histogram'] = df['macd'] - df['macd_signal']
+        df["macd"], df["macd_signal"] = self._calculate_macd(df["close"])
+        df["macd_histogram"] = df["macd"] - df["macd_signal"]
 
         # Bollinger Bands
         for period in [20, 50]:
-            sma = df['close'].rolling(period).mean()
-            std = df['close'].rolling(period).std()
-            df[f'bb_upper_{period}'] = sma + (2 * std)
-            df[f'bb_lower_{period}'] = sma - (2 * std)
-            df[f'bb_position_{period}'] = (df['close'] - df[f'bb_lower_{period}']) / (df[f'bb_upper_{period}'] - df[f'bb_lower_{period}'])
+            sma = df["close"].rolling(period).mean()
+            std = df["close"].rolling(period).std()
+            df[f"bb_upper_{period}"] = sma + (2 * std)
+            df[f"bb_lower_{period}"] = sma - (2 * std)
+            df[f"bb_position_{period}"] = (df["close"] - df[f"bb_lower_{period}"]) / (
+                df[f"bb_upper_{period}"] - df[f"bb_lower_{period}"]
+            )
 
         return df
 
@@ -148,16 +158,16 @@ class FeatureEngineer:
 
         for period in periods:
             # Volume moving averages
-            df[f'volume_sma_{period}'] = df['volume'].rolling(period).mean()
-            volume_sma = df[f'volume_sma_{period}']
-            df[f'volume_ratio_{period}'] = df['volume'] / volume_sma.where(volume_sma != 0, 1)
+            df[f"volume_sma_{period}"] = df["volume"].rolling(period).mean()
+            volume_sma = df[f"volume_sma_{period}"]
+            df[f"volume_ratio_{period}"] = df["volume"] / volume_sma.where(volume_sma != 0, 1)
 
             # Volume-price trend
-            price_change = df['close'].pct_change().fillna(0)
-            df[f'vpt_{period}'] = (price_change * df['volume']).rolling(period).sum()
+            price_change = df["close"].pct_change().fillna(0)
+            df[f"vpt_{period}"] = (price_change * df["volume"]).rolling(period).sum()
 
         # On-balance volume
-        df['obv'] = (np.sign(df['close'].diff()) * df['volume']).fillna(0).cumsum()
+        df["obv"] = (np.sign(df["close"].diff()) * df["volume"]).fillna(0).cumsum()
 
         return df
 
@@ -166,15 +176,15 @@ class FeatureEngineer:
 
         for period in periods:
             # Realized volatility
-            returns = df['close'].pct_change()
-            df[f'volatility_{period}'] = returns.rolling(period).std()
+            returns = df["close"].pct_change()
+            df[f"volatility_{period}"] = returns.rolling(period).std()
 
             # ATR
-            df[f'atr_{period}'] = self._calculate_atr(df, period)
+            df[f"atr_{period}"] = self._calculate_atr(df, period)
 
             # Volatility ratio
             if period > 5:
-                df[f'vol_ratio_{period}'] = df[f'volatility_{period}'] / df[f'volatility_5']
+                df[f"vol_ratio_{period}"] = df[f"volatility_{period}"] / df[f"volatility_5"]
 
         return df
 
@@ -183,8 +193,8 @@ class FeatureEngineer:
 
         # This would include correlations with BTC, market cap, etc.
         # For now, add placeholder features
-        df['btc_correlation_placeholder'] = 0.5
-        df['market_beta_placeholder'] = 1.0
+        df["btc_correlation_placeholder"] = 0.5
+        df["market_beta_placeholder"] = 1.0
 
         return df
 
@@ -197,7 +207,7 @@ class FeatureEngineer:
             # Apply weights to relevant features
             feature_cols = [col for col in df.columns if feature_type in col.lower()]
             for col in feature_cols:
-                if df[col].dtype in ['float64', 'int64']:
+                if df[col].dtype in ["float64", "int64"]:
                     df[col] = df[col] * weight
 
         return df
@@ -221,9 +231,9 @@ class FeatureEngineer:
 
     def _calculate_atr(self, df: pd.DataFrame, period: int = 14) -> pd.Series:
         """Calculate Average True Range"""
-        high = df['high']
-        low = df['low']
-        close = df['close']
+        high = df["high"]
+        low = df["low"]
+        close = df["close"]
 
         tr1 = high - low
         tr2 = abs(high - close.shift())
@@ -232,16 +242,19 @@ class FeatureEngineer:
 
         return tr.rolling(period).mean()
 
+
 class UncertaintyQuantifier:
     """Bayesian uncertainty quantification"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('ml_predictions')
+        self.logger = get_daily_logger().get_logger("ml_predictions")
 
-    def quantify_uncertainty(self,
-                           predictions: np.ndarray,
-                           model_predictions: List[np.ndarray],
-                           confidence_level: float = 0.8) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def quantify_uncertainty(
+        self,
+        predictions: np.ndarray,
+        model_predictions: List[np.ndarray],
+        confidence_level: float = 0.8,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Calculate prediction uncertainty and intervals"""
 
         # Ensemble variance
@@ -258,25 +271,25 @@ class UncertaintyQuantifier:
 
         return ensemble_std, lower_bound, upper_bound
 
+
 class ModelDriftDetector:
     """Detect model drift and data distribution shifts"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('ml_predictions')
+        self.logger = get_daily_logger().get_logger("ml_predictions")
         self.reference_stats = {}
 
-    def detect_drift(self,
-                    new_features: pd.DataFrame,
-                    model_name: str,
-                    threshold: float = 0.1) -> Tuple[bool, float, Dict[str, float]]:
+    def detect_drift(
+        self, new_features: pd.DataFrame, model_name: str, threshold: float = 0.1
+    ) -> Tuple[bool, float, Dict[str, float]]:
         """Detect feature drift in new data"""
 
         if model_name not in self.reference_stats:
             # Initialize reference statistics
             self.reference_stats[model_name] = {
-                'means': new_features.mean(),
-                'stds': new_features.std(),
-                'timestamp': datetime.now()
+                "means": new_features.mean(),
+                "stds": new_features.std(),
+                "timestamp": datetime.now(),
             }
             return False, 0.0, {}
 
@@ -285,10 +298,10 @@ class ModelDriftDetector:
         # Calculate drift metrics
         drift_scores = {}
         for col in new_features.columns:
-            if col in ref_stats['means']:
+            if col in ref_stats["means"]:
                 # Normalized difference in means
-                ref_mean = ref_stats['means'][col]
-                ref_std = ref_stats['stds'][col]
+                ref_mean = ref_stats["means"][col]
+                ref_std = ref_stats["stds"][col]
                 new_mean = new_features[col].mean()
 
                 if ref_std > 0:
@@ -304,20 +317,21 @@ class ModelDriftDetector:
 
         return is_drifted, overall_drift, drift_scores
 
+
 class EnsemblePredictor:
     """Ensemble of deep learning and traditional ML models"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('ml_predictions')
+        self.logger = get_daily_logger().get_logger("ml_predictions")
         self.models = {}
         self.scalers = {}
         self.feature_engineer = FeatureEngineer()
         self.uncertainty_quantifier = UncertaintyQuantifier()
         self.drift_detector = ModelDriftDetector()
 
-    async def train_ensemble(self,
-                           training_data: Dict[str, pd.DataFrame],
-                           horizons: List[str] = ['1h', '4h', '1d', '7d']) -> Dict[str, Any]:
+    async def train_ensemble(
+        self, training_data: Dict[str, pd.DataFrame], horizons: List[str] = ["1h", "4h", "1d", "7d"]
+    ) -> Dict[str, Any]:
         """Train ensemble models for multiple horizons"""
 
         training_results = {}
@@ -345,11 +359,9 @@ class EnsemblePredictor:
 
         return training_results
 
-    async def predict(self,
-                     coin: str,
-                     data: pd.DataFrame,
-                     horizons: List[str],
-                     regime: str = 'bull') -> List[MLPrediction]:
+    async def predict(
+        self, coin: str, data: pd.DataFrame, horizons: List[str], regime: str = "bull"
+    ) -> List[MLPrediction]:
         """Generate predictions with uncertainty"""
 
         predictions = []
@@ -376,11 +388,9 @@ class EnsemblePredictor:
 
         return predictions
 
-    async def _predict_horizon(self,
-                             coin: str,
-                             features: pd.DataFrame,
-                             horizon: str,
-                             regime: str) -> Optional[MLPrediction]:
+    async def _predict_horizon(
+        self, coin: str, features: pd.DataFrame, horizon: str, regime: str
+    ) -> Optional[MLPrediction]:
         """Predict for specific horizon"""
 
         models = self.models[horizon]
@@ -399,9 +409,11 @@ class EnsemblePredictor:
 
         for model_name, model in models.items():
             try:
-                if hasattr(model, 'predict'):
+                if hasattr(model, "predict"):
                     pred = model.predict(latest_features_scaled)
-                    model_predictions.append(float(pred[0]) if hasattr(pred, '__len__') else float(pred))
+                    model_predictions.append(
+                        float(pred[0]) if hasattr(pred, "__len__") else float(pred)
+                    )
                     model_names.append(model_name)
             except Exception as e:
                 self.logger.error(f"Model {model_name} prediction failed: {e}")
@@ -416,8 +428,7 @@ class EnsemblePredictor:
 
         # Quantify uncertainty
         uncertainty, lower_bound, upper_bound = self.uncertainty_quantifier.quantify_uncertainty(
-            np.array([ensemble_prediction]),
-            [np.array([pred]) for pred in model_predictions]
+            np.array([ensemble_prediction]), [np.array([pred]) for pred in model_predictions]
         )
 
         # Calculate confidence
@@ -437,24 +448,24 @@ class EnsemblePredictor:
             prediction=float(ensemble_prediction),
             uncertainty=float(uncertainty[0]),
             confidence=float(confidence),
-            model_type='ensemble',
+            model_type="ensemble",
             feature_importance=feature_importance,
             prediction_interval=(float(lower_bound[0]), float(upper_bound[0])),
             timestamp=datetime.now(),
-            model_version='v1.0',
-            explanation=explanation
+            model_version="v1.0",
+            explanation=explanation,
         )
 
-    def _prepare_training_data(self,
-                             data: Dict[str, pd.DataFrame],
-                             horizon: str) -> Tuple[np.ndarray, np.ndarray]:
+    def _prepare_training_data(
+        self, data: Dict[str, pd.DataFrame], horizon: str
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Prepare training data for specific horizon"""
 
         all_X = []
         all_y = []
 
         # Map horizon to prediction periods
-        horizon_map = {'1h': 1, '4h': 4, '1d': 24, '7d': 168}
+        horizon_map = {"1h": 1, "4h": 4, "1d": 24, "7d": 168}
         periods = horizon_map.get(horizon, 24)
 
         for coin, df in data.items():
@@ -468,7 +479,7 @@ class EnsemblePredictor:
                 continue
 
             # Create targets (future returns)
-            targets = df['close'].pct_change(periods).shift(-periods)
+            targets = df["close"].pct_change(periods).shift(-periods)
 
             # Align features and targets - ensure same index
             min_len = min(len(features), len(targets))
@@ -493,10 +504,9 @@ class EnsemblePredictor:
 
         return X_combined, y_combined
 
-    async def _train_models(self,
-                          X_train: np.ndarray,
-                          y_train: np.ndarray,
-                          horizon: str) -> Dict[str, Any]:
+    async def _train_models(
+        self, X_train: np.ndarray, y_train: np.ndarray, horizon: str
+    ) -> Dict[str, Any]:
         """Train multiple models for ensemble"""
 
         models = {}
@@ -507,40 +517,31 @@ class EnsemblePredictor:
         self.scalers[horizon] = scaler
 
         # REMOVED: Mock data pattern not allowed in production
-        rf_model = RandomForestRegressor(
-            n_estimators=100,
-            max_depth=10,
-            random_state=42,
-            n_jobs=-1
-        )
+        rf_model = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42, n_jobs=-1)
         rf_model.fit(X_scaled, y_train)
-        models['random_forest'] = rf_model
+        models["random_forest"] = rf_model
 
         # Gradient Boosting
         gb_model = GradientBoostingRegressor(
-            n_estimators=100,
-            max_depth=6,
-            learning_rate=0.1,
-            random_state=42
+            n_estimators=100, max_depth=6, learning_rate=0.1, random_state=42
         )
         gb_model.fit(X_scaled, y_train)
-        models['gradient_boosting'] = gb_model
+        models["gradient_boosting"] = gb_model
 
         # Deep Learning (if available)
         if ADVANCED_ML_AVAILABLE:
             try:
                 dl_model = await self._train_deep_model(X_scaled, y_train, horizon)
                 if dl_model:
-                    models['deep_learning'] = dl_model
+                    models["deep_learning"] = dl_model
             except Exception as e:
                 self.logger.error(f"Deep learning training failed: {e}")
 
         return models
 
-    async def _train_deep_model(self,
-                              X_train: np.ndarray,
-                              y_train: np.ndarray,
-                              horizon: str) -> Optional[Any]:
+    async def _train_deep_model(
+        self, X_train: np.ndarray, y_train: np.ndarray, horizon: str
+    ) -> Optional[Any]:
         """Train deep learning model"""
 
         if not ADVANCED_ML_AVAILABLE:
@@ -560,7 +561,7 @@ class EnsemblePredictor:
                         nn.Dropout(0.2),
                         nn.Linear(64, 32),
                         nn.ReLU(),
-                        nn.Linear(32, 1)
+                        nn.Linear(32, 1),
                     )
 
                 def forward(self, x):
@@ -594,11 +595,9 @@ class EnsemblePredictor:
             self.logger.error(f"Deep model training error: {e}")
             return None
 
-    def _evaluate_ensemble(self,
-                         models: Dict[str, Any],
-                         X_test: np.ndarray,
-                         y_test: np.ndarray,
-                         horizon: str) -> ModelPerformance:
+    def _evaluate_ensemble(
+        self, models: Dict[str, Any], X_test: np.ndarray, y_test: np.ndarray, horizon: str
+    ) -> ModelPerformance:
         """Evaluate ensemble performance"""
 
         # Get predictions from all models
@@ -606,7 +605,7 @@ class EnsemblePredictor:
 
         for model_name, model in models.items():
             try:
-                if hasattr(model, 'predict'):
+                if hasattr(model, "predict"):
                     pred = model.predict(X_test)
                     predictions.append(pred)
             except Exception:
@@ -614,14 +613,14 @@ class EnsemblePredictor:
 
         if not predictions:
             return ModelPerformance(
-                model_name='ensemble',
+                model_name="ensemble",
                 horizon=horizon,
                 mse=1.0,
                 mae=1.0,
                 directional_accuracy=0.5,
                 sharpe_ratio=0.0,
                 last_updated=datetime.now(),
-                training_samples=len(X_test)
+                training_samples=len(X_test),
             )
 
         # Ensemble prediction
@@ -639,14 +638,14 @@ class EnsemblePredictor:
         sharpe_ratio = np.mean(returns) / (np.std(returns) + 1e-8)
 
         return ModelPerformance(
-            model_name='ensemble',
+            model_name="ensemble",
             horizon=horizon,
             mse=mse,
             mae=mae,
             directional_accuracy=directional_accuracy,
             sharpe_ratio=sharpe_ratio,
             last_updated=datetime.now(),
-            training_samples=len(X_test)
+            training_samples=len(X_test),
         )
 
     def _calculate_feature_importance(self, feature_names: List[str]) -> Dict[str, float]:
@@ -657,32 +656,31 @@ class EnsemblePredictor:
         importance = 1.0 / len(feature_names)
         return {name: importance for name in feature_names}
 
-    def _generate_explanation(self,
-                            prediction: float,
-                            model_predictions: List[float],
-                            model_names: List[str],
-                            regime: str) -> Dict[str, Any]:
+    def _generate_explanation(
+        self, prediction: float, model_predictions: List[float], model_names: List[str], regime: str
+    ) -> Dict[str, Any]:
         """Generate prediction explanation"""
 
         return {
-            'prediction_direction': 'bullish' if prediction > 0 else 'bearish',
-            'magnitude': abs(prediction),
-            'model_agreement': len(set(np.sign(model_predictions))) == 1,
-            'regime_context': regime,
-            'model_contributions': dict(zip(model_names, model_predictions))
+            "prediction_direction": "bullish" if prediction > 0 else "bearish",
+            "magnitude": abs(prediction),
+            "model_agreement": len(set(np.sign(model_predictions))) == 1,
+            "regime_context": regime,
+            "model_contributions": dict(zip(model_names, model_predictions)),
         }
 
     def get_status(self) -> Dict:
         """Get agent status"""
         return {
-            'agent': 'enhanced_ml',
-            'status': 'operational',
-            'trained_horizons': list(self.models.keys()),
-            'deep_learning_available': ADVANCED_ML_AVAILABLE,
-            'uncertainty_quantification': True,
-            'drift_detection': True,
-            'feature_engineering': True
+            "agent": "enhanced_ml",
+            "status": "operational",
+            "trained_horizons": list(self.models.keys()),
+            "deep_learning_available": ADVANCED_ML_AVAILABLE,
+            "uncertainty_quantification": True,
+            "drift_detection": True,
+            "feature_engineering": True,
         }
+
 
 # Global instance
 ml_agent = EnsemblePredictor()

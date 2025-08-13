@@ -18,6 +18,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 class CircuitState(Enum):
     """Circuit breaker states"""
+
     CLOSED = "closed"
     OPEN = "open"
     HALF_OPEN = "half_open"
@@ -26,6 +27,7 @@ class CircuitState(Enum):
 @dataclass
 class CircuitBreaker:
     """Circuit breaker for external service resilience"""
+
     failure_threshold: int = 5
     recovery_timeout: int = 60
     half_open_max_calls: int = 3
@@ -41,8 +43,10 @@ class CircuitBreaker:
         if self.state == CircuitState.CLOSED:
             return True
         elif self.state == CircuitState.OPEN:
-            if self.last_failure_time and \
-               (datetime.utcnow() - self.last_failure_time).seconds >= self.recovery_timeout:
+            if (
+                self.last_failure_time
+                and (datetime.utcnow() - self.last_failure_time).seconds >= self.recovery_timeout
+            ):
                 self.state = CircuitState.HALF_OPEN
                 self.successful_calls = 0
                 return True
@@ -76,6 +80,7 @@ class CircuitBreaker:
 @dataclass
 class CacheEntry:
     """Cache entry with TTL and metadata"""
+
     data: Any
     timestamp: datetime
     ttl_seconds: int
@@ -135,13 +140,13 @@ class EnterpriseHTTPClient:
 
         # Default cache TTLs per data type
         self.default_ttls = {
-            "price": 30,        # Price data: 30 seconds
-            "orderbook": 10,    # Order book: 10 seconds
-            "market": 60,       # Market data: 1 minute
-            "sentiment": 300,   # Sentiment: 5 minutes
-            "news": 600,        # News: 10 minutes
-            "social": 180,      # Social data: 3 minutes
-            "metadata": 3600,   # Metadata: 1 hour
+            "price": 30,  # Price data: 30 seconds
+            "orderbook": 10,  # Order book: 10 seconds
+            "market": 60,  # Market data: 1 minute
+            "sentiment": 300,  # Sentiment: 5 minutes
+            "news": 600,  # News: 10 minutes
+            "social": 180,  # Social data: 3 minutes
+            "metadata": 3600,  # Metadata: 1 hour
         }
 
     async def _get_client(self, service: str) -> httpx.AsyncClient:
@@ -167,18 +172,18 @@ class EnterpriseHTTPClient:
 
             # Service-specific headers
             if service in ["reddit", "twitter"]:
-                headers.update({
-                    "Accept-Language": "en-US,en;q=0.9",
-                    "Cache-Control": "no-cache",
-                })
+                headers.update(
+                    {
+                        "Accept-Language": "en-US,en;q=0.9",
+                        "Cache-Control": "no-cache",
+                    }
+                )
 
             self.clients[service] = httpx.AsyncClient(
                 timeout=timeout_configs.get(service, 30.0),
                 headers=headers,
                 limits=httpx.Limits(
-                    max_keepalive_connections=5,
-                    max_connections=10,
-                    keepalive_expiry=30.0
+                    max_keepalive_connections=5, max_connections=10, keepalive_expiry=30.0
                 ),
                 follow_redirects=True,
                 verify=True,
@@ -186,7 +191,9 @@ class EnterpriseHTTPClient:
 
         return self.clients[service]
 
-    def _generate_cache_key(self, service: str, endpoint: str, params: Optional[Dict] = None) -> str:
+    def _generate_cache_key(
+        self, service: str, endpoint: str, params: Optional[Dict] = None
+    ) -> str:
         """Generate cache key for request"""
         key_parts = [service, endpoint]
         if params:
@@ -210,16 +217,14 @@ class EnterpriseHTTPClient:
 
         return None
 
-    def _cache_response(self, cache_key: str, data: Any, data_type: str = "default", ttl: Optional[int] = None):
+    def _cache_response(
+        self, cache_key: str, data: Any, data_type: str = "default", ttl: Optional[int] = None
+    ):
         """Cache response with TTL"""
         if ttl is None:
             ttl = self.default_ttls.get(data_type, 300)
 
-        self.cache[cache_key] = CacheEntry(
-            data=data,
-            timestamp=datetime.utcnow(),
-            ttl_seconds=ttl
-        )
+        self.cache[cache_key] = CacheEntry(data=data, timestamp=datetime.utcnow(), ttl_seconds=ttl)
 
         self.logger.debug(f"Cached response for {cache_key} (TTL: {ttl}s)")
 
@@ -232,10 +237,7 @@ class EnterpriseHTTPClient:
         now = datetime.utcnow()
 
         # Remove expired entries
-        expired_keys = [
-            key for key, entry in self.cache.items()
-            if entry.is_expired()
-        ]
+        expired_keys = [key for key, entry in self.cache.items() if entry.is_expired()]
 
         for key in expired_keys:
             del self.cache[key]
@@ -243,8 +245,7 @@ class EnterpriseHTTPClient:
         # If still too many entries, remove least accessed
         if len(self.cache) > 500:
             sorted_entries = sorted(
-                self.cache.items(),
-                key=lambda x: (x[1].access_count, x[1].last_accessed)
+                self.cache.items(), key=lambda x: (x[1].access_count, x[1].last_accessed)
             )
 
             # Remove bottom 25%
@@ -268,7 +269,7 @@ class EnterpriseHTTPClient:
         if rate_key not in self.rate_limits:
             self.rate_limits[rate_key] = {
                 "requests": [],
-                "window": 60  # 1 minute window
+                "window": 60,  # 1 minute window
             }
 
         rate_info = self.rate_limits[rate_key]
@@ -276,8 +277,7 @@ class EnterpriseHTTPClient:
 
         # Remove old requests outside window
         rate_info["requests"] = [
-            req_time for req_time in rate_info["requests"]
-            if now - req_time < rate_info["window"]
+            req_time for req_time in rate_info["requests"] if now - req_time < rate_info["window"]
         ]
 
         # Service-specific rate limits (requests per minute)
@@ -303,7 +303,7 @@ class EnterpriseHTTPClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential_jitter(initial=1, max=60, jitter=2),
-        reraise=True
+        reraise=True,
     )
     async def request(
         self,
@@ -316,7 +316,7 @@ class EnterpriseHTTPClient:
         json_data: Optional[Dict] = None,
         use_cache: bool = True,
         cache_ttl: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> Union[Dict, List, str]:
         """
         Make HTTP request with resilience patterns
@@ -348,7 +348,7 @@ class EnterpriseHTTPClient:
                 raise RuntimeError(f"Circuit breaker open for {service}")
 
         # Check rate limits
-        endpoint = url.split('/')[-1] if '/' in url else url
+        endpoint = url.split("/")[-1] if "/" in url else url
         if not await self._check_rate_limit(service, endpoint):
             # Wait before retry
             await asyncio.sleep(random.choice)
@@ -368,9 +368,20 @@ class EnterpriseHTTPClient:
             if self._should_use_stale_while_revalidate(cache_key):
                 stale_data = self.cache[cache_key].data
                 # Schedule background revalidation
-                asyncio.create_task(self._background_revalidate(
-                    service, method, url, data_type, params, headers, json_data, cache_key, cache_ttl, **kwargs
-                ))
+                asyncio.create_task(
+                    self._background_revalidate(
+                        service,
+                        method,
+                        url,
+                        data_type,
+                        params,
+                        headers,
+                        json_data,
+                        cache_key,
+                        cache_ttl,
+                        **kwargs,
+                    )
+                )
                 return stale_data
 
         # Get client
@@ -392,7 +403,7 @@ class EnterpriseHTTPClient:
                 params=params,
                 headers=request_headers,
                 json=json_data,
-                **kwargs
+                **kwargs,
             )
 
             response.raise_for_status()
@@ -430,10 +441,19 @@ class EnterpriseHTTPClient:
             self.logger.error(f"Request error {service}: {url} - {e}")
             raise
 
-    async def _background_revalidate(self, service: str, method: str, url: str, data_type: str,
-                                   params: Optional[Dict], headers: Optional[Dict],
-                                   json_data: Optional[Dict], cache_key: str,
-                                   cache_ttl: Optional[int], **kwargs):
+    async def _background_revalidate(
+        self,
+        service: str,
+        method: str,
+        url: str,
+        data_type: str,
+        params: Optional[Dict],
+        headers: Optional[Dict],
+        json_data: Optional[Dict],
+        cache_key: str,
+        cache_ttl: Optional[int],
+        **kwargs,
+    ):
         """Background cache revalidation"""
         try:
             await self.request(
@@ -446,7 +466,7 @@ class EnterpriseHTTPClient:
                 json_data=json_data,
                 use_cache=False,  # Don't use cache for revalidation
                 cache_ttl=cache_ttl,
-                **kwargs
+                **kwargs,
             )
             self.logger.debug(f"Background revalidation complete for {cache_key}")
         except Exception as e:
@@ -473,8 +493,10 @@ class EnterpriseHTTPClient:
             service: {
                 "state": breaker.state.value,
                 "failure_count": breaker.failure_count,
-                "last_failure": breaker.last_failure_time.isoformat() if breaker.last_failure_time else None,
-                "successful_calls": breaker.successful_calls
+                "last_failure": breaker.last_failure_time.isoformat()
+                if breaker.last_failure_time
+                else None,
+                "successful_calls": breaker.successful_calls,
             }
             for service, breaker in self.circuit_breakers.items()
         }
@@ -487,8 +509,10 @@ class EnterpriseHTTPClient:
         return {
             "total_entries": total_entries,
             "expired_entries": expired_entries,
-            "memory_usage_mb": sum(len(str(entry.data)) for entry in self.cache.values()) / (1024 * 1024),
-            "hit_rate": sum(entry.access_count for entry in self.cache.values()) / max(total_entries, 1)
+            "memory_usage_mb": sum(len(str(entry.data)) for entry in self.cache.values())
+            / (1024 * 1024),
+            "hit_rate": sum(entry.access_count for entry in self.cache.values())
+            / max(total_entries, 1),
         }
 
 
@@ -500,10 +524,7 @@ http_client = EnterpriseHTTPClient()
 async def get_market_data(exchange: str, symbol: str, **kwargs) -> Dict:
     """Get market data from exchange"""
     return await http_client.get(
-        service=exchange.lower(),
-        url=f"/api/v1/ticker/{symbol}",
-        data_type="price",
-        **kwargs
+        service=exchange.lower(), url=f"/api/v1/ticker/{symbol}", data_type="price", **kwargs
     )
 
 
@@ -514,15 +535,12 @@ async def get_sentiment_data(source: str, query: str, **kwargs) -> Dict:
         url=f"/api/search",
         params={"q": query},
         data_type="sentiment",
-        **kwargs
+        **kwargs,
     )
 
 
 async def get_news_data(source: str, category: str = "crypto", **kwargs) -> List:
     """Get news data"""
     return await http_client.get(
-        service=source.lower(),
-        url=f"/api/news/{category}",
-        data_type="news",
-        **kwargs
+        service=source.lower(), url=f"/api/news/{category}", data_type="news", **kwargs
     )

@@ -13,11 +13,14 @@ from dataclasses import dataclass
 from sklearn.model_selection import train_test_split
 from sklearn.base import BaseEstimator
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 @dataclass
 class ConformalInterval:
     """Conformal prediction interval"""
+
     point_prediction: float
     lower_bound: float
     upper_bound: float
@@ -26,14 +29,17 @@ class ConformalInterval:
     coverage_probability: float
     nonconformity_score: float
 
+
 @dataclass
 class CoverageResult:
     """Coverage validation result"""
+
     nominal_coverage: float
     empirical_coverage: float
     coverage_gap: float
     interval_efficiency: float
     is_well_calibrated: bool
+
 
 class ConformalPredictor:
     """Conformal prediction wrapper for any scikit-learn compatible model"""
@@ -46,8 +52,9 @@ class ConformalPredictor:
         self.is_fitted = False
         self.logger = logging.getLogger(__name__)
 
-    def fit(self, X_train: pd.DataFrame, y_train: pd.Series,
-            X_calib: pd.DataFrame, y_calib: pd.Series) -> Dict[str, Any]:
+    def fit(
+        self, X_train: pd.DataFrame, y_train: pd.Series, X_calib: pd.DataFrame, y_calib: pd.Series
+    ) -> Dict[str, Any]:
         """Fit conformal predictor with proper train/calibration split"""
 
         # Fit base model on training data
@@ -77,7 +84,7 @@ class ConformalPredictor:
             "interval_quantile": self.quantile,
             "train_mae": train_mae,
             "calib_mae": calib_mae,
-            "confidence_level": self.confidence_level
+            "confidence_level": self.confidence_level,
         }
 
         self.logger.info(f"Conformal predictor fitted with {len(X_calib)} calibration samples")
@@ -101,8 +108,12 @@ class ConformalPredictor:
             interval_width = upper_bound - lower_bound
 
             # Estimate coverage probability (heuristic based on interval width)
-            coverage_prob = min(0.99, self.confidence_level + (1 - self.confidence_level) *
-                               np.exp(-interval_width / np.std(self.calibration_scores)))
+            coverage_prob = min(
+                0.99,
+                self.confidence_level
+                + (1 - self.confidence_level)
+                * np.exp(-interval_width / np.std(self.calibration_scores)),
+            )
 
             # Calculate nonconformity score (prediction uncertainty)
             nonconformity = self.quantile / (np.std(self.calibration_scores) + 1e-6)
@@ -114,7 +125,7 @@ class ConformalPredictor:
                 interval_width=float(interval_width),
                 confidence_level=self.confidence_level,
                 coverage_probability=float(coverage_prob),
-                nonconformity_score=float(nonconformity)
+                nonconformity_score=float(nonconformity),
             )
 
             intervals.append(interval)
@@ -146,16 +157,18 @@ class ConformalPredictor:
             empirical_coverage=empirical_coverage,
             coverage_gap=coverage_gap,
             interval_efficiency=interval_efficiency,
-            is_well_calibrated=is_well_calibrated
+            is_well_calibrated=is_well_calibrated,
         )
 
         return result
 
+
 class AdaptiveConformalPredictor:
     """Adaptive conformal predictor that adjusts to changing distributions"""
 
-    def __init__(self, base_model: BaseEstimator, confidence_level: float = 0.8,
-                 adaptation_window: int = 100):
+    def __init__(
+        self, base_model: BaseEstimator, confidence_level: float = 0.8, adaptation_window: int = 100
+    ):
         self.base_model = base_model
         self.confidence_level = confidence_level
         self.adaptation_window = adaptation_window
@@ -169,8 +182,9 @@ class AdaptiveConformalPredictor:
         self.is_fitted = False
         self.logger = logging.getLogger(__name__)
 
-    def fit(self, X_train: pd.DataFrame, y_train: pd.Series,
-            X_calib: pd.DataFrame, y_calib: pd.Series) -> Dict[str, Any]:
+    def fit(
+        self, X_train: pd.DataFrame, y_train: pd.Series, X_calib: pd.DataFrame, y_calib: pd.Series
+    ) -> Dict[str, Any]:
         """Fit adaptive conformal predictor"""
 
         # Fit base model
@@ -181,9 +195,9 @@ class AdaptiveConformalPredictor:
         calib_errors = np.abs(y_calib - calib_predictions)
 
         # Initialize rolling buffers
-        self.rolling_errors = list(calib_errors[-self.adaptation_window:])
-        self.rolling_predictions = list(calib_predictions[-self.adaptation_window:])
-        self.rolling_targets = list(y_calib.iloc[-self.adaptation_window:])
+        self.rolling_errors = list(calib_errors[-self.adaptation_window :])
+        self.rolling_predictions = list(calib_predictions[-self.adaptation_window :])
+        self.rolling_targets = list(y_calib.iloc[-self.adaptation_window :])
 
         self.is_fitted = True
 
@@ -191,14 +205,14 @@ class AdaptiveConformalPredictor:
             "success": True,
             "initial_quantile": self._calculate_current_quantile(),
             "adaptation_window": self.adaptation_window,
-            "calibration_samples": len(calib_errors)
+            "calibration_samples": len(calib_errors),
         }
 
         return result
 
-    def predict_with_adaptive_intervals(self, X: pd.DataFrame,
-                                      update_with_feedback: bool = False,
-                                      y_true: pd.Series = None) -> List[ConformalInterval]:
+    def predict_with_adaptive_intervals(
+        self, X: pd.DataFrame, update_with_feedback: bool = False, y_true: pd.Series = None
+    ) -> List[ConformalInterval]:
         """Generate predictions with adaptive intervals"""
 
         if not self.is_fitted:
@@ -226,7 +240,7 @@ class AdaptiveConformalPredictor:
                 interval_width=float(interval_width),
                 confidence_level=self.confidence_level,
                 coverage_probability=float(recent_coverage),
-                nonconformity_score=float(current_quantile)
+                nonconformity_score=float(current_quantile),
             )
 
             intervals.append(interval)
@@ -264,15 +278,17 @@ class AdaptiveConformalPredictor:
         recent_intervals_covered = []
 
         for i in range(min(50, len(self.rolling_predictions))):
-            pred = self.rolling_predictions[-(i+1)]
-            true_val = self.rolling_targets[-(i+1)]
+            pred = self.rolling_predictions[-(i + 1)]
+            true_val = self.rolling_targets[-(i + 1)]
 
             lower = pred - recent_quantile
             upper = pred + recent_quantile
             covered = lower <= true_val <= upper
             recent_intervals_covered.append(covered)
 
-        return np.mean(recent_intervals_covered) if recent_intervals_covered else self.confidence_level
+        return (
+            np.mean(recent_intervals_covered) if recent_intervals_covered else self.confidence_level
+        )
 
     def _update_rolling_data(self, prediction: float, true_value: float, error: float):
         """Update rolling calibration data"""
@@ -287,6 +303,7 @@ class AdaptiveConformalPredictor:
             self.rolling_predictions.pop(0)
             self.rolling_targets.pop(0)
 
+
 class ConformalRiskGate:
     """Risk gate using conformal prediction intervals for better confidence gating"""
 
@@ -295,8 +312,9 @@ class ConformalRiskGate:
         self.max_interval_width = max_interval_width
         self.logger = logging.getLogger(__name__)
 
-    def apply_conformal_gate(self, intervals: List[ConformalInterval],
-                           additional_features: pd.DataFrame = None) -> Dict[str, Any]:
+    def apply_conformal_gate(
+        self, intervals: List[ConformalInterval], additional_features: pd.DataFrame = None
+    ) -> Dict[str, Any]:
         """Apply risk gate using conformal intervals"""
 
         passed_indices = []
@@ -308,7 +326,9 @@ class ConformalRiskGate:
 
             # Check 1: Minimum coverage probability
             if interval.coverage_probability < self.min_confidence:
-                rejection_reason = f"Low coverage: {interval.coverage_probability:.3f} < {self.min_confidence}"
+                rejection_reason = (
+                    f"Low coverage: {interval.coverage_probability:.3f} < {self.min_confidence}"
+                )
 
             # Check 2: Maximum interval width (uncertainty)
             elif interval.interval_width > self.max_interval_width:
@@ -320,9 +340,9 @@ class ConformalRiskGate:
 
             # Calculate gate score (higher is better)
             gate_score = (
-                interval.coverage_probability * 0.4 +
-                (1 / (interval.interval_width + 0.01)) * 0.3 +
-                (1 / (interval.nonconformity_score + 0.01)) * 0.3
+                interval.coverage_probability * 0.4
+                + (1 / (interval.interval_width + 0.01)) * 0.3
+                + (1 / (interval.nonconformity_score + 0.01)) * 0.3
             )
 
             gate_scores.append(gate_score)
@@ -347,7 +367,7 @@ class ConformalRiskGate:
             "passed_predictions": len(passed_indices),
             "avg_coverage_probability": avg_coverage,
             "avg_interval_width": avg_width,
-            "gate_effectiveness": pass_rate * avg_coverage  # Combined metric
+            "gate_effectiveness": pass_rate * avg_coverage,  # Combined metric
         }
 
         return result
@@ -362,26 +382,32 @@ class ConformalRiskGate:
 
         for interval in intervals:
             features = {
-                'conformal_prediction': interval.point_prediction,
-                'conformal_lower': interval.lower_bound,
-                'conformal_upper': interval.upper_bound,
-                'conformal_width': interval.interval_width,
-                'conformal_coverage': interval.coverage_probability,
-                'conformal_uncertainty': interval.nonconformity_score,
-                'conformal_asymmetry': abs(interval.point_prediction -
-                                         ((interval.lower_bound + interval.upper_bound) / 2)),
-                'conformal_normalized_width': interval.interval_width / (abs(interval.point_prediction) + 0.01),
-                'conformal_confidence_score': interval.coverage_probability / (interval.interval_width + 0.01)
+                "conformal_prediction": interval.point_prediction,
+                "conformal_lower": interval.lower_bound,
+                "conformal_upper": interval.upper_bound,
+                "conformal_width": interval.interval_width,
+                "conformal_coverage": interval.coverage_probability,
+                "conformal_uncertainty": interval.nonconformity_score,
+                "conformal_asymmetry": abs(
+                    interval.point_prediction - ((interval.lower_bound + interval.upper_bound) / 2)
+                ),
+                "conformal_normalized_width": interval.interval_width
+                / (abs(interval.point_prediction) + 0.01),
+                "conformal_confidence_score": interval.coverage_probability
+                / (interval.interval_width + 0.01),
             }
 
             features_data.append(features)
 
         return pd.DataFrame(features_data)
 
+
 class ConformalPredictionSystem:
     """Complete conformal prediction system for crypto trading"""
 
-    def __init__(self, base_models: List[BaseEstimator], confidence_levels: List[float] = [0.8, 0.9]):
+    def __init__(
+        self, base_models: List[BaseEstimator], confidence_levels: List[float] = [0.8, 0.9]
+    ):
         self.base_models = base_models
         self.confidence_levels = confidence_levels
         self.conformal_predictors = {}
@@ -393,11 +419,12 @@ class ConformalPredictionSystem:
         for conf_level in confidence_levels:
             self.risk_gates[conf_level] = ConformalRiskGate(
                 min_confidence=conf_level,
-                max_interval_width=0.3 - (conf_level - 0.8) * 0.5  # Tighter for higher confidence
+                max_interval_width=0.3 - (conf_level - 0.8) * 0.5,  # Tighter for higher confidence
             )
 
-    def train_conformal_system(self, X: pd.DataFrame, y: pd.Series,
-                              test_size: float = 0.3) -> Dict[str, Any]:
+    def train_conformal_system(
+        self, X: pd.DataFrame, y: pd.Series, test_size: float = 0.3
+    ) -> Dict[str, Any]:
         """Train complete conformal prediction system"""
 
         # Split data: train/calib/test
@@ -438,7 +465,7 @@ class ConformalPredictionSystem:
                     training_results[predictor_key] = {
                         "fit_result": fit_result,
                         "coverage_validation": coverage_result,
-                        "adaptive_fit": adaptive_fit
+                        "adaptive_fit": adaptive_fit,
                     }
 
         # Overall system statistics
@@ -448,29 +475,37 @@ class ConformalPredictionSystem:
             "training_samples": len(X_train),
             "calibration_samples": len(X_calib),
             "test_samples": len(X_test),
-            "avg_coverage_gap": np.mean([
-                result["coverage_validation"].coverage_gap
-                for result in training_results.values()
-                if "coverage_validation" in result
-            ]) if training_results else 0
+            "avg_coverage_gap": np.mean(
+                [
+                    result["coverage_validation"].coverage_gap
+                    for result in training_results.values()
+                    if "coverage_validation" in result
+                ]
+            )
+            if training_results
+            else 0,
         }
 
         result = {
             "success": True,
             "system_stats": system_stats,
-            "predictor_results": training_results
+            "predictor_results": training_results,
         }
 
-        self.logger.info(f"Conformal system trained with {len(self.conformal_predictors)} predictors")
+        self.logger.info(
+            f"Conformal system trained with {len(self.conformal_predictors)} predictors"
+        )
         return result
 
-    def predict_with_conformal_ensemble(self, X: pd.DataFrame,
-                                      confidence_level: float = 0.8) -> Tuple[List[ConformalInterval], Dict[str, Any]]:
+    def predict_with_conformal_ensemble(
+        self, X: pd.DataFrame, confidence_level: float = 0.8
+    ) -> Tuple[List[ConformalInterval], Dict[str, Any]]:
         """Generate ensemble conformal predictions"""
 
         # Get all predictors for this confidence level
         relevant_predictors = {
-            key: predictor for key, predictor in self.conformal_predictors.items()
+            key: predictor
+            for key, predictor in self.conformal_predictors.items()
             if f"_{confidence_level}" in key
         }
 
@@ -515,7 +550,7 @@ class ConformalPredictionSystem:
                 interval_width=ensemble_width,
                 confidence_level=confidence_level,
                 coverage_probability=avg_coverage,
-                nonconformity_score=avg_nonconformity
+                nonconformity_score=avg_nonconformity,
             )
 
             ensemble_intervals.append(ensemble_interval)
@@ -528,11 +563,14 @@ class ConformalPredictionSystem:
             "models_used": len(relevant_predictors),
             "avg_interval_width": np.mean([i.interval_width for i in ensemble_intervals]),
             "avg_coverage": np.mean([i.coverage_probability for i in ensemble_intervals]),
-            "gate_result": gate_result
+            "gate_result": gate_result,
         }
 
         return ensemble_intervals, ensemble_stats
 
-def create_conformal_prediction_system(base_models: List[BaseEstimator]) -> ConformalPredictionSystem:
+
+def create_conformal_prediction_system(
+    base_models: List[BaseEstimator],
+) -> ConformalPredictionSystem:
     """Create conformal prediction system with multiple models"""
     return ConformalPredictionSystem(base_models)

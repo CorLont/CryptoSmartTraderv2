@@ -11,13 +11,16 @@ from typing import Dict, List, Tuple, Optional, Any
 import logging
 from dataclasses import dataclass
 
+
 @dataclass
 class TemporalValidationResult:
     """Simplified temporal validation result"""
+
     is_valid: bool
     violations: List[str]
     aligned_data: Optional[pd.DataFrame]
     recommendation: str
+
 
 class TemporalIntegrityValidator:
     """Lightweight temporal integrity validator"""
@@ -27,18 +30,13 @@ class TemporalIntegrityValidator:
         self.logger = logging.getLogger(__name__)
 
         # Timeframe intervals in seconds
-        self.intervals = {
-            "1m": 60,
-            "5m": 300,
-            "15m": 900,
-            "1h": 3600,
-            "4h": 14400,
-            "1d": 86400
-        }
+        self.intervals = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
 
         self.interval_seconds = self.intervals.get(timeframe, 3600)
 
-    def validate_agent_data(self, df: pd.DataFrame, agent_name: str = "agent") -> TemporalValidationResult:
+    def validate_agent_data(
+        self, df: pd.DataFrame, agent_name: str = "agent"
+    ) -> TemporalValidationResult:
         """Validate temporal integrity of agent data"""
 
         violations = []
@@ -50,7 +48,7 @@ class TemporalIntegrityValidator:
                 is_valid=False,
                 violations=[f"No timestamp column found in {agent_name}"],
                 aligned_data=None,
-                recommendation="Add timestamp column with UTC datetime values"
+                recommendation="Add timestamp column with UTC datetime values",
             )
 
         timestamps = df[timestamp_col]
@@ -84,7 +82,9 @@ class TemporalIntegrityValidator:
         # Check 5: Regular intervals
         if len(timestamps) > 1:
             intervals = timestamps.diff().dt.total_seconds().dropna()
-            irregular_count = sum(1 for interval in intervals if abs(interval - self.interval_seconds) > 60)
+            irregular_count = sum(
+                1 for interval in intervals if abs(interval - self.interval_seconds) > 60
+            )
             if irregular_count > len(intervals) * 0.1:  # More than 10% irregular
                 violations.append(f"{agent_name}: {irregular_count} irregular intervals")
 
@@ -92,13 +92,15 @@ class TemporalIntegrityValidator:
         aligned_data = self._align_to_candles(df, timestamp_col)
 
         is_valid = len(violations) == 0
-        recommendation = "Safe for ML operations" if is_valid else "Fix temporal violations before ML use"
+        recommendation = (
+            "Safe for ML operations" if is_valid else "Fix temporal violations before ML use"
+        )
 
         return TemporalValidationResult(
             is_valid=is_valid,
             violations=violations,
             aligned_data=aligned_data,
-            recommendation=recommendation
+            recommendation=recommendation,
         )
 
     def validate_multi_agent(self, agent_data: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
@@ -145,17 +147,19 @@ class TemporalIntegrityValidator:
         overall_valid = len(all_violations) == 0
 
         return {
-            'overall_valid': overall_valid,
-            'violations': all_violations,
-            'agent_results': agent_results,
-            'aligned_agents': aligned_agents,
-            'recommendation': 'Safe for ML operations' if overall_valid else 'Fix violations before proceeding'
+            "overall_valid": overall_valid,
+            "violations": all_violations,
+            "agent_results": agent_results,
+            "aligned_agents": aligned_agents,
+            "recommendation": "Safe for ML operations"
+            if overall_valid
+            else "Fix violations before proceeding",
         }
 
     def _find_timestamp_column(self, df: pd.DataFrame) -> Optional[str]:
         """Find timestamp column in DataFrame"""
 
-        candidates = ['timestamp', 'time', 'datetime', 'date']
+        candidates = ["timestamp", "time", "datetime", "date"]
 
         for col in candidates:
             if col in df.columns:
@@ -201,7 +205,9 @@ class TemporalIntegrityValidator:
                     # Align to candle boundary (floor to nearest interval)
                     epoch = datetime(2000, 1, 1, tzinfo=timezone.utc)
                     seconds_since_epoch = (original_ts - epoch).total_seconds()
-                    aligned_seconds = (seconds_since_epoch // self.interval_seconds) * self.interval_seconds
+                    aligned_seconds = (
+                        seconds_since_epoch // self.interval_seconds
+                    ) * self.interval_seconds
                     aligned_ts = epoch + timedelta(seconds=aligned_seconds)
 
                     aligned_df.at[idx, timestamp_col] = aligned_ts
@@ -212,19 +218,17 @@ class TemporalIntegrityValidator:
 
         return aligned_df
 
+
 def validate_temporal_integrity(
-    agent_data: Dict[str, pd.DataFrame],
-    timeframe: str = "1h"
+    agent_data: Dict[str, pd.DataFrame], timeframe: str = "1h"
 ) -> Dict[str, Any]:
     """High-level function to validate temporal integrity"""
 
     validator = TemporalIntegrityValidator(timeframe)
     return validator.validate_multi_agent(agent_data)
 
-def align_agent_timestamps(
-    df: pd.DataFrame,
-    timeframe: str = "1h"
-) -> pd.DataFrame:
+
+def align_agent_timestamps(df: pd.DataFrame, timeframe: str = "1h") -> pd.DataFrame:
     """Align agent timestamps to candle boundaries"""
 
     validator = TemporalIntegrityValidator(timeframe)

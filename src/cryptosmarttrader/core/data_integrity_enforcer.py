@@ -14,9 +14,12 @@ import json
 from ..core.structured_logger import get_logger
 from config.daily_logging_config import get_daily_logger
 
+
 class DataIntegrityViolation(Exception):
     """Exception raised when data integrity is violated"""
+
     pass
+
 
 class ProductionDataGuard:
     """Production-grade data integrity enforcement"""
@@ -38,14 +41,18 @@ class ProductionDataGuard:
             "max_missing_percentage": 0.0,  # 0% missing data allowed
             "min_data_freshness_hours": 1,
             "required_sources": ["exchange_api"],
-            "forbidden_sources": ["synthetic", "fallback", "interpolated", "mock", "placeholder"]
+            "forbidden_sources": ["synthetic", "fallback", "interpolated", "mock", "placeholder"],
         }
 
-        self.logger.info(f"Data integrity enforcer initialized",
-                        production_mode=production_mode,
-                        zero_tolerance=True)
+        self.logger.info(
+            f"Data integrity enforcer initialized",
+            production_mode=production_mode,
+            zero_tolerance=True,
+        )
 
-    def validate_data_pipeline(self, data: pd.DataFrame, source_metadata: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
+    def validate_data_pipeline(
+        self, data: pd.DataFrame, source_metadata: Dict[str, Any]
+    ) -> Tuple[bool, Dict[str, Any]]:
         """Validate entire data pipeline for integrity violations"""
 
         validation_start = datetime.utcnow()
@@ -58,7 +65,7 @@ class ProductionDataGuard:
             "source_metadata": source_metadata,
             "violations": [],
             "passed_checks": [],
-            "overall_status": "UNKNOWN"
+            "overall_status": "UNKNOWN",
         }
 
         try:
@@ -109,7 +116,7 @@ class ProductionDataGuard:
             self.daily_logger.log_system_check(
                 "data_integrity_validation",
                 not has_violations,
-                f"Violations: {len(validation_results['violations'])}, Passed: {len(validation_results['passed_checks'])}"
+                f"Violations: {len(validation_results['violations'])}, Passed: {len(validation_results['passed_checks'])}",
             )
 
             validation_time = (datetime.utcnow() - validation_start).total_seconds()
@@ -121,11 +128,13 @@ class ProductionDataGuard:
 
         except Exception as e:
             self.logger.error(f"Data validation failed: {e}")
-            validation_results["violations"].append({
-                "type": "VALIDATION_ERROR",
-                "severity": "CRITICAL",
-                "message": f"Validation process failed: {str(e)}"
-            })
+            validation_results["violations"].append(
+                {
+                    "type": "VALIDATION_ERROR",
+                    "severity": "CRITICAL",
+                    "message": f"Validation process failed: {str(e)}",
+                }
+            )
             validation_results["overall_status"] = "ERROR"
 
             return False, validation_results
@@ -142,26 +151,30 @@ class ProductionDataGuard:
 
             # Check for forbidden sources
             if source_type.lower() in self.validation_rules["forbidden_sources"]:
-                violations.append({
-                    "type": "FORBIDDEN_SOURCE",
-                    "severity": "CRITICAL",
-                    "message": f"Forbidden data source detected: {source_type}",
-                    "source": source
-                })
+                violations.append(
+                    {
+                        "type": "FORBIDDEN_SOURCE",
+                        "severity": "CRITICAL",
+                        "message": f"Forbidden data source detected: {source_type}",
+                        "source": source,
+                    }
+                )
 
             # Check for required authentic sources
             if source_type.lower() not in self.validation_rules["required_sources"]:
-                violations.append({
-                    "type": "NON_AUTHENTIC_SOURCE",
-                    "severity": "CRITICAL",
-                    "message": f"Non-authentic data source: {source_type}",
-                    "source": source
-                })
+                violations.append(
+                    {
+                        "type": "NON_AUTHENTIC_SOURCE",
+                        "severity": "CRITICAL",
+                        "message": f"Non-authentic data source: {source_type}",
+                        "source": source,
+                    }
+                )
 
         return {
             "passed": len(violations) == 0,
             "violations": violations,
-            "sources_checked": len(data_sources)
+            "sources_checked": len(data_sources),
         }
 
     def _validate_data_completeness(self, data: pd.DataFrame) -> Dict[str, Any]:
@@ -172,30 +185,34 @@ class ProductionDataGuard:
         # Check required fields
         missing_fields = set(self.validation_rules["required_fields"]) - set(data.columns)
         if missing_fields:
-            violations.append({
-                "type": "MISSING_REQUIRED_FIELDS",
-                "severity": "CRITICAL",
-                "message": f"Required fields missing: {list(missing_fields)}",
-                "missing_fields": list(missing_fields)
-            })
+            violations.append(
+                {
+                    "type": "MISSING_REQUIRED_FIELDS",
+                    "severity": "CRITICAL",
+                    "message": f"Required fields missing: {list(missing_fields)}",
+                    "missing_fields": list(missing_fields),
+                }
+            )
 
         # Check for missing data percentage
         for field in self.validation_rules["required_fields"]:
             if field in data.columns:
                 missing_percentage = data[field].isnull().sum() / len(data)
                 if missing_percentage > self.validation_rules["max_missing_percentage"]:
-                    violations.append({
-                        "type": "EXCESSIVE_MISSING_DATA",
-                        "severity": "CRITICAL",
-                        "message": f"Field '{field}' has {missing_percentage:.1%} missing data (max allowed: {self.validation_rules['max_missing_percentage']:.1%})",
-                        "field": field,
-                        "missing_percentage": missing_percentage
-                    })
+                    violations.append(
+                        {
+                            "type": "EXCESSIVE_MISSING_DATA",
+                            "severity": "CRITICAL",
+                            "message": f"Field '{field}' has {missing_percentage:.1%} missing data (max allowed: {self.validation_rules['max_missing_percentage']:.1%})",
+                            "field": field,
+                            "missing_percentage": missing_percentage,
+                        }
+                    )
 
         return {
             "passed": len(violations) == 0,
             "violations": violations,
-            "total_records": len(data)
+            "total_records": len(data),
         }
 
     def _validate_data_freshness(self, data: pd.DataFrame) -> Dict[str, Any]:
@@ -215,25 +232,26 @@ class ProductionDataGuard:
                 max_hours = self.validation_rules["min_data_freshness_hours"]
 
                 if hours_old > max_hours:
-                    violations.append({
-                        "type": "STALE_DATA",
-                        "severity": "CRITICAL",
-                        "message": f"Data is {hours_old:.1f} hours old (max allowed: {max_hours} hours)",
-                        "hours_old": hours_old,
-                        "latest_timestamp": latest_timestamp.isoformat()
-                    })
+                    violations.append(
+                        {
+                            "type": "STALE_DATA",
+                            "severity": "CRITICAL",
+                            "message": f"Data is {hours_old:.1f} hours old (max allowed: {max_hours} hours)",
+                            "hours_old": hours_old,
+                            "latest_timestamp": latest_timestamp.isoformat(),
+                        }
+                    )
 
             except Exception as e:
-                violations.append({
-                    "type": "TIMESTAMP_VALIDATION_ERROR",
-                    "severity": "CRITICAL",
-                    "message": f"Cannot validate timestamp freshness: {str(e)}"
-                })
+                violations.append(
+                    {
+                        "type": "TIMESTAMP_VALIDATION_ERROR",
+                        "severity": "CRITICAL",
+                        "message": f"Cannot validate timestamp freshness: {str(e)}",
+                    }
+                )
 
-        return {
-            "passed": len(violations) == 0,
-            "violations": violations
-        }
+        return {"passed": len(violations) == 0, "violations": violations}
 
     def _detect_synthetic_data(self, data: pd.DataFrame) -> Dict[str, Any]:
         """Detect synthetic/generated data patterns"""
@@ -249,41 +267,49 @@ class ProductionDataGuard:
 
                 # Detect constant changes (synthetic pattern)
                 if len(price_changes.unique()) == 1 and len(price_changes) > 5:
-                    violations.append({
-                        "type": "SYNTHETIC_PRICE_PATTERN",
-                        "severity": "CRITICAL",
-                        "message": "Detected synthetic price pattern (constant changes)",
-                        "pattern": "constant_changes"
-                    })
+                    violations.append(
+                        {
+                            "type": "SYNTHETIC_PRICE_PATTERN",
+                            "severity": "CRITICAL",
+                            "message": "Detected synthetic price pattern (constant changes)",
+                            "pattern": "constant_changes",
+                        }
+                    )
 
                 # Detect unrealistic volatility patterns
                 price_volatility = price_changes.std()
                 if price_volatility == 0 and len(price_changes) > 3:
-                    violations.append({
-                        "type": "ZERO_VOLATILITY",
-                        "severity": "CRITICAL",
-                        "message": "Detected zero price volatility (likely synthetic)",
-                        "volatility": price_volatility
-                    })
+                    violations.append(
+                        {
+                            "type": "ZERO_VOLATILITY",
+                            "severity": "CRITICAL",
+                            "message": "Detected zero price volatility (likely synthetic)",
+                            "volatility": price_volatility,
+                        }
+                    )
 
         # Check for placeholder values
         for column in data.columns:
-            if data[column].dtype in ['object', 'string']:
-                placeholder_values = ['placeholder', 'dummy', 'test', 'fake', 'synthetic', 'mock']
+            if data[column].dtype in ["object", "string"]:
+                placeholder_values = ["placeholder", "dummy", "test", "fake", "synthetic", "mock"]
                 for placeholder in placeholder_values:
-                    if data[column].astype(str).str.contains(placeholder, case=False, na=False).any():
-                        violations.append({
-                            "type": "PLACEHOLDER_VALUES",
-                            "severity": "CRITICAL",
-                            "message": f"Placeholder values detected in column '{column}': {placeholder}",
-                            "column": column,
-                            "placeholder": placeholder
-                        })
+                    if (
+                        data[column]
+                        .astype(str)
+                        .str.contains(placeholder, case=False, na=False)
+                        .any()
+                    ):
+                        violations.append(
+                            {
+                                "type": "PLACEHOLDER_VALUES",
+                                "severity": "CRITICAL",
+                                "message": f"Placeholder values detected in column '{column}': {placeholder}",
+                                "column": column,
+                                "placeholder": placeholder,
+                            }
+                        )
 
-        return {
-            "passed": len(violations) == 0,
-            "violations": violations
-        }
+        return {"passed": len(violations) == 0, "violations": violations}
 
     def _validate_no_nan_values(self, data: pd.DataFrame) -> Dict[str, Any]:
         """Validate zero NaN/missing values in critical fields"""
@@ -296,18 +322,17 @@ class ProductionDataGuard:
             if field in data.columns:
                 nan_count = data[field].isnull().sum()
                 if nan_count > 0:
-                    violations.append({
-                        "type": "NAN_VALUES_DETECTED",
-                        "severity": "CRITICAL",
-                        "message": f"NaN values detected in critical field '{field}': {nan_count} occurrences",
-                        "field": field,
-                        "nan_count": nan_count
-                    })
+                    violations.append(
+                        {
+                            "type": "NAN_VALUES_DETECTED",
+                            "severity": "CRITICAL",
+                            "message": f"NaN values detected in critical field '{field}': {nan_count} occurrences",
+                            "field": field,
+                            "nan_count": nan_count,
+                        }
+                    )
 
-        return {
-            "passed": len(violations) == 0,
-            "violations": violations
-        }
+        return {"passed": len(violations) == 0, "violations": violations}
 
     def _block_production_pipeline(self, validation_results: Dict[str, Any]) -> None:
         """Block production pipeline when violations are detected"""
@@ -318,7 +343,7 @@ class ProductionDataGuard:
         self.daily_logger.log_security_event(
             "PRODUCTION_PIPELINE_BLOCKED",
             "CRITICAL",
-            f"Data integrity violations: {len(validation_results['violations'])} issues detected"
+            f"Data integrity violations: {len(validation_results['violations'])} issues detected",
         )
 
         # Save violation report
@@ -336,9 +361,11 @@ class ProductionDataGuard:
             reports_dir = Path("logs/data_integrity_violations")
             reports_dir.mkdir(parents=True, exist_ok=True)
 
-            report_file = reports_dir / f"violation_report_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+            report_file = (
+                reports_dir / f"violation_report_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+            )
 
-            with open(report_file, 'w') as f:
+            with open(report_file, "w") as f:
                 json.dump(validation_results, f, indent=2)
 
             self.logger.info(f"Violation report saved: {report_file}")
@@ -346,9 +373,13 @@ class ProductionDataGuard:
         except Exception as e:
             self.logger.error(f"Failed to save violation report: {e}")
 
+
 # Global instance for production use
 production_guard = ProductionDataGuard(production_mode=True)
 
-def validate_production_data(data: pd.DataFrame, source_metadata: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
+
+def validate_production_data(
+    data: pd.DataFrame, source_metadata: Dict[str, Any]
+) -> Tuple[bool, Dict[str, Any]]:
     """Global function for production data validation"""
     return production_guard.validate_data_pipeline(data, source_metadata)

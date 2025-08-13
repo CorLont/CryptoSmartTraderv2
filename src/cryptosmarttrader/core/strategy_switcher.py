@@ -17,6 +17,7 @@ from .regime_detector import RegimeDetector, MarketRegime
 
 class StrategyType(Enum):
     """Available trading strategies."""
+
     MOMENTUM_LONG = "momentum_long"
     MOMENTUM_SHORT = "momentum_short"
     MEAN_REVERSION = "mean_reversion"
@@ -30,6 +31,7 @@ class StrategyType(Enum):
 @dataclass
 class StrategyAllocation:
     """Strategy allocation configuration."""
+
     strategy_type: StrategyType
     weight: float
     confidence: float
@@ -43,6 +45,7 @@ class StrategyAllocation:
 @dataclass
 class PositionTarget:
     """Target position for a symbol in a strategy."""
+
     symbol: str
     target_weight: float
     current_weight: float
@@ -54,6 +57,7 @@ class PositionTarget:
 @dataclass
 class ClusterLimit:
     """Risk limits for asset clusters."""
+
     cluster_name: str
     max_weight: float
     current_weight: float
@@ -107,48 +111,50 @@ class StrategySwitcher:
         self.data_path = Path("data/strategy_switching")
         self.data_path.mkdir(parents=True, exist_ok=True)
 
-        self.logger.info("Strategy switcher initialized",
-                        initial_capital=initial_capital,
-                        target_volatility=self.target_volatility)
+        self.logger.info(
+            "Strategy switcher initialized",
+            initial_capital=initial_capital,
+            target_volatility=self.target_volatility,
+        )
 
     def _initialize_cluster_limits(self) -> None:
         """Initialize asset cluster limits for risk management."""
         # Define crypto asset clusters
         clusters = {
-            'large_cap': {
-                'symbols': ['BTC/USDT', 'ETH/USDT', 'BNB/USDT'],
-                'max_weight': 0.6,  # 60% max in large caps
-                'correlation_threshold': 0.8
+            "large_cap": {
+                "symbols": ["BTC/USDT", "ETH/USDT", "BNB/USDT"],
+                "max_weight": 0.6,  # 60% max in large caps
+                "correlation_threshold": 0.8,
             },
-            'defi': {
-                'symbols': ['UNI/USDT', 'AAVE/USDT', 'COMP/USDT', 'MKR/USDT'],
-                'max_weight': 0.25,  # 25% max in DeFi
-                'correlation_threshold': 0.75
+            "defi": {
+                "symbols": ["UNI/USDT", "AAVE/USDT", "COMP/USDT", "MKR/USDT"],
+                "max_weight": 0.25,  # 25% max in DeFi
+                "correlation_threshold": 0.75,
             },
-            'layer1': {
-                'symbols': ['ADA/USDT', 'SOL/USDT', 'DOT/USDT', 'AVAX/USDT'],
-                'max_weight': 0.3,   # 30% max in Layer 1s
-                'correlation_threshold': 0.7
+            "layer1": {
+                "symbols": ["ADA/USDT", "SOL/USDT", "DOT/USDT", "AVAX/USDT"],
+                "max_weight": 0.3,  # 30% max in Layer 1s
+                "correlation_threshold": 0.7,
             },
-            'gaming_metaverse': {
-                'symbols': ['AXS/USDT', 'SAND/USDT', 'MANA/USDT', 'ENJ/USDT'],
-                'max_weight': 0.15,  # 15% max in gaming/metaverse
-                'correlation_threshold': 0.65
+            "gaming_metaverse": {
+                "symbols": ["AXS/USDT", "SAND/USDT", "MANA/USDT", "ENJ/USDT"],
+                "max_weight": 0.15,  # 15% max in gaming/metaverse
+                "correlation_threshold": 0.65,
             },
-            'privacy': {
-                'symbols': ['XMR/USDT', 'ZEC/USDT', 'DASH/USDT'],
-                'max_weight': 0.1,   # 10% max in privacy coins
-                'correlation_threshold': 0.6
-            }
+            "privacy": {
+                "symbols": ["XMR/USDT", "ZEC/USDT", "DASH/USDT"],
+                "max_weight": 0.1,  # 10% max in privacy coins
+                "correlation_threshold": 0.6,
+            },
         }
 
         for cluster_name, config in clusters.items():
             self.cluster_limits[cluster_name] = ClusterLimit(
                 cluster_name=cluster_name,
-                max_weight=config['max_weight'],
+                max_weight=config["max_weight"],
                 current_weight=0.0,
-                symbols=config['symbols'],
-                correlation_threshold=config['correlation_threshold']
+                symbols=config["symbols"],
+                correlation_threshold=config["correlation_threshold"],
             )
 
     def _initialize_strategy_allocations(self) -> None:
@@ -165,7 +171,7 @@ class StrategySwitcher:
             StrategyType.RANGE_TRADING: 0.0,
             StrategyType.VOLATILITY_CAPTURE: 0.0,
             StrategyType.CONTRARIAN: 0.0,
-            StrategyType.TREND_FOLLOWING: 0.0
+            StrategyType.TREND_FOLLOWING: 0.0,
         }
 
         # Regime-specific allocations
@@ -211,21 +217,22 @@ class StrategySwitcher:
                     strategy_type=strategy_type,
                     weight=weight,
                     confidence=self.regime_detector.regime_confidence,
-                    max_position_size=regime_config.get('position_sizing', 1.0) * self.max_single_position,
-                    risk_multiplier=regime_config.get('risk_multiplier', 1.0),
-                    rebalance_frequency=regime_config.get('rebalance_frequency', 'daily')
+                    max_position_size=regime_config.get("position_sizing", 1.0)
+                    * self.max_single_position,
+                    risk_multiplier=regime_config.get("risk_multiplier", 1.0),
+                    rebalance_frequency=regime_config.get("rebalance_frequency", "daily"),
                 )
 
     def update_regime_allocation(self) -> bool:
         """Update strategy allocation based on regime change."""
-        previous_regime = getattr(self, '_previous_regime', None)
+        previous_regime = getattr(self, "_previous_regime", None)
         current_regime = self.regime_detector.current_regime
 
         if previous_regime != current_regime:
             self.logger.info(f"Updating allocation for regime change: {current_regime.value}")
 
             # Save previous allocation for transition analysis
-            if hasattr(self, '_previous_allocations'):
+            if hasattr(self, "_previous_allocations"):
                 self._analyze_regime_transition_performance()
 
             self._previous_allocations = self.current_allocations.copy()
@@ -238,8 +245,9 @@ class StrategySwitcher:
 
         return False
 
-    def calculate_volatility_target_sizing(self, symbol: str, base_weight: float,
-                                         historical_returns: pd.Series) -> float:
+    def calculate_volatility_target_sizing(
+        self, symbol: str, base_weight: float, historical_returns: pd.Series
+    ) -> float:
         """Calculate position size based on volatility targeting."""
         try:
             if len(historical_returns) < 20:
@@ -262,11 +270,13 @@ class StrategySwitcher:
             max_pos = self.max_single_position
             adjusted_weight = min(adjusted_weight, max_pos)
 
-            self.logger.debug(f"Vol targeting for {symbol}",
-                            base_weight=base_weight,
-                            symbol_vol=symbol_vol,
-                            vol_scalar=vol_scalar,
-                            adjusted_weight=adjusted_weight)
+            self.logger.debug(
+                f"Vol targeting for {symbol}",
+                base_weight=base_weight,
+                symbol_vol=symbol_vol,
+                vol_scalar=vol_scalar,
+                adjusted_weight=adjusted_weight,
+            )
 
             return adjusted_weight
 
@@ -281,14 +291,15 @@ class StrategySwitcher:
         for cluster_name, cluster in self.cluster_limits.items():
             # Calculate cluster exposure
             cluster_exposure = sum(
-                adjusted_positions.get(symbol, 0.0)
-                for symbol in cluster.symbols
+                adjusted_positions.get(symbol, 0.0) for symbol in cluster.symbols
             )
 
             # Check if cluster limit is exceeded
             if cluster_exposure > cluster.max_weight:
-                self.logger.warning(f"Cluster {cluster_name} exposure {cluster_exposure:.2%} "
-                                  f"exceeds limit {cluster.max_weight:.2%}")
+                self.logger.warning(
+                    f"Cluster {cluster_name} exposure {cluster_exposure:.2%} "
+                    f"exceeds limit {cluster.max_weight:.2%}"
+                )
 
                 # Scale down positions proportionally
                 scale_factor = cluster.max_weight / cluster_exposure
@@ -298,7 +309,9 @@ class StrategySwitcher:
 
         return adjusted_positions
 
-    def generate_position_targets(self, market_data: Dict[str, pd.DataFrame]) -> Dict[str, PositionTarget]:
+    def generate_position_targets(
+        self, market_data: Dict[str, pd.DataFrame]
+    ) -> Dict[str, PositionTarget]:
         """Generate position targets based on current strategy allocations."""
         position_targets = {}
 
@@ -307,9 +320,7 @@ class StrategySwitcher:
                 continue
 
             # Get strategy-specific position targets
-            strategy_targets = self._get_strategy_positions(
-                strategy_type, allocation, market_data
-            )
+            strategy_targets = self._get_strategy_positions(strategy_type, allocation, market_data)
 
             # Merge with overall targets
             for symbol, target_weight in strategy_targets.items():
@@ -317,8 +328,8 @@ class StrategySwitcher:
                     # Combine multiple strategy signals
                     existing_target = position_targets[symbol]
                     combined_weight = (
-                        existing_target.target_weight * existing_target.confidence +
-                        target_weight * allocation.confidence
+                        existing_target.target_weight * existing_target.confidence
+                        + target_weight * allocation.confidence
                     ) / (existing_target.confidence + allocation.confidence)
 
                     position_targets[symbol] = PositionTarget(
@@ -326,7 +337,7 @@ class StrategySwitcher:
                         target_weight=combined_weight,
                         current_weight=existing_target.current_weight,
                         confidence=(existing_target.confidence + allocation.confidence) / 2,
-                        strategy_source=strategy_type  # Last strategy wins
+                        strategy_source=strategy_type,  # Last strategy wins
                     )
                 else:
                     position_targets[symbol] = PositionTarget(
@@ -334,13 +345,13 @@ class StrategySwitcher:
                         target_weight=target_weight,
                         current_weight=0.0,  # Will be updated with actual positions
                         confidence=allocation.confidence,
-                        strategy_source=strategy_type
+                        strategy_source=strategy_type,
                     )
 
         # Apply volatility targeting
         for symbol, target in position_targets.items():
             if symbol in market_data:
-                returns = market_data[symbol]['close'].pct_change().dropna()
+                returns = market_data[symbol]["close"].pct_change().dropna()
                 target.target_weight = self.calculate_volatility_target_sizing(
                     symbol, target.target_weight, returns
                 )
@@ -356,9 +367,12 @@ class StrategySwitcher:
 
         return position_targets
 
-    def _get_strategy_positions(self, strategy_type: StrategyType,
-                              allocation: StrategyAllocation,
-                              market_data: Dict[str, pd.DataFrame]) -> Dict[str, float]:
+    def _get_strategy_positions(
+        self,
+        strategy_type: StrategyType,
+        allocation: StrategyAllocation,
+        market_data: Dict[str, pd.DataFrame],
+    ) -> Dict[str, float]:
         """Get position targets for specific strategy."""
         positions = {}
 
@@ -377,8 +391,9 @@ class StrategySwitcher:
 
         return positions
 
-    def _momentum_long_positions(self, market_data: Dict[str, pd.DataFrame],
-                               allocation: StrategyAllocation) -> Dict[str, float]:
+    def _momentum_long_positions(
+        self, market_data: Dict[str, pd.DataFrame], allocation: StrategyAllocation
+    ) -> Dict[str, float]:
         """Generate momentum long positions."""
         positions = {}
 
@@ -389,7 +404,7 @@ class StrategySwitcher:
                 continue
 
             # Simple momentum: 20-day return
-            momentum = (df['close'].iloc[-1] / df['close'].iloc[-21] - 1)
+            momentum = df["close"].iloc[-1] / df["close"].iloc[-21] - 1
             momentum_scores[symbol] = momentum
 
         # Select top momentum symbols
@@ -405,8 +420,9 @@ class StrategySwitcher:
 
         return positions
 
-    def _mean_reversion_positions(self, market_data: Dict[str, pd.DataFrame],
-                                allocation: StrategyAllocation) -> Dict[str, float]:
+    def _mean_reversion_positions(
+        self, market_data: Dict[str, pd.DataFrame], allocation: StrategyAllocation
+    ) -> Dict[str, float]:
         """Generate mean reversion positions."""
         positions = {}
 
@@ -415,12 +431,12 @@ class StrategySwitcher:
                 continue
 
             # Calculate distance from 50-day MA
-            ma_50 = df['close'].rolling(50).mean().iloc[-1]
-            current_price = df['close'].iloc[-1]
+            ma_50 = df["close"].rolling(50).mean().iloc[-1]
+            current_price = df["close"].iloc[-1]
             distance = (current_price - ma_50) / ma_50
 
             # RSI for oversold/overbought
-            rsi = self._calculate_rsi(df['close']).iloc[-1]
+            rsi = self._calculate_rsi(df["close"]).iloc[-1]
 
             # Mean reversion signal
             if distance < -0.1 and rsi < 30:  # Oversold
@@ -432,8 +448,9 @@ class StrategySwitcher:
 
         return positions
 
-    def _breakout_momentum_positions(self, market_data: Dict[str, pd.DataFrame],
-                                   allocation: StrategyAllocation) -> Dict[str, float]:
+    def _breakout_momentum_positions(
+        self, market_data: Dict[str, pd.DataFrame], allocation: StrategyAllocation
+    ) -> Dict[str, float]:
         """Generate breakout momentum positions."""
         positions = {}
 
@@ -442,13 +459,13 @@ class StrategySwitcher:
                 continue
 
             # Bollinger Band breakout
-            ma_20 = df['close'].rolling(20).mean()
-            std_20 = df['close'].rolling(20).std()
+            ma_20 = df["close"].rolling(20).mean()
+            std_20 = df["close"].rolling(20).std()
             upper_band = ma_20 + (2 * std_20)
             lower_band = ma_20 - (2 * std_20)
 
-            current_price = df['close'].iloc[-1]
-            volume_ratio = df['volume'].iloc[-1] / df['volume'].rolling(20).mean().iloc[-1]
+            current_price = df["close"].iloc[-1]
+            volume_ratio = df["volume"].iloc[-1] / df["volume"].rolling(20).mean().iloc[-1]
 
             # Breakout signals
             if current_price > upper_band.iloc[-1] and volume_ratio > 1.5:
@@ -458,14 +475,16 @@ class StrategySwitcher:
 
         return positions
 
-    def _range_trading_positions(self, market_data: Dict[str, pd.DataFrame],
-                               allocation: StrategyAllocation) -> Dict[str, float]:
+    def _range_trading_positions(
+        self, market_data: Dict[str, pd.DataFrame], allocation: StrategyAllocation
+    ) -> Dict[str, float]:
         """Generate range trading positions."""
         # Similar implementation to mean reversion but with different parameters
         return self._mean_reversion_positions(market_data, allocation)
 
-    def _volatility_capture_positions(self, market_data: Dict[str, pd.DataFrame],
-                                    allocation: StrategyAllocation) -> Dict[str, float]:
+    def _volatility_capture_positions(
+        self, market_data: Dict[str, pd.DataFrame], allocation: StrategyAllocation
+    ) -> Dict[str, float]:
         """Generate volatility capture positions."""
         positions = {}
 
@@ -474,8 +493,8 @@ class StrategySwitcher:
                 continue
 
             # Volatility expansion/contraction signals
-            current_vol = df['close'].pct_change().rolling(20).std().iloc[-1]
-            avg_vol = df['close'].pct_change().rolling(60).std().mean()
+            current_vol = df["close"].pct_change().rolling(20).std().iloc[-1]
+            avg_vol = df["close"].pct_change().rolling(60).std().mean()
 
             vol_ratio = current_vol / avg_vol if avg_vol > 0 else 1.0
 
@@ -500,20 +519,21 @@ class StrategySwitcher:
         """Check if rebalancing is needed based on frequency."""
         now = datetime.now()
 
-        if frequency == 'hourly':
+        if frequency == "hourly":
             return True  # Always rebalance for hourly
-        elif frequency == 'daily':
+        elif frequency == "daily":
             # Rebalance once per day
-            return getattr(self, '_last_daily_rebalance', datetime.min).date() < now.date()
-        elif frequency == 'weekly':
+            return getattr(self, "_last_daily_rebalance", datetime.min).date() < now.date()
+        elif frequency == "weekly":
             # Rebalance once per week
-            last_rebalance = getattr(self, '_last_weekly_rebalance', datetime.min)
+            last_rebalance = getattr(self, "_last_weekly_rebalance", datetime.min)
             return (now - last_rebalance).days >= 7
 
         return False
 
-    def calculate_required_trades(self, current_positions: Dict[str, float],
-                                target_positions: Dict[str, PositionTarget]) -> Dict[str, float]:
+    def calculate_required_trades(
+        self, current_positions: Dict[str, float], target_positions: Dict[str, PositionTarget]
+    ) -> Dict[str, float]:
         """Calculate required trades to reach target positions."""
         trades = {}
 
@@ -522,7 +542,9 @@ class StrategySwitcher:
 
         for symbol in all_symbols:
             current_weight = current_positions.get(symbol, 0.0)
-            target_weight = target_positions[symbol].target_weight if symbol in target_positions else 0.0
+            target_weight = (
+                target_positions[symbol].target_weight if symbol in target_positions else 0.0
+            )
 
             trade_size = target_weight - current_weight
 
@@ -543,60 +565,61 @@ class StrategySwitcher:
     def get_strategy_allocation_summary(self) -> Dict[str, Any]:
         """Get summary of current strategy allocations."""
         return {
-            'current_regime': self.regime_detector.current_regime.value,
-            'regime_confidence': self.regime_detector.regime_confidence,
-            'allocations': {
+            "current_regime": self.regime_detector.current_regime.value,
+            "regime_confidence": self.regime_detector.regime_confidence,
+            "allocations": {
                 strategy.strategy_type.value: {
-                    'weight': strategy.weight,
-                    'confidence': strategy.confidence,
-                    'max_position_size': strategy.max_position_size,
-                    'active': strategy.active
+                    "weight": strategy.weight,
+                    "confidence": strategy.confidence,
+                    "max_position_size": strategy.max_position_size,
+                    "active": strategy.active,
                 }
                 for strategy in self.current_allocations.values()
             },
-            'cluster_limits': {
+            "cluster_limits": {
                 cluster.cluster_name: {
-                    'max_weight': cluster.max_weight,
-                    'current_weight': cluster.current_weight,
-                    'utilization': cluster.current_weight / cluster.max_weight
+                    "max_weight": cluster.max_weight,
+                    "current_weight": cluster.current_weight,
+                    "utilization": cluster.current_weight / cluster.max_weight,
                 }
                 for cluster in self.cluster_limits.values()
-            }
+            },
         }
 
     def save_strategy_state(self) -> None:
         """Save current strategy state."""
         state = {
-            'current_allocations': {
+            "current_allocations": {
                 strategy_type.value: {
-                    'weight': allocation.weight,
-                    'confidence': allocation.confidence,
-                    'max_position_size': allocation.max_position_size,
-                    'risk_multiplier': allocation.risk_multiplier,
-                    'rebalance_frequency': allocation.rebalance_frequency,
-                    'active': allocation.active
+                    "weight": allocation.weight,
+                    "confidence": allocation.confidence,
+                    "max_position_size": allocation.max_position_size,
+                    "risk_multiplier": allocation.risk_multiplier,
+                    "rebalance_frequency": allocation.rebalance_frequency,
+                    "active": allocation.active,
                 }
                 for strategy_type, allocation in self.current_allocations.items()
             },
-            'cluster_limits': {
+            "cluster_limits": {
                 name: {
-                    'max_weight': cluster.max_weight,
-                    'current_weight': cluster.current_weight,
-                    'symbols': cluster.symbols
+                    "max_weight": cluster.max_weight,
+                    "current_weight": cluster.current_weight,
+                    "symbols": cluster.symbols,
                 }
                 for name, cluster in self.cluster_limits.items()
             },
-            'timestamp': datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         try:
-            with open(self.data_path / "strategy_state.json", 'w') as f:
+            with open(self.data_path / "strategy_state.json", "w") as f:
                 json.dump(state, f, indent=2)
         except Exception as e:
             self.logger.error(f"Failed to save strategy state: {e}")
 
 
-def create_strategy_switcher(regime_detector: RegimeDetector,
-                           initial_capital: float = 100000.0) -> StrategySwitcher:
+def create_strategy_switcher(
+    regime_detector: RegimeDetector, initial_capital: float = 100000.0
+) -> StrategySwitcher:
     """Factory function to create StrategySwitcher instance."""
     return StrategySwitcher(regime_detector, initial_capital)

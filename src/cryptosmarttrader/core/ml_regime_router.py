@@ -13,22 +13,27 @@ from enum import Enum
 import pickle
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 from ..core.logging_manager import get_logger
 from ..core.ml_uncertainty_engine import get_uncertainty_engine, RegimePrediction
 
+
 class ModelType(str, Enum):
     """Available model types for each regime"""
+
     LSTM = "lstm"
     TRANSFORMER = "transformer"
     ENSEMBLE = "ensemble"
     LINEAR = "linear"
     XGBOOST = "xgboost"
 
+
 @dataclass
 class RegimeModel:
     """Model configuration for specific market regime"""
+
     regime: str
     model_type: ModelType
     feature_weights: Dict[str, float]
@@ -38,13 +43,16 @@ class RegimeModel:
     training_samples: int = 0
     is_active: bool = True
 
+
 @dataclass
 class FeatureImportance:
     """Feature importance scores per regime"""
+
     feature_name: str
     regime_scores: Dict[str, float]  # regime -> importance score
     overall_importance: float
     stability_score: float  # How stable across regimes
+
 
 class RegimeFeatureSelector:
     """Regime-aware feature selection and weighting"""
@@ -54,36 +62,16 @@ class RegimeFeatureSelector:
 
         # Feature categories and their regime affinities
         self.feature_categories = {
-            'momentum': {
-                'bull': 0.9,   # High importance in bull markets
-                'bear': 0.6,   # Medium importance in bear markets
-                'sideways': 0.3,  # Low importance in sideways
-                'volatile': 0.7   # Medium-high in volatile
+            "momentum": {
+                "bull": 0.9,  # High importance in bull markets
+                "bear": 0.6,  # Medium importance in bear markets
+                "sideways": 0.3,  # Low importance in sideways
+                "volatile": 0.7,  # Medium-high in volatile
             },
-            'volatility': {
-                'bull': 0.4,
-                'bear': 0.8,
-                'sideways': 0.2,
-                'volatile': 0.9
-            },
-            'volume': {
-                'bull': 0.7,
-                'bear': 0.8,
-                'sideways': 0.4,
-                'volatile': 0.9
-            },
-            'technical': {
-                'bull': 0.8,
-                'bear': 0.7,
-                'sideways': 0.9,
-                'volatile': 0.5
-            },
-            'sentiment': {
-                'bull': 0.6,
-                'bear': 0.9,
-                'sideways': 0.5,
-                'volatile': 0.8
-            }
+            "volatility": {"bull": 0.4, "bear": 0.8, "sideways": 0.2, "volatile": 0.9},
+            "volume": {"bull": 0.7, "bear": 0.8, "sideways": 0.4, "volatile": 0.9},
+            "technical": {"bull": 0.8, "bear": 0.7, "sideways": 0.9, "volatile": 0.5},
+            "sentiment": {"bull": 0.6, "bear": 0.9, "sideways": 0.5, "volatile": 0.8},
         }
 
         self.feature_importance_history = []
@@ -108,16 +96,18 @@ class RegimeFeatureSelector:
         # Normalize weights
         total_weight = sum(feature_weights.values())
         if total_weight > 0:
-            feature_weights = {k: v/total_weight for k, v in feature_weights.items()}
+            feature_weights = {k: v / total_weight for k, v in feature_weights.items()}
 
         self.logger.info(
             f"Selected features for {regime} regime",
             extra={
-                'regime': regime,
-                'total_features': len(feature_weights),
-                'avg_weight': np.mean(list(feature_weights.values())),
-                'top_features': sorted(feature_weights.items(), key=lambda x: x[1], reverse=True)[:5]
-            }
+                "regime": regime,
+                "total_features": len(feature_weights),
+                "avg_weight": np.mean(list(feature_weights.values())),
+                "top_features": sorted(feature_weights.items(), key=lambda x: x[1], reverse=True)[
+                    :5
+                ],
+            },
         )
 
         return feature_weights
@@ -126,50 +116,35 @@ class RegimeFeatureSelector:
         """Categorize feature based on name pattern"""
         feature_lower = feature_name.lower()
 
-        if any(term in feature_lower for term in ['rsi', 'macd', 'ma_', 'sma', 'ema']):
-            return 'technical'
-        elif any(term in feature_lower for term in ['vol', 'std', 'var']):
-            return 'volatility'
-        elif any(term in feature_lower for term in ['volume', 'trade_count']):
-            return 'volume'
-        elif any(term in feature_lower for term in ['return', 'momentum', 'trend']):
-            return 'momentum'
-        elif any(term in feature_lower for term in ['sentiment', 'fear', 'greed']):
-            return 'sentiment'
+        if any(term in feature_lower for term in ["rsi", "macd", "ma_", "sma", "ema"]):
+            return "technical"
+        elif any(term in feature_lower for term in ["vol", "std", "var"]):
+            return "volatility"
+        elif any(term in feature_lower for term in ["volume", "trade_count"]):
+            return "volume"
+        elif any(term in feature_lower for term in ["return", "momentum", "trend"]):
+            return "momentum"
+        elif any(term in feature_lower for term in ["sentiment", "fear", "greed"]):
+            return "sentiment"
         else:
-            return 'technical'  # Default category
+            return "technical"  # Default category
 
     def _adjust_feature_weight(self, feature: str, regime: str, base_weight: float) -> float:
         """Apply feature-specific weight adjustments"""
 
         # Regime-specific feature adjustments
         adjustments = {
-            'bull': {
-                'momentum': 1.2,
-                'volume': 1.1,
-                'volatility': 0.8
-            },
-            'bear': {
-                'volatility': 1.3,
-                'sentiment': 1.2,
-                'momentum': 0.7
-            },
-            'sideways': {
-                'technical': 1.3,
-                'momentum': 0.6,
-                'volatility': 0.7
-            },
-            'volatile': {
-                'volatility': 1.4,
-                'volume': 1.2,
-                'technical': 0.8
-            }
+            "bull": {"momentum": 1.2, "volume": 1.1, "volatility": 0.8},
+            "bear": {"volatility": 1.3, "sentiment": 1.2, "momentum": 0.7},
+            "sideways": {"technical": 1.3, "momentum": 0.6, "volatility": 0.7},
+            "volatile": {"volatility": 1.4, "volume": 1.2, "technical": 0.8},
         }
 
         category = self._categorize_feature(feature)
         adjustment = adjustments.get(regime, {}).get(category, 1.0)
 
         return base_weight * adjustment
+
 
 class MLRegimeRouter:
     """Main regime-aware model router"""
@@ -197,52 +172,48 @@ class MLRegimeRouter:
         """Initialize regime-specific models"""
 
         regime_configs = {
-            'bull': {
-                'model_type': ModelType.LSTM,
-                'features': ['momentum', 'volume', 'technical'],
-                'description': 'Optimized for trending upward markets'
+            "bull": {
+                "model_type": ModelType.LSTM,
+                "features": ["momentum", "volume", "technical"],
+                "description": "Optimized for trending upward markets",
             },
-            'bear': {
-                'model_type': ModelType.ENSEMBLE,
-                'features': ['volatility', 'sentiment', 'volume'],
-                'description': 'Robust for declining markets with high uncertainty'
+            "bear": {
+                "model_type": ModelType.ENSEMBLE,
+                "features": ["volatility", "sentiment", "volume"],
+                "description": "Robust for declining markets with high uncertainty",
             },
-            'sideways': {
-                'model_type': ModelType.TRANSFORMER,
-                'features': ['technical', 'momentum'],
-                'description': 'Pattern recognition for range-bound markets'
+            "sideways": {
+                "model_type": ModelType.TRANSFORMER,
+                "features": ["technical", "momentum"],
+                "description": "Pattern recognition for range-bound markets",
             },
-            'volatile': {
-                'model_type': ModelType.XGBOOST,
-                'features': ['volatility', 'volume', 'sentiment'],
-                'description': 'Adaptive for high-volatility periods'
-            }
+            "volatile": {
+                "model_type": ModelType.XGBOOST,
+                "features": ["volatility", "volume", "sentiment"],
+                "description": "Adaptive for high-volatility periods",
+            },
         }
 
         for regime, config in regime_configs.items():
             self.regime_models[regime] = RegimeModel(
                 regime=regime,
-                model_type=config['model_type'],
+                model_type=config["model_type"],
                 feature_weights={},
                 performance_metrics={
-                    'accuracy': 0.0,
-                    'precision': 0.0,
-                    'recall': 0.0,
-                    'sharpe_ratio': 0.0,
-                    'max_drawdown': 0.0
-                }
+                    "accuracy": 0.0,
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "sharpe_ratio": 0.0,
+                    "max_drawdown": 0.0,
+                },
             )
 
         self.logger.info(
-            "Regime models initialized",
-            extra={'regimes': list(self.regime_models.keys())}
+            "Regime models initialized", extra={"regimes": list(self.regime_models.keys())}
         )
 
     def route_prediction(
-        self,
-        features: np.ndarray,
-        market_data: Dict[str, Any],
-        horizon: str = '24h'
+        self, features: np.ndarray, market_data: Dict[str, Any], horizon: str = "24h"
     ) -> Tuple[float, Dict[str, Any]]:
         """Route prediction to appropriate regime model"""
 
@@ -289,41 +260,37 @@ class MLRegimeRouter:
 
             # Track routing decision
             routing_info = {
-                'selected_regime': current_regime,
-                'regime_confidence': regime_confidence,
-                'model_type': regime_model.model_type.value,
-                'feature_weights': regime_weights,
-                'raw_prediction': regime_prediction_value,
-                'smoothed_prediction': smoothed_prediction,
-                'uncertainty_metrics': uncertainty_metrics,
-                'routing_timestamp': datetime.now().isoformat()
+                "selected_regime": current_regime,
+                "regime_confidence": regime_confidence,
+                "model_type": regime_model.model_type.value,
+                "feature_weights": regime_weights,
+                "raw_prediction": regime_prediction_value,
+                "smoothed_prediction": smoothed_prediction,
+                "uncertainty_metrics": uncertainty_metrics,
+                "routing_timestamp": datetime.now().isoformat(),
             }
 
             self.logger.info(
                 f"Regime routing for {horizon}",
                 extra={
-                    'horizon': horizon,
-                    'regime': current_regime,
-                    'confidence': regime_confidence,
-                    'model_type': regime_model.model_type.value,
-                    'prediction': smoothed_prediction
-                }
+                    "horizon": horizon,
+                    "regime": current_regime,
+                    "confidence": regime_confidence,
+                    "model_type": regime_model.model_type.value,
+                    "prediction": smoothed_prediction,
+                },
             )
 
             return smoothed_prediction, routing_info
 
         except Exception as e:
             self.logger.error(
-                f"Regime routing failed: {e}",
-                extra={'horizon': horizon, 'error': str(e)}
+                f"Regime routing failed: {e}", extra={"horizon": horizon, "error": str(e)}
             )
-            return 0.0, {'error': str(e), 'fallback_used': True}
+            return 0.0, {"error": str(e), "fallback_used": True}
 
     def _ensemble_prediction(
-        self,
-        features: np.ndarray,
-        market_data: Dict[str, Any],
-        horizon: str
+        self, features: np.ndarray, market_data: Dict[str, Any], horizon: str
     ) -> Tuple[float, Dict[str, Any]]:
         """Generate ensemble prediction when regime is uncertain"""
 
@@ -343,7 +310,7 @@ class MLRegimeRouter:
                     predictions.append(pred)
 
                     # Weight by historical performance
-                    performance_weight = model.performance_metrics.get('accuracy', 0.5)
+                    performance_weight = model.performance_metrics.get("accuracy", 0.5)
                     regime_weights.append(performance_weight)
 
                 except Exception as e:
@@ -353,27 +320,26 @@ class MLRegimeRouter:
             # Weighted average of regime predictions
             total_weight = sum(regime_weights) if regime_weights else len(predictions)
             if total_weight > 0:
-                ensemble_prediction = sum(p * w for p, w in zip(predictions, regime_weights)) / total_weight
+                ensemble_prediction = (
+                    sum(p * w for p, w in zip(predictions, regime_weights)) / total_weight
+                )
             else:
                 ensemble_prediction = np.mean(predictions)
         else:
             ensemble_prediction = 0.0
 
         routing_info = {
-            'selected_regime': 'ensemble',
-            'regime_confidence': 0.0,
-            'ensemble_predictions': predictions,
-            'ensemble_weights': regime_weights,
-            'final_prediction': ensemble_prediction
+            "selected_regime": "ensemble",
+            "regime_confidence": 0.0,
+            "ensemble_predictions": predictions,
+            "ensemble_weights": regime_weights,
+            "final_prediction": ensemble_prediction,
         }
 
         return ensemble_prediction, routing_info
 
     def _fallback_prediction(
-        self,
-        features: np.ndarray,
-        market_data: Dict[str, Any],
-        horizon: str
+        self, features: np.ndarray, market_data: Dict[str, Any], horizon: str
     ) -> Tuple[float, Dict[str, Any]]:
         """Fallback prediction when regime routing fails"""
 
@@ -383,7 +349,7 @@ class MLRegimeRouter:
 
         for model in self.regime_models.values():
             if model.is_active:
-                accuracy = model.performance_metrics.get('accuracy', 0.0)
+                accuracy = model.performance_metrics.get("accuracy", 0.0)
                 if accuracy > best_performance:
                     best_performance = accuracy
                     best_model = model
@@ -401,9 +367,9 @@ class MLRegimeRouter:
                 )
 
                 routing_info = {
-                    'selected_regime': 'fallback',
-                    'fallback_model': best_model.regime,
-                    'prediction': prediction
+                    "selected_regime": "fallback",
+                    "fallback_model": best_model.regime,
+                    "prediction": prediction,
                 }
 
                 return prediction, routing_info
@@ -412,13 +378,10 @@ class MLRegimeRouter:
                 self.logger.error(f"Fallback prediction failed: {e}")
 
         # Ultimate fallback
-        return 0.0, {'selected_regime': 'none', 'error': 'All models failed'}
+        return 0.0, {"selected_regime": "none", "error": "All models failed"}
 
     def _predict_with_regime_model(
-        self,
-        regime_model: RegimeModel,
-        features: np.ndarray,
-        market_data: Dict[str, Any]
+        self, regime_model: RegimeModel, features: np.ndarray, market_data: Dict[str, Any]
     ) -> float:
         """Generate prediction using regime-specific model"""
 
@@ -444,7 +407,9 @@ class MLRegimeRouter:
 
             elif regime_model.model_type == ModelType.XGBOOST:
                 # XGBoost prediction with feature importance
-                weighted_sum = np.sum(features * list(regime_model.feature_weights.values())[:len(features)])
+                weighted_sum = np.sum(
+                    features * list(regime_model.feature_weights.values())[: len(features)]
+                )
                 prediction = float(weighted_sum * 0.02)
 
             else:
@@ -454,9 +419,7 @@ class MLRegimeRouter:
             return prediction
 
         except Exception as e:
-            self.logger.warning(
-                f"Prediction failed for {regime_model.regime} model: {e}"
-            )
+            self.logger.warning(f"Prediction failed for {regime_model.regime} model: {e}")
             return 0.0
 
     def _apply_feature_weights(self, features: np.ndarray, weights: Dict[str, float]) -> np.ndarray:
@@ -466,39 +429,48 @@ class MLRegimeRouter:
             return features
 
         # Create weight array matching feature dimensions
-        weight_values = list(weights.values())[:len(features)]
+        weight_values = list(weights.values())[: len(features)]
         weight_array = np.array(weight_values + [1.0] * (len(features) - len(weight_values)))
 
         return features * weight_array
 
     def _apply_regime_smoothing(
-        self,
-        prediction: float,
-        current_regime: str,
-        confidence: float
+        self, prediction: float, current_regime: str, confidence: float
     ) -> float:
         """Apply smoothing during regime transitions"""
 
         # Add to transition buffer
-        self.regime_transition_buffer.append({
-            'regime': current_regime,
-            'prediction': prediction,
-            'confidence': confidence,
-            'timestamp': datetime.now()
-        })
+        self.regime_transition_buffer.append(
+            {
+                "regime": current_regime,
+                "prediction": prediction,
+                "confidence": confidence,
+                "timestamp": datetime.now(),
+            }
+        )
 
         # Keep buffer size manageable
         if len(self.regime_transition_buffer) > self.regime_transition_smoothing * 2:
-            self.regime_transition_buffer = self.regime_transition_buffer[-self.regime_transition_smoothing:]
+            self.regime_transition_buffer = self.regime_transition_buffer[
+                -self.regime_transition_smoothing :
+            ]
 
         # If we have enough history, apply smoothing
         if len(self.regime_transition_buffer) >= self.regime_transition_smoothing:
-            recent_predictions = [item['prediction'] for item in self.regime_transition_buffer[-self.regime_transition_smoothing:]]
-            recent_confidences = [item['confidence'] for item in self.regime_transition_buffer[-self.regime_transition_smoothing:]]
+            recent_predictions = [
+                item["prediction"]
+                for item in self.regime_transition_buffer[-self.regime_transition_smoothing :]
+            ]
+            recent_confidences = [
+                item["confidence"]
+                for item in self.regime_transition_buffer[-self.regime_transition_smoothing :]
+            ]
 
             # Weighted average based on confidence
             if sum(recent_confidences) > 0:
-                weighted_pred = sum(p * c for p, c in zip(recent_predictions, recent_confidences)) / sum(recent_confidences)
+                weighted_pred = sum(
+                    p * c for p, c in zip(recent_predictions, recent_confidences)
+                ) / sum(recent_confidences)
 
                 # Blend with current prediction based on confidence
                 smoothed = prediction * confidence + weighted_pred * (1 - confidence)
@@ -512,23 +484,20 @@ class MLRegimeRouter:
         feature_names = []
         for i in range(len(features)):
             if i % 5 == 0:
-                feature_names.append(f'momentum_{i}')
+                feature_names.append(f"momentum_{i}")
             elif i % 5 == 1:
-                feature_names.append(f'volatility_{i}')
+                feature_names.append(f"volatility_{i}")
             elif i % 5 == 2:
-                feature_names.append(f'volume_{i}')
+                feature_names.append(f"volume_{i}")
             elif i % 5 == 3:
-                feature_names.append(f'technical_{i}')
+                feature_names.append(f"technical_{i}")
             else:
-                feature_names.append(f'sentiment_{i}')
+                feature_names.append(f"sentiment_{i}")
 
         return feature_names
 
     def update_regime_model_performance(
-        self,
-        regime: str,
-        predictions: List[float],
-        actuals: List[float]
+        self, regime: str, predictions: List[float], actuals: List[float]
     ):
         """Update performance metrics for regime-specific model"""
 
@@ -545,21 +514,23 @@ class MLRegimeRouter:
             directional_accuracy = np.mean(pred_direction == actual_direction)
 
             # Update model performance
-            self.regime_models[regime].performance_metrics.update({
-                'accuracy': max(0.0, accuracy),
-                'directional_accuracy': directional_accuracy,
-                'rmse': np.sqrt(np.mean((np.array(predictions) - np.array(actuals))**2)),
-                'last_updated': datetime.now().isoformat()
-            })
+            self.regime_models[regime].performance_metrics.update(
+                {
+                    "accuracy": max(0.0, accuracy),
+                    "directional_accuracy": directional_accuracy,
+                    "rmse": np.sqrt(np.mean((np.array(predictions) - np.array(actuals)) ** 2)),
+                    "last_updated": datetime.now().isoformat(),
+                }
+            )
 
             self.logger.info(
                 f"Updated performance for {regime} model",
                 extra={
-                    'regime': regime,
-                    'accuracy': accuracy,
-                    'directional_accuracy': directional_accuracy,
-                    'samples': len(predictions)
-                }
+                    "regime": regime,
+                    "accuracy": accuracy,
+                    "directional_accuracy": directional_accuracy,
+                    "samples": len(predictions),
+                },
             )
 
         except Exception as e:
@@ -569,24 +540,30 @@ class MLRegimeRouter:
         """Get summary of regime routing performance"""
 
         summary = {
-            'timestamp': datetime.now().isoformat(),
-            'active_regimes': [regime for regime, model in self.regime_models.items() if model.is_active],
-            'regime_performance': {},
-            'recent_routing_history': self.regime_transition_buffer[-10:] if self.regime_transition_buffer else []
+            "timestamp": datetime.now().isoformat(),
+            "active_regimes": [
+                regime for regime, model in self.regime_models.items() if model.is_active
+            ],
+            "regime_performance": {},
+            "recent_routing_history": self.regime_transition_buffer[-10:]
+            if self.regime_transition_buffer
+            else [],
         }
 
         for regime, model in self.regime_models.items():
-            summary['regime_performance'][regime] = {
-                'model_type': model.model_type.value,
-                'is_active': model.is_active,
-                'performance_metrics': model.performance_metrics,
-                'last_trained': model.last_trained.isoformat() if model.last_trained else None
+            summary["regime_performance"][regime] = {
+                "model_type": model.model_type.value,
+                "is_active": model.is_active,
+                "performance_metrics": model.performance_metrics,
+                "last_trained": model.last_trained.isoformat() if model.last_trained else None,
             }
 
         return summary
 
+
 # Global instance
 _regime_router = None
+
 
 def get_regime_router() -> MLRegimeRouter:
     """Get global regime router instance"""

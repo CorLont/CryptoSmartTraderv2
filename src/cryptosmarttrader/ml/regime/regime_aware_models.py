@@ -15,22 +15,27 @@ from abc import ABC, abstractmethod
 import pickle
 import warnings
 from pathlib import Path
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 from ml.regime.market_regime_detector import MarketRegime, RegimeState, MarketRegimeDetector
+
 
 @dataclass
 class RegimeModelConfig:
     """Configuration for regime-specific model"""
+
     regime: MarketRegime
     model_type: str
     model_params: Dict[str, Any]
     training_params: Dict[str, Any]
     performance_threshold: float = 0.7
 
+
 @dataclass
 class RegimeModelPerformance:
     """Performance metrics for regime-specific model"""
+
     regime: MarketRegime
     accuracy: float
     precision: float
@@ -40,6 +45,7 @@ class RegimeModelPerformance:
     max_drawdown: float
     total_predictions: int
     regime_coverage: float  # % of regime periods this model was active
+
 
 class RegimeAwareModel(ABC):
     """Abstract base class for regime-aware models"""
@@ -64,6 +70,7 @@ class RegimeAwareModel(ABC):
         """Predict probabilities"""
         pass
 
+
 class BullMarketModel(RegimeAwareModel):
     """Specialized model for bull market conditions"""
 
@@ -73,10 +80,10 @@ class BullMarketModel(RegimeAwareModel):
 
         # Bull market specific features
         self.feature_weights = {
-            'momentum_features': 1.2,      # Higher weight on momentum
-            'trend_features': 1.1,         # Trend following important
-            'volume_features': 1.0,        # Standard volume analysis
-            'volatility_features': 0.8     # Less focus on volatility
+            "momentum_features": 1.2,  # Higher weight on momentum
+            "trend_features": 1.1,  # Trend following important
+            "volume_features": 1.0,  # Standard volume analysis
+            "volatility_features": 0.8,  # Less focus on volatility
         }
 
     def fit(self, X: np.ndarray, y: np.ndarray, regime_mask: np.ndarray):
@@ -95,18 +102,11 @@ class BullMarketModel(RegimeAwareModel):
 
         # Momentum-focused model
         self.momentum_model = GradientBoostingClassifier(
-            n_estimators=100,
-            learning_rate=0.1,
-            max_depth=4,
-            random_state=42
+            n_estimators=100, learning_rate=0.1, max_depth=4, random_state=42
         )
 
         # Trend-following model
-        self.trend_model = LogisticRegression(
-            C=1.0,
-            random_state=42,
-            max_iter=1000
-        )
+        self.trend_model = LogisticRegression(C=1.0, random_state=42, max_iter=1000)
 
         # Train both models
         self.momentum_model.fit(X_bull, y_bull)
@@ -125,7 +125,7 @@ class BullMarketModel(RegimeAwareModel):
         trend_pred = self.trend_model.predict_proba(X)[:, 1]
 
         # Weight combination for bull markets
-        ensemble_pred = (momentum_pred * 0.6 + trend_pred * 0.4)
+        ensemble_pred = momentum_pred * 0.6 + trend_pred * 0.4
 
         return (ensemble_pred > 0.5).astype(int)
 
@@ -140,6 +140,7 @@ class BullMarketModel(RegimeAwareModel):
 
         return ensemble_proba
 
+
 class BearMarketModel(RegimeAwareModel):
     """Specialized model for bear market conditions"""
 
@@ -148,10 +149,10 @@ class BearMarketModel(RegimeAwareModel):
 
         # Bear market specific features
         self.feature_weights = {
-            'volatility_features': 1.3,    # Higher focus on volatility
-            'risk_features': 1.2,          # Risk indicators important
-            'momentum_features': 0.9,      # Less reliable momentum
-            'sentiment_features': 1.1      # Sentiment more important
+            "volatility_features": 1.3,  # Higher focus on volatility
+            "risk_features": 1.2,  # Risk indicators important
+            "momentum_features": 0.9,  # Less reliable momentum
+            "sentiment_features": 1.1,  # Sentiment more important
         }
 
     def fit(self, X: np.ndarray, y: np.ndarray, regime_mask: np.ndarray):
@@ -170,17 +171,17 @@ class BearMarketModel(RegimeAwareModel):
         # Risk-focused model
         self.risk_model = RandomForestClassifier(
             n_estimators=100,
-            max_depth=3,       # Shallower trees for stability
+            max_depth=3,  # Shallower trees for stability
             min_samples_leaf=5,
-            random_state=42
+            random_state=42,
         )
 
         # Volatility-aware model
         self.volatility_model = SVC(
-            C=0.5,             # Lower C for regularization
-            kernel='rbf',
+            C=0.5,  # Lower C for regularization
+            kernel="rbf",
             probability=True,
-            random_state=42
+            random_state=42,
         )
 
         self.risk_model.fit(X_bear, y_bear)
@@ -195,7 +196,7 @@ class BearMarketModel(RegimeAwareModel):
         vol_pred = self.volatility_model.predict_proba(X)[:, 1]
 
         # Conservative combination for bear markets
-        ensemble_pred = (risk_pred * 0.7 + vol_pred * 0.3)
+        ensemble_pred = risk_pred * 0.7 + vol_pred * 0.3
 
         # Higher threshold for bear markets (more conservative)
         return (ensemble_pred > 0.6).astype(int)
@@ -208,6 +209,7 @@ class BearMarketModel(RegimeAwareModel):
 
         return risk_proba * 0.7 + vol_proba * 0.3
 
+
 class HighVolatilityModel(RegimeAwareModel):
     """Specialized model for high volatility periods"""
 
@@ -215,10 +217,10 @@ class HighVolatilityModel(RegimeAwareModel):
         super().__init__(MarketRegime.HIGH_VOLATILITY)
 
         self.feature_weights = {
-            'volatility_features': 1.5,    # Maximum focus on volatility
-            'range_features': 1.3,         # High-low ranges important
-            'momentum_features': 0.7,      # Momentum less reliable
-            'mean_reversion_features': 1.2 # Mean reversion opportunities
+            "volatility_features": 1.5,  # Maximum focus on volatility
+            "range_features": 1.3,  # High-low ranges important
+            "momentum_features": 0.7,  # Momentum less reliable
+            "mean_reversion_features": 1.2,  # Mean reversion opportunities
         }
 
     def fit(self, X: np.ndarray, y: np.ndarray, regime_mask: np.ndarray):
@@ -239,7 +241,7 @@ class HighVolatilityModel(RegimeAwareModel):
             n_estimators=200,
             max_depth=5,
             random_state=42,
-            bootstrap=True      # Bootstrap for robustness
+            bootstrap=True,  # Bootstrap for robustness
         )
 
         # Mean reversion model
@@ -257,7 +259,7 @@ class HighVolatilityModel(RegimeAwareModel):
         rev_pred = self.reversion_model.predict_proba(X)[:, 1]
 
         # Balanced combination for high volatility
-        ensemble_pred = (vol_pred * 0.6 + rev_pred * 0.4)
+        ensemble_pred = vol_pred * 0.6 + rev_pred * 0.4
 
         return (ensemble_pred > 0.5).astype(int)
 
@@ -269,6 +271,7 @@ class HighVolatilityModel(RegimeAwareModel):
 
         return vol_proba * 0.6 + rev_proba * 0.4
 
+
 class ConsolidationModel(RegimeAwareModel):
     """Specialized model for consolidation periods"""
 
@@ -276,10 +279,10 @@ class ConsolidationModel(RegimeAwareModel):
         super().__init__(MarketRegime.CONSOLIDATION)
 
         self.feature_weights = {
-            'range_bound_features': 1.4,   # Range-bound behavior
-            'mean_reversion_features': 1.3, # Mean reversion strong
-            'breakout_features': 1.2,      # Breakout detection
-            'trend_features': 0.8          # Weak trends
+            "range_bound_features": 1.4,  # Range-bound behavior
+            "mean_reversion_features": 1.3,  # Mean reversion strong
+            "breakout_features": 1.2,  # Breakout detection
+            "trend_features": 0.8,  # Weak trends
         }
 
     def fit(self, X: np.ndarray, y: np.ndarray, regime_mask: np.ndarray):
@@ -296,16 +299,10 @@ class ConsolidationModel(RegimeAwareModel):
         from sklearn.linear_model import RidgeClassifier
 
         # Pattern-based model
-        self.pattern_model = KNeighborsClassifier(
-            n_neighbors=7,
-            weights='distance'
-        )
+        self.pattern_model = KNeighborsClassifier(n_neighbors=7, weights="distance")
 
         # Linear model for ranges
-        self.range_model = RidgeClassifier(
-            alpha=1.0,
-            random_state=42
-        )
+        self.range_model = RidgeClassifier(alpha=1.0, random_state=42)
 
         self.pattern_model.fit(X_consol, y_consol)
         self.range_model.fit(X_consol, y_consol)
@@ -321,7 +318,7 @@ class ConsolidationModel(RegimeAwareModel):
         range_scores = self.range_model.decision_function(X)
         range_pred = 1 / (1 + np.exp(-range_scores))  # Sigmoid transformation
 
-        ensemble_pred = (pattern_pred * 0.6 + range_pred * 0.4)
+        ensemble_pred = pattern_pred * 0.6 + range_pred * 0.4
 
         return (ensemble_pred > 0.5).astype(int)
 
@@ -331,12 +328,12 @@ class ConsolidationModel(RegimeAwareModel):
         pattern_proba = self.pattern_model.predict_proba(X)
 
         range_scores = self.range_model.decision_function(X)
-        range_proba = np.column_stack([
-            1 - 1 / (1 + np.exp(-range_scores)),
-            1 / (1 + np.exp(-range_scores))
-        ])
+        range_proba = np.column_stack(
+            [1 - 1 / (1 + np.exp(-range_scores)), 1 / (1 + np.exp(-range_scores))]
+        )
 
         return pattern_proba * 0.6 + range_proba * 0.4
+
 
 class RegimeRouter:
     """Routes predictions to appropriate regime-specific models"""
@@ -362,15 +359,10 @@ class RegimeRouter:
             MarketRegime.CONSOLIDATION: ConsolidationModel(),
             # Default model for other regimes
             MarketRegime.LOW_VOLATILITY: ConsolidationModel(),  # Use consolidation model
-            MarketRegime.TREND_REVERSAL: HighVolatilityModel(), # Use high vol model
+            MarketRegime.TREND_REVERSAL: HighVolatilityModel(),  # Use high vol model
         }
 
-    def train_regime_models(
-        self,
-        X: np.ndarray,
-        y: np.ndarray,
-        regime_labels: List[MarketRegime]
-    ):
+    def train_regime_models(self, X: np.ndarray, y: np.ndarray, regime_labels: List[MarketRegime]):
         """Train all regime-specific models"""
 
         if len(regime_labels) != len(X):
@@ -392,12 +384,12 @@ class RegimeRouter:
                 except Exception as e:
                     self.logger.error(f"Failed to train {regime.value} model: {e}")
             else:
-                self.logger.warning(f"Insufficient data for {regime.value} model: {np.sum(mask)} samples")
+                self.logger.warning(
+                    f"Insufficient data for {regime.value} model: {np.sum(mask)} samples"
+                )
 
     def predict_with_routing(
-        self,
-        X: np.ndarray,
-        market_data: pd.DataFrame
+        self, X: np.ndarray, market_data: pd.DataFrame
     ) -> Tuple[np.ndarray, np.ndarray, List[MarketRegime]]:
         """Make predictions using regime-aware routing"""
 
@@ -414,13 +406,15 @@ class RegimeRouter:
                 probabilities = model.predict_proba(X)
 
                 # Record routing decision
-                self.routing_history.append({
-                    'timestamp': current_regime_state.timestamp,
-                    'regime': current_regime,
-                    'confidence': current_regime_state.confidence,
-                    'model_used': type(model).__name__,
-                    'n_predictions': len(predictions)
-                })
+                self.routing_history.append(
+                    {
+                        "timestamp": current_regime_state.timestamp,
+                        "regime": current_regime,
+                        "confidence": current_regime_state.confidence,
+                        "model_used": type(model).__name__,
+                        "n_predictions": len(predictions),
+                    }
+                )
 
                 regimes_used = [current_regime] * len(predictions)
 
@@ -433,15 +427,14 @@ class RegimeRouter:
         return self._fallback_prediction(X, current_regime)
 
     def _fallback_prediction(
-        self,
-        X: np.ndarray,
-        detected_regime: MarketRegime
+        self, X: np.ndarray, detected_regime: MarketRegime
     ) -> Tuple[np.ndarray, np.ndarray, List[MarketRegime]]:
         """Fallback prediction using ensemble of trained models"""
 
         # Find trained models
-        trained_models = [(regime, model) for regime, model in self.regime_models.items()
-                         if model.is_trained]
+        trained_models = [
+            (regime, model) for regime, model in self.regime_models.items() if model.is_trained
+        ]
 
         if not trained_models:
             raise ValueError("No trained models available")
@@ -468,10 +461,7 @@ class RegimeRouter:
         return final_predictions, ensemble_probabilities, regimes_used
 
     def evaluate_regime_models(
-        self,
-        X_test: np.ndarray,
-        y_test: np.ndarray,
-        regime_labels_test: List[MarketRegime]
+        self, X_test: np.ndarray, y_test: np.ndarray, regime_labels_test: List[MarketRegime]
     ) -> Dict[MarketRegime, RegimeModelPerformance]:
         """Evaluate performance of each regime model"""
 
@@ -500,9 +490,9 @@ class RegimeRouter:
 
                 # Calculate metrics
                 accuracy = accuracy_score(y_regime, y_pred)
-                precision = precision_score(y_regime, y_pred, average='weighted', zero_division=0)
-                recall = recall_score(y_regime, y_pred, average='weighted', zero_division=0)
-                f1 = f1_score(y_regime, y_pred, average='weighted', zero_division=0)
+                precision = precision_score(y_regime, y_pred, average="weighted", zero_division=0)
+                recall = recall_score(y_regime, y_pred, average="weighted", zero_division=0)
+                f1 = f1_score(y_regime, y_pred, average="weighted", zero_division=0)
 
                 # Create performance object
                 performance = RegimeModelPerformance(
@@ -514,7 +504,7 @@ class RegimeRouter:
                     sharpe_ratio=0.0,  # Would need returns data
                     max_drawdown=0.0,  # Would need returns data
                     total_predictions=len(y_pred),
-                    regime_coverage=np.sum(regime_mask) / len(regime_labels_test)
+                    regime_coverage=np.sum(regime_mask) / len(regime_labels_test),
                 )
 
                 performance_results[regime] = performance
@@ -531,54 +521,56 @@ class RegimeRouter:
         """Get comprehensive routing statistics"""
 
         if not self.routing_history:
-            return {'error': 'No routing history available'}
+            return {"error": "No routing history available"}
 
         # Routing frequency by regime
         regime_usage = {}
         for record in self.routing_history:
-            regime = record['regime']
+            regime = record["regime"]
             regime_usage[regime.value] = regime_usage.get(regime.value, 0) + 1
 
         # Average confidence by regime
         regime_confidence = {}
         for regime_value in regime_usage.keys():
-            confidences = [r['confidence'] for r in self.routing_history
-                          if r['regime'].value == regime_value]
+            confidences = [
+                r["confidence"] for r in self.routing_history if r["regime"].value == regime_value
+            ]
             regime_confidence[regime_value] = np.mean(confidences) if confidences else 0.0
 
         # Model performance summary
         performance_summary = {}
         for regime, perf in self.model_performance.items():
             performance_summary[regime.value] = {
-                'accuracy': perf.accuracy,
-                'f1_score': perf.f1_score,
-                'coverage': perf.regime_coverage
+                "accuracy": perf.accuracy,
+                "f1_score": perf.f1_score,
+                "coverage": perf.regime_coverage,
             }
 
         return {
-            'total_routing_decisions': len(self.routing_history),
-            'regime_usage_distribution': regime_usage,
-            'average_confidence_by_regime': regime_confidence,
-            'model_performance_summary': performance_summary,
-            'most_used_regime': max(regime_usage, key=regime_usage.get) if regime_usage else None
+            "total_routing_decisions": len(self.routing_history),
+            "regime_usage_distribution": regime_usage,
+            "average_confidence_by_regime": regime_confidence,
+            "model_performance_summary": performance_summary,
+            "most_used_regime": max(regime_usage, key=regime_usage.get) if regime_usage else None,
         }
 
-def create_regime_aware_system(
-    regime_detector: MarketRegimeDetector = None
-) -> RegimeRouter:
+
+def create_regime_aware_system(regime_detector: MarketRegimeDetector = None) -> RegimeRouter:
     """Create complete regime-aware modeling system"""
 
     if regime_detector is None:
         from ml.regime.market_regime_detector import create_regime_detector
+
         regime_detector = create_regime_detector()
 
     return RegimeRouter(regime_detector)
+
 
 def train_regime_aware_models(
     X: np.ndarray,
     y: np.ndarray,
     market_data: pd.DataFrame,
-    regime_detector: MarketRegimeDetector = None
+    regime_detector: MarketRegimeDetector = None,
 ) -> RegimeRouter:
     """High-level function to train regime-aware models"""
 
@@ -591,7 +583,7 @@ def train_regime_aware_models(
     # Detect regimes for training data
     regime_labels = []
     for i in range(len(market_data)):
-        subset_data = market_data.iloc[:i+1]
+        subset_data = market_data.iloc[: i + 1]
         if len(subset_data) > 30:  # Need minimum data for regime detection
             regime_state = router.regime_detector.detect_current_regime(subset_data)
             regime_labels.append(regime_state.regime)

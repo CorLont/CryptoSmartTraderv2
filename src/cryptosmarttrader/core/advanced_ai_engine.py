@@ -25,6 +25,7 @@ try:
     from sklearn.model_selection import cross_val_score, TimeSeriesSplit
     from sklearn.preprocessing import PolynomialFeatures
     from sklearn.inspection import permutation_importance
+
     ADVANCED_ML_AVAILABLE = True
 except ImportError:
     ADVANCED_ML_AVAILABLE = False
@@ -34,30 +35,37 @@ except ImportError:
 try:
     from dowhy import CausalModel
     import econml
+
     CAUSAL_INFERENCE_AVAILABLE = True
 except ImportError:
     CAUSAL_INFERENCE_AVAILABLE = False
 
+
 class MarketRegime(Enum):
     """Market regime classification for adaptive model selection"""
+
     BULL_TRENDING = "bull_trending"
     BEAR_TRENDING = "bear_trending"
     SIDEWAYS_VOLATILE = "sideways_volatile"
     CRISIS_MODE = "crisis_mode"
     RECOVERY_MODE = "recovery_mode"
 
+
 @dataclass
 class FeatureImportance:
     """Feature importance with stability metrics"""
+
     feature_name: str
     importance_score: float
     stability_score: float
     confidence_interval: Tuple[float, float]
     regime_dependency: Dict[MarketRegime, float]
 
+
 @dataclass
 class ModelPerformanceMetrics:
     """Comprehensive model performance tracking"""
+
     accuracy: float
     precision: float
     recall: float
@@ -68,6 +76,7 @@ class ModelPerformanceMetrics:
     feature_stability: float
     prediction_confidence: float
 
+
 class AutomatedFeatureEngineer:
     """Advanced automated feature engineering with discovery capabilities"""
 
@@ -77,7 +86,9 @@ class AutomatedFeatureEngineer:
         self.feature_cache = {}
         self.leakage_detector = FeatureLeakageDetector()
 
-    def generate_advanced_features(self, data: pd.DataFrame, target_col: str = 'target') -> pd.DataFrame:
+    def generate_advanced_features(
+        self, data: pd.DataFrame, target_col: str = "target"
+    ) -> pd.DataFrame:
         """Generate advanced features using automated feature engineering"""
         try:
             original_features = data.shape[1]
@@ -99,7 +110,9 @@ class AutomatedFeatureEngineer:
             enhanced_data = self._generate_regime_features(enhanced_data)
 
             # 6. Leakage detection and removal
-            enhanced_data = self.leakage_detector.detect_and_remove_leakage(enhanced_data, target_col)
+            enhanced_data = self.leakage_detector.detect_and_remove_leakage(
+                enhanced_data, target_col
+            )
 
             new_features = enhanced_data.shape[1] - original_features
             self.logger.info(f"Generated {new_features} new features via automated engineering")
@@ -110,7 +123,9 @@ class AutomatedFeatureEngineer:
             self.logger.error(f"Feature engineering failed: {e}")
             return data
 
-    def _generate_polynomial_features(self, data: pd.DataFrame, target_col: str, degree: int = 2) -> pd.DataFrame:
+    def _generate_polynomial_features(
+        self, data: pd.DataFrame, target_col: str, degree: int = 2
+    ) -> pd.DataFrame:
         """Generate polynomial feature interactions"""
         try:
             # Select numerical columns (excluding target)
@@ -150,20 +165,22 @@ class AutomatedFeatureEngineer:
             temporal_features = pd.DataFrame(index=data.index)
 
             # Time-based features
-            temporal_features['hour'] = data.index.hour
-            temporal_features['day_of_week'] = data.index.dayofweek
-            temporal_features['month'] = data.index.month
-            temporal_features['quarter'] = data.index.quarter
+            temporal_features["hour"] = data.index.hour
+            temporal_features["day_of_week"] = data.index.dayofweek
+            temporal_features["month"] = data.index.month
+            temporal_features["quarter"] = data.index.quarter
 
             # Market session features
-            temporal_features['is_weekend'] = (data.index.dayofweek >= 5).astype(int)
-            temporal_features['is_market_hours'] = ((data.index.hour >= 9) & (data.index.hour <= 16)).astype(int)
+            temporal_features["is_weekend"] = (data.index.dayofweek >= 5).astype(int)
+            temporal_features["is_market_hours"] = (
+                (data.index.hour >= 9) & (data.index.hour <= 16)
+            ).astype(int)
 
             # Cyclical encoding for time features
-            temporal_features['hour_sin'] = np.sin(2 * np.pi * temporal_features['hour'] / 24)
-            temporal_features['hour_cos'] = np.cos(2 * np.pi * temporal_features['hour'] / 24)
-            temporal_features['day_sin'] = np.sin(2 * np.pi * temporal_features['day_of_week'] / 7)
-            temporal_features['day_cos'] = np.cos(2 * np.pi * temporal_features['day_of_week'] / 7)
+            temporal_features["hour_sin"] = np.sin(2 * np.pi * temporal_features["hour"] / 24)
+            temporal_features["hour_cos"] = np.cos(2 * np.pi * temporal_features["hour"] / 24)
+            temporal_features["day_sin"] = np.sin(2 * np.pi * temporal_features["day_of_week"] / 7)
+            temporal_features["day_cos"] = np.cos(2 * np.pi * temporal_features["day_of_week"] / 7)
 
             return pd.concat([data, temporal_features], axis=1)
 
@@ -195,16 +212,16 @@ class AutomatedFeatureEngineer:
 
             # Generate ratio and difference features
             for i, feat1 in enumerate(top_features):
-                for feat2 in top_features[i+1:]:
+                for feat2 in top_features[i + 1 :]:
                     # Ratio features
                     safe_denominator = data[feat2].replace(0, 1e-10)
-                    cross_features[f'{feat1}_to_{feat2}_ratio'] = data[feat1] / safe_denominator
+                    cross_features[f"{feat1}_to_{feat2}_ratio"] = data[feat1] / safe_denominator
 
                     # Difference features
-                    cross_features[f'{feat1}_minus_{feat2}'] = data[feat1] - data[feat2]
+                    cross_features[f"{feat1}_minus_{feat2}"] = data[feat1] - data[feat2]
 
                     # Product features
-                    cross_features[f'{feat1}_times_{feat2}'] = data[feat1] * data[feat2]
+                    cross_features[f"{feat1}_times_{feat2}"] = data[feat1] * data[feat2]
 
             return pd.concat([data, cross_features], axis=1)
 
@@ -236,8 +253,8 @@ class AutomatedFeatureEngineer:
             # Create encoded feature DataFrame
             encoded_df = pd.DataFrame(
                 encoded_features,
-                columns=[f'encoded_feature_{i}' for i in range(n_components)],
-                index=data.index
+                columns=[f"encoded_feature_{i}" for i in range(n_components)],
+                index=data.index,
             )
 
             return pd.concat([data, encoded_df], axis=1)
@@ -252,30 +269,35 @@ class AutomatedFeatureEngineer:
             regime_features = pd.DataFrame(index=data.index)
 
             # Volatility-based regime detection
-            if 'close' in data.columns:
-                returns = data['close'].pct_change()
+            if "close" in data.columns:
+                returns = data["close"].pct_change()
                 rolling_vol = returns.rolling(20).std()
 
-                regime_features['high_volatility_regime'] = (rolling_vol > rolling_vol.quantile(0.8)).astype(int)
-                regime_features['low_volatility_regime'] = (rolling_vol < rolling_vol.quantile(0.2)).astype(int)
+                regime_features["high_volatility_regime"] = (
+                    rolling_vol > rolling_vol.quantile(0.8)
+                ).astype(int)
+                regime_features["low_volatility_regime"] = (
+                    rolling_vol < rolling_vol.quantile(0.2)
+                ).astype(int)
 
                 # Trend regime features
-                sma_short = data['close'].rolling(10).mean()
-                sma_long = data['close'].rolling(50).mean()
+                sma_short = data["close"].rolling(10).mean()
+                sma_long = data["close"].rolling(50).mean()
 
-                regime_features['bull_regime'] = (sma_short > sma_long).astype(int)
-                regime_features['bear_regime'] = (sma_short < sma_long).astype(int)
+                regime_features["bull_regime"] = (sma_short > sma_long).astype(int)
+                regime_features["bear_regime"] = (sma_short < sma_long).astype(int)
 
                 # Momentum regime
-                momentum = data['close'] / data['close'].shift(20) - 1
-                regime_features['strong_momentum'] = (momentum > momentum.quantile(0.8)).astype(int)
-                regime_features['weak_momentum'] = (momentum < momentum.quantile(0.2)).astype(int)
+                momentum = data["close"] / data["close"].shift(20) - 1
+                regime_features["strong_momentum"] = (momentum > momentum.quantile(0.8)).astype(int)
+                regime_features["weak_momentum"] = (momentum < momentum.quantile(0.2)).astype(int)
 
             return pd.concat([data, regime_features], axis=1)
 
         except Exception as e:
             self.logger.warning(f"Regime feature generation failed: {e}")
             return data
+
 
 class FeatureLeakageDetector:
     """Detects and prevents feature leakage in automated feature engineering"""
@@ -301,7 +323,9 @@ class FeatureLeakageDetector:
 
                 if abs(correlation) > self.leakage_threshold:
                     leaked_features.append(col)
-                    self.logger.warning(f"Potential leakage detected in feature {col} (correlation: {correlation:.3f})")
+                    self.logger.warning(
+                        f"Potential leakage detected in feature {col} (correlation: {correlation:.3f})"
+                    )
 
             # Remove leaked features
             clean_data = data.drop(columns=leaked_features)
@@ -315,6 +339,7 @@ class FeatureLeakageDetector:
             self.logger.error(f"Leakage detection failed: {e}")
             return data
 
+
 class MetaLearningEngine:
     """Meta-learning system for automated model selection and continual learning"""
 
@@ -324,8 +349,9 @@ class MetaLearningEngine:
         self.model_performance_history = {}
         self.regime_detector = MarketRegimeDetector()
 
-    def select_optimal_model(self, data: pd.DataFrame, target_col: str,
-                           available_models: List[Any]) -> Tuple[Any, float]:
+    def select_optimal_model(
+        self, data: pd.DataFrame, target_col: str, available_models: List[Any]
+    ) -> Tuple[Any, float]:
         """Automatically select optimal model based on current market regime"""
         try:
             # Detect current market regime
@@ -342,7 +368,9 @@ class MetaLearningEngine:
                     best_score = score
                     best_model = model
 
-            self.logger.info(f"Selected model for regime {current_regime}: {type(best_model).__name__} (score: {best_score:.3f})")
+            self.logger.info(
+                f"Selected model for regime {current_regime}: {type(best_model).__name__} (score: {best_score:.3f})"
+            )
 
             return best_model, best_score
 
@@ -350,8 +378,9 @@ class MetaLearningEngine:
             self.logger.error(f"Model selection failed: {e}")
             return available_models[0] if available_models else None, 0.0
 
-    def _evaluate_model_for_regime(self, model, data: pd.DataFrame,
-                                 target_col: str, regime: MarketRegime) -> float:
+    def _evaluate_model_for_regime(
+        self, model, data: pd.DataFrame, target_col: str, regime: MarketRegime
+    ) -> float:
         """Evaluate model performance for specific market regime"""
         try:
             # Get regime-specific data
@@ -370,7 +399,7 @@ class MetaLearningEngine:
 
             # Time series cross-validation
             tscv = TimeSeriesSplit(n_splits=min(5, len(X) // 10))
-            scores = cross_val_score(model, X, y, cv=tscv, scoring='neg_mean_squared_error')
+            scores = cross_val_score(model, X, y, cv=tscv, scoring="neg_mean_squared_error")
 
             return -np.mean(scores)  # Convert to positive score
 
@@ -382,10 +411,10 @@ class MetaLearningEngine:
         """Filter data to specific market regime periods"""
         # Simplified regime filtering - in practice would use sophisticated regime detection
         try:
-            if 'close' not in data.columns:
+            if "close" not in data.columns:
                 return data
 
-            returns = data['close'].pct_change()
+            returns = data["close"].pct_change()
             volatility = returns.rolling(20).std()
 
             if regime == MarketRegime.BULL_TRENDING:
@@ -393,7 +422,9 @@ class MetaLearningEngine:
             elif regime == MarketRegime.BEAR_TRENDING:
                 mask = (returns.rolling(20).mean() < 0) & (volatility < volatility.quantile(0.6))
             elif regime == MarketRegime.SIDEWAYS_VOLATILE:
-                mask = (abs(returns.rolling(20).mean()) < returns.rolling(20).std()) & (volatility > volatility.quantile(0.4))
+                mask = (abs(returns.rolling(20).mean()) < returns.rolling(20).std()) & (
+                    volatility > volatility.quantile(0.4)
+                )
             elif regime == MarketRegime.CRISIS_MODE:
                 mask = volatility > volatility.quantile(0.9)
             else:  # RECOVERY_MODE
@@ -405,6 +436,7 @@ class MetaLearningEngine:
             self.logger.warning(f"Regime filtering failed: {e}")
             return data
 
+
 class MarketRegimeDetector:
     """Advanced market regime detection for adaptive model selection"""
 
@@ -414,15 +446,15 @@ class MarketRegimeDetector:
     def detect_regime(self, data: pd.DataFrame) -> MarketRegime:
         """Detect current market regime based on multiple indicators"""
         try:
-            if 'close' not in data.columns or len(data) < 50:
+            if "close" not in data.columns or len(data) < 50:
                 return MarketRegime.SIDEWAYS_VOLATILE
 
             # Calculate regime indicators
-            returns = data['close'].pct_change()
+            returns = data["close"].pct_change()
 
             # Trend strength
-            sma_short = data['close'].rolling(10).mean()
-            sma_long = data['close'].rolling(50).mean()
+            sma_short = data["close"].rolling(10).mean()
+            sma_long = data["close"].rolling(50).mean()
             trend_strength = (sma_short.iloc[-1] - sma_long.iloc[-1]) / sma_long.iloc[-1]
 
             # Volatility
@@ -430,7 +462,7 @@ class MarketRegimeDetector:
             avg_volatility = returns.rolling(100).std().mean()
 
             # Momentum
-            momentum = (data['close'].iloc[-1] / data['close'].iloc[-20]) - 1
+            momentum = (data["close"].iloc[-1] / data["close"].iloc[-20]) - 1
 
             # Regime classification logic
             if volatility > 2 * avg_volatility:
@@ -448,6 +480,7 @@ class MarketRegimeDetector:
             self.logger.error(f"Regime detection failed: {e}")
             return MarketRegime.SIDEWAYS_VOLATILE
 
+
 class CausalInferenceEngine:
     """Causal inference and counterfactual analysis for crypto markets"""
 
@@ -456,12 +489,15 @@ class CausalInferenceEngine:
         self.logger = logging.getLogger(__name__)
         self.causal_models = {}
 
-    def analyze_causal_relationships(self, data: pd.DataFrame,
-                                   treatment_col: str, outcome_col: str) -> Dict[str, Any]:
+    def analyze_causal_relationships(
+        self, data: pd.DataFrame, treatment_col: str, outcome_col: str
+    ) -> Dict[str, Any]:
         """Analyze causal relationships between variables"""
         try:
             if not CAUSAL_INFERENCE_AVAILABLE:
-                self.logger.warning("Causal inference libraries not available - using correlation analysis")
+                self.logger.warning(
+                    "Causal inference libraries not available - using correlation analysis"
+                )
                 return self._fallback_correlation_analysis(data, treatment_col, outcome_col)
 
             # Create causal model
@@ -475,10 +511,7 @@ class CausalInferenceEngine:
             """
 
             model = CausalModel(
-                data=data,
-                treatment=treatment_col,
-                outcome=outcome_col,
-                graph=causal_graph
+                data=data, treatment=treatment_col, outcome=outcome_col, graph=causal_graph
             )
 
             # Identify causal effect
@@ -486,52 +519,51 @@ class CausalInferenceEngine:
 
             # Estimate causal effect
             causal_estimate = model.estimate_effect(
-                identified_estimand,
-                method_name="backdoor.propensity_score_matching"
+                identified_estimand, method_name="backdoor.propensity_score_matching"
             )
 
             # Refutation tests
             refutation_results = []
             try:
                 refutation = model.refute_estimate(
-                    identified_estimand,
-                    causal_estimate,
-                    method_name="random_common_cause"
+                    identified_estimand, causal_estimate, method_name="random_common_cause"
                 )
                 refutation_results.append(refutation)
             except Exception:
                 pass
 
             return {
-                'causal_effect': causal_estimate.value,
-                'confidence_interval': getattr(causal_estimate, 'confidence_intervals', None),
-                'refutation_tests': refutation_results,
-                'estimand': str(identified_estimand)
+                "causal_effect": causal_estimate.value,
+                "confidence_interval": getattr(causal_estimate, "confidence_intervals", None),
+                "refutation_tests": refutation_results,
+                "estimand": str(identified_estimand),
             }
 
         except Exception as e:
             self.logger.error(f"Causal analysis failed: {e}")
             return self._fallback_correlation_analysis(data, treatment_col, outcome_col)
 
-    def _fallback_correlation_analysis(self, data: pd.DataFrame,
-                                     treatment_col: str, outcome_col: str) -> Dict[str, Any]:
+    def _fallback_correlation_analysis(
+        self, data: pd.DataFrame, treatment_col: str, outcome_col: str
+    ) -> Dict[str, Any]:
         """Fallback correlation analysis when causal inference is not available"""
         try:
             correlation = data[treatment_col].corr(data[outcome_col])
 
             return {
-                'correlation': correlation,
-                'method': 'pearson_correlation',
-                'interpretation': 'correlation_only_not_causal',
-                'causal_effect': None
+                "correlation": correlation,
+                "method": "pearson_correlation",
+                "interpretation": "correlation_only_not_causal",
+                "causal_effect": None,
             }
 
         except Exception as e:
             self.logger.error(f"Fallback correlation analysis failed: {e}")
-            return {'error': str(e)}
+            return {"error": str(e)}
 
-    def generate_counterfactuals(self, data: pd.DataFrame,
-                               intervention: Dict[str, float]) -> pd.DataFrame:
+    def generate_counterfactuals(
+        self, data: pd.DataFrame, intervention: Dict[str, float]
+    ) -> pd.DataFrame:
         """Generate counterfactual scenarios"""
         try:
             counterfactual_data = data.copy()
@@ -548,6 +580,7 @@ class CausalInferenceEngine:
             self.logger.error(f"Counterfactual generation failed: {e}")
             return data
 
+
 class AdversarialRobustnessEngine:
     """Adversarial ML and robustness testing for crypto trading models"""
 
@@ -555,8 +588,9 @@ class AdversarialRobustnessEngine:
         self.config_manager = config_manager
         self.logger = logging.getLogger(__name__)
 
-    def generate_adversarial_examples(self, model, X: np.ndarray,
-                                    epsilon: float = 0.1) -> np.ndarray:
+    def generate_adversarial_examples(
+        self, model, X: np.ndarray, epsilon: float = 0.1
+    ) -> np.ndarray:
         """Generate adversarial examples to test model robustness"""
         try:
             # Simplified adversarial example generation (FGSM-style)
@@ -577,14 +611,15 @@ class AdversarialRobustnessEngine:
             self.logger.error(f"Adversarial example generation failed: {e}")
             return X
 
-    def stress_test_model(self, model, data: pd.DataFrame,
-                         scenarios: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def stress_test_model(
+        self, model, data: pd.DataFrame, scenarios: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Stress test model against extreme market scenarios"""
         try:
             results = {}
 
             for i, scenario in enumerate(scenarios):
-                scenario_name = scenario.get('name', f'scenario_{i}')
+                scenario_name = scenario.get("name", f"scenario_{i}")
 
                 # Apply scenario modifications to data
                 stressed_data = self._apply_stress_scenario(data, scenario)
@@ -602,27 +637,30 @@ class AdversarialRobustnessEngine:
             self.logger.error(f"Stress testing failed: {e}")
             return {}
 
-    def _apply_stress_scenario(self, data: pd.DataFrame,
-                             scenario: Dict[str, Any]) -> pd.DataFrame:
+    def _apply_stress_scenario(self, data: pd.DataFrame, scenario: Dict[str, Any]) -> pd.DataFrame:
         """Apply stress scenario to data"""
         try:
             stressed_data = data.copy()
 
             # Apply scenario modifications
-            if 'volatility_multiplier' in scenario:
-                if 'close' in stressed_data.columns:
-                    returns = stressed_data['close'].pct_change()
-                    stressed_returns = returns * scenario['volatility_multiplier']
-                    stressed_data['close'] = stressed_data['close'].iloc[0] * (1 + stressed_returns).cumprod()
+            if "volatility_multiplier" in scenario:
+                if "close" in stressed_data.columns:
+                    returns = stressed_data["close"].pct_change()
+                    stressed_returns = returns * scenario["volatility_multiplier"]
+                    stressed_data["close"] = (
+                        stressed_data["close"].iloc[0] * (1 + stressed_returns).cumprod()
+                    )
 
-            if 'volume_shock' in scenario:
-                if 'volume' in stressed_data.columns:
-                    stressed_data['volume'] *= scenario['volume_shock']
+            if "volume_shock" in scenario:
+                if "volume" in stressed_data.columns:
+                    stressed_data["volume"] *= scenario["volume_shock"]
 
-            if 'sentiment_crash' in scenario:
-                sentiment_cols = [col for col in stressed_data.columns if 'sentiment' in col.lower()]
+            if "sentiment_crash" in scenario:
+                sentiment_cols = [
+                    col for col in stressed_data.columns if "sentiment" in col.lower()
+                ]
                 for col in sentiment_cols:
-                    stressed_data[col] *= scenario['sentiment_crash']
+                    stressed_data[col] *= scenario["sentiment_crash"]
 
             return stressed_data
 
@@ -637,14 +675,14 @@ class AdversarialRobustnessEngine:
             numerical_cols = data.select_dtypes(include=[np.number]).columns.tolist()
 
             if len(numerical_cols) < 2:
-                return {'error': 'insufficient_data'}
+                return {"error": "insufficient_data"}
 
             # Use last column as target (simplified)
             X = data[numerical_cols[:-1]].fillna(0)
             y = data[numerical_cols[-1]].fillna(0)
 
             if len(X) < 5:
-                return {'error': 'insufficient_samples'}
+                return {"error": "insufficient_samples"}
 
             # Simple prediction and error calculation
             try:
@@ -652,17 +690,14 @@ class AdversarialRobustnessEngine:
                 mse = np.mean((predictions - y) ** 2)
                 mae = np.mean(np.abs(predictions - y))
 
-                return {
-                    'mse': mse,
-                    'mae': mae,
-                    'prediction_std': np.std(predictions)
-                }
+                return {"mse": mse, "mae": mae, "prediction_std": np.std(predictions)}
 
             except Exception:
-                return {'error': 'prediction_failed'}
+                return {"error": "prediction_failed"}
 
         except Exception as e:
-            return {'error': str(e)}
+            return {"error": str(e)}
+
 
 class AdvancedAICoordinator:
     """Main coordinator for all advanced AI engines"""
@@ -680,29 +715,30 @@ class AdvancedAICoordinator:
 
         self.logger.info("Advanced AI Engine initialized with all subsystems")
 
-    def process_comprehensive_analysis(self, data: pd.DataFrame,
-                                     target_col: str = 'target') -> Dict[str, Any]:
+    def process_comprehensive_analysis(
+        self, data: pd.DataFrame, target_col: str = "target"
+    ) -> Dict[str, Any]:
         """Run comprehensive advanced AI analysis"""
         try:
             results = {
-                'timestamp': datetime.now().isoformat(),
-                'input_shape': data.shape,
-                'analysis_components': []
+                "timestamp": datetime.now().isoformat(),
+                "input_shape": data.shape,
+                "analysis_components": [],
             }
 
             # 1. Advanced feature engineering
             self.logger.info("Running automated feature engineering...")
             enhanced_data = self.feature_engineer.generate_advanced_features(data, target_col)
-            results['enhanced_data_shape'] = enhanced_data.shape
-            results['new_features_count'] = enhanced_data.shape[1] - data.shape[1]
-            results['analysis_components'].append('automated_feature_engineering')
+            results["enhanced_data_shape"] = enhanced_data.shape
+            results["new_features_count"] = enhanced_data.shape[1] - data.shape[1]
+            results["analysis_components"].append("automated_feature_engineering")
 
             # 2. Market regime detection
             self.logger.info("Detecting market regime...")
             regime_detector = MarketRegimeDetector()
             current_regime = regime_detector.detect_regime(data)
-            results['market_regime'] = current_regime.value
-            results['analysis_components'].append('market_regime_detection')
+            results["market_regime"] = current_regime.value
+            results["analysis_components"].append("market_regime_detection")
 
             # 3. Causal analysis (if sufficient data)
             if len(data) > 100 and target_col in data.columns:
@@ -718,79 +754,78 @@ class AdvancedAICoordinator:
                     causal_results = self.causal_engine.analyze_causal_relationships(
                         data, treatment_col, target_col
                     )
-                    results['causal_analysis'] = causal_results
-                    results['analysis_components'].append('causal_inference')
+                    results["causal_analysis"] = causal_results
+                    results["analysis_components"].append("causal_inference")
 
             # 4. Generate stress test scenarios
             self.logger.info("Preparing adversarial robustness scenarios...")
             stress_scenarios = [
-                {'name': 'high_volatility', 'volatility_multiplier': 3.0},
-                {'name': 'volume_crash', 'volume_shock': 0.1},
-                {'name': 'sentiment_panic', 'sentiment_crash': 0.3},
-                {'name': 'market_crash', 'volatility_multiplier': 5.0, 'volume_shock': 0.2}
+                {"name": "high_volatility", "volatility_multiplier": 3.0},
+                {"name": "volume_crash", "volume_shock": 0.1},
+                {"name": "sentiment_panic", "sentiment_crash": 0.3},
+                {"name": "market_crash", "volatility_multiplier": 5.0, "volume_shock": 0.2},
             ]
-            results['stress_scenarios_prepared'] = len(stress_scenarios)
-            results['analysis_components'].append('adversarial_robustness_prep')
+            results["stress_scenarios_prepared"] = len(stress_scenarios)
+            results["analysis_components"].append("adversarial_robustness_prep")
 
-            results['status'] = 'completed'
-            results['total_components'] = len(results['analysis_components'])
+            results["status"] = "completed"
+            results["total_components"] = len(results["analysis_components"])
 
-            self.logger.info(f"Advanced AI analysis completed with {results['total_components']} components")
+            self.logger.info(
+                f"Advanced AI analysis completed with {results['total_components']} components"
+            )
 
             return results
 
         except Exception as e:
             self.logger.error(f"Comprehensive analysis failed: {e}")
-            return {
-                'status': 'failed',
-                'error': str(e),
-                'timestamp': datetime.now().isoformat()
-            }
+            return {"status": "failed", "error": str(e), "timestamp": datetime.now().isoformat()}
 
     def get_system_status(self) -> Dict[str, Any]:
         """Get status of all advanced AI components"""
         try:
             return {
-                'feature_engineer_available': self.feature_engineer is not None,
-                'meta_learner_available': self.meta_learner is not None,
-                'causal_engine_available': self.causal_engine is not None,
-                'adversarial_engine_available': self.adversarial_engine is not None,
-                'advanced_ml_libs': ADVANCED_ML_AVAILABLE,
-                'causal_inference_libs': CAUSAL_INFERENCE_AVAILABLE,
-                'status': 'operational',
-                'timestamp': datetime.now().isoformat()
+                "feature_engineer_available": self.feature_engineer is not None,
+                "meta_learner_available": self.meta_learner is not None,
+                "causal_engine_available": self.causal_engine is not None,
+                "adversarial_engine_available": self.adversarial_engine is not None,
+                "advanced_ml_libs": ADVANCED_ML_AVAILABLE,
+                "causal_inference_libs": CAUSAL_INFERENCE_AVAILABLE,
+                "status": "operational",
+                "timestamp": datetime.now().isoformat(),
             }
 
         except Exception as e:
-            return {
-                'status': 'error',
-                'error': str(e),
-                'timestamp': datetime.now().isoformat()
-            }
+            return {"status": "error", "error": str(e), "timestamp": datetime.now().isoformat()}
+
 
 # Convenience function for easy access
 def get_advanced_ai_engine(config_manager=None, cache_manager=None) -> AdvancedAICoordinator:
     """Get configured advanced AI engine"""
     return AdvancedAICoordinator(config_manager, cache_manager)
 
+
 if __name__ == "__main__":
     # Test the advanced AI engine
 
     # Create test data
     np.random.seed(42)
-    dates = pd.date_range('2024-01-01', periods=200, freq='1H')
-    test_data = pd.DataFrame({
-        'close': 50000 + np.cumsum(np.random.randn(200) * 100),
-        'volume': np.random.exponential(1000000, 200),
-        'sentiment': np.random.normal(0, 1),
-        'target': np.random.randn(200)
-    }, index=dates)
+    dates = pd.date_range("2024-01-01", periods=200, freq="1H")
+    test_data = pd.DataFrame(
+        {
+            "close": 50000 + np.cumsum(np.random.randn(200) * 100),
+            "volume": np.random.exponential(1000000, 200),
+            "sentiment": np.random.normal(0, 1),
+            "target": np.random.randn(200),
+        },
+        index=dates,
+    )
 
     # Initialize and test
     ai_engine = get_advanced_ai_engine()
 
     print("Testing Advanced AI Engine...")
-    results = ai_engine.process_comprehensive_analysis(test_data, 'target')
+    results = ai_engine.process_comprehensive_analysis(test_data, "target")
 
     print(f"Analysis Results:")
     for key, value in results.items():

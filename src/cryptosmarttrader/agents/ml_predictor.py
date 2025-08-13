@@ -9,6 +9,7 @@ import json
 
 logger = logging.getLogger(__name__)
 
+
 class MLPredictorAgent:
     """Multi-horizon ML predictions with confidence scoring"""
 
@@ -29,6 +30,7 @@ class MLPredictorAgent:
 
             # Generate predictions using trained models
             from ml.models.predict import predict_all
+
             predictions_df = predict_all(features_df)
 
             # Apply enterprise confidence gate
@@ -51,18 +53,22 @@ class MLPredictorAgent:
                             expected_return = row[pred_col] * 100  # Convert to percentage
                             confidence = row[conf_col] * 100
 
-                            results.append({
-                                'symbol': row['coin'],
-                                'horizon': horizon,
-                                'expected_return': expected_return,
-                                'confidence': confidence,
-                                'timestamp': datetime.utcnow().isoformat(),
-                                'score': confidence,
-                                'risk_level': self._calculate_risk_level(expected_return, confidence)
-                            })
+                            results.append(
+                                {
+                                    "symbol": row["coin"],
+                                    "horizon": horizon,
+                                    "expected_return": expected_return,
+                                    "confidence": confidence,
+                                    "timestamp": datetime.utcnow().isoformat(),
+                                    "score": confidence,
+                                    "risk_level": self._calculate_risk_level(
+                                        expected_return, confidence
+                                    ),
+                                }
+                            )
 
             # Sort by confidence * expected return (best opportunities first)
-            results.sort(key=lambda x: x['confidence'] * abs(x['expected_return']), reverse=True)
+            results.sort(key=lambda x: x["confidence"] * abs(x["expected_return"]), reverse=True)
 
             return results
 
@@ -97,23 +103,25 @@ class MLPredictorAgent:
         df.to_csv("exports/production/predictions.csv", index=False)
 
         # Save as JSON for API consumption
-        with open("exports/production/predictions.json", 'w') as f:
+        with open("exports/production/predictions.json", "w") as f:
             json.dump(predictions, f, indent=2)
 
         # Create summary metrics
         summary = {
-            'timestamp': datetime.utcnow().isoformat(),
-            'total_predictions': len(predictions),
-            'by_horizon': df['horizon'].value_counts().to_dict(),
-            'by_risk': df['risk_level'].value_counts().to_dict(),
-            'avg_confidence': df['confidence'].mean(),
-            'avg_expected_return': df['expected_return'].mean()
+            "timestamp": datetime.utcnow().isoformat(),
+            "total_predictions": len(predictions),
+            "by_horizon": df["horizon"].value_counts().to_dict(),
+            "by_risk": df["risk_level"].value_counts().to_dict(),
+            "avg_confidence": df["confidence"].mean(),
+            "avg_expected_return": df["expected_return"].mean(),
         }
 
-        with open("exports/production/prediction_summary.json", 'w') as f:
+        with open("exports/production/prediction_summary.json", "w") as f:
             json.dump(summary, f, indent=2)
 
-        logger.info(f"Saved {len(predictions)} predictions across {len(set(p['horizon'] for p in predictions))} horizons")
+        logger.info(
+            f"Saved {len(predictions)} predictions across {len(set(p['horizon'] for p in predictions))} horizons"
+        )
 
     async def run_continuous(self):
         """Run ML prediction continuously"""
@@ -125,13 +133,16 @@ class MLPredictorAgent:
                 await self.save_predictions(predictions)
 
                 if predictions:
-                    high_confidence = [p for p in predictions if p['confidence'] >= 85]
-                    logger.info(f"Generated {len(predictions)} predictions, {len(high_confidence)} high-confidence")
+                    high_confidence = [p for p in predictions if p["confidence"] >= 85]
+                    logger.info(
+                        f"Generated {len(predictions)} predictions, {len(high_confidence)} high-confidence"
+                    )
 
             except Exception as e:
                 logger.error(f"Prediction cycle failed: {e}")
 
             await asyncio.sleep(300)  # 5 minutes
+
 
 if __name__ == "__main__":
     agent = MLPredictorAgent()

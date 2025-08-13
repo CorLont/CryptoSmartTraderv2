@@ -7,28 +7,29 @@ import sys
 import os
 from pathlib import Path
 
+
 def test_workstation_deployment():
     """Complete workstation deployment test"""
-    
+
     print("🎯 FINALE WORKSTATION DEPLOYMENT VALIDATIE")
     print("=" * 60)
-    
+
     all_tests_passed = True
-    
+
     # Test 1: Critical files
     print("\n1. CRITICAL FILES CHECK:")
     critical_files = [
         ("Models 1h", "models/saved/rf_1h.pkl"),
-        ("Models 24h", "models/saved/rf_24h.pkl"), 
+        ("Models 24h", "models/saved/rf_24h.pkl"),
         ("Models 168h", "models/saved/rf_168h.pkl"),
         ("Models 720h", "models/saved/rf_720h.pkl"),
         ("Predictions", "exports/production/predictions.csv"),
         ("Features", "exports/features.parquet"),
         ("Config", "config.json"),
         ("Main App", "app_minimal.py"),
-        ("Clean App", "app_clean.py")
+        ("Clean App", "app_clean.py"),
     ]
-    
+
     for name, filepath in critical_files:
         if Path(filepath).exists():
             size_mb = Path(filepath).stat().st_size / 1024 / 1024
@@ -36,11 +37,11 @@ def test_workstation_deployment():
         else:
             print(f"   {name:.<25} ❌ MISSING")
             all_tests_passed = False
-    
+
     # Test 2: Core dependencies
     print("\n2. CORE DEPENDENCIES CHECK:")
     core_deps = ["streamlit", "pandas", "plotly", "numpy", "pathlib"]
-    
+
     for dep in core_deps:
         try:
             __import__(dep)
@@ -48,54 +49,57 @@ def test_workstation_deployment():
         except ImportError as e:
             print(f"   {dep:.<25} ❌ {e}")
             all_tests_passed = False
-    
+
     # Test 3: Custom modules (standalone)
     print("\n3. CUSTOM MODULES CHECK:")
     try:
         # Test direct imports zonder orchestration hierarchy
-        sys.path.insert(0, '.')
-        
+        sys.path.insert(0, ".")
+
         # Test strict gate standalone
         from orchestration.strict_gate_standalone import apply_strict_gate_orchestration
+
         print("   strict_gate_standalone.... ✅")
-        
+
         from utils.authentic_opportunities import get_authentic_opportunities_count
+
         print("   authentic_opportunities... ✅")
-        
+
     except ImportError as e:
         print(f"   custom modules............ ❌ {e}")
         all_tests_passed = False
-    
+
     # Test 4: Predictions authenticity
     print("\n4. PREDICTIONS QUALITY CHECK:")
     try:
         import pandas as pd
+
         df = pd.read_csv("exports/production/predictions.csv")
-        
+
         # Test data quality
-        conf_std = df['conf_1h'].std()
+        conf_std = df["conf_1h"].std()
         entries = len(df)
-        mean_conf = df['conf_1h'].mean()
-        
+        mean_conf = df["conf_1h"].mean()
+
         # Quality criteria
         authentic = conf_std > 0.001  # Real ensemble variance
         sufficient_data = entries >= 100
         high_confidence = mean_conf > 0.8
-        
+
         print(f"   Entries: {entries}")
         print(f"   Confidence std: {conf_std:.6f}")
         print(f"   Mean confidence: {mean_conf:.3f}")
         print(f"   Authentic ensemble: {'✅' if authentic else '❌'}")
         print(f"   Sufficient data: {'✅' if sufficient_data else '❌'}")
         print(f"   High confidence: {'✅' if high_confidence else '❌'}")
-        
+
         if not (authentic and sufficient_data and high_confidence):
             all_tests_passed = False
-            
+
     except Exception as e:
         print(f"   predictions quality....... ❌ {e}")
         all_tests_passed = False
-    
+
     # Test 5: App functionality test
     print("\n5. APP FUNCTIONALITY TEST:")
     try:
@@ -120,17 +124,17 @@ def test_app_core():
 
 app_ready = test_app_core()
 """)
-        
-        if locals().get('app_ready', False):
+
+        if locals().get("app_ready", False):
             print("   app core functionality.... ✅")
         else:
             print("   app core functionality.... ❌")
             all_tests_passed = False
-            
+
     except Exception as e:
         print(f"   app functionality......... ❌ {e}")
         all_tests_passed = False
-    
+
     # Final result
     print("\n" + "=" * 60)
     if all_tests_passed:
@@ -147,6 +151,7 @@ app_ready = test_app_core()
         print("\n🔧 ACTION REQUIRED:")
         print("   Some components need attention before deployment")
         return False
+
 
 if __name__ == "__main__":
     success = test_workstation_deployment()

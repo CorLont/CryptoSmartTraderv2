@@ -8,6 +8,7 @@ import numpy as np
 from typing import Dict, List, Any
 import logging
 
+
 class FeatureMonitor:
     """Placeholder feature monitor"""
 

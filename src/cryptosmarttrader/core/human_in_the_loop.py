@@ -19,27 +19,34 @@ from enum import Enum
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 class FeedbackType(Enum):
     """Types of human feedback"""
+
     TRADE_QUALITY = "trade_quality"
     PREDICTION_ACCURACY = "prediction_accuracy"
     FEATURE_RELEVANCE = "feature_relevance"
     RISK_ASSESSMENT = "risk_assessment"
     STRATEGY_PREFERENCE = "strategy_preference"
 
+
 class FeedbackValue(Enum):
     """Feedback values"""
+
     EXCELLENT = 5
     GOOD = 4
     NEUTRAL = 3
     POOR = 2
     TERRIBLE = 1
 
+
 @dataclass
 class HumanFeedback:
     """Represents human feedback on system decisions"""
+
     feedback_id: str
     feedback_type: FeedbackType
     feedback_value: FeedbackValue
@@ -50,9 +57,11 @@ class HumanFeedback:
     confidence: float  # User's confidence in their feedback
     metadata: Dict[str, Any]
 
+
 @dataclass
 class ActiveLearningQuery:
     """Represents a query for active learning"""
+
     query_id: str
     query_type: str
     data_point: Dict[str, Any]
@@ -62,6 +71,7 @@ class ActiveLearningQuery:
     options: List[str]
     timestamp: datetime
 
+
 class FeedbackProcessor(ABC):
     """Abstract base class for feedback processors"""
 
@@ -69,6 +79,7 @@ class FeedbackProcessor(ABC):
     def process_feedback(self, feedback: HumanFeedback) -> Dict[str, Any]:
         """Process human feedback and return insights"""
         pass
+
 
 class TradeFeedbackProcessor(FeedbackProcessor):
     """Processes trade quality feedback"""
@@ -79,23 +90,25 @@ class TradeFeedbackProcessor(FeedbackProcessor):
     def process_feedback(self, feedback: HumanFeedback) -> Dict[str, Any]:
         """Process trade quality feedback"""
 
-        trade_context = feedback.context.get('trade', {})
+        trade_context = feedback.context.get("trade", {})
 
         # Extract trade features
         features = {
-            'entry_price': trade_context.get('entry_price', 0),
-            'exit_price': trade_context.get('exit_price', 0),
-            'holding_period': trade_context.get('holding_period_hours', 0),
-            'position_size': trade_context.get('position_size', 0),
-            'market_conditions': trade_context.get('market_conditions', {}),
-            'sentiment_score': trade_context.get('sentiment_score', 0),
-            'technical_indicators': trade_context.get('technical_indicators', {}),
-            'ml_confidence': trade_context.get('ml_confidence', 0)
+            "entry_price": trade_context.get("entry_price", 0),
+            "exit_price": trade_context.get("exit_price", 0),
+            "holding_period": trade_context.get("holding_period_hours", 0),
+            "position_size": trade_context.get("position_size", 0),
+            "market_conditions": trade_context.get("market_conditions", {}),
+            "sentiment_score": trade_context.get("sentiment_score", 0),
+            "technical_indicators": trade_context.get("technical_indicators", {}),
+            "ml_confidence": trade_context.get("ml_confidence", 0),
         }
 
         # Calculate trade outcome
-        if trade_context.get('exit_price') and trade_context.get('entry_price'):
-            actual_return = (trade_context['exit_price'] - trade_context['entry_price']) / trade_context['entry_price']
+        if trade_context.get("exit_price") and trade_context.get("entry_price"):
+            actual_return = (
+                trade_context["exit_price"] - trade_context["entry_price"]
+            ) / trade_context["entry_price"]
         else:
             actual_return = 0
 
@@ -104,12 +117,12 @@ class TradeFeedbackProcessor(FeedbackProcessor):
 
         # Determine learning insights
         insights = {
-            'feedback_score': feedback_score,
-            'actual_return': actual_return,
-            'features': features,
-            'misalignment': self._calculate_misalignment(feedback_score, actual_return),
-            'improvement_areas': self._identify_improvement_areas(feedback, features),
-            'confidence_calibration': self._assess_confidence_calibration(feedback, features)
+            "feedback_score": feedback_score,
+            "actual_return": actual_return,
+            "features": features,
+            "misalignment": self._calculate_misalignment(feedback_score, actual_return),
+            "improvement_areas": self._identify_improvement_areas(feedback, features),
+            "confidence_calibration": self._assess_confidence_calibration(feedback, features),
         }
 
         return insights
@@ -133,42 +146,47 @@ class TradeFeedbackProcessor(FeedbackProcessor):
         misalignment = abs(feedback_score - performance_score)
         return misalignment / 4  # Normalize to 0-1
 
-    def _identify_improvement_areas(self, feedback: HumanFeedback, features: Dict[str, Any]) -> List[str]:
+    def _identify_improvement_areas(
+        self, feedback: HumanFeedback, features: Dict[str, Any]
+    ) -> List[str]:
         """Identify areas for improvement based on feedback"""
 
         improvement_areas = []
 
         if feedback.feedback_value.value <= 2:  # Poor feedback
             # Check various aspects
-            if features.get('ml_confidence', 0) > 0.8:
+            if features.get("ml_confidence", 0) > 0.8:
                 improvement_areas.append("overconfident_predictions")
 
-            if features.get('holding_period', 0) < 2:
+            if features.get("holding_period", 0) < 2:
                 improvement_areas.append("exit_timing")
 
-            if features.get('position_size', 0) > 0.1:
+            if features.get("position_size", 0) > 0.1:
                 improvement_areas.append("position_sizing")
 
-            market_volatility = features.get('market_conditions', {}).get('volatility', 0)
+            market_volatility = features.get("market_conditions", {}).get("volatility", 0)
             if market_volatility > 0.05:
                 improvement_areas.append("volatility_handling")
 
         return improvement_areas
 
-    def _assess_confidence_calibration(self, feedback: HumanFeedback, features: Dict[str, Any]) -> Dict[str, float]:
+    def _assess_confidence_calibration(
+        self, feedback: HumanFeedback, features: Dict[str, Any]
+    ) -> Dict[str, float]:
         """Assess how well model confidence aligns with outcomes"""
 
-        ml_confidence = features.get('ml_confidence', 0)
+        ml_confidence = features.get("ml_confidence", 0)
         human_confidence = feedback.confidence
         feedback_score = feedback.feedback_value.value
 
         return {
-            'ml_confidence': ml_confidence,
-            'human_confidence': human_confidence,
-            'feedback_quality': feedback_score / 5,
-            'confidence_gap': abs(ml_confidence - human_confidence),
-            'calibration_score': 1 - abs(ml_confidence - feedback_score / 5)
+            "ml_confidence": ml_confidence,
+            "human_confidence": human_confidence,
+            "feedback_quality": feedback_score / 5,
+            "confidence_gap": abs(ml_confidence - human_confidence),
+            "calibration_score": 1 - abs(ml_confidence - feedback_score / 5),
         }
+
 
 class PredictionFeedbackProcessor(FeedbackProcessor):
     """Processes prediction accuracy feedback"""
@@ -179,26 +197,28 @@ class PredictionFeedbackProcessor(FeedbackProcessor):
     def process_feedback(self, feedback: HumanFeedback) -> Dict[str, Any]:
         """Process prediction accuracy feedback"""
 
-        prediction_context = feedback.context.get('prediction', {})
+        prediction_context = feedback.context.get("prediction", {})
 
         insights = {
-            'prediction_type': prediction_context.get('type', 'unknown'),
-            'predicted_value': prediction_context.get('predicted_value', 0),
-            'actual_value': prediction_context.get('actual_value', 0),
-            'time_horizon': prediction_context.get('time_horizon', '1d'),
-            'feedback_score': feedback.feedback_value.value,
-            'model_features': prediction_context.get('features_used', []),
-            'market_regime': prediction_context.get('market_regime', 'unknown'),
-            'accuracy_assessment': self._assess_prediction_accuracy(feedback, prediction_context)
+            "prediction_type": prediction_context.get("type", "unknown"),
+            "predicted_value": prediction_context.get("predicted_value", 0),
+            "actual_value": prediction_context.get("actual_value", 0),
+            "time_horizon": prediction_context.get("time_horizon", "1d"),
+            "feedback_score": feedback.feedback_value.value,
+            "model_features": prediction_context.get("features_used", []),
+            "market_regime": prediction_context.get("market_regime", "unknown"),
+            "accuracy_assessment": self._assess_prediction_accuracy(feedback, prediction_context),
         }
 
         return insights
 
-    def _assess_prediction_accuracy(self, feedback: HumanFeedback, context: Dict[str, Any]) -> Dict[str, float]:
+    def _assess_prediction_accuracy(
+        self, feedback: HumanFeedback, context: Dict[str, Any]
+    ) -> Dict[str, float]:
         """Assess prediction accuracy based on feedback"""
 
-        predicted = context.get('predicted_value', 0)
-        actual = context.get('actual_value', 0)
+        predicted = context.get("predicted_value", 0)
+        actual = context.get("actual_value", 0)
 
         if actual != 0:
             error_rate = abs(predicted - actual) / abs(actual)
@@ -206,11 +226,12 @@ class PredictionFeedbackProcessor(FeedbackProcessor):
             error_rate = abs(predicted)
 
         return {
-            'error_rate': error_rate,
-            'human_assessment': feedback.feedback_value.value / 5,
-            'direction_correct': (predicted > 0) == (actual > 0),
-            'magnitude_accuracy': max(0, 1 - error_rate)
+            "error_rate": error_rate,
+            "human_assessment": feedback.feedback_value.value / 5,
+            "direction_correct": (predicted > 0) == (actual > 0),
+            "magnitude_accuracy": max(0, 1 - error_rate),
         }
+
 
 class ActiveLearningEngine:
     """Engine for active learning and uncertainty sampling"""
@@ -220,8 +241,9 @@ class ActiveLearningEngine:
         self.pending_queries = []
         self.query_history = []
 
-    def identify_uncertain_predictions(self, predictions: np.ndarray, features: np.ndarray,
-                                    threshold: float = 0.3) -> List[int]:
+    def identify_uncertain_predictions(
+        self, predictions: np.ndarray, features: np.ndarray, threshold: float = 0.3
+    ) -> List[int]:
         """Identify predictions with high uncertainty for human feedback"""
 
         # Calculate uncertainty (simplified - can be enhanced with ensemble variance)
@@ -241,21 +263,36 @@ class ActiveLearningEngine:
 
         return uncertain_indices.tolist()
 
-    def generate_active_learning_query(self, data_point: Dict[str, Any],
-                                     uncertainty_score: float) -> ActiveLearningQuery:
+    def generate_active_learning_query(
+        self, data_point: Dict[str, Any], uncertainty_score: float
+    ) -> ActiveLearningQuery:
         """Generate an active learning query for human feedback"""
 
         query_id = f"al_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{np.random.normal(0, 1)}"
 
         # Determine query type based on data
-        if 'prediction' in data_point:
+        if "prediction" in data_point:
             query_type = "prediction_validation"
             question = f"How accurate is this prediction: {data_point['prediction']:.3f}?"
-            options = ["Very accurate", "Somewhat accurate", "Neutral", "Somewhat inaccurate", "Very inaccurate"]
-        elif 'trade_signal' in data_point:
+            options = [
+                "Very accurate",
+                "Somewhat accurate",
+                "Neutral",
+                "Somewhat inaccurate",
+                "Very inaccurate",
+            ]
+        elif "trade_signal" in data_point:
             query_type = "trade_signal_validation"
-            question = f"Should we {data_point['trade_signal']} {data_point.get('coin', 'this asset')}?"
-            options = ["Definitely yes", "Probably yes", "Uncertain", "Probably no", "Definitely no"]
+            question = (
+                f"Should we {data_point['trade_signal']} {data_point.get('coin', 'this asset')}?"
+            )
+            options = [
+                "Definitely yes",
+                "Probably yes",
+                "Uncertain",
+                "Probably no",
+                "Definitely no",
+            ]
         else:
             query_type = "general_validation"
             question = "How confident are you in this analysis?"
@@ -272,13 +309,15 @@ class ActiveLearningEngine:
             priority=priority,
             question=question,
             options=options,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         self.pending_queries.append(query)
         return query
 
-    def process_query_response(self, query_id: str, response: str, confidence: float) -> HumanFeedback:
+    def process_query_response(
+        self, query_id: str, response: str, confidence: float
+    ) -> HumanFeedback:
         """Process response to active learning query"""
 
         # Find the query
@@ -305,7 +344,7 @@ class ActiveLearningEngine:
             1: FeedbackValue.GOOD,
             2: FeedbackValue.NEUTRAL,
             3: FeedbackValue.POOR,
-            4: FeedbackValue.TERRIBLE
+            4: FeedbackValue.TERRIBLE,
         }
 
         # Find response index
@@ -326,7 +365,7 @@ class ActiveLearningEngine:
             timestamp=datetime.now(),
             user_id="human_expert",
             confidence=confidence,
-            metadata={"source": "active_learning"}
+            metadata={"source": "active_learning"},
         )
 
         # Move query to history
@@ -340,12 +379,11 @@ class ActiveLearningEngine:
 
         # Sort by priority (descending) and timestamp
         sorted_queries = sorted(
-            self.pending_queries,
-            key=lambda q: (q.priority, q.timestamp),
-            reverse=True
+            self.pending_queries, key=lambda q: (q.priority, q.timestamp), reverse=True
         )
 
         return sorted_queries[:limit]
+
 
 class HumanInTheLoopSystem:
     """Main system for human-in-the-loop learning"""
@@ -376,14 +414,18 @@ class HumanInTheLoopSystem:
             # Update learning metrics
             self._update_learning_metrics(feedback, insights)
 
-            self.logger.info(f"Processed feedback {feedback.feedback_id}: {feedback.feedback_type.value}")
+            self.logger.info(
+                f"Processed feedback {feedback.feedback_id}: {feedback.feedback_type.value}"
+            )
 
             return insights
         else:
             self.logger.warning(f"No processor for feedback type: {feedback.feedback_type}")
             return {}
 
-    def request_feedback(self, data_point: Dict[str, Any], uncertainty_score: float) -> ActiveLearningQuery:
+    def request_feedback(
+        self, data_point: Dict[str, Any], uncertainty_score: float
+    ) -> ActiveLearningQuery:
         """Request human feedback on uncertain predictions"""
 
         query = self.active_learning.generate_active_learning_query(data_point, uncertainty_score)
@@ -399,30 +441,34 @@ class HumanInTheLoopSystem:
             return {"message": "No feedback collected yet"}
 
         insights = {
-            'total_feedback': len(self.feedback_history),
-            'feedback_distribution': {},
-            'average_confidence': 0,
-            'improvement_trends': {},
-            'calibration_metrics': {},
-            'last_updated': datetime.now()
+            "total_feedback": len(self.feedback_history),
+            "feedback_distribution": {},
+            "average_confidence": 0,
+            "improvement_trends": {},
+            "calibration_metrics": {},
+            "last_updated": datetime.now(),
         }
 
         # Analyze feedback distribution
         for feedback in self.feedback_history:
             fb_type = feedback.feedback_type.value
-            if fb_type not in insights['feedback_distribution']:
-                insights['feedback_distribution'][fb_type] = []
-            insights['feedback_distribution'][fb_type].append(feedback.feedback_value.value)
+            if fb_type not in insights["feedback_distribution"]:
+                insights["feedback_distribution"][fb_type] = []
+            insights["feedback_distribution"][fb_type].append(feedback.feedback_value.value)
 
         # Calculate average confidence
-        insights['average_confidence'] = np.mean([f.confidence for f in self.feedback_history])
+        insights["average_confidence"] = np.mean([f.confidence for f in self.feedback_history])
 
         # Analyze trends
-        recent_feedback = [f for f in self.feedback_history if f.timestamp > datetime.now() - timedelta(days=7)]
+        recent_feedback = [
+            f for f in self.feedback_history if f.timestamp > datetime.now() - timedelta(days=7)
+        ]
 
         if recent_feedback:
-            insights['recent_feedback_quality'] = np.mean([f.feedback_value.value for f in recent_feedback])
-            insights['recent_confidence'] = np.mean([f.confidence for f in recent_feedback])
+            insights["recent_feedback_quality"] = np.mean(
+                [f.feedback_value.value for f in recent_feedback]
+            )
+            insights["recent_confidence"] = np.mean([f.confidence for f in recent_feedback])
 
         return insights
 
@@ -435,10 +481,10 @@ class HumanInTheLoopSystem:
             self.learning_metrics[metric_key] = []
 
         metric_entry = {
-            'timestamp': feedback.timestamp,
-            'feedback_value': feedback.feedback_value.value,
-            'confidence': feedback.confidence,
-            'insights': insights
+            "timestamp": feedback.timestamp,
+            "feedback_value": feedback.feedback_value.value,
+            "confidence": feedback.confidence,
+            "insights": insights,
         }
 
         self.learning_metrics[metric_key].append(metric_entry)
@@ -463,23 +509,27 @@ class HumanInTheLoopSystem:
         """Get comprehensive system summary"""
 
         summary = {
-            'feedback_stats': {
-                'total_feedback': len(self.feedback_history),
-                'pending_queries': len(self.active_learning.pending_queries),
-                'processed_queries': len(self.active_learning.query_history)
+            "feedback_stats": {
+                "total_feedback": len(self.feedback_history),
+                "pending_queries": len(self.active_learning.pending_queries),
+                "processed_queries": len(self.active_learning.query_history),
             },
-            'learning_progress': self.get_feedback_insights(),
-            'active_learning_status': {
-                'high_priority_queries': len([q for q in self.active_learning.pending_queries if q.priority >= 7]),
-                'total_pending': len(self.active_learning.pending_queries)
+            "learning_progress": self.get_feedback_insights(),
+            "active_learning_status": {
+                "high_priority_queries": len(
+                    [q for q in self.active_learning.pending_queries if q.priority >= 7]
+                ),
+                "total_pending": len(self.active_learning.pending_queries),
             },
-            'last_updated': datetime.now()
+            "last_updated": datetime.now(),
         }
 
         return summary
 
+
 # Global instance
 _hitl_system = None
+
 
 def get_human_in_the_loop_system() -> HumanInTheLoopSystem:
     """Get or create human-in-the-loop system"""
@@ -490,8 +540,13 @@ def get_human_in_the_loop_system() -> HumanInTheLoopSystem:
 
     return _hitl_system
 
-def submit_trade_feedback(trade_context: Dict[str, Any], feedback_value: FeedbackValue,
-                         explanation: str, confidence: float = 0.8) -> Dict[str, Any]:
+
+def submit_trade_feedback(
+    trade_context: Dict[str, Any],
+    feedback_value: FeedbackValue,
+    explanation: str,
+    confidence: float = 0.8,
+) -> Dict[str, Any]:
     """Submit feedback on trade quality"""
 
     system = get_human_in_the_loop_system()
@@ -505,13 +560,15 @@ def submit_trade_feedback(trade_context: Dict[str, Any], feedback_value: Feedbac
         timestamp=datetime.now(),
         user_id="trader",
         confidence=confidence,
-        metadata={"source": "manual_trade_feedback"}
+        metadata={"source": "manual_trade_feedback"},
     )
 
     return system.submit_feedback(feedback)
 
-def request_prediction_feedback(prediction_context: Dict[str, Any],
-                              uncertainty_score: float) -> ActiveLearningQuery:
+
+def request_prediction_feedback(
+    prediction_context: Dict[str, Any], uncertainty_score: float
+) -> ActiveLearningQuery:
     """Request feedback on uncertain predictions"""
 
     system = get_human_in_the_loop_system()
@@ -520,10 +577,11 @@ def request_prediction_feedback(prediction_context: Dict[str, Any],
         "prediction": prediction_context.get("predicted_value", 0),
         "confidence": prediction_context.get("confidence", 0),
         "features": prediction_context.get("features_used", []),
-        "coin": prediction_context.get("coin", "Unknown")
+        "coin": prediction_context.get("coin", "Unknown"),
     }
 
     return system.request_feedback(data_point, uncertainty_score)
+
 
 if __name__ == "__main__":
     # Demo usage
@@ -538,14 +596,14 @@ if __name__ == "__main__":
         "holding_period_hours": 12,
         "position_size": 0.05,
         "ml_confidence": 0.85,
-        "sentiment_score": 0.7
+        "sentiment_score": 0.7,
     }
 
     insights = submit_trade_feedback(
         trade_context,
         FeedbackValue.GOOD,
         "Good trade, but exit could have been timed better",
-        confidence=0.8
+        confidence=0.8,
     )
 
     print("Trade feedback insights:", insights)

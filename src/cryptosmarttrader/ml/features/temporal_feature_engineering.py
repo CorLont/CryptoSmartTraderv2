@@ -11,11 +11,14 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 import logging
 from dataclasses import dataclass
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 @dataclass
 class TemporalFeatureConfig:
     """Configuration for temporal feature engineering"""
+
     lookback_periods: List[int] = None  # [1, 3, 7, 14, 30] periods
     forward_looking: bool = False  # NEVER allow forward-looking features
     lag_features: bool = True
@@ -32,6 +35,7 @@ class TemporalFeatureConfig:
         if self.forward_looking:
             raise ValueError("Forward-looking features are prohibited to prevent look-ahead bias")
 
+
 class TemporalFeatureEngineer:
     """Safe temporal feature engineering with leak prevention"""
 
@@ -41,17 +45,17 @@ class TemporalFeatureEngineer:
 
         # Feature validation settings
         self.validation_settings = {
-            'max_future_correlation': 0.05,  # Max correlation with future values
-            'min_temporal_consistency': 0.95,  # Min consistency across time
-            'require_lag_validation': True,  # Validate all lag features
+            "max_future_correlation": 0.05,  # Max correlation with future values
+            "min_temporal_consistency": 0.95,  # Min consistency across time
+            "require_lag_validation": True,  # Validate all lag features
         }
 
     def create_temporal_features(
         self,
         df: pd.DataFrame,
         value_cols: List[str],
-        timestamp_col: str = 'timestamp',
-        validate_leakage: bool = True
+        timestamp_col: str = "timestamp",
+        validate_leakage: bool = True,
     ) -> pd.DataFrame:
         """Create temporal features with comprehensive leak prevention"""
 
@@ -95,12 +99,7 @@ class TemporalFeatureEngineer:
 
         return feature_df
 
-    def _validate_input_data(
-        self,
-        df: pd.DataFrame,
-        value_cols: List[str],
-        timestamp_col: str
-    ):
+    def _validate_input_data(self, df: pd.DataFrame, value_cols: List[str], timestamp_col: str):
         """Validate input data for feature engineering"""
 
         if timestamp_col not in df.columns:
@@ -126,26 +125,26 @@ class TemporalFeatureEngineer:
         timestamps = pd.to_datetime(df[timestamp_col])
 
         # Basic time features
-        df[f'{timestamp_col}_hour'] = timestamps.dt.hour
-        df[f'{timestamp_col}_day'] = timestamps.dt.day
-        df[f'{timestamp_col}_day_of_week'] = timestamps.dt.dayofweek
-        df[f'{timestamp_col}_month'] = timestamps.dt.month
-        df[f'{timestamp_col}_quarter'] = timestamps.dt.quarter
-        df[f'{timestamp_col}_year'] = timestamps.dt.year
+        df[f"{timestamp_col}_hour"] = timestamps.dt.hour
+        df[f"{timestamp_col}_day"] = timestamps.dt.day
+        df[f"{timestamp_col}_day_of_week"] = timestamps.dt.dayofweek
+        df[f"{timestamp_col}_month"] = timestamps.dt.month
+        df[f"{timestamp_col}_quarter"] = timestamps.dt.quarter
+        df[f"{timestamp_col}_year"] = timestamps.dt.year
 
         # Cyclical features (better for ML)
-        df[f'{timestamp_col}_hour_sin'] = np.sin(2 * np.pi * timestamps.dt.hour / 24)
-        df[f'{timestamp_col}_hour_cos'] = np.cos(2 * np.pi * timestamps.dt.hour / 24)
-        df[f'{timestamp_col}_day_sin'] = np.sin(2 * np.pi * timestamps.dt.dayofweek / 7)
-        df[f'{timestamp_col}_day_cos'] = np.cos(2 * np.pi * timestamps.dt.dayofweek / 7)
-        df[f'{timestamp_col}_month_sin'] = np.sin(2 * np.pi * timestamps.dt.month / 12)
-        df[f'{timestamp_col}_month_cos'] = np.cos(2 * np.pi * timestamps.dt.month / 12)
+        df[f"{timestamp_col}_hour_sin"] = np.sin(2 * np.pi * timestamps.dt.hour / 24)
+        df[f"{timestamp_col}_hour_cos"] = np.cos(2 * np.pi * timestamps.dt.hour / 24)
+        df[f"{timestamp_col}_day_sin"] = np.sin(2 * np.pi * timestamps.dt.dayofweek / 7)
+        df[f"{timestamp_col}_day_cos"] = np.cos(2 * np.pi * timestamps.dt.dayofweek / 7)
+        df[f"{timestamp_col}_month_sin"] = np.sin(2 * np.pi * timestamps.dt.month / 12)
+        df[f"{timestamp_col}_month_cos"] = np.cos(2 * np.pi * timestamps.dt.month / 12)
 
         # Market session features (for trading)
         hour = timestamps.dt.hour
-        df[f'{timestamp_col}_is_market_hours'] = ((hour >= 9) & (hour <= 16)).astype(int)
-        df[f'{timestamp_col}_is_overnight'] = ((hour >= 17) | (hour <= 8)).astype(int)
-        df[f'{timestamp_col}_is_weekend'] = (timestamps.dt.dayofweek >= 5).astype(int)
+        df[f"{timestamp_col}_is_market_hours"] = ((hour >= 9) & (hour <= 16)).astype(int)
+        df[f"{timestamp_col}_is_overnight"] = ((hour >= 17) | (hour <= 8)).astype(int)
+        df[f"{timestamp_col}_is_weekend"] = (timestamps.dt.dayofweek >= 5).astype(int)
 
         return df
 
@@ -154,13 +153,15 @@ class TemporalFeatureEngineer:
 
         for lag in self.config.lookback_periods:
             # Simple lag
-            df[f'{col}_lag_{lag}'] = df[col].shift(lag)
+            df[f"{col}_lag_{lag}"] = df[col].shift(lag)
 
             # Lag change
-            df[f'{col}_lag_{lag}_change'] = df[col] - df[col].shift(lag)
+            df[f"{col}_lag_{lag}_change"] = df[col] - df[col].shift(lag)
 
             # Lag percentage change
-            df[f'{col}_lag_{lag}_pct_change'] = (df[col] - df[col].shift(lag)) / (df[col].shift(lag) + 1e-8)
+            df[f"{col}_lag_{lag}_pct_change"] = (df[col] - df[col].shift(lag)) / (
+                df[col].shift(lag) + 1e-8
+            )
 
         return df
 
@@ -169,24 +170,32 @@ class TemporalFeatureEngineer:
 
         for window in self.config.lookback_periods:
             # Basic rolling statistics
-            df[f'{col}_rolling_{window}_mean'] = df[col].rolling(window=window, min_periods=1).mean()
-            df[f'{col}_rolling_{window}_std'] = df[col].rolling(window=window, min_periods=1).std()
-            df[f'{col}_rolling_{window}_min'] = df[col].rolling(window=window, min_periods=1).min()
-            df[f'{col}_rolling_{window}_max'] = df[col].rolling(window=window, min_periods=1).max()
+            df[f"{col}_rolling_{window}_mean"] = (
+                df[col].rolling(window=window, min_periods=1).mean()
+            )
+            df[f"{col}_rolling_{window}_std"] = df[col].rolling(window=window, min_periods=1).std()
+            df[f"{col}_rolling_{window}_min"] = df[col].rolling(window=window, min_periods=1).min()
+            df[f"{col}_rolling_{window}_max"] = df[col].rolling(window=window, min_periods=1).max()
 
             # Percentile features
-            df[f'{col}_rolling_{window}_q25'] = df[col].rolling(window=window, min_periods=1).quantile(0.25)
-            df[f'{col}_rolling_{window}_q75'] = df[col].rolling(window=window, min_periods=1).quantile(0.75)
+            df[f"{col}_rolling_{window}_q25"] = (
+                df[col].rolling(window=window, min_periods=1).quantile(0.25)
+            )
+            df[f"{col}_rolling_{window}_q75"] = (
+                df[col].rolling(window=window, min_periods=1).quantile(0.75)
+            )
 
             # Position relative to rolling window
-            rolling_mean = df[f'{col}_rolling_{window}_mean']
-            rolling_std = df[f'{col}_rolling_{window}_std']
+            rolling_mean = df[f"{col}_rolling_{window}_mean"]
+            rolling_std = df[f"{col}_rolling_{window}_std"]
 
-            df[f'{col}_rolling_{window}_zscore'] = (df[col] - rolling_mean) / (rolling_std + 1e-8)
-            df[f'{col}_rolling_{window}_relative'] = df[col] / (rolling_mean + 1e-8)
+            df[f"{col}_rolling_{window}_zscore"] = (df[col] - rolling_mean) / (rolling_std + 1e-8)
+            df[f"{col}_rolling_{window}_relative"] = df[col] / (rolling_mean + 1e-8)
 
             # Rolling trend
-            df[f'{col}_rolling_{window}_trend'] = df[col] / df[f'{col}_rolling_{window}_mean'].shift(1)
+            df[f"{col}_rolling_{window}_trend"] = df[col] / df[
+                f"{col}_rolling_{window}_mean"
+            ].shift(1)
 
         return df
 
@@ -194,19 +203,19 @@ class TemporalFeatureEngineer:
         """Add difference and change features"""
 
         # First difference
-        df[f'{col}_diff_1'] = df[col].diff(1)
+        df[f"{col}_diff_1"] = df[col].diff(1)
 
         # Multiple period differences
         for period in [3, 7, 14]:
             if period <= len(df):
-                df[f'{col}_diff_{period}'] = df[col].diff(period)
-                df[f'{col}_pct_change_{period}'] = df[col].pct_change(period)
+                df[f"{col}_diff_{period}"] = df[col].diff(period)
+                df[f"{col}_pct_change_{period}"] = df[col].pct_change(period)
 
         # Acceleration (second difference)
-        df[f'{col}_acceleration'] = df[f'{col}_diff_1'].diff(1)
+        df[f"{col}_acceleration"] = df[f"{col}_diff_1"].diff(1)
 
         # Cumulative changes
-        df[f'{col}_cumulative_change'] = (df[col] / df[col].iloc[0] - 1) if len(df) > 0 else 0
+        df[f"{col}_cumulative_change"] = (df[col] / df[col].iloc[0] - 1) if len(df) > 0 else 0
 
         return df
 
@@ -216,27 +225,27 @@ class TemporalFeatureEngineer:
         # RSI (Relative Strength Index)
         for period in [14, 21]:
             rsi = self._calculate_rsi(df[col], period)
-            df[f'{col}_rsi_{period}'] = rsi
+            df[f"{col}_rsi_{period}"] = rsi
 
         # MACD (Moving Average Convergence Divergence)
         macd, macd_signal, macd_histogram = self._calculate_macd(df[col])
-        df[f'{col}_macd'] = macd
-        df[f'{col}_macd_signal'] = macd_signal
-        df[f'{col}_macd_histogram'] = macd_histogram
+        df[f"{col}_macd"] = macd
+        df[f"{col}_macd_signal"] = macd_signal
+        df[f"{col}_macd_histogram"] = macd_histogram
 
         # Bollinger Bands
         for period in [20, 50]:
             bb_upper, bb_middle, bb_lower = self._calculate_bollinger_bands(df[col], period)
-            df[f'{col}_bb_{period}_upper'] = bb_upper
-            df[f'{col}_bb_{period}_middle'] = bb_middle
-            df[f'{col}_bb_{period}_lower'] = bb_lower
-            df[f'{col}_bb_{period}_position'] = (df[col] - bb_lower) / (bb_upper - bb_lower + 1e-8)
+            df[f"{col}_bb_{period}_upper"] = bb_upper
+            df[f"{col}_bb_{period}_middle"] = bb_middle
+            df[f"{col}_bb_{period}_lower"] = bb_lower
+            df[f"{col}_bb_{period}_position"] = (df[col] - bb_lower) / (bb_upper - bb_lower + 1e-8)
 
         # Support and Resistance levels
-        df[f'{col}_support'] = df[col].rolling(window=20, min_periods=1).min()
-        df[f'{col}_resistance'] = df[col].rolling(window=20, min_periods=1).max()
-        df[f'{col}_support_distance'] = (df[col] - df[f'{col}_support']) / (df[col] + 1e-8)
-        df[f'{col}_resistance_distance'] = (df[f'{col}_resistance'] - df[col]) / (df[col] + 1e-8)
+        df[f"{col}_support"] = df[col].rolling(window=20, min_periods=1).min()
+        df[f"{col}_resistance"] = df[col].rolling(window=20, min_periods=1).max()
+        df[f"{col}_support_distance"] = (df[col] - df[f"{col}_support"]) / (df[col] + 1e-8)
+        df[f"{col}_resistance_distance"] = (df[f"{col}_resistance"] - df[col]) / (df[col] + 1e-8)
 
         return df
 
@@ -257,7 +266,7 @@ class TemporalFeatureEngineer:
         series: pd.Series,
         fast_period: int = 12,
         slow_period: int = 26,
-        signal_period: int = 9
+        signal_period: int = 9,
     ) -> Tuple[pd.Series, pd.Series, pd.Series]:
         """Calculate MACD indicator"""
 
@@ -271,10 +280,7 @@ class TemporalFeatureEngineer:
         return macd_line, signal_line, histogram
 
     def _calculate_bollinger_bands(
-        self,
-        series: pd.Series,
-        period: int = 20,
-        std_dev: float = 2.0
+        self, series: pd.Series, period: int = 20, std_dev: float = 2.0
     ) -> Tuple[pd.Series, pd.Series, pd.Series]:
         """Calculate Bollinger Bands"""
 
@@ -287,10 +293,7 @@ class TemporalFeatureEngineer:
         return upper, middle, lower
 
     def _validate_temporal_features(
-        self,
-        df: pd.DataFrame,
-        value_cols: List[str],
-        timestamp_col: str
+        self, df: pd.DataFrame, value_cols: List[str], timestamp_col: str
     ) -> pd.DataFrame:
         """Validate features for temporal leakage"""
 
@@ -311,7 +314,9 @@ class TemporalFeatureEngineer:
 
             # Check for temporal consistency
             if not self._check_temporal_consistency(df, feature_col):
-                self.logger.warning(f"Removing feature {feature_col}: Temporal inconsistency detected")
+                self.logger.warning(
+                    f"Removing feature {feature_col}: Temporal inconsistency detected"
+                )
                 validated_df = validated_df.drop(columns=[feature_col])
                 removed_features.append(feature_col)
                 continue
@@ -322,10 +327,7 @@ class TemporalFeatureEngineer:
         return validated_df
 
     def _check_forward_correlation(
-        self,
-        df: pd.DataFrame,
-        feature_col: str,
-        value_cols: List[str]
+        self, df: pd.DataFrame, feature_col: str, value_cols: List[str]
     ) -> bool:
         """Check if feature has suspicious correlation with future values"""
 
@@ -356,7 +358,7 @@ class TemporalFeatureEngineer:
                 # Calculate correlation
                 try:
                     correlation = aligned_feature.corr(aligned_future)
-                    if abs(correlation) > self.validation_settings['max_future_correlation']:
+                    if abs(correlation) > self.validation_settings["max_future_correlation"]:
                         return True  # Suspicious forward correlation
                 except Exception:
                     continue
@@ -402,12 +404,13 @@ class TemporalFeatureEngineer:
 
         return True
 
+
 def create_temporal_features(
     df: pd.DataFrame,
     value_cols: List[str],
-    timestamp_col: str = 'timestamp',
+    timestamp_col: str = "timestamp",
     lookback_periods: List[int] = None,
-    include_technical: bool = True
+    include_technical: bool = True,
 ) -> pd.DataFrame:
     """High-level function to create temporal features"""
 
@@ -417,17 +420,15 @@ def create_temporal_features(
         rolling_features=True,
         diff_features=True,
         technical_indicators=include_technical,
-        time_features=True
+        time_features=True,
     )
 
     engineer = TemporalFeatureEngineer(config)
     return engineer.create_temporal_features(df, value_cols, timestamp_col)
 
+
 def validate_feature_leakage(
-    df: pd.DataFrame,
-    feature_cols: List[str],
-    target_col: str,
-    timestamp_col: str = 'timestamp'
+    df: pd.DataFrame, feature_cols: List[str], target_col: str, timestamp_col: str = "timestamp"
 ) -> Dict[str, Any]:
     """Validate features for potential look-ahead bias"""
 
@@ -454,7 +455,9 @@ def validate_feature_leakage(
                 correlation = feature_values.iloc[:min_len].corr(future_target.iloc[:min_len])
 
                 if abs(correlation) > 0.1:  # Suspicious correlation
-                    violations.append(f"{feature_col}: High correlation ({correlation:.3f}) with future target (+{shift})")
+                    violations.append(
+                        f"{feature_col}: High correlation ({correlation:.3f}) with future target (+{shift})"
+                    )
                     if feature_col not in suspicious_features:
                         suspicious_features.append(feature_col)
 
@@ -462,8 +465,10 @@ def validate_feature_leakage(
                 continue
 
     return {
-        'is_valid': len(violations) == 0,
-        'violations': violations,
-        'suspicious_features': suspicious_features,
-        'recommendation': 'Features are safe' if len(violations) == 0 else 'Review suspicious features'
+        "is_valid": len(violations) == 0,
+        "violations": violations,
+        "suspicious_features": suspicious_features,
+        "recommendation": "Features are safe"
+        if len(violations) == 0
+        else "Review suspicious features",
     }

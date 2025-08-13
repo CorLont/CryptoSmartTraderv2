@@ -19,31 +19,34 @@ from .meta_learner import EnsemblePrediction
 
 logger = logging.getLogger(__name__)
 
+
 class BlendingStrategy(Enum):
     """Alpha blending strategies"""
-    EQUAL_WEIGHT = "equal_weight"           # Simple equal weighting
-    PERFORMANCE_WEIGHT = "performance"     # Weight by historical performance
-    VOLATILITY_ADJUSTED = "vol_adjusted"   # Risk-adjusted weighting
-    SHARPE_OPTIMAL = "sharpe_optimal"      # Maximize Sharpe ratio
-    KELLY_OPTIMAL = "kelly_optimal"        # Kelly criterion weighting
-    ADAPTIVE = "adaptive"                  # Dynamic strategy switching
+
+    EQUAL_WEIGHT = "equal_weight"  # Simple equal weighting
+    PERFORMANCE_WEIGHT = "performance"  # Weight by historical performance
+    VOLATILITY_ADJUSTED = "vol_adjusted"  # Risk-adjusted weighting
+    SHARPE_OPTIMAL = "sharpe_optimal"  # Maximize Sharpe ratio
+    KELLY_OPTIMAL = "kelly_optimal"  # Kelly criterion weighting
+    ADAPTIVE = "adaptive"  # Dynamic strategy switching
 
 
 @dataclass
 class BlendingConfig:
     """Configuration for alpha blending"""
+
     strategy: BlendingStrategy = BlendingStrategy.PERFORMANCE_WEIGHT
     lookback_days: int = 30
     min_observations: int = 20
 
     # Risk management
-    max_weight: float = 0.6                # Maximum weight for single model
-    min_weight: float = 0.05               # Minimum weight for included models
-    risk_aversion: float = 2.0             # Risk aversion parameter
+    max_weight: float = 0.6  # Maximum weight for single model
+    min_weight: float = 0.05  # Minimum weight for included models
+    risk_aversion: float = 2.0  # Risk aversion parameter
 
     # Rebalancing
     rebalance_frequency_hours: int = 6
-    weight_change_threshold: float = 0.1   # Trigger rebalancing
+    weight_change_threshold: float = 0.1  # Trigger rebalancing
 
     # Performance targets
     target_sharpe: float = 1.5
@@ -53,6 +56,7 @@ class BlendingConfig:
 @dataclass
 class BlendedAlpha:
     """Result of alpha blending"""
+
     timestamp: datetime
     symbol: str
 
@@ -72,8 +76,8 @@ class BlendedAlpha:
 
     # Blending metadata
     strategy_used: BlendingStrategy
-    weight_stability: float        # How stable weights are
-    diversification_ratio: float   # Effective number of models / actual models
+    weight_stability: float  # How stable weights are
+    diversification_ratio: float  # Effective number of models / actual models
 
 
 class AlphaBlender:
@@ -95,9 +99,9 @@ class AlphaBlender:
         # Model performance tracking
         self.model_performance = {}
 
-    def blend_predictions(self,
-                         ensemble_predictions: List[EnsemblePrediction],
-                         symbol: str) -> BlendedAlpha:
+    def blend_predictions(
+        self, ensemble_predictions: List[EnsemblePrediction], symbol: str
+    ) -> BlendedAlpha:
         """
         Blend multiple ensemble predictions using optimal strategy
 
@@ -120,17 +124,13 @@ class AlphaBlender:
             weights = self._get_current_weights(ensemble_predictions)
 
             # Perform blending
-            blended_prob, contributions = self._blend_probabilities(
-                ensemble_predictions, weights
-            )
+            blended_prob, contributions = self._blend_probabilities(ensemble_predictions, weights)
 
             # Calculate blended confidence
-            blended_confidence = self._blend_confidences(
-                ensemble_predictions, weights
-            )
+            blended_confidence = self._blend_confidences(ensemble_predictions, weights)
 
             # Determine direction
-            blended_direction = 'up' if blended_prob > 0.5 else 'down'
+            blended_direction = "up" if blended_prob > 0.5 else "down"
 
             # Calculate risk metrics
             pred_volatility = self._predict_volatility(ensemble_predictions, weights)
@@ -154,7 +154,7 @@ class AlphaBlender:
                 max_component_weight=max_weight,
                 strategy_used=self.config.strategy,
                 weight_stability=weight_stability,
-                diversification_ratio=diversification_ratio
+                diversification_ratio=diversification_ratio,
             )
 
             # Record for analysis
@@ -166,10 +166,7 @@ class AlphaBlender:
             logger.error(f"Alpha blending failed for {symbol}: {e}")
             raise
 
-    def update_performance(self,
-                          prediction_id: str,
-                          actual_outcome: bool,
-                          returns: float) -> None:
+    def update_performance(self, prediction_id: str, actual_outcome: bool, returns: float) -> None:
         """
         Update model performance based on actual outcomes
 
@@ -181,31 +178,33 @@ class AlphaBlender:
         try:
             # Find the corresponding prediction
             for perf_record in self.performance_history:
-                if perf_record.get('prediction_id') == prediction_id:
-                    perf_record.update({
-                        'actual_outcome': actual_outcome,
-                        'actual_returns': returns,
-                        'updated_timestamp': datetime.now()
-                    })
+                if perf_record.get("prediction_id") == prediction_id:
+                    perf_record.update(
+                        {
+                            "actual_outcome": actual_outcome,
+                            "actual_returns": returns,
+                            "updated_timestamp": datetime.now(),
+                        }
+                    )
 
                     # Update model-specific performance
-                    model_weights = perf_record.get('model_weights', {})
+                    model_weights = perf_record.get("model_weights", {})
                     for model_name, weight in model_weights.items():
                         if model_name not in self.model_performance:
                             self.model_performance[model_name] = {
-                                'correct_predictions': 0,
-                                'total_predictions': 0,
-                                'total_returns': 0.0,
-                                'returns_squared': 0.0
+                                "correct_predictions": 0,
+                                "total_predictions": 0,
+                                "total_returns": 0.0,
+                                "returns_squared": 0.0,
                             }
 
                         perf = self.model_performance[model_name]
-                        perf['total_predictions'] += 1
-                        perf['total_returns'] += returns * weight
-                        perf['returns_squared'] += (returns * weight) ** 2
+                        perf["total_predictions"] += 1
+                        perf["total_returns"] += returns * weight
+                        perf["returns_squared"] += (returns * weight) ** 2
 
                         if actual_outcome:
-                            perf['correct_predictions'] += 1
+                            perf["correct_predictions"] += 1
 
                     break
 
@@ -251,11 +250,13 @@ class AlphaBlender:
             self.last_rebalance_time = datetime.now()
 
             # Record weight history
-            self.weight_history.append({
-                'timestamp': datetime.now(),
-                'weights': weights.copy(),
-                'strategy': self.config.strategy.value
-            })
+            self.weight_history.append(
+                {
+                    "timestamp": datetime.now(),
+                    "weights": weights.copy(),
+                    "strategy": self.config.strategy.value,
+                }
+            )
 
             # Keep only recent history
             if len(self.weight_history) > 1000:
@@ -268,7 +269,9 @@ class AlphaBlender:
             # Fallback to equal weights
             self.current_weights = self._equal_weight_strategy(ensemble_predictions)
 
-    def _get_current_weights(self, ensemble_predictions: List[EnsemblePrediction]) -> Dict[str, float]:
+    def _get_current_weights(
+        self, ensemble_predictions: List[EnsemblePrediction]
+    ) -> Dict[str, float]:
         """Get current model weights"""
         if not self.current_weights:
             return self._equal_weight_strategy(ensemble_predictions)
@@ -286,13 +289,13 @@ class AlphaBlender:
         # Renormalize
         total_weight = sum(self.current_weights.values())
         if total_weight > 0:
-            self.current_weights = {
-                k: v / total_weight for k, v in self.current_weights.items()
-            }
+            self.current_weights = {k: v / total_weight for k, v in self.current_weights.items()}
 
         return self.current_weights
 
-    def _equal_weight_strategy(self, ensemble_predictions: List[EnsemblePrediction]) -> Dict[str, float]:
+    def _equal_weight_strategy(
+        self, ensemble_predictions: List[EnsemblePrediction]
+    ) -> Dict[str, float]:
         """Simple equal weighting strategy"""
         model_names = set()
         for pred in ensemble_predictions:
@@ -304,7 +307,9 @@ class AlphaBlender:
         equal_weight = 1.0 / len(model_names)
         return {name: equal_weight for name in model_names}
 
-    def _performance_weight_strategy(self, ensemble_predictions: List[EnsemblePrediction]) -> Dict[str, float]:
+    def _performance_weight_strategy(
+        self, ensemble_predictions: List[EnsemblePrediction]
+    ) -> Dict[str, float]:
         """Weight by historical performance"""
         try:
             model_names = set()
@@ -318,10 +323,10 @@ class AlphaBlender:
                     perf = self.model_performance[model_name]
 
                     # Calculate performance metrics
-                    total_preds = perf['total_predictions']
+                    total_preds = perf["total_predictions"]
                     if total_preds > 0:
-                        accuracy = perf['correct_predictions'] / total_preds
-                        avg_returns = perf['total_returns'] / total_preds
+                        accuracy = perf["correct_predictions"] / total_preds
+                        avg_returns = perf["total_returns"] / total_preds
 
                         # Combined performance score
                         performance_score = 0.5 * accuracy + 0.5 * max(0, avg_returns)
@@ -345,7 +350,9 @@ class AlphaBlender:
             logger.error(f"Performance weighting failed: {e}")
             return self._equal_weight_strategy(ensemble_predictions)
 
-    def _volatility_adjusted_strategy(self, ensemble_predictions: List[EnsemblePrediction]) -> Dict[str, float]:
+    def _volatility_adjusted_strategy(
+        self, ensemble_predictions: List[EnsemblePrediction]
+    ) -> Dict[str, float]:
         """Risk-adjusted weighting (inverse volatility)"""
         try:
             model_names = set()
@@ -357,12 +364,12 @@ class AlphaBlender:
             for model_name in model_names:
                 if model_name in self.model_performance:
                     perf = self.model_performance[model_name]
-                    total_preds = perf['total_predictions']
+                    total_preds = perf["total_predictions"]
 
                     if total_preds > 1:
                         # Calculate volatility (standard deviation of returns)
-                        avg_returns = perf['total_returns'] / total_preds
-                        variance = (perf['returns_squared'] / total_preds) - (avg_returns ** 2)
+                        avg_returns = perf["total_returns"] / total_preds
+                        variance = (perf["returns_squared"] / total_preds) - (avg_returns**2)
                         volatility = np.sqrt(max(0, variance))
 
                         # Inverse volatility weight
@@ -388,13 +395,14 @@ class AlphaBlender:
             logger.error(f"Volatility adjustment failed: {e}")
             return self._equal_weight_strategy(ensemble_predictions)
 
-    def _sharpe_optimal_strategy(self, ensemble_predictions: List[EnsemblePrediction]) -> Dict[str, float]:
+    def _sharpe_optimal_strategy(
+        self, ensemble_predictions: List[EnsemblePrediction]
+    ) -> Dict[str, float]:
         """Optimize for maximum Sharpe ratio"""
         try:
-            model_names = list(set(
-                name for pred in ensemble_predictions
-                for name in pred.base_predictions.keys()
-            ))
+            model_names = list(
+                set(name for pred in ensemble_predictions for name in pred.base_predictions.keys())
+            )
 
             if len(model_names) < 2:
                 return self._equal_weight_strategy(ensemble_predictions)
@@ -423,7 +431,7 @@ class AlphaBlender:
 
             # Constraints
             constraints = [
-                {'type': 'eq', 'fun': lambda x: np.sum(x) - 1.0}  # Weights sum to 1
+                {"type": "eq", "fun": lambda x: np.sum(x) - 1.0}  # Weights sum to 1
             ]
 
             # Bounds (min and max weights)
@@ -436,17 +444,16 @@ class AlphaBlender:
             result = minimize(
                 neg_sharpe_ratio,
                 x0,
-                method='SLSQP',
+                method="SLSQP",
                 bounds=bounds,
                 constraints=constraints,
-                options={'maxiter': 1000}
+                options={"maxiter": 1000},
             )
 
             if result.success:
                 optimal_weights = result.x
                 weights_dict = {
-                    model_names[i]: float(optimal_weights[i])
-                    for i in range(len(model_names))
+                    model_names[i]: float(optimal_weights[i]) for i in range(len(model_names))
                 }
                 return weights_dict
             else:
@@ -457,7 +464,9 @@ class AlphaBlender:
             logger.error(f"Sharpe optimization failed: {e}")
             return self._performance_weight_strategy(ensemble_predictions)
 
-    def _kelly_optimal_strategy(self, ensemble_predictions: List[EnsemblePrediction]) -> Dict[str, float]:
+    def _kelly_optimal_strategy(
+        self, ensemble_predictions: List[EnsemblePrediction]
+    ) -> Dict[str, float]:
         """Kelly criterion optimal weighting"""
         try:
             model_names = set()
@@ -469,11 +478,11 @@ class AlphaBlender:
             for model_name in model_names:
                 if model_name in self.model_performance:
                     perf = self.model_performance[model_name]
-                    total_preds = perf['total_predictions']
+                    total_preds = perf["total_predictions"]
 
                     if total_preds > 0:
-                        win_rate = perf['correct_predictions'] / total_preds
-                        avg_returns = perf['total_returns'] / total_preds
+                        win_rate = perf["correct_predictions"] / total_preds
+                        avg_returns = perf["total_returns"] / total_preds
 
                         # Simplified Kelly criterion
                         # f* = (bp - q) / b where b = avg_win/avg_loss, p = win_rate, q = 1-p
@@ -510,7 +519,9 @@ class AlphaBlender:
             logger.error(f"Kelly optimization failed: {e}")
             return self._performance_weight_strategy(ensemble_predictions)
 
-    def _adaptive_strategy(self, ensemble_predictions: List[EnsemblePrediction]) -> Dict[str, float]:
+    def _adaptive_strategy(
+        self, ensemble_predictions: List[EnsemblePrediction]
+    ) -> Dict[str, float]:
         """Adaptive strategy that switches based on market conditions"""
         try:
             # Choose strategy based on recent performance and market conditions
@@ -522,7 +533,7 @@ class AlphaBlender:
                 strategy_performance = {}
 
                 for record in recent_history:
-                    strategy = record.get('strategy', 'equal_weight')
+                    strategy = record.get("strategy", "equal_weight")
                     if strategy not in strategy_performance:
                         strategy_performance[strategy] = []
 
@@ -534,7 +545,7 @@ class AlphaBlender:
                 # Low volatility = use Sharpe optimal
                 recent_preds = ensemble_predictions[-1] if ensemble_predictions else None
 
-                if recent_preds and hasattr(recent_preds, 'consensus_score'):
+                if recent_preds and hasattr(recent_preds, "consensus_score"):
                     if recent_preds.consensus_score < 0.7:  # Low consensus = high uncertainty
                         return self._volatility_adjusted_strategy(ensemble_predictions)
                     else:
@@ -554,16 +565,15 @@ class AlphaBlender:
 
             for model_name, weight in weights.items():
                 # Apply min/max constraints
-                constrained_weight = max(self.config.min_weight,
-                                       min(self.config.max_weight, weight))
+                constrained_weight = max(
+                    self.config.min_weight, min(self.config.max_weight, weight)
+                )
                 constrained_weights[model_name] = constrained_weight
 
             # Renormalize to sum to 1
             total_weight = sum(constrained_weights.values())
             if total_weight > 0:
-                constrained_weights = {
-                    k: v / total_weight for k, v in constrained_weights.items()
-                }
+                constrained_weights = {k: v / total_weight for k, v in constrained_weights.items()}
 
             return constrained_weights
 
@@ -571,9 +581,9 @@ class AlphaBlender:
             logger.error(f"Weight constraint application failed: {e}")
             return weights
 
-    def _blend_probabilities(self,
-                           ensemble_predictions: List[EnsemblePrediction],
-                           weights: Dict[str, float]) -> tuple:
+    def _blend_probabilities(
+        self, ensemble_predictions: List[EnsemblePrediction], weights: Dict[str, float]
+    ) -> tuple:
         """Blend probabilities using weights"""
         try:
             blended_prob = 0.0
@@ -603,9 +613,9 @@ class AlphaBlender:
             logger.error(f"Probability blending failed: {e}")
             return 0.5, {}
 
-    def _blend_confidences(self,
-                          ensemble_predictions: List[EnsemblePrediction],
-                          weights: Dict[str, float]) -> float:
+    def _blend_confidences(
+        self, ensemble_predictions: List[EnsemblePrediction], weights: Dict[str, float]
+    ) -> float:
         """Blend confidences using weights"""
         try:
             blended_confidence = 0.0
@@ -638,9 +648,9 @@ class AlphaBlender:
             logger.error(f"Returns matrix extraction failed: {e}")
             return None
 
-    def _predict_volatility(self,
-                          ensemble_predictions: List[EnsemblePrediction],
-                          weights: Dict[str, float]) -> float:
+    def _predict_volatility(
+        self, ensemble_predictions: List[EnsemblePrediction], weights: Dict[str, float]
+    ) -> float:
         """Predict portfolio volatility"""
         try:
             # Simplified volatility prediction
@@ -659,9 +669,9 @@ class AlphaBlender:
             logger.error(f"Volatility prediction failed: {e}")
             return 0.15
 
-    def _predict_sharpe(self,
-                       ensemble_predictions: List[EnsemblePrediction],
-                       weights: Dict[str, float]) -> float:
+    def _predict_sharpe(
+        self, ensemble_predictions: List[EnsemblePrediction], weights: Dict[str, float]
+    ) -> float:
         """Predict portfolio Sharpe ratio"""
         try:
             # Simplified Sharpe prediction
@@ -691,8 +701,8 @@ class AlphaBlender:
 
             weight_changes = []
             for i in range(1, len(recent_weights)):
-                prev_weights = recent_weights[i-1]['weights']
-                curr_weights = recent_weights[i]['weights']
+                prev_weights = recent_weights[i - 1]["weights"]
+                curr_weights = recent_weights[i]["weights"]
 
                 # Calculate weight change magnitude
                 total_change = 0.0
@@ -722,7 +732,7 @@ class AlphaBlender:
                 return 0.0
 
             # Effective number of models (Herfindahl index)
-            sum_squared_weights = sum(w ** 2 for w in weights.values())
+            sum_squared_weights = sum(w**2 for w in weights.values())
             effective_models = 1.0 / sum_squared_weights if sum_squared_weights > 0 else 0.0
             actual_models = len(weights)
 
@@ -738,15 +748,15 @@ class AlphaBlender:
         """Record blending result for analysis"""
         try:
             result_record = {
-                'timestamp': blended_alpha.timestamp,
-                'symbol': blended_alpha.symbol,
-                'blended_probability': blended_alpha.blended_probability,
-                'blended_confidence': blended_alpha.blended_confidence,
-                'model_weights': blended_alpha.model_weights,
-                'strategy_used': blended_alpha.strategy_used.value,
-                'predicted_sharpe': blended_alpha.predicted_sharpe,
-                'diversification_ratio': blended_alpha.diversification_ratio,
-                'prediction_id': f"{blended_alpha.symbol}_{blended_alpha.timestamp.timestamp()}"
+                "timestamp": blended_alpha.timestamp,
+                "symbol": blended_alpha.symbol,
+                "blended_probability": blended_alpha.blended_probability,
+                "blended_confidence": blended_alpha.blended_confidence,
+                "model_weights": blended_alpha.model_weights,
+                "strategy_used": blended_alpha.strategy_used.value,
+                "predicted_sharpe": blended_alpha.predicted_sharpe,
+                "diversification_ratio": blended_alpha.diversification_ratio,
+                "prediction_id": f"{blended_alpha.symbol}_{blended_alpha.timestamp.timestamp()}",
             }
 
             self.performance_history.append(result_record)
@@ -763,30 +773,36 @@ class AlphaBlender:
         try:
             analytics = {
                 "current_strategy": self.config.strategy.value,
-                "last_rebalance": self.last_rebalance_time.isoformat() if self.last_rebalance_time else None,
+                "last_rebalance": self.last_rebalance_time.isoformat()
+                if self.last_rebalance_time
+                else None,
                 "current_weights": self.current_weights,
                 "total_predictions": len(self.performance_history),
-                "rebalance_count": len(self.weight_history)
+                "rebalance_count": len(self.weight_history),
             }
 
             # Recent performance
             if self.performance_history:
                 recent_preds = self.performance_history[-100:]  # Last 100 predictions
                 analytics["recent_performance"] = {
-                    "avg_confidence": np.mean([p['blended_confidence'] for p in recent_preds]),
-                    "avg_predicted_sharpe": np.mean([p.get('predicted_sharpe', 1.0) for p in recent_preds]),
-                    "avg_diversification": np.mean([p.get('diversification_ratio', 0.5) for p in recent_preds])
+                    "avg_confidence": np.mean([p["blended_confidence"] for p in recent_preds]),
+                    "avg_predicted_sharpe": np.mean(
+                        [p.get("predicted_sharpe", 1.0) for p in recent_preds]
+                    ),
+                    "avg_diversification": np.mean(
+                        [p.get("diversification_ratio", 0.5) for p in recent_preds]
+                    ),
                 }
 
             # Model performance summary
             if self.model_performance:
                 analytics["model_performance"] = {}
                 for model_name, perf in self.model_performance.items():
-                    if perf['total_predictions'] > 0:
+                    if perf["total_predictions"] > 0:
                         analytics["model_performance"][model_name] = {
-                            "accuracy": perf['correct_predictions'] / perf['total_predictions'],
-                            "avg_returns": perf['total_returns'] / perf['total_predictions'],
-                            "total_predictions": perf['total_predictions']
+                            "accuracy": perf["correct_predictions"] / perf["total_predictions"],
+                            "avg_returns": perf["total_returns"] / perf["total_predictions"],
+                            "total_predictions": perf["total_predictions"],
                         }
 
             return analytics

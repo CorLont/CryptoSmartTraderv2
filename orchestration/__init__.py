@@ -8,9 +8,4 @@ from .scheduler import TaskScheduler
 from .pipeline import DataPipeline
 from .health_monitor import HealthMonitor
 
-__all__ = [
-    'SystemOrchestrator',
-    'TaskScheduler',
-    'DataPipeline',
-    'HealthMonitor'
-]
+__all__ = ["SystemOrchestrator", "TaskScheduler", "DataPipeline", "HealthMonitor"]

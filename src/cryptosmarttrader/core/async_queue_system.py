@@ -13,30 +13,37 @@ from typing import Dict, List, Any, Optional, Union, Callable
 from dataclasses import dataclass, asdict
 from enum import Enum
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 # Import core components
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from ..core.structured_logger import get_logger
 
 try:
     import redis.asyncio as aioredis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
 
+
 class MessagePriority(Enum):
     """Message priority levels"""
+
     LOW = 1
     NORMAL = 2
     HIGH = 3
     CRITICAL = 4
 
+
 @dataclass
 class QueueMessage:
     """Standard queue message format"""
+
     id: str
     queue_name: str
     message_type: str
@@ -51,16 +58,17 @@ class QueueMessage:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization"""
         data = asdict(self)
-        data['priority'] = self.priority.value
-        data['timestamp'] = self.timestamp.isoformat()
+        data["priority"] = self.priority.value
+        data["timestamp"] = self.timestamp.isoformat()
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'QueueMessage':
+    def from_dict(cls, data: Dict[str, Any]) -> "QueueMessage":
         """Create from dictionary"""
-        data['priority'] = MessagePriority(data['priority'])
-        data['timestamp'] = datetime.fromisoformat(data['timestamp'])
+        data["priority"] = MessagePriority(data["priority"])
+        data["timestamp"] = datetime.fromisoformat(data["timestamp"])
         return cls(**data)
+
 
 class RateLimiter:
     """Centralized rate limiter"""
@@ -89,6 +97,7 @@ class RateLimiter:
         if self.request_count % 100 == 0:
             self.logger.info(f"Rate limiter processed {self.request_count} requests")
 
+
 class AsyncQueueBackend:
     """Base class for queue backends"""
 
@@ -111,6 +120,7 @@ class AsyncQueueBackend:
     async def health_check(self) -> bool:
         """Check backend health"""
         raise NotImplementedError
+
 
 class AsyncioQueueBackend(AsyncQueueBackend):
     """Asyncio-based queue backend (in-memory)"""
@@ -185,6 +195,7 @@ class AsyncioQueueBackend(AsyncQueueBackend):
     async def health_check(self) -> bool:
         """Check backend health"""
         return True
+
 
 class RedisQueueBackend(AsyncQueueBackend):
     """Redis-based queue backend (distributed)"""
@@ -296,6 +307,7 @@ class RedisQueueBackend(AsyncQueueBackend):
         except Exception:
             return False
 
+
 class AsyncQueueSystem:
     """Central async queue system with rate limiting"""
 
@@ -304,17 +316,22 @@ class AsyncQueueSystem:
         self.rate_limiter = rate_limiter
         self.logger = get_logger("AsyncQueueSystem")
         self.metrics = {
-            'messages_sent': 0,
-            'messages_received': 0,
-            'messages_failed': 0,
-            'queues_active': set()
+            "messages_sent": 0,
+            "messages_received": 0,
+            "messages_failed": 0,
+            "queues_active": set(),
         }
         self.message_handlers: Dict[str, Callable] = {}
 
-    async def send_message(self, queue_name: str, message_type: str,
-                          payload: Dict[str, Any], sender: str,
-                          priority: MessagePriority = MessagePriority.NORMAL,
-                          ttl_seconds: Optional[int] = None) -> bool:
+    async def send_message(
+        self,
+        queue_name: str,
+        message_type: str,
+        payload: Dict[str, Any],
+        sender: str,
+        priority: MessagePriority = MessagePriority.NORMAL,
+        ttl_seconds: Optional[int] = None,
+    ) -> bool:
         """Send message to queue"""
 
         # Apply rate limiting
@@ -329,28 +346,29 @@ class AsyncQueueSystem:
                 priority=priority,
                 timestamp=datetime.now(),
                 sender=sender,
-                ttl_seconds=ttl_seconds
+                ttl_seconds=ttl_seconds,
             )
 
             success = await self.backend.put(queue_name, message)
 
             if success:
-                self.metrics['messages_sent'] += 1
-                self.metrics['queues_active'].add(queue_name)
+                self.metrics["messages_sent"] += 1
+                self.metrics["queues_active"].add(queue_name)
                 self.logger.debug(f"Sent message {message.id} to {queue_name}")
             else:
-                self.metrics['messages_failed'] += 1
+                self.metrics["messages_failed"] += 1
                 self.logger.error(f"Failed to send message to {queue_name}")
 
             return success
 
         except Exception as e:
-            self.metrics['messages_failed'] += 1
+            self.metrics["messages_failed"] += 1
             self.logger.error(f"Error sending message to {queue_name}: {e}")
             return False
 
-    async def receive_message(self, queue_name: str,
-                            timeout: float = 1.0) -> Optional[QueueMessage]:
+    async def receive_message(
+        self, queue_name: str, timeout: float = 1.0
+    ) -> Optional[QueueMessage]:
         """Receive message from queue"""
 
         # Apply rate limiting
@@ -360,7 +378,7 @@ class AsyncQueueSystem:
             message = await self.backend.get(queue_name, timeout)
 
             if message:
-                self.metrics['messages_received'] += 1
+                self.metrics["messages_received"] += 1
                 self.logger.debug(f"Received message {message.id} from {queue_name}")
 
             return message
@@ -406,7 +424,9 @@ class AsyncQueueSystem:
                         if message.retry_count < message.max_retries:
                             message.retry_count += 1
                             await self.backend.put(queue_name, message)
-                            self.logger.info(f"Retrying message {message.id} (attempt {message.retry_count})")
+                            self.logger.info(
+                                f"Retrying message {message.id} (attempt {message.retry_count})"
+                            )
                         else:
                             self.logger.error(f"Message {message.id} exhausted retries")
                 else:
@@ -429,13 +449,13 @@ class AsyncQueueSystem:
     def get_metrics(self) -> Dict[str, Any]:
         """Get system metrics"""
         return {
-            'messages_sent': self.metrics['messages_sent'],
-            'messages_received': self.metrics['messages_received'],
-            'messages_failed': self.metrics['messages_failed'],
-            'active_queues': len(self.metrics['queues_active']),
-            'queue_names': list(self.metrics['queues_active']),
-            'rate_limit_rps': self.rate_limiter.requests_per_second,
-            'total_requests': self.rate_limiter.request_count
+            "messages_sent": self.metrics["messages_sent"],
+            "messages_received": self.metrics["messages_received"],
+            "messages_failed": self.metrics["messages_failed"],
+            "active_queues": len(self.metrics["queues_active"]),
+            "queue_names": list(self.metrics["queues_active"]),
+            "rate_limit_rps": self.rate_limiter.requests_per_second,
+            "total_requests": self.rate_limiter.request_count,
         }
 
     async def health_check(self) -> Dict[str, Any]:
@@ -444,10 +464,11 @@ class AsyncQueueSystem:
         backend_healthy = await self.backend.health_check()
 
         return {
-            'backend_healthy': backend_healthy,
-            'system_healthy': backend_healthy,
-            'metrics': self.get_metrics()
+            "backend_healthy": backend_healthy,
+            "system_healthy": backend_healthy,
+            "metrics": self.get_metrics(),
         }
+
 
 # Message handlers for testing
 async def data_collection_handler(message: QueueMessage) -> None:
@@ -455,12 +476,15 @@ async def data_collection_handler(message: QueueMessage) -> None:
     logger = get_logger("DataCollectionHandler")
     logger.info(f"Processing data collection: {message.payload.get('symbol', 'unknown')}")
 
+
 async def ml_prediction_handler(message: QueueMessage) -> None:
     """Handler for ML prediction messages"""
     logger = get_logger("MLPredictionHandler")
     logger.info(f"Processing ML prediction: {message.payload.get('model', 'unknown')}")
 
+
 if __name__ == "__main__":
+
     async def test_async_queue_system():
         """Test async queue system"""
 
@@ -473,8 +497,8 @@ if __name__ == "__main__":
         queue_system = AsyncQueueSystem(backend, rate_limiter)
 
         # Register handlers
-        queue_system.register_handler('data_collection', data_collection_handler)
-        queue_system.register_handler('ml_prediction', ml_prediction_handler)
+        queue_system.register_handler("data_collection", data_collection_handler)
+        queue_system.register_handler("ml_prediction", ml_prediction_handler)
 
         print("📤 Sending test messages...")
 
@@ -488,7 +512,7 @@ if __name__ == "__main__":
                 message_type="data_collection",
                 payload={"symbol": f"BTC{i}", "exchange": "kraken"},
                 sender="test_producer",
-                priority=MessagePriority.HIGH
+                priority=MessagePriority.HIGH,
             )
             if success:
                 messages_sent += 1
@@ -500,7 +524,7 @@ if __name__ == "__main__":
                 message_type="ml_prediction",
                 payload={"model": f"ensemble_{i}", "horizon": "30d"},
                 sender="test_producer",
-                priority=MessagePriority.NORMAL
+                priority=MessagePriority.NORMAL,
             )
             if success:
                 messages_sent += 1
@@ -534,7 +558,7 @@ if __name__ == "__main__":
         print("\n🏥 Health check:")
         health = await queue_system.health_check()
         for key, value in health.items():
-            if key != 'metrics':
+            if key != "metrics":
                 print(f"   {key}: {value}")
 
         print("\n✅ ASYNC QUEUE SYSTEM TEST COMPLETED")

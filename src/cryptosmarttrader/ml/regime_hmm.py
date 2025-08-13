@@ -8,15 +8,18 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Any, Optional, Tuple
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 # Try to import hmmlearn, fallback to custom implementation if not available
 try:
     from hmmlearn.hmm import GaussianHMM
+
     HMMLEARN_AVAILABLE = True
 except ImportError:
     HMMLEARN_AVAILABLE = False
     print("hmmlearn not available - using fallback regime detection")
+
 
 def fit_hmm(returns: np.ndarray, n_components: int = 3) -> np.ndarray:
     """
@@ -33,10 +36,7 @@ def fit_hmm(returns: np.ndarray, n_components: int = 3) -> np.ndarray:
     if HMMLEARN_AVAILABLE:
         try:
             model = GaussianHMM(
-                n_components=n_components,
-                covariance_type='diag',
-                n_iter=200,
-                random_state=42
+                n_components=n_components, covariance_type="diag", n_iter=200, random_state=42
             )
 
             # Fit model
@@ -52,6 +52,7 @@ def fit_hmm(returns: np.ndarray, n_components: int = 3) -> np.ndarray:
             return _fallback_regime_detection(returns, n_components)
     else:
         return _fallback_regime_detection(returns, n_components)
+
 
 def _fallback_regime_detection(returns: np.ndarray, n_components: int = 3) -> np.ndarray:
     """
@@ -88,6 +89,7 @@ def _fallback_regime_detection(returns: np.ndarray, n_components: int = 3) -> np
 
     return regimes
 
+
 class MarketRegimeDetector:
     """
     Advanced market regime detection with HMM and additional features
@@ -98,10 +100,10 @@ class MarketRegimeDetector:
         self.lookback_window = lookback_window
 
         self.model = None
-        self.regime_labels = {0: 'bear', 1: 'neutral', 2: 'bull'}
+        self.regime_labels = {0: "bear", 1: "neutral", 2: "bull"}
         self.regime_stats = {}
 
-    def fit(self, prices: np.ndarray) -> 'MarketRegimeDetector':
+    def fit(self, prices: np.ndarray) -> "MarketRegimeDetector":
         """
         Fit regime detection model to price data
         """
@@ -116,8 +118,8 @@ class MarketRegimeDetector:
         self._calculate_regime_stats(returns, regimes)
 
         # Store for prediction
-        self.last_returns = returns[-self.lookback_window:]
-        self.last_regimes = regimes[-self.lookback_window:]
+        self.last_returns = returns[-self.lookback_window :]
+        self.last_regimes = regimes[-self.lookback_window :]
 
         return self
 
@@ -127,26 +129,24 @@ class MarketRegimeDetector:
         """
 
         if len(recent_returns) == 0:
-            return {'regime': 1, 'regime_name': 'neutral', 'confidence': 0.5}
+            return {"regime": 1, "regime_name": "neutral", "confidence": 0.5}
 
         # Use most recent returns for prediction
         current_regimes = fit_hmm(recent_returns, self.n_regimes)
 
         # Get most recent regime
         current_regime = current_regimes[-1]
-        regime_name = self.regime_labels.get(current_regime, 'unknown')
+        regime_name = self.regime_labels.get(current_regime, "unknown")
 
         # Calculate confidence based on regime stability
         recent_window = min(10, len(current_regimes))
-        recent_regime_consistency = np.mean(
-            current_regimes[-recent_window:] == current_regime
-        )
+        recent_regime_consistency = np.mean(current_regimes[-recent_window:] == current_regime)
 
         return {
-            'regime': int(current_regime),
-            'regime_name': regime_name,
-            'confidence': float(recent_regime_consistency),
-            'regime_sequence': current_regimes[-recent_window:].tolist()
+            "regime": int(current_regime),
+            "regime_name": regime_name,
+            "confidence": float(recent_regime_consistency),
+            "regime_sequence": current_regimes[-recent_window:].tolist(),
         }
 
     def _calculate_regime_stats(self, returns: np.ndarray, regimes: np.ndarray):
@@ -160,19 +160,19 @@ class MarketRegimeDetector:
 
             if len(regime_returns) > 0:
                 stats = {
-                    'mean_return': np.mean(regime_returns),
-                    'volatility': np.std(regime_returns),
-                    'frequency': np.mean(regime_mask),
-                    'sharpe_ratio': np.mean(regime_returns) / max(np.std(regime_returns), 1e-8),
-                    'max_drawdown': self._calculate_max_drawdown(regime_returns)
+                    "mean_return": np.mean(regime_returns),
+                    "volatility": np.std(regime_returns),
+                    "frequency": np.mean(regime_mask),
+                    "sharpe_ratio": np.mean(regime_returns) / max(np.std(regime_returns), 1e-8),
+                    "max_drawdown": self._calculate_max_drawdown(regime_returns),
                 }
             else:
                 stats = {
-                    'mean_return': 0,
-                    'volatility': 0,
-                    'frequency': 0,
-                    'sharpe_ratio': 0,
-                    'max_drawdown': 0
+                    "mean_return": 0,
+                    "volatility": 0,
+                    "frequency": 0,
+                    "sharpe_ratio": 0,
+                    "max_drawdown": 0,
                 }
 
             regime_name = self.regime_labels[regime_id]
@@ -198,10 +198,11 @@ class MarketRegimeDetector:
         """
 
         return {
-            'n_regimes': self.n_regimes,
-            'regime_stats': self.regime_stats,
-            'regime_labels': self.regime_labels
+            "n_regimes": self.n_regimes,
+            "regime_stats": self.regime_stats,
+            "regime_labels": self.regime_labels,
         }
+
 
 def detect_crypto_market_regime(prices: List[float], symbol: str = "BTC") -> Dict[str, Any]:
     """
@@ -210,11 +211,11 @@ def detect_crypto_market_regime(prices: List[float], symbol: str = "BTC") -> Dic
 
     if len(prices) < 30:
         return {
-            'symbol': symbol,
-            'regime': 1,
-            'regime_name': 'neutral',
-            'confidence': 0.5,
-            'error': 'Insufficient data for regime detection'
+            "symbol": symbol,
+            "regime": 1,
+            "regime_name": "neutral",
+            "confidence": 0.5,
+            "error": "Insufficient data for regime detection",
         }
 
     try:
@@ -232,24 +233,25 @@ def detect_crypto_market_regime(prices: List[float], symbol: str = "BTC") -> Dic
         current_regime = detector.predict_current_regime(recent_returns)
 
         result = {
-            'symbol': symbol,
-            'regime': current_regime['regime'],
-            'regime_name': current_regime['regime_name'],
-            'confidence': current_regime['confidence'],
-            'regime_stats': detector.get_regime_summary(),
-            'data_points': len(prices)
+            "symbol": symbol,
+            "regime": current_regime["regime"],
+            "regime_name": current_regime["regime_name"],
+            "confidence": current_regime["confidence"],
+            "regime_stats": detector.get_regime_summary(),
+            "data_points": len(prices),
         }
 
         return result
 
     except Exception as e:
         return {
-            'symbol': symbol,
-            'regime': 1,
-            'regime_name': 'neutral',
-            'confidence': 0.5,
-            'error': str(e)
+            "symbol": symbol,
+            "regime": 1,
+            "regime_name": "neutral",
+            "confidence": 0.5,
+            "error": str(e),
         }
+
 
 if __name__ == "__main__":
     print("📊 TESTING MARKET REGIME DETECTION")
@@ -299,13 +301,15 @@ if __name__ == "__main__":
     recent_returns = np.diff(np.log(prices[-30:]))
     current_regime = detector.predict_current_regime(recent_returns)
 
-    print(f"   Current regime: {current_regime['regime_name']} (confidence: {current_regime['confidence']:.3f})")
+    print(
+        f"   Current regime: {current_regime['regime_name']} (confidence: {current_regime['confidence']:.3f})"
+    )
 
     # Show regime statistics
     print(f"\n📊 Regime statistics:")
     regime_summary = detector.get_regime_summary()
 
-    for regime_name, stats in regime_summary['regime_stats'].items():
+    for regime_name, stats in regime_summary["regime_stats"].items():
         print(f"   {regime_name.upper()} regime:")
         print(f"      Mean return: {stats['mean_return']:.4f}")
         print(f"      Volatility: {stats['volatility']:.4f}")

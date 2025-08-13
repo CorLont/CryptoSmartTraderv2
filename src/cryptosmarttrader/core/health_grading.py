@@ -13,6 +13,7 @@ from enum import Enum
 
 class HealthGrade(Enum):
     """Health grade enumeration"""
+
     A = "A"  # Excellent (90-100)
     B = "B"  # Good (80-89)
     C = "C"  # Fair (70-79)
@@ -23,10 +24,11 @@ class HealthGrade(Enum):
 @dataclass
 class ComponentHealth:
     """Component health data"""
+
     name: str
     score: float  # 0-100
     weight: float  # Weight in overall score
-    status: str   # healthy, degraded, unhealthy
+    status: str  # healthy, degraded, unhealthy
     last_check: datetime
     details: Dict[str, Any] = field(default_factory=dict)
 
@@ -34,6 +36,7 @@ class ComponentHealth:
 @dataclass
 class HealthReport:
     """Comprehensive health report"""
+
     overall_grade: HealthGrade
     overall_score: float
     component_scores: Dict[str, ComponentHealth]
@@ -112,7 +115,7 @@ class HealthGradingSystem:
             "model_performance": 0.20,
             "api_health": 0.15,
             "trading_system": 0.15,
-            "security": 0.05
+            "security": 0.05,
         }
 
         # Grade boundaries
@@ -121,7 +124,7 @@ class HealthGradingSystem:
             80: HealthGrade.B,
             70: HealthGrade.C,
             60: HealthGrade.D,
-            0:  HealthGrade.F
+            0: HealthGrade.F,
         }
 
         # Trading policies by grade
@@ -130,7 +133,7 @@ class HealthGradingSystem:
             HealthGrade.B: {"trading_enabled": True, "position_size_multiplier": 1.0},
             HealthGrade.C: {"trading_enabled": True, "position_size_multiplier": 0.5},
             HealthGrade.D: {"trading_enabled": False, "paper_trading": True},
-            HealthGrade.F: {"trading_enabled": False, "paper_trading": False}
+            HealthGrade.F: {"trading_enabled": False, "paper_trading": False},
         }
 
         # Current component health
@@ -144,7 +147,7 @@ class HealthGradingSystem:
         api_uptime_pct: float,
         data_freshness_minutes: float,
         data_completeness_pct: float,
-        drift_score: float
+        drift_score: float,
     ) -> float:
         """
         Calculate data quality score
@@ -187,10 +190,10 @@ class HealthGradingSystem:
 
         # Weighted combination
         score = (
-            uptime_score * 0.40 +
-            freshness_score * 0.30 +
-            completeness_score * 0.20 +
-            drift_score_normalized * 0.10
+            uptime_score * 0.40
+            + freshness_score * 0.30
+            + completeness_score * 0.20
+            + drift_score_normalized * 0.10
         )
 
         return max(0, min(100, score))
@@ -200,7 +203,7 @@ class HealthGradingSystem:
         cpu_usage_pct: float,
         memory_usage_pct: float,
         disk_usage_pct: float,
-        avg_response_time_ms: float
+        avg_response_time_ms: float,
     ) -> float:
         """
         Calculate system performance score
@@ -252,20 +255,12 @@ class HealthGradingSystem:
             response_score = 100 * (1 - (avg_response_time_ms - 100) / 900)
 
         # Weighted combination
-        score = (
-            cpu_score * 0.25 +
-            memory_score * 0.25 +
-            disk_score * 0.20 +
-            response_score * 0.30
-        )
+        score = cpu_score * 0.25 + memory_score * 0.25 + disk_score * 0.20 + response_score * 0.30
 
         return max(0, min(100, score))
 
     def calculate_model_performance_score(
-        self,
-        prediction_accuracy: float,
-        avg_confidence: float,
-        model_drift_score: float
+        self, prediction_accuracy: float, avg_confidence: float, model_drift_score: float
     ) -> float:
         """
         Calculate model performance score
@@ -302,19 +297,12 @@ class HealthGradingSystem:
             drift_score = 100 * (1 - (model_drift_score - 0.1) / 0.2)
 
         # Weighted combination
-        score = (
-            accuracy_score * 0.50 +
-            confidence_score * 0.30 +
-            drift_score * 0.20
-        )
+        score = accuracy_score * 0.50 + confidence_score * 0.30 + drift_score * 0.20
 
         return max(0, min(100, score))
 
     def calculate_api_health_score(
-        self,
-        avg_response_time_ms: float,
-        error_rate_pct: float,
-        rate_limit_usage_pct: float
+        self, avg_response_time_ms: float, error_rate_pct: float, rate_limit_usage_pct: float
     ) -> float:
         """
         Calculate API health score
@@ -356,19 +344,12 @@ class HealthGradingSystem:
             rate_limit_score = 100 * (1 - (rate_limit_usage_pct - 70) / 20)
 
         # Weighted combination
-        score = (
-            response_score * 0.40 +
-            error_score * 0.40 +
-            rate_limit_score * 0.20
-        )
+        score = response_score * 0.40 + error_score * 0.40 + rate_limit_score * 0.20
 
         return max(0, min(100, score))
 
     def calculate_trading_system_score(
-        self,
-        execution_success_rate: float,
-        avg_slippage_bps: float,
-        risk_violations: int
+        self, execution_success_rate: float, avg_slippage_bps: float, risk_violations: int
     ) -> float:
         """
         Calculate trading system score
@@ -404,18 +385,12 @@ class HealthGradingSystem:
             risk_score = 100 * (1 - risk_violations / 5)
 
         # Weighted combination
-        score = (
-            execution_score * 0.50 +
-            slippage_score * 0.30 +
-            risk_score * 0.20
-        )
+        score = execution_score * 0.50 + slippage_score * 0.30 + risk_score * 0.20
 
         return max(0, min(100, score))
 
     def calculate_security_score(
-        self,
-        auth_success_rate: float,
-        rate_limit_violations: int
+        self, auth_success_rate: float, rate_limit_violations: int
     ) -> float:
         """
         Calculate security score
@@ -441,10 +416,7 @@ class HealthGradingSystem:
             rate_limit_score = 100 * (1 - rate_limit_violations / 10)
 
         # Weighted combination
-        score = (
-            auth_score * 0.60 +
-            rate_limit_score * 0.40
-        )
+        score = auth_score * 0.60 + rate_limit_score * 0.40
 
         return max(0, min(100, score))
 
@@ -453,7 +425,7 @@ class HealthGradingSystem:
         component_name: str,
         score: float,
         status: str,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ):
         """Update component health data"""
 
@@ -467,7 +439,7 @@ class HealthGradingSystem:
             weight=self.component_weights[component_name],
             status=status,
             last_check=datetime.utcnow(),
-            details=details or {}
+            details=details or {},
         )
 
     def calculate_overall_health(self) -> HealthReport:
@@ -485,7 +457,7 @@ class HealthGradingSystem:
                 component_scores={},
                 trading_enabled=False,
                 recommendations=["No health data available"],
-                timestamp=datetime.utcnow()
+                timestamp=datetime.utcnow(),
             )
 
         # Calculate weighted overall score
@@ -519,10 +491,7 @@ class HealthGradingSystem:
 
         # Keep only last 24 hours of history
         cutoff_time = datetime.utcnow() - timedelta(hours=24)
-        self.health_history = [
-            (ts, g, s) for ts, g, s in self.health_history
-            if ts > cutoff_time
-        ]
+        self.health_history = [(ts, g, s) for ts, g, s in self.health_history if ts > cutoff_time]
 
         return HealthReport(
             overall_grade=grade,
@@ -531,13 +500,11 @@ class HealthGradingSystem:
             trading_enabled=trading_enabled,
             recommendations=recommendations,
             timestamp=datetime.utcnow(),
-            grade_history=list(self.health_history)
+            grade_history=list(self.health_history),
         )
 
     def _generate_recommendations(
-        self,
-        grade: HealthGrade,
-        components: Dict[str, ComponentHealth]
+        self, grade: HealthGrade, components: Dict[str, ComponentHealth]
     ) -> List[str]:
         """Generate actionable recommendations"""
 
@@ -558,17 +525,29 @@ class HealthGradingSystem:
         for component in components.values():
             if component.score < 70:
                 if component.name == "data_quality":
-                    recommendations.append(f"Improve data quality: check API connections and data freshness")
+                    recommendations.append(
+                        f"Improve data quality: check API connections and data freshness"
+                    )
                 elif component.name == "system_performance":
-                    recommendations.append(f"Optimize system performance: monitor CPU/memory/disk usage")
+                    recommendations.append(
+                        f"Optimize system performance: monitor CPU/memory/disk usage"
+                    )
                 elif component.name == "model_performance":
-                    recommendations.append(f"Model performance degraded: consider retraining or validation")
+                    recommendations.append(
+                        f"Model performance degraded: consider retraining or validation"
+                    )
                 elif component.name == "api_health":
-                    recommendations.append(f"API health issues: check response times and error rates")
+                    recommendations.append(
+                        f"API health issues: check response times and error rates"
+                    )
                 elif component.name == "trading_system":
-                    recommendations.append(f"Trading system problems: review execution and slippage")
+                    recommendations.append(
+                        f"Trading system problems: review execution and slippage"
+                    )
                 elif component.name == "security":
-                    recommendations.append(f"Security concerns: review authentication and rate limiting")
+                    recommendations.append(
+                        f"Security concerns: review authentication and rate limiting"
+                    )
 
         return recommendations[:5]  # Limit to top 5 recommendations
 

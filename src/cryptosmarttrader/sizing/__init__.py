@@ -14,5 +14,5 @@ __all__ = [
     "KellyParameters",
     "KellyMode",
     "ProbabilityCalibrator",
-    "ConfidenceWeighter"
+    "ConfidenceWeighter",
 ]

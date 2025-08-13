@@ -17,8 +17,10 @@ from collections import Counter
 
 logger = logging.getLogger(__name__)
 
+
 class RegimeType(Enum):
     """Market regime types"""
+
     BULL_MARKET = "bull_market"
     BEAR_MARKET = "bear_market"
     SIDEWAYS = "sideways"
@@ -30,8 +32,9 @@ class RegimeType(Enum):
 
 class StratificationStrategy(Enum):
     """Regime stratification strategies"""
-    BALANCED = "balanced"              # Equal representation per regime
-    PROPORTIONAL = "proportional"      # Maintain original proportions
+
+    BALANCED = "balanced"  # Equal representation per regime
+    PROPORTIONAL = "proportional"  # Maintain original proportions
     MINORITY_BOOST = "minority_boost"  # Boost minority regimes
     TEMPORAL_AWARE = "temporal_aware"  # Consider time ordering
 
@@ -39,6 +42,7 @@ class StratificationStrategy(Enum):
 @dataclass
 class RegimeSplit:
     """Regime-aware data split"""
+
     fold_id: int
     train_indices: List[int]
     validation_indices: List[int]
@@ -65,8 +69,12 @@ class RegimeSplit:
             balance_scores = []
 
             for regime in all_regimes:
-                train_prop = self.train_regime_counts.get(regime, 0) / max(sum(self.train_regime_counts.values()), 1)
-                val_prop = self.val_regime_counts.get(regime, 0) / max(sum(self.val_regime_counts.values()), 1)
+                train_prop = self.train_regime_counts.get(regime, 0) / max(
+                    sum(self.train_regime_counts.values()), 1
+                )
+                val_prop = self.val_regime_counts.get(regime, 0) / max(
+                    sum(self.val_regime_counts.values()), 1
+                )
 
                 # Balance score for this regime (1 = perfect balance)
                 if train_prop + val_prop > 0:
@@ -86,6 +94,7 @@ class RegimeSplit:
 @dataclass
 class RegimeValidationResult:
     """Regime-aware validation result"""
+
     fold_id: int
 
     # Overall performance
@@ -103,7 +112,7 @@ class RegimeValidationResult:
 
     # Distribution metrics
     regime_coverage: float = 0.0  # Fraction of regimes covered
-    regime_balance: float = 0.0   # How balanced the regimes are
+    regime_balance: float = 0.0  # How balanced the regimes are
 
     @property
     def regime_robustness_score(self) -> float:
@@ -115,8 +124,9 @@ class RegimeValidationResult:
         consistency_weight = 0.6
         worst_case_weight = 0.4
 
-        return (consistency_weight * self.regime_consistency +
-                worst_case_weight * max(0, (self.worst_regime_performance + 2) / 4))
+        return consistency_weight * self.regime_consistency + worst_case_weight * max(
+            0, (self.worst_regime_performance + 2) / 4
+        )
 
 
 class RegimeAwareCV:
@@ -124,14 +134,15 @@ class RegimeAwareCV:
     Regime-aware cross-validation system
     """
 
-    def __init__(self,
-                 n_splits: int = 5,
-                 strategy: StratificationStrategy = StratificationStrategy.BALANCED,
-                 min_regime_samples: int = 10,
-                 regime_column: str = "regime",
-                 time_column: str = "timestamp",
-                 random_state: int = 42):
-
+    def __init__(
+        self,
+        n_splits: int = 5,
+        strategy: StratificationStrategy = StratificationStrategy.BALANCED,
+        min_regime_samples: int = 10,
+        regime_column: str = "regime",
+        time_column: str = "timestamp",
+        random_state: int = 42,
+    ):
         self.n_splits = n_splits
         self.strategy = strategy
         self.min_regime_samples = min_regime_samples
@@ -142,12 +153,15 @@ class RegimeAwareCV:
         # Validation history
         self.validation_history = []
 
-    def split(self, data: pd.DataFrame,
-              target_column: str = None) -> Generator[RegimeSplit, None, None]:
+    def split(
+        self, data: pd.DataFrame, target_column: str = None
+    ) -> Generator[RegimeSplit, None, None]:
         """Generate regime-aware splits"""
 
         if self.regime_column not in data.columns:
-            logger.warning(f"Regime column '{self.regime_column}' not found, falling back to random splits")
+            logger.warning(
+                f"Regime column '{self.regime_column}' not found, falling back to random splits"
+            )
             yield from self._fallback_random_splits(data)
             return
 
@@ -155,8 +169,11 @@ class RegimeAwareCV:
         regime_distribution = self._analyze_regime_distribution(data)
 
         # Filter out regimes with too few samples
-        valid_regimes = {regime: count for regime, count in regime_distribution.items()
-                        if count >= self.min_regime_samples}
+        valid_regimes = {
+            regime: count
+            for regime, count in regime_distribution.items()
+            if count >= self.min_regime_samples
+        }
 
         if len(valid_regimes) < 2:
             logger.warning("Insufficient regime diversity, falling back to random splits")
@@ -182,8 +199,9 @@ class RegimeAwareCV:
             logger.error(f"Regime distribution analysis failed: {e}")
             return {}
 
-    def _stratified_splits(self, data: pd.DataFrame,
-                          valid_regimes: Dict[str, int]) -> Generator[RegimeSplit, None, None]:
+    def _stratified_splits(
+        self, data: pd.DataFrame, valid_regimes: Dict[str, int]
+    ) -> Generator[RegimeSplit, None, None]:
         """Generate stratified splits maintaining regime balance"""
 
         try:
@@ -192,9 +210,7 @@ class RegimeAwareCV:
 
             # Create stratified splits
             skf = StratifiedKFold(
-                n_splits=self.n_splits,
-                shuffle=True,
-                random_state=self.random_state
+                n_splits=self.n_splits, shuffle=True, random_state=self.random_state
             )
 
             fold_id = 0
@@ -205,7 +221,9 @@ class RegimeAwareCV:
                 val_indices = valid_data.iloc[val_idx].index.tolist()
 
                 # Calculate regime distributions
-                train_regimes = valid_data.iloc[train_idx][self.regime_column].value_counts().to_dict()
+                train_regimes = (
+                    valid_data.iloc[train_idx][self.regime_column].value_counts().to_dict()
+                )
                 val_regimes = valid_data.iloc[val_idx][self.regime_column].value_counts().to_dict()
 
                 # Get time boundaries if available
@@ -221,7 +239,7 @@ class RegimeAwareCV:
                     train_start_date=train_dates[0],
                     train_end_date=train_dates[1],
                     val_start_date=val_dates[0],
-                    val_end_date=val_dates[1]
+                    val_end_date=val_dates[1],
                 )
 
                 yield split
@@ -231,8 +249,9 @@ class RegimeAwareCV:
             logger.error(f"Stratified splits generation failed: {e}")
             yield from self._fallback_random_splits(data)
 
-    def _temporal_aware_splits(self, data: pd.DataFrame,
-                              valid_regimes: Dict[str, int]) -> Generator[RegimeSplit, None, None]:
+    def _temporal_aware_splits(
+        self, data: pd.DataFrame, valid_regimes: Dict[str, int]
+    ) -> Generator[RegimeSplit, None, None]:
         """Generate temporal-aware splits preserving time order"""
 
         try:
@@ -243,7 +262,9 @@ class RegimeAwareCV:
                 data_sorted = data.copy()
 
             # Filter to valid regimes
-            valid_data = data_sorted[data_sorted[self.regime_column].isin(valid_regimes.keys())].copy()
+            valid_data = data_sorted[
+                data_sorted[self.regime_column].isin(valid_regimes.keys())
+            ].copy()
 
             n_samples = len(valid_data)
             fold_size = n_samples // self.n_splits
@@ -257,8 +278,10 @@ class RegimeAwareCV:
                 val_indices = valid_data.iloc[val_start:val_end].index.tolist()
 
                 # Training set (all data except validation)
-                train_indices = (valid_data.iloc[:val_start].index.tolist() +
-                               valid_data.iloc[val_end:].index.tolist())
+                train_indices = (
+                    valid_data.iloc[:val_start].index.tolist()
+                    + valid_data.iloc[val_end:].index.tolist()
+                )
 
                 # Calculate regime distributions
                 train_data = valid_data.loc[train_indices]
@@ -280,7 +303,7 @@ class RegimeAwareCV:
                     train_start_date=train_dates[0],
                     train_end_date=train_dates[1],
                     val_start_date=val_dates[0],
-                    val_end_date=val_dates[1]
+                    val_end_date=val_dates[1],
                 )
 
                 yield split
@@ -304,9 +327,7 @@ class RegimeAwareCV:
                 val_indices = data.iloc[val_idx].index.tolist()
 
                 split = RegimeSplit(
-                    fold_id=fold_id,
-                    train_indices=train_indices,
-                    validation_indices=val_indices
+                    fold_id=fold_id, train_indices=train_indices, validation_indices=val_indices
                 )
 
                 yield split
@@ -315,7 +336,9 @@ class RegimeAwareCV:
         except Exception as e:
             logger.error(f"Fallback random splits failed: {e}")
 
-    def _get_time_boundaries(self, data: pd.DataFrame) -> Tuple[Optional[datetime], Optional[datetime]]:
+    def _get_time_boundaries(
+        self, data: pd.DataFrame
+    ) -> Tuple[Optional[datetime], Optional[datetime]]:
         """Get time boundaries for data subset"""
         try:
             if self.time_column in data.columns:
@@ -335,20 +358,25 @@ class RegimeAwareCV:
             logger.error(f"Time boundary calculation failed: {e}")
             return None, None
 
-    def validate_regime_model(self,
-                             model_func: callable,
-                             data: pd.DataFrame,
-                             target_column: str,
-                             feature_columns: List[str] = None,
-                             params: Dict[str, Any] = None) -> List[RegimeValidationResult]:
+    def validate_regime_model(
+        self,
+        model_func: callable,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str] = None,
+        params: Dict[str, Any] = None,
+    ) -> List[RegimeValidationResult]:
         """Perform regime-aware model validation"""
 
         try:
             logger.info("Starting regime-aware validation")
 
             if feature_columns is None:
-                feature_columns = [col for col in data.columns
-                                 if col not in [target_column, self.regime_column, self.time_column]]
+                feature_columns = [
+                    col
+                    for col in data.columns
+                    if col not in [target_column, self.regime_column, self.time_column]
+                ]
 
             if params is None:
                 params = {}
@@ -379,13 +407,15 @@ class RegimeAwareCV:
             logger.error(f"Regime-aware validation failed: {e}")
             return []
 
-    def _validate_regime_split(self,
-                              model_func: callable,
-                              data: pd.DataFrame,
-                              target_column: str,
-                              feature_columns: List[str],
-                              split: RegimeSplit,
-                              params: Dict[str, Any]) -> RegimeValidationResult:
+    def _validate_regime_split(
+        self,
+        model_func: callable,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str],
+        split: RegimeSplit,
+        params: Dict[str, Any],
+    ) -> RegimeValidationResult:
         """Validate single regime split"""
 
         # Extract data
@@ -431,7 +461,7 @@ class RegimeAwareCV:
             worst_regime_performance=robustness_metrics["worst"],
             best_regime_performance=robustness_metrics["best"],
             regime_coverage=robustness_metrics["coverage"],
-            regime_balance=split.regime_balance_score
+            regime_balance=split.regime_balance_score,
         )
 
     def _calculate_overall_metrics(self, returns: List[float]) -> Dict[str, float]:
@@ -446,16 +476,11 @@ class RegimeAwareCV:
         std_return = np.std(returns_array)
         sharpe_ratio = mean_return / std_return if std_return > 0 else 0
 
-        return {
-            "sharpe": sharpe_ratio,
-            "return": mean_return,
-            "volatility": std_return
-        }
+        return {"sharpe": sharpe_ratio, "return": mean_return, "volatility": std_return}
 
-    def _calculate_regime_performance(self,
-                                    val_data: pd.DataFrame,
-                                    returns: List[float],
-                                    regime_counts: Dict[str, int]) -> Dict[str, Dict[str, float]]:
+    def _calculate_regime_performance(
+        self, val_data: pd.DataFrame, returns: List[float], regime_counts: Dict[str, int]
+    ) -> Dict[str, Dict[str, float]]:
         """Calculate performance by regime"""
 
         regime_performance = {}
@@ -481,8 +506,9 @@ class RegimeAwareCV:
 
         return regime_performance
 
-    def _calculate_robustness_metrics(self,
-                                    regime_performance: Dict[str, Dict[str, float]]) -> Dict[str, float]:
+    def _calculate_robustness_metrics(
+        self, regime_performance: Dict[str, Dict[str, float]]
+    ) -> Dict[str, float]:
         """Calculate regime robustness metrics"""
 
         if not regime_performance:
@@ -511,11 +537,12 @@ class RegimeAwareCV:
             "consistency": consistency,
             "worst": worst_performance,
             "best": best_performance,
-            "coverage": coverage
+            "coverage": coverage,
         }
 
-    def analyze_regime_robustness(self,
-                                 validation_results: List[RegimeValidationResult]) -> Dict[str, Any]:
+    def analyze_regime_robustness(
+        self, validation_results: List[RegimeValidationResult]
+    ) -> Dict[str, Any]:
         """Analyze overall regime robustness"""
 
         if not validation_results:
@@ -545,7 +572,7 @@ class RegimeAwareCV:
                 regime_stability[regime] = {
                     "mean_sharpe": mean_sharpe,
                     "stability": stability,
-                    "n_folds": len(sharpe_values)
+                    "n_folds": len(sharpe_values),
                 }
 
         return {
@@ -553,24 +580,26 @@ class RegimeAwareCV:
                 "mean_robustness_score": np.mean(robustness_scores),
                 "robustness_consistency": 1 - np.std(robustness_scores),
                 "mean_regime_consistency": np.mean(consistency_scores),
-                "mean_regime_coverage": np.mean(coverage_scores)
+                "mean_regime_coverage": np.mean(coverage_scores),
             },
             "regime_stability": regime_stability,
             "recommendations": self._get_regime_recommendations(
                 all_regime_performance, np.mean(robustness_scores)
-            )
+            ),
         }
 
-    def _get_regime_recommendations(self,
-                                   regime_performance: Dict[str, List[float]],
-                                   overall_robustness: float) -> List[str]:
+    def _get_regime_recommendations(
+        self, regime_performance: Dict[str, List[float]], overall_robustness: float
+    ) -> List[str]:
         """Generate regime-based recommendations"""
 
         recommendations = []
 
         try:
             if overall_robustness < 0.4:
-                recommendations.append("Low regime robustness - consider regime-specific models or features")
+                recommendations.append(
+                    "Low regime robustness - consider regime-specific models or features"
+                )
 
             # Identify problematic regimes
             problematic_regimes = []
@@ -581,15 +610,22 @@ class RegimeAwareCV:
                         problematic_regimes.append(regime)
 
             if problematic_regimes:
-                recommendations.append(f"Poor performance in {', '.join(problematic_regimes)} - implement regime-aware parameters")
+                recommendations.append(
+                    f"Poor performance in {', '.join(problematic_regimes)} - implement regime-aware parameters"
+                )
 
             # Check regime coverage
-            positive_regimes = sum(1 for sharpe_values in regime_performance.values()
-                                 if sharpe_values and np.mean(sharpe_values) > 0)
+            positive_regimes = sum(
+                1
+                for sharpe_values in regime_performance.values()
+                if sharpe_values and np.mean(sharpe_values) > 0
+            )
             total_regimes = len(regime_performance)
 
             if positive_regimes / total_regimes < 0.6:
-                recommendations.append("Limited positive performance across regimes - review feature engineering")
+                recommendations.append(
+                    "Limited positive performance across regimes - review feature engineering"
+                )
 
             # Stability recommendations
             unstable_regimes = []
@@ -600,7 +636,9 @@ class RegimeAwareCV:
                         unstable_regimes.append(regime)
 
             if unstable_regimes:
-                recommendations.append(f"Unstable performance in {', '.join(unstable_regimes)} - consider ensemble methods")
+                recommendations.append(
+                    f"Unstable performance in {', '.join(unstable_regimes)} - consider ensemble methods"
+                )
 
             return recommendations
 

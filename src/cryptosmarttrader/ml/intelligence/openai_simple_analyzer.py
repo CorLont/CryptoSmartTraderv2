@@ -14,24 +14,30 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from openai import OpenAI
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 @dataclass
 class AIMarketInsight:
     """AI-generated market insight"""
+
     insight_type: str
     confidence: float
     content: str
     timestamp: datetime = field(default_factory=lambda: datetime.utcnow())
 
+
 @dataclass
 class AISentimentResult:
     """AI sentiment analysis result"""
+
     overall_sentiment: str  # bullish, bearish, neutral
     sentiment_score: float  # -1 to 1
     confidence: float
     key_themes: List[str]
     market_drivers: List[str]
+
 
 class OpenAISimpleAnalyzer:
     """Simplified OpenAI market analyzer without complex dependencies"""
@@ -50,9 +56,7 @@ class OpenAISimpleAnalyzer:
         self.logger.info("OpenAI Simple Analyzer initialized with GPT-4o")
 
     def analyze_market_sentiment(
-        self,
-        price_data: pd.DataFrame,
-        news_headlines: Optional[List[str]] = None
+        self, price_data: pd.DataFrame, news_headlines: Optional[List[str]] = None
     ) -> AISentimentResult:
         """Analyze market sentiment using AI"""
 
@@ -87,12 +91,12 @@ class OpenAISimpleAnalyzer:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert cryptocurrency market analyst. Provide objective, data-driven sentiment analysis for trading decisions."
+                        "content": "You are an expert cryptocurrency market analyst. Provide objective, data-driven sentiment analysis for trading decisions.",
                     },
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.3
+                temperature=0.3,
             )
 
             result = json.loads(response.choices[0].message.content)
@@ -102,7 +106,7 @@ class OpenAISimpleAnalyzer:
                 sentiment_score=float(result.get("sentiment_score", 0.0)),
                 confidence=float(result.get("confidence", 0.5)),
                 key_themes=result.get("key_themes", []),
-                market_drivers=result.get("market_drivers", [])
+                market_drivers=result.get("market_drivers", []),
             )
 
         except Exception as e:
@@ -112,14 +116,11 @@ class OpenAISimpleAnalyzer:
                 sentiment_score=0.0,
                 confidence=0.0,
                 key_themes=[],
-                market_drivers=[]
+                market_drivers=[],
             )
 
     def assess_news_impact(
-        self,
-        news_headline: str,
-        news_content: str,
-        crypto_symbols: List[str] = None
+        self, news_headline: str, news_content: str, crypto_symbols: List[str] = None
     ) -> Dict[str, Any]:
         """Assess news impact on cryptocurrency markets"""
 
@@ -152,12 +153,12 @@ class OpenAISimpleAnalyzer:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a cryptocurrency news impact specialist. Assess how news affects crypto markets with precise analysis."
+                        "content": "You are a cryptocurrency news impact specialist. Assess how news affects crypto markets with precise analysis.",
                     },
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.2
+                temperature=0.2,
             )
 
             return json.loads(response.choices[0].message.content)
@@ -170,13 +171,11 @@ class OpenAISimpleAnalyzer:
                 "affected_assets": [],
                 "time_horizon": "unknown",
                 "confidence": 0.0,
-                "reasoning": f"Analysis failed: {e}"
+                "reasoning": f"Analysis failed: {e}",
             }
 
     def generate_trading_insights(
-        self,
-        market_data: pd.DataFrame,
-        current_positions: Dict[str, float] = None
+        self, market_data: pd.DataFrame, current_positions: Dict[str, float] = None
     ) -> List[AIMarketInsight]:
         """Generate AI-powered trading insights"""
 
@@ -216,12 +215,12 @@ class OpenAISimpleAnalyzer:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a professional cryptocurrency trader. Generate practical trading insights based on market analysis."
+                        "content": "You are a professional cryptocurrency trader. Generate practical trading insights based on market analysis.",
                     },
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.3
+                temperature=0.3,
             )
 
             result = json.loads(response.choices[0].message.content)
@@ -230,7 +229,7 @@ class OpenAISimpleAnalyzer:
                 insight = AIMarketInsight(
                     insight_type=insight_data.get("type", "general"),
                     confidence=float(insight_data.get("confidence", 0.5)),
-                    content=f"{insight_data.get('description', '')}\n\nReasoning: {insight_data.get('reasoning', '')}"
+                    content=f"{insight_data.get('description', '')}\n\nReasoning: {insight_data.get('reasoning', '')}",
                 )
                 insights.append(insight)
 
@@ -240,9 +239,7 @@ class OpenAISimpleAnalyzer:
         return insights
 
     def detect_market_anomalies(
-        self,
-        price_data: pd.DataFrame,
-        volume_data: Optional[pd.DataFrame] = None
+        self, price_data: pd.DataFrame, volume_data: Optional[pd.DataFrame] = None
     ) -> List[AIMarketInsight]:
         """Detect market anomalies using AI analysis"""
 
@@ -278,12 +275,12 @@ class OpenAISimpleAnalyzer:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a quantitative analyst expert in detecting cryptocurrency market anomalies and unusual patterns."
+                        "content": "You are a quantitative analyst expert in detecting cryptocurrency market anomalies and unusual patterns.",
                     },
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.3
+                temperature=0.3,
             )
 
             result = json.loads(response.choices[0].message.content)
@@ -292,7 +289,7 @@ class OpenAISimpleAnalyzer:
                 insight = AIMarketInsight(
                     insight_type=anomaly.get("type", "anomaly"),
                     confidence=float(anomaly.get("confidence", 0.5)),
-                    content=f"{anomaly.get('description', '')}\n\nImplications: {anomaly.get('implications', '')}"
+                    content=f"{anomaly.get('description', '')}\n\nImplications: {anomaly.get('implications', '')}",
                 )
                 insights.append(insight)
 
@@ -302,9 +299,7 @@ class OpenAISimpleAnalyzer:
         return insights
 
     def generate_feature_suggestions(
-        self,
-        current_features: List[str],
-        prediction_target: str = "price_direction"
+        self, current_features: List[str], prediction_target: str = "price_direction"
     ) -> List[Dict[str, str]]:
         """Generate intelligent feature engineering suggestions"""
 
@@ -336,12 +331,12 @@ class OpenAISimpleAnalyzer:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a machine learning engineer specializing in cryptocurrency prediction. Generate innovative feature ideas."
+                        "content": "You are a machine learning engineer specializing in cryptocurrency prediction. Generate innovative feature ideas.",
                     },
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.4
+                temperature=0.4,
             )
 
             result = json.loads(response.choices[0].message.content)
@@ -354,10 +349,10 @@ class OpenAISimpleAnalyzer:
     def _create_market_summary(self, price_data: pd.DataFrame) -> Dict[str, Any]:
         """Create market data summary for AI analysis"""
 
-        if 'close' not in price_data.columns:
+        if "close" not in price_data.columns:
             return {"error": "No price data available"}
 
-        prices = price_data['close']
+        prices = price_data["close"]
 
         # Calculate basic statistics
         current_price = float(prices.iloc[-1]) if len(prices) > 0 else 0
@@ -379,11 +374,13 @@ class OpenAISimpleAnalyzer:
 
         # Volume analysis
         volume_info = {}
-        if 'volume' in price_data.columns:
-            volumes = price_data['volume']
+        if "volume" in price_data.columns:
+            volumes = price_data["volume"]
             volume_info = {
                 "current_volume": float(volumes.iloc[-1]) if len(volumes) > 0 else 0,
-                "volume_trend": "increasing" if len(volumes) > 5 and volumes.iloc[-1] > volumes.rolling(5).mean().iloc[-1] else "decreasing"
+                "volume_trend": "increasing"
+                if len(volumes) > 5 and volumes.iloc[-1] > volumes.rolling(5).mean().iloc[-1]
+                else "decreasing",
             }
 
         summary = {
@@ -392,23 +389,21 @@ class OpenAISimpleAnalyzer:
             "recent_trend": recent_trend,
             "trend_strength": trend_strength,
             "volatility_7d": volatility_7d,
-            "data_points": len(prices)
+            "data_points": len(prices),
         }
 
         summary.update(volume_info)
         return summary
 
     def _prepare_anomaly_analysis(
-        self,
-        price_data: pd.DataFrame,
-        volume_data: Optional[pd.DataFrame] = None
+        self, price_data: pd.DataFrame, volume_data: Optional[pd.DataFrame] = None
     ) -> Dict[str, Any]:
         """Prepare data for anomaly detection"""
 
         anomaly_data = {}
 
-        if 'close' in price_data.columns:
-            prices = price_data['close']
+        if "close" in price_data.columns:
+            prices = price_data["close"]
 
             # Price statistics
             if len(prices) > 20:
@@ -419,32 +414,39 @@ class OpenAISimpleAnalyzer:
                 anomaly_data["price_analysis"] = {
                     "current_z_score": float(current_z_score),
                     "recent_returns": prices.pct_change().tail(5).tolist(),
-                    "volatility_recent": float(prices.pct_change().rolling(5).std().iloc[-1]) if len(prices) > 5 else 0
+                    "volatility_recent": float(prices.pct_change().rolling(5).std().iloc[-1])
+                    if len(prices) > 5
+                    else 0,
                 }
 
         # Volume statistics
-        if volume_data is not None and 'volume' in volume_data.columns:
-            volumes = volume_data['volume']
+        if volume_data is not None and "volume" in volume_data.columns:
+            volumes = volume_data["volume"]
 
             if len(volumes) > 20:
                 volume_mean = volumes.rolling(20).mean().iloc[-1]
                 volume_std = volumes.rolling(20).std().iloc[-1]
-                volume_z_score = (volumes.iloc[-1] - volume_mean) / volume_std if volume_std > 0 else 0
+                volume_z_score = (
+                    (volumes.iloc[-1] - volume_mean) / volume_std if volume_std > 0 else 0
+                )
 
                 anomaly_data["volume_analysis"] = {
                     "volume_z_score": float(volume_z_score),
-                    "volume_spike_ratio": float(volumes.iloc[-1] / volume_mean) if volume_mean > 0 else 1.0
+                    "volume_spike_ratio": float(volumes.iloc[-1] / volume_mean)
+                    if volume_mean > 0
+                    else 1.0,
                 }
 
         return anomaly_data
+
 
 def create_simple_ai_analyzer() -> OpenAISimpleAnalyzer:
     """Create simplified OpenAI analyzer"""
     return OpenAISimpleAnalyzer()
 
+
 def quick_ai_analysis(
-    price_data: pd.DataFrame,
-    news_headlines: Optional[List[str]] = None
+    price_data: pd.DataFrame, news_headlines: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """Quick AI-powered market analysis"""
 
@@ -466,13 +468,13 @@ def quick_ai_analysis(
                 "score": sentiment.sentiment_score,
                 "confidence": sentiment.confidence,
                 "themes": sentiment.key_themes,
-                "drivers": sentiment.market_drivers
+                "drivers": sentiment.market_drivers,
             },
             "trading_insights": [
                 {
                     "type": insight.insight_type,
                     "content": insight.content,
-                    "confidence": insight.confidence
+                    "confidence": insight.confidence,
                 }
                 for insight in insights
             ],
@@ -480,10 +482,10 @@ def quick_ai_analysis(
                 {
                     "type": anomaly.insight_type,
                     "content": anomaly.content,
-                    "confidence": anomaly.confidence
+                    "confidence": anomaly.confidence,
                 }
                 for anomaly in anomalies
-            ]
+            ],
         }
 
     except Exception as e:

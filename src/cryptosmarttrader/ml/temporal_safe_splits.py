@@ -12,19 +12,24 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 class SplitType(Enum):
     """Types of time-series splits"""
+
     TIME_SERIES_SPLIT = "time_series_split"
     ROLLING_WINDOW = "rolling_window"
     EXPANDING_WINDOW = "expanding_window"
     PURGED_CROSS_VALIDATION = "purged_cv"
     WALK_FORWARD = "walk_forward"
 
+
 @dataclass
 class TemporalSplit:
     """Single temporal split result"""
+
     train_start: datetime
     train_end: datetime
     test_start: datetime
@@ -36,14 +41,17 @@ class TemporalSplit:
     validation_passed: bool = True
     warnings: List[str] = None
 
+
 @dataclass
 class TemporalSplitValidation:
     """Validation result for temporal splits"""
+
     is_valid: bool
     violations: List[str]
     temporal_integrity_score: float
     leakage_detected: bool
     recommendation: str
+
 
 class TemporalSafeSplitter:
     """Time-series safe train/test splitter with leak prevention"""
@@ -54,7 +62,7 @@ class TemporalSafeSplitter:
         test_size: float = 0.2,
         gap_hours: int = 24,  # 24-hour gap between train and test
         min_train_size: int = 100,
-        max_splits: int = 5
+        max_splits: int = 5,
     ):
         self.split_type = split_type
         self.test_size = test_size
@@ -65,17 +73,17 @@ class TemporalSafeSplitter:
 
         # Validation thresholds
         self.validation_thresholds = {
-            'min_temporal_integrity': 0.95,
-            'max_leakage_tolerance': 0.01,  # 1% tolerance for edge cases
-            'min_train_test_gap_hours': 1,  # Minimum gap requirement
+            "min_temporal_integrity": 0.95,
+            "max_leakage_tolerance": 0.01,  # 1% tolerance for edge cases
+            "min_train_test_gap_hours": 1,  # Minimum gap requirement
         }
 
     def create_temporal_splits(
         self,
         df: pd.DataFrame,
-        timestamp_col: str = 'timestamp',
+        timestamp_col: str = "timestamp",
         target_col: Optional[str] = None,
-        validation_split: bool = True
+        validation_split: bool = True,
     ) -> List[TemporalSplit]:
         """Create temporal splits with comprehensive validation"""
 
@@ -112,7 +120,9 @@ class TemporalSafeSplitter:
                 if split_validation.is_valid or not validation_split:
                     validated_splits.append(split)
                 else:
-                    self.logger.warning(f"Split {split.split_number} failed validation: {split_validation.violations}")
+                    self.logger.warning(
+                        f"Split {split.split_number} failed validation: {split_validation.violations}"
+                    )
 
             splits = validated_splits
 
@@ -121,8 +131,8 @@ class TemporalSafeSplitter:
     def split_multi_agent_data(
         self,
         agent_data: Dict[str, pd.DataFrame],
-        timestamp_col: str = 'timestamp',
-        sync_timestamps: bool = True
+        timestamp_col: str = "timestamp",
+        sync_timestamps: bool = True,
     ) -> Dict[str, List[TemporalSplit]]:
         """Split multiple agent datasets with synchronized timestamps"""
 
@@ -143,19 +153,21 @@ class TemporalSafeSplitter:
                 agent_splits[agent_name] = reference_splits
             else:
                 # Subsequent agents use same split points as reference
-                agent_splits[agent_name] = self._apply_reference_splits(df, reference_splits, timestamp_col)
+                agent_splits[agent_name] = self._apply_reference_splits(
+                    df, reference_splits, timestamp_col
+                )
 
         # Validate cross-agent split consistency
         cross_validation = self._validate_cross_agent_splits(agent_splits, timestamp_col)
         if not cross_validation.is_valid:
-            self.logger.warning(f"Cross-agent split validation failed: {cross_validation.violations}")
+            self.logger.warning(
+                f"Cross-agent split validation failed: {cross_validation.violations}"
+            )
 
         return agent_splits
 
     def _create_time_series_splits(
-        self,
-        df: pd.DataFrame,
-        timestamp_col: str
+        self, df: pd.DataFrame, timestamp_col: str
     ) -> List[TemporalSplit]:
         """Create simple time-series splits with gap"""
 
@@ -173,7 +185,9 @@ class TemporalSafeSplitter:
         test_start_idx = train_rows
 
         if train_end_idx < self.min_train_size:
-            raise ValueError(f"Insufficient training data after gap: {train_end_idx} < {self.min_train_size}")
+            raise ValueError(
+                f"Insufficient training data after gap: {train_end_idx} < {self.min_train_size}"
+            )
 
         split = TemporalSplit(
             train_start=timestamps.iloc[0],
@@ -183,15 +197,13 @@ class TemporalSafeSplitter:
             train_indices=list(range(0, train_end_idx + 1)),
             test_indices=list(range(test_start_idx, total_rows)),
             split_number=1,
-            gap_hours=self.gap_hours
+            gap_hours=self.gap_hours,
         )
 
         return [split]
 
     def _create_rolling_window_splits(
-        self,
-        df: pd.DataFrame,
-        timestamp_col: str
+        self, df: pd.DataFrame, timestamp_col: str
     ) -> List[TemporalSplit]:
         """Create rolling window splits for walk-forward validation"""
 
@@ -212,7 +224,9 @@ class TemporalSafeSplitter:
         for i in range(self.max_splits):
             # Calculate indices for this split
             train_start_idx = i * (total_rows // self.max_splits)
-            train_end_idx = min(train_start_idx + window_size - gap_rows, total_rows - test_rows - gap_rows)
+            train_end_idx = min(
+                train_start_idx + window_size - gap_rows, total_rows - test_rows - gap_rows
+            )
             test_start_idx = train_end_idx + gap_rows
             test_end_idx = min(test_start_idx + test_rows, total_rows)
 
@@ -231,7 +245,7 @@ class TemporalSafeSplitter:
                 train_indices=list(range(train_start_idx, train_end_idx + 1)),
                 test_indices=list(range(test_start_idx, test_end_idx)),
                 split_number=i + 1,
-                gap_hours=self.gap_hours
+                gap_hours=self.gap_hours,
             )
 
             splits.append(split)
@@ -239,9 +253,7 @@ class TemporalSafeSplitter:
         return splits
 
     def _create_expanding_window_splits(
-        self,
-        df: pd.DataFrame,
-        timestamp_col: str
+        self, df: pd.DataFrame, timestamp_col: str
     ) -> List[TemporalSplit]:
         """Create expanding window splits (growing training set)"""
 
@@ -259,7 +271,9 @@ class TemporalSafeSplitter:
         for i in range(self.max_splits):
             # Expanding training window
             train_start_idx = 0
-            train_end_idx = initial_train_size + (i * (total_rows // (self.max_splits + 1))) - gap_rows
+            train_end_idx = (
+                initial_train_size + (i * (total_rows // (self.max_splits + 1))) - gap_rows
+            )
             test_start_idx = train_end_idx + gap_rows
             test_end_idx = min(test_start_idx + test_rows, total_rows)
 
@@ -278,38 +292,28 @@ class TemporalSafeSplitter:
                 train_indices=list(range(train_start_idx, train_end_idx + 1)),
                 test_indices=list(range(test_start_idx, test_end_idx)),
                 split_number=i + 1,
-                gap_hours=self.gap_hours
+                gap_hours=self.gap_hours,
             )
 
             splits.append(split)
 
         return splits
 
-    def _create_purged_cv_splits(
-        self,
-        df: pd.DataFrame,
-        timestamp_col: str
-    ) -> List[TemporalSplit]:
+    def _create_purged_cv_splits(self, df: pd.DataFrame, timestamp_col: str) -> List[TemporalSplit]:
         """Create purged cross-validation splits (Lopez de Prado method)"""
 
         # Similar to rolling window but with purging around test sets
         return self._create_rolling_window_splits(df, timestamp_col)
 
     def _create_walk_forward_splits(
-        self,
-        df: pd.DataFrame,
-        timestamp_col: str
+        self, df: pd.DataFrame, timestamp_col: str
     ) -> List[TemporalSplit]:
         """Create walk-forward analysis splits"""
 
         # Similar to expanding window but with fixed test periods
         return self._create_expanding_window_splits(df, timestamp_col)
 
-    def _validate_input_data(
-        self,
-        df: pd.DataFrame,
-        timestamp_col: str
-    ) -> TemporalSplitValidation:
+    def _validate_input_data(self, df: pd.DataFrame, timestamp_col: str) -> TemporalSplitValidation:
         """Validate input data for temporal splitting"""
 
         violations = []
@@ -320,7 +324,9 @@ class TemporalSafeSplitter:
 
         # Check if data is sufficient
         if len(df) < self.min_train_size + 10:  # Minimum viable dataset
-            violations.append(f"Insufficient data: {len(df)} rows < {self.min_train_size + 10} required")
+            violations.append(
+                f"Insufficient data: {len(df)} rows < {self.min_train_size + 10} required"
+            )
 
         # Check timestamp ordering
         if timestamp_col in df.columns:
@@ -354,14 +360,13 @@ class TemporalSafeSplitter:
             violations=violations,
             temporal_integrity_score=1.0 if is_valid else 0.5,
             leakage_detected=False,
-            recommendation="Data is suitable for temporal splitting" if is_valid else "Fix violations before splitting"
+            recommendation="Data is suitable for temporal splitting"
+            if is_valid
+            else "Fix violations before splitting",
         )
 
     def _validate_single_split(
-        self,
-        df: pd.DataFrame,
-        split: TemporalSplit,
-        timestamp_col: str
+        self, df: pd.DataFrame, split: TemporalSplit, timestamp_col: str
     ) -> TemporalSplitValidation:
         """Validate a single temporal split for leakage"""
 
@@ -370,13 +375,17 @@ class TemporalSafeSplitter:
 
         # Check temporal ordering
         if split.train_end >= split.test_start:
-            violations.append(f"Split {split.split_number}: Training period overlaps with test period")
+            violations.append(
+                f"Split {split.split_number}: Training period overlaps with test period"
+            )
             leakage_detected = True
 
         # Check gap requirement
         gap_actual = (split.test_start - split.train_end).total_seconds() / 3600
-        if gap_actual < self.validation_thresholds['min_train_test_gap_hours']:
-            violations.append(f"Split {split.split_number}: Gap too small ({gap_actual:.1f}h < {self.validation_thresholds['min_train_test_gap_hours']}h)")
+        if gap_actual < self.validation_thresholds["min_train_test_gap_hours"]:
+            violations.append(
+                f"Split {split.split_number}: Gap too small ({gap_actual:.1f}h < {self.validation_thresholds['min_train_test_gap_hours']}h)"
+            )
 
         # Check for future leakage in training data
         current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -391,12 +400,16 @@ class TemporalSafeSplitter:
                     future_train_count += 1
 
         if future_train_count > 0:
-            violations.append(f"Split {split.split_number}: {future_train_count} future timestamps in training data")
+            violations.append(
+                f"Split {split.split_number}: {future_train_count} future timestamps in training data"
+            )
             leakage_detected = True
 
         # Check training set size
         if len(split.train_indices) < self.min_train_size:
-            violations.append(f"Split {split.split_number}: Training set too small ({len(split.train_indices)} < {self.min_train_size})")
+            violations.append(
+                f"Split {split.split_number}: Training set too small ({len(split.train_indices)} < {self.min_train_size})"
+            )
 
         # Check test set size
         if len(split.test_indices) < 1:
@@ -410,7 +423,7 @@ class TemporalSafeSplitter:
             violations=violations,
             temporal_integrity_score=temporal_integrity_score,
             leakage_detected=leakage_detected,
-            recommendation="Split is temporally safe" if is_valid else "Fix temporal violations"
+            recommendation="Split is temporally safe" if is_valid else "Fix temporal violations",
         )
 
     def _calculate_average_interval_hours(self, timestamps: pd.Series) -> float:
@@ -423,9 +436,7 @@ class TemporalSafeSplitter:
         return intervals.median() if len(intervals) > 0 else 1.0
 
     def _synchronize_agent_timestamps(
-        self,
-        agent_data: Dict[str, pd.DataFrame],
-        timestamp_col: str
+        self, agent_data: Dict[str, pd.DataFrame], timestamp_col: str
     ) -> Dict[str, pd.DataFrame]:
         """Synchronize timestamps across agents"""
 
@@ -459,10 +470,7 @@ class TemporalSafeSplitter:
         return synchronized_data
 
     def _apply_reference_splits(
-        self,
-        df: pd.DataFrame,
-        reference_splits: List[TemporalSplit],
-        timestamp_col: str
+        self, df: pd.DataFrame, reference_splits: List[TemporalSplit], timestamp_col: str
     ) -> List[TemporalSplit]:
         """Apply reference split timepoints to another agent's data"""
 
@@ -486,7 +494,7 @@ class TemporalSafeSplitter:
                     train_indices=train_indices,
                     test_indices=test_indices,
                     split_number=ref_split.split_number,
-                    gap_hours=ref_split.gap_hours
+                    gap_hours=ref_split.gap_hours,
                 )
 
                 applied_splits.append(split)
@@ -494,9 +502,7 @@ class TemporalSafeSplitter:
         return applied_splits
 
     def _validate_cross_agent_splits(
-        self,
-        agent_splits: Dict[str, List[TemporalSplit]],
-        timestamp_col: str
+        self, agent_splits: Dict[str, List[TemporalSplit]], timestamp_col: str
     ) -> TemporalSplitValidation:
         """Validate that splits are consistent across agents"""
 
@@ -508,7 +514,7 @@ class TemporalSafeSplitter:
                 violations=[],
                 temporal_integrity_score=1.0,
                 leakage_detected=False,
-                recommendation="Single agent - no cross-validation needed"
+                recommendation="Single agent - no cross-validation needed",
             )
 
         # Get reference splits
@@ -521,7 +527,9 @@ class TemporalSafeSplitter:
                 continue
 
             if len(splits) != len(reference_splits):
-                violations.append(f"{agent_name}: Different number of splits ({len(splits)} vs {len(reference_splits)})")
+                violations.append(
+                    f"{agent_name}: Different number of splits ({len(splits)} vs {len(reference_splits)})"
+                )
                 continue
 
             # Check each split
@@ -539,15 +547,18 @@ class TemporalSafeSplitter:
             violations=violations,
             temporal_integrity_score=1.0 if is_valid else 0.5,
             leakage_detected=False,
-            recommendation="Cross-agent splits are consistent" if is_valid else "Fix split inconsistencies"
+            recommendation="Cross-agent splits are consistent"
+            if is_valid
+            else "Fix split inconsistencies",
         )
+
 
 def create_temporal_splitter(
     split_type: str = "time_series_split",
     test_size: float = 0.2,
     gap_hours: int = 24,
     min_train_size: int = 100,
-    max_splits: int = 5
+    max_splits: int = 5,
 ) -> TemporalSafeSplitter:
     """Create temporal safe splitter with specified parameters"""
 
@@ -556,7 +567,7 @@ def create_temporal_splitter(
         "rolling_window": SplitType.ROLLING_WINDOW,
         "expanding_window": SplitType.EXPANDING_WINDOW,
         "purged_cv": SplitType.PURGED_CROSS_VALIDATION,
-        "walk_forward": SplitType.WALK_FORWARD
+        "walk_forward": SplitType.WALK_FORWARD,
     }
 
     split_enum = split_type_map.get(split_type, SplitType.TIME_SERIES_SPLIT)
@@ -566,22 +577,21 @@ def create_temporal_splitter(
         test_size=test_size,
         gap_hours=gap_hours,
         min_train_size=min_train_size,
-        max_splits=max_splits
+        max_splits=max_splits,
     )
+
 
 def temporal_train_test_split(
     df: pd.DataFrame,
-    timestamp_col: str = 'timestamp',
+    timestamp_col: str = "timestamp",
     test_size: float = 0.2,
     gap_hours: int = 24,
-    target_col: Optional[str] = None
+    target_col: Optional[str] = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.Series], Optional[pd.Series]]:
     """Simple temporal train/test split function"""
 
     splitter = create_temporal_splitter(
-        split_type="time_series_split",
-        test_size=test_size,
-        gap_hours=gap_hours
+        split_type="time_series_split", test_size=test_size, gap_hours=gap_hours
     )
 
     splits = splitter.create_temporal_splits(df, timestamp_col, target_col)
@@ -601,10 +611,9 @@ def temporal_train_test_split(
     else:
         return X_train, X_test, None, None
 
+
 def validate_temporal_splits(
-    splits: List[TemporalSplit],
-    df: pd.DataFrame,
-    timestamp_col: str = 'timestamp'
+    splits: List[TemporalSplit], df: pd.DataFrame, timestamp_col: str = "timestamp"
 ) -> Dict[str, Any]:
     """Validate temporal splits for leakage and integrity"""
 
@@ -630,11 +639,13 @@ def validate_temporal_splits(
     avg_integrity_score = total_integrity_score / len(splits) if splits else 0.0
 
     return {
-        'is_valid': len(violations) == 0,
-        'violations': violations,
-        'leakage_detected': leakage_count > 0,
-        'temporal_integrity_score': avg_integrity_score,
-        'total_splits': len(splits),
-        'valid_splits': sum(1 for s in splits if s.validation_passed),
-        'recommendation': 'Splits are temporally safe' if len(violations) == 0 else 'Fix temporal violations'
+        "is_valid": len(violations) == 0,
+        "violations": violations,
+        "leakage_detected": leakage_count > 0,
+        "temporal_integrity_score": avg_integrity_score,
+        "total_splits": len(splits),
+        "valid_splits": sum(1 for s in splits if s.validation_passed),
+        "recommendation": "Splits are temporally safe"
+        if len(violations) == 0
+        else "Fix temporal violations",
     }

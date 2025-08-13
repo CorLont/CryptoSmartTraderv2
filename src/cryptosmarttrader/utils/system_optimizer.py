@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class OptimizationResult:
     """Result of an optimization operation"""
+
     action: str
     success: bool
     details: str
@@ -47,10 +48,7 @@ class SystemOptimizer:
         if self.auto_optimization_enabled and (
             self.optimization_thread is None or not self.optimization_thread.is_alive()
         ):
-            self.optimization_thread = threading.Thread(
-                target=self._optimization_loop,
-                daemon=True
-            )
+            self.optimization_thread = threading.Thread(target=self._optimization_loop, daemon=True)
             self.optimization_thread.start()
             logger.info("Auto-optimization started")
 
@@ -124,7 +122,7 @@ class SystemOptimizer:
                 details=f"Garbage collection freed {collected_objects} objects",
                 impact=impact,
                 metrics_before={"memory_percent": memory_before.percent},
-                metrics_after={"memory_percent": memory_after.percent}
+                metrics_after={"memory_percent": memory_after.percent},
             )
 
             with self._lock:
@@ -137,7 +135,7 @@ class SystemOptimizer:
             result = OptimizationResult(
                 action="memory_optimization",
                 success=False,
-                details=f"Memory optimization failed: {str(e)}"
+                details=f"Memory optimization failed: {str(e)}",
             )
 
             with self._lock:
@@ -156,7 +154,7 @@ class SystemOptimizer:
 
             # Reduce thread priorities for non-critical operations
             current_process = psutil.Process()
-            if hasattr(current_process, 'nice'):
+            if hasattr(current_process, "nice"):
                 try:
                     current_process.nice(5)  # Lower priority slightly
                     optimizations.append("reduced_process_priority")
@@ -175,7 +173,7 @@ class SystemOptimizer:
                 details=f"Applied optimizations: {optimizations}",
                 impact=f"CPU usage: {cpu_before:.1f}% -> {cpu_after:.1f}%",
                 metrics_before={"cpu_percent": cpu_before},
-                metrics_after={"cpu_percent": cpu_after}
+                metrics_after={"cpu_percent": cpu_after},
             )
 
             with self._lock:
@@ -188,7 +186,7 @@ class SystemOptimizer:
             result = OptimizationResult(
                 action="cpu_optimization",
                 success=False,
-                details=f"CPU optimization failed: {str(e)}"
+                details=f"CPU optimization failed: {str(e)}",
             )
 
             with self._lock:
@@ -220,7 +218,7 @@ class SystemOptimizer:
             result = OptimizationResult(
                 action="cache_cleanup",
                 success=True,
-                details=f"Cache cleanup completed: {', '.join(cleanup_details) if cleanup_details else 'no cleanup needed'}"
+                details=f"Cache cleanup completed: {', '.join(cleanup_details) if cleanup_details else 'no cleanup needed'}",
             )
 
             with self._lock:
@@ -231,9 +229,7 @@ class SystemOptimizer:
 
         except Exception as e:
             result = OptimizationResult(
-                action="cache_cleanup",
-                success=False,
-                details=f"Cache cleanup failed: {str(e)}"
+                action="cache_cleanup", success=False, details=f"Cache cleanup failed: {str(e)}"
             )
 
             with self._lock:
@@ -274,7 +270,9 @@ class SystemOptimizer:
             for temp_dir in temp_dirs:
                 if temp_dir.exists():
                     for temp_file in temp_dir.rglob("*"):
-                        if temp_file.is_file() and temp_file.stat().st_mtime < (time.time() - 86400):  # 1 day old
+                        if temp_file.is_file() and temp_file.stat().st_mtime < (
+                            time.time() - 86400
+                        ):  # 1 day old
                             temp_file.unlink()
                             cleaned_count += 1
 
@@ -351,7 +349,7 @@ class SystemOptimizer:
             "success_rate": len(successful) / len(history) * 100,
             "optimization_types": action_counts,
             "last_optimization": history[-1].action if history else None,
-            "auto_optimization_enabled": self.auto_optimization_enabled
+            "auto_optimization_enabled": self.auto_optimization_enabled,
         }
 
     def clear_history(self):

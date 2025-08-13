@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
+
 class ImportPathResolver:
     """Resolves import path issues across the system"""
 
@@ -33,7 +34,7 @@ class ImportPathResolver:
 
         # Try primary import path
         try:
-            parts = module_path.split('.')
+            parts = module_path.split(".")
             module = __import__(module_path, fromlist=[parts[-1]])
             return module
         except ImportError:
@@ -43,7 +44,7 @@ class ImportPathResolver:
         if fallback_paths:
             for fallback in fallback_paths:
                 try:
-                    parts = fallback.split('.')
+                    parts = fallback.split(".")
                     module = __import__(fallback, fromlist=[parts[-1]])
                     return module
                 except ImportError:
@@ -58,7 +59,7 @@ class ImportPathResolver:
         paths_to_try = [
             "core.synthetic_data_augmentation",
             "synthetic_data_augmentation",
-            "core.synthetic_data_generator"
+            "core.synthetic_data_generator",
         ]
 
         for path in paths_to_try:
@@ -75,7 +76,7 @@ class ImportPathResolver:
         paths_to_try = [
             "core.unified_confidence_gate",
             "core.strict_confidence_gate",
-            "orchestration.strict_gate_standalone"
+            "orchestration.strict_gate_standalone",
         ]
 
         for path in paths_to_try:
@@ -92,7 +93,7 @@ class ImportPathResolver:
         paths_to_try = [
             "core.consolidated_logging_manager",
             "core.unified_structured_logger",
-            "core.structured_logger"
+            "core.structured_logger",
         ]
 
         for path in paths_to_try:
@@ -102,8 +103,10 @@ class ImportPathResolver:
 
         return None
 
+
 # Global resolver instance
 _resolver: Optional[ImportPathResolver] = None
+
 
 def get_import_resolver() -> ImportPathResolver:
     """Get global import resolver instance"""
@@ -111,6 +114,7 @@ def get_import_resolver() -> ImportPathResolver:
     if _resolver is None:
         _resolver = ImportPathResolver()
     return _resolver
+
 
 # Convenience functions for common imports
 def get_logger_function():
@@ -120,13 +124,20 @@ def get_logger_function():
 
     if logging_module:
         # Try different logger function names
-        for func_name in ['get_consolidated_logger', 'get_unified_logger', 'get_logger', 'get_logger']:
+        for func_name in [
+            "get_consolidated_logger",
+            "get_unified_logger",
+            "get_logger",
+            "get_logger",
+        ]:
             if hasattr(logging_module, func_name):
                 return getattr(logging_module, func_name)
 
     # Ultimate fallback to standard logging
     import logging
+
     return logging.getLogger
+
 
 def get_confidence_gate_function():
     """Get the correct confidence gate function"""
@@ -135,11 +146,16 @@ def get_confidence_gate_function():
 
     if gate_module:
         # Try different function names
-        for func_name in ['get_unified_confidence_gate', 'get_strict_confidence_gate', 'apply_strict_gate_orchestration']:
+        for func_name in [
+            "get_unified_confidence_gate",
+            "get_strict_confidence_gate",
+            "apply_strict_gate_orchestration",
+        ]:
             if hasattr(gate_module, func_name):
                 return getattr(gate_module, func_name)
 
     return None
+
 
 def get_synthetic_classes():
     """Get synthetic data classes with fallbacks"""
@@ -148,7 +164,7 @@ def get_synthetic_classes():
 
     classes = {}
     if synth_module:
-        for class_name in ['BlackSwanGenerator', 'SyntheticScenario', 'RegimeShiftGenerator']:
+        for class_name in ["BlackSwanGenerator", "SyntheticScenario", "RegimeShiftGenerator"]:
             if hasattr(synth_module, class_name):
                 classes[class_name] = getattr(synth_module, class_name)
 

@@ -15,9 +15,11 @@ from openai import OpenAI
 
 from ..core.structured_logger import get_logger
 
+
 @dataclass
 class NewsImpactAnalysis:
     """Structured news impact analysis result"""
+
     sentiment: str  # "bullish", "bearish", "neutral"
     magnitude: float  # 0.0 to 1.0 scale
     half_life_hours: float  # Expected impact duration half-life
@@ -27,6 +29,7 @@ class NewsImpactAnalysis:
     market_sectors: List[str]  # Affected market sectors
     impact_timeline: str  # "immediate", "short_term", "medium_term", "long_term"
 
+
 class LLMNewsImpactScorer:
     """Advanced news impact scoring using GPT-4o with structured output"""
 
@@ -34,7 +37,7 @@ class LLMNewsImpactScorer:
         self.logger = get_logger("LLMNewsImpactScorer")
 
         # Initialize OpenAI client
-        api_key = os.getenv('OPENAI_API_KEY')
+        api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OpenAI API key not found in environment variables")
 
@@ -43,14 +46,16 @@ class LLMNewsImpactScorer:
         # Impact scoring parameters
         self.impact_categories = {
             "regulatory": {"base_magnitude": 0.8, "half_life_hours": 168},  # 1 week
-            "adoption": {"base_magnitude": 0.6, "half_life_hours": 72},     # 3 days
-            "technical": {"base_magnitude": 0.4, "half_life_hours": 24},    # 1 day
-            "market": {"base_magnitude": 0.5, "half_life_hours": 48},       # 2 days
+            "adoption": {"base_magnitude": 0.6, "half_life_hours": 72},  # 3 days
+            "technical": {"base_magnitude": 0.4, "half_life_hours": 24},  # 1 day
+            "market": {"base_magnitude": 0.5, "half_life_hours": 48},  # 2 days
             "partnership": {"base_magnitude": 0.3, "half_life_hours": 36},  # 1.5 days
-            "security": {"base_magnitude": 0.9, "half_life_hours": 120}     # 5 days
+            "security": {"base_magnitude": 0.9, "half_life_hours": 120},  # 5 days
         }
 
-    async def analyze_news_impact(self, news_items: List[Dict[str, Any]]) -> List[NewsImpactAnalysis]:
+    async def analyze_news_impact(
+        self, news_items: List[Dict[str, Any]]
+    ) -> List[NewsImpactAnalysis]:
         """Analyze impact of multiple news items"""
 
         self.logger.info(f"Analyzing impact of {len(news_items)} news items")
@@ -61,7 +66,7 @@ class LLMNewsImpactScorer:
             # Process news items in batches to respect rate limits
             batch_size = 5
             for i in range(0, len(news_items), batch_size):
-                batch = news_items[i:i + batch_size]
+                batch = news_items[i : i + batch_size]
                 batch_results = await self._process_news_batch(batch)
                 analyses.extend(batch_results)
 
@@ -76,7 +81,9 @@ class LLMNewsImpactScorer:
             self.logger.error(f"News impact analysis failed: {e}")
             return []
 
-    async def _process_news_batch(self, news_batch: List[Dict[str, Any]]) -> List[NewsImpactAnalysis]:
+    async def _process_news_batch(
+        self, news_batch: List[Dict[str, Any]]
+    ) -> List[NewsImpactAnalysis]:
         """Process a batch of news items"""
 
         analyses = []
@@ -92,15 +99,17 @@ class LLMNewsImpactScorer:
 
         return analyses
 
-    async def _analyze_single_news_item(self, news_item: Dict[str, Any]) -> Optional[NewsImpactAnalysis]:
+    async def _analyze_single_news_item(
+        self, news_item: Dict[str, Any]
+    ) -> Optional[NewsImpactAnalysis]:
         """Analyze impact of a single news item using GPT-4o"""
 
         try:
             # Extract news content
-            title = news_item.get('title', '')
-            content = news_item.get('content', news_item.get('summary', ''))
-            source = news_item.get('source', 'unknown')
-            timestamp = news_item.get('timestamp', datetime.utcnow().isoformat())
+            title = news_item.get("title", "")
+            content = news_item.get("content", news_item.get("summary", ""))
+            source = news_item.get("source", "unknown")
+            timestamp = news_item.get("timestamp", datetime.utcnow().isoformat())
 
             # Create structured prompt for GPT-4o
             prompt = self._create_analysis_prompt(title, content, source)
@@ -113,15 +122,12 @@ class LLMNewsImpactScorer:
                     {
                         "role": "system",
                         "content": "Je bent een expert cryptocurrency marktanalist die nieuwsimpact analyseert. "
-                        "Geef gestructureerde output in JSON formaat zoals gevraagd."
+                        "Geef gestructureerde output in JSON formaat zoals gevraagd.",
                     },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
+                    {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.1  # Low temperature for consistent analysis
+                temperature=0.1,  # Low temperature for consistent analysis
             )
 
             # Parse response
@@ -129,17 +135,19 @@ class LLMNewsImpactScorer:
 
             # Create structured analysis object
             analysis = NewsImpactAnalysis(
-                sentiment=analysis_json.get('sentiment', 'neutral'),
-                magnitude=min(1.0, max(0.0, analysis_json.get('magnitude', 0.0))),
-                half_life_hours=max(1.0, analysis_json.get('half_life_hours', 24.0)),
-                confidence=min(1.0, max(0.0, analysis_json.get('confidence', 0.5))),
-                key_factors=analysis_json.get('key_factors', []),
-                affected_tokens=analysis_json.get('affected_tokens', []),
-                market_sectors=analysis_json.get('market_sectors', []),
-                impact_timeline=analysis_json.get('impact_timeline', 'short_term')
+                sentiment=analysis_json.get("sentiment", "neutral"),
+                magnitude=min(1.0, max(0.0, analysis_json.get("magnitude", 0.0))),
+                half_life_hours=max(1.0, analysis_json.get("half_life_hours", 24.0)),
+                confidence=min(1.0, max(0.0, analysis_json.get("confidence", 0.5))),
+                key_factors=analysis_json.get("key_factors", []),
+                affected_tokens=analysis_json.get("affected_tokens", []),
+                market_sectors=analysis_json.get("market_sectors", []),
+                impact_timeline=analysis_json.get("impact_timeline", "short_term"),
             )
 
-            self.logger.info(f"Analyzed news: {analysis.sentiment} sentiment, {analysis.magnitude:.2f} magnitude")
+            self.logger.info(
+                f"Analyzed news: {analysis.sentiment} sentiment, {analysis.magnitude:.2f} magnitude"
+            )
             return analysis
 
         except Exception as e:
@@ -181,8 +189,9 @@ Wees conservatief met magnitude scores tenzij het echt significant nieuws is.
 
         return prompt
 
-    def calculate_aggregate_sentiment(self, analyses: List[NewsImpactAnalysis],
-                                   time_window_hours: int = 24) -> Dict[str, Any]:
+    def calculate_aggregate_sentiment(
+        self, analyses: List[NewsImpactAnalysis], time_window_hours: int = 24
+    ) -> Dict[str, Any]:
         """Calculate aggregate market sentiment from multiple news analyses"""
 
         try:
@@ -209,9 +218,9 @@ Wees conservatief met magnitude scores tenzij het echt significant nieuws is.
                 weight = analysis.magnitude * analysis.confidence
 
                 # Convert sentiment to numeric
-                if analysis.sentiment == 'bullish':
+                if analysis.sentiment == "bullish":
                     sentiment_value = 1.0
-                elif analysis.sentiment == 'bearish':
+                elif analysis.sentiment == "bearish":
                     sentiment_value = -1.0
                 else:
                     sentiment_value = 0.0
@@ -242,17 +251,17 @@ Wees conservatief met magnitude scores tenzij het echt significant nieuws is.
             market_impact_score = avg_magnitude * avg_confidence
 
             return {
-                'overall_sentiment': overall_sentiment,
-                'sentiment_score': final_sentiment_score,
-                'confidence': avg_confidence,
-                'market_impact_score': market_impact_score,
-                'max_individual_magnitude': max_magnitude,
-                'average_magnitude': avg_magnitude,
-                'total_news_items': len(recent_analyses),
-                'bullish_count': sum(1 for a in recent_analyses if a.sentiment == 'bullish'),
-                'bearish_count': sum(1 for a in recent_analyses if a.sentiment == 'bearish'),
-                'neutral_count': sum(1 for a in recent_analyses if a.sentiment == 'neutral'),
-                'analysis_timestamp': datetime.utcnow().isoformat()
+                "overall_sentiment": overall_sentiment,
+                "sentiment_score": final_sentiment_score,
+                "confidence": avg_confidence,
+                "market_impact_score": market_impact_score,
+                "max_individual_magnitude": max_magnitude,
+                "average_magnitude": avg_magnitude,
+                "total_news_items": len(recent_analyses),
+                "bullish_count": sum(1 for a in recent_analyses if a.sentiment == "bullish"),
+                "bearish_count": sum(1 for a in recent_analyses if a.sentiment == "bearish"),
+                "neutral_count": sum(1 for a in recent_analyses if a.sentiment == "neutral"),
+                "analysis_timestamp": datetime.utcnow().isoformat(),
             }
 
         except Exception as e:
@@ -264,76 +273,77 @@ Wees conservatief met magnitude scores tenzij het echt significant nieuws is.
 
         try:
             if not analyses:
-                return {'signals': [], 'signal_strength': 'NONE'}
+                return {"signals": [], "signal_strength": "NONE"}
 
             signals = []
 
             for analysis in analyses:
                 # Only consider high-confidence, high-magnitude news
                 if analysis.confidence >= 0.7 and analysis.magnitude >= 0.4:
-
                     signal = {
-                        'type': 'news_impact',
-                        'direction': analysis.sentiment,
-                        'strength': analysis.magnitude * analysis.confidence,
-                        'expected_duration_hours': analysis.half_life_hours * 2,  # Double half-life for full impact
-                        'affected_tokens': analysis.affected_tokens,
-                        'key_factors': analysis.key_factors,
-                        'timeline': analysis.impact_timeline
+                        "type": "news_impact",
+                        "direction": analysis.sentiment,
+                        "strength": analysis.magnitude * analysis.confidence,
+                        "expected_duration_hours": analysis.half_life_hours
+                        * 2,  # Double half-life for full impact
+                        "affected_tokens": analysis.affected_tokens,
+                        "key_factors": analysis.key_factors,
+                        "timeline": analysis.impact_timeline,
                     }
 
                     # Add specific signal recommendations
-                    if analysis.sentiment == 'bullish' and analysis.magnitude > 0.6:
-                        signal['recommendation'] = 'STRONG_BUY_SIGNAL'
-                    elif analysis.sentiment == 'bearish' and analysis.magnitude > 0.6:
-                        signal['recommendation'] = 'STRONG_SELL_SIGNAL'
-                    elif analysis.sentiment in ['bullish', 'bearish'] and analysis.magnitude > 0.4:
-                        signal['recommendation'] = f'MODERATE_{analysis.sentiment.upper()}_SIGNAL'
+                    if analysis.sentiment == "bullish" and analysis.magnitude > 0.6:
+                        signal["recommendation"] = "STRONG_BUY_SIGNAL"
+                    elif analysis.sentiment == "bearish" and analysis.magnitude > 0.6:
+                        signal["recommendation"] = "STRONG_SELL_SIGNAL"
+                    elif analysis.sentiment in ["bullish", "bearish"] and analysis.magnitude > 0.4:
+                        signal["recommendation"] = f"MODERATE_{analysis.sentiment.upper()}_SIGNAL"
                     else:
-                        signal['recommendation'] = 'WATCH_SIGNAL'
+                        signal["recommendation"] = "WATCH_SIGNAL"
 
                     signals.append(signal)
 
             # Calculate overall signal strength
             if not signals:
-                signal_strength = 'NONE'
+                signal_strength = "NONE"
             else:
-                avg_strength = sum(s['strength'] for s in signals) / len(signals)
+                avg_strength = sum(s["strength"] for s in signals) / len(signals)
                 if avg_strength >= 0.7:
-                    signal_strength = 'VERY_STRONG'
+                    signal_strength = "VERY_STRONG"
                 elif avg_strength >= 0.5:
-                    signal_strength = 'STRONG'
+                    signal_strength = "STRONG"
                 elif avg_strength >= 0.3:
-                    signal_strength = 'MODERATE'
+                    signal_strength = "MODERATE"
                 else:
-                    signal_strength = 'WEAK'
+                    signal_strength = "WEAK"
 
             return {
-                'signals': signals,
-                'signal_strength': signal_strength,
-                'total_signals': len(signals),
-                'extraction_timestamp': datetime.utcnow().isoformat()
+                "signals": signals,
+                "signal_strength": signal_strength,
+                "total_signals": len(signals),
+                "extraction_timestamp": datetime.utcnow().isoformat(),
             }
 
         except Exception as e:
             self.logger.error(f"Signal extraction failed: {e}")
-            return {'signals': [], 'signal_strength': 'NONE'}
+            return {"signals": [], "signal_strength": "NONE"}
 
     def _get_default_sentiment(self) -> Dict[str, Any]:
         """Default sentiment when analysis fails"""
         return {
-            'overall_sentiment': 'neutral',
-            'sentiment_score': 0.0,
-            'confidence': 0.5,
-            'market_impact_score': 0.0,
-            'max_individual_magnitude': 0.0,
-            'average_magnitude': 0.0,
-            'total_news_items': 0,
-            'bullish_count': 0,
-            'bearish_count': 0,
-            'neutral_count': 0,
-            'analysis_timestamp': datetime.utcnow().isoformat()
+            "overall_sentiment": "neutral",
+            "sentiment_score": 0.0,
+            "confidence": 0.5,
+            "market_impact_score": 0.0,
+            "max_individual_magnitude": 0.0,
+            "average_magnitude": 0.0,
+            "total_news_items": 0,
+            "bullish_count": 0,
+            "bearish_count": 0,
+            "neutral_count": 0,
+            "analysis_timestamp": datetime.utcnow().isoformat(),
         }
+
 
 # Example usage and testing
 async def test_news_impact_scorer():
@@ -344,17 +354,17 @@ async def test_news_impact_scorer():
     # Sample news items
     test_news = [
         {
-            'title': 'Bitcoin ETF Approval by SEC Expected This Week',
-            'content': 'Multiple sources indicate that the SEC is preparing to approve the first Bitcoin ETF, which could bring institutional investment.',
-            'source': 'CoinDesk',
-            'timestamp': datetime.utcnow().isoformat()
+            "title": "Bitcoin ETF Approval by SEC Expected This Week",
+            "content": "Multiple sources indicate that the SEC is preparing to approve the first Bitcoin ETF, which could bring institutional investment.",
+            "source": "CoinDesk",
+            "timestamp": datetime.utcnow().isoformat(),
         },
         {
-            'title': 'Ethereum Merge Successfully Completed',
-            'content': 'The Ethereum network has successfully transitioned to Proof of Stake, reducing energy consumption by 99%.',
-            'source': 'Ethereum Foundation',
-            'timestamp': datetime.utcnow().isoformat()
-        }
+            "title": "Ethereum Merge Successfully Completed",
+            "content": "The Ethereum network has successfully transitioned to Proof of Stake, reducing energy consumption by 99%.",
+            "source": "Ethereum Foundation",
+            "timestamp": datetime.utcnow().isoformat(),
+        },
     ]
 
     # Analyze news impact
@@ -367,10 +377,11 @@ async def test_news_impact_scorer():
     signals = scorer.extract_impact_signals(analyses)
 
     return {
-        'individual_analyses': analyses,
-        'aggregate_sentiment': aggregate,
-        'trading_signals': signals
+        "individual_analyses": analyses,
+        "aggregate_sentiment": aggregate,
+        "trading_signals": signals,
     }
+
 
 if __name__ == "__main__":
     # Run test

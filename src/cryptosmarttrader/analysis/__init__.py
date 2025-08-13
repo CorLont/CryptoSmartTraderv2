@@ -2,6 +2,4 @@
 
 from .backtest_parity import BacktestParityAnalyzer
 
-__all__ = [
-    "BacktestParityAnalyzer"
-]
+__all__ = ["BacktestParityAnalyzer"]

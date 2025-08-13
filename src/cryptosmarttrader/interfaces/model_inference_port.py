@@ -13,8 +13,10 @@ from datetime import datetime
 from enum import Enum
 from dataclasses import dataclass
 
+
 class ModelType(Enum):
     """Types of ML models"""
+
     CLASSIFICATION = "classification"
     REGRESSION = "regression"
     TIME_SERIES = "time_series"
@@ -22,50 +24,62 @@ class ModelType(Enum):
     DEEP_LEARNING = "deep_learning"
     REINFORCEMENT = "reinforcement_learning"
 
+
 class PredictionHorizon(Enum):
     """Prediction time horizons"""
-    SHORT_TERM = "1h"      # 1 hour
-    MEDIUM_TERM = "24h"    # 24 hours
-    LONG_TERM = "7d"       # 7 days
-    EXTENDED = "30d"       # 30 days
+
+    SHORT_TERM = "1h"  # 1 hour
+    MEDIUM_TERM = "24h"  # 24 hours
+    LONG_TERM = "7d"  # 7 days
+    EXTENDED = "30d"  # 30 days
+
 
 class ModelStatus(Enum):
     """Model operational status"""
+
     READY = "ready"
     TRAINING = "training"
     ERROR = "error"
     OUTDATED = "outdated"
     CALIBRATING = "calibrating"
 
+
 class ConfidenceLevel(Enum):
     """Confidence levels for predictions"""
-    VERY_LOW = "very_low"      # < 50%
-    LOW = "low"                # 50-65%
-    MEDIUM = "medium"          # 65-80%
-    HIGH = "high"              # 80-90%
-    VERY_HIGH = "very_high"    # > 90%
+
+    VERY_LOW = "very_low"  # < 50%
+    LOW = "low"  # 50-65%
+    MEDIUM = "medium"  # 65-80%
+    HIGH = "high"  # 80-90%
+    VERY_HIGH = "very_high"  # > 90%
+
 
 @dataclass
 class PredictionRequest:
     """Request object for model predictions"""
+
     symbol: str
     feature_data: pd.DataFrame
     horizon: PredictionHorizon
     confidence_threshold: float = 0.8
     metadata: Optional[Dict] = None
 
+
 @dataclass
 class UncertaintyQuantification:
     """Uncertainty quantification for predictions"""
-    epistemic_uncertainty: float      # Model uncertainty
-    aleatoric_uncertainty: float      # Data uncertainty
-    total_uncertainty: float          # Combined uncertainty
+
+    epistemic_uncertainty: float  # Model uncertainty
+    aleatoric_uncertainty: float  # Data uncertainty
+    total_uncertainty: float  # Combined uncertainty
     confidence_interval: Tuple[float, float]  # Lower, upper bounds
     prediction_interval: Tuple[float, float]  # Prediction bounds
+
 
 @dataclass
 class PredictionResult:
     """Result object containing prediction and metadata"""
+
     symbol: str
     prediction: Union[float, np.ndarray]
     confidence: float
@@ -78,9 +92,11 @@ class PredictionResult:
     explanation: Optional[str] = None
     metadata: Optional[Dict] = None
 
+
 @dataclass
 class ModelMetrics:
     """Model performance metrics"""
+
     accuracy: Optional[float] = None
     precision: Optional[float] = None
     recall: Optional[float] = None
@@ -93,6 +109,7 @@ class ModelMetrics:
     max_drawdown: Optional[float] = None
     hit_rate: Optional[float] = None
     calibration_score: Optional[float] = None
+
 
 class ModelInferencePort(ABC):
     """
@@ -200,12 +217,17 @@ class ModelInferencePort(ABC):
         """
         pass
 
+
 class TrainableModelPort(ModelInferencePort):
     """Extended interface for models that support training"""
 
     @abstractmethod
-    def train(self, training_data: pd.DataFrame, validation_data: Optional[pd.DataFrame] = None,
-              target_column: str = "target") -> Dict[str, Any]:
+    def train(
+        self,
+        training_data: pd.DataFrame,
+        validation_data: Optional[pd.DataFrame] = None,
+        target_column: str = "target",
+    ) -> Dict[str, Any]:
         """
         Train the model on provided data
 
@@ -259,6 +281,7 @@ class TrainableModelPort(ModelInferencePort):
         """
         pass
 
+
 class EnsembleModelPort(ModelInferencePort):
     """Interface for ensemble model implementations"""
 
@@ -281,6 +304,7 @@ class EnsembleModelPort(ModelInferencePort):
     def update_weights(self, weights: Dict[str, float]):
         """Update model weights based on performance"""
         pass
+
 
 class UncertaintyAwareModelPort(ModelInferencePort):
     """Interface for models with uncertainty quantification"""
@@ -309,8 +333,9 @@ class UncertaintyAwareModelPort(ModelInferencePort):
         pass
 
     @abstractmethod
-    def get_prediction_intervals(self, request: PredictionRequest,
-                               confidence_levels: List[float]) -> Dict[float, Tuple[float, float]]:
+    def get_prediction_intervals(
+        self, request: PredictionRequest, confidence_levels: List[float]
+    ) -> Dict[float, Tuple[float, float]]:
         """
         Get prediction intervals for different confidence levels
 
@@ -323,14 +348,17 @@ class UncertaintyAwareModelPort(ModelInferencePort):
         """
         pass
 
+
 class ModelInferenceError(Exception):
     """Exception raised by model inference implementations"""
 
-    def __init__(self, message: str, error_code: Optional[str] = None,
-                 model_name: Optional[str] = None):
+    def __init__(
+        self, message: str, error_code: Optional[str] = None, model_name: Optional[str] = None
+    ):
         super().__init__(message)
         self.error_code = error_code
         self.model_name = model_name
+
 
 class ModelRegistry:
     """Registry for managing multiple model implementations"""
@@ -340,9 +368,13 @@ class ModelRegistry:
         self._model_metadata: Dict[str, Dict] = {}
         self._default_models: Dict[PredictionHorizon, str] = {}
 
-    def register_model(self, name: str, model: ModelInferencePort,
-                      metadata: Optional[Dict] = None,
-                      default_for_horizon: Optional[PredictionHorizon] = None):
+    def register_model(
+        self,
+        name: str,
+        model: ModelInferencePort,
+        metadata: Optional[Dict] = None,
+        default_for_horizon: Optional[PredictionHorizon] = None,
+    ):
         """Register a model implementation"""
         self._models[name] = model
         self._model_metadata[name] = metadata or {}
@@ -350,8 +382,9 @@ class ModelRegistry:
         if default_for_horizon:
             self._default_models[default_for_horizon] = name
 
-    def get_model(self, name: Optional[str] = None,
-                 horizon: Optional[PredictionHorizon] = None) -> ModelInferencePort:
+    def get_model(
+        self, name: Optional[str] = None, horizon: Optional[PredictionHorizon] = None
+    ) -> ModelInferencePort:
         """Get a specific model or default for horizon"""
         if name:
             if name not in self._models:
@@ -372,7 +405,7 @@ class ModelRegistry:
         matching_models = []
         for name, model in self._models.items():
             model_info = model.get_model_info()
-            if model_info.get('type') == model_type.value:
+            if model_info.get("type") == model_type.value:
                 matching_models.append(name)
         return matching_models
 
@@ -387,16 +420,20 @@ class ModelRegistry:
                 continue
         return healthy
 
+
 # Global registry instance
 model_registry = ModelRegistry()
+
 
 # Utility functions for model operations
 def validate_prediction_confidence(confidence: float, threshold: float = 0.8) -> bool:
     """Validate prediction meets confidence threshold"""
     return confidence >= threshold
 
-def aggregate_ensemble_predictions(predictions: List[PredictionResult],
-                                 weights: Optional[List[float]] = None) -> PredictionResult:
+
+def aggregate_ensemble_predictions(
+    predictions: List[PredictionResult], weights: Optional[List[float]] = None
+) -> PredictionResult:
     """Aggregate multiple predictions into ensemble result"""
     if not predictions:
         raise ModelInferenceError("No predictions to aggregate")
@@ -424,8 +461,8 @@ def aggregate_ensemble_predictions(predictions: List[PredictionResult],
         model_name="ensemble",
         model_version="1.0",
         metadata={
-            'component_models': [p.model_name for p in predictions],
-            'weights': weights,
-            'aggregation_method': 'weighted_average'
-        }
+            "component_models": [p.model_name for p in predictions],
+            "weights": weights,
+            "aggregation_method": "weighted_average",
+        },
     )

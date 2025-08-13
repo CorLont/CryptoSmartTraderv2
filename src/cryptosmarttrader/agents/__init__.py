@@ -3,7 +3,7 @@ CryptoSmartTrader V2 - Trading Agents Module
 
 Intelligent trading agents for market analysis and decision making:
 - Ensemble Voting Agent: Advanced ML prediction aggregation
-- Early Mover System: Fast market opportunity detection  
+- Early Mover System: Fast market opportunity detection
 - Technical Analysis: Advanced charting and indicators
 - Sentiment Analysis: Market sentiment and news analysis
 - Portfolio Optimization: Risk-adjusted portfolio management
@@ -18,10 +18,10 @@ from .enhanced_sentiment_agent import EnhancedSentimentAgent
 from .portfolio_optimizer_agent import PortfolioOptimizerAgent
 
 __all__ = [
-    'EnsembleVotingAgent',
-    'EarlyMoverSystem', 
-    'ListingDetectionAgent',
-    'EnhancedTechnicalAgent',
-    'EnhancedSentimentAgent',
-    'PortfolioOptimizerAgent'
+    "EnsembleVotingAgent",
+    "EarlyMoverSystem",
+    "ListingDetectionAgent",
+    "EnhancedTechnicalAgent",
+    "EnhancedSentimentAgent",
+    "PortfolioOptimizerAgent",
 ]

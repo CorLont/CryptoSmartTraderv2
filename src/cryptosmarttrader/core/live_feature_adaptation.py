@@ -15,11 +15,13 @@ import threading
 import time
 from collections import deque, defaultdict
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
 from .feature_discovery_engine import get_feature_discovery_engine, DiscoveryConfig
 from .shap_regime_analyzer import get_shap_regime_analyzer, SHAPRegimeConfig, MarketRegime
+
 
 class AdaptationTrigger(Enum):
     REGIME_CHANGE = "regime_change"
@@ -30,9 +32,11 @@ class AdaptationTrigger(Enum):
     VOLATILITY_SPIKE = "volatility_spike"
     VOLUME_ANOMALY = "volume_anomaly"
 
+
 @dataclass
 class AdaptationConfig:
     """Configuration for live feature adaptation"""
+
     # Adaptation triggers
     adaptation_frequency_minutes: int = 15
     regime_change_threshold: float = 0.3
@@ -47,8 +51,8 @@ class AdaptationConfig:
 
     # Adaptation aggressiveness
     conservative_adaptation_ratio: float = 0.1  # 10% feature change
-    moderate_adaptation_ratio: float = 0.3      # 30% feature change
-    aggressive_adaptation_ratio: float = 0.5    # 50% feature change
+    moderate_adaptation_ratio: float = 0.3  # 30% feature change
+    aggressive_adaptation_ratio: float = 0.5  # 50% feature change
 
     # Performance tracking
     performance_history_size: int = 100
@@ -60,9 +64,11 @@ class AdaptationConfig:
     max_daily_adaptations: int = 20
     rollback_enabled: bool = True
 
+
 @dataclass
 class AdaptationEvent:
     """Record of a feature adaptation event"""
+
     timestamp: datetime
     trigger: AdaptationTrigger
     regime_before: Optional[MarketRegime]
@@ -73,15 +79,18 @@ class AdaptationEvent:
     performance_after: Optional[float] = None
     rollback_performed: bool = False
 
+
 @dataclass
 class FeaturePerformanceMetrics:
     """Performance metrics for feature evaluation"""
+
     accuracy_score: float
     stability_score: float
     regime_consistency: float
     computational_cost: float
     prediction_confidence: float
     overall_score: float
+
 
 class LiveFeatureAdaptationEngine:
     """Main engine for live feature adaptation based on market conditions"""
@@ -122,9 +131,13 @@ class LiveFeatureAdaptationEngine:
 
         self.logger.info("Live Feature Adaptation Engine initialized")
 
-    def adapt_features(self, data: pd.DataFrame, target_column: str,
-                      trigger: AdaptationTrigger,
-                      force_adaptation: bool = False) -> List[str]:
+    def adapt_features(
+        self,
+        data: pd.DataFrame,
+        target_column: str,
+        trigger: AdaptationTrigger,
+        force_adaptation: bool = False,
+    ) -> List[str]:
         """Main feature adaptation method"""
         with self._lock:
             try:
@@ -140,7 +153,7 @@ class LiveFeatureAdaptationEngine:
 
                 # Detect current regime
                 current_regime = self._detect_current_regime(data, target_column)
-                regime_changed = (self.current_regime != current_regime)
+                regime_changed = self.current_regime != current_regime
 
                 # Determine adaptation strategy
                 adaptation_strategy = self._determine_adaptation_strategy(trigger, regime_changed)
@@ -151,9 +164,7 @@ class LiveFeatureAdaptationEngine:
                 )
 
                 # Evaluate new feature set
-                performance_metrics = self._evaluate_feature_set(
-                    data, target_column, new_features
-                )
+                performance_metrics = self._evaluate_feature_set(data, target_column, new_features)
 
                 # Decide whether to accept adaptation
                 if self._should_accept_adaptation(performance_metrics):
@@ -165,7 +176,7 @@ class LiveFeatureAdaptationEngine:
                         regime_after=current_regime,
                         features_before=self.current_features.copy(),
                         features_after=new_features.copy(),
-                        performance_before=self.current_performance
+                        performance_before=self.current_performance,
                     )
 
                     # Apply adaptation
@@ -181,7 +192,9 @@ class LiveFeatureAdaptationEngine:
                     # Update feature performance cache
                     self._update_feature_performance_cache(new_features, performance_metrics)
 
-                    self.logger.info(f"Feature adaptation successful: {len(new_features)} features selected")
+                    self.logger.info(
+                        f"Feature adaptation successful: {len(new_features)} features selected"
+                    )
                     self.logger.info(f"Performance improvement: {self.current_performance:.4f}")
 
                     return new_features
@@ -211,8 +224,7 @@ class LiveFeatureAdaptationEngine:
             # Check daily limit
             today = datetime.now().date()
             adaptations_today = sum(
-                1 for event in self.adaptation_history
-                if event.timestamp.date() == today
+                1 for event in self.adaptation_history if event.timestamp.date() == today
             )
 
             if adaptations_today >= self.config.max_daily_adaptations:
@@ -234,8 +246,7 @@ class LiveFeatureAdaptationEngine:
             if regime_results:
                 # Get most confident regime
                 best_regime = max(
-                    regime_results.keys(),
-                    key=lambda r: regime_results[r].confidence_score
+                    regime_results.keys(), key=lambda r: regime_results[r].confidence_score
                 )
                 return best_regime
 
@@ -247,7 +258,7 @@ class LiveFeatureAdaptationEngine:
             if target_column not in recent_data.columns:
                 return MarketRegime.SIDEWAYS
 
-            prices = recent_data[target_column].fillna(method='ffill')
+            prices = recent_data[target_column].fillna(method="ffill")
             returns = prices.pct_change().fillna(0)
             volatility = returns.std()
 
@@ -267,8 +278,9 @@ class LiveFeatureAdaptationEngine:
             self.logger.error(f"Regime detection failed: {e}")
             return MarketRegime.SIDEWAYS
 
-    def _determine_adaptation_strategy(self, trigger: AdaptationTrigger,
-                                     regime_changed: bool) -> str:
+    def _determine_adaptation_strategy(
+        self, trigger: AdaptationTrigger, regime_changed: bool
+    ) -> str:
         """Determine how aggressive the adaptation should be"""
         try:
             if trigger == AdaptationTrigger.REGIME_CHANGE and regime_changed:
@@ -285,17 +297,16 @@ class LiveFeatureAdaptationEngine:
         except Exception:
             return "conservative"
 
-    def _generate_adapted_features(self, data: pd.DataFrame, target_column: str,
-                                 regime: MarketRegime, strategy: str) -> List[str]:
+    def _generate_adapted_features(
+        self, data: pd.DataFrame, target_column: str, regime: MarketRegime, strategy: str
+    ) -> List[str]:
         """Generate new feature set based on adaptation strategy"""
         try:
             # Get regime-optimized features from SHAP analyzer
             regime_features = self.shap_analyzer.get_regime_optimized_features(regime)
 
             # Get newly discovered features
-            discovered_features = self.discovery_engine.discover_features(
-                data, target_column
-            )
+            discovered_features = self.discovery_engine.discover_features(data, target_column)
 
             # Combine feature sources
             candidate_features = set(regime_features)
@@ -316,7 +327,9 @@ class LiveFeatureAdaptationEngine:
             if len(candidate_list) > self.config.max_features_per_regime:
                 # Score and select top features
                 scored_features = self._score_feature_candidates(candidate_list, regime)
-                candidate_list = [f[0] for f in scored_features[:self.config.max_features_per_regime]]
+                candidate_list = [
+                    f[0] for f in scored_features[: self.config.max_features_per_regime]
+                ]
 
             # Apply adaptation strategy
             if strategy == "conservative":
@@ -341,14 +354,15 @@ class LiveFeatureAdaptationEngine:
             else:
                 final_features = candidate_list
 
-            return final_features[:self.config.max_features_per_regime]
+            return final_features[: self.config.max_features_per_regime]
 
         except Exception as e:
             self.logger.error(f"Feature generation failed: {e}")
             return self.current_features if self.current_features else []
 
-    def _score_feature_candidates(self, features: List[str],
-                                regime: MarketRegime) -> List[Tuple[str, float]]:
+    def _score_feature_candidates(
+        self, features: List[str], regime: MarketRegime
+    ) -> List[Tuple[str, float]]:
         """Score feature candidates for selection"""
         try:
             scored_features = []
@@ -385,8 +399,9 @@ class LiveFeatureAdaptationEngine:
             self.logger.error(f"Feature scoring failed: {e}")
             return [(f, 0.5) for f in features]
 
-    def _evaluate_feature_set(self, data: pd.DataFrame, target_column: str,
-                            features: List[str]) -> FeaturePerformanceMetrics:
+    def _evaluate_feature_set(
+        self, data: pd.DataFrame, target_column: str, features: List[str]
+    ) -> FeaturePerformanceMetrics:
         """Evaluate performance of a feature set"""
         try:
             if not features:
@@ -420,8 +435,8 @@ class LiveFeatureAdaptationEngine:
 
             # Overall score
             overall_score = (
-                accuracy_score * self.config.feature_performance_weight +
-                stability_score * self.config.feature_stability_weight
+                accuracy_score * self.config.feature_performance_weight
+                + stability_score * self.config.feature_stability_weight
             )
 
             return FeaturePerformanceMetrics(
@@ -430,7 +445,7 @@ class LiveFeatureAdaptationEngine:
                 regime_consistency=regime_consistency,
                 computational_cost=computational_cost,
                 prediction_confidence=prediction_confidence,
-                overall_score=overall_score
+                overall_score=overall_score,
             )
 
         except Exception as e:
@@ -451,8 +466,10 @@ class LiveFeatureAdaptationEngine:
                 return True
 
             # Accept small decline if stability improves significantly
-            if (improvement > -self.config.performance_decline_threshold * 0.5 and
-                new_metrics.stability_score > 0.8):
+            if (
+                improvement > -self.config.performance_decline_threshold * 0.5
+                and new_metrics.stability_score > 0.8
+            ):
                 return True
 
             return False
@@ -484,8 +501,9 @@ class LiveFeatureAdaptationEngine:
         except Exception:
             return self.current_features[:n] if self.current_features else []
 
-    def _update_feature_performance_cache(self, features: List[str],
-                                        metrics: FeaturePerformanceMetrics):
+    def _update_feature_performance_cache(
+        self, features: List[str], metrics: FeaturePerformanceMetrics
+    ):
         """Update feature performance cache"""
         try:
             # Update individual feature metrics (simplified)
@@ -496,7 +514,7 @@ class LiveFeatureAdaptationEngine:
                     regime_consistency=metrics.regime_consistency,
                     computational_cost=metrics.computational_cost / len(features),
                     prediction_confidence=metrics.prediction_confidence,
-                    overall_score=metrics.overall_score
+                    overall_score=metrics.overall_score,
                 )
 
             # Update regime cache
@@ -511,10 +529,10 @@ class LiveFeatureAdaptationEngine:
         try:
             if self.current_features:
                 snapshot = {
-                    'features': self.current_features.copy(),
-                    'regime': self.current_regime,
-                    'performance': self.current_performance,
-                    'timestamp': datetime.now()
+                    "features": self.current_features.copy(),
+                    "regime": self.current_regime,
+                    "performance": self.current_performance,
+                    "timestamp": datetime.now(),
                 }
                 self.feature_snapshots.append(snapshot)
 
@@ -537,15 +555,17 @@ class LiveFeatureAdaptationEngine:
                 snapshot = self.feature_snapshots[-1]
 
                 # Restore state
-                self.current_features = snapshot['features']
-                self.current_regime = snapshot['regime']
-                self.current_performance = snapshot['performance']
+                self.current_features = snapshot["features"]
+                self.current_regime = snapshot["regime"]
+                self.current_performance = snapshot["performance"]
 
                 # Mark last adaptation as rolled back
                 if self.adaptation_history:
                     self.adaptation_history[-1].rollback_performed = True
 
-                self.logger.info(f"Rollback successful: restored {len(self.current_features)} features")
+                self.logger.info(
+                    f"Rollback successful: restored {len(self.current_features)} features"
+                )
                 return True
 
             except Exception as e:
@@ -598,33 +618,40 @@ class LiveFeatureAdaptationEngine:
         """Get comprehensive adaptation summary"""
         with self._lock:
             return {
-                'current_features_count': len(self.current_features),
-                'current_regime': self.current_regime.value if self.current_regime else None,
-                'current_performance': self.current_performance,
-                'adaptations_today': sum(
-                    1 for event in self.adaptation_history
+                "current_features_count": len(self.current_features),
+                "current_regime": self.current_regime.value if self.current_regime else None,
+                "current_performance": self.current_performance,
+                "adaptations_today": sum(
+                    1
+                    for event in self.adaptation_history
                     if event.timestamp.date() == datetime.now().date()
                 ),
-                'total_adaptations': len(self.adaptation_history),
-                'last_adaptation': self.last_adaptation_time.isoformat() if self.last_adaptation_time else None,
-                'adaptation_triggers': {
+                "total_adaptations": len(self.adaptation_history),
+                "last_adaptation": self.last_adaptation_time.isoformat()
+                if self.last_adaptation_time
+                else None,
+                "adaptation_triggers": {
                     trigger.value: sum(
-                        1 for event in self.adaptation_history
-                        if event.trigger == trigger
-                    ) for trigger in AdaptationTrigger
+                        1 for event in self.adaptation_history if event.trigger == trigger
+                    )
+                    for trigger in AdaptationTrigger
                 },
-                'regime_stability': self.regime_stability_counter,
-                'snapshots_available': len(self.feature_snapshots),
-                'rollback_enabled': self.config.rollback_enabled,
-                'feature_performance_cache_size': len(self.feature_performance_cache),
-                'regime_feature_cache': {
+                "regime_stability": self.regime_stability_counter,
+                "snapshots_available": len(self.feature_snapshots),
+                "rollback_enabled": self.config.rollback_enabled,
+                "feature_performance_cache_size": len(self.feature_performance_cache),
+                "regime_feature_cache": {
                     regime.value: len(features)
                     for regime, features in self.regime_feature_cache.items()
-                }
+                },
             }
 
-    def force_adaptation(self, data: pd.DataFrame, target_column: str,
-                        trigger: AdaptationTrigger = AdaptationTrigger.USER_REQUESTED) -> List[str]:
+    def force_adaptation(
+        self,
+        data: pd.DataFrame,
+        target_column: str,
+        trigger: AdaptationTrigger = AdaptationTrigger.USER_REQUESTED,
+    ) -> List[str]:
         """Force feature adaptation regardless of safety constraints"""
         return self.adapt_features(data, target_column, trigger, force_adaptation=True)
 
@@ -633,7 +660,10 @@ class LiveFeatureAdaptationEngine:
 _live_adaptation_engine = None
 _lae_lock = threading.Lock()
 
-def get_live_adaptation_engine(config: Optional[AdaptationConfig] = None) -> LiveFeatureAdaptationEngine:
+
+def get_live_adaptation_engine(
+    config: Optional[AdaptationConfig] = None,
+) -> LiveFeatureAdaptationEngine:
     """Get the singleton live adaptation engine"""
     global _live_adaptation_engine
 
@@ -642,8 +672,12 @@ def get_live_adaptation_engine(config: Optional[AdaptationConfig] = None) -> Liv
             _live_adaptation_engine = LiveFeatureAdaptationEngine(config)
         return _live_adaptation_engine
 
-def adapt_features_for_regime(data: pd.DataFrame, target_column: str,
-                             trigger: AdaptationTrigger = AdaptationTrigger.REGIME_CHANGE) -> List[str]:
+
+def adapt_features_for_regime(
+    data: pd.DataFrame,
+    target_column: str,
+    trigger: AdaptationTrigger = AdaptationTrigger.REGIME_CHANGE,
+) -> List[str]:
     """Convenient function to adapt features for current conditions"""
     engine = get_live_adaptation_engine()
     return engine.adapt_features(data, target_column, trigger)

@@ -11,6 +11,7 @@ from datetime import datetime
 from ..core.structured_logger import get_logger
 from .model import SentimentModel
 
+
 class SentimentEnsemble:
     """Ensemble of sentiment models for robust predictions"""
 
@@ -26,11 +27,11 @@ class SentimentEnsemble:
             self.logger.info("Initializing sentiment ensemble")
 
             # Initialize different models
-            self.models['finbert'] = SentimentModel("ProsusAI/finbert")
-            await self.models['finbert'].initialize()
+            self.models["finbert"] = SentimentModel("ProsusAI/finbert")
+            await self.models["finbert"].initialize()
 
             # Model weights (could be learned from validation data)
-            self.weights['finbert'] = 1.0
+            self.weights["finbert"] = 1.0
 
             self.initialized = True
             self.logger.info("Sentiment ensemble initialized")
@@ -80,10 +81,10 @@ class SentimentEnsemble:
                         "individual_predictions": {
                             model_name: {
                                 "score": preds[i].score if i < len(preds) else 0.0,
-                                "confidence": preds[i].confidence if i < len(preds) else 0.0
+                                "confidence": preds[i].confidence if i < len(preds) else 0.0,
                             }
                             for model_name, preds in all_predictions.items()
-                        }
+                        },
                     }
                     ensemble_results.append(result)
 

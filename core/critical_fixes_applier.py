@@ -18,20 +18,21 @@ import re
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from core.structured_logger import get_structured_logger
 
+
 class CriticalFixesApplier:
     """Automatically applies critical fixes based on audit results"""
-    
+
     def __init__(self):
         self.logger = get_structured_logger("CriticalFixes")
         self.fixes_applied = []
         self.fixes_failed = []
-    
+
     def apply_all_critical_fixes(self) -> Dict[str, Any]:
         """Apply all available critical fixes"""
-        
+
         self.logger.info("🔧 APPLYING CRITICAL FIXES")
         self.logger.info("=" * 40)
-        
+
         # Apply fixes in order of criticality
         fixes = [
             self._fix_timestamp_validation,
@@ -40,27 +41,27 @@ class CriticalFixesApplier:
             self._fix_security_logging,
             self._fix_data_completeness_gates,
             self._fix_regime_awareness,
-            self._fix_uncertainty_quantification
+            self._fix_uncertainty_quantification,
         ]
-        
+
         for fix_func in fixes:
             fix_name = "Unknown Fix"
             try:
-                fix_name = fix_func.__name__.replace('_fix_', '').replace('_', ' ').title()
+                fix_name = fix_func.__name__.replace("_fix_", "").replace("_", " ").title()
                 self.logger.info(f"Applying {fix_name}...")
-                
+
                 result = fix_func()
-                if result.get('success', False):
+                if result.get("success", False):
                     self.fixes_applied.append(fix_name)
                     self.logger.info(f"✅ {fix_name} applied successfully")
                 else:
                     self.fixes_failed.append(f"{fix_name}: {result.get('error', 'Unknown error')}")
                     self.logger.warning(f"⚠️ {fix_name} failed: {result.get('error', 'Unknown')}")
-                    
+
             except Exception as e:
                 self.fixes_failed.append(f"{fix_name}: {str(e)}")
                 self.logger.error(f"❌ {fix_name} crashed: {e}")
-        
+
         # Generate summary
         summary = {
             "timestamp": datetime.now().isoformat(),
@@ -68,16 +69,18 @@ class CriticalFixesApplier:
             "fixes_failed": len(self.fixes_failed),
             "applied_fixes": self.fixes_applied,
             "failed_fixes": self.fixes_failed,
-            "overall_success": len(self.fixes_applied) > len(self.fixes_failed)
+            "overall_success": len(self.fixes_applied) > len(self.fixes_failed),
         }
-        
-        self.logger.info(f"🏁 Critical fixes completed: {len(self.fixes_applied)} applied, {len(self.fixes_failed)} failed")
-        
+
+        self.logger.info(
+            f"🏁 Critical fixes completed: {len(self.fixes_applied)} applied, {len(self.fixes_failed)} failed"
+        )
+
         return summary
-    
+
     def _fix_timestamp_validation(self) -> Dict[str, Any]:
         """Fix timestamp validation and timezone issues"""
-        
+
         try:
             # Create timestamp utility module
             timestamp_util_code = '''#!/usr/bin/env python3
@@ -169,21 +172,21 @@ def fix_dataframe_timestamps(df: pd.DataFrame, ts_col: str = 'ts') -> pd.DataFra
     
     return df_fixed
 '''
-            
+
             utils_dir = Path("utils")
             utils_dir.mkdir(exist_ok=True)
-            
+
             timestamp_file = utils_dir / "timestamp_validator.py"
             timestamp_file.write_text(timestamp_util_code)
-            
+
             return {"success": True, "message": "Timestamp validation utility created"}
-            
+
         except Exception as e:
             return {"success": False, "error": str(e)}
-    
+
     def _fix_confidence_calibration(self) -> Dict[str, Any]:
         """Fix ML confidence calibration issues"""
-        
+
         try:
             calibration_code = '''#!/usr/bin/env python3
 """
@@ -284,21 +287,21 @@ def create_confidence_gate_with_calibration(threshold: float = 0.8) -> callable:
     
     return calibrated_confidence_gate
 '''
-            
+
             ml_dir = Path("ml")
             ml_dir.mkdir(exist_ok=True)
-            
+
             calibration_file = ml_dir / "enhanced_calibration.py"
             calibration_file.write_text(calibration_code)
-            
+
             return {"success": True, "message": "Enhanced calibration system created"}
-            
+
         except Exception as e:
             return {"success": False, "error": str(e)}
-    
+
     def _fix_slippage_modeling(self) -> Dict[str, Any]:
         """Fix realistic slippage and execution modeling"""
-        
+
         try:
             slippage_code = '''#!/usr/bin/env python3
 """
@@ -454,21 +457,21 @@ class PortfolioBacktestEngine:
             "execution_stats": self.execution_engine.get_execution_stats()
         }
 '''
-            
+
             trading_dir = Path("trading")
             trading_dir.mkdir(exist_ok=True)
-            
+
             execution_file = trading_dir / "realistic_execution_engine.py"
             execution_file.write_text(slippage_code)
-            
+
             return {"success": True, "message": "Realistic execution engine created"}
-            
+
         except Exception as e:
             return {"success": False, "error": str(e)}
-    
+
     def _fix_security_logging(self) -> Dict[str, Any]:
         """Fix security and logging practices"""
-        
+
         try:
             security_code = '''#!/usr/bin/env python3
 """
@@ -600,21 +603,21 @@ def get_secure_logger(name: str) -> CorrelatedLogger:
     """Get secure logger instance"""
     return CorrelatedLogger(name)
 '''
-            
+
             core_dir = Path("core")
             core_dir.mkdir(exist_ok=True)
-            
+
             security_file = core_dir / "secure_logging.py"
             security_file.write_text(security_code)
-            
+
             return {"success": True, "message": "Secure logging system created"}
-            
+
         except Exception as e:
             return {"success": False, "error": str(e)}
-    
+
     def _fix_data_completeness_gates(self) -> Dict[str, Any]:
         """Fix data completeness validation"""
-        
+
         try:
             completeness_code = '''#!/usr/bin/env python3
 """
@@ -751,21 +754,21 @@ def create_zero_tolerance_pipeline():
     
     return pipeline_step
 '''
-            
+
             core_dir = Path("core")
             core_dir.mkdir(exist_ok=True)
-            
+
             completeness_file = core_dir / "data_completeness_gate.py"
             completeness_file.write_text(completeness_code)
-            
+
             return {"success": True, "message": "Data completeness gate created"}
-            
+
         except Exception as e:
             return {"success": False, "error": str(e)}
-    
+
     def _fix_regime_awareness(self) -> Dict[str, Any]:
         """Fix regime-blind model issues"""
-        
+
         try:
             regime_code = '''#!/usr/bin/env python3
 """
@@ -996,21 +999,21 @@ class RegimeAdaptiveModel:
         
         return predictions
 '''
-            
+
             ml_dir = Path("ml")
             ml_dir.mkdir(exist_ok=True)
-            
+
             regime_file = ml_dir / "regime_adaptive_modeling.py"
             regime_file.write_text(regime_code)
-            
+
             return {"success": True, "message": "Regime-adaptive modeling system created"}
-            
+
         except Exception as e:
             return {"success": False, "error": str(e)}
-    
+
     def _fix_uncertainty_quantification(self) -> Dict[str, Any]:
         """Fix missing uncertainty quantification"""
-        
+
         try:
             uncertainty_code = '''#!/usr/bin/env python3
 """
@@ -1262,47 +1265,49 @@ class UncertaintyAwarePredictionSystem:
         
         return results_df, gate_report
 '''
-            
+
             ml_dir = Path("ml")
             ml_dir.mkdir(exist_ok=True)
-            
+
             uncertainty_file = ml_dir / "uncertainty_quantification.py"
             uncertainty_file.write_text(uncertainty_code)
-            
+
             return {"success": True, "message": "Uncertainty quantification system created"}
-            
+
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+
 def apply_critical_fixes():
     """Apply all critical fixes"""
-    
+
     print("🔧 CRITICAL FIXES APPLIER")
     print("=" * 30)
     print("Applying enterprise-grade fixes for common critical issues...")
-    
+
     applier = CriticalFixesApplier()
     summary = applier.apply_all_critical_fixes()
-    
+
     print(f"\n📊 FIXES SUMMARY")
     print(f"Applied: {summary['fixes_applied']} fixes")
     print(f"Failed: {summary['fixes_failed']} fixes")
-    print(f"Success Rate: {len(summary['applied_fixes'])/7*100:.1f}%")
-    
-    if summary['applied_fixes']:
+    print(f"Success Rate: {len(summary['applied_fixes']) / 7 * 100:.1f}%")
+
+    if summary["applied_fixes"]:
         print(f"\n✅ SUCCESSFULLY APPLIED:")
-        for fix in summary['applied_fixes']:
+        for fix in summary["applied_fixes"]:
             print(f"   • {fix}")
-    
-    if summary['failed_fixes']:
+
+    if summary["failed_fixes"]:
         print(f"\n❌ FAILED TO APPLY:")
-        for failure in summary['failed_fixes']:
+        for failure in summary["failed_fixes"]:
             print(f"   • {failure}")
-    
+
     print(f"\n📁 All fixes available in respective directories")
     print(f"Integration required for full functionality")
-    
+
     return summary
+
 
 if __name__ == "__main__":
     summary = apply_critical_fixes()

@@ -18,11 +18,13 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 
+
 class AlertLevel(Enum):
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
+
 
 class ErrorCategory(Enum):
     DATA_COLLECTION = "data_collection"
@@ -33,9 +35,11 @@ class ErrorCategory(Enum):
     NETWORK = "network"
     EXTERNAL_API = "external_api"
 
+
 @dataclass
 class ErrorReport:
     """Comprehensive error report"""
+
     error_id: str
     timestamp: datetime
     category: ErrorCategory
@@ -50,9 +54,11 @@ class ErrorReport:
     resolved: bool = False
     health_impact: float = 0.0  # 0.0 to 1.0, impact on system health
 
+
 @dataclass
 class AlertConfig:
     """Alert configuration"""
+
     email_enabled: bool = False
     email_smtp_server: str = "smtp.gmail.com"
     email_smtp_port: int = 587
@@ -74,6 +80,7 @@ class AlertConfig:
     min_alert_interval: int = 300  # 5 minutes between same type alerts
     max_alerts_per_hour: int = 10
     critical_alert_bypass: bool = True  # Critical alerts always sent
+
 
 class ExceptionHandler:
     """Enterprise exception handler with comprehensive error management"""
@@ -123,7 +130,7 @@ class ExceptionHandler:
         module: str,
         function: str,
         context: Dict[str, Any] = None,
-        level: AlertLevel = AlertLevel.ERROR
+        level: AlertLevel = AlertLevel.ERROR,
     ) -> ErrorReport:
         """
         Handle an exception with comprehensive tracking and alerting
@@ -154,17 +161,25 @@ class ExceptionHandler:
                 message=str(exception),
                 traceback_info=traceback.format_exc(),
                 context=context or {},
-                health_impact=self.health_impact_weights.get(category, 0.5) *
-                            (1.0 if level == AlertLevel.CRITICAL else
-                             0.8 if level == AlertLevel.ERROR else
-                             0.5 if level == AlertLevel.WARNING else 0.2)
+                health_impact=self.health_impact_weights.get(category, 0.5)
+                * (
+                    1.0
+                    if level == AlertLevel.CRITICAL
+                    else 0.8
+                    if level == AlertLevel.ERROR
+                    else 0.5
+                    if level == AlertLevel.WARNING
+                    else 0.2
+                ),
             )
 
             # Store error report
             self.error_reports.append(error_report)
 
             # Update error counts
-            self.error_count_by_category[category] = self.error_count_by_category.get(category, 0) + 1
+            self.error_count_by_category[category] = (
+                self.error_count_by_category.get(category, 0) + 1
+            )
 
             # Log the error
             self._log_error(error_report)
@@ -210,10 +225,15 @@ class ExceptionHandler:
     def _handle_data_error(self, error_report: ErrorReport):
         """Handle data collection errors"""
         # Check for fallback data issues
-        if "fallback" in error_report.message.lower() or "synthetic" in error_report.message.lower():
+        if (
+            "fallback" in error_report.message.lower()
+            or "synthetic" in error_report.message.lower()
+        ):
             error_report.level = AlertLevel.CRITICAL
             error_report.health_impact = 1.0
-            self.logger.critical("CRITICAL: Fallback/synthetic data detected - production violation!")
+            self.logger.critical(
+                "CRITICAL: Fallback/synthetic data detected - production violation!"
+            )
 
         # Check for missing data
         elif "missing" in error_report.message.lower() or "empty" in error_report.message.lower():
@@ -228,7 +248,10 @@ class ExceptionHandler:
             error_report.health_impact = 0.9
 
         # Check for prediction failures
-        elif "prediction" in error_report.message.lower() or "inference" in error_report.message.lower():
+        elif (
+            "prediction" in error_report.message.lower()
+            or "inference" in error_report.message.lower()
+        ):
             error_report.level = AlertLevel.WARNING
             error_report.health_impact = 0.6
 
@@ -254,7 +277,9 @@ class ExceptionHandler:
         security_log_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(security_log_path, "a") as f:
-            f.write(f"{error_report.timestamp.isoformat()} - SECURITY ERROR: {error_report.message}\n")
+            f.write(
+                f"{error_report.timestamp.isoformat()} - SECURITY ERROR: {error_report.message}\n"
+            )
             f.write(f"Module: {error_report.module}, Function: {error_report.function}\n")
             f.write(f"Context: {json.dumps(error_report.context, default=str)}\n")
             f.write(f"Traceback:\n{error_report.traceback_info}\n")
@@ -263,14 +288,20 @@ class ExceptionHandler:
     def _handle_system_error(self, error_report: ErrorReport):
         """Handle system-level errors"""
         # Check for memory/resource issues
-        if any(keyword in error_report.message.lower() for keyword in ["memory", "disk", "cpu", "resource"]):
+        if any(
+            keyword in error_report.message.lower()
+            for keyword in ["memory", "disk", "cpu", "resource"]
+        ):
             error_report.level = AlertLevel.CRITICAL
             error_report.health_impact = 0.9
 
     def _handle_network_error(self, error_report: ErrorReport):
         """Handle network-related errors"""
         # Network errors might be transient
-        if "timeout" in error_report.message.lower() or "connection" in error_report.message.lower():
+        if (
+            "timeout" in error_report.message.lower()
+            or "connection" in error_report.message.lower()
+        ):
             error_report.level = AlertLevel.WARNING
             error_report.health_impact = 0.4
 
@@ -282,7 +313,11 @@ class ExceptionHandler:
             error_report.health_impact = 0.3
 
         # Check for authentication issues
-        elif "auth" in error_report.message.lower() or "401" in error_report.message or "403" in error_report.message:
+        elif (
+            "auth" in error_report.message.lower()
+            or "401" in error_report.message
+            or "403" in error_report.message
+        ):
             error_report.level = AlertLevel.ERROR
             error_report.health_impact = 0.7
 
@@ -296,7 +331,10 @@ class ExceptionHandler:
                 self.last_hour_reset = now
 
             # Critical alerts bypass all limits
-            if error_report.level == AlertLevel.CRITICAL and self.alert_config.critical_alert_bypass:
+            if (
+                error_report.level == AlertLevel.CRITICAL
+                and self.alert_config.critical_alert_bypass
+            ):
                 return True
 
             # Check hourly limit
@@ -352,7 +390,7 @@ class ExceptionHandler:
             AlertLevel.INFO: "ℹ️",
             AlertLevel.WARNING: "⚠️",
             AlertLevel.ERROR: "❌",
-            AlertLevel.CRITICAL: "🚨"
+            AlertLevel.CRITICAL: "🚨",
         }
 
         message = f"{level_emoji.get(error_report.level, '⚠️')} **CryptoSmartTrader Alert**\n\n"
@@ -374,18 +412,24 @@ class ExceptionHandler:
         """Send email alert"""
         try:
             msg = MIMEMultipart()
-            msg['From'] = self.alert_config.email_username
-            msg['To'] = ", ".join(self.alert_config.email_to_addresses)
-            msg['Subject'] = f"CryptoSmartTrader {error_report.level.value.upper()} Alert - {error_report.category.value}"
+            msg["From"] = self.alert_config.email_username
+            msg["To"] = ", ".join(self.alert_config.email_to_addresses)
+            msg["Subject"] = (
+                f"CryptoSmartTrader {error_report.level.value.upper()} Alert - {error_report.category.value}"
+            )
 
-            msg.attach(MIMEText(message, 'plain'))
+            msg.attach(MIMEText(message, "plain"))
 
-            server = smtplib.SMTP(self.alert_config.email_smtp_server, self.alert_config.email_smtp_port)
+            server = smtplib.SMTP(
+                self.alert_config.email_smtp_server, self.alert_config.email_smtp_port
+            )
             server.starttls()
             server.login(self.alert_config.email_username, self.alert_config.email_password)
 
             text = msg.as_string()
-            server.sendmail(self.alert_config.email_username, self.alert_config.email_to_addresses, text)
+            server.sendmail(
+                self.alert_config.email_username, self.alert_config.email_to_addresses, text
+            )
             server.quit()
 
         except Exception as e:
@@ -414,8 +458,7 @@ class ExceptionHandler:
         cutoff_time = datetime.now() - timedelta(days=7)
 
         self.error_reports = [
-            report for report in self.error_reports
-            if report.timestamp > cutoff_time
+            report for report in self.error_reports if report.timestamp > cutoff_time
         ]
 
         # Keep only last 1000 errors
@@ -436,15 +479,21 @@ class ExceptionHandler:
                 "total_errors": len(self.error_reports),
                 "errors_last_hour": len(recent_errors),
                 "errors_last_day": len(daily_errors),
-                "critical_errors_last_hour": len([r for r in recent_errors if r.level == AlertLevel.CRITICAL]),
+                "critical_errors_last_hour": len(
+                    [r for r in recent_errors if r.level == AlertLevel.CRITICAL]
+                ),
                 "error_rate_per_hour": len(recent_errors),
-                "average_health_impact": sum(r.health_impact for r in recent_errors) / max(len(recent_errors), 1),
+                "average_health_impact": sum(r.health_impact for r in recent_errors)
+                / max(len(recent_errors), 1),
                 "error_count_by_category": dict(self.error_count_by_category),
                 "alerts_sent_this_hour": self.alerts_sent_this_hour,
-                "unresolved_critical_errors": len([
-                    r for r in self.error_reports
-                    if r.level == AlertLevel.CRITICAL and not r.resolved
-                ])
+                "unresolved_critical_errors": len(
+                    [
+                        r
+                        for r in self.error_reports
+                        if r.level == AlertLevel.CRITICAL and not r.resolved
+                    ]
+                ),
             }
 
             return stats
@@ -485,6 +534,7 @@ class ExceptionHandler:
 _exception_handler = None
 _handler_lock = threading.Lock()
 
+
 def get_exception_handler(alert_config: Optional[AlertConfig] = None) -> ExceptionHandler:
     """Get the singleton exception handler instance"""
     global _exception_handler
@@ -494,21 +544,24 @@ def get_exception_handler(alert_config: Optional[AlertConfig] = None) -> Excepti
             _exception_handler = ExceptionHandler(alert_config)
         return _exception_handler
 
+
 def handle_error(
     exception: Exception,
     category: ErrorCategory,
     module: str,
     function: str,
     context: Dict[str, Any] = None,
-    level: AlertLevel = AlertLevel.ERROR
+    level: AlertLevel = AlertLevel.ERROR,
 ) -> ErrorReport:
     """Convenient function to handle an error"""
     handler = get_exception_handler()
     return handler.handle_exception(exception, category, module, function, context, level)
 
+
 # Decorator for automatic exception handling
 def exception_handler(category: ErrorCategory, level: AlertLevel = AlertLevel.ERROR):
     """Decorator for automatic exception handling"""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
@@ -520,8 +573,10 @@ def exception_handler(category: ErrorCategory, level: AlertLevel = AlertLevel.ER
                     module=func.__module__,
                     function=func.__name__,
                     context={"args": args, "kwargs": kwargs},
-                    level=level
+                    level=level,
                 )
                 raise
+
         return wrapper
+
     return decorator

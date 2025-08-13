@@ -21,23 +21,29 @@ from .deployment_config import DeploymentConfig
 
 logger = logging.getLogger(__name__)
 
+
 class RecoveryState(Enum):
     """Recovery states"""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     RECOVERING = "recovering"
     FAILED = "failed"
 
+
 class AlertLevel(Enum):
     """Alert severity levels"""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
 
+
 @dataclass
 class RecoveryEvent:
     """Recovery event tracking"""
+
     timestamp: datetime
     event_type: str
     description: str
@@ -46,6 +52,7 @@ class RecoveryEvent:
     recovery_action: Optional[str] = None
     duration_seconds: Optional[float] = None
     success: bool = False
+
 
 class RecoveryCoordinator:
     """
@@ -77,12 +84,12 @@ class RecoveryCoordinator:
 
         # Recovery statistics
         self.recovery_stats = {
-            'total_recoveries': 0,
-            'successful_recoveries': 0,
-            'failed_recoveries': 0,
-            'average_recovery_time': 0.0,
-            'rto_violations': 0,
-            'rpo_violations': 0
+            "total_recoveries": 0,
+            "successful_recoveries": 0,
+            "failed_recoveries": 0,
+            "average_recovery_time": 0.0,
+            "rto_violations": 0,
+            "rpo_violations": 0,
         }
 
     def _setup_health_dependencies(self):
@@ -96,7 +103,7 @@ class RecoveryCoordinator:
                     critical=dep_config.get("critical", True),
                     max_memory_percent=dep_config.get("max_memory_percent"),
                     max_cpu_percent=dep_config.get("max_cpu_percent"),
-                    max_disk_percent=dep_config.get("max_disk_percent")
+                    max_disk_percent=dep_config.get("max_disk_percent"),
                 )
             elif dep_config["type"] == "file_system":
                 check = DependencyCheck(
@@ -104,7 +111,7 @@ class RecoveryCoordinator:
                     type=DependencyType.FILE_SYSTEM,
                     description=dep_config.get("description", dep_config["name"]),
                     critical=dep_config.get("critical", True),
-                    path=dep_config.get("path")
+                    path=dep_config.get("path"),
                 )
             else:
                 continue  # Skip unknown types
@@ -171,7 +178,7 @@ class RecoveryCoordinator:
                 event_type="critical_failure",
                 description="Critical system failure detected",
                 alert_level=AlertLevel.CRITICAL,
-                component="system"
+                component="system",
             )
 
             self.recovery_events.append(event)
@@ -191,7 +198,7 @@ class RecoveryCoordinator:
                 description="Unhealthy system state detected",
                 alert_level=AlertLevel.ERROR,
                 component="system",
-                recovery_action="automated_recovery"
+                recovery_action="automated_recovery",
             )
 
             self.recovery_events.append(event)
@@ -210,7 +217,7 @@ class RecoveryCoordinator:
                 event_type="degraded_state",
                 description="System performance degraded",
                 alert_level=AlertLevel.WARNING,
-                component="system"
+                component="system",
             )
 
             self.recovery_events.append(event)
@@ -234,20 +241,25 @@ class RecoveryCoordinator:
                 alert_level=AlertLevel.INFO,
                 component="system",
                 duration_seconds=recovery_time,
-                success=True
+                success=True,
             )
 
             self.recovery_events.append(event)
 
             # Update recovery statistics
             if recovery_time:
-                self.recovery_stats['total_recoveries'] += 1
-                self.recovery_stats['successful_recoveries'] += 1
+                self.recovery_stats["total_recoveries"] += 1
+                self.recovery_stats["successful_recoveries"] += 1
 
                 # Update average recovery time
-                total_time = (self.recovery_stats['average_recovery_time'] *
-                            (self.recovery_stats['total_recoveries'] - 1) + recovery_time)
-                self.recovery_stats['average_recovery_time'] = total_time / self.recovery_stats['total_recoveries']
+                total_time = (
+                    self.recovery_stats["average_recovery_time"]
+                    * (self.recovery_stats["total_recoveries"] - 1)
+                    + recovery_time
+                )
+                self.recovery_stats["average_recovery_time"] = (
+                    total_time / self.recovery_stats["total_recoveries"]
+                )
 
                 logger.info(f"Recovery completed in {recovery_time:.1f} seconds")
 
@@ -276,8 +288,8 @@ class RecoveryCoordinator:
         health_report = self.health_checker.get_health_report()
 
         # Restart unhealthy services
-        for dep_name, dep_status in health_report['dependencies'].items():
-            if dep_status['status'] in ['unhealthy', 'critical']:
+        for dep_name, dep_status in health_report["dependencies"].items():
+            if dep_status["status"] in ["unhealthy", "critical"]:
                 self._recover_dependency(dep_name, dep_status)
 
     def _recover_dependency(self, dep_name: str, dep_status: Dict[str, Any]):
@@ -320,16 +332,18 @@ class RecoveryCoordinator:
                 if downtime > self.config.rto_target_seconds:
                     # RTO violation
                     violation = {
-                        'timestamp': datetime.now().isoformat(),
-                        'downtime_seconds': downtime,
-                        'rto_target_seconds': self.config.rto_target_seconds,
-                        'violation_seconds': downtime - self.config.rto_target_seconds
+                        "timestamp": datetime.now().isoformat(),
+                        "downtime_seconds": downtime,
+                        "rto_target_seconds": self.config.rto_target_seconds,
+                        "violation_seconds": downtime - self.config.rto_target_seconds,
                     }
 
                     self.rto_violations.append(violation)
-                    self.recovery_stats['rto_violations'] += 1
+                    self.recovery_stats["rto_violations"] += 1
 
-                    logger.error(f"RTO violation: {downtime:.1f}s > {self.config.rto_target_seconds}s")
+                    logger.error(
+                        f"RTO violation: {downtime:.1f}s > {self.config.rto_target_seconds}s"
+                    )
 
     def _check_rpo_compliance(self):
         """Check Recovery Point Objective compliance"""
@@ -339,29 +353,35 @@ class RecoveryCoordinator:
             if time_since_backup > self.config.rpo_target_seconds:
                 # RPO violation
                 violation = {
-                    'timestamp': datetime.now().isoformat(),
-                    'time_since_backup': time_since_backup,
-                    'rpo_target_seconds': self.config.rpo_target_seconds,
-                    'violation_seconds': time_since_backup - self.config.rpo_target_seconds
+                    "timestamp": datetime.now().isoformat(),
+                    "time_since_backup": time_since_backup,
+                    "rpo_target_seconds": self.config.rpo_target_seconds,
+                    "violation_seconds": time_since_backup - self.config.rpo_target_seconds,
                 }
 
                 self.rpo_violations.append(violation)
-                self.recovery_stats['rpo_violations'] += 1
+                self.recovery_stats["rpo_violations"] += 1
 
-                logger.warning(f"RPO violation: {time_since_backup:.1f}s > {self.config.rpo_target_seconds}s")
+                logger.warning(
+                    f"RPO violation: {time_since_backup:.1f}s > {self.config.rpo_target_seconds}s"
+                )
 
     def _perform_automatic_backup(self):
         """Perform automatic backup if needed"""
-        if (not self.last_backup_time or
-            (datetime.now() - self.last_backup_time).total_seconds() >= self.config.backup_interval_seconds):
-
+        if (
+            not self.last_backup_time
+            or (datetime.now() - self.last_backup_time).total_seconds()
+            >= self.config.backup_interval_seconds
+        ):
             self._create_backup()
 
     def _perform_automatic_checkpoint(self):
         """Perform automatic checkpoint if needed"""
-        if (not self.last_checkpoint_time or
-            (datetime.now() - self.last_checkpoint_time).total_seconds() >= self.config.checkpoint_interval_seconds):
-
+        if (
+            not self.last_checkpoint_time
+            or (datetime.now() - self.last_checkpoint_time).total_seconds()
+            >= self.config.checkpoint_interval_seconds
+        ):
             self._create_checkpoint()
 
     def _create_backup(self):
@@ -374,15 +394,15 @@ class RecoveryCoordinator:
             backup_file = backup_dir / f"backup_{timestamp}.json"
 
             backup_data = {
-                'timestamp': datetime.now().isoformat(),
-                'system_state': {
-                    'recovery_state': self.recovery_state.value,
-                    'processes': self.process_manager.get_all_status(),
-                    'health_status': self.health_checker.get_health_report()
-                }
+                "timestamp": datetime.now().isoformat(),
+                "system_state": {
+                    "recovery_state": self.recovery_state.value,
+                    "processes": self.process_manager.get_all_status(),
+                    "health_status": self.health_checker.get_health_report(),
+                },
             }
 
-            with open(backup_file, 'w') as f:
+            with open(backup_file, "w") as f:
                 json.dump(backup_data, f, indent=2, default=str)
 
             self.last_backup_time = datetime.now()
@@ -406,32 +426,36 @@ class RecoveryCoordinator:
     def get_recovery_report(self) -> Dict[str, Any]:
         """Generate comprehensive recovery report"""
         return {
-            'current_state': self.recovery_state.value,
-            'last_healthy_time': self.last_healthy_time.isoformat() if self.last_healthy_time else None,
-            'recovery_statistics': self.recovery_stats,
-            'rto_compliance': {
-                'target_seconds': self.config.rto_target_seconds,
-                'violations': len(self.rto_violations),
-                'last_violation': self.rto_violations[-1] if self.rto_violations else None
+            "current_state": self.recovery_state.value,
+            "last_healthy_time": self.last_healthy_time.isoformat()
+            if self.last_healthy_time
+            else None,
+            "recovery_statistics": self.recovery_stats,
+            "rto_compliance": {
+                "target_seconds": self.config.rto_target_seconds,
+                "violations": len(self.rto_violations),
+                "last_violation": self.rto_violations[-1] if self.rto_violations else None,
             },
-            'rpo_compliance': {
-                'target_seconds': self.config.rpo_target_seconds,
-                'violations': len(self.rpo_violations),
-                'last_backup': self.last_backup_time.isoformat() if self.last_backup_time else None,
-                'last_checkpoint': self.last_checkpoint_time.isoformat() if self.last_checkpoint_time else None
+            "rpo_compliance": {
+                "target_seconds": self.config.rpo_target_seconds,
+                "violations": len(self.rpo_violations),
+                "last_backup": self.last_backup_time.isoformat() if self.last_backup_time else None,
+                "last_checkpoint": self.last_checkpoint_time.isoformat()
+                if self.last_checkpoint_time
+                else None,
             },
-            'recent_events': [
+            "recent_events": [
                 {
-                    'timestamp': event.timestamp.isoformat(),
-                    'type': event.event_type,
-                    'description': event.description,
-                    'alert_level': event.alert_level.value,
-                    'component': event.component,
-                    'duration': event.duration_seconds,
-                    'success': event.success
+                    "timestamp": event.timestamp.isoformat(),
+                    "type": event.event_type,
+                    "description": event.description,
+                    "alert_level": event.alert_level.value,
+                    "component": event.component,
+                    "duration": event.duration_seconds,
+                    "success": event.success,
                 }
                 for event in self.recovery_events[-10:]  # Last 10 events
-            ]
+            ],
         }
 
     def force_recovery_test(self) -> Dict[str, Any]:
@@ -458,11 +482,11 @@ class RecoveryCoordinator:
         test_duration = (datetime.now() - test_start).total_seconds()
 
         result = {
-            'test_duration_seconds': test_duration,
-            'rto_target_seconds': self.config.rto_target_seconds,
-            'recovery_detected': recovery_detected,
-            'rto_met': recovery_detected and test_duration <= self.config.rto_target_seconds,
-            'test_timestamp': test_start.isoformat()
+            "test_duration_seconds": test_duration,
+            "rto_target_seconds": self.config.rto_target_seconds,
+            "recovery_detected": recovery_detected,
+            "rto_met": recovery_detected and test_duration <= self.config.rto_target_seconds,
+            "test_timestamp": test_start.isoformat(),
         }
 
         logger.info(f"Recovery test completed: {result}")

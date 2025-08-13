@@ -14,11 +14,14 @@ import logging
 from dataclasses import dataclass
 import ccxt.async_support as ccxt
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 @dataclass
 class FuturesSignal:
     """Futures-based trading signal"""
+
     symbol: str
     signal_type: str  # 'funding_squeeze', 'oi_divergence', 'basis_anomaly', 'crowding_reversal'
     signal_strength: float  # 0-1
@@ -34,6 +37,7 @@ class FuturesSignal:
     expected_duration_hours: int
     risk_level: str  # 'low', 'medium', 'high'
 
+
 class FuturesDataCollector:
     """Collects futures data from multiple exchanges"""
 
@@ -46,13 +50,15 @@ class FuturesDataCollector:
         """Initialize futures exchanges"""
         try:
             # Binance Futures
-            self.exchanges['binance'] = ccxt.binance({
-                'apiKey': '',  # Will use environment variables
-                'secret': '',
-                'sandbox': False,
-                'enableRateLimit': True,
-                'options': {'defaultType': 'future'}
-            })
+            self.exchanges["binance"] = ccxt.binance(
+                {
+                    "apiKey": "",  # Will use environment variables
+                    "secret": "",
+                    "sandbox": False,
+                    "enableRateLimit": True,
+                    "options": {"defaultType": "future"},
+                }
+            )
 
             # FTX (if available)
             # self.exchanges['ftx'] = ccxt.ftx({
@@ -82,14 +88,15 @@ class FuturesDataCollector:
 
                         # Get funding rate history
                         funding_history = await exchange.fetch_funding_rate_history(
-                            futures_symbol, limit=168  # 1 week of 1h data
+                            futures_symbol,
+                            limit=168,  # 1 week of 1h data
                         )
 
                         funding_data[symbol] = {
-                            'current_rate': funding_rate['fundingRate'],
-                            'next_funding_time': funding_rate['fundingTimestamp'],
-                            'history': [f['fundingRate'] for f in funding_history],
-                            'exchange': exchange_name
+                            "current_rate": funding_rate["fundingRate"],
+                            "next_funding_time": funding_rate["fundingTimestamp"],
+                            "history": [f["fundingRate"] for f in funding_history],
+                            "exchange": exchange_name,
                         }
 
             except Exception as e:
@@ -114,17 +121,17 @@ class FuturesDataCollector:
                         # Get OI history (if available)
                         try:
                             oi_history = await exchange.fetch_open_interest_history(
-                                futures_symbol, timeframe='1h', limit=168
+                                futures_symbol, timeframe="1h", limit=168
                             )
-                            oi_values = [oi['openInterest'] for oi in oi_history]
+                            oi_values = [oi["openInterest"] for oi in oi_history]
                         except Exception:
                             oi_values = []
 
                         oi_data[symbol] = {
-                            'current_oi': ticker.get('info', {}).get('openInterest', 0),
-                            'oi_history': oi_values,
-                            'volume_24h': ticker['quoteVolume'],
-                            'exchange': exchange_name
+                            "current_oi": ticker.get("info", {}).get("openInterest", 0),
+                            "oi_history": oi_values,
+                            "volume_24h": ticker["quoteVolume"],
+                            "exchange": exchange_name,
                         }
 
             except Exception as e:
@@ -147,19 +154,19 @@ class FuturesDataCollector:
                     spot_ticker = await exchange.fetch_ticker(spot_symbol)
                     futures_ticker = await exchange.fetch_ticker(futures_symbol)
 
-                    spot_price = spot_ticker['last']
-                    futures_price = futures_ticker['last']
+                    spot_price = spot_ticker["last"]
+                    futures_price = futures_ticker["last"]
 
                     # Calculate basis
                     basis_absolute = futures_price - spot_price
                     basis_bps = (basis_absolute / spot_price) * 10000
 
                     basis_data[symbol] = {
-                        'spot_price': spot_price,
-                        'futures_price': futures_price,
-                        'basis_absolute': basis_absolute,
-                        'basis_bps': basis_bps,
-                        'exchange': exchange_name
+                        "spot_price": spot_price,
+                        "futures_price": futures_price,
+                        "basis_absolute": basis_absolute,
+                        "basis_bps": basis_bps,
+                        "exchange": exchange_name,
                     }
 
             except Exception as e:
@@ -172,6 +179,7 @@ class FuturesDataCollector:
         for exchange in self.exchanges.values():
             await exchange.close()
 
+
 class FuturesSignalGenerator:
     """Generates trading signals from futures data"""
 
@@ -181,24 +189,23 @@ class FuturesSignalGenerator:
 
         # Signal thresholds
         self.thresholds = {
-            'funding_extreme_percentile': 90,  # 90th percentile for extreme funding
-            'oi_change_threshold': 0.15,       # 15% OI change threshold
-            'basis_zscore_threshold': 2.0,     # 2 std devs for basis anomaly
-            'crowding_threshold': 0.7,         # 70% crowding score threshold
-            'min_signal_confidence': 0.6       # 60% minimum confidence
+            "funding_extreme_percentile": 90,  # 90th percentile for extreme funding
+            "oi_change_threshold": 0.15,  # 15% OI change threshold
+            "basis_zscore_threshold": 2.0,  # 2 std devs for basis anomaly
+            "crowding_threshold": 0.7,  # 70% crowding score threshold
+            "min_signal_confidence": 0.6,  # 60% minimum confidence
         }
 
     def generate_funding_squeeze_signals(
-        self,
-        funding_data: Dict[str, Dict]
+        self, funding_data: Dict[str, Dict]
     ) -> List[FuturesSignal]:
         """Generate signals based on funding rate extremes"""
 
         signals = []
 
         for symbol, data in funding_data.items():
-            current_rate = data['current_rate']
-            history = data.get('history', [])
+            current_rate = data["current_rate"]
+            history = data.get("history", [])
 
             if len(history) < 24:  # Need at least 24 hours of data
                 continue
@@ -207,14 +214,14 @@ class FuturesSignalGenerator:
             funding_percentile = self._calculate_percentile(current_rate, history)
 
             # Extreme funding suggests potential reversal
-            if funding_percentile > self.thresholds['funding_extreme_percentile']:
+            if funding_percentile > self.thresholds["funding_extreme_percentile"]:
                 # High funding -> shorts pay longs -> potential squeeze up
                 signal_strength = min(1.0, (funding_percentile - 50) / 50)
                 squeeze_risk = signal_strength
 
                 signal = FuturesSignal(
                     symbol=symbol,
-                    signal_type='funding_squeeze',
+                    signal_type="funding_squeeze",
                     signal_strength=signal_strength,
                     funding_rate=current_rate,
                     funding_premium_percentile=funding_percentile,
@@ -226,19 +233,19 @@ class FuturesSignalGenerator:
                     squeeze_risk=squeeze_risk,
                     signal_confidence=min(0.9, signal_strength + 0.2),
                     expected_duration_hours=8,
-                    risk_level='high' if squeeze_risk > 0.8 else 'medium'
+                    risk_level="high" if squeeze_risk > 0.8 else "medium",
                 )
 
                 signals.append(signal)
 
-            elif funding_percentile < (100 - self.thresholds['funding_extreme_percentile']):
+            elif funding_percentile < (100 - self.thresholds["funding_extreme_percentile"]):
                 # Low/negative funding -> longs pay shorts -> potential squeeze down
                 signal_strength = min(1.0, (50 - funding_percentile) / 50)
                 squeeze_risk = signal_strength
 
                 signal = FuturesSignal(
                     symbol=symbol,
-                    signal_type='funding_squeeze',
+                    signal_type="funding_squeeze",
                     signal_strength=-signal_strength,  # Negative for short signal
                     funding_rate=current_rate,
                     funding_premium_percentile=funding_percentile,
@@ -250,7 +257,7 @@ class FuturesSignalGenerator:
                     squeeze_risk=squeeze_risk,
                     signal_confidence=min(0.9, signal_strength + 0.2),
                     expected_duration_hours=8,
-                    risk_level='high' if squeeze_risk > 0.8 else 'medium'
+                    risk_level="high" if squeeze_risk > 0.8 else "medium",
                 )
 
                 signals.append(signal)
@@ -258,17 +265,15 @@ class FuturesSignalGenerator:
         return signals
 
     def generate_oi_divergence_signals(
-        self,
-        oi_data: Dict[str, Dict],
-        price_data: Dict[str, float]
+        self, oi_data: Dict[str, Dict], price_data: Dict[str, float]
     ) -> List[FuturesSignal]:
         """Generate signals based on OI divergence from price"""
 
         signals = []
 
         for symbol, data in oi_data.items():
-            oi_history = data.get('oi_history', [])
-            current_oi = data['current_oi']
+            oi_history = data.get("oi_history", [])
+            current_oi = data["current_oi"]
 
             if len(oi_history) < 24 or symbol not in price_data:
                 continue
@@ -281,8 +286,7 @@ class FuturesSignalGenerator:
                 oi_change_24h = 0
 
             # Check for significant OI changes
-            if abs(oi_change_24h) > self.thresholds['oi_change_threshold']:
-
+            if abs(oi_change_24h) > self.thresholds["oi_change_threshold"]:
                 # Rising OI + rising price = trend continuation
                 # Rising OI + falling price = potential reversal
                 # Falling OI + rising price = weak trend
@@ -290,7 +294,7 @@ class FuturesSignalGenerator:
 
                 price_change = price_data.get(f"{symbol}_change_24h", 0)
 
-                signal_type = 'oi_divergence'
+                signal_type = "oi_divergence"
 
                 if oi_change_24h > 0 and price_change < -0.05:
                     # Rising OI, falling price -> potential reversal up
@@ -319,23 +323,20 @@ class FuturesSignalGenerator:
                     squeeze_risk=crowding_score * 0.8,
                     signal_confidence=min(0.8, signal_strength + 0.3),
                     expected_duration_hours=12,
-                    risk_level='medium' if crowding_score < 0.7 else 'high'
+                    risk_level="medium" if crowding_score < 0.7 else "high",
                 )
 
                 signals.append(signal)
 
         return signals
 
-    def generate_basis_anomaly_signals(
-        self,
-        basis_data: Dict[str, Dict]
-    ) -> List[FuturesSignal]:
+    def generate_basis_anomaly_signals(self, basis_data: Dict[str, Dict]) -> List[FuturesSignal]:
         """Generate signals based on spot-futures basis anomalies"""
 
         signals = []
 
         # First, collect all basis values for z-score calculation
-        all_basis_values = [data['basis_bps'] for data in basis_data.values()]
+        all_basis_values = [data["basis_bps"] for data in basis_data.values()]
 
         if len(all_basis_values) < 5:
             return signals
@@ -344,14 +345,13 @@ class FuturesSignalGenerator:
         basis_std = np.std(all_basis_values)
 
         for symbol, data in basis_data.items():
-            basis_bps = data['basis_bps']
+            basis_bps = data["basis_bps"]
 
             # Calculate z-score
             z_score = (basis_bps - basis_mean) / basis_std if basis_std > 0 else 0
 
             # Check for basis anomalies
-            if abs(z_score) > self.thresholds['basis_zscore_threshold']:
-
+            if abs(z_score) > self.thresholds["basis_zscore_threshold"]:
                 # Extreme positive basis -> futures overpriced -> potential convergence (short futures)
                 # Extreme negative basis -> futures underpriced -> potential convergence (long futures)
 
@@ -360,7 +360,7 @@ class FuturesSignalGenerator:
 
                 signal = FuturesSignal(
                     symbol=symbol,
-                    signal_type='basis_anomaly',
+                    signal_type="basis_anomaly",
                     signal_strength=signal_strength * signal_direction,
                     funding_rate=0,
                     funding_premium_percentile=50,
@@ -372,7 +372,7 @@ class FuturesSignalGenerator:
                     squeeze_risk=signal_strength * 0.4,
                     signal_confidence=min(0.8, signal_strength + 0.2),
                     expected_duration_hours=6,
-                    risk_level='low' if abs(z_score) < 3 else 'medium'
+                    risk_level="low" if abs(z_score) < 3 else "medium",
                 )
 
                 signals.append(signal)
@@ -380,10 +380,7 @@ class FuturesSignalGenerator:
         return signals
 
     def generate_crowding_reversal_signals(
-        self,
-        funding_data: Dict[str, Dict],
-        oi_data: Dict[str, Dict],
-        basis_data: Dict[str, Dict]
+        self, funding_data: Dict[str, Dict], oi_data: Dict[str, Dict], basis_data: Dict[str, Dict]
     ) -> List[FuturesSignal]:
         """Generate reversal signals based on extreme crowding"""
 
@@ -399,12 +396,11 @@ class FuturesSignalGenerator:
 
             # Calculate crowding score based on multiple factors
             funding_extreme = self._calculate_percentile(
-                funding['current_rate'],
-                funding.get('history', [])
+                funding["current_rate"], funding.get("history", [])
             )
 
-            oi_change = oi.get('oi_change_24h', 0)
-            basis_bps = basis['basis_bps']
+            oi_change = oi.get("oi_change_24h", 0)
+            basis_bps = basis["basis_bps"]
 
             # Crowding indicators:
             # - Extreme funding rates
@@ -416,7 +412,7 @@ class FuturesSignalGenerator:
             # Funding extremity (0-1)
             funding_factor = max(
                 (funding_extreme - 50) / 50 if funding_extreme > 50 else 0,
-                (50 - funding_extreme) / 50 if funding_extreme < 50 else 0
+                (50 - funding_extreme) / 50 if funding_extreme < 50 else 0,
             )
             crowding_factors.append(funding_factor)
 
@@ -431,8 +427,7 @@ class FuturesSignalGenerator:
             # Combined crowding score
             crowding_score = np.mean(crowding_factors)
 
-            if crowding_score > self.thresholds['crowding_threshold']:
-
+            if crowding_score > self.thresholds["crowding_threshold"]:
                 # Determine reversal direction based on dominant factor
                 if funding_extreme > 70:
                     # High funding -> potential squeeze up
@@ -454,11 +449,11 @@ class FuturesSignalGenerator:
 
                 signal = FuturesSignal(
                     symbol=symbol,
-                    signal_type='crowding_reversal',
+                    signal_type="crowding_reversal",
                     signal_strength=signal_strength * signal_direction,
-                    funding_rate=funding['current_rate'],
+                    funding_rate=funding["current_rate"],
                     funding_premium_percentile=funding_extreme,
-                    open_interest=oi['current_oi'],
+                    open_interest=oi["current_oi"],
                     oi_change_24h=oi_change,
                     basis_bps=basis_bps,
                     basis_z_score=0,
@@ -466,7 +461,7 @@ class FuturesSignalGenerator:
                     squeeze_risk=squeeze_risk,
                     signal_confidence=min(0.9, crowding_score + 0.1),
                     expected_duration_hours=4,
-                    risk_level='high'
+                    risk_level="high",
                 )
 
                 signals.append(signal)
@@ -484,6 +479,7 @@ class FuturesSignalGenerator:
 
         return percentile
 
+
 class FuturesSignalSystem:
     """Complete futures signal system"""
 
@@ -497,9 +493,7 @@ class FuturesSignalSystem:
         self.signal_decay_hours = 24
 
     async def generate_futures_signals(
-        self,
-        symbols: List[str],
-        price_data: Dict[str, float] = None
+        self, symbols: List[str], price_data: Dict[str, float] = None
     ) -> List[FuturesSignal]:
         """Generate all futures-based signals"""
 
@@ -530,7 +524,9 @@ class FuturesSignalSystem:
             # Filter and rank signals
             filtered_signals = self._filter_and_rank_signals(all_signals)
 
-            self.logger.info(f"Generated {len(filtered_signals)} futures signals from {len(symbols)} symbols")
+            self.logger.info(
+                f"Generated {len(filtered_signals)} futures signals from {len(symbols)} symbols"
+            )
 
             return filtered_signals
 
@@ -546,8 +542,9 @@ class FuturesSignalSystem:
 
         # Filter by minimum confidence
         filtered = [
-            s for s in signals
-            if s.signal_confidence >= self.signal_generator.thresholds['min_signal_confidence']
+            s
+            for s in signals
+            if s.signal_confidence >= self.signal_generator.thresholds["min_signal_confidence"]
         ]
 
         # Group by symbol and keep only top signals per symbol
@@ -564,16 +561,16 @@ class FuturesSignalSystem:
             sorted_signals = sorted(
                 symbol_signals,
                 key=lambda s: s.signal_confidence * (1 + s.squeeze_risk),
-                reverse=True
+                reverse=True,
             )
 
             # Keep top N signals per symbol
-            final_signals.extend(sorted_signals[:self.max_signals_per_symbol])
+            final_signals.extend(sorted_signals[: self.max_signals_per_symbol])
 
         # Final sort by overall quality
         final_signals.sort(
             key=lambda s: s.signal_confidence * abs(s.signal_strength) * (1 + s.squeeze_risk),
-            reverse=True
+            reverse=True,
         )
 
         return final_signals
@@ -588,47 +585,51 @@ class FuturesSignalSystem:
 
         for signal in signals:
             features = {
-                'symbol': signal.symbol,
-                'futures_signal_strength': signal.signal_strength,
-                'funding_rate': signal.funding_rate,
-                'funding_percentile': signal.funding_premium_percentile,
-                'oi_change_24h': signal.oi_change_24h,
-                'basis_bps': signal.basis_bps,
-                'basis_z_score': signal.basis_z_score,
-                'crowding_score': signal.crowding_score,
-                'squeeze_risk': signal.squeeze_risk,
-                'signal_confidence': signal.signal_confidence,
-                'is_funding_squeeze': signal.signal_type == 'funding_squeeze',
-                'is_oi_divergence': signal.signal_type == 'oi_divergence',
-                'is_basis_anomaly': signal.signal_type == 'basis_anomaly',
-                'is_crowding_reversal': signal.signal_type == 'crowding_reversal',
-                'risk_level_numeric': {'low': 1, 'medium': 2, 'high': 3}[signal.risk_level]
+                "symbol": signal.symbol,
+                "futures_signal_strength": signal.signal_strength,
+                "funding_rate": signal.funding_rate,
+                "funding_percentile": signal.funding_premium_percentile,
+                "oi_change_24h": signal.oi_change_24h,
+                "basis_bps": signal.basis_bps,
+                "basis_z_score": signal.basis_z_score,
+                "crowding_score": signal.crowding_score,
+                "squeeze_risk": signal.squeeze_risk,
+                "signal_confidence": signal.signal_confidence,
+                "is_funding_squeeze": signal.signal_type == "funding_squeeze",
+                "is_oi_divergence": signal.signal_type == "oi_divergence",
+                "is_basis_anomaly": signal.signal_type == "basis_anomaly",
+                "is_crowding_reversal": signal.signal_type == "crowding_reversal",
+                "risk_level_numeric": {"low": 1, "medium": 2, "high": 3}[signal.risk_level],
             }
 
             features_data.append(features)
 
         return pd.DataFrame(features_data)
 
+
 async def main():
     """Test futures signal system"""
 
     system = FuturesSignalSystem()
 
-    test_symbols = ['BTC', 'ETH', 'ADA', 'SOL', 'AVAX']
+    test_symbols = ["BTC", "ETH", "ADA", "SOL", "AVAX"]
     test_prices = {
-        'BTC_change_24h': 0.03,
-        'ETH_change_24h': -0.02,
-        'ADA_change_24h': 0.08,
-        'SOL_change_24h': -0.05,
-        'AVAX_change_24h': 0.15
+        "BTC_change_24h": 0.03,
+        "ETH_change_24h": -0.02,
+        "ADA_change_24h": 0.08,
+        "SOL_change_24h": -0.05,
+        "AVAX_change_24h": 0.15,
     }
 
     signals = await system.generate_futures_signals(test_symbols, test_prices)
 
     print(f"Generated {len(signals)} futures signals")
     for signal in signals[:5]:
-        print(f"{signal.symbol}: {signal.signal_type} - Strength: {signal.signal_strength:.3f}, "
-              f"Confidence: {signal.signal_confidence:.3f}, Risk: {signal.squeeze_risk:.3f}")
+        print(
+            f"{signal.symbol}: {signal.signal_type} - Strength: {signal.signal_strength:.3f}, "
+            f"Confidence: {signal.signal_confidence:.3f}, Risk: {signal.squeeze_risk:.3f}"
+        )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

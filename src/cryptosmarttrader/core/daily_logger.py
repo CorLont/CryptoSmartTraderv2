@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 import hashlib
 
+
 class SecureFormatter(logging.Formatter):
     """Secure formatter that redacts sensitive information"""
 
@@ -23,14 +24,16 @@ class SecureFormatter(logging.Formatter):
         # Patterns to redact (secrets, API keys, etc.)
         self.secret_patterns = [
             r'api[_-]?key["\s]*[:=]["\s]*([A-Za-z0-9+/=]{20,})',  # API keys
-            r'secret["\s]*[:=]["\s]*([A-Za-z0-9+/=]{20,})',        # Secrets
-            r'password["\s]*[:=]["\s]*([^\s"]+)',                  # Passwords
-            r'token["\s]*[:=]["\s]*([A-Za-z0-9._-]{20,})',         # Tokens
-            r'([A-Za-z0-9+/=]{40,})',                             # Long base64-like strings
+            r'secret["\s]*[:=]["\s]*([A-Za-z0-9+/=]{20,})',  # Secrets
+            r'password["\s]*[:=]["\s]*([^\s"]+)',  # Passwords
+            r'token["\s]*[:=]["\s]*([A-Za-z0-9._-]{20,})',  # Tokens
+            r"([A-Za-z0-9+/=]{40,})",  # Long base64-like strings
         ]
 
         # Compile patterns for performance
-        self.compiled_patterns = [re.compile(pattern, re.IGNORECASE) for pattern in self.secret_patterns]
+        self.compiled_patterns = [
+            re.compile(pattern, re.IGNORECASE) for pattern in self.secret_patterns
+        ]
 
     def format(self, record):
         """Format log record with secret redaction"""
@@ -49,8 +52,8 @@ class SecureFormatter(logging.Formatter):
         original = match.group(0)
 
         # Keep structure but replace sensitive part with hash
-        if '=' in original or ':' in original:
-            prefix = original.split('=')[0] if '=' in original else original.split(':')[0]
+        if "=" in original or ":" in original:
+            prefix = original.split("=")[0] if "=" in original else original.split(":")[0]
             return f"{prefix}=***REDACTED***"
         else:
             # For standalone secrets, show first 4 chars + hash suffix
@@ -60,6 +63,7 @@ class SecureFormatter(logging.Formatter):
                 return f"{secret[:4]}***{hash_suffix}"
             else:
                 return "***REDACTED***"
+
 
 class DailyLogger:
     """Daily logger with run_id tracking and structured output"""
@@ -80,11 +84,14 @@ class DailyLogger:
         self.daily_log_file = self._get_daily_log_file()
 
         # Log session start
-        self.log_info("Logger initialized", {
-            "run_id": self.run_id,
-            "component": self.component_name,
-            "session_start": self.session_start.isoformat()
-        })
+        self.log_info(
+            "Logger initialized",
+            {
+                "run_id": self.run_id,
+                "component": self.component_name,
+                "session_start": self.session_start.isoformat(),
+            },
+        )
 
     def _setup_logger(self) -> logging.Logger:
         """Setup structured logger with secure formatting"""
@@ -107,9 +114,11 @@ class DailyLogger:
 
         # Secure formatter
         formatter = SecureFormatter(
-            '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "component": "' +
-            self.component_name + '", "run_id": "' + self.run_id +
-            '", "message": "%(message)s"}'
+            '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "component": "'
+            + self.component_name
+            + '", "run_id": "'
+            + self.run_id
+            + '", "message": "%(message)s"}'
         )
 
         console_handler.setFormatter(formatter)
@@ -134,13 +143,18 @@ class DailyLogger:
             "run_id": self.run_id,
             "component": self.component_name,
             "message": message,
-            "context": context or {}
+            "context": context or {},
         }
 
         self.logger.info(json.dumps(log_entry))
         self._append_to_daily_log(log_entry)
 
-    def log_error(self, message: str, error: Optional[Exception] = None, context: Optional[Dict[str, Any]] = None):
+    def log_error(
+        self,
+        message: str,
+        error: Optional[Exception] = None,
+        context: Optional[Dict[str, Any]] = None,
+    ):
         """Log error with optional exception details"""
 
         log_entry = {
@@ -151,7 +165,7 @@ class DailyLogger:
             "message": message,
             "error": str(error) if error else None,
             "error_type": type(error).__name__ if error else None,
-            "context": context or {}
+            "context": context or {},
         }
 
         self.logger.error(json.dumps(log_entry))
@@ -169,20 +183,22 @@ class DailyLogger:
             "run_id": self.run_id,
             "component": self.component_name,
             "message": message,
-            "context": context or {}
+            "context": context or {},
         }
 
         self.logger.warning(json.dumps(log_entry))
         self._append_to_daily_log(log_entry)
 
-    def log_performance(self, operation: str, duration_seconds: float, context: Optional[Dict[str, Any]] = None):
+    def log_performance(
+        self, operation: str, duration_seconds: float, context: Optional[Dict[str, Any]] = None
+    ):
         """Log performance metrics"""
 
         perf_context = {
             "operation": operation,
             "duration_seconds": duration_seconds,
             "performance_grade": self._grade_performance(duration_seconds),
-            **(context or {})
+            **(context or {}),
         }
 
         self.log_info(f"Performance: {operation}", perf_context)
@@ -205,7 +221,7 @@ class DailyLogger:
             # Load existing daily log
             daily_entries = []
             if self.daily_log_file.exists():
-                with open(self.daily_log_file, 'r') as f:
+                with open(self.daily_log_file, "r") as f:
                     daily_entries = json.load(f)
 
             # Append new entry
@@ -216,8 +232,8 @@ class DailyLogger:
                 daily_entries = daily_entries[-1000:]
 
             # Write atomically
-            temp_file = self.daily_log_file.with_suffix('.tmp')
-            with open(temp_file, 'w') as f:
+            temp_file = self.daily_log_file.with_suffix(".tmp")
+            with open(temp_file, "w") as f:
                 json.dump(daily_entries, f, indent=2)
 
             temp_file.rename(self.daily_log_file)
@@ -235,7 +251,7 @@ class DailyLogger:
             # Load existing alerts
             alerts = []
             if alerts_file.exists():
-                with open(alerts_file, 'r') as f:
+                with open(alerts_file, "r") as f:
                     alerts = json.load(f)
 
             # Add error entry
@@ -246,8 +262,8 @@ class DailyLogger:
                 alerts = alerts[-50:]
 
             # Write atomically
-            temp_file = alerts_file.with_suffix('.tmp')
-            with open(temp_file, 'w') as f:
+            temp_file = alerts_file.with_suffix(".tmp")
+            with open(temp_file, "w") as f:
                 json.dump(alerts, f, indent=2)
 
             temp_file.rename(alerts_file)
@@ -258,40 +274,48 @@ class DailyLogger:
     def log_pipeline_start(self, pipeline_name: str, config: Optional[Dict[str, Any]] = None):
         """Log pipeline start"""
 
-        self.log_info(f"Pipeline started: {pipeline_name}", {
-            "pipeline": pipeline_name,
-            "config": config or {},
-            "stage": "START"
-        })
+        self.log_info(
+            f"Pipeline started: {pipeline_name}",
+            {"pipeline": pipeline_name, "config": config or {}, "stage": "START"},
+        )
 
     def log_pipeline_step(self, pipeline_name: str, step_name: str, step_result: Dict[str, Any]):
         """Log pipeline step completion"""
 
-        self.log_info(f"Pipeline step: {step_name}", {
-            "pipeline": pipeline_name,
-            "step": step_name,
-            "result": step_result,
-            "stage": "STEP"
-        })
+        self.log_info(
+            f"Pipeline step: {step_name}",
+            {"pipeline": pipeline_name, "step": step_name, "result": step_result, "stage": "STEP"},
+        )
 
-    def log_pipeline_complete(self, pipeline_name: str, total_duration: float, final_result: Dict[str, Any]):
+    def log_pipeline_complete(
+        self, pipeline_name: str, total_duration: float, final_result: Dict[str, Any]
+    ):
         """Log pipeline completion"""
 
-        self.log_info(f"Pipeline completed: {pipeline_name}", {
-            "pipeline": pipeline_name,
-            "total_duration": total_duration,
-            "result": final_result,
-            "stage": "COMPLETE"
-        })
+        self.log_info(
+            f"Pipeline completed: {pipeline_name}",
+            {
+                "pipeline": pipeline_name,
+                "total_duration": total_duration,
+                "result": final_result,
+                "stage": "COMPLETE",
+            },
+        )
 
-    def log_pipeline_failed(self, pipeline_name: str, error: Exception, partial_results: Optional[Dict[str, Any]] = None):
+    def log_pipeline_failed(
+        self, pipeline_name: str, error: Exception, partial_results: Optional[Dict[str, Any]] = None
+    ):
         """Log pipeline failure"""
 
-        self.log_error(f"Pipeline failed: {pipeline_name}", error, {
-            "pipeline": pipeline_name,
-            "partial_results": partial_results or {},
-            "stage": "FAILED"
-        })
+        self.log_error(
+            f"Pipeline failed: {pipeline_name}",
+            error,
+            {
+                "pipeline": pipeline_name,
+                "partial_results": partial_results or {},
+                "stage": "FAILED",
+            },
+        )
 
     def get_session_summary(self) -> Dict[str, Any]:
         """Get summary of current logging session"""
@@ -303,7 +327,7 @@ class DailyLogger:
 
         if self.daily_log_file.exists():
             try:
-                with open(self.daily_log_file, 'r') as f:
+                with open(self.daily_log_file, "r") as f:
                     daily_entries = json.load(f)
 
                 # Count entries for this run_id
@@ -321,11 +345,13 @@ class DailyLogger:
             "session_start": self.session_start.isoformat(),
             "session_duration": session_duration,
             "log_counts": log_counts,
-            "daily_log_file": str(self.daily_log_file)
+            "daily_log_file": str(self.daily_log_file),
         }
+
 
 # Global logger registry
 _loggers: Dict[str, DailyLogger] = {}
+
 
 def get_daily_logger(component_name: str) -> DailyLogger:
     """Get or create daily logger for component"""
@@ -334,6 +360,7 @@ def get_daily_logger(component_name: str) -> DailyLogger:
         _loggers[component_name] = DailyLogger(component_name)
 
     return _loggers[component_name]
+
 
 def test_daily_logger():
     """Test daily logger functionality"""
@@ -365,6 +392,7 @@ def test_daily_logger():
     print(f"Session summary: {summary}")
 
     print("✅ Daily Logger test completed!")
+
 
 if __name__ == "__main__":
     test_daily_logger()

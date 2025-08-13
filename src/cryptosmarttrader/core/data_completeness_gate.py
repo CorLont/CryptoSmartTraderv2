@@ -6,6 +6,7 @@ Data Completeness Gate - Zero-tolerance policy for incomplete data
 import pandas as pd
 from typing import Dict, Any
 
+
 class DataCompletenessGate:
     """Enforce strict data completeness requirements"""
 
@@ -16,11 +17,7 @@ class DataCompletenessGate:
         """Validate data meets completeness requirements"""
 
         if data.empty:
-            return {
-                "passed": False,
-                "reason": "Empty dataset",
-                "coverage_percentage": 0.0
-            }
+            return {"passed": False, "reason": "Empty dataset", "coverage_percentage": 0.0}
 
         # Calculate completeness
         total_cells = data.size
@@ -34,5 +31,7 @@ class DataCompletenessGate:
             "coverage_percentage": completeness * 100,
             "missing_cells": missing_cells,
             "total_cells": total_cells,
-            "reason": f"Data completeness {completeness:.1%} < {self.min_completeness:.1%}" if not passed else "OK"
+            "reason": f"Data completeness {completeness:.1%} < {self.min_completeness:.1%}"
+            if not passed
+            else "OK",
         }

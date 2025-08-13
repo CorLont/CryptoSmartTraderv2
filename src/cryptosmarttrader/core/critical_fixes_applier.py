@@ -18,6 +18,7 @@ import re
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from ..core.structured_logger import get_logger
 
+
 class CriticalFixesApplier:
     """Automatically applies critical fixes based on audit results"""
 
@@ -40,17 +41,17 @@ class CriticalFixesApplier:
             self._fix_security_logging,
             self._fix_data_completeness_gates,
             self._fix_regime_awareness,
-            self._fix_uncertainty_quantification
+            self._fix_uncertainty_quantification,
         ]
 
         for fix_func in fixes:
             fix_name = "Unknown Fix"
             try:
-                fix_name = fix_func.__name__.replace('_fix_', '').replace('_', ' ').title()
+                fix_name = fix_func.__name__.replace("_fix_", "").replace("_", " ").title()
                 self.logger.info(f"Applying {fix_name}...")
 
                 result = fix_func()
-                if result.get('success', False):
+                if result.get("success", False):
                     self.fixes_applied.append(fix_name)
                     self.logger.info(f"✅ {fix_name} applied successfully")
                 else:
@@ -68,10 +69,12 @@ class CriticalFixesApplier:
             "fixes_failed": len(self.fixes_failed),
             "applied_fixes": self.fixes_applied,
             "failed_fixes": self.fixes_failed,
-            "overall_success": len(self.fixes_applied) > len(self.fixes_failed)
+            "overall_success": len(self.fixes_applied) > len(self.fixes_failed),
         }
 
-        self.logger.info(f"🏁 Critical fixes completed: {len(self.fixes_applied)} applied, {len(self.fixes_failed)} failed")
+        self.logger.info(
+            f"🏁 Critical fixes completed: {len(self.fixes_applied)} applied, {len(self.fixes_failed)} failed"
+        )
 
         return summary
 
@@ -1258,6 +1261,7 @@ class UncertaintyAwarePredictionSystem:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+
 def apply_critical_fixes():
     """Apply all critical fixes"""
 
@@ -1271,22 +1275,23 @@ def apply_critical_fixes():
     print(f"\n📊 FIXES SUMMARY")
     print(f"Applied: {summary['fixes_applied']} fixes")
     print(f"Failed: {summary['fixes_failed']} fixes")
-    print(f"Success Rate: {len(summary['applied_fixes'])/7*100:.1f}%")
+    print(f"Success Rate: {len(summary['applied_fixes']) / 7 * 100:.1f}%")
 
-    if summary['applied_fixes']:
+    if summary["applied_fixes"]:
         print(f"\n✅ SUCCESSFULLY APPLIED:")
-        for fix in summary['applied_fixes']:
+        for fix in summary["applied_fixes"]:
             print(f"   • {fix}")
 
-    if summary['failed_fixes']:
+    if summary["failed_fixes"]:
         print(f"\n❌ FAILED TO APPLY:")
-        for failure in summary['failed_fixes']:
+        for failure in summary["failed_fixes"]:
             print(f"   • {failure}")
 
     print(f"\n📁 All fixes available in respective directories")
     print(f"Integration required for full functionality")
 
     return summary
+
 
 if __name__ == "__main__":
     summary = apply_critical_fixes()

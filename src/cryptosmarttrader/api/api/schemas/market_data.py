@@ -12,6 +12,7 @@ from .common import BaseResponse
 
 class PriceData(BaseModel):
     """Price data point"""
+
     timestamp: datetime = Field(description="Price timestamp")
     open: float = Field(description="Opening price", gt=0)
     high: float = Field(description="Highest price", gt=0)
@@ -22,6 +23,7 @@ class PriceData(BaseModel):
 
 class CoinData(BaseModel):
     """Cryptocurrency data"""
+
     symbol: str = Field(description="Trading symbol", example="BTC/USD")
     name: str = Field(description="Full coin name", example="Bitcoin")
     current_price: float = Field(description="Current price", gt=0)
@@ -32,4 +34,5 @@ class CoinData(BaseModel):
 
 class MarketDataResponse(BaseResponse):
     """Market data response"""
+
     data: List[CoinData] = Field(description="Market data")

@@ -17,14 +17,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class Environment(Enum):
     """Environment types"""
+
     DEVELOPMENT = "development"
     STAGING = "staging"
     PRODUCTION = "production"
 
+
 class CanaryState(Enum):
     """Canary deployment states"""
+
     INACTIVE = "inactive"
     STARTING = "starting"
     RUNNING = "running"
@@ -34,9 +38,11 @@ class CanaryState(Enum):
     ROLLING_BACK = "rolling_back"
     FAILED = "failed"
 
+
 @dataclass
 class EnvironmentConfig:
     """Environment-specific configuration"""
+
     name: str
     environment: Environment
 
@@ -70,9 +76,11 @@ class EnvironmentConfig:
     alerts_enabled: bool = True
     debug_logging: bool = False
 
+
 @dataclass
 class FeatureFlag:
     """Feature flag definition"""
+
     name: str
     description: str
     enabled_environments: List[Environment]
@@ -82,9 +90,11 @@ class FeatureFlag:
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
 
+
 @dataclass
 class CanaryDeployment:
     """Canary deployment configuration"""
+
     name: str
     description: str
 
@@ -108,6 +118,7 @@ class CanaryDeployment:
     # Metrics tracking
     metrics_history: List[Dict[str, Any]] = field(default_factory=list)
     alerts_triggered: List[str] = field(default_factory=list)
+
 
 class EnvironmentManager:
     """
@@ -166,8 +177,8 @@ class EnvironmentManager:
                     "advanced_ml_models": True,
                     "real_trading": False,
                     "chaos_testing": True,
-                    "debug_mode": True
-                }
+                    "debug_mode": True,
+                },
             )
 
         if Environment.STAGING not in self.environments:
@@ -186,8 +197,8 @@ class EnvironmentManager:
                     "advanced_ml_models": True,
                     "real_trading": True,
                     "canary_deployment": True,
-                    "shadow_trading": True
-                }
+                    "shadow_trading": True,
+                },
             )
 
         if Environment.PRODUCTION not in self.environments:
@@ -206,8 +217,8 @@ class EnvironmentManager:
                     "advanced_ml_models": True,
                     "real_trading": True,
                     "production_monitoring": True,
-                    "strict_validation": True
-                }
+                    "strict_validation": True,
+                },
             )
 
         # Setup default feature flags
@@ -220,51 +231,55 @@ class EnvironmentManager:
             FeatureFlag(
                 name="advanced_ml_models",
                 description="Enable advanced ML models (Transformers, LSTM ensembles)",
-                enabled_environments=[Environment.DEVELOPMENT, Environment.STAGING, Environment.PRODUCTION],
-                rollout_percentage=100.0
+                enabled_environments=[
+                    Environment.DEVELOPMENT,
+                    Environment.STAGING,
+                    Environment.PRODUCTION,
+                ],
+                rollout_percentage=100.0,
             ),
             FeatureFlag(
                 name="real_trading",
                 description="Enable real trading execution",
                 enabled_environments=[Environment.STAGING, Environment.PRODUCTION],
-                rollout_percentage=100.0
+                rollout_percentage=100.0,
             ),
             FeatureFlag(
                 name="canary_deployment",
                 description="Enable canary deployment testing",
                 enabled_environments=[Environment.STAGING],
-                rollout_percentage=1.0  # 1% traffic for canary
+                rollout_percentage=1.0,  # 1% traffic for canary
             ),
             FeatureFlag(
                 name="shadow_trading",
                 description="Enable shadow trading for validation",
                 enabled_environments=[Environment.STAGING, Environment.PRODUCTION],
-                rollout_percentage=10.0  # 10% shadow trading
+                rollout_percentage=10.0,  # 10% shadow trading
             ),
             FeatureFlag(
                 name="chaos_testing",
                 description="Enable automated chaos testing",
                 enabled_environments=[Environment.DEVELOPMENT, Environment.STAGING],
-                rollout_percentage=100.0
+                rollout_percentage=100.0,
             ),
             FeatureFlag(
                 name="production_monitoring",
                 description="Enable production-grade monitoring",
                 enabled_environments=[Environment.PRODUCTION],
-                rollout_percentage=100.0
+                rollout_percentage=100.0,
             ),
             FeatureFlag(
                 name="debug_mode",
                 description="Enable debug logging and detailed traces",
                 enabled_environments=[Environment.DEVELOPMENT],
-                rollout_percentage=100.0
+                rollout_percentage=100.0,
             ),
             FeatureFlag(
                 name="strict_validation",
                 description="Enable strict data validation and safeguards",
                 enabled_environments=[Environment.PRODUCTION],
-                rollout_percentage=100.0
-            )
+                rollout_percentage=100.0,
+            ),
         ]
 
         for flag in default_flags:
@@ -293,9 +308,12 @@ class EnvironmentManager:
 
         # Check rollout percentage (simple random check)
         import random
+
         return random.random() * 100 <= flag.rollout_percentage
 
-    def set_feature_flag(self, feature_name: str, enabled: bool, environments: Optional[List[Environment]] = None):
+    def set_feature_flag(
+        self, feature_name: str, enabled: bool, environments: Optional[List[Environment]] = None
+    ):
         """Set feature flag state"""
         if feature_name not in self.feature_flags:
             logger.error(f"Feature flag not found: {feature_name}")
@@ -312,11 +330,13 @@ class EnvironmentManager:
         self._save_feature_flags()
         logger.info(f"Feature flag updated: {feature_name} = {enabled}")
 
-    def create_canary_deployment(self,
-                                name: str,
-                                description: str,
-                                canary_percentage: float = 1.0,
-                                min_duration_hours: int = 168) -> CanaryDeployment:
+    def create_canary_deployment(
+        self,
+        name: str,
+        description: str,
+        canary_percentage: float = 1.0,
+        min_duration_hours: int = 168,
+    ) -> CanaryDeployment:
         """Create new canary deployment"""
 
         # Validate canary percentage for safety
@@ -333,22 +353,22 @@ class EnvironmentManager:
                 "latency_p95",
                 "slippage_realized",
                 "pnl_daily",
-                "drawdown_current"
+                "drawdown_current",
             ],
             success_criteria={
                 "error_rate_max": 0.01,  # 1% max error rate
                 "latency_p95_max": 2.0,  # 2s max latency
                 "slippage_p95_max": 50.0,  # 50 bps max slippage
                 "pnl_min_daily": -100.0,  # Max $100 daily loss
-                "drawdown_max": 2.0  # Max 2% drawdown
+                "drawdown_max": 2.0,  # Max 2% drawdown
             },
             max_risk_exposure_usd=canary_percentage * 100,  # $1 per 1% exposure
             auto_rollback_triggers={
                 "error_rate": 0.05,  # 5% error rate triggers rollback
                 "latency_p95": 5.0,  # 5s latency triggers rollback
                 "daily_loss": 500.0,  # $500 loss triggers rollback
-                "drawdown": 3.0  # 3% drawdown triggers rollback
-            }
+                "drawdown": 3.0,  # 3% drawdown triggers rollback
+            },
         )
 
         self.canary_deployments[name] = canary
@@ -401,16 +421,17 @@ class EnvironmentManager:
             return False
 
         # Record metrics
-        canary.metrics_history.append({
-            "timestamp": datetime.now().isoformat(),
-            "metrics": metrics.copy()
-        })
+        canary.metrics_history.append(
+            {"timestamp": datetime.now().isoformat(), "metrics": metrics.copy()}
+        )
 
         # Check auto-rollback triggers
         rollback_triggered = False
         for trigger_name, trigger_value in canary.auto_rollback_triggers.items():
             if trigger_name in metrics and metrics[trigger_name] > trigger_value:
-                logger.error(f"🚨 Canary rollback triggered: {trigger_name} = {metrics[trigger_name]} > {trigger_value}")
+                logger.error(
+                    f"🚨 Canary rollback triggered: {trigger_name} = {metrics[trigger_name]} > {trigger_value}"
+                )
                 canary.alerts_triggered.append(f"Auto rollback: {trigger_name}")
                 rollback_triggered = True
 
@@ -515,13 +536,13 @@ class EnvironmentManager:
             config_file = self.config_dir / f"{env.value}.json"
             if config_file.exists():
                 try:
-                    with open(config_file, 'r') as f:
+                    with open(config_file, "r") as f:
                         data = json.load(f)
 
                     config = EnvironmentConfig(
                         name=data.get("name", env.value.title()),
                         environment=env,
-                        **{k: v for k, v in data.items() if k != "name"}
+                        **{k: v for k, v in data.items() if k != "name"},
                     )
                     self.environments[env] = config
 
@@ -546,10 +567,10 @@ class EnvironmentManager:
                     "feature_flags": config.feature_flags,
                     "metrics_enabled": config.metrics_enabled,
                     "alerts_enabled": config.alerts_enabled,
-                    "debug_logging": config.debug_logging
+                    "debug_logging": config.debug_logging,
                 }
 
-                with open(config_file, 'w') as f:
+                with open(config_file, "w") as f:
                     json.dump(data, f, indent=2)
 
             except Exception as e:
@@ -560,19 +581,25 @@ class EnvironmentManager:
         flags_file = self.config_dir / "feature_flags.json"
         if flags_file.exists():
             try:
-                with open(flags_file, 'r') as f:
+                with open(flags_file, "r") as f:
                     data = json.load(f)
 
                 for flag_name, flag_data in data.items():
                     self.feature_flags[flag_name] = FeatureFlag(
                         name=flag_name,
                         description=flag_data.get("description", ""),
-                        enabled_environments=[Environment(env) for env in flag_data.get("enabled_environments", [])],
+                        enabled_environments=[
+                            Environment(env) for env in flag_data.get("enabled_environments", [])
+                        ],
                         rollout_percentage=flag_data.get("rollout_percentage", 100.0),
                         conditions=flag_data.get("conditions", {}),
                         metadata=flag_data.get("metadata", {}),
-                        created_at=datetime.fromisoformat(flag_data.get("created_at", datetime.now().isoformat())),
-                        updated_at=datetime.fromisoformat(flag_data.get("updated_at", datetime.now().isoformat()))
+                        created_at=datetime.fromisoformat(
+                            flag_data.get("created_at", datetime.now().isoformat())
+                        ),
+                        updated_at=datetime.fromisoformat(
+                            flag_data.get("updated_at", datetime.now().isoformat())
+                        ),
                     )
 
             except Exception as e:
@@ -591,10 +618,10 @@ class EnvironmentManager:
                     "conditions": flag.conditions,
                     "metadata": flag.metadata,
                     "created_at": flag.created_at.isoformat(),
-                    "updated_at": flag.updated_at.isoformat()
+                    "updated_at": flag.updated_at.isoformat(),
                 }
 
-            with open(flags_file, 'w') as f:
+            with open(flags_file, "w") as f:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
@@ -605,7 +632,7 @@ class EnvironmentManager:
         canary_file = self.config_dir / "canary_deployments.json"
         if canary_file.exists():
             try:
-                with open(canary_file, 'r') as f:
+                with open(canary_file, "r") as f:
                     data = json.load(f)
 
                 for canary_name, canary_data in data.items():
@@ -617,12 +644,16 @@ class EnvironmentManager:
                         validation_metrics=canary_data.get("validation_metrics", []),
                         success_criteria=canary_data.get("success_criteria", {}),
                         state=CanaryState(canary_data.get("state", "inactive")),
-                        start_time=datetime.fromisoformat(canary_data["start_time"]) if canary_data.get("start_time") else None,
-                        end_time=datetime.fromisoformat(canary_data["end_time"]) if canary_data.get("end_time") else None,
+                        start_time=datetime.fromisoformat(canary_data["start_time"])
+                        if canary_data.get("start_time")
+                        else None,
+                        end_time=datetime.fromisoformat(canary_data["end_time"])
+                        if canary_data.get("end_time")
+                        else None,
                         max_risk_exposure_usd=canary_data.get("max_risk_exposure_usd", 1000.0),
                         auto_rollback_triggers=canary_data.get("auto_rollback_triggers", {}),
                         metrics_history=canary_data.get("metrics_history", []),
-                        alerts_triggered=canary_data.get("alerts_triggered", [])
+                        alerts_triggered=canary_data.get("alerts_triggered", []),
                     )
 
             except Exception as e:
@@ -646,10 +677,10 @@ class EnvironmentManager:
                     "max_risk_exposure_usd": canary.max_risk_exposure_usd,
                     "auto_rollback_triggers": canary.auto_rollback_triggers,
                     "metrics_history": canary.metrics_history,
-                    "alerts_triggered": canary.alerts_triggered
+                    "alerts_triggered": canary.alerts_triggered,
                 }
 
-            with open(canary_file, 'w') as f:
+            with open(canary_file, "w") as f:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
@@ -661,13 +692,15 @@ class EnvironmentManager:
 
         # Active canaries
         active_canaries = [
-            name for name, canary in self.canary_deployments.items()
+            name
+            for name, canary in self.canary_deployments.items()
             if canary.state in [CanaryState.RUNNING, CanaryState.VALIDATING]
         ]
 
         # Feature flags summary
         enabled_flags = [
-            name for name, flag in self.feature_flags.items()
+            name
+            for name, flag in self.feature_flags.items()
             if self.current_environment in flag.enabled_environments
         ]
 
@@ -679,22 +712,22 @@ class EnvironmentManager:
                 "max_daily_loss_usd": current_config.max_daily_loss_usd,
                 "max_drawdown_percent": current_config.max_drawdown_percent,
                 "api_rate_limit": current_config.api_rate_limit_per_minute,
-                "debug_logging": current_config.debug_logging
+                "debug_logging": current_config.debug_logging,
             },
             "feature_flags": {
                 "total": len(self.feature_flags),
                 "enabled": len(enabled_flags),
-                "enabled_list": enabled_flags
+                "enabled_list": enabled_flags,
             },
             "canary_deployments": {
                 "total": len(self.canary_deployments),
                 "active": len(active_canaries),
-                "active_list": active_canaries
+                "active_list": active_canaries,
             },
             "risk_limits": {
                 "max_daily_loss_usd": current_config.max_daily_loss_usd,
                 "max_drawdown_percent": current_config.max_drawdown_percent,
                 "position_size_limit_percent": current_config.position_size_limit_percent,
-                "max_concurrent_orders": current_config.max_concurrent_orders
-            }
+                "max_concurrent_orders": current_config.max_concurrent_orders,
+            },
         }

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict, Tuple, Any
 from datetime import datetime, timezone
 
+
 def is_fresh(filepath: str, max_age_seconds: int = 24 * 3600) -> bool:
     """Check if file exists and is fresh (within max_age)"""
 
@@ -20,6 +21,7 @@ def is_fresh(filepath: str, max_age_seconds: int = 24 * 3600) -> bool:
 
     file_age = time.time() - path.stat().st_mtime
     return file_age < max_age_seconds
+
 
 def check_models_ready() -> Dict[str, Any]:
     """Check if all required models are trained and available"""
@@ -33,7 +35,7 @@ def check_models_ready() -> Dict[str, Any]:
         models_status[horizon] = {
             "exists": model_path.exists(),
             "path": str(model_path),
-            "fresh": is_fresh(str(model_path), max_age_seconds=7 * 24 * 3600)  # 7 days
+            "fresh": is_fresh(str(model_path), max_age_seconds=7 * 24 * 3600),  # 7 days
         }
 
         if model_path.exists():
@@ -52,8 +54,11 @@ def check_models_ready() -> Dict[str, Any]:
         "all_fresh": all_fresh,
         "models": models_status,
         "missing_models": [h for h, s in models_status.items() if not s["exists"]],
-        "stale_models": [h for h, s in models_status.items() if s["exists"] and not s.get("fresh", False)]
+        "stale_models": [
+            h for h, s in models_status.items() if s["exists"] and not s.get("fresh", False)
+        ],
     }
+
 
 def check_features_ready() -> Dict[str, Any]:
     """Check if features are available and fresh"""
@@ -61,11 +66,7 @@ def check_features_ready() -> Dict[str, Any]:
     features_path = Path("exports/features.parquet")
 
     if not features_path.exists():
-        return {
-            "ready": False,
-            "exists": False,
-            "reason": "Features file not found"
-        }
+        return {"ready": False, "exists": False, "reason": "Features file not found"}
 
     # Check freshness (features should be updated daily)
     fresh = is_fresh(str(features_path), max_age_seconds=24 * 3600)
@@ -73,7 +74,7 @@ def check_features_ready() -> Dict[str, Any]:
     file_info = {
         "size_mb": round(features_path.stat().st_size / 1024 / 1024, 2),
         "modified": datetime.fromtimestamp(features_path.stat().st_mtime).isoformat(),
-        "age_hours": round((time.time() - features_path.stat().st_mtime) / 3600, 1)
+        "age_hours": round((time.time() - features_path.stat().st_mtime) / 3600, 1),
     }
 
     return {
@@ -81,8 +82,9 @@ def check_features_ready() -> Dict[str, Any]:
         "exists": True,
         "fresh": fresh,
         "file_info": file_info,
-        "reason": "OK" if fresh else f"Features stale ({file_info['age_hours']}h old)"
+        "reason": "OK" if fresh else f"Features stale ({file_info['age_hours']}h old)",
     }
+
 
 def check_health_score() -> Dict[str, Any]:
     """Check latest health score from daily logs"""
@@ -91,14 +93,14 @@ def check_health_score() -> Dict[str, Any]:
     health_sources = [
         "logs/daily/latest.json",
         "logs/daily/health_summary.json",
-        "exports/production/predictions_summary.json"
+        "exports/production/predictions_summary.json",
     ]
 
     for source_path in health_sources:
         path = Path(source_path)
         if path.exists():
             try:
-                with open(path, 'r') as f:
+                with open(path, "r") as f:
                     data = json.load(f)
 
                 # Extract health score (different formats possible)
@@ -124,19 +126,17 @@ def check_health_score() -> Dict[str, Any]:
                         "score": health_score,
                         "source": source_path,
                         "threshold": 85,
-                        "reason": "OK" if health_score >= 85 else f"Health score {health_score:.1f} < 85"
+                        "reason": "OK"
+                        if health_score >= 85
+                        else f"Health score {health_score:.1f} < 85",
                     }
 
             except Exception as e:
                 continue
 
     # No health score available
-    return {
-        "ready": False,
-        "score": 0,
-        "source": None,
-        "reason": "No health score available"
-    }
+    return {"ready": False, "score": 0, "source": None, "reason": "No health score available"}
+
 
 def check_calibration_ready() -> Dict[str, Any]:
     """Check if probability calibration is available"""
@@ -144,7 +144,7 @@ def check_calibration_ready() -> Dict[str, Any]:
     calibration_sources = [
         "models/probability_calibrator.pkl",
         "models/calibration_report.json",
-        "logs/daily/calibration_summary.json"
+        "logs/daily/calibration_summary.json",
     ]
 
     for source_path in calibration_sources:
@@ -157,15 +157,11 @@ def check_calibration_ready() -> Dict[str, Any]:
                 "exists": True,
                 "fresh": fresh,
                 "source": source_path,
-                "reason": "OK" if fresh else "Calibration stale"
+                "reason": "OK" if fresh else "Calibration stale",
             }
 
-    return {
-        "ready": False,
-        "exists": False,
-        "source": None,
-        "reason": "No calibration found"
-    }
+    return {"ready": False, "exists": False, "source": None, "reason": "No calibration found"}
+
 
 def check_predictions_ready() -> Dict[str, Any]:
     """Check if recent predictions are available"""
@@ -173,11 +169,7 @@ def check_predictions_ready() -> Dict[str, Any]:
     predictions_path = Path("exports/production/predictions.csv")
 
     if not predictions_path.exists():
-        return {
-            "ready": False,
-            "exists": False,
-            "reason": "No predictions.csv found"
-        }
+        return {"ready": False, "exists": False, "reason": "No predictions.csv found"}
 
     # Check freshness (predictions should be recent)
     fresh = is_fresh(str(predictions_path), max_age_seconds=6 * 3600)  # 6 hours
@@ -186,6 +178,7 @@ def check_predictions_ready() -> Dict[str, Any]:
     prediction_count = 0
     try:
         import pandas as pd
+
         pred_df = pd.read_csv(predictions_path)
         prediction_count = len(pred_df)
     except Exception:
@@ -196,8 +189,11 @@ def check_predictions_ready() -> Dict[str, Any]:
         "exists": True,
         "fresh": fresh,
         "prediction_count": prediction_count,
-        "reason": "OK" if fresh and prediction_count > 0 else f"Predictions stale or empty ({prediction_count})"
+        "reason": "OK"
+        if fresh and prediction_count > 0
+        else f"Predictions stale or empty ({prediction_count})",
     }
+
 
 def system_readiness_check() -> Tuple[bool, Dict[str, Any], float]:
     """
@@ -223,7 +219,7 @@ def system_readiness_check() -> Tuple[bool, Dict[str, Any], float]:
         "features": features_check,
         "health": health_check,
         "calibration": calibration_check,
-        "predictions": predictions_check
+        "predictions": predictions_check,
     }
 
     # Calculate readiness scores
@@ -238,11 +234,11 @@ def system_readiness_check() -> Tuple[bool, Dict[str, Any], float]:
 
     # Weighted overall score
     weights = {
-        "models": 0.3,      # Critical
-        "features": 0.25,   # Critical
-        "health": 0.2,      # Important
-        "calibration": 0.15, # Important
-        "predictions": 0.1   # Nice to have
+        "models": 0.3,  # Critical
+        "features": 0.25,  # Critical
+        "health": 0.2,  # Important
+        "calibration": 0.15,  # Important
+        "predictions": 0.1,  # Nice to have
     }
 
     overall_score = sum(component_scores[comp] * weights[comp] for comp in component_scores.keys())
@@ -258,20 +254,24 @@ def system_readiness_check() -> Tuple[bool, Dict[str, Any], float]:
         "readiness_threshold": 85.0,
         "components": components,
         "component_scores": component_scores,
-        "blocking_issues": []
+        "blocking_issues": [],
     }
 
     # Identify blocking issues
     for comp_name, comp_check in components.items():
         if not comp_check["ready"]:
-            status_details["blocking_issues"].append({
-                "component": comp_name,
-                "reason": comp_check.get("reason", "Unknown issue"),
-                "critical": comp_name in ["models", "features"]
-            })
+            status_details["blocking_issues"].append(
+                {
+                    "component": comp_name,
+                    "reason": comp_check.get("reason", "Unknown issue"),
+                    "critical": comp_name in ["models", "features"],
+                }
+            )
 
     # Print summary
-    print(f"Overall Readiness: {'✅ READY' if is_ready else '❌ NOT READY'} ({overall_score:.1f}/100)")
+    print(
+        f"Overall Readiness: {'✅ READY' if is_ready else '❌ NOT READY'} ({overall_score:.1f}/100)"
+    )
 
     for comp_name, comp_check in components.items():
         status = "✅" if comp_check["ready"] else "❌"
@@ -287,6 +287,7 @@ def system_readiness_check() -> Tuple[bool, Dict[str, Any], float]:
 
     return is_ready, status_details, overall_score
 
+
 def get_readiness_badge() -> Dict[str, str]:
     """Get readiness badge for UI display"""
 
@@ -297,30 +298,31 @@ def get_readiness_badge() -> Dict[str, str]:
             "status": "READY",
             "color": "#22c55e",  # Green
             "text": f"System Ready ({score:.0f}/100)",
-            "icon": "✅"
+            "icon": "✅",
         }
     elif score >= 60:
         return {
             "status": "PARTIAL",
             "color": "#f59e0b",  # Amber
             "text": f"Partial Ready ({score:.0f}/100)",
-            "icon": "⚠️"
+            "icon": "⚠️",
         }
     else:
         return {
             "status": "NOT_READY",
             "color": "#ef4444",  # Red
             "text": f"Not Ready ({score:.0f}/100)",
-            "icon": "❌"
+            "icon": "❌",
         }
+
 
 if __name__ == "__main__":
     # Run readiness check
     is_ready, status, score = system_readiness_check()
 
-    print(f"\n{'='*40}")
+    print(f"\n{'=' * 40}")
     print("READINESS SUMMARY")
-    print(f"{'='*40}")
+    print(f"{'=' * 40}")
 
     if is_ready:
         print("🟢 SYSTEM IS PRODUCTION READY")
@@ -346,7 +348,7 @@ if __name__ == "__main__":
     output_dir.mkdir(parents=True, exist_ok=True)
 
     status_file = output_dir / "readiness_status.json"
-    with open(status_file, 'w') as f:
+    with open(status_file, "w") as f:
         json.dump(status, f, indent=2)
 
     print(f"\n💾 Readiness status saved to: {status_file}")

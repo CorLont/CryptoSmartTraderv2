@@ -13,15 +13,18 @@ from datetime import datetime, timedelta
 from enum import Enum
 import threading
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 try:
     import torch
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
 
 from .uncertainty_engine import UncertaintyEngine, UncertaintyPrediction, ConfidenceLevel
+
 
 class TradeDecision(Enum):
     STRONG_BUY = "strong_buy"
@@ -31,16 +34,19 @@ class TradeDecision(Enum):
     STRONG_SELL = "strong_sell"
     NO_TRADE = "no_trade"
 
+
 class RiskLevel(Enum):
-    VERY_LOW = 0.01    # 1% risk
-    LOW = 0.02         # 2% risk
-    MEDIUM = 0.05      # 5% risk
-    HIGH = 0.10        # 10% risk
-    VERY_HIGH = 0.20   # 20% risk
+    VERY_LOW = 0.01  # 1% risk
+    LOW = 0.02  # 2% risk
+    MEDIUM = 0.05  # 5% risk
+    HIGH = 0.10  # 10% risk
+    VERY_HIGH = 0.20  # 20% risk
+
 
 @dataclass
 class TradingSignal:
     """Probabilistic trading signal with uncertainty"""
+
     symbol: str
     decision: TradeDecision
     confidence: float
@@ -65,9 +71,11 @@ class TradingSignal:
     expected_shortfall: float = 0.0
     sharpe_ratio_estimate: float = 0.0
 
+
 @dataclass
 class ProbabilisticTradingConfig:
     """Configuration for probabilistic trading"""
+
     # Confidence thresholds for different decisions
     strong_buy_confidence: float = 0.9
     buy_confidence: float = 0.75
@@ -80,7 +88,7 @@ class ProbabilisticTradingConfig:
 
     # Risk management
     base_position_size: float = 0.02  # 2% of portfolio
-    max_position_size: float = 0.10   # 10% max
+    max_position_size: float = 0.10  # 10% max
     min_position_size: float = 0.005  # 0.5% min
 
     # Stop loss and take profit
@@ -95,6 +103,7 @@ class ProbabilisticTradingConfig:
     # Model ensemble
     min_models_for_consensus: int = 3
     consensus_threshold: float = 0.7
+
 
 class ProbabilisticTrader:
     """Probabilistic trading engine with uncertainty-aware decisions"""
@@ -117,18 +126,23 @@ class ProbabilisticTrader:
         # Performance tracking
         self.performance_metrics: Dict[str, float] = {}
         self.uncertainty_performance: Dict[str, List] = {
-            'high_confidence_trades': [],
-            'low_confidence_trades': [],
-            'uncertainty_predictions': [],
-            'actual_errors': []
+            "high_confidence_trades": [],
+            "low_confidence_trades": [],
+            "uncertainty_predictions": [],
+            "actual_errors": [],
         }
 
         self._lock = threading.RLock()
 
         self.logger.info("Probabilistic Trading Engine initialized")
 
-    def generate_trading_signal(self, symbol: str, predictions: List[UncertaintyPrediction],
-                              current_price: float, portfolio_context: Optional[Dict] = None) -> TradingSignal:
+    def generate_trading_signal(
+        self,
+        symbol: str,
+        predictions: List[UncertaintyPrediction],
+        current_price: float,
+        portfolio_context: Optional[Dict] = None,
+    ) -> TradingSignal:
         """
         Generate trading signal from multiple uncertainty predictions
 
@@ -150,7 +164,9 @@ class ProbabilisticTrader:
                 decision = self._determine_trade_decision(consensus_prediction)
 
                 # Calculate position size with uncertainty adjustment
-                position_size = self._calculate_position_size(consensus_prediction, portfolio_context)
+                position_size = self._calculate_position_size(
+                    consensus_prediction, portfolio_context
+                )
 
                 # Calculate risk metrics
                 risk_metrics = self._calculate_risk_metrics(consensus_prediction, current_price)
@@ -161,7 +177,9 @@ class ProbabilisticTrader:
                 )
 
                 # Generate reasoning
-                reasoning = self._generate_reasoning(consensus_prediction, decision, len(predictions))
+                reasoning = self._generate_reasoning(
+                    consensus_prediction, decision, len(predictions)
+                )
 
                 # Create trading signal
                 signal = TradingSignal(
@@ -181,9 +199,9 @@ class ProbabilisticTrader:
                     epistemic_uncertainty=consensus_prediction.epistemic_uncertainty,
                     aleatoric_uncertainty=consensus_prediction.aleatoric_uncertainty,
                     total_uncertainty=consensus_prediction.uncertainty,
-                    value_at_risk_95=risk_metrics['var_95'],
-                    expected_shortfall=risk_metrics['expected_shortfall'],
-                    sharpe_ratio_estimate=risk_metrics['sharpe_estimate']
+                    value_at_risk_95=risk_metrics["var_95"],
+                    expected_shortfall=risk_metrics["expected_shortfall"],
+                    sharpe_ratio_estimate=risk_metrics["sharpe_estimate"],
                 )
 
                 # Store signal
@@ -199,7 +217,9 @@ class ProbabilisticTrader:
                 self.logger.error(f"Signal generation failed for {symbol}: {e}")
                 return self._create_no_trade_signal(symbol)
 
-    def _calculate_model_consensus(self, predictions: List[UncertaintyPrediction]) -> UncertaintyPrediction:
+    def _calculate_model_consensus(
+        self, predictions: List[UncertaintyPrediction]
+    ) -> UncertaintyPrediction:
         """Calculate consensus from multiple model predictions"""
         if not predictions:
             raise ValueError("No predictions provided")
@@ -230,7 +250,9 @@ class ProbabilisticTrader:
         consensus_quantiles = {}
         if predictions[0].quantile_predictions:
             for quantile in predictions[0].quantile_predictions.keys():
-                quantile_values = [p.quantile_predictions.get(quantile, consensus_mean) for p in predictions]
+                quantile_values = [
+                    p.quantile_predictions.get(quantile, consensus_mean) for p in predictions
+                ]
                 consensus_quantiles[quantile] = np.average(quantile_values, weights=weights)
 
         # Uncertainty decomposition
@@ -246,7 +268,7 @@ class ProbabilisticTrader:
             method_used=predictions[0].method_used,  # Use first method as representative
             timestamp=datetime.now(),
             epistemic_uncertainty=epistemic_unc,
-            aleatoric_uncertainty=aleatoric_unc
+            aleatoric_uncertainty=aleatoric_unc,
         )
 
     def _determine_trade_decision(self, prediction: UncertaintyPrediction) -> TradeDecision:
@@ -277,16 +299,19 @@ class ProbabilisticTrader:
         # Default to no trade if conditions don't match
         return TradeDecision.NO_TRADE
 
-    def _calculate_position_size(self, prediction: UncertaintyPrediction,
-                               portfolio_context: Optional[Dict] = None) -> float:
+    def _calculate_position_size(
+        self, prediction: UncertaintyPrediction, portfolio_context: Optional[Dict] = None
+    ) -> float:
         """Calculate position size based on uncertainty and risk management"""
         base_size = self.config.base_position_size
 
         # Confidence scaling
-        confidence_multiplier = prediction.confidence ** 2  # Square for more conservative scaling
+        confidence_multiplier = prediction.confidence**2  # Square for more conservative scaling
 
         # Uncertainty penalty
-        uncertainty_penalty = 1.0 / (1.0 + self.config.uncertainty_penalty_factor * prediction.uncertainty)
+        uncertainty_penalty = 1.0 / (
+            1.0 + self.config.uncertainty_penalty_factor * prediction.uncertainty
+        )
 
         # Prediction magnitude scaling
         return_magnitude = abs(prediction.mean_prediction)
@@ -307,23 +332,31 @@ class ProbabilisticTrader:
             kelly_fraction = 0.05
 
         # Combine all factors
-        size = base_size * confidence_multiplier * uncertainty_penalty * magnitude_multiplier * kelly_fraction
+        size = (
+            base_size
+            * confidence_multiplier
+            * uncertainty_penalty
+            * magnitude_multiplier
+            * kelly_fraction
+        )
 
         # Apply portfolio-level constraints
         if portfolio_context:
-            max_size = portfolio_context.get('max_position_size', self.config.max_position_size)
-            portfolio_risk = portfolio_context.get('current_risk', 0.0)
+            max_size = portfolio_context.get("max_position_size", self.config.max_position_size)
+            portfolio_risk = portfolio_context.get("current_risk", 0.0)
 
             # Reduce size if portfolio risk is high
             if portfolio_risk > 0.5:
-                size *= (1.0 - portfolio_risk)
+                size *= 1.0 - portfolio_risk
 
         # Enforce limits
         size = max(self.config.min_position_size, min(self.config.max_position_size, size))
 
         return size
 
-    def _calculate_risk_metrics(self, prediction: UncertaintyPrediction, current_price: float) -> Dict[str, float]:
+    def _calculate_risk_metrics(
+        self, prediction: UncertaintyPrediction, current_price: float
+    ) -> Dict[str, float]:
         """Calculate risk metrics for the trade"""
         # Value at Risk (95% confidence level)
         if 0.05 in prediction.quantile_predictions:
@@ -341,13 +374,14 @@ class ProbabilisticTrader:
         sharpe_estimate = expected_return / max(volatility, 0.01)
 
         return {
-            'var_95': var_95,
-            'expected_shortfall': expected_shortfall,
-            'sharpe_estimate': sharpe_estimate
+            "var_95": var_95,
+            "expected_shortfall": expected_shortfall,
+            "sharpe_estimate": sharpe_estimate,
         }
 
-    def _calculate_stop_levels(self, prediction: UncertaintyPrediction, current_price: float,
-                             decision: TradeDecision) -> Tuple[float, float]:
+    def _calculate_stop_levels(
+        self, prediction: UncertaintyPrediction, current_price: float, decision: TradeDecision
+    ) -> Tuple[float, float]:
         """Calculate dynamic stop loss and take profit levels"""
         if decision in [TradeDecision.NO_TRADE, TradeDecision.HOLD]:
             return 0.0, 0.0
@@ -368,7 +402,9 @@ class ProbabilisticTrader:
 
             # Take profit based on prediction and risk-reward ratio
             expected_return = prediction.mean_prediction
-            take_profit_pct = max(expected_return, stop_loss_pct * self.config.min_risk_reward_ratio)
+            take_profit_pct = max(
+                expected_return, stop_loss_pct * self.config.min_risk_reward_ratio
+            )
             take_profit = current_price * (1 + take_profit_pct)
 
         else:
@@ -378,7 +414,9 @@ class ProbabilisticTrader:
 
             # Take profit for short
             expected_return = abs(prediction.mean_prediction)
-            take_profit_pct = max(expected_return, stop_loss_pct * self.config.min_risk_reward_ratio)
+            take_profit_pct = max(
+                expected_return, stop_loss_pct * self.config.min_risk_reward_ratio
+            )
             take_profit = current_price * (1 - take_profit_pct)
 
         return stop_loss, take_profit
@@ -396,18 +434,31 @@ class ProbabilisticTrader:
         else:
             return RiskLevel.VERY_HIGH
 
-    def _generate_reasoning(self, prediction: UncertaintyPrediction, decision: TradeDecision,
-                          num_models: int) -> str:
+    def _generate_reasoning(
+        self, prediction: UncertaintyPrediction, decision: TradeDecision, num_models: int
+    ) -> str:
         """Generate human-readable reasoning for the trade decision"""
-        confidence_desc = "high" if prediction.confidence > 0.8 else "medium" if prediction.confidence > 0.6 else "low"
-        uncertainty_desc = "low" if prediction.uncertainty < 0.2 else "medium" if prediction.uncertainty < 0.4 else "high"
+        confidence_desc = (
+            "high"
+            if prediction.confidence > 0.8
+            else "medium"
+            if prediction.confidence > 0.6
+            else "low"
+        )
+        uncertainty_desc = (
+            "low"
+            if prediction.uncertainty < 0.2
+            else "medium"
+            if prediction.uncertainty < 0.4
+            else "high"
+        )
 
         reasoning_parts = [
             f"{decision.value.replace('_', ' ').title()} decision based on:",
             f"• {confidence_desc} confidence ({prediction.confidence:.2f})",
             f"• {uncertainty_desc} uncertainty ({prediction.uncertainty:.2f})",
             f"• Predicted return: {prediction.mean_prediction:.2%}",
-            f"• Model consensus from {num_models} models"
+            f"• Model consensus from {num_models} models",
         ]
 
         if prediction.prediction_interval:
@@ -430,7 +481,7 @@ class ProbabilisticTrader:
             stop_loss=0.0,
             take_profit=0.0,
             reasoning="No trade due to insufficient or invalid predictions",
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
     def _update_portfolio_uncertainty(self):
@@ -451,8 +502,9 @@ class ProbabilisticTrader:
 
         self.portfolio_uncertainty = total_uncertainty / max(total_weight, 1e-8)
 
-    def evaluate_signal_performance(self, symbol: str, actual_return: float,
-                                  time_horizon_hours: int = 24) -> Dict[str, Any]:
+    def evaluate_signal_performance(
+        self, symbol: str, actual_return: float, time_horizon_hours: int = 24
+    ) -> Dict[str, Any]:
         """Evaluate trading signal performance against actual outcome"""
         if symbol not in self.active_signals:
             return {}
@@ -463,15 +515,21 @@ class ProbabilisticTrader:
         prediction_error = abs(signal.predicted_return - actual_return)
 
         # Was the prediction within the uncertainty bounds?
-        within_interval = (signal.prediction_interval[0] <= actual_return <= signal.prediction_interval[1])
+        within_interval = (
+            signal.prediction_interval[0] <= actual_return <= signal.prediction_interval[1]
+        )
 
         # Direction accuracy
-        predicted_direction = 1 if signal.predicted_return > 0 else -1 if signal.predicted_return < 0 else 0
+        predicted_direction = (
+            1 if signal.predicted_return > 0 else -1 if signal.predicted_return < 0 else 0
+        )
         actual_direction = 1 if actual_return > 0 else -1 if actual_return < 0 else 0
         direction_correct = predicted_direction == actual_direction
 
         # Confidence calibration
-        confidence_calibrated = signal.confidence > 0.5 if direction_correct else signal.confidence <= 0.5
+        confidence_calibrated = (
+            signal.confidence > 0.5 if direction_correct else signal.confidence <= 0.5
+        )
 
         # Risk-adjusted performance
         if signal.uncertainty > 0:
@@ -481,28 +539,28 @@ class ProbabilisticTrader:
 
         # Store performance data
         performance = {
-            'symbol': symbol,
-            'predicted_return': signal.predicted_return,
-            'actual_return': actual_return,
-            'prediction_error': prediction_error,
-            'confidence': signal.confidence,
-            'uncertainty': signal.uncertainty,
-            'within_interval': within_interval,
-            'direction_correct': direction_correct,
-            'confidence_calibrated': confidence_calibrated,
-            'risk_adjusted_error': risk_adjusted_error,
-            'time_horizon_hours': time_horizon_hours,
-            'evaluation_time': datetime.now()
+            "symbol": symbol,
+            "predicted_return": signal.predicted_return,
+            "actual_return": actual_return,
+            "prediction_error": prediction_error,
+            "confidence": signal.confidence,
+            "uncertainty": signal.uncertainty,
+            "within_interval": within_interval,
+            "direction_correct": direction_correct,
+            "confidence_calibrated": confidence_calibrated,
+            "risk_adjusted_error": risk_adjusted_error,
+            "time_horizon_hours": time_horizon_hours,
+            "evaluation_time": datetime.now(),
         }
 
         # Update uncertainty performance tracking
         if signal.confidence > 0.8:
-            self.uncertainty_performance['high_confidence_trades'].append(performance)
+            self.uncertainty_performance["high_confidence_trades"].append(performance)
         else:
-            self.uncertainty_performance['low_confidence_trades'].append(performance)
+            self.uncertainty_performance["low_confidence_trades"].append(performance)
 
-        self.uncertainty_performance['uncertainty_predictions'].append(signal.uncertainty)
-        self.uncertainty_performance['actual_errors'].append(prediction_error)
+        self.uncertainty_performance["uncertainty_predictions"].append(signal.uncertainty)
+        self.uncertainty_performance["actual_errors"].append(prediction_error)
 
         return performance
 
@@ -511,50 +569,60 @@ class ProbabilisticTrader:
         with self._lock:
             # Active signals summary
             active_summary = {
-                'total_signals': len(self.active_signals),
-                'by_decision': {},
-                'average_confidence': 0.0,
-                'average_uncertainty': 0.0,
-                'portfolio_uncertainty': self.portfolio_uncertainty
+                "total_signals": len(self.active_signals),
+                "by_decision": {},
+                "average_confidence": 0.0,
+                "average_uncertainty": 0.0,
+                "portfolio_uncertainty": self.portfolio_uncertainty,
             }
 
             if self.active_signals:
                 confidences = [s.confidence for s in self.active_signals.values()]
                 uncertainties = [s.uncertainty for s in self.active_signals.values()]
 
-                active_summary['average_confidence'] = np.mean(confidences)
-                active_summary['average_uncertainty'] = np.mean(uncertainties)
+                active_summary["average_confidence"] = np.mean(confidences)
+                active_summary["average_uncertainty"] = np.mean(uncertainties)
 
                 # Count by decision type
                 for signal in self.active_signals.values():
                     decision = signal.decision.value
-                    active_summary['by_decision'][decision] = active_summary['by_decision'].get(decision, 0) + 1
+                    active_summary["by_decision"][decision] = (
+                        active_summary["by_decision"].get(decision, 0) + 1
+                    )
 
             # Historical performance
             historical_summary = {
-                'total_signals_generated': len(self.signal_history),
-                'high_confidence_trades': len(self.uncertainty_performance['high_confidence_trades']),
-                'low_confidence_trades': len(self.uncertainty_performance['low_confidence_trades'])
+                "total_signals_generated": len(self.signal_history),
+                "high_confidence_trades": len(
+                    self.uncertainty_performance["high_confidence_trades"]
+                ),
+                "low_confidence_trades": len(self.uncertainty_performance["low_confidence_trades"]),
             }
 
             # Performance metrics
-            if self.uncertainty_performance['high_confidence_trades']:
-                high_conf_errors = [t['prediction_error'] for t in self.uncertainty_performance['high_confidence_trades']]
-                historical_summary['high_confidence_avg_error'] = np.mean(high_conf_errors)
+            if self.uncertainty_performance["high_confidence_trades"]:
+                high_conf_errors = [
+                    t["prediction_error"]
+                    for t in self.uncertainty_performance["high_confidence_trades"]
+                ]
+                historical_summary["high_confidence_avg_error"] = np.mean(high_conf_errors)
 
-            if self.uncertainty_performance['low_confidence_trades']:
-                low_conf_errors = [t['prediction_error'] for t in self.uncertainty_performance['low_confidence_trades']]
-                historical_summary['low_confidence_avg_error'] = np.mean(low_conf_errors)
+            if self.uncertainty_performance["low_confidence_trades"]:
+                low_conf_errors = [
+                    t["prediction_error"]
+                    for t in self.uncertainty_performance["low_confidence_trades"]
+                ]
+                historical_summary["low_confidence_avg_error"] = np.mean(low_conf_errors)
 
             return {
-                'active_signals': active_summary,
-                'historical_performance': historical_summary,
-                'uncertainty_performance': self.uncertainty_performance,
-                'config': {
-                    'trade_confidence_threshold': self.config.buy_confidence,
-                    'max_uncertainty': self.config.max_uncertainty_for_trade,
-                    'base_position_size': self.config.base_position_size
-                }
+                "active_signals": active_summary,
+                "historical_performance": historical_summary,
+                "uncertainty_performance": self.uncertainty_performance,
+                "config": {
+                    "trade_confidence_threshold": self.config.buy_confidence,
+                    "max_uncertainty": self.config.max_uncertainty_for_trade,
+                    "base_position_size": self.config.base_position_size,
+                },
             }
 
 
@@ -562,7 +630,10 @@ class ProbabilisticTrader:
 _probabilistic_trader = None
 _trader_lock = threading.Lock()
 
-def get_probabilistic_trader(config: Optional[ProbabilisticTradingConfig] = None) -> ProbabilisticTrader:
+
+def get_probabilistic_trader(
+    config: Optional[ProbabilisticTradingConfig] = None,
+) -> ProbabilisticTrader:
     """Get the singleton probabilistic trader"""
     global _probabilistic_trader
 
@@ -571,8 +642,10 @@ def get_probabilistic_trader(config: Optional[ProbabilisticTradingConfig] = None
             _probabilistic_trader = ProbabilisticTrader(config)
         return _probabilistic_trader
 
-def generate_uncertainty_signal(symbol: str, predictions: List[UncertaintyPrediction],
-                              current_price: float) -> TradingSignal:
+
+def generate_uncertainty_signal(
+    symbol: str, predictions: List[UncertaintyPrediction], current_price: float
+) -> TradingSignal:
     """Convenient function to generate trading signal with uncertainty"""
     trader = get_probabilistic_trader()
     return trader.generate_trading_signal(symbol, predictions, current_price)

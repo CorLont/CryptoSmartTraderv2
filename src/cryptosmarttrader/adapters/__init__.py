@@ -10,9 +10,4 @@ from .redis_cache_adapter import RedisCacheAdapter
 from .file_storage_adapter import FileStorageAdapter
 from .sklearn_model_adapter import SklearnModelAdapter
 
-__all__ = [
-    "KrakenDataAdapter",
-    "RedisCacheAdapter",
-    "FileStorageAdapter",
-    "SklearnModelAdapter"
-]
+__all__ = ["KrakenDataAdapter", "RedisCacheAdapter", "FileStorageAdapter", "SklearnModelAdapter"]

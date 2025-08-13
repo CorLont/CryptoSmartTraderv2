@@ -17,19 +17,23 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 import sys
 import os
-sys.path.append('.')
+
+sys.path.append(".")
 from src.cryptosmarttrader.observability import (
-    get_metrics_collector, create_alert_manager, setup_metrics_collector
+    get_metrics_collector,
+    create_alert_manager,
+    setup_metrics_collector,
 )
 
 
 # Setup structured logging
 logging.basicConfig(
     level=logging.INFO,
-    format='{"timestamp": "%(asctime)s", "level": "%(levelname)s", "component": "metrics_server", "message": "%(message)s", "module": "%(module)s"}'
+    format='{"timestamp": "%(asctime)s", "level": "%(levelname)s", "component": "metrics_server", "message": "%(message)s", "module": "%(module)s"}',
 )
 logger = logging.getLogger(__name__)
 
@@ -37,7 +41,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="CryptoSmartTrader Metrics Server",
     description="Enterprise metrics and monitoring endpoint",
-    version="2.0.0"
+    version="2.0.0",
 )
 
 # Add CORS middleware
@@ -59,11 +63,7 @@ logger.info("Metrics server initialized with observability system")
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": "metrics_server",
-        "version": "2.0.0"
-    }
+    return {"status": "healthy", "service": "metrics_server", "version": "2.0.0"}
 
 
 @app.get("/metrics")
@@ -71,16 +71,11 @@ async def get_prometheus_metrics():
     """Prometheus metrics endpoint."""
     try:
         metrics_data = metrics_collector.get_metrics()
-        return Response(
-            content=metrics_data,
-            media_type="text/plain; version=0.0.4; charset=utf-8"
-        )
+        return Response(content=metrics_data, media_type="text/plain; version=0.0.4; charset=utf-8")
     except Exception as e:
         logger.error(f"Error generating metrics: {e}")
         return Response(
-            content=f"# Error generating metrics: {e}\n",
-            media_type="text/plain",
-            status_code=500
+            content=f"# Error generating metrics: {e}\n", media_type="text/plain", status_code=500
         )
 
 
@@ -102,11 +97,11 @@ async def get_active_alerts():
         # Evaluate current alerts
         metrics_summary = metrics_collector.get_metrics_summary()
         alert_manager.evaluate_rules(metrics_summary)
-        
+
         # Return alert data
         return {
             "active_alerts": alert_manager.get_active_alerts(),
-            "alert_summary": alert_manager.get_alert_summary()
+            "alert_summary": alert_manager.get_alert_summary(),
         }
     except Exception as e:
         logger.error(f"Error getting alerts: {e}")
@@ -129,11 +124,7 @@ async def suppress_alert(alert_name: str, duration_minutes: int = 60):
     """Suppress an alert for specified duration."""
     try:
         alert_manager.suppress_alert(alert_name, duration_minutes)
-        return {
-            "status": "suppressed", 
-            "alert": alert_name,
-            "duration_minutes": duration_minutes
-        }
+        return {"status": "suppressed", "alert": alert_name, "duration_minutes": duration_minutes}
     except Exception as e:
         logger.error(f"Error suppressing alert {alert_name}: {e}")
         return {"error": str(e)}
@@ -145,25 +136,25 @@ async def get_system_status():
     try:
         metrics_summary = metrics_collector.get_metrics_summary()
         alert_summary = alert_manager.get_alert_summary()
-        
+
         # Determine overall health
-        critical_alerts = alert_summary['severity_distribution']['critical']
-        emergency_alerts = alert_summary['severity_distribution']['emergency']
-        
+        critical_alerts = alert_summary["severity_distribution"]["critical"]
+        emergency_alerts = alert_summary["severity_distribution"]["emergency"]
+
         if emergency_alerts > 0:
             health_status = "emergency"
         elif critical_alerts > 0:
             health_status = "critical"
-        elif alert_summary['active_alerts'] > 0:
+        elif alert_summary["active_alerts"] > 0:
             health_status = "warning"
         else:
             health_status = "healthy"
-        
+
         return {
             "overall_health": health_status,
             "metrics": metrics_summary,
             "alerts": alert_summary,
-            "timestamp": metrics_summary['timestamp']
+            "timestamp": metrics_summary["timestamp"],
         }
     except Exception as e:
         logger.error(f"Error getting system status: {e}")
@@ -174,7 +165,7 @@ async def get_system_status():
 async def startup_event():
     """Server startup event."""
     logger.info("Metrics server starting up")
-    
+
     # Record server startup
     metrics_collector.record_signal_received("system", "server_startup", service="metrics_server")
 
@@ -194,7 +185,7 @@ if __name__ == "__main__":
             port=8000,
             log_level="info",
             access_log=True,
-            reload=False
+            reload=False,
         )
     except KeyboardInterrupt:
         logger.info("Metrics server stopped by user")

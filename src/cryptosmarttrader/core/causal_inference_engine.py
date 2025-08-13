@@ -13,7 +13,8 @@ from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 # ML imports
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
@@ -23,9 +24,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score
 import xgboost as xgb
 
+
 @dataclass
 class CausalEffect:
     """Causal effect structure"""
+
     treatment: str
     outcome: str
     effect_size: float
@@ -37,9 +40,11 @@ class CausalEffect:
     sample_size: int
     confounders: List[str]
 
+
 @dataclass
 class CounterfactualPrediction:
     """Counterfactual prediction structure"""
+
     scenario_id: str
     treatment_variable: str
     original_value: float
@@ -49,9 +54,11 @@ class CounterfactualPrediction:
     explanation: str
     timestamp: datetime
 
+
 @dataclass
 class GrangerCausalityResult:
     """Granger causality test result"""
+
     cause: str
     effect: str
     f_statistic: float
@@ -60,6 +67,7 @@ class GrangerCausalityResult:
     lag_order: int
     aic_score: float
     direction: str  # 'unidirectional', 'bidirectional', 'none'
+
 
 class DoubleMachineLearning:
     """Double Machine Learning for causal inference"""
@@ -73,19 +81,20 @@ class DoubleMachineLearning:
         self.outcome_models = [
             RandomForestRegressor(n_estimators=100, random_state=random_state),
             GradientBoostingRegressor(n_estimators=100, random_state=random_state),
-            xgb.XGBRegressor(n_estimators=100, random_state=random_state)
+            xgb.XGBRegressor(n_estimators=100, random_state=random_state),
         ]
 
         self.treatment_models = [
             RandomForestRegressor(n_estimators=100, random_state=random_state),
             GradientBoostingRegressor(n_estimators=100, random_state=random_state),
-            xgb.XGBRegressor(n_estimators=100, random_state=random_state)
+            xgb.XGBRegressor(n_estimators=100, random_state=random_state),
         ]
 
         self.scaler = StandardScaler()
 
-    def estimate_ate(self, Y: np.ndarray, T: np.ndarray, X: np.ndarray,
-                     confounders: List[str]) -> CausalEffect:
+    def estimate_ate(
+        self, Y: np.ndarray, T: np.ndarray, X: np.ndarray, confounders: List[str]
+    ) -> CausalEffect:
         """Estimate Average Treatment Effect using DML"""
         try:
             n_samples = len(Y)
@@ -133,13 +142,17 @@ class DoubleMachineLearning:
 
                 # Compute standard error and p-value
                 residuals = Y_res - effect_size * T_res
-                variance = np.var(residuals) / (denominator ** 2)
+                variance = np.var(residuals) / (denominator**2)
                 std_error = np.sqrt(variance / n_samples)
                 t_stat = effect_size / (std_error + 1e-10)
                 p_value = 2 * (1 - abs(t_stat / np.sqrt(n_samples)))
 
             # Confidence interval (approximate)
-            margin_error = 1.96 * np.sqrt(variance / n_samples) if 'variance' in locals() else 0.1 * abs(effect_size)
+            margin_error = (
+                1.96 * np.sqrt(variance / n_samples)
+                if "variance" in locals()
+                else 0.1 * abs(effect_size)
+            )
             confidence_interval = (effect_size - margin_error, effect_size + margin_error)
 
             return CausalEffect(
@@ -152,7 +165,7 @@ class DoubleMachineLearning:
                 method="Double Machine Learning",
                 timestamp=datetime.now(),
                 sample_size=n_samples,
-                confounders=confounders
+                confounders=confounders,
             )
 
         except Exception as e:
@@ -167,8 +180,9 @@ class DoubleMachineLearning:
                 method="Double Machine Learning (Failed)",
                 timestamp=datetime.now(),
                 sample_size=0,
-                confounders=confounders
+                confounders=confounders,
             )
+
 
 class GrangerCausalityAnalyzer:
     """Granger causality analysis for time series"""
@@ -177,8 +191,9 @@ class GrangerCausalityAnalyzer:
         self.max_lags = max_lags
         self.logger = logging.getLogger(__name__)
 
-    def test_granger_causality(self, cause: pd.Series, effect: pd.Series,
-                             variable_names: Tuple[str, str] = ("X", "Y")) -> GrangerCausalityResult:
+    def test_granger_causality(
+        self, cause: pd.Series, effect: pd.Series, variable_names: Tuple[str, str] = ("X", "Y")
+    ) -> GrangerCausalityResult:
         """Test Granger causality between two time series"""
         try:
             # Ensure same length and alignment
@@ -197,8 +212,8 @@ class GrangerCausalityAnalyzer:
                     p_value=1.0,
                     is_causal=False,
                     lag_order=0,
-                    aic_score=float('inf'),
-                    direction='none'
+                    aic_score=float("inf"),
+                    direction="none",
                 )
 
             # Test causality
@@ -212,11 +227,11 @@ class GrangerCausalityAnalyzer:
             is_reverse_causal = p_value_reverse < 0.05
 
             if is_causal and is_reverse_causal:
-                direction = 'bidirectional'
+                direction = "bidirectional"
             elif is_causal:
-                direction = 'unidirectional'
+                direction = "unidirectional"
             else:
-                direction = 'none'
+                direction = "none"
 
             return GrangerCausalityResult(
                 cause=variable_names[0],
@@ -226,7 +241,7 @@ class GrangerCausalityAnalyzer:
                 is_causal=is_causal,
                 lag_order=best_lag,
                 aic_score=best_aic,
-                direction=direction
+                direction=direction,
             )
 
         except Exception as e:
@@ -238,13 +253,13 @@ class GrangerCausalityAnalyzer:
                 p_value=1.0,
                 is_causal=False,
                 lag_order=0,
-                aic_score=float('inf'),
-                direction='none'
+                aic_score=float("inf"),
+                direction="none",
             )
 
     def _find_optimal_lag(self, cause: np.ndarray, effect: np.ndarray) -> Tuple[int, float]:
         """Find optimal lag order using AIC"""
-        best_aic = float('inf')
+        best_aic = float("inf")
         best_lag = 0
 
         for lag in range(1, min(self.max_lags + 1, len(cause) // 4)):
@@ -266,11 +281,9 @@ class GrangerCausalityAnalyzer:
             y = effect[lag:]
 
             # Create design matrix
-            X = np.column_stack([
-                effect[i:n+i] for i in range(lag)
-            ] + [
-                cause[i:n+i] for i in range(lag)
-            ])
+            X = np.column_stack(
+                [effect[i : n + i] for i in range(lag)] + [cause[i : n + i] for i in range(lag)]
+            )
 
             # Add intercept
             X = np.column_stack([np.ones(n), X])
@@ -289,25 +302,28 @@ class GrangerCausalityAnalyzer:
             return aic
 
         except Exception:
-            return float('inf')
+            return float("inf")
 
-    def _compute_granger_test(self, cause: np.ndarray, effect: np.ndarray, lag: int) -> Tuple[float, float]:
+    def _compute_granger_test(
+        self, cause: np.ndarray, effect: np.ndarray, lag: int
+    ) -> Tuple[float, float]:
         """Compute Granger causality F-test"""
         try:
             n = len(effect) - lag
             y = effect[lag:]
 
             # Restricted model (without cause)
-            X_restricted = np.column_stack([
-                np.ones(n),  # intercept
-                *[effect[i:n+i] for i in range(lag)]
-            ])
+            X_restricted = np.column_stack(
+                [
+                    np.ones(n),  # intercept
+                    *[effect[i : n + i] for i in range(lag)],
+                ]
+            )
 
             # Unrestricted model (with cause)
-            X_unrestricted = np.column_stack([
-                X_restricted,
-                *[cause[i:n+i] for i in range(lag)]
-            ])
+            X_unrestricted = np.column_stack(
+                [X_restricted, *[cause[i : n + i] for i in range(lag)]]
+            )
 
             # Fit models
             coeffs_restricted = np.linalg.lstsq(X_restricted, y, rcond=None)[0]
@@ -334,6 +350,7 @@ class GrangerCausalityAnalyzer:
         except Exception as e:
             return 0.0, 1.0
 
+
 class CounterfactualPredictor:
     """Counterfactual prediction and what-if analysis"""
 
@@ -353,10 +370,7 @@ class CounterfactualPredictor:
 
             # Use ensemble model for robustness
             self.model = xgb.XGBRegressor(
-                n_estimators=200,
-                max_depth=6,
-                learning_rate=0.1,
-                random_state=42
+                n_estimators=200, max_depth=6, learning_rate=0.1, random_state=42
             )
 
             self.model.fit(X_scaled, y)
@@ -366,9 +380,9 @@ class CounterfactualPredictor:
         except Exception as e:
             self.logger.error(f"Error fitting counterfactual model: {e}")
 
-    def predict_counterfactual(self, X_original: pd.DataFrame,
-                             intervention_variable: str,
-                             intervention_value: float) -> List[CounterfactualPrediction]:
+    def predict_counterfactual(
+        self, X_original: pd.DataFrame, intervention_variable: str, intervention_value: float
+    ) -> List[CounterfactualPrediction]:
         """Predict counterfactual outcomes"""
         predictions = []
 
@@ -396,7 +410,9 @@ class CounterfactualPredictor:
                 effect = counterfactual_prediction - original_prediction
 
                 # Confidence (simplified based on prediction difference)
-                confidence = min(0.95, max(0.1, 1.0 - abs(effect) / (abs(original_prediction) + 1e-6)))
+                confidence = min(
+                    0.95, max(0.1, 1.0 - abs(effect) / (abs(original_prediction) + 1e-6))
+                )
 
                 # Create explanation
                 direction = "increase" if effect > 0 else "decrease"
@@ -411,7 +427,7 @@ class CounterfactualPredictor:
                     predicted_outcome=counterfactual_prediction,
                     confidence=confidence,
                     explanation=explanation,
-                    timestamp=datetime.now()
+                    timestamp=datetime.now(),
                 )
 
                 predictions.append(prediction)
@@ -420,6 +436,7 @@ class CounterfactualPredictor:
             self.logger.error(f"Error in counterfactual prediction: {e}")
 
         return predictions
+
 
 class CausalInferenceEngine:
     """Main causal inference engine"""
@@ -446,29 +463,19 @@ class CausalInferenceEngine:
     def _load_config(self) -> Dict[str, Any]:
         """Load causal inference configuration"""
         default_config = {
-            "dml_settings": {
-                "n_folds": 5,
-                "significance_level": 0.05,
-                "min_sample_size": 100
-            },
-            "granger_settings": {
-                "max_lags": 10,
-                "significance_level": 0.05
-            },
-            "counterfactual_settings": {
-                "confidence_threshold": 0.7,
-                "max_scenarios": 100
-            },
+            "dml_settings": {"n_folds": 5, "significance_level": 0.05, "min_sample_size": 100},
+            "granger_settings": {"max_lags": 10, "significance_level": 0.05},
+            "counterfactual_settings": {"confidence_threshold": 0.7, "max_scenarios": 100},
             "analysis_variables": {
                 "price_variables": ["price_change", "volume_change", "volatility"],
                 "market_variables": ["market_cap_change", "sentiment_score", "whale_activity"],
-                "technical_variables": ["rsi", "macd", "bollinger_position"]
-            }
+                "technical_variables": ["rsi", "macd", "bollinger_position"],
+            },
         }
 
         try:
             if self.config_path.exists():
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path, "r") as f:
                     loaded_config = json.load(f)
                     default_config.update(loaded_config)
         except Exception as e:
@@ -476,10 +483,13 @@ class CausalInferenceEngine:
 
         return default_config
 
-    def analyze_causal_relationships(self, data: pd.DataFrame,
-                                   treatment_col: str,
-                                   outcome_col: str,
-                                   confounders: List[str] = None) -> CausalEffect:
+    def analyze_causal_relationships(
+        self,
+        data: pd.DataFrame,
+        treatment_col: str,
+        outcome_col: str,
+        confounders: List[str] = None,
+    ) -> CausalEffect:
         """Analyze causal relationships using Double Machine Learning"""
         try:
             if len(data) < self.config["dml_settings"]["min_sample_size"]:
@@ -487,8 +497,9 @@ class CausalInferenceEngine:
                 return None
 
             # Prepare data
-            confounders = confounders or [col for col in data.columns
-                                        if col not in [treatment_col, outcome_col]]
+            confounders = confounders or [
+                col for col in data.columns if col not in [treatment_col, outcome_col]
+            ]
 
             Y = data[outcome_col].values
             T = data[treatment_col].values
@@ -512,7 +523,9 @@ class CausalInferenceEngine:
             # Store result
             self.causal_effects.append(effect)
 
-            self.logger.info(f"Causal effect estimated: {treatment_col} -> {outcome_col} = {effect.effect_size:.4f}")
+            self.logger.info(
+                f"Causal effect estimated: {treatment_col} -> {outcome_col} = {effect.effect_size:.4f}"
+            )
 
             return effect
 
@@ -520,8 +533,9 @@ class CausalInferenceEngine:
             self.logger.error(f"Error in causal analysis: {e}")
             return None
 
-    def test_granger_causality_matrix(self, data: pd.DataFrame,
-                                    variables: List[str] = None) -> List[GrangerCausalityResult]:
+    def test_granger_causality_matrix(
+        self, data: pd.DataFrame, variables: List[str] = None
+    ) -> List[GrangerCausalityResult]:
         """Test Granger causality between all variable pairs"""
         results = []
 
@@ -536,9 +550,7 @@ class CausalInferenceEngine:
 
                         if len(cause_series) > 20 and len(effect_series) > 20:
                             result = self.granger.test_granger_causality(
-                                cause_series,
-                                effect_series,
-                                (cause_var, effect_var)
+                                cause_series, effect_series, (cause_var, effect_var)
                             )
                             results.append(result)
 
@@ -555,10 +567,13 @@ class CausalInferenceEngine:
             self.logger.error(f"Error in Granger causality analysis: {e}")
             return results
 
-    def generate_counterfactual_scenarios(self, data: pd.DataFrame,
-                                        outcome_variable: str,
-                                        intervention_variables: List[str] = None,
-                                        intervention_ranges: Dict[str, Tuple[float, float]] = None) -> List[CounterfactualPrediction]:
+    def generate_counterfactual_scenarios(
+        self,
+        data: pd.DataFrame,
+        outcome_variable: str,
+        intervention_variables: List[str] = None,
+        intervention_ranges: Dict[str, Tuple[float, float]] = None,
+    ) -> List[CounterfactualPrediction]:
         """Generate counterfactual predictions for what-if scenarios"""
         predictions = []
 
@@ -603,9 +618,15 @@ class CausalInferenceEngine:
             self.counterfactual_predictions.extend(predictions)
 
             # Filter high-confidence predictions
-            high_confidence = [p for p in predictions if p.confidence > self.config["counterfactual_settings"]["confidence_threshold"]]
+            high_confidence = [
+                p
+                for p in predictions
+                if p.confidence > self.config["counterfactual_settings"]["confidence_threshold"]
+            ]
 
-            self.logger.info(f"Generated {len(predictions)} counterfactual scenarios, {len(high_confidence)} high-confidence")
+            self.logger.info(
+                f"Generated {len(predictions)} counterfactual scenarios, {len(high_confidence)} high-confidence"
+            )
 
             return predictions
 
@@ -620,38 +641,42 @@ class CausalInferenceEngine:
             "granger_relationships": [],
             "counterfactual_scenarios": [],
             "summary": {},
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         try:
             # Analyze price causality
-            price_vars = [col for col in market_data.columns if 'price' in col.lower()]
+            price_vars = [col for col in market_data.columns if "price" in col.lower()]
             if len(price_vars) >= 2:
                 for outcome in price_vars[:2]:  # Limit to avoid excessive computation
                     for treatment in [col for col in market_data.columns if col != outcome][:3]:
-                        effect = self.analyze_causal_relationships(
-                            market_data, treatment, outcome
-                        )
+                        effect = self.analyze_causal_relationships(market_data, treatment, outcome)
                         if effect:
                             results["causal_effects"].append(asdict(effect))
 
             # Granger causality analysis
-            key_variables = [col for col in market_data.columns
-                           if any(keyword in col.lower() for keyword in
-                                ['price', 'volume', 'rsi', 'sentiment', 'whale'])][:6]
+            key_variables = [
+                col
+                for col in market_data.columns
+                if any(
+                    keyword in col.lower()
+                    for keyword in ["price", "volume", "rsi", "sentiment", "whale"]
+                )
+            ][:6]
 
             if len(key_variables) >= 2:
-                granger_results = self.test_granger_causality_matrix(
-                    market_data[key_variables]
-                )
+                granger_results = self.test_granger_causality_matrix(market_data[key_variables])
                 results["granger_relationships"] = [asdict(r) for r in granger_results]
 
             # Counterfactual scenarios
             if price_vars:
                 outcome_var = price_vars[0]
-                intervention_vars = [col for col in market_data.columns
-                                   if col != outcome_var and
-                                   any(kw in col.lower() for kw in ['volume', 'sentiment', 'whale'])][:3]
+                intervention_vars = [
+                    col
+                    for col in market_data.columns
+                    if col != outcome_var
+                    and any(kw in col.lower() for kw in ["volume", "sentiment", "whale"])
+                ][:3]
 
                 if intervention_vars:
                     cf_predictions = self.generate_counterfactual_scenarios(
@@ -662,11 +687,17 @@ class CausalInferenceEngine:
             # Generate summary
             results["summary"] = {
                 "total_causal_effects": len(results["causal_effects"]),
-                "significant_effects": len([e for e in results["causal_effects"] if e["significance"]]),
+                "significant_effects": len(
+                    [e for e in results["causal_effects"] if e["significance"]]
+                ),
                 "granger_relationships": len(results["granger_relationships"]),
-                "significant_granger": len([r for r in results["granger_relationships"] if r["is_causal"]]),
+                "significant_granger": len(
+                    [r for r in results["granger_relationships"] if r["is_causal"]]
+                ),
                 "counterfactual_scenarios": len(results["counterfactual_scenarios"]),
-                "high_confidence_scenarios": len([s for s in results["counterfactual_scenarios"] if s["confidence"] > 0.7])
+                "high_confidence_scenarios": len(
+                    [s for s in results["counterfactual_scenarios"] if s["confidence"] > 0.7]
+                ),
             }
 
             self.logger.info(f"Market causality discovery completed: {results['summary']}")
@@ -677,9 +708,9 @@ class CausalInferenceEngine:
 
         return results
 
-    def explain_price_movement(self, market_data: pd.DataFrame,
-                             target_coin: str,
-                             movement_threshold: float = 0.05) -> Dict[str, Any]:
+    def explain_price_movement(
+        self, market_data: pd.DataFrame, target_coin: str, movement_threshold: float = 0.05
+    ) -> Dict[str, Any]:
         """Explain significant price movements using causal analysis"""
         try:
             # Identify significant movements
@@ -708,23 +739,30 @@ class CausalInferenceEngine:
                 for col in market_data.columns:
                     if col != price_col and not pd.isna(movement[col]):
                         if abs(movement[col]) > market_data[col].std():  # Anomalous value
-                            potential_causes.append({
-                                "variable": col,
-                                "value": movement[col],
-                                "z_score": (movement[col] - market_data[col].mean()) / market_data[col].std()
-                            })
+                            potential_causes.append(
+                                {
+                                    "variable": col,
+                                    "value": movement[col],
+                                    "z_score": (movement[col] - market_data[col].mean())
+                                    / market_data[col].std(),
+                                }
+                            )
 
-                explanations.append({
-                    "timestamp": idx,
-                    "movement": f"{movement_size:.2%} {direction}",
-                    "potential_causes": sorted(potential_causes, key=lambda x: abs(x["z_score"]), reverse=True)[:3]
-                })
+                explanations.append(
+                    {
+                        "timestamp": idx,
+                        "movement": f"{movement_size:.2%} {direction}",
+                        "potential_causes": sorted(
+                            potential_causes, key=lambda x: abs(x["z_score"]), reverse=True
+                        )[:3],
+                    }
+                )
 
             return {
                 "coin": target_coin,
                 "movement_threshold": movement_threshold,
                 "explanations": explanations,
-                "summary": f"Analyzed {len(explanations)} significant movements"
+                "summary": f"Analyzed {len(explanations)} significant movements",
             }
 
         except Exception as e:
@@ -738,20 +776,26 @@ class CausalInferenceEngine:
                 "causal_effects": {
                     "total": len(self.causal_effects),
                     "significant": len([e for e in self.causal_effects if e.significance]),
-                    "recent": [asdict(e) for e in self.causal_effects[-5:]]
+                    "recent": [asdict(e) for e in self.causal_effects[-5:]],
                 },
                 "granger_causality": {
                     "total_tests": len(self.granger_results),
-                    "significant_relationships": len([r for r in self.granger_results if r.is_causal]),
-                    "bidirectional": len([r for r in self.granger_results if r.direction == 'bidirectional']),
-                    "recent": [asdict(r) for r in self.granger_results[-5:]]
+                    "significant_relationships": len(
+                        [r for r in self.granger_results if r.is_causal]
+                    ),
+                    "bidirectional": len(
+                        [r for r in self.granger_results if r.direction == "bidirectional"]
+                    ),
+                    "recent": [asdict(r) for r in self.granger_results[-5:]],
                 },
                 "counterfactual_predictions": {
                     "total_scenarios": len(self.counterfactual_predictions),
-                    "high_confidence": len([p for p in self.counterfactual_predictions if p.confidence > 0.7]),
-                    "recent": [asdict(p) for p in self.counterfactual_predictions[-5:]]
+                    "high_confidence": len(
+                        [p for p in self.counterfactual_predictions if p.confidence > 0.7]
+                    ),
+                    "recent": [asdict(p) for p in self.counterfactual_predictions[-5:]],
                 },
-                "last_updated": datetime.now().isoformat()
+                "last_updated": datetime.now().isoformat(),
             }
 
         except Exception as e:
@@ -762,6 +806,7 @@ class CausalInferenceEngine:
 # Singleton instance
 _causal_inference_engine = None
 
+
 def get_causal_inference_engine() -> CausalInferenceEngine:
     """Get or create causal inference engine singleton"""
     global _causal_inference_engine
@@ -769,20 +814,30 @@ def get_causal_inference_engine() -> CausalInferenceEngine:
         _causal_inference_engine = CausalInferenceEngine()
     return _causal_inference_engine
 
-def analyze_causality(data: pd.DataFrame, treatment: str, outcome: str, confounders: List[str] = None) -> CausalEffect:
+
+def analyze_causality(
+    data: pd.DataFrame, treatment: str, outcome: str, confounders: List[str] = None
+) -> CausalEffect:
     """Convenient function for causal analysis"""
     engine = get_causal_inference_engine()
     return engine.analyze_causal_relationships(data, treatment, outcome, confounders)
 
-def test_granger_causality(data: pd.DataFrame, variables: List[str] = None) -> List[GrangerCausalityResult]:
+
+def test_granger_causality(
+    data: pd.DataFrame, variables: List[str] = None
+) -> List[GrangerCausalityResult]:
     """Convenient function for Granger causality testing"""
     engine = get_causal_inference_engine()
     return engine.test_granger_causality_matrix(data, variables)
 
-def predict_counterfactuals(data: pd.DataFrame, outcome: str, interventions: List[str] = None) -> List[CounterfactualPrediction]:
+
+def predict_counterfactuals(
+    data: pd.DataFrame, outcome: str, interventions: List[str] = None
+) -> List[CounterfactualPrediction]:
     """Convenient function for counterfactual prediction"""
     engine = get_causal_inference_engine()
     return engine.generate_counterfactual_scenarios(data, outcome, interventions)
+
 
 def discover_market_causality(market_data: pd.DataFrame) -> Dict[str, Any]:
     """Convenient function for comprehensive market causality discovery"""

@@ -8,6 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class BayesianEnsemble(BaseEstimator, RegressorMixin):
     """Bayesian ensemble with Monte Carlo Dropout for uncertainty estimation"""
 
@@ -59,7 +60,9 @@ class BayesianEnsemble(BaseEstimator, RegressorMixin):
         epistemic_uncertainty = np.std(model_means, axis=0)  # Std across models
 
         # Calculate aleatoric uncertainty (within models)
-        aleatoric_uncertainty = np.mean(np.std(predictions, axis=1), axis=0)  # Mean of std within models
+        aleatoric_uncertainty = np.mean(
+            np.std(predictions, axis=1), axis=0
+        )  # Mean of std within models
 
         # Final predictions (mean across all)
         means = np.mean(model_means, axis=0)
@@ -70,6 +73,7 @@ class BayesianEnsemble(BaseEstimator, RegressorMixin):
         """Apply dropout to input features"""
         dropout_mask = np.random.random(X.shape) > self.dropout_rate
         return X * dropout_mask
+
 
 class ConformalPredictor:
     """Conformal prediction for calibrated uncertainty intervals"""
@@ -89,7 +93,7 @@ class ConformalPredictor:
         """Calibrate the predictor using calibration set"""
 
         # Get predictions for calibration set
-        if hasattr(self.base_model, 'predict_with_uncertainty'):
+        if hasattr(self.base_model, "predict_with_uncertainty"):
             predictions, _, _ = self.base_model.predict_with_uncertainty(X_cal)
         else:
             predictions = self.base_model.predict(X_cal)
@@ -111,7 +115,7 @@ class ConformalPredictor:
             raise ValueError("Predictor not calibrated. Call calibrate() first.")
 
         # Get base predictions
-        if hasattr(self.base_model, 'predict_with_uncertainty'):
+        if hasattr(self.base_model, "predict_with_uncertainty"):
             predictions, epistemic_unc, aleatoric_unc = self.base_model.predict_with_uncertainty(X)
             total_uncertainty = np.sqrt(epistemic_unc**2 + aleatoric_unc**2)
         else:
@@ -131,15 +135,16 @@ class ConformalPredictor:
         interval_width = 2 * quantile
 
         return {
-            'predictions': predictions,
-            'lower_bound': lower_bound,
-            'upper_bound': upper_bound,
-            'interval_width': interval_width,
-            'epistemic_uncertainty': epistemic_unc,
-            'aleatoric_uncertainty': aleatoric_unc,
-            'total_uncertainty': total_uncertainty,
-            'coverage_probability': 1 - self.alpha
+            "predictions": predictions,
+            "lower_bound": lower_bound,
+            "upper_bound": upper_bound,
+            "interval_width": interval_width,
+            "epistemic_uncertainty": epistemic_unc,
+            "aleatoric_uncertainty": aleatoric_unc,
+            "total_uncertainty": total_uncertainty,
+            "coverage_probability": 1 - self.alpha,
         }
+
 
 class EnhancedUncertaintyQuantifier:
     """Enhanced uncertainty quantification combining multiple methods"""
@@ -180,8 +185,8 @@ class EnhancedUncertaintyQuantifier:
         conformal_results = self.conformal_predictor.predict_with_intervals(X)
 
         # Calculate confidence scores based on uncertainty
-        total_unc = conformal_results['total_uncertainty']
-        interval_widths = conformal_results['interval_width']
+        total_unc = conformal_results["total_uncertainty"]
+        interval_widths = conformal_results["interval_width"]
 
         # Normalize uncertainties to get confidence (higher uncertainty = lower confidence)
         max_unc = np.percentile(total_unc, 95)  # Use 95th percentile for normalization
@@ -198,16 +203,16 @@ class EnhancedUncertaintyQuantifier:
         calibrated_confidence = self._calibrate_confidence(combined_confidence)
 
         return {
-            'predictions': conformal_results['predictions'],
-            'confidence': calibrated_confidence,
-            'epistemic_uncertainty': conformal_results['epistemic_uncertainty'],
-            'aleatoric_uncertainty': conformal_results['aleatoric_uncertainty'],
-            'prediction_intervals': {
-                'lower': conformal_results['lower_bound'],
-                'upper': conformal_results['upper_bound'],
-                'width': conformal_results['interval_width']
+            "predictions": conformal_results["predictions"],
+            "confidence": calibrated_confidence,
+            "epistemic_uncertainty": conformal_results["epistemic_uncertainty"],
+            "aleatoric_uncertainty": conformal_results["aleatoric_uncertainty"],
+            "prediction_intervals": {
+                "lower": conformal_results["lower_bound"],
+                "upper": conformal_results["upper_bound"],
+                "width": conformal_results["interval_width"],
             },
-            'coverage_probability': conformal_results['coverage_probability']
+            "coverage_probability": conformal_results["coverage_probability"],
         }
 
     def _calibrate_confidence(self, raw_confidence: np.ndarray) -> np.ndarray:
@@ -228,16 +233,19 @@ class EnhancedUncertaintyQuantifier:
         results = self.predict_with_full_uncertainty(X)
 
         return {
-            'mean_confidence': np.mean(results['confidence']),
-            'confidence_std': np.std(results['confidence']),
-            'high_confidence_fraction': np.mean(results['confidence'] > 0.8),
-            'mean_interval_width': np.mean(results['prediction_intervals']['width']),
-            'mean_epistemic_uncertainty': np.mean(results['epistemic_uncertainty']),
-            'mean_aleatoric_uncertainty': np.mean(results['aleatoric_uncertainty']),
-            'coverage_probability': results['coverage_probability']
+            "mean_confidence": np.mean(results["confidence"]),
+            "confidence_std": np.std(results["confidence"]),
+            "high_confidence_fraction": np.mean(results["confidence"] > 0.8),
+            "mean_interval_width": np.mean(results["prediction_intervals"]["width"]),
+            "mean_epistemic_uncertainty": np.mean(results["epistemic_uncertainty"]),
+            "mean_aleatoric_uncertainty": np.mean(results["aleatoric_uncertainty"]),
+            "coverage_probability": results["coverage_probability"],
         }
 
-def create_uncertainty_aware_predictions(features: pd.DataFrame, targets: pd.DataFrame, models: List) -> pd.DataFrame:
+
+def create_uncertainty_aware_predictions(
+    features: pd.DataFrame, targets: pd.DataFrame, models: List
+) -> pd.DataFrame:
     """
     Create uncertainty-aware predictions using advanced quantification methods
 
@@ -262,18 +270,20 @@ def create_uncertainty_aware_predictions(features: pd.DataFrame, targets: pd.Dat
     uncertainty_results = quantifier.predict_with_full_uncertainty(X)
 
     # Create results DataFrame
-    results_df = pd.DataFrame({
-        'predictions': uncertainty_results['predictions'],
-        'confidence': uncertainty_results['confidence'],
-        'epistemic_uncertainty': uncertainty_results['epistemic_uncertainty'],
-        'aleatoric_uncertainty': uncertainty_results['aleatoric_uncertainty'],
-        'interval_lower': uncertainty_results['prediction_intervals']['lower'],
-        'interval_upper': uncertainty_results['prediction_intervals']['upper'],
-        'interval_width': uncertainty_results['prediction_intervals']['width']
-    })
+    results_df = pd.DataFrame(
+        {
+            "predictions": uncertainty_results["predictions"],
+            "confidence": uncertainty_results["confidence"],
+            "epistemic_uncertainty": uncertainty_results["epistemic_uncertainty"],
+            "aleatoric_uncertainty": uncertainty_results["aleatoric_uncertainty"],
+            "interval_lower": uncertainty_results["prediction_intervals"]["lower"],
+            "interval_upper": uncertainty_results["prediction_intervals"]["upper"],
+            "interval_width": uncertainty_results["prediction_intervals"]["width"],
+        }
+    )
 
     # Add feature information if available
-    if hasattr(features, 'index'):
+    if hasattr(features, "index"):
         results_df.index = features.index
 
     # Get uncertainty summary

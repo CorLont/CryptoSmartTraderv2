@@ -12,19 +12,24 @@ from datetime import datetime, timedelta
 from enum import Enum
 import json
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 from ..core.logging_manager import get_logger
 from ..core.data_quality_manager import get_data_quality_manager, DataCompleteness
 
+
 class FilterAction(str, Enum):
     """Filter actions for incomplete data"""
-    PASS = "pass"          # Data is complete - allow through
-    BLOCK = "block"        # Data is incomplete - BLOCK coin
+
+    PASS = "pass"  # Data is complete - allow through
+    BLOCK = "block"  # Data is incomplete - BLOCK coin
     QUARANTINE = "quarantine"  # Data quality issues - quarantine for review
+
 
 class BlockReason(str, Enum):
     """Reasons for blocking coins"""
+
     MISSING_PRICE = "missing_price"
     MISSING_VOLUME = "missing_volume"
     MISSING_OHLCV = "missing_ohlcv"
@@ -34,9 +39,11 @@ class BlockReason(str, Enum):
     DATA_QUALITY_FAILURE = "data_quality_failure"
     API_ERROR = "api_error"
 
+
 @dataclass
 class FilterResult:
     """Result of hard data filter check"""
+
     symbol: str
     action: FilterAction
     completeness_score: float
@@ -46,9 +53,11 @@ class FilterResult:
     timestamp: datetime
     details: Dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class FilterStats:
     """Statistics from filtering operation"""
+
     timestamp: datetime
     total_coins_processed: int
     coins_passed: int
@@ -57,6 +66,7 @@ class FilterStats:
     block_reasons: Dict[BlockReason, int]
     average_completeness: float
     filter_duration_seconds: float
+
 
 class HardDataFilter:
     """Hard data integrity filter with zero tolerance for incomplete data"""
@@ -69,22 +79,22 @@ class HardDataFilter:
         self.completeness_threshold = 0.8  # 80% minimum completeness
         self.critical_components = {"price_data", "volume_data", "ohlcv_data"}  # Must have these
         self.component_weights = {
-            "price_data": 0.35,      # 35% weight - CRITICAL
-            "volume_data": 0.25,     # 25% weight - CRITICAL
-            "ohlcv_data": 0.20,      # 20% weight - CRITICAL
-            "order_book_data": 0.10, # 10% weight
+            "price_data": 0.35,  # 35% weight - CRITICAL
+            "volume_data": 0.25,  # 25% weight - CRITICAL
+            "ohlcv_data": 0.20,  # 20% weight - CRITICAL
+            "order_book_data": 0.10,  # 10% weight
             "sentiment_data": 0.05,  # 5% weight
-            "technical_data": 0.05   # 5% weight
+            "technical_data": 0.05,  # 5% weight
         }
 
         # Minimum thresholds per component
         self.component_thresholds = {
-            "price_data": 0.9,      # 90% - price must be nearly perfect
-            "volume_data": 0.8,     # 80% - volume must be reliable
-            "ohlcv_data": 0.7,      # 70% - OHLCV needs reasonable coverage
-            "order_book_data": 0.5, # 50% - order book can be partial
+            "price_data": 0.9,  # 90% - price must be nearly perfect
+            "volume_data": 0.8,  # 80% - volume must be reliable
+            "ohlcv_data": 0.7,  # 70% - OHLCV needs reasonable coverage
+            "order_book_data": 0.5,  # 50% - order book can be partial
             "sentiment_data": 0.3,  # 30% - sentiment can be sparse
-            "technical_data": 0.6   # 60% - technical indicators need good coverage
+            "technical_data": 0.6,  # 60% - technical indicators need good coverage
         }
 
         # Statistics tracking
@@ -95,8 +105,8 @@ class HardDataFilter:
             "Hard Data Filter initialized with zero-tolerance policy",
             extra={
                 "completeness_threshold": self.completeness_threshold,
-                "critical_components": list(self.critical_components)
-            }
+                "critical_components": list(self.critical_components),
+            },
         )
 
     def apply_hard_filter(self, coins_data: Dict[str, Any]) -> Tuple[Dict[str, Any], FilterStats]:
@@ -134,8 +144,8 @@ class HardDataFilter:
                         extra={
                             "symbol": symbol,
                             "action": "PASS",
-                            "completeness": filter_result.completeness_score
-                        }
+                            "completeness": filter_result.completeness_score,
+                        },
                     )
 
                 elif filter_result.action == FilterAction.BLOCK:
@@ -149,13 +159,15 @@ class HardDataFilter:
                     block_reasons[reason] += 1
 
                     # Store blocked coin for analysis
-                    self.blocked_coins_history.append({
-                        "symbol": symbol,
-                        "block_reason": reason.value,
-                        "completeness_score": filter_result.completeness_score,
-                        "missing_components": filter_result.missing_components,
-                        "timestamp": start_time
-                    })
+                    self.blocked_coins_history.append(
+                        {
+                            "symbol": symbol,
+                            "block_reason": reason.value,
+                            "completeness_score": filter_result.completeness_score,
+                            "missing_components": filter_result.missing_components,
+                            "timestamp": start_time,
+                        }
+                    )
 
                     self.logger.warning(
                         f"BLOCKED: {symbol} - {reason.value} (completeness {filter_result.completeness_score:.2f})",
@@ -164,8 +176,8 @@ class HardDataFilter:
                             "action": "BLOCKED",
                             "block_reason": reason.value,
                             "completeness": filter_result.completeness_score,
-                            "missing_components": filter_result.missing_components
-                        }
+                            "missing_components": filter_result.missing_components,
+                        },
                     )
 
                 else:  # QUARANTINE
@@ -176,14 +188,16 @@ class HardDataFilter:
                         extra={
                             "symbol": symbol,
                             "action": "QUARANTINE",
-                            "completeness": filter_result.completeness_score
-                        }
+                            "completeness": filter_result.completeness_score,
+                        },
                     )
 
             except Exception as e:
                 # Exception during filtering - BLOCK the coin
                 blocked_count += 1
-                block_reasons[BlockReason.API_ERROR] = block_reasons.get(BlockReason.API_ERROR, 0) + 1
+                block_reasons[BlockReason.API_ERROR] = (
+                    block_reasons.get(BlockReason.API_ERROR, 0) + 1
+                )
 
                 self.logger.error(
                     f"BLOCKED: {symbol} - filter error: {e}",
@@ -191,8 +205,8 @@ class HardDataFilter:
                         "symbol": symbol,
                         "action": "BLOCKED",
                         "block_reason": "api_error",
-                        "error": str(e)
-                    }
+                        "error": str(e),
+                    },
                 )
 
         # Calculate statistics
@@ -207,7 +221,7 @@ class HardDataFilter:
             coins_quarantined=quarantined_count,
             block_reasons=block_reasons,
             average_completeness=avg_completeness,
-            filter_duration_seconds=filter_duration
+            filter_duration_seconds=filter_duration,
         )
 
         # Store statistics
@@ -229,13 +243,15 @@ class HardDataFilter:
                 "quarantined": quarantined_count,
                 "pass_rate": passed_count / total_processed if total_processed > 0 else 0,
                 "avg_completeness": avg_completeness,
-                "duration_seconds": filter_duration
-            }
+                "duration_seconds": filter_duration,
+            },
         )
 
         return filtered_data, filter_stats
 
-    def _check_coin_completeness_strict(self, symbol: str, coin_data: Dict[str, Any]) -> FilterResult:
+    def _check_coin_completeness_strict(
+        self, symbol: str, coin_data: Dict[str, Any]
+    ) -> FilterResult:
         """Strict completeness check with zero tolerance for incomplete data"""
 
         component_scores = {}
@@ -297,9 +313,11 @@ class HardDataFilter:
             component_scores=component_scores,
             timestamp=datetime.now(),
             details={
-                "critical_components_missing": len([c for c in missing_components if c in self.critical_components]),
-                "total_components_missing": len(missing_components)
-            }
+                "critical_components_missing": len(
+                    [c for c in missing_components if c in self.critical_components]
+                ),
+                "total_components_missing": len(missing_components),
+            },
         )
 
     def _check_price_data_completeness(self, coin_data: Dict[str, Any]) -> float:
@@ -386,8 +404,11 @@ class HardDataFilter:
                 # Check if data points are valid
                 valid_points = 0
                 for point in data[:10]:  # Check first 10 points
-                    if (isinstance(point, list) and len(point) >= 6 and
-                        all(isinstance(x, (int, float)) and x > 0 for x in point[1:5])):  # OHLC values
+                    if (
+                        isinstance(point, list)
+                        and len(point) >= 6
+                        and all(isinstance(x, (int, float)) and x > 0 for x in point[1:5])
+                    ):  # OHLC values
                         valid_points += 1
 
                 if valid_points >= 8:  # At least 80% valid points
@@ -476,7 +497,7 @@ class HardDataFilter:
         self,
         completeness_score: float,
         missing_components: List[str],
-        component_scores: Dict[str, float]
+        component_scores: Dict[str, float],
     ) -> Tuple[FilterAction, Optional[BlockReason]]:
         """Determine filter action based on completeness analysis"""
 
@@ -516,8 +537,18 @@ class HardDataFilter:
         latest_stats = self.filter_stats_history[-1]
 
         # Calculate trends
-        recent_stats = self.filter_stats_history[-10:] if len(self.filter_stats_history) >= 10 else self.filter_stats_history
-        avg_pass_rate = np.mean([s.coins_passed / s.total_coins_processed for s in recent_stats if s.total_coins_processed > 0])
+        recent_stats = (
+            self.filter_stats_history[-10:]
+            if len(self.filter_stats_history) >= 10
+            else self.filter_stats_history
+        )
+        avg_pass_rate = np.mean(
+            [
+                s.coins_passed / s.total_coins_processed
+                for s in recent_stats
+                if s.total_coins_processed > 0
+            ]
+        )
         avg_completeness = np.mean([s.average_completeness for s in recent_stats])
 
         # Most common block reasons
@@ -535,27 +566,39 @@ class HardDataFilter:
                 "total_processed": latest_stats.total_coins_processed,
                 "passed": latest_stats.coins_passed,
                 "blocked": latest_stats.coins_blocked,
-                "pass_rate": latest_stats.coins_passed / latest_stats.total_coins_processed if latest_stats.total_coins_processed > 0 else 0,
-                "average_completeness": latest_stats.average_completeness
+                "pass_rate": latest_stats.coins_passed / latest_stats.total_coins_processed
+                if latest_stats.total_coins_processed > 0
+                else 0,
+                "average_completeness": latest_stats.average_completeness,
             },
             "trends": {
                 "average_pass_rate_last_10": avg_pass_rate,
                 "average_completeness_last_10": avg_completeness,
-                "total_filter_runs": len(self.filter_stats_history)
+                "total_filter_runs": len(self.filter_stats_history),
             },
             "block_analysis": {
-                "most_common_block_reasons": dict(sorted(all_block_reasons.items(), key=lambda x: x[1], reverse=True)[:5]),
-                "recently_blocked_coins": len([c for c in self.blocked_coins_history if (datetime.now() - c["timestamp"]).total_seconds() < 3600])  # Last hour
+                "most_common_block_reasons": dict(
+                    sorted(all_block_reasons.items(), key=lambda x: x[1], reverse=True)[:5]
+                ),
+                "recently_blocked_coins": len(
+                    [
+                        c
+                        for c in self.blocked_coins_history
+                        if (datetime.now() - c["timestamp"]).total_seconds() < 3600
+                    ]
+                ),  # Last hour
             },
             "configuration": {
                 "completeness_threshold": self.completeness_threshold,
                 "critical_components": list(self.critical_components),
-                "zero_tolerance_policy": True
-            }
+                "zero_tolerance_policy": True,
+            },
         }
+
 
 # Global instance
 _hard_data_filter = None
+
 
 def get_hard_data_filter() -> HardDataFilter:
     """Get global hard data filter instance"""

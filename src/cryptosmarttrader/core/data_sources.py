@@ -33,15 +33,15 @@ class DataSourceManager:
                 "ticker": "/public/Ticker",
                 "orderbook": "/public/Depth",
                 "trades": "/public/Trades",
-                "ohlc": "/public/OHLC"
+                "ohlc": "/public/OHLC",
             },
             "binance": {
                 "base_url": "https://api.binance.com/api/v3",
                 "ticker": "/ticker/24hr",
                 "orderbook": "/depth",
                 "trades": "/trades",
-                "klines": "/klines"
-            }
+                "klines": "/klines",
+            },
         }
 
         # Market data endpoints
@@ -50,14 +50,14 @@ class DataSourceManager:
                 "base_url": "https://api.coingecko.com/api/v3",
                 "coins": "/coins/markets",
                 "price": "/simple/price",
-                "trending": "/search/trending"
+                "trending": "/search/trending",
             },
             "coinmarketcap": {
                 "base_url": "https://pro-api.coinmarketcap.com/v1",
                 "listings": "/cryptocurrency/listings/latest",
                 "quotes": "/cryptocurrency/quotes/latest",
-                "metadata": "/cryptocurrency/info"
-            }
+                "metadata": "/cryptocurrency/info",
+            },
         }
 
         # Social/news endpoints
@@ -65,21 +65,17 @@ class DataSourceManager:
             "reddit": {
                 "base_url": "https://www.reddit.com/r",
                 "search": "/search.json",
-                "hot": "/hot.json"
+                "hot": "/hot.json",
             },
             "newsapi": {
                 "base_url": "https://newsapi.org/v2",
                 "everything": "/everything",
-                "headlines": "/top-headlines"
-            }
+                "headlines": "/top-headlines",
+            },
         }
 
     async def get_exchange_data(
-        self,
-        exchange: str,
-        endpoint_type: str,
-        symbol: Optional[str] = None,
-        **params
+        self, exchange: str, endpoint_type: str, symbol: Optional[str] = None, **params
     ) -> Dict[str, Any]:
         """
         Get data from cryptocurrency exchange
@@ -116,7 +112,7 @@ class DataSourceManager:
                 service=exchange,
                 url=url,
                 params=params,
-                data_type="price" if endpoint_type == "ticker" else "market"
+                data_type="price" if endpoint_type == "ticker" else "market",
             )
 
             self.logger.debug(f"Retrieved {endpoint_type} data from {exchange}")
@@ -139,26 +135,26 @@ class DataSourceManager:
         """
 
         if source == "coingecko":
-            url = self.market_endpoints["coingecko"]["base_url"] + \
-                  self.market_endpoints["coingecko"]["coins"]
+            url = (
+                self.market_endpoints["coingecko"]["base_url"]
+                + self.market_endpoints["coingecko"]["coins"]
+            )
 
             params = {
                 "vs_currency": "usd",
                 "order": "market_cap_desc",
                 "per_page": limit,
                 "page": 1,
-                "sparkline": "false"
+                "sparkline": "false",
             }
 
         elif source == "coinmarketcap":
-            url = self.market_endpoints["coinmarketcap"]["base_url"] + \
-                  self.market_endpoints["coinmarketcap"]["listings"]
+            url = (
+                self.market_endpoints["coinmarketcap"]["base_url"]
+                + self.market_endpoints["coinmarketcap"]["listings"]
+            )
 
-            params = {
-                "start": 1,
-                "limit": limit,
-                "convert": "USD"
-            }
+            params = {"start": 1, "limit": limit, "convert": "USD"}
 
         else:
             raise ValueError(f"Unsupported market data source: {source}")
@@ -169,7 +165,7 @@ class DataSourceManager:
                 url=url,
                 params=params,
                 data_type="market",
-                cache_ttl=300  # 5 minute cache
+                cache_ttl=300,  # 5 minute cache
             )
 
             self.logger.info(f"Retrieved market overview from {source} ({limit} coins)")
@@ -180,9 +176,7 @@ class DataSourceManager:
             raise
 
     async def get_price_data(
-        self,
-        symbols: List[str],
-        source: str = "coingecko"
+        self, symbols: List[str], source: str = "coingecko"
     ) -> Dict[str, Dict]:
         """
         Get current price data for multiple symbols
@@ -196,15 +190,17 @@ class DataSourceManager:
         """
 
         if source == "coingecko":
-            url = self.market_endpoints["coingecko"]["base_url"] + \
-                  self.market_endpoints["coingecko"]["price"]
+            url = (
+                self.market_endpoints["coingecko"]["base_url"]
+                + self.market_endpoints["coingecko"]["price"]
+            )
 
             params = {
                 "ids": ",".join(symbols),
                 "vs_currencies": "usd",
                 "include_24hr_change": "true",
                 "include_market_cap": "true",
-                "include_24hr_vol": "true"
+                "include_24hr_vol": "true",
             }
 
         else:
@@ -216,7 +212,7 @@ class DataSourceManager:
                 url=url,
                 params=params,
                 data_type="price",
-                cache_ttl=30  # 30 second cache for prices
+                cache_ttl=30,  # 30 second cache for prices
             )
 
             self.logger.debug(f"Retrieved price data for {len(symbols)} symbols from {source}")
@@ -227,10 +223,7 @@ class DataSourceManager:
             raise
 
     async def get_social_sentiment(
-        self,
-        query: str,
-        source: str = "reddit",
-        limit: int = 25
+        self, query: str, source: str = "reddit", limit: int = 25
     ) -> List[Dict]:
         """
         Get social sentiment data
@@ -257,7 +250,7 @@ class DataSourceManager:
                         "q": query,
                         "sort": "relevance",
                         "t": "day",  # Last 24 hours
-                        "limit": limit // len(subreddits)
+                        "limit": limit // len(subreddits),
                     }
 
                     data = await http_client.get(
@@ -265,7 +258,7 @@ class DataSourceManager:
                         url=url,
                         params=params,
                         data_type="social",
-                        cache_ttl=180  # 3 minute cache
+                        cache_ttl=180,  # 3 minute cache
                     )
 
                     if "data" in data and "children" in data["data"]:
@@ -286,10 +279,7 @@ class DataSourceManager:
             raise ValueError(f"Unsupported social source: {source}")
 
     async def get_news_data(
-        self,
-        query: str = "cryptocurrency",
-        source: str = "newsapi",
-        limit: int = 50
+        self, query: str = "cryptocurrency", source: str = "newsapi", limit: int = 50
     ) -> List[Dict]:
         """
         Get news articles for sentiment analysis
@@ -304,15 +294,17 @@ class DataSourceManager:
         """
 
         if source == "newsapi":
-            url = self.social_endpoints["newsapi"]["base_url"] + \
-                  self.social_endpoints["newsapi"]["everything"]
+            url = (
+                self.social_endpoints["newsapi"]["base_url"]
+                + self.social_endpoints["newsapi"]["everything"]
+            )
 
             params = {
                 "q": query,
                 "language": "en",
                 "sortBy": "publishedAt",
                 "pageSize": limit,
-                "from": (datetime.utcnow() - timedelta(days=1)).isoformat()
+                "from": (datetime.utcnow() - timedelta(days=1)).isoformat(),
             }
 
         else:
@@ -329,7 +321,7 @@ class DataSourceManager:
                 params=params,
                 headers=headers,
                 data_type="news",
-                cache_ttl=600  # 10 minute cache
+                cache_ttl=600,  # 10 minute cache
             )
 
             articles = data.get("articles", []) if isinstance(data, dict) else []
@@ -352,8 +344,10 @@ class DataSourceManager:
         """
 
         if source == "coingecko":
-            url = self.market_endpoints["coingecko"]["base_url"] + \
-                  self.market_endpoints["coingecko"]["trending"]
+            url = (
+                self.market_endpoints["coingecko"]["base_url"]
+                + self.market_endpoints["coingecko"]["trending"]
+            )
 
         else:
             raise ValueError(f"Unsupported trending source: {source}")
@@ -363,7 +357,7 @@ class DataSourceManager:
                 service=source,
                 url=url,
                 data_type="market",
-                cache_ttl=900  # 15 minute cache
+                cache_ttl=900,  # 15 minute cache
             )
 
             trending = data.get("coins", []) if isinstance(data, dict) else []
@@ -403,14 +397,14 @@ class DataSourceManager:
                 health_status[service] = {
                     "status": "healthy",
                     "response_time_ms": round(response_time * 1000, 2),
-                    "circuit_breaker": circuit_status.get(service, {})
+                    "circuit_breaker": circuit_status.get(service, {}),
                 }
 
             except Exception as e:
                 health_status[service] = {
                     "status": "unhealthy",
                     "error": str(e),
-                    "circuit_breaker": circuit_status.get(service, {})
+                    "circuit_breaker": circuit_status.get(service, {}),
                 }
 
         # Add cache statistics

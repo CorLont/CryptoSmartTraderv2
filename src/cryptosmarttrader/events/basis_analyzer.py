@@ -15,28 +15,32 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class BasisRegime(Enum):
     """Basis regime classification"""
-    EXTREME_CONTANGO = "extreme_contango"       # Very high positive basis
-    HIGH_CONTANGO = "high_contango"             # High positive basis
-    NORMAL_CONTANGO = "normal_contango"         # Normal positive basis
-    NEUTRAL = "neutral"                         # Near zero basis
-    NORMAL_BACKWARDATION = "normal_backwardation"   # Normal negative basis
-    HIGH_BACKWARDATION = "high_backwardation"   # High negative basis
+
+    EXTREME_CONTANGO = "extreme_contango"  # Very high positive basis
+    HIGH_CONTANGO = "high_contango"  # High positive basis
+    NORMAL_CONTANGO = "normal_contango"  # Normal positive basis
+    NEUTRAL = "neutral"  # Near zero basis
+    NORMAL_BACKWARDATION = "normal_backwardation"  # Normal negative basis
+    HIGH_BACKWARDATION = "high_backwardation"  # High negative basis
     EXTREME_BACKWARDATION = "extreme_backwardation"  # Very high negative basis
 
 
 class BasisSignalType(Enum):
     """Types of basis signals"""
-    MEAN_REVERSION = "mean_reversion"           # Extreme basis reverting
-    TREND_CONTINUATION = "trend_continuation"   # Low basis trending
-    ARBITRAGE = "arbitrage"                     # Cross-exchange arbitrage
-    MOMENTUM = "momentum"                       # Basis momentum signal
+
+    MEAN_REVERSION = "mean_reversion"  # Extreme basis reverting
+    TREND_CONTINUATION = "trend_continuation"  # Low basis trending
+    ARBITRAGE = "arbitrage"  # Cross-exchange arbitrage
+    MOMENTUM = "momentum"  # Basis momentum signal
 
 
 @dataclass
 class BasisZScore:
     """Basis z-score analysis"""
+
     timestamp: datetime
     pair: str
     exchange: str
@@ -44,21 +48,21 @@ class BasisZScore:
     # Raw basis data
     perp_price: float
     spot_price: float
-    basis_bp: float             # Basis in basis points
+    basis_bp: float  # Basis in basis points
 
     # Statistical analysis
-    z_score: float              # Statistical z-score
-    lookback_mean: float        # Historical mean basis
-    lookback_std: float         # Historical standard deviation
-    lookback_periods: int       # Number of periods in analysis
+    z_score: float  # Statistical z-score
+    lookback_mean: float  # Historical mean basis
+    lookback_std: float  # Historical standard deviation
+    lookback_periods: int  # Number of periods in analysis
 
     # Classification
     regime: BasisRegime
-    is_extreme: bool            # |z-score| > 2
-    is_very_extreme: bool       # |z-score| > 3
+    is_extreme: bool  # |z-score| > 2
+    is_very_extreme: bool  # |z-score| > 3
 
     # Context
-    volume_ratio: float         # Perp/spot volume ratio
+    volume_ratio: float  # Perp/spot volume ratio
     funding_rate: Optional[float] = None
     time_to_expiry: Optional[float] = None  # For futures
 
@@ -81,6 +85,7 @@ class BasisZScore:
 @dataclass
 class BasisSignal:
     """Basis-based trading signal"""
+
     signal_id: str
     timestamp: datetime
     pair: str
@@ -88,8 +93,8 @@ class BasisSignal:
 
     # Signal details
     signal_type: BasisSignalType
-    direction: str              # "long", "short", "neutral"
-    confidence: float           # Signal confidence (0-1)
+    direction: str  # "long", "short", "neutral"
+    confidence: float  # Signal confidence (0-1)
 
     # Basis context
     current_basis_bp: float
@@ -115,7 +120,9 @@ class BasisSignal:
     def kelly_fraction(self) -> float:
         """Optimal Kelly fraction for position sizing"""
         if self.risk_reward_ratio > 0:
-            return (self.win_probability * (1 + self.risk_reward_ratio) - 1) / self.risk_reward_ratio
+            return (
+                self.win_probability * (1 + self.risk_reward_ratio) - 1
+            ) / self.risk_reward_ratio
         return 0.0
 
 
@@ -125,49 +132,50 @@ class BasisAnalyzer:
     """
 
     def __init__(self):
-        self.basis_history = {}     # exchange -> pair -> List[BasisZScore]
+        self.basis_history = {}  # exchange -> pair -> List[BasisZScore]
         self.signal_history = []
 
         # Configuration
-        self.z_score_window = 168   # 7 days of hourly data
-        self.extreme_threshold = 2.0    # 2 sigma
-        self.very_extreme_threshold = 3.0   # 3 sigma
+        self.z_score_window = 168  # 7 days of hourly data
+        self.extreme_threshold = 2.0  # 2 sigma
+        self.very_extreme_threshold = 3.0  # 3 sigma
 
         # Basis thresholds (basis points)
         self.contango_thresholds = {
-            'normal': 10,       # 10bp
-            'high': 50,         # 50bp
-            'extreme': 200      # 200bp
+            "normal": 10,  # 10bp
+            "high": 50,  # 50bp
+            "extreme": 200,  # 200bp
         }
 
         self.backwardation_thresholds = {
-            'normal': -10,      # -10bp
-            'high': -50,        # -50bp
-            'extreme': -200     # -200bp
+            "normal": -10,  # -10bp
+            "high": -50,  # -50bp
+            "extreme": -200,  # -200bp
         }
 
         # Performance tracking
         self.signal_performance = {}
 
-    def calculate_basis_z_scores(self,
-                                exchange: str,
-                                pair: str,
-                                basis_data: List[Dict[str, Any]]) -> List[BasisZScore]:
+    def calculate_basis_z_scores(
+        self, exchange: str, pair: str, basis_data: List[Dict[str, Any]]
+    ) -> List[BasisZScore]:
         """Calculate basis z-scores and regime classification"""
         try:
             z_scores = []
 
             if len(basis_data) < self.z_score_window:
-                logger.warning(f"Insufficient data for z-score calculation: {len(basis_data)} < {self.z_score_window}")
+                logger.warning(
+                    f"Insufficient data for z-score calculation: {len(basis_data)} < {self.z_score_window}"
+                )
                 return z_scores
 
             # Sort by timestamp
-            basis_data = sorted(basis_data, key=lambda x: x.get('timestamp', datetime.min))
+            basis_data = sorted(basis_data, key=lambda x: x.get("timestamp", datetime.min))
 
             # Calculate rolling z-scores
             for i in range(self.z_score_window, len(basis_data)):
                 current_data = basis_data[i]
-                historical_window = basis_data[i-self.z_score_window:i]
+                historical_window = basis_data[i - self.z_score_window : i]
 
                 # Calculate basis
                 perp_price = current_data.get("perp_price", 0.0)
@@ -219,7 +227,7 @@ class BasisAnalyzer:
                     is_very_extreme=abs(z_score) > self.very_extreme_threshold,
                     volume_ratio=current_data.get("volume_ratio", 1.0),
                     funding_rate=current_data.get("funding_rate"),
-                    time_to_expiry=current_data.get("time_to_expiry")
+                    time_to_expiry=current_data.get("time_to_expiry"),
                 )
 
                 z_scores.append(z_score_obj)
@@ -233,10 +241,9 @@ class BasisAnalyzer:
             logger.error(f"Basis z-score calculation failed for {exchange} {pair}: {e}")
             return []
 
-    def generate_basis_signals(self,
-                              exchange: str,
-                              pair: str,
-                              current_price: float) -> List[BasisSignal]:
+    def generate_basis_signals(
+        self, exchange: str, pair: str, current_price: float
+    ) -> List[BasisSignal]:
         """Generate basis-based trading signals"""
         try:
             # Get recent z-scores
@@ -277,10 +284,9 @@ class BasisAnalyzer:
             logger.error(f"Basis signal generation failed: {e}")
             return []
 
-    def detect_basis_anomalies(self,
-                              exchange: str,
-                              pair: str,
-                              lookback_hours: int = 168) -> List[Dict[str, Any]]:
+    def detect_basis_anomalies(
+        self, exchange: str, pair: str, lookback_hours: int = 168
+    ) -> List[Dict[str, Any]]:
         """Detect basis anomalies and patterns"""
         try:
             z_scores = self._get_recent_z_scores(exchange, pair, hours_back=lookback_hours)
@@ -299,7 +305,7 @@ class BasisAnalyzer:
                         "z_score": z_score.z_score,
                         "basis_bp": z_score.basis_bp,
                         "regime": z_score.regime.value,
-                        "severity": min(1.0, abs(z_score.z_score) / 5.0)
+                        "severity": min(1.0, abs(z_score.z_score) / 5.0),
                     }
                     anomalies.append(anomaly)
 
@@ -317,21 +323,24 @@ class BasisAnalyzer:
                     "type": "persistent_extreme_basis",
                     "streak_length": extreme_streak,
                     "avg_z_score": np.mean([abs(z.z_score) for z in z_scores[-extreme_streak:]]),
-                    "severity": min(1.0, extreme_streak / 10)
+                    "severity": min(1.0, extreme_streak / 10),
                 }
                 anomalies.append(anomaly)
 
             # Basis oscillation
             z_score_values = [z.z_score for z in z_scores[-20:]]
-            oscillations = sum(1 for i in range(1, len(z_score_values))
-                             if z_score_values[i] * z_score_values[i-1] < 0)
+            oscillations = sum(
+                1
+                for i in range(1, len(z_score_values))
+                if z_score_values[i] * z_score_values[i - 1] < 0
+            )
 
             if oscillations > len(z_score_values) * 0.4:  # More than 40% sign changes
                 anomaly = {
                     "timestamp": z_scores[-1].timestamp,
                     "type": "excessive_basis_oscillation",
                     "oscillation_rate": oscillations / len(z_score_values),
-                    "severity": min(1.0, oscillations / len(z_score_values) / 0.5)
+                    "severity": min(1.0, oscillations / len(z_score_values) / 0.5),
                 }
                 anomalies.append(anomaly)
 
@@ -341,9 +350,7 @@ class BasisAnalyzer:
             logger.error(f"Basis anomaly detection failed: {e}")
             return []
 
-    def get_cross_exchange_basis_analysis(self,
-                                         pair: str,
-                                         exchanges: List[str]) -> Dict[str, Any]:
+    def get_cross_exchange_basis_analysis(self, pair: str, exchanges: List[str]) -> Dict[str, Any]:
         """Analyze basis patterns across exchanges"""
         try:
             cross_analysis = {
@@ -351,7 +358,7 @@ class BasisAnalyzer:
                 "timestamp": datetime.now(),
                 "exchanges_analyzed": exchanges,
                 "basis_data": {},
-                "arbitrage_opportunities": []
+                "arbitrage_opportunities": [],
             }
 
             # Get latest basis for each exchange
@@ -366,7 +373,7 @@ class BasisAnalyzer:
                         "regime": latest_z_score.regime.value,
                         "perp_price": latest_z_score.perp_price,
                         "spot_price": latest_z_score.spot_price,
-                        "timestamp": latest_z_score.timestamp
+                        "timestamp": latest_z_score.timestamp,
                     }
                     cross_analysis["basis_data"][exchange] = latest_basis[exchange]
 
@@ -389,7 +396,7 @@ class BasisAnalyzer:
                     "short_exchange": highest_exchange if basis_spread > 0 else lowest_exchange,
                     "basis_spread": abs(basis_spread),
                     "profit_potential_bp": abs(basis_spread) * 0.8,  # 80% capture efficiency
-                    "confidence": min(1.0, abs(basis_spread) / 100)
+                    "confidence": min(1.0, abs(basis_spread) / 100),
                 }
                 cross_analysis["arbitrage_opportunities"].append(opportunity)
 
@@ -403,7 +410,7 @@ class BasisAnalyzer:
                     "std_basis_bp": np.std(all_basis),
                     "range_bp": max(all_basis) - min(all_basis),
                     "mean_z_score": np.mean(all_z_scores),
-                    "agreement_score": 1 - np.std(all_z_scores) / (abs(np.mean(all_z_scores)) + 1)
+                    "agreement_score": 1 - np.std(all_z_scores) / (abs(np.mean(all_z_scores)) + 1),
                 }
 
             return cross_analysis
@@ -412,10 +419,9 @@ class BasisAnalyzer:
             logger.error(f"Cross-exchange basis analysis failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def get_basis_analytics(self,
-                           exchange: Optional[str] = None,
-                           pair: Optional[str] = None,
-                           days_back: int = 30) -> Dict[str, Any]:
+    def get_basis_analytics(
+        self, exchange: Optional[str] = None, pair: Optional[str] = None, days_back: int = 30
+    ) -> Dict[str, Any]:
         """Get comprehensive basis analytics"""
         try:
             cutoff_time = datetime.now() - timedelta(days=days_back)
@@ -429,7 +435,8 @@ class BasisAnalyzer:
                     if pair and p != pair:
                         continue
                     z_scores = [
-                        z_score for z_score in self.basis_history[ex][p]
+                        z_score
+                        for z_score in self.basis_history[ex][p]
                         if z_score.timestamp >= cutoff_time
                     ]
                     all_z_scores.extend(z_scores)
@@ -441,10 +448,11 @@ class BasisAnalyzer:
 
             # Add signal analysis
             recent_signals = [
-                signal for signal in self.signal_history
-                if signal.timestamp >= cutoff_time and
-                   (exchange is None or signal.exchange == exchange) and
-                   (pair is None or signal.pair == pair)
+                signal
+                for signal in self.signal_history
+                if signal.timestamp >= cutoff_time
+                and (exchange is None or signal.exchange == exchange)
+                and (pair is None or signal.pair == pair)
             ]
 
             analytics["signal_analysis"] = self._analyze_basis_signals(recent_signals)
@@ -457,24 +465,24 @@ class BasisAnalyzer:
 
     def _classify_basis_regime(self, basis_bp: float) -> BasisRegime:
         """Classify basis regime"""
-        if basis_bp >= self.contango_thresholds['extreme']:
+        if basis_bp >= self.contango_thresholds["extreme"]:
             return BasisRegime.EXTREME_CONTANGO
-        elif basis_bp >= self.contango_thresholds['high']:
+        elif basis_bp >= self.contango_thresholds["high"]:
             return BasisRegime.HIGH_CONTANGO
-        elif basis_bp >= self.contango_thresholds['normal']:
+        elif basis_bp >= self.contango_thresholds["normal"]:
             return BasisRegime.NORMAL_CONTANGO
-        elif basis_bp <= self.backwardation_thresholds['extreme']:
+        elif basis_bp <= self.backwardation_thresholds["extreme"]:
             return BasisRegime.EXTREME_BACKWARDATION
-        elif basis_bp <= self.backwardation_thresholds['high']:
+        elif basis_bp <= self.backwardation_thresholds["high"]:
             return BasisRegime.HIGH_BACKWARDATION
-        elif basis_bp <= self.backwardation_thresholds['normal']:
+        elif basis_bp <= self.backwardation_thresholds["normal"]:
             return BasisRegime.NORMAL_BACKWARDATION
         else:
             return BasisRegime.NEUTRAL
 
-    def _generate_mean_reversion_signal(self,
-                                       latest_z_score: BasisZScore,
-                                       recent_z_scores: List[BasisZScore]) -> Optional[BasisSignal]:
+    def _generate_mean_reversion_signal(
+        self, latest_z_score: BasisZScore, recent_z_scores: List[BasisZScore]
+    ) -> Optional[BasisSignal]:
         """Generate mean reversion signal for extreme basis"""
         try:
             if not latest_z_score.is_extreme:
@@ -509,10 +517,10 @@ class BasisAnalyzer:
                 stop_loss_bp=stop_loss_bp,
                 take_profit_bp=take_profit_bp,
                 max_position_size_pct=0.05,  # 5% max position
-                correlation_with_spot=0.8,   # High correlation assumption
+                correlation_with_spot=0.8,  # High correlation assumption
                 expected_pnl_bp=take_profit_bp * 0.7,  # 70% probability weighted
                 win_probability=0.7,
-                risk_reward_ratio=take_profit_bp / max(stop_loss_bp, 1)
+                risk_reward_ratio=take_profit_bp / max(stop_loss_bp, 1),
             )
 
             return signal
@@ -521,9 +529,9 @@ class BasisAnalyzer:
             logger.error(f"Mean reversion signal generation failed: {e}")
             return None
 
-    def _generate_trend_continuation_signal(self,
-                                           latest_z_score: BasisZScore,
-                                           recent_z_scores: List[BasisZScore]) -> Optional[BasisSignal]:
+    def _generate_trend_continuation_signal(
+        self, latest_z_score: BasisZScore, recent_z_scores: List[BasisZScore]
+    ) -> Optional[BasisSignal]:
         """Generate trend continuation signal for low basis"""
         try:
             if abs(latest_z_score.z_score) > 0.5:  # Not low enough
@@ -537,7 +545,7 @@ class BasisAnalyzer:
             recent_price_changes = []
             for i in range(1, min(5, len(recent_z_scores))):
                 curr = recent_z_scores[-i]
-                prev = recent_z_scores[-i-1]
+                prev = recent_z_scores[-i - 1]
                 price_change = (curr.perp_price - prev.perp_price) / prev.perp_price
                 recent_price_changes.append(price_change)
 
@@ -575,7 +583,7 @@ class BasisAnalyzer:
                 correlation_with_spot=0.9,
                 expected_pnl_bp=140,  # 70% win rate * 200bp
                 win_probability=0.65,
-                risk_reward_ratio=2.0
+                risk_reward_ratio=2.0,
             )
 
             return signal
@@ -584,9 +592,9 @@ class BasisAnalyzer:
             logger.error(f"Trend continuation signal generation failed: {e}")
             return None
 
-    def _generate_momentum_signal(self,
-                                 latest_z_score: BasisZScore,
-                                 recent_z_scores: List[BasisZScore]) -> Optional[BasisSignal]:
+    def _generate_momentum_signal(
+        self, latest_z_score: BasisZScore, recent_z_scores: List[BasisZScore]
+    ) -> Optional[BasisSignal]:
         """Generate momentum signal based on basis acceleration"""
         try:
             if len(recent_z_scores) < 5:
@@ -634,7 +642,7 @@ class BasisAnalyzer:
                 correlation_with_spot=0.7,
                 expected_pnl_bp=105,  # 70% win rate * 150bp
                 win_probability=0.65,
-                risk_reward_ratio=2.0
+                risk_reward_ratio=2.0,
             )
 
             return signal
@@ -661,7 +669,9 @@ class BasisAnalyzer:
             stop_loss_bp = int(abs(z_score.basis_bp) * 0.3)  # 30% adverse move
             take_profit_bp = int(expected_capture)
 
-            signal_id = f"basis_arb_{z_score.exchange}_{z_score.pair}_{z_score.timestamp.timestamp()}"
+            signal_id = (
+                f"basis_arb_{z_score.exchange}_{z_score.pair}_{z_score.timestamp.timestamp()}"
+            )
 
             signal = BasisSignal(
                 signal_id=signal_id,
@@ -682,7 +692,7 @@ class BasisAnalyzer:
                 correlation_with_spot=0.95,  # Very high correlation for arbitrage
                 expected_pnl_bp=expected_capture * 0.8,  # 80% success rate
                 win_probability=0.8,
-                risk_reward_ratio=take_profit_bp / max(stop_loss_bp, 1)
+                risk_reward_ratio=take_profit_bp / max(stop_loss_bp, 1),
             )
 
             return signal
@@ -691,10 +701,7 @@ class BasisAnalyzer:
             logger.error(f"Arbitrage signal generation failed: {e}")
             return None
 
-    def _get_recent_z_scores(self,
-                            exchange: str,
-                            pair: str,
-                            hours_back: int) -> List[BasisZScore]:
+    def _get_recent_z_scores(self, exchange: str, pair: str, hours_back: int) -> List[BasisZScore]:
         """Get recent basis z-scores"""
         try:
             if exchange not in self.basis_history or pair not in self.basis_history[exchange]:
@@ -723,8 +730,7 @@ class BasisAnalyzer:
             # Keep only recent history (30 days)
             cutoff_time = datetime.now() - timedelta(days=30)
             self.basis_history[exchange][pair] = [
-                z for z in self.basis_history[exchange][pair]
-                if z.timestamp >= cutoff_time
+                z for z in self.basis_history[exchange][pair] if z.timestamp >= cutoff_time
             ]
 
         except Exception as e:
@@ -747,16 +753,16 @@ class BasisAnalyzer:
                     "min_basis_bp": np.min(basis_values),
                     "max_basis_bp": np.max(basis_values),
                     "skewness": self._calculate_skewness(basis_values),
-                    "kurtosis": self._calculate_kurtosis(basis_values)
+                    "kurtosis": self._calculate_kurtosis(basis_values),
                 },
                 "z_score_statistics": {
                     "mean_z_score": np.mean(z_score_values),
                     "std_z_score": np.std(z_score_values),
                     "extreme_periods": sum(1 for z in z_scores if z.is_extreme),
                     "very_extreme_periods": sum(1 for z in z_scores if z.is_very_extreme),
-                    "max_abs_z_score": max(abs(z) for z in z_score_values)
+                    "max_abs_z_score": max(abs(z) for z in z_score_values),
                 },
-                "regime_distribution": {}
+                "regime_distribution": {},
             }
 
             # Regime distribution
@@ -764,7 +770,7 @@ class BasisAnalyzer:
                 count = sum(1 for z in z_scores if z.regime == regime)
                 analytics["regime_distribution"][regime.value] = {
                     "count": count,
-                    "percentage": count / len(z_scores)
+                    "percentage": count / len(z_scores),
                 }
 
             # Mean reversion efficiency
@@ -776,7 +782,9 @@ class BasisAnalyzer:
                     start_idx = z_scores.index(extreme_z)
                     for j in range(start_idx + 1, len(z_scores)):
                         if abs(z_scores[j].z_score) < 1.0:
-                            reversion_time = (z_scores[j].timestamp - extreme_z.timestamp).total_seconds() / 3600
+                            reversion_time = (
+                                z_scores[j].timestamp - extreme_z.timestamp
+                            ).total_seconds() / 3600
                             reversion_times.append(reversion_time)
                             break
 
@@ -784,7 +792,7 @@ class BasisAnalyzer:
                     analytics["mean_reversion_stats"] = {
                         "avg_reversion_time_hours": np.mean(reversion_times),
                         "median_reversion_time_hours": np.median(reversion_times),
-                        "reversion_success_rate": len(reversion_times) / len(extreme_z_scores)
+                        "reversion_success_rate": len(reversion_times) / len(extreme_z_scores),
                     }
 
             return analytics
@@ -804,7 +812,7 @@ class BasisAnalyzer:
                 "signal_types": {},
                 "average_confidence": np.mean([s.confidence for s in signals]),
                 "average_expected_pnl_bp": np.mean([s.expected_pnl_bp for s in signals]),
-                "total_expected_pnl_bp": sum(s.expected_pnl_bp for s in signals)
+                "total_expected_pnl_bp": sum(s.expected_pnl_bp for s in signals),
             }
 
             # Signal type distribution
@@ -812,7 +820,11 @@ class BasisAnalyzer:
                 count = sum(1 for s in signals if s.signal_type == signal_type)
                 signal_analysis["signal_types"][signal_type.value] = {
                     "count": count,
-                    "avg_confidence": np.mean([s.confidence for s in signals if s.signal_type == signal_type]) if count > 0 else 0
+                    "avg_confidence": np.mean(
+                        [s.confidence for s in signals if s.signal_type == signal_type]
+                    )
+                    if count > 0
+                    else 0,
                 }
 
             # Direction distribution
@@ -822,7 +834,7 @@ class BasisAnalyzer:
             signal_analysis["direction_distribution"] = {
                 "long": long_signals,
                 "short": short_signals,
-                "net_bias": (long_signals - short_signals) / len(signals)
+                "net_bias": (long_signals - short_signals) / len(signals),
             }
 
             return signal_analysis

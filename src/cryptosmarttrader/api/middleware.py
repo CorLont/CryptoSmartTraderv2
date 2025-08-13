@@ -44,7 +44,7 @@ async def logging_middleware(request: Request, call_next: Callable) -> Response:
             "url": str(request.url),
             "client_ip": request.client.host if request.client else None,
             "user_agent": request.headers.get("user-agent"),
-        }
+        },
     )
 
     # Process request
@@ -64,7 +64,7 @@ async def logging_middleware(request: Request, call_next: Callable) -> Response:
             "request_id": request_id,
             "status_code": response.status_code,
             "process_time": process_time,
-        }
+        },
     )
 
     return response

@@ -20,6 +20,7 @@ import logging
 # Cross-platform imports with fallbacks
 try:
     import psutil
+
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
@@ -28,19 +29,22 @@ except ImportError:
 try:
     from ..core.consolidated_logging_manager import get_consolidated_logger
 except ImportError:
+
     def get_consolidated_logger(name: str) -> logging.Logger:
         logger = logging.getLogger(name)
         if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             logger.addHandler(handler)
             logger.setLevel(logging.INFO)
         return logger
 
+
 @dataclass
 class SystemMetrics:
     """System resource metrics"""
+
     timestamp: datetime
     cpu_percent: float
     memory_percent: float
@@ -55,9 +59,11 @@ class SystemMetrics:
     boot_time: Optional[datetime] = None
     platform_info: Dict[str, str] = field(default_factory=dict)
 
+
 @dataclass
 class ServiceStatus:
     """Service availability status"""
+
     name: str
     host: str
     port: int
@@ -66,15 +72,18 @@ class ServiceStatus:
     last_check: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     error_message: Optional[str] = None
 
+
 @dataclass
 class SystemMonitorReport:
     """Complete system monitoring report"""
+
     timestamp: datetime
     system_metrics: SystemMetrics
     service_statuses: List[ServiceStatus]
     alerts: List[str]
     overall_health: str  # "healthy", "warning", "critical"
     metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 class SystemMonitor:
     """
@@ -126,9 +135,8 @@ class SystemMonitor:
                 "cpu_percent": 80.0,
                 "memory_percent": 85.0,
                 "disk_percent": 90.0,
-                "load_average_per_core": 2.0
+                "load_average_per_core": 2.0,
             },
-
             # Service monitoring - CONFIGURABLE PORTS
             "services": {
                 "dashboard": {
@@ -138,52 +146,47 @@ class SystemMonitor:
                         int(os.getenv("DASHBOARD_PORT", "5000")),  # Primary Replit port
                         8501,  # Default Streamlit port
                         3000,  # Common development port
-                        8080   # Alternative port
+                        8080,  # Alternative port
                     ],
-                    "timeout_seconds": 5.0
+                    "timeout_seconds": 5.0,
                 },
                 "api": {
                     "name": "API Server",
                     "host": "localhost",
-                    "ports": [
-                        int(os.getenv("API_PORT", "8000")),
-                        5000,
-                        8080
-                    ],
-                    "timeout_seconds": 3.0
-                }
+                    "ports": [int(os.getenv("API_PORT", "8000")), 5000, 8080],
+                    "timeout_seconds": 3.0,
+                },
             },
-
             # Monitoring intervals
             "intervals": {
                 "monitor_seconds": 30,
                 "history_retention_hours": 24,
-                "alert_cooldown_minutes": 5
+                "alert_cooldown_minutes": 5,
             },
-
             # Cross-platform settings
             "platform": {
                 "enable_load_average": True,  # Will be disabled on Windows
                 "enable_network_monitoring": True,
-                "enable_process_monitoring": True
+                "enable_process_monitoring": True,
             },
-
             # Output configuration
             "output": {
                 "json_file": "system_monitor_report.json",
                 "log_level": "INFO",
-                "include_metadata": True
-            }
+                "include_metadata": True,
+            },
         }
 
         if config_path and Path(config_path).exists():
             try:
-                with open(config_path, 'r') as f:
+                with open(config_path, "r") as f:
                     user_config = json.load(f)
                 self._deep_merge_dict(default_config, user_config)
                 self.logger.info(f"Configuration loaded from {config_path}")
             except Exception as e:
-                self.logger.warning(f"Failed to load config from {config_path}: {e}, using defaults")
+                self.logger.warning(
+                    f"Failed to load config from {config_path}: {e}, using defaults"
+                )
 
         # Platform-specific configuration adjustments
         if self.is_windows:
@@ -213,7 +216,7 @@ class SystemMonitor:
                 disk_percent=0.0,
                 disk_used_gb=0.0,
                 disk_total_gb=0.0,
-                platform_info={"system": self.platform_name, "psutil": "unavailable"}
+                platform_info={"system": self.platform_name, "psutil": "unavailable"},
             )
 
         try:
@@ -226,15 +229,14 @@ class SystemMonitor:
             memory_total_gb = memory.total / (1024**3)
 
             # Disk metrics
-            disk = psutil.disk_usage('.')
+            disk = psutil.disk_usage(".")
             disk_used_gb = disk.used / (1024**3)
             disk_total_gb = disk.total / (1024**3)
             disk_percent = (disk.used / disk.total) * 100.0
 
             # Load average - CROSS-PLATFORM COMPATIBLE
             load_average = None
-            if (self.config["platform"]["enable_load_average"] and
-                hasattr(psutil, 'getloadavg')):
+            if self.config["platform"]["enable_load_average"] and hasattr(psutil, "getloadavg"):
                 try:
                     load_average = list(psutil.getloadavg())
                 except (AttributeError, OSError) as e:
@@ -274,7 +276,7 @@ class SystemMonitor:
                 "machine": platform.machine(),
                 "processor": platform.processor(),
                 "python_version": platform.python_version(),
-                "psutil_version": psutil.__version__ if PSUTIL_AVAILABLE else "unavailable"
+                "psutil_version": psutil.__version__ if PSUTIL_AVAILABLE else "unavailable",
             }
 
             return SystemMetrics(
@@ -290,7 +292,7 @@ class SystemMonitor:
                 network_connections=network_connections,
                 process_count=process_count,
                 boot_time=boot_time,
-                platform_info=platform_info
+                platform_info=platform_info,
             )
 
         except Exception as e:
@@ -306,7 +308,7 @@ class SystemMonitor:
                 disk_percent=0.0,
                 disk_used_gb=0.0,
                 disk_total_gb=0.0,
-                platform_info={"error": str(e), "system": self.platform_name}
+                platform_info={"error": str(e), "system": self.platform_name},
             )
 
     def check_service_availability(self) -> List[ServiceStatus]:
@@ -371,15 +373,21 @@ class SystemMonitor:
                 is_accessible=service_accessible,
                 response_time_ms=best_response_time,
                 last_check=datetime.now(timezone.utc),
-                error_message="; ".join(error_messages) if error_messages and not service_accessible else None
+                error_message="; ".join(error_messages)
+                if error_messages and not service_accessible
+                else None,
             )
 
             service_statuses.append(status)
 
             if not service_accessible:
-                self.logger.warning(f"{service_name} not accessible on any configured port: {ports}")
+                self.logger.warning(
+                    f"{service_name} not accessible on any configured port: {ports}"
+                )
             else:
-                self.logger.debug(f"{service_name} accessible on {host}:{successful_port} ({best_response_time:.1f}ms)")
+                self.logger.debug(
+                    f"{service_name} accessible on {host}:{successful_port} ({best_response_time:.1f}ms)"
+                )
 
         return service_statuses
 
@@ -400,20 +408,24 @@ class SystemMonitor:
 
         # CPU alerts
         if metrics.cpu_percent > thresholds["cpu_percent"]:
-            alerts.append(f"High CPU usage: {metrics.cpu_percent:.1f}% (threshold: {thresholds['cpu_percent']}%)")
+            alerts.append(
+                f"High CPU usage: {metrics.cpu_percent:.1f}% (threshold: {thresholds['cpu_percent']}%)"
+            )
 
         # Memory alerts
         if metrics.memory_percent > thresholds["memory_percent"]:
-            alerts.append(f"High memory usage: {metrics.memory_percent:.1f}% (threshold: {thresholds['memory_percent']}%)")
+            alerts.append(
+                f"High memory usage: {metrics.memory_percent:.1f}% (threshold: {thresholds['memory_percent']}%)"
+            )
 
         # Disk alerts
         if metrics.disk_percent > thresholds["disk_percent"]:
-            alerts.append(f"High disk usage: {metrics.disk_percent:.1f}% (threshold: {thresholds['disk_percent']}%)")
+            alerts.append(
+                f"High disk usage: {metrics.disk_percent:.1f}% (threshold: {thresholds['disk_percent']}%)"
+            )
 
         # Load average alerts - CROSS-PLATFORM SAFE
-        if (metrics.load_average and
-            PSUTIL_AVAILABLE and
-            hasattr(psutil, 'cpu_count')):
+        if metrics.load_average and PSUTIL_AVAILABLE and hasattr(psutil, "cpu_count"):
             try:
                 cpu_count = psutil.cpu_count()
                 if cpu_count and len(metrics.load_average) > 0:
@@ -421,14 +433,18 @@ class SystemMonitor:
                     threshold = thresholds["load_average_per_core"]
 
                     if load_per_core > threshold:
-                        alerts.append(f"High load average: {load_per_core:.2f} per core (threshold: {threshold})")
+                        alerts.append(
+                            f"High load average: {load_per_core:.2f} per core (threshold: {threshold})"
+                        )
             except Exception as e:
                 self.logger.debug(f"Load average analysis failed: {e}")
 
         # Service availability alerts
         for service in services:
             if not service.is_accessible:
-                alerts.append(f"Service unavailable: {service.name} ({service.host}:{service.port})")
+                alerts.append(
+                    f"Service unavailable: {service.name} ({service.host}:{service.port})"
+                )
 
         # Low resource alerts
         if PSUTIL_AVAILABLE and metrics.memory_total_gb > 0:
@@ -443,7 +459,9 @@ class SystemMonitor:
 
         return alerts
 
-    def determine_overall_health(self, metrics: SystemMetrics, services: List[ServiceStatus], alerts: List[str]) -> str:
+    def determine_overall_health(
+        self, metrics: SystemMetrics, services: List[ServiceStatus], alerts: List[str]
+    ) -> str:
         """
         Determine overall system health status
 
@@ -461,7 +479,11 @@ class SystemMonitor:
             metrics.cpu_percent > 95,
             metrics.memory_percent > 95,
             metrics.disk_percent > 95,
-            any(not service.is_accessible for service in services if "dashboard" in service.name.lower())
+            any(
+                not service.is_accessible
+                for service in services
+                if "dashboard" in service.name.lower()
+            ),
         ]
 
         if any(critical_conditions):
@@ -472,7 +494,7 @@ class SystemMonitor:
             len(alerts) > 0,
             metrics.cpu_percent > self.config["alert_thresholds"]["cpu_percent"],
             metrics.memory_percent > self.config["alert_thresholds"]["memory_percent"],
-            metrics.disk_percent > self.config["alert_thresholds"]["disk_percent"]
+            metrics.disk_percent > self.config["alert_thresholds"]["disk_percent"],
         ]
 
         if any(warning_conditions):
@@ -516,8 +538,8 @@ class SystemMonitor:
                     "psutil_available": PSUTIL_AVAILABLE,
                     "config_version": "2.0.0",
                     "services_checked": len(services),
-                    "alerts_generated": len(alerts)
-                }
+                    "alerts_generated": len(alerts),
+                },
             )
 
             # Update monitoring state
@@ -529,7 +551,9 @@ class SystemMonitor:
             self.monitor_count += 1
             self.total_monitor_time += report.metadata["monitor_duration_seconds"]
 
-            self.logger.info(f"Monitoring report generated: {overall_health} ({len(alerts)} alerts)")
+            self.logger.info(
+                f"Monitoring report generated: {overall_health} ({len(alerts)} alerts)"
+            )
 
             return report
 
@@ -539,7 +563,9 @@ class SystemMonitor:
             # Return emergency report
             return self._create_emergency_report(str(e))
 
-    def save_report_to_json(self, report: SystemMonitorReport, output_path: Optional[str] = None) -> bool:
+    def save_report_to_json(
+        self, report: SystemMonitorReport, output_path: Optional[str] = None
+    ) -> bool:
         """
         Save monitoring report to JSON file
 
@@ -574,8 +600,10 @@ class SystemMonitor:
                     "load_average": report.system_metrics.load_average,
                     "network_connections": report.system_metrics.network_connections,
                     "process_count": report.system_metrics.process_count,
-                    "boot_time": report.system_metrics.boot_time.isoformat() if report.system_metrics.boot_time else None,
-                    "platform_info": report.system_metrics.platform_info
+                    "boot_time": report.system_metrics.boot_time.isoformat()
+                    if report.system_metrics.boot_time
+                    else None,
+                    "platform_info": report.system_metrics.platform_info,
                 },
                 "service_statuses": [
                     {
@@ -585,15 +613,15 @@ class SystemMonitor:
                         "is_accessible": service.is_accessible,
                         "response_time_ms": service.response_time_ms,
                         "last_check": service.last_check.isoformat(),
-                        "error_message": service.error_message
+                        "error_message": service.error_message,
                     }
                     for service in report.service_statuses
                 ],
                 "alerts": report.alerts,
-                "metadata": report.metadata
+                "metadata": report.metadata,
             }
 
-            with open(output_file, 'w') as f:
+            with open(output_file, "w") as f:
                 json.dump(report_data, f, indent=2, default=str)
 
             self.logger.debug(f"Report saved to {output_file}")
@@ -615,7 +643,7 @@ class SystemMonitor:
             "average_duration": self.total_monitor_time / max(1, self.monitor_count),
             "history_length": len(self.report_history),
             "services_configured": len(self.config.get("services", {})),
-            "alert_thresholds": self.config.get("alert_thresholds", {})
+            "alert_thresholds": self.config.get("alert_thresholds", {}),
         }
 
     def _create_emergency_report(self, error_message: str) -> SystemMonitorReport:
@@ -632,12 +660,12 @@ class SystemMonitor:
                 disk_percent=0.0,
                 disk_used_gb=0.0,
                 disk_total_gb=0.0,
-                platform_info={"error": error_message}
+                platform_info={"error": error_message},
             ),
             service_statuses=[],
             alerts=[f"CRITICAL: System monitoring failure - {error_message}"],
             overall_health="critical",
-            metadata={"emergency_report": True, "error": error_message}
+            metadata={"emergency_report": True, "error": error_message},
         )
 
     def _cleanup_history(self):
@@ -647,8 +675,7 @@ class SystemMonitor:
         cutoff_time = datetime.now(timezone.utc).timestamp() - (retention_hours * 3600)
 
         self.report_history = [
-            report for report in self.report_history
-            if report.timestamp.timestamp() > cutoff_time
+            report for report in self.report_history if report.timestamp.timestamp() > cutoff_time
         ]
 
     def _deep_merge_dict(self, base: Dict, update: Dict) -> Dict:
@@ -662,7 +689,9 @@ class SystemMonitor:
 
         return base
 
+
 # Utility functions for system monitoring
+
 
 def quick_system_check() -> Dict[str, Any]:
     """Perform quick system resource check"""
@@ -677,8 +706,9 @@ def quick_system_check() -> Dict[str, Any]:
         "disk_percent": report.system_metrics.disk_percent,
         "alerts": len(report.alerts),
         "services_up": sum(1 for s in report.service_statuses if s.is_accessible),
-        "timestamp": report.timestamp.isoformat()
+        "timestamp": report.timestamp.isoformat(),
     }
+
 
 def detailed_system_report(output_file: Optional[str] = None) -> SystemMonitorReport:
     """Generate detailed system monitoring report"""
@@ -690,6 +720,7 @@ def detailed_system_report(output_file: Optional[str] = None) -> SystemMonitorRe
         monitor.save_report_to_json(report, output_file)
 
     return report
+
 
 if __name__ == "__main__":
     # Test system monitoring

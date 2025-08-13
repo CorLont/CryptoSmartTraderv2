@@ -16,5 +16,5 @@ __all__ = [
     "StoragePort",
     "ModelInferencePort",
     "RiskManagementPort",
-    "NotificationPort"
+    "NotificationPort",
 ]

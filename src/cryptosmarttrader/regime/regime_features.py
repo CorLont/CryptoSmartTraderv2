@@ -18,6 +18,7 @@ import logging
 # Try to import talib, fallback to custom implementation if not available
 try:
     import talib  # type: ignore
+
     TALIB_AVAILABLE = True
 except ImportError:
     TALIB_AVAILABLE = False
@@ -25,9 +26,11 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class RegimeFeatureSet:
     """Container for regime detection features"""
+
     hurst_exponent: float
     adx: float
     realized_vol: float
@@ -37,7 +40,7 @@ class RegimeFeatureSet:
     funding_impulse: float
     oi_impulse: float
     volatility_regime: str  # 'low', 'high'
-    trend_strength: str     # 'weak', 'strong'
+    trend_strength: str  # 'weak', 'strong'
 
 
 class RegimeFeatures:
@@ -47,12 +50,12 @@ class RegimeFeatures:
 
     def __init__(self, lookback_periods: Dict[str, int] = None):
         self.lookback_periods = lookback_periods or {
-            'hurst': 100,
-            'adx': 14,
-            'vol': 20,
-            'atr': 14,
-            'funding': 24,  # hours
-            'oi': 48       # hours
+            "hurst": 100,
+            "adx": 14,
+            "vol": 20,
+            "atr": 14,
+            "funding": 24,  # hours
+            "oi": 48,  # hours
         }
 
     def calculate_hurst_exponent(self, prices: pd.Series, max_lag: int = 20) -> float:
@@ -76,7 +79,7 @@ class RegimeFeatures:
 
             for lag in lags:
                 # Split series into chunks of length 'lag'
-                chunks = [log_returns[i:i+lag] for i in range(0, len(log_returns), lag)]
+                chunks = [log_returns[i : i + lag] for i in range(0, len(log_returns), lag)]
                 chunks = [chunk for chunk in chunks if len(chunk) == lag]
 
                 if not chunks:
@@ -108,7 +111,7 @@ class RegimeFeatures:
                 return 0.5
 
             # Linear regression of log(R/S) vs log(lag)
-            log_lags = np.log(lags[:len(rs_values)])
+            log_lags = np.log(lags[: len(rs_values)])
             log_rs = np.log(rs_values)
 
             # Remove any inf or nan values
@@ -129,11 +132,12 @@ class RegimeFeatures:
             logger.warning(f"Hurst calculation failed: {e}")
             return 0.5
 
-    def calculate_adx(self, high: pd.Series, low: pd.Series, close: pd.Series,
-                      period: int = None) -> float:
+    def calculate_adx(
+        self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = None
+    ) -> float:
         """Calculate Average Directional Index for trend strength"""
         try:
-            period = period or self.lookback_periods['adx']
+            period = period or self.lookback_periods["adx"]
 
             if TALIB_AVAILABLE and talib is not None:
                 adx = talib.ADX(high.values, low.values, close.values, timeperiod=period)
@@ -146,7 +150,9 @@ class RegimeFeatures:
             logger.warning(f"ADX calculation failed: {e}")
             return 0.0
 
-    def _calculate_adx_custom(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int) -> float:
+    def _calculate_adx_custom(
+        self, high: pd.Series, low: pd.Series, close: pd.Series, period: int
+    ) -> float:
         """Custom ADX calculation when talib is not available"""
         try:
             # True Range calculation
@@ -177,11 +183,10 @@ class RegimeFeatures:
             logger.warning(f"Custom ADX calculation failed: {e}")
             return 20.0  # Default moderate trend strength
 
-    def calculate_realized_volatility(self, returns: pd.Series,
-                                     period: int = None) -> float:
+    def calculate_realized_volatility(self, returns: pd.Series, period: int = None) -> float:
         """Calculate realized volatility (annualized)"""
         try:
-            period = period or self.lookback_periods['vol']
+            period = period or self.lookback_periods["vol"]
             recent_returns = returns.tail(period).dropna()
 
             if len(recent_returns) < 5:
@@ -195,11 +200,12 @@ class RegimeFeatures:
             logger.warning(f"Realized volatility calculation failed: {e}")
             return 0.0
 
-    def calculate_atr_normalized(self, high: pd.Series, low: pd.Series,
-                                close: pd.Series, period: int = None) -> float:
+    def calculate_atr_normalized(
+        self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = None
+    ) -> float:
         """Calculate ATR normalized by price (as percentage)"""
         try:
-            period = period or self.lookback_periods['atr']
+            period = period or self.lookback_periods["atr"]
 
             if TALIB_AVAILABLE and talib is not None:
                 atr = talib.ATR(high.values, low.values, close.values, timeperiod=period)
@@ -218,7 +224,9 @@ class RegimeFeatures:
             logger.warning(f"ATR calculation failed: {e}")
             return 0.0
 
-    def _calculate_atr_custom(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int) -> float:
+    def _calculate_atr_custom(
+        self, high: pd.Series, low: pd.Series, close: pd.Series, period: int
+    ) -> float:
         """Custom ATR calculation when talib is not available"""
         try:
             # True Range calculation
@@ -249,27 +257,28 @@ class RegimeFeatures:
             dominance_data: {'BTC': 45.2, 'ETH': 18.5, 'others': 36.3}
         """
         try:
-            btc_dominance = dominance_data.get('BTC', 50.0)
-            eth_dominance = dominance_data.get('ETH', 15.0)
+            btc_dominance = dominance_data.get("BTC", 50.0)
+            eth_dominance = dominance_data.get("ETH", 15.0)
 
             # Alt breadth = how spread the non-BTC market is
             alt_market_cap = 100 - btc_dominance
             major_alts = eth_dominance  # Could include more top alts
 
             # Higher score means more distributed alt market
-            alt_breadth = (alt_market_cap - major_alts) / alt_market_cap if alt_market_cap > 0 else 0
+            alt_breadth = (
+                (alt_market_cap - major_alts) / alt_market_cap if alt_market_cap > 0 else 0
+            )
 
             return {
-                'btc_dominance': btc_dominance,
-                'alt_breadth': alt_breadth * 100  # Convert to percentage
+                "btc_dominance": btc_dominance,
+                "alt_breadth": alt_breadth * 100,  # Convert to percentage
             }
 
         except Exception as e:
             logger.warning(f"Market breadth calculation failed: {e}")
-            return {'btc_dominance': 50.0, 'alt_breadth': 50.0}
+            return {"btc_dominance": 50.0, "alt_breadth": 50.0}
 
-    def calculate_funding_impulse(self, funding_rates: pd.Series,
-                                 period: int = None) -> float:
+    def calculate_funding_impulse(self, funding_rates: pd.Series, period: int = None) -> float:
         """
         Calculate funding rate impulse (change acceleration)
 
@@ -277,7 +286,7 @@ class RegimeFeatures:
         High negative = leveraged shorts building (risk off)
         """
         try:
-            period = period or self.lookback_periods['funding']
+            period = period or self.lookback_periods["funding"]
             recent_funding = funding_rates.tail(period).dropna()
 
             if len(recent_funding) < 5:
@@ -296,8 +305,9 @@ class RegimeFeatures:
             logger.warning(f"Funding impulse calculation failed: {e}")
             return 0.0
 
-    def calculate_oi_impulse(self, open_interest: pd.Series,
-                            volume: pd.Series, period: int = None) -> float:
+    def calculate_oi_impulse(
+        self, open_interest: pd.Series, volume: pd.Series, period: int = None
+    ) -> float:
         """
         Calculate Open Interest impulse relative to volume
 
@@ -305,7 +315,7 @@ class RegimeFeatures:
         High OI growth + Low volume = potential squeeze setup
         """
         try:
-            period = period or self.lookback_periods['oi']
+            period = period or self.lookback_periods["oi"]
 
             oi_recent = open_interest.tail(period).dropna()
             vol_recent = volume.tail(period).dropna()
@@ -335,45 +345,47 @@ class RegimeFeatures:
             logger.warning(f"OI impulse calculation failed: {e}")
             return 0.0
 
-    def classify_volatility_regime(self, realized_vol: float,
-                                  historical_vols: pd.Series) -> str:
+    def classify_volatility_regime(self, realized_vol: float, historical_vols: pd.Series) -> str:
         """Classify current volatility as low/high vs historical"""
         try:
             if len(historical_vols) < 20:
-                return 'unknown'
+                return "unknown"
 
             vol_percentile = (historical_vols < realized_vol).mean() * 100
 
             if vol_percentile > 70:
-                return 'high'
+                return "high"
             elif vol_percentile < 30:
-                return 'low'
+                return "low"
             else:
-                return 'medium'
+                return "medium"
 
         except Exception as e:
             logger.warning(f"Volatility regime classification failed: {e}")
-            return 'unknown'
+            return "unknown"
 
     def classify_trend_strength(self, hurst: float, adx: float) -> str:
         """Classify trend strength based on Hurst and ADX"""
         try:
             # Strong trend: high persistence + high directional movement
             if hurst > 0.55 and adx > 25:
-                return 'strong'
+                return "strong"
             elif hurst < 0.45 or adx < 15:
-                return 'weak'
+                return "weak"
             else:
-                return 'medium'
+                return "medium"
 
         except Exception as e:
             logger.warning(f"Trend strength classification failed: {e}")
-            return 'unknown'
+            return "unknown"
 
-    def calculate_all_features(self, market_data: Dict[str, pd.DataFrame],
-                              dominance_data: Dict[str, float],
-                              funding_data: Optional[pd.Series] = None,
-                              oi_data: Optional[pd.Series] = None) -> RegimeFeatureSet:
+    def calculate_all_features(
+        self,
+        market_data: Dict[str, pd.DataFrame],
+        dominance_data: Dict[str, float],
+        funding_data: Optional[pd.Series] = None,
+        oi_data: Optional[pd.Series] = None,
+    ) -> RegimeFeatureSet:
         """
         Calculate all regime features from market data
 
@@ -385,20 +397,20 @@ class RegimeFeatures:
         """
         try:
             # Use BTC as primary market proxy
-            btc_data = market_data.get('BTC/USD')
+            btc_data = market_data.get("BTC/USD")
             if btc_data is None or len(btc_data) < 50:
                 logger.warning("Insufficient BTC data for regime analysis")
                 return self._default_feature_set()
 
             # Calculate returns for volatility and Hurst
-            returns = btc_data['close'].pct_change().dropna()
+            returns = btc_data["close"].pct_change().dropna()
 
             # Core features
-            hurst = self.calculate_hurst_exponent(btc_data['close'])
-            adx = self.calculate_adx(btc_data['high'], btc_data['low'], btc_data['close'])
+            hurst = self.calculate_hurst_exponent(btc_data["close"])
+            adx = self.calculate_adx(btc_data["high"], btc_data["low"], btc_data["close"])
             realized_vol = self.calculate_realized_volatility(returns)
             atr_norm = self.calculate_atr_normalized(
-                btc_data['high'], btc_data['low'], btc_data['close']
+                btc_data["high"], btc_data["low"], btc_data["close"]
             )
 
             # Market breadth
@@ -412,7 +424,7 @@ class RegimeFeatures:
                 funding_impulse = self.calculate_funding_impulse(funding_data)
 
             if oi_data is not None and len(oi_data) > 48:
-                volume_proxy = btc_data['volume'] if 'volume' in btc_data.columns else None
+                volume_proxy = btc_data["volume"] if "volume" in btc_data.columns else None
                 if volume_proxy is not None:
                     oi_impulse = self.calculate_oi_impulse(oi_data, volume_proxy)
 
@@ -426,12 +438,12 @@ class RegimeFeatures:
                 adx=adx,
                 realized_vol=realized_vol,
                 atr_normalized=atr_norm,
-                btc_dominance=breadth['btc_dominance'],
-                alt_breadth=breadth['alt_breadth'],
+                btc_dominance=breadth["btc_dominance"],
+                alt_breadth=breadth["alt_breadth"],
                 funding_impulse=funding_impulse,
                 oi_impulse=oi_impulse,
                 volatility_regime=vol_regime,
-                trend_strength=trend_strength
+                trend_strength=trend_strength,
             )
 
         except Exception as e:
@@ -449,6 +461,6 @@ class RegimeFeatures:
             alt_breadth=50.0,
             funding_impulse=0.0,
             oi_impulse=0.0,
-            volatility_regime='medium',
-            trend_strength='medium'
+            volatility_regime="medium",
+            trend_strength="medium",
         )

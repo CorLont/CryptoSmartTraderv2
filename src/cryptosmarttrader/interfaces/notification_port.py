@@ -11,16 +11,20 @@ from datetime import datetime
 from enum import Enum
 from dataclasses import dataclass
 
+
 class NotificationSeverity(Enum):
     """Notification severity levels"""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
 
+
 class NotificationChannel(Enum):
     """Available notification channels"""
+
     EMAIL = "email"
     SMS = "sms"
     SLACK = "slack"
@@ -29,22 +33,27 @@ class NotificationChannel(Enum):
     CONSOLE = "console"
     FILE = "file"
 
+
 @dataclass
 class NotificationMessage:
     """Notification message structure"""
+
     title: str
     content: str
     severity: NotificationSeverity
     timestamp: datetime
     metadata: Optional[Dict] = None
 
+
 @dataclass
 class NotificationResult:
     """Result of notification send operation"""
+
     success: bool
     message_id: Optional[str] = None
     error: Optional[str] = None
     delivery_time: Optional[datetime] = None
+
 
 class NotificationPort(ABC):
     """
@@ -55,9 +64,13 @@ class NotificationPort(ABC):
     """
 
     @abstractmethod
-    def send_alert(self, message: str, severity: NotificationSeverity = NotificationSeverity.INFO,
-                  channels: Optional[List[NotificationChannel]] = None,
-                  metadata: Optional[Dict] = None) -> NotificationResult:
+    def send_alert(
+        self,
+        message: str,
+        severity: NotificationSeverity = NotificationSeverity.INFO,
+        channels: Optional[List[NotificationChannel]] = None,
+        metadata: Optional[Dict] = None,
+    ) -> NotificationResult:
         """
         Send alert notification
 
@@ -73,8 +86,12 @@ class NotificationPort(ABC):
         pass
 
     @abstractmethod
-    def send_report(self, report_data: Dict[str, Any], report_type: str = "daily",
-                   channels: Optional[List[NotificationChannel]] = None) -> NotificationResult:
+    def send_report(
+        self,
+        report_data: Dict[str, Any],
+        report_type: str = "daily",
+        channels: Optional[List[NotificationChannel]] = None,
+    ) -> NotificationResult:
         """
         Send periodic report
 
@@ -89,8 +106,9 @@ class NotificationPort(ABC):
         pass
 
     @abstractmethod
-    def send_trade_notification(self, trade_data: Dict[str, Any],
-                               notification_type: str = "execution") -> NotificationResult:
+    def send_trade_notification(
+        self, trade_data: Dict[str, Any], notification_type: str = "execution"
+    ) -> NotificationResult:
         """
         Send trading-related notification
 
@@ -130,6 +148,7 @@ class NotificationPort(ABC):
         """
         pass
 
+
 # Registry for notification implementations
 class NotificationRegistry:
     """Registry for managing notification implementations"""
@@ -150,6 +169,7 @@ class NotificationRegistry:
         if notifier_name not in self._notifiers:
             raise ValueError(f"Notifier '{notifier_name}' not found")
         return self._notifiers[notifier_name]
+
 
 # Global registry
 notification_registry = NotificationRegistry()

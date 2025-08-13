@@ -15,6 +15,7 @@ from typing import Dict, Any, Optional
 import json
 from pathlib import Path
 
+
 class BaseAgent(ABC):
     def __init__(self, name: str, config: Dict[str, Any] = None):
         self.name = name
@@ -28,7 +29,7 @@ class BaseAgent(ABC):
         signal.signal(signal.SIGINT, self.shutdown_handler)
 
         # Health check settings
-        self.health_check_interval = self.config.get('health_check_interval', 30)
+        self.health_check_interval = self.config.get("health_check_interval", 30)
         self.heartbeat_file = Path(f"logs/{self.name}_heartbeat.json")
 
     def setup_logging(self) -> logging.Logger:
@@ -41,9 +42,7 @@ class BaseAgent(ABC):
 
         # File handler
         handler = logging.FileHandler(f"logs/{self.name}.log")
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
@@ -66,11 +65,11 @@ class BaseAgent(ABC):
             "name": self.name,
             "timestamp": self.last_heartbeat.isoformat(),
             "status": "healthy",
-            "pid": os.getpid()
+            "pid": os.getpid(),
         }
 
         try:
-            with open(self.heartbeat_file, 'w') as f:
+            with open(self.heartbeat_file, "w") as f:
                 json.dump(heartbeat_data, f)
         except Exception as e:
             self.logger.error(f"Failed to update heartbeat: {e}")
@@ -126,6 +125,7 @@ class BaseAgent(ABC):
             raise
         finally:
             self.cleanup()
+
 
 def run_agent(agent_class, config: Dict[str, Any] = None):
     """Utility function to run an agent"""

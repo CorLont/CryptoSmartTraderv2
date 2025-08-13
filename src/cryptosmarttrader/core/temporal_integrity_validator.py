@@ -14,6 +14,7 @@ import json
 
 from ..core.consolidated_logging_manager import get_consolidated_logger
 
+
 class TemporalIntegrityValidator:
     """Enterprise temporal validator with comprehensive integrity checks and efficient alignment"""
 
@@ -32,8 +33,9 @@ class TemporalIntegrityValidator:
 
         self.logger.info("Temporal Integrity Validator initialized")
 
-    def validate_temporal_integrity(self, df: pd.DataFrame, agent_name: str = "Unknown",
-                                  timestamp_col: str = 'timestamp') -> Dict[str, Any]:
+    def validate_temporal_integrity(
+        self, df: pd.DataFrame, agent_name: str = "Unknown", timestamp_col: str = "timestamp"
+    ) -> Dict[str, Any]:
         """
         Comprehensive temporal integrity validation with early datatype normalization
 
@@ -67,13 +69,15 @@ class TemporalIntegrityValidator:
 
             try:
                 # Force conversion to UTC datetime with error handling
-                df[timestamp_col] = pd.to_datetime(df[timestamp_col], utc=True, errors='coerce')
+                df[timestamp_col] = pd.to_datetime(df[timestamp_col], utc=True, errors="coerce")
                 timestamps = df[timestamp_col]
 
                 # Check for conversion failures
                 if timestamps.isna().any():
                     invalid_count = timestamps.isna().sum()
-                    violations.append(f"{agent_name}: {invalid_count} invalid timestamp values after conversion")
+                    violations.append(
+                        f"{agent_name}: {invalid_count} invalid timestamp values after conversion"
+                    )
 
                     if self.strict_mode:
                         return self._create_validation_result(
@@ -97,32 +101,32 @@ class TemporalIntegrityValidator:
             # 1. Monotonicity check (now safe with proper datetime)
             monotonic_result = self._check_monotonicity(timestamps, agent_name)
             validation_results.append(monotonic_result)
-            if not monotonic_result['passed']:
-                violations.extend(monotonic_result['violations'])
+            if not monotonic_result["passed"]:
+                violations.extend(monotonic_result["violations"])
 
             # 2. UTC alignment check (comprehensive, not just first 5)
             utc_result = self._check_utc_alignment(timestamps, agent_name)
             validation_results.append(utc_result)
-            if not utc_result['passed']:
-                violations.extend(utc_result['violations'])
+            if not utc_result["passed"]:
+                violations.extend(utc_result["violations"])
 
             # 3. Future timestamp check (vectorized, no bypass)
             future_result = self._check_future_timestamps(timestamps, agent_name)
             validation_results.append(future_result)
-            if not future_result['passed']:
-                violations.extend(future_result['violations'])
+            if not future_result["passed"]:
+                violations.extend(future_result["violations"])
 
             # 4. Duplicate timestamp check
             duplicate_result = self._check_duplicate_timestamps(timestamps, agent_name)
             validation_results.append(duplicate_result)
-            if not duplicate_result['passed']:
-                violations.extend(duplicate_result['violations'])
+            if not duplicate_result["passed"]:
+                violations.extend(duplicate_result["violations"])
 
             # 5. Temporal gaps analysis
             gaps_result = self._analyze_temporal_gaps(timestamps, agent_name)
             validation_results.append(gaps_result)
-            if gaps_result['warnings']:
-                warnings_list.extend(gaps_result['warnings'])
+            if gaps_result["warnings"]:
+                warnings_list.extend(gaps_result["warnings"])
 
             # Update statistics
             self.validation_count += 1
@@ -141,16 +145,18 @@ class TemporalIntegrityValidator:
             )
 
             # Add detailed validation results
-            result['validation_details'] = validation_results
-            result['original_dtype'] = str(original_dtype)
-            result['converted_dtype'] = str(timestamps.dtype)
-            result['validation_duration'] = validation_duration
+            result["validation_details"] = validation_results
+            result["original_dtype"] = str(original_dtype)
+            result["converted_dtype"] = str(timestamps.dtype)
+            result["validation_duration"] = validation_duration
 
             # Log results
             if is_valid:
                 self.logger.info(f"Temporal validation passed for {agent_name}: {len(df)} records")
             else:
-                self.logger.warning(f"Temporal validation failed for {agent_name}: {len(violations)} violations")
+                self.logger.warning(
+                    f"Temporal validation failed for {agent_name}: {len(violations)} violations"
+                )
 
             return result
 
@@ -166,10 +172,10 @@ class TemporalIntegrityValidator:
         try:
             if len(timestamps) < 2:
                 return {
-                    'check': 'monotonicity',
-                    'passed': True,
-                    'violations': [],
-                    'details': 'Insufficient data for monotonicity check'
+                    "check": "monotonicity",
+                    "passed": True,
+                    "violations": [],
+                    "details": "Insufficient data for monotonicity check",
                 }
 
             # Safe monotonicity check with proper datetime
@@ -181,25 +187,25 @@ class TemporalIntegrityValidator:
                 negative_diffs = diffs[diffs < pd.Timedelta(0)]
 
                 return {
-                    'check': 'monotonicity',
-                    'passed': False,
-                    'violations': [f"{agent_name}: {len(negative_diffs)} non-monotonic timestamps"],
-                    'details': f"First violation at index {negative_diffs.index[0] if len(negative_diffs) > 0 else 'unknown'}"
+                    "check": "monotonicity",
+                    "passed": False,
+                    "violations": [f"{agent_name}: {len(negative_diffs)} non-monotonic timestamps"],
+                    "details": f"First violation at index {negative_diffs.index[0] if len(negative_diffs) > 0 else 'unknown'}",
                 }
 
             return {
-                'check': 'monotonicity',
-                'passed': True,
-                'violations': [],
-                'details': 'All timestamps are monotonically increasing'
+                "check": "monotonicity",
+                "passed": True,
+                "violations": [],
+                "details": "All timestamps are monotonically increasing",
             }
 
         except Exception as e:
             return {
-                'check': 'monotonicity',
-                'passed': False,
-                'violations': [f"{agent_name}: monotonicity check failed - {str(e)}"],
-                'details': str(e)
+                "check": "monotonicity",
+                "passed": False,
+                "violations": [f"{agent_name}: monotonicity check failed - {str(e)}"],
+                "details": str(e),
             }
 
     def _check_utc_alignment(self, timestamps: pd.Series, agent_name: str) -> Dict[str, Any]:
@@ -218,25 +224,27 @@ class TemporalIntegrityValidator:
 
             if non_utc_count > 0:
                 return {
-                    'check': 'utc_alignment',
-                    'passed': False,
-                    'violations': [f"{agent_name}: {non_utc_count} timestamps not properly UTC-aligned"],
-                    'details': f"Found {non_utc_count}/{len(timestamps)} non-UTC timestamps"
+                    "check": "utc_alignment",
+                    "passed": False,
+                    "violations": [
+                        f"{agent_name}: {non_utc_count} timestamps not properly UTC-aligned"
+                    ],
+                    "details": f"Found {non_utc_count}/{len(timestamps)} non-UTC timestamps",
                 }
 
             return {
-                'check': 'utc_alignment',
-                'passed': True,
-                'violations': [],
-                'details': 'All timestamps are properly UTC-aligned'
+                "check": "utc_alignment",
+                "passed": True,
+                "violations": [],
+                "details": "All timestamps are properly UTC-aligned",
             }
 
         except Exception as e:
             return {
-                'check': 'utc_alignment',
-                'passed': False,
-                'violations': [f"{agent_name}: UTC alignment check failed - {str(e)}"],
-                'details': str(e)
+                "check": "utc_alignment",
+                "passed": False,
+                "violations": [f"{agent_name}: UTC alignment check failed - {str(e)}"],
+                "details": str(e),
             }
 
     def _check_future_timestamps(self, timestamps: pd.Series, agent_name: str) -> Dict[str, Any]:
@@ -254,25 +262,25 @@ class TemporalIntegrityValidator:
                 future_examples = [ts.isoformat() for ts in future_timestamps]
 
                 return {
-                    'check': 'future_timestamps',
-                    'passed': False,
-                    'violations': [f"{agent_name}: {future_count} future timestamps detected"],
-                    'details': f"Examples: {future_examples}"
+                    "check": "future_timestamps",
+                    "passed": False,
+                    "violations": [f"{agent_name}: {future_count} future timestamps detected"],
+                    "details": f"Examples: {future_examples}",
                 }
 
             return {
-                'check': 'future_timestamps',
-                'passed': True,
-                'violations': [],
-                'details': 'No future timestamps detected'
+                "check": "future_timestamps",
+                "passed": True,
+                "violations": [],
+                "details": "No future timestamps detected",
             }
 
         except Exception as e:
             return {
-                'check': 'future_timestamps',
-                'passed': False,
-                'violations': [f"{agent_name}: future timestamp check failed - {str(e)}"],
-                'details': str(e)
+                "check": "future_timestamps",
+                "passed": False,
+                "violations": [f"{agent_name}: future timestamp check failed - {str(e)}"],
+                "details": str(e),
             }
 
     def _check_duplicate_timestamps(self, timestamps: pd.Series, agent_name: str) -> Dict[str, Any]:
@@ -287,25 +295,25 @@ class TemporalIntegrityValidator:
                 duplicate_values = duplicates.value_counts().head(3)
 
                 return {
-                    'check': 'duplicate_timestamps',
-                    'passed': False,
-                    'violations': [f"{agent_name}: {duplicate_count} duplicate timestamps"],
-                    'details': f"Most common duplicates: {duplicate_values.to_dict()}"
+                    "check": "duplicate_timestamps",
+                    "passed": False,
+                    "violations": [f"{agent_name}: {duplicate_count} duplicate timestamps"],
+                    "details": f"Most common duplicates: {duplicate_values.to_dict()}",
                 }
 
             return {
-                'check': 'duplicate_timestamps',
-                'passed': True,
-                'violations': [],
-                'details': 'No duplicate timestamps found'
+                "check": "duplicate_timestamps",
+                "passed": True,
+                "violations": [],
+                "details": "No duplicate timestamps found",
             }
 
         except Exception as e:
             return {
-                'check': 'duplicate_timestamps',
-                'passed': False,
-                'violations': [f"{agent_name}: duplicate check failed - {str(e)}"],
-                'details': str(e)
+                "check": "duplicate_timestamps",
+                "passed": False,
+                "violations": [f"{agent_name}: duplicate check failed - {str(e)}"],
+                "details": str(e),
             }
 
     def _analyze_temporal_gaps(self, timestamps: pd.Series, agent_name: str) -> Dict[str, Any]:
@@ -314,10 +322,10 @@ class TemporalIntegrityValidator:
         try:
             if len(timestamps) < 2:
                 return {
-                    'check': 'temporal_gaps',
-                    'passed': True,
-                    'warnings': [],
-                    'details': 'Insufficient data for gap analysis'
+                    "check": "temporal_gaps",
+                    "passed": True,
+                    "warnings": [],
+                    "details": "Insufficient data for gap analysis",
                 }
 
             # Calculate intervals
@@ -334,34 +342,37 @@ class TemporalIntegrityValidator:
 
             warnings_list = []
             if len(large_gaps) > 0:
-                warnings_list.append(f"{agent_name}: {len(large_gaps)} unusually large temporal gaps detected")
+                warnings_list.append(
+                    f"{agent_name}: {len(large_gaps)} unusually large temporal gaps detected"
+                )
 
             # Check for very irregular intervals
             if std_interval > mean_interval:
                 warnings_list.append(f"{agent_name}: highly irregular time intervals (std > mean)")
 
             return {
-                'check': 'temporal_gaps',
-                'passed': True,  # Gaps are warnings, not violations
-                'warnings': warnings_list,
-                'details': {
-                    'median_interval': str(median_interval),
-                    'mean_interval': str(mean_interval),
-                    'std_interval': str(std_interval),
-                    'large_gaps_count': len(large_gaps)
-                }
+                "check": "temporal_gaps",
+                "passed": True,  # Gaps are warnings, not violations
+                "warnings": warnings_list,
+                "details": {
+                    "median_interval": str(median_interval),
+                    "mean_interval": str(mean_interval),
+                    "std_interval": str(std_interval),
+                    "large_gaps_count": len(large_gaps),
+                },
             }
 
         except Exception as e:
             return {
-                'check': 'temporal_gaps',
-                'passed': False,
-                'warnings': [f"{agent_name}: gap analysis failed - {str(e)}"],
-                'details': str(e)
+                "check": "temporal_gaps",
+                "passed": False,
+                "warnings": [f"{agent_name}: gap analysis failed - {str(e)}"],
+                "details": str(e),
             }
 
-    def align_timestamps_efficient(self, df: pd.DataFrame, target_freq: str = 'H',
-                                 timestamp_col: str = 'timestamp') -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def align_timestamps_efficient(
+        self, df: pd.DataFrame, target_freq: str = "H", timestamp_col: str = "timestamp"
+    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Efficient timestamp alignment using vectorized operations instead of iterrows()
 
@@ -378,11 +389,11 @@ class TemporalIntegrityValidator:
 
         try:
             if df.empty:
-                return df, {'status': 'empty', 'aligned_count': 0}
+                return df, {"status": "empty", "aligned_count": 0}
 
             # Early normalization
             df = df.copy()
-            df[timestamp_col] = pd.to_datetime(df[timestamp_col], utc=True, errors='coerce')
+            df[timestamp_col] = pd.to_datetime(df[timestamp_col], utc=True, errors="coerce")
 
             # Remove invalid timestamps
             original_count = len(df)
@@ -391,9 +402,9 @@ class TemporalIntegrityValidator:
 
             if df.empty:
                 return df, {
-                    'status': 'no_valid_timestamps',
-                    'original_count': original_count,
-                    'aligned_count': 0
+                    "status": "no_valid_timestamps",
+                    "original_count": original_count,
+                    "aligned_count": 0,
                 }
 
             # Efficient alignment using pandas resampling - CRITICAL PERFORMANCE FIX
@@ -408,15 +419,15 @@ class TemporalIntegrityValidator:
                 start=start_time_data.floor(target_freq),
                 end=end_time_data.ceil(target_freq),
                 freq=target_freq,
-                tz=timezone.utc
+                tz=timezone.utc,
             )
 
             # Vectorized alignment using reindex with forward fill
-            aligned_df = df_indexed.reindex(target_range, method='ffill')
+            aligned_df = df_indexed.reindex(target_range, method="ffill")
 
             # Reset index to get timestamp column back
             aligned_df = aligned_df.reset_index()
-            aligned_df = aligned_df.rename(columns={'index': timestamp_col})
+            aligned_df = aligned_df.rename(columns={"index": timestamp_col})
 
             # Update statistics
             self.alignment_count += 1
@@ -426,47 +437,54 @@ class TemporalIntegrityValidator:
             alignment_duration = (end_time_proc - start_time).total_seconds()
 
             alignment_report = {
-                'status': 'success',
-                'original_count': original_count,
-                'valid_count': valid_count,
-                'aligned_count': len(aligned_df),
-                'target_frequency': target_freq,
-                'alignment_duration': alignment_duration,
-                'start_time': start_time_data.isoformat(),
-                'end_time': end_time_data.isoformat(),
-                'method': 'vectorized_reindex'
+                "status": "success",
+                "original_count": original_count,
+                "valid_count": valid_count,
+                "aligned_count": len(aligned_df),
+                "target_frequency": target_freq,
+                "alignment_duration": alignment_duration,
+                "start_time": start_time_data.isoformat(),
+                "end_time": end_time_data.isoformat(),
+                "method": "vectorized_reindex",
             }
 
-            self.logger.info(f"Efficient alignment completed: {original_count} → {len(aligned_df)} records")
+            self.logger.info(
+                f"Efficient alignment completed: {original_count} → {len(aligned_df)} records"
+            )
 
             return aligned_df, alignment_report
 
         except Exception as e:
             self.logger.error(f"Timestamp alignment failed: {e}")
             return df, {
-                'status': 'error',
-                'error': str(e),
-                'original_count': len(df) if 'df' in locals() else 0,
-                'aligned_count': 0
+                "status": "error",
+                "error": str(e),
+                "original_count": len(df) if "df" in locals() else 0,
+                "aligned_count": 0,
             }
 
-    def _create_validation_result(self, agent_name: str, is_valid: bool,
-                                violations: List[str], warnings: List[str],
-                                record_count: int) -> Dict[str, Any]:
+    def _create_validation_result(
+        self,
+        agent_name: str,
+        is_valid: bool,
+        violations: List[str],
+        warnings: List[str],
+        record_count: int,
+    ) -> Dict[str, Any]:
         """Create standardized validation result"""
 
         return {
-            'agent_name': agent_name,
-            'is_valid': is_valid,
-            'violations': violations,
-            'warnings': warnings,
-            'record_count': record_count,
-            'timestamp': pd.Timestamp.utcnow().isoformat(),
-            'validator_stats': {
-                'total_validations': self.validation_count,
-                'total_violations': self.violation_count,
-                'total_alignments': self.alignment_count
-            }
+            "agent_name": agent_name,
+            "is_valid": is_valid,
+            "violations": violations,
+            "warnings": warnings,
+            "record_count": record_count,
+            "timestamp": pd.Timestamp.utcnow().isoformat(),
+            "validator_stats": {
+                "total_validations": self.validation_count,
+                "total_violations": self.violation_count,
+                "total_alignments": self.alignment_count,
+            },
         }
 
     def _update_performance_stats(self, duration: float):
@@ -484,17 +502,20 @@ class TemporalIntegrityValidator:
         """Get validator status and statistics"""
 
         return {
-            'strict_mode': self.strict_mode,
-            'validation_count': self.validation_count,
-            'violation_count': self.violation_count,
-            'alignment_count': self.alignment_count,
-            'violation_rate': self.violation_count / max(self.validation_count, 1),
-            'average_validation_time': self.average_validation_time,
-            'last_validation': self.last_validation_time.isoformat() if self.last_validation_time else None
+            "strict_mode": self.strict_mode,
+            "validation_count": self.validation_count,
+            "violation_count": self.violation_count,
+            "alignment_count": self.alignment_count,
+            "violation_rate": self.violation_count / max(self.validation_count, 1),
+            "average_validation_time": self.average_validation_time,
+            "last_validation": self.last_validation_time.isoformat()
+            if self.last_validation_time
+            else None,
         }
 
-    def save_validation_report(self, validation_result: Dict[str, Any],
-                             output_dir: str = "logs/temporal_validation") -> str:
+    def save_validation_report(
+        self, validation_result: Dict[str, Any], output_dir: str = "logs/temporal_validation"
+    ) -> str:
         """Save detailed validation report to file"""
 
         try:
@@ -502,12 +523,12 @@ class TemporalIntegrityValidator:
             output_path.mkdir(parents=True, exist_ok=True)
 
             timestamp_str = pd.Timestamp.utcnow().strftime("%Y%m%d_%H%M%S")
-            agent_name = validation_result.get('agent_name', 'unknown')
+            agent_name = validation_result.get("agent_name", "unknown")
             filename = f"temporal_validation_{agent_name}_{timestamp_str}.json"
 
             file_path = output_path / filename
 
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 json.dump(validation_result, f, indent=2, default=str)
 
             self.logger.info(f"Validation report saved: {file_path}")
@@ -517,8 +538,10 @@ class TemporalIntegrityValidator:
             self.logger.error(f"Failed to save validation report: {e}")
             return ""
 
+
 # Global validator instance
 _temporal_validator: Optional[TemporalIntegrityValidator] = None
+
 
 def get_temporal_validator(strict_mode: bool = True) -> TemporalIntegrityValidator:
     """Get global temporal validator instance"""
@@ -529,34 +552,41 @@ def get_temporal_validator(strict_mode: bool = True) -> TemporalIntegrityValidat
 
     return _temporal_validator
 
-def validate_temporal_data(df: pd.DataFrame, agent_name: str = "Unknown",
-                         timestamp_col: str = 'timestamp') -> Dict[str, Any]:
+
+def validate_temporal_data(
+    df: pd.DataFrame, agent_name: str = "Unknown", timestamp_col: str = "timestamp"
+) -> Dict[str, Any]:
     """Convenience function for temporal validation"""
     validator = get_temporal_validator()
     return validator.validate_temporal_integrity(df, agent_name, timestamp_col)
 
-def align_temporal_data(df: pd.DataFrame, target_freq: str = 'H',
-                       timestamp_col: str = 'timestamp') -> Tuple[pd.DataFrame, Dict[str, Any]]:
+
+def align_temporal_data(
+    df: pd.DataFrame, target_freq: str = "H", timestamp_col: str = "timestamp"
+) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """Convenience function for temporal alignment"""
     validator = get_temporal_validator()
     return validator.align_timestamps_efficient(df, target_freq, timestamp_col)
+
 
 if __name__ == "__main__":
     # Test temporal integrity validator
     print("Testing Temporal Integrity Validator")
 
     # Create test data with various temporal issues
-    test_data = pd.DataFrame({
-        'timestamp': [
-            '2024-01-01 10:00:00',
-            '2024-01-01 11:00:00',
-            '2024-01-01 09:30:00',  # Non-monotonic
-            '2024-01-01 12:00:00',
-            '2024-01-01 12:00:00',  # Duplicate
-            '2025-01-01 10:00:00',  # Future
-        ],
-        'value': [100, 101, 99, 102, 102, 200]
-    })
+    test_data = pd.DataFrame(
+        {
+            "timestamp": [
+                "2024-01-01 10:00:00",
+                "2024-01-01 11:00:00",
+                "2024-01-01 09:30:00",  # Non-monotonic
+                "2024-01-01 12:00:00",
+                "2024-01-01 12:00:00",  # Duplicate
+                "2025-01-01 10:00:00",  # Future
+            ],
+            "value": [100, 101, 99, 102, 102, 200],
+        }
+    )
 
     validator = TemporalIntegrityValidator(strict_mode=False)
 
@@ -571,10 +601,12 @@ if __name__ == "__main__":
     print(f"Warnings: {result['warnings']}")
 
     # Test alignment
-    aligned_df, alignment_report = validator.align_timestamps_efficient(test_data, '1H')
+    aligned_df, alignment_report = validator.align_timestamps_efficient(test_data, "1H")
     print(f"\nAlignment report:")
     print(f"Status: {alignment_report['status']}")
-    print(f"Original: {alignment_report.get('original_count', 0)} → Aligned: {alignment_report.get('aligned_count', 0)}")
+    print(
+        f"Original: {alignment_report.get('original_count', 0)} → Aligned: {alignment_report.get('aligned_count', 0)}"
+    )
 
     # Show status
     status = validator.get_validator_status()

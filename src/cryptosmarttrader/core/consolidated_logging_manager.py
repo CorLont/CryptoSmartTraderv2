@@ -14,6 +14,7 @@ from typing import Dict, Any, Optional, Union
 import threading
 from logging.handlers import RotatingFileHandler
 
+
 class ConsolidatedLogger:
     """Single, consistent logger for entire system"""
 
@@ -47,7 +48,7 @@ class ConsolidatedLogger:
         )
 
         console_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
 
         # Console handler for immediate feedback
@@ -64,7 +65,7 @@ class ConsolidatedLogger:
             log_file = log_dir / f"system_{today}.log"
 
             file_handler = RotatingFileHandler(
-                log_file, maxBytes=10*1024*1024, backupCount=5, encoding='utf-8'
+                log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
             )
             file_handler.setLevel(logging.INFO)
             file_handler.setFormatter(json_formatter)
@@ -107,10 +108,7 @@ class ConsolidatedLogger:
         # Create structured message
         if kwargs:
             # Ensure message is JSON-safe
-            context_data = {
-                "msg": message,
-                "context": kwargs
-            }
+            context_data = {"msg": message, "context": kwargs}
             structured_message = json.dumps(context_data, default=str, ensure_ascii=False)
         else:
             structured_message = json.dumps(message, ensure_ascii=False)
@@ -119,41 +117,51 @@ class ConsolidatedLogger:
 
     def log_system_check(self, check_name: str, passed: bool, details: str = "", **kwargs):
         """Log system check result consistently"""
-        self.info(f"System check: {check_name}",
-                 check_name=check_name,
-                 check_passed=passed,
-                 check_details=details,
-                 check_type="system_validation",
-                 **kwargs)
+        self.info(
+            f"System check: {check_name}",
+            check_name=check_name,
+            check_passed=passed,
+            check_details=details,
+            check_type="system_validation",
+            **kwargs,
+        )
 
     def log_performance_metric(self, metric_name: str, value: float, unit: str = "", **kwargs):
         """Log performance metric consistently"""
-        self.info(f"Performance metric: {metric_name}",
-                 metric_name=metric_name,
-                 metric_value=value,
-                 metric_unit=unit,
-                 metric_type="performance",
-                 **kwargs)
+        self.info(
+            f"Performance metric: {metric_name}",
+            metric_name=metric_name,
+            metric_value=value,
+            metric_unit=unit,
+            metric_type="performance",
+            **kwargs,
+        )
 
-    def log_confidence_gate(self, gate_id: str, input_count: int, output_count: int,
-                           threshold: float, **kwargs):
+    def log_confidence_gate(
+        self, gate_id: str, input_count: int, output_count: int, threshold: float, **kwargs
+    ):
         """Log confidence gate application consistently"""
-        self.info(f"Confidence gate applied: {gate_id}",
-                 gate_id=gate_id,
-                 input_count=input_count,
-                 output_count=output_count,
-                 pass_rate=output_count/max(input_count,1),
-                 threshold=threshold,
-                 log_type="confidence_gate",
-                 **kwargs)
+        self.info(
+            f"Confidence gate applied: {gate_id}",
+            gate_id=gate_id,
+            input_count=input_count,
+            output_count=output_count,
+            pass_rate=output_count / max(input_count, 1),
+            threshold=threshold,
+            log_type="confidence_gate",
+            **kwargs,
+        )
 
     def log_error_with_context(self, error: Exception, context: Dict[str, Any]):
         """Log error with full context consistently"""
-        self.error(f"Error occurred: {str(error)}",
-                  error_type=type(error).__name__,
-                  error_message=str(error),
-                  context=context,
-                  log_type="error_with_context")
+        self.error(
+            f"Error occurred: {str(error)}",
+            error_type=type(error).__name__,
+            error_message=str(error),
+            context=context,
+            log_type="error_with_context",
+        )
+
 
 def get_consolidated_logger(name: str) -> ConsolidatedLogger:
     """Get or create consolidated logger instance"""
@@ -163,18 +171,22 @@ def get_consolidated_logger(name: str) -> ConsolidatedLogger:
             ConsolidatedLogger._instances[name] = ConsolidatedLogger(name)
         return ConsolidatedLogger._instances[name]
 
+
 # Compatibility aliases to replace old logging systems
 def get_logger(name: str = "CryptoSmartTrader") -> ConsolidatedLogger:
     """Compatibility alias for get_consolidated_logger"""
     return get_consolidated_logger(name)
 
+
 def get_logger(name: str) -> ConsolidatedLogger:
     """Compatibility alias for get_consolidated_logger"""
     return get_consolidated_logger(name)
 
+
 def get_unified_logger(name: str) -> ConsolidatedLogger:
     """Compatibility alias for get_consolidated_logger"""
     return get_consolidated_logger(name)
+
 
 # Initialize root logging on import
 _root_logger = get_consolidated_logger("CryptoSmartTrader")

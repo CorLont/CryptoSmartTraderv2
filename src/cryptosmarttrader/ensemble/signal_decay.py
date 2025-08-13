@@ -17,39 +17,43 @@ from .base_models import ModelPrediction
 
 logger = logging.getLogger(__name__)
 
+
 class DecayFunction(Enum):
     """Signal decay function types"""
-    LINEAR = "linear"                    # Linear decay
-    EXPONENTIAL = "exponential"          # Exponential decay
-    STEP = "step"                       # Step function (valid/invalid)
-    SIGMOID = "sigmoid"                 # Sigmoid decay
+
+    LINEAR = "linear"  # Linear decay
+    EXPONENTIAL = "exponential"  # Exponential decay
+    STEP = "step"  # Step function (valid/invalid)
+    SIGMOID = "sigmoid"  # Sigmoid decay
 
 
 @dataclass
 class DecayConfig:
     """Configuration for signal decay"""
-    default_ttl_hours: float = 4.0         # Default signal TTL
+
+    default_ttl_hours: float = 4.0  # Default signal TTL
     decay_function: DecayFunction = DecayFunction.EXPONENTIAL
 
     # Model-specific TTL settings
     model_ttl_overrides: Dict[str, float] = None
 
     # Decay parameters
-    half_life_factor: float = 0.5           # At what fraction of TTL is signal half strength
-    min_signal_strength: float = 0.1        # Minimum signal strength before removal
+    half_life_factor: float = 0.5  # At what fraction of TTL is signal half strength
+    min_signal_strength: float = 0.1  # Minimum signal strength before removal
 
     # Update frequency
-    cleanup_frequency_minutes: int = 15     # How often to clean up expired signals
+    cleanup_frequency_minutes: int = 15  # How often to clean up expired signals
 
 
 @dataclass
 class DecayedSignal:
     """Signal with decay applied"""
+
     original_prediction: ModelPrediction
-    current_strength: float         # Current signal strength (0-1)
-    time_remaining_hours: float     # Hours until complete decay
-    decay_factor: float            # Current decay multiplier
-    is_expired: bool               # Whether signal is considered expired
+    current_strength: float  # Current signal strength (0-1)
+    time_remaining_hours: float  # Hours until complete decay
+    decay_factor: float  # Current decay multiplier
+    is_expired: bool  # Whether signal is considered expired
 
 
 class SignalDecayManager:
@@ -86,7 +90,7 @@ class SignalDecayManager:
                 current_strength=1.0,  # Full strength initially
                 time_remaining_hours=ttl_hours,
                 decay_factor=1.0,
-                is_expired=False
+                is_expired=False,
             )
 
             # Store signal
@@ -96,7 +100,9 @@ class SignalDecayManager:
 
             self.active_signals[symbol].append(decayed_signal)
 
-            logger.debug(f"Added signal for {symbol} from {prediction.model_name}, TTL: {ttl_hours}h")
+            logger.debug(
+                f"Added signal for {symbol} from {prediction.model_name}, TTL: {ttl_hours}h"
+            )
 
             return decayed_signal
 
@@ -104,9 +110,7 @@ class SignalDecayManager:
             logger.error(f"Failed to add signal: {e}")
             raise
 
-    def get_active_signals(self,
-                          symbol: str,
-                          update_decay: bool = True) -> List[DecayedSignal]:
+    def get_active_signals(self, symbol: str, update_decay: bool = True) -> List[DecayedSignal]:
         """
         Get active signals for a symbol with current decay applied
 
@@ -137,9 +141,9 @@ class SignalDecayManager:
             logger.error(f"Failed to get active signals for {symbol}: {e}")
             return []
 
-    def get_weighted_prediction(self,
-                               symbol: str,
-                               combine_method: str = "weighted_average") -> Optional[ModelPrediction]:
+    def get_weighted_prediction(
+        self, symbol: str, combine_method: str = "weighted_average"
+    ) -> Optional[ModelPrediction]:
         """
         Get combined prediction from all active signals for a symbol
 
@@ -197,11 +201,7 @@ class SignalDecayManager:
                 if minutes_since < self.config.cleanup_frequency_minutes:
                     return {"status": "cleanup_not_due"}
 
-            cleanup_stats = {
-                "symbols_processed": 0,
-                "signals_removed": 0,
-                "signals_remaining": 0
-            }
+            cleanup_stats = {"symbols_processed": 0, "signals_removed": 0, "signals_remaining": 0}
 
             for symbol in list(self.active_signals.keys()):
                 signals = self.active_signals[symbol]
@@ -248,12 +248,14 @@ class SignalDecayManager:
         try:
             analytics = {
                 "total_symbols": len(self.active_signals),
-                "total_active_signals": sum(len(signals) for signals in self.active_signals.values()),
+                "total_active_signals": sum(
+                    len(signals) for signals in self.active_signals.values()
+                ),
                 "config": {
                     "default_ttl_hours": self.config.default_ttl_hours,
                     "decay_function": self.config.decay_function.value,
-                    "min_signal_strength": self.config.min_signal_strength
-                }
+                    "min_signal_strength": self.config.min_signal_strength,
+                },
             }
 
             # Per-model statistics
@@ -275,7 +277,7 @@ class SignalDecayManager:
                             "count": 0,
                             "avg_strength": 0.0,
                             "avg_age_hours": 0.0,
-                            "expired_count": 0
+                            "expired_count": 0,
                         }
 
                     stats = model_stats[model_name]
@@ -307,7 +309,7 @@ class SignalDecayManager:
                     "median_signal_age_hours": np.median(signal_ages),
                     "avg_signal_strength": np.mean(signal_strengths),
                     "median_signal_strength": np.median(signal_strengths),
-                    "strength_std": np.std(signal_strengths)
+                    "strength_std": np.std(signal_strengths),
                 }
 
             # Symbol-specific analytics if requested
@@ -316,7 +318,7 @@ class SignalDecayManager:
                 analytics["symbol_details"] = {
                     "active_signals": len(symbol_signals),
                     "model_breakdown": {},
-                    "age_distribution": {}
+                    "age_distribution": {},
                 }
 
                 for signal in symbol_signals:
@@ -371,7 +373,9 @@ class SignalDecayManager:
                     # Sigmoid decay - slow at first, then rapid
                     steepness = 5.0  # Controls steepness of decay
                     midpoint = ttl_hours * 0.7  # Decay accelerates at 70% of TTL
-                    decay_factor = 1.0 / (1.0 + np.exp(steepness * (age_hours - midpoint) / ttl_hours))
+                    decay_factor = 1.0 / (
+                        1.0 + np.exp(steepness * (age_hours - midpoint) / ttl_hours)
+                    )
                 else:
                     decay_factor = 1.0 - time_fraction  # Default to linear
 
@@ -416,7 +420,7 @@ class SignalDecayManager:
                 model_version=original.model_version,
                 training_data_end=original.training_data_end,
                 ttl_hours=original.ttl_hours,
-                decay_factor=signal.decay_factor
+                decay_factor=signal.decay_factor,
             )
 
             return decayed_prediction
@@ -443,8 +447,7 @@ class SignalDecayManager:
 
             # Weighted average of probabilities
             weighted_prob = sum(
-                w * signal.original_prediction.probability
-                for w, signal in zip(weights, signals)
+                w * signal.original_prediction.probability for w, signal in zip(weights, signals)
             )
 
             # Weighted average of confidences (already decayed)
@@ -454,7 +457,7 @@ class SignalDecayManager:
             )
 
             # Determine direction from weighted probability
-            direction = 'up' if weighted_prob > 0.5 else 'down'
+            direction = "up" if weighted_prob > 0.5 else "down"
 
             # Combine feature importance
             combined_importance = {}
@@ -476,7 +479,7 @@ class SignalDecayManager:
                 model_version="1.0.0",
                 training_data_end=None,
                 ttl_hours=min(signal.time_remaining_hours for signal in signals),
-                decay_factor=np.mean([signal.decay_factor for signal in signals])
+                decay_factor=np.mean([signal.decay_factor for signal in signals]),
             )
 
             return combined_prediction
@@ -493,8 +496,7 @@ class SignalDecayManager:
 
             # Find signal with highest decayed confidence
             best_signal = max(
-                signals,
-                key=lambda s: s.original_prediction.confidence * s.decay_factor
+                signals, key=lambda s: s.original_prediction.confidence * s.decay_factor
             )
 
             return self._apply_decay_to_prediction(best_signal)
@@ -513,13 +515,13 @@ class SignalDecayManager:
             up_weight = sum(
                 signal.decay_factor
                 for signal in signals
-                if signal.original_prediction.direction == 'up'
+                if signal.original_prediction.direction == "up"
             )
 
             down_weight = sum(
                 signal.decay_factor
                 for signal in signals
-                if signal.original_prediction.direction == 'down'
+                if signal.original_prediction.direction == "down"
             )
 
             total_weight = up_weight + down_weight
@@ -532,12 +534,11 @@ class SignalDecayManager:
 
             # Average confidence weighted by decay
             avg_confidence = sum(
-                signal.original_prediction.confidence * signal.decay_factor
-                for signal in signals
+                signal.original_prediction.confidence * signal.decay_factor for signal in signals
             ) / len(signals)
 
             # Direction from consensus
-            direction = 'up' if consensus_prob > 0.5 else 'down'
+            direction = "up" if consensus_prob > 0.5 else "down"
 
             # Create consensus prediction
             first_signal = signals[0].original_prediction
@@ -553,7 +554,7 @@ class SignalDecayManager:
                 model_version="1.0.0",
                 training_data_end=None,
                 ttl_hours=min(signal.time_remaining_hours for signal in signals),
-                decay_factor=np.mean([signal.decay_factor for signal in signals])
+                decay_factor=np.mean([signal.decay_factor for signal in signals]),
             )
 
             return consensus_prediction

@@ -8,9 +8,4 @@ from .auto_features import AutoFeatures
 from .feature_monitor import FeatureMonitor
 from .leakage_detector import LeakageDetector
 
-__all__ = [
-    'FeatureEngineering',
-    'AutoFeatures',
-    'FeatureMonitor',
-    'LeakageDetector'
-]
+__all__ = ["FeatureEngineering", "AutoFeatures", "FeatureMonitor", "LeakageDetector"]

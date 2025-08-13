@@ -16,19 +16,24 @@ from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import squareform
 from scipy.stats import pearsonr
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 logger = logging.getLogger(__name__)
 
+
 class CorrelationLevel(Enum):
     """Correlation risk levels"""
-    LOW = "low"          # < 0.3
+
+    LOW = "low"  # < 0.3
     MODERATE = "moderate"  # 0.3 - 0.6
-    HIGH = "high"        # 0.6 - 0.8
-    EXTREME = "extreme"   # > 0.8
+    HIGH = "high"  # 0.6 - 0.8
+    EXTREME = "extreme"  # > 0.8
+
 
 class ClusterType(Enum):
     """Asset cluster types"""
+
     LARGE_CAP = "large_cap"
     MID_CAP = "mid_cap"
     SMALL_CAP = "small_cap"
@@ -38,19 +43,23 @@ class ClusterType(Enum):
     MEME = "meme"
     STABLECOIN = "stablecoin"
 
+
 @dataclass
 class CorrelationWindow:
     """Correlation calculation window"""
+
     lookback_days: int = 30
     min_observations: int = 20
     rolling_window: bool = True
 
+
 @dataclass
 class ClusterLimit:
     """Cluster exposure limit"""
+
     cluster_type: ClusterType
     max_weight: float = 0.15  # Max 15% per cluster
-    max_positions: int = 5    # Max 5 positions per cluster
+    max_positions: int = 5  # Max 5 positions per cluster
     current_weight: float = 0.0
     current_positions: int = 0
 
@@ -64,21 +73,26 @@ class ClusterLimit:
 
     @property
     def is_at_limit(self) -> bool:
-        return (self.current_weight >= self.max_weight or
-                self.current_positions >= self.max_positions)
+        return (
+            self.current_weight >= self.max_weight or self.current_positions >= self.max_positions
+        )
+
 
 @dataclass
 class CorrelationShockScenario:
     """Correlation shock test scenario"""
+
     name: str
     correlation_increase: float = 0.3  # Increase all correlations by 30%
-    volatility_spike: float = 2.0      # 2x volatility increase
-    duration_days: int = 5             # Shock duration
+    volatility_spike: float = 2.0  # 2x volatility increase
+    duration_days: int = 5  # Shock duration
     affected_clusters: List[ClusterType] = field(default_factory=list)
+
 
 @dataclass
 class StressTestResult:
     """Portfolio stress test result"""
+
     scenario_name: str
     max_drawdown: float
     portfolio_var: float
@@ -86,6 +100,7 @@ class StressTestResult:
     cluster_impacts: Dict[str, float]
     risk_limit_breaches: List[str]
     recommended_actions: List[str]
+
 
 class CorrelationManager:
     """
@@ -99,8 +114,8 @@ class CorrelationManager:
         self.max_cluster_correlation = 0.8  # Max avg correlation within cluster
 
         # Portfolio limits
-        self.max_single_asset_weight = 0.05    # 5% max per asset
-        self.max_total_crypto_weight = 0.25    # 25% max crypto allocation
+        self.max_single_asset_weight = 0.05  # 5% max per asset
+        self.max_total_crypto_weight = 0.25  # 25% max crypto allocation
         self.max_high_correlation_weight = 0.15  # 15% max in highly correlated assets
 
         # Cluster definitions and limits
@@ -123,43 +138,43 @@ class CorrelationManager:
             ClusterType.LARGE_CAP: ClusterLimit(
                 cluster_type=ClusterType.LARGE_CAP,
                 max_weight=0.15,  # 15% in large caps (BTC, ETH)
-                max_positions=3
+                max_positions=3,
             ),
             ClusterType.MID_CAP: ClusterLimit(
                 cluster_type=ClusterType.MID_CAP,
                 max_weight=0.10,  # 10% in mid caps
-                max_positions=5
+                max_positions=5,
             ),
             ClusterType.SMALL_CAP: ClusterLimit(
                 cluster_type=ClusterType.SMALL_CAP,
                 max_weight=0.08,  # 8% in small caps
-                max_positions=8
+                max_positions=8,
             ),
             ClusterType.DEFI: ClusterLimit(
                 cluster_type=ClusterType.DEFI,
                 max_weight=0.12,  # 12% in DeFi
-                max_positions=6
+                max_positions=6,
             ),
             ClusterType.LAYER1: ClusterLimit(
                 cluster_type=ClusterType.LAYER1,
                 max_weight=0.10,  # 10% in Layer 1s
-                max_positions=4
+                max_positions=4,
             ),
             ClusterType.GAMING: ClusterLimit(
                 cluster_type=ClusterType.GAMING,
                 max_weight=0.06,  # 6% in gaming
-                max_positions=4
+                max_positions=4,
             ),
             ClusterType.MEME: ClusterLimit(
                 cluster_type=ClusterType.MEME,
                 max_weight=0.03,  # 3% in meme coins
-                max_positions=3
+                max_positions=3,
             ),
             ClusterType.STABLECOIN: ClusterLimit(
                 cluster_type=ClusterType.STABLECOIN,
                 max_weight=0.05,  # 5% in stablecoins
-                max_positions=2
-            )
+                max_positions=2,
+            ),
         }
 
     def update_asset_clusters(self, asset_clusters: Dict[str, str]):
@@ -182,9 +197,9 @@ class CorrelationManager:
         except Exception as e:
             logger.error(f"Asset cluster update failed: {e}")
 
-    def calculate_correlation_matrix(self,
-                                   price_data: Dict[str, pd.DataFrame],
-                                   window: Optional[CorrelationWindow] = None) -> pd.DataFrame:
+    def calculate_correlation_matrix(
+        self, price_data: Dict[str, pd.DataFrame], window: Optional[CorrelationWindow] = None
+    ) -> pd.DataFrame:
         """Calculate rolling correlation matrix for assets"""
 
         try:
@@ -197,11 +212,11 @@ class CorrelationManager:
             returns_data = {}
 
             for symbol, data in price_data.items():
-                if 'close' not in data.columns or len(data) < window.min_observations:
+                if "close" not in data.columns or len(data) < window.min_observations:
                     continue
 
                 # Calculate returns
-                returns = data['close'].pct_change().dropna()
+                returns = data["close"].pct_change().dropna()
 
                 # Use last N days
                 if len(returns) > window.lookback_days:
@@ -236,9 +251,9 @@ class CorrelationManager:
             logger.error(f"Correlation calculation failed: {e}")
             return pd.DataFrame()
 
-    def identify_correlation_clusters(self,
-                                    correlation_matrix: pd.DataFrame,
-                                    cluster_threshold: float = 0.7) -> Dict[int, List[str]]:
+    def identify_correlation_clusters(
+        self, correlation_matrix: pd.DataFrame, cluster_threshold: float = 0.7
+    ) -> Dict[int, List[str]]:
         """Identify asset clusters based on correlation"""
 
         try:
@@ -250,10 +265,10 @@ class CorrelationManager:
 
             # Hierarchical clustering
             condensed_distances = squareform(distance_matrix.values)
-            linkage_matrix = linkage(condensed_distances, method='ward')
+            linkage_matrix = linkage(condensed_distances, method="ward")
 
             # Form clusters
-            cluster_labels = fcluster(linkage_matrix, 1 - cluster_threshold, criterion='distance')
+            cluster_labels = fcluster(linkage_matrix, 1 - cluster_threshold, criterion="distance")
 
             # Group assets by cluster
             clusters = {}
@@ -265,8 +280,7 @@ class CorrelationManager:
 
             # Filter clusters with multiple assets
             significant_clusters = {
-                cid: assets for cid, assets in clusters.items()
-                if len(assets) > 1
+                cid: assets for cid, assets in clusters.items() if len(assets) > 1
             }
 
             logger.info(f"Identified {len(significant_clusters)} correlation clusters")
@@ -276,9 +290,9 @@ class CorrelationManager:
             logger.error(f"Cluster identification failed: {e}")
             return {}
 
-    def check_correlation_limits(self,
-                                current_positions: Dict[str, float],
-                                correlation_matrix: pd.DataFrame) -> Dict[str, Any]:
+    def check_correlation_limits(
+        self, current_positions: Dict[str, float], correlation_matrix: pd.DataFrame
+    ) -> Dict[str, Any]:
         """Check portfolio against correlation limits"""
 
         try:
@@ -290,7 +304,8 @@ class CorrelationManager:
 
             # Filter positions that are in correlation matrix
             relevant_positions = {
-                symbol: weight for symbol, weight in current_positions.items()
+                symbol: weight
+                for symbol, weight in current_positions.items()
                 if symbol in correlation_matrix.index and weight > 0
             }
 
@@ -308,23 +323,27 @@ class CorrelationManager:
 
                     # High correlation warning
                     if abs(correlation) > self.correlation_threshold and combined_weight > 0.05:
-                        warnings.append({
-                            'type': 'high_correlation',
-                            'assets': [symbol1, symbol2],
-                            'correlation': correlation,
-                            'combined_weight': combined_weight,
-                            'message': f"High correlation ({correlation:.2f}) between {symbol1} and {symbol2}"
-                        })
+                        warnings.append(
+                            {
+                                "type": "high_correlation",
+                                "assets": [symbol1, symbol2],
+                                "correlation": correlation,
+                                "combined_weight": combined_weight,
+                                "message": f"High correlation ({correlation:.2f}) between {symbol1} and {symbol2}",
+                            }
+                        )
 
                     # Extreme correlation violation
                     if abs(correlation) > 0.85 and combined_weight > 0.03:
-                        violations.append({
-                            'type': 'extreme_correlation',
-                            'assets': [symbol1, symbol2],
-                            'correlation': correlation,
-                            'combined_weight': combined_weight,
-                            'severity': 'high'
-                        })
+                        violations.append(
+                            {
+                                "type": "extreme_correlation",
+                                "assets": [symbol1, symbol2],
+                                "correlation": correlation,
+                                "combined_weight": combined_weight,
+                                "severity": "high",
+                            }
+                        )
 
             # Check total high-correlation exposure
             high_corr_assets = set()
@@ -337,24 +356,27 @@ class CorrelationManager:
                             high_corr_assets.add(symbol2)
 
             high_corr_exposure = sum(
-                weight for symbol, weight in relevant_positions.items()
+                weight
+                for symbol, weight in relevant_positions.items()
                 if symbol in high_corr_assets
             )
 
             if high_corr_exposure > self.max_high_correlation_weight:
-                violations.append({
-                    'type': 'total_correlation_exposure',
-                    'exposure': high_corr_exposure,
-                    'limit': self.max_high_correlation_weight,
-                    'severity': 'medium'
-                })
+                violations.append(
+                    {
+                        "type": "total_correlation_exposure",
+                        "exposure": high_corr_exposure,
+                        "limit": self.max_high_correlation_weight,
+                        "severity": "medium",
+                    }
+                )
 
             return {
-                'status': 'checked',
-                'violations': violations,
-                'warnings': warnings,
-                'high_correlation_exposure': high_corr_exposure,
-                'total_positions_checked': len(relevant_positions)
+                "status": "checked",
+                "violations": violations,
+                "warnings": warnings,
+                "high_correlation_exposure": high_corr_exposure,
+                "total_positions_checked": len(relevant_positions),
             }
 
         except Exception as e:
@@ -391,63 +413,71 @@ class CorrelationManager:
             for cluster_type, cluster_limit in self.cluster_limits.items():
                 # Weight violations
                 if cluster_limit.current_weight > cluster_limit.max_weight:
-                    violations.append({
-                        'type': 'cluster_weight_violation',
-                        'cluster': cluster_type.value,
-                        'current_weight': cluster_limit.current_weight,
-                        'max_weight': cluster_limit.max_weight,
-                        'excess': cluster_limit.current_weight - cluster_limit.max_weight,
-                        'severity': 'high'
-                    })
+                    violations.append(
+                        {
+                            "type": "cluster_weight_violation",
+                            "cluster": cluster_type.value,
+                            "current_weight": cluster_limit.current_weight,
+                            "max_weight": cluster_limit.max_weight,
+                            "excess": cluster_limit.current_weight - cluster_limit.max_weight,
+                            "severity": "high",
+                        }
+                    )
                 elif cluster_limit.current_weight > cluster_limit.max_weight * 0.85:
-                    warnings.append({
-                        'type': 'cluster_weight_warning',
-                        'cluster': cluster_type.value,
-                        'current_weight': cluster_limit.current_weight,
-                        'max_weight': cluster_limit.max_weight,
-                        'utilization': cluster_limit.weight_utilization
-                    })
+                    warnings.append(
+                        {
+                            "type": "cluster_weight_warning",
+                            "cluster": cluster_type.value,
+                            "current_weight": cluster_limit.current_weight,
+                            "max_weight": cluster_limit.max_weight,
+                            "utilization": cluster_limit.weight_utilization,
+                        }
+                    )
 
                 # Position count violations
                 if cluster_limit.current_positions > cluster_limit.max_positions:
-                    violations.append({
-                        'type': 'cluster_position_violation',
-                        'cluster': cluster_type.value,
-                        'current_positions': cluster_limit.current_positions,
-                        'max_positions': cluster_limit.max_positions,
-                        'excess': cluster_limit.current_positions - cluster_limit.max_positions,
-                        'severity': 'medium'
-                    })
+                    violations.append(
+                        {
+                            "type": "cluster_position_violation",
+                            "cluster": cluster_type.value,
+                            "current_positions": cluster_limit.current_positions,
+                            "max_positions": cluster_limit.max_positions,
+                            "excess": cluster_limit.current_positions - cluster_limit.max_positions,
+                            "severity": "medium",
+                        }
+                    )
 
             # Generate cluster summary
             cluster_summary = {}
             for cluster_type, cluster_limit in self.cluster_limits.items():
                 cluster_summary[cluster_type.value] = {
-                    'weight': cluster_limit.current_weight,
-                    'max_weight': cluster_limit.max_weight,
-                    'positions': cluster_limit.current_positions,
-                    'max_positions': cluster_limit.max_positions,
-                    'weight_utilization': cluster_limit.weight_utilization,
-                    'position_utilization': cluster_limit.position_utilization,
-                    'at_limit': cluster_limit.is_at_limit
+                    "weight": cluster_limit.current_weight,
+                    "max_weight": cluster_limit.max_weight,
+                    "positions": cluster_limit.current_positions,
+                    "max_positions": cluster_limit.max_positions,
+                    "weight_utilization": cluster_limit.weight_utilization,
+                    "position_utilization": cluster_limit.position_utilization,
+                    "at_limit": cluster_limit.is_at_limit,
                 }
 
             return {
-                'status': 'checked',
-                'violations': violations,
-                'warnings': warnings,
-                'cluster_summary': cluster_summary,
-                'total_clusters': len(self.cluster_limits)
+                "status": "checked",
+                "violations": violations,
+                "warnings": warnings,
+                "cluster_summary": cluster_summary,
+                "total_clusters": len(self.cluster_limits),
             }
 
         except Exception as e:
             logger.error(f"Cluster limit check failed: {e}")
             return {"status": "error", "message": str(e)}
 
-    def stress_test_correlation_shock(self,
-                                    current_positions: Dict[str, float],
-                                    scenarios: List[CorrelationShockScenario],
-                                    historical_volatility: Dict[str, float]) -> Dict[str, StressTestResult]:
+    def stress_test_correlation_shock(
+        self,
+        current_positions: Dict[str, float],
+        scenarios: List[CorrelationShockScenario],
+        historical_volatility: Dict[str, float],
+    ) -> Dict[str, StressTestResult]:
         """Stress test portfolio against correlation shock scenarios"""
 
         try:
@@ -470,7 +500,9 @@ class CorrelationManager:
                         if i != j:
                             current_corr = matrix_values[i, j]
                             # Increase correlation but cap at 0.95
-                            shocked_corr = min(0.95, abs(current_corr) + scenario.correlation_increase)
+                            shocked_corr = min(
+                                0.95, abs(current_corr) + scenario.correlation_increase
+                            )
                             # Maintain sign of original correlation
                             if current_corr < 0:
                                 shocked_corr = -shocked_corr
@@ -480,12 +512,15 @@ class CorrelationManager:
                 shocked_corr_matrix = pd.DataFrame(
                     matrix_values,
                     index=shocked_corr_matrix.index,
-                    columns=shocked_corr_matrix.columns
+                    columns=shocked_corr_matrix.columns,
                 )
 
                 # Calculate portfolio metrics under shock
                 portfolio_var = self._calculate_portfolio_var(
-                    current_positions, shocked_corr_matrix, historical_volatility, scenario.volatility_spike
+                    current_positions,
+                    shocked_corr_matrix,
+                    historical_volatility,
+                    scenario.volatility_spike,
                 )
 
                 # Estimate maximum drawdown
@@ -510,13 +545,17 @@ class CorrelationManager:
                 )
 
                 # Correlation metrics
-                avg_correlation = shocked_corr_matrix.values[np.triu_indices_from(shocked_corr_matrix.values, k=1)].mean()
-                max_correlation = shocked_corr_matrix.values[np.triu_indices_from(shocked_corr_matrix.values, k=1)].max()
+                avg_correlation = shocked_corr_matrix.values[
+                    np.triu_indices_from(shocked_corr_matrix.values, k=1)
+                ].mean()
+                max_correlation = shocked_corr_matrix.values[
+                    np.triu_indices_from(shocked_corr_matrix.values, k=1)
+                ].max()
 
                 correlation_metrics = {
-                    'average_correlation': avg_correlation,
-                    'max_correlation': max_correlation,
-                    'correlation_increase': scenario.correlation_increase
+                    "average_correlation": avg_correlation,
+                    "max_correlation": max_correlation,
+                    "correlation_increase": scenario.correlation_increase,
                 }
 
                 stress_results[scenario.name] = StressTestResult(
@@ -526,7 +565,7 @@ class CorrelationManager:
                     correlation_metrics=correlation_metrics,
                     cluster_impacts=cluster_impacts,
                     risk_limit_breaches=risk_breaches,
-                    recommended_actions=recommendations
+                    recommended_actions=recommendations,
                 )
 
             return stress_results
@@ -535,17 +574,20 @@ class CorrelationManager:
             logger.error(f"Correlation shock stress test failed: {e}")
             return {}
 
-    def _calculate_portfolio_var(self,
-                               positions: Dict[str, float],
-                               correlation_matrix: pd.DataFrame,
-                               volatilities: Dict[str, float],
-                               vol_multiplier: float = 1.0) -> float:
+    def _calculate_portfolio_var(
+        self,
+        positions: Dict[str, float],
+        correlation_matrix: pd.DataFrame,
+        volatilities: Dict[str, float],
+        vol_multiplier: float = 1.0,
+    ) -> float:
         """Calculate portfolio Value at Risk"""
 
         try:
             # Filter positions in correlation matrix
             relevant_positions = {
-                symbol: weight for symbol, weight in positions.items()
+                symbol: weight
+                for symbol, weight in positions.items()
                 if symbol in correlation_matrix.index and weight > 0
             }
 
@@ -557,10 +599,7 @@ class CorrelationManager:
             weights = np.array([relevant_positions[symbol] for symbol in symbols])
 
             # Create volatility vector
-            vols = np.array([
-                volatilities.get(symbol, 0.02) * vol_multiplier
-                for symbol in symbols
-            ])
+            vols = np.array([volatilities.get(symbol, 0.02) * vol_multiplier for symbol in symbols])
 
             # Get correlation submatrix
             corr_sub = correlation_matrix.loc[symbols, symbols].values
@@ -581,9 +620,9 @@ class CorrelationManager:
             logger.error(f"Portfolio VaR calculation failed: {e}")
             return 0.0
 
-    def _calculate_cluster_impacts(self,
-                                 positions: Dict[str, float],
-                                 correlation_matrix: pd.DataFrame) -> Dict[str, float]:
+    def _calculate_cluster_impacts(
+        self, positions: Dict[str, float], correlation_matrix: pd.DataFrame
+    ) -> Dict[str, float]:
         """Calculate impact by cluster under correlation shock"""
 
         try:
@@ -591,7 +630,8 @@ class CorrelationManager:
 
             for cluster_type in ClusterType:
                 cluster_assets = [
-                    symbol for symbol, cluster in self.asset_cluster_mapping.items()
+                    symbol
+                    for symbol, cluster in self.asset_cluster_mapping.items()
                     if cluster == cluster_type and symbol in positions and positions[symbol] > 0
                 ]
 
@@ -602,8 +642,11 @@ class CorrelationManager:
                 # Calculate average correlation within cluster
                 correlations = []
                 for i, asset1 in enumerate(cluster_assets):
-                    for asset2 in cluster_assets[i+1:]:
-                        if asset1 in correlation_matrix.index and asset2 in correlation_matrix.index:
+                    for asset2 in cluster_assets[i + 1 :]:
+                        if (
+                            asset1 in correlation_matrix.index
+                            and asset2 in correlation_matrix.index
+                        ):
                             correlations.append(correlation_matrix.loc[asset1, asset2])
 
                 avg_correlation = np.mean(correlations) if correlations else 0.0
@@ -620,10 +663,9 @@ class CorrelationManager:
             logger.error(f"Cluster impact calculation failed: {e}")
             return {}
 
-    def _generate_stress_recommendations(self,
-                                       max_dd: float,
-                                       var: float,
-                                       breaches: List[str]) -> List[str]:
+    def _generate_stress_recommendations(
+        self, max_dd: float, var: float, breaches: List[str]
+    ) -> List[str]:
         """Generate recommendations based on stress test results"""
 
         recommendations = []
@@ -650,35 +692,41 @@ class CorrelationManager:
 
         try:
             summary = {
-                'last_update': self.last_correlation_update.isoformat() if self.last_correlation_update else None,
-                'correlation_matrix_size': len(self.correlation_matrix) if self.correlation_matrix is not None else 0,
-                'cluster_mapping_size': len(self.asset_cluster_mapping),
-                'correlation_threshold': self.correlation_threshold,
-                'max_cluster_correlation': self.max_cluster_correlation
+                "last_update": self.last_correlation_update.isoformat()
+                if self.last_correlation_update
+                else None,
+                "correlation_matrix_size": len(self.correlation_matrix)
+                if self.correlation_matrix is not None
+                else 0,
+                "cluster_mapping_size": len(self.asset_cluster_mapping),
+                "correlation_threshold": self.correlation_threshold,
+                "max_cluster_correlation": self.max_cluster_correlation,
             }
 
             # Correlation statistics
             if self.correlation_matrix is not None and not self.correlation_matrix.empty:
-                corr_values = self.correlation_matrix.values[np.triu_indices_from(self.correlation_matrix.values, k=1)]
-                summary['correlation_stats'] = {
-                    'mean': float(np.mean(corr_values)),
-                    'median': float(np.median(corr_values)),
-                    'max': float(np.max(corr_values)),
-                    'min': float(np.min(corr_values)),
-                    'std': float(np.std(corr_values))
+                corr_values = self.correlation_matrix.values[
+                    np.triu_indices_from(self.correlation_matrix.values, k=1)
+                ]
+                summary["correlation_stats"] = {
+                    "mean": float(np.mean(corr_values)),
+                    "median": float(np.median(corr_values)),
+                    "max": float(np.max(corr_values)),
+                    "min": float(np.min(corr_values)),
+                    "std": float(np.std(corr_values)),
                 }
 
             # Cluster limits summary
             cluster_limits_summary = {}
             for cluster_type, limit in self.cluster_limits.items():
                 cluster_limits_summary[cluster_type.value] = {
-                    'max_weight': limit.max_weight,
-                    'max_positions': limit.max_positions,
-                    'current_weight': limit.current_weight,
-                    'current_positions': limit.current_positions
+                    "max_weight": limit.max_weight,
+                    "max_positions": limit.max_positions,
+                    "current_weight": limit.current_weight,
+                    "current_positions": limit.current_positions,
                 }
 
-            summary['cluster_limits'] = cluster_limits_summary
+            summary["cluster_limits"] = cluster_limits_summary
 
             return summary
 

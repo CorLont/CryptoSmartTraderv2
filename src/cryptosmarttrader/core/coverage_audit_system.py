@@ -15,29 +15,36 @@ import json
 import ccxt
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 from ..core.logging_manager import get_logger
 from ..core.async_data_manager import get_async_data_manager
 
+
 class CoverageStatus(str, Enum):
     """Coverage audit status"""
-    COMPLETE = "complete"      # ≥99% coverage achieved
-    PARTIAL = "partial"        # <99% but >95% coverage
+
+    COMPLETE = "complete"  # ≥99% coverage achieved
+    PARTIAL = "partial"  # <99% but >95% coverage
     INSUFFICIENT = "insufficient"  # <95% coverage - BLOCK
-    ERROR = "error"           # Audit failed
+    ERROR = "error"  # Audit failed
+
 
 class TickerChangeType(str, Enum):
     """Types of ticker changes"""
+
     NEW_LISTING = "new_listing"
     DELISTED = "delisted"
     MISSING = "missing"
     RESTORED = "restored"
     DATA_QUALITY_ISSUE = "data_quality_issue"
 
+
 @dataclass
 class TickerChange:
     """Individual ticker change record"""
+
     symbol: str
     change_type: TickerChangeType
     detected_at: datetime
@@ -48,9 +55,11 @@ class TickerChange:
     market_cap_tier: str = "unknown"
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class CoverageReport:
     """Comprehensive coverage audit report"""
+
     audit_id: str
     timestamp: datetime
     exchange_name: str
@@ -64,22 +73,26 @@ class CoverageReport:
     performance_metrics: Dict[str, float]
     recommendations: List[str]
 
+
 @dataclass
 class DataCompletenessConfig:
     """Configuration for data completeness validation"""
+
     minimum_completeness_percent: float = 0.98  # 98% minimum
-    required_features: List[str] = field(default_factory=lambda: [
-        "price", "volume", "high", "low", "open", "close", "change"
-    ])
-    optional_features: List[str] = field(default_factory=lambda: [
-        "bid", "ask", "spread", "volume_quote"
-    ])
+    required_features: List[str] = field(
+        default_factory=lambda: ["price", "volume", "high", "low", "open", "close", "change"]
+    )
+    optional_features: List[str] = field(
+        default_factory=lambda: ["bid", "ask", "spread", "volume_quote"]
+    )
     max_missing_features: int = 1  # Max 1 missing optional feature
     latency_budget_minutes: int = 30  # 30 min max for batch processing
+
 
 @dataclass
 class CompletenessValidationResult:
     """Result from completeness validation"""
+
     validation_id: str
     timestamp: datetime
     total_coins_evaluated: int
@@ -89,6 +102,7 @@ class CompletenessValidationResult:
     average_completeness: float
     feature_availability: Dict[str, float]
     processing_latency_minutes: float
+
 
 class KrakenCoverageAuditor:
     """Kraken exchange coverage auditor"""
@@ -103,16 +117,20 @@ class KrakenCoverageAuditor:
         """Initialize Kraken exchange connection"""
 
         try:
-            self.exchange = ccxt.kraken({
-                'apiKey': '',  # Public data only
-                'secret': '',
-                'timeout': 30000,
-                'enableRateLimit': True,
-            })
+            self.exchange = ccxt.kraken(
+                {
+                    "apiKey": "",  # Public data only
+                    "secret": "",
+                    "timeout": 30000,
+                    "enableRateLimit": True,
+                }
+            )
 
             await self.exchange.load_markets()
 
-            self.logger.info(f"Kraken exchange initialized with {len(self.exchange.markets)} markets")
+            self.logger.info(
+                f"Kraken exchange initialized with {len(self.exchange.markets)} markets"
+            )
             return True
 
         except Exception as e:
@@ -146,7 +164,9 @@ class KrakenCoverageAuditor:
             total_tradeable = len(tradeable_tickers)
             total_covered = len(covered_tickers)
             missing_tickers = set(tradeable_tickers) - set(covered_tickers)
-            coverage_percentage = (total_covered / total_tradeable) * 100 if total_tradeable > 0 else 0
+            coverage_percentage = (
+                (total_covered / total_tradeable) * 100 if total_tradeable > 0 else 0
+            )
 
             # Determine status
             if coverage_percentage >= 99.0:
@@ -168,7 +188,7 @@ class KrakenCoverageAuditor:
                 "audit_duration_minutes": audit_duration,
                 "tickers_per_minute": total_tradeable / max(audit_duration, 0.1),
                 "coverage_percentage": coverage_percentage,
-                "missing_count": len(missing_tickers)
+                "missing_count": len(missing_tickers),
             }
 
             # Generate recommendations
@@ -189,7 +209,7 @@ class KrakenCoverageAuditor:
                 ticker_changes=ticker_changes,
                 data_quality_issues=data_quality_issues,
                 performance_metrics=performance_metrics,
-                recommendations=recommendations
+                recommendations=recommendations,
             )
 
             # Store audit result
@@ -209,8 +229,8 @@ class KrakenCoverageAuditor:
                     "total_tradeable": total_tradeable,
                     "covered": total_covered,
                     "missing": len(missing_tickers),
-                    "audit_duration_minutes": audit_duration
-                }
+                    "audit_duration_minutes": audit_duration,
+                },
             )
 
             return coverage_report
@@ -231,7 +251,7 @@ class KrakenCoverageAuditor:
                 ticker_changes=[],
                 data_quality_issues=[{"error": str(e)}],
                 performance_metrics={},
-                recommendations=["Fix exchange connection and retry audit"]
+                recommendations=["Fix exchange connection and retry audit"],
             )
 
     async def _get_all_tradeable_tickers(self) -> List[str]:
@@ -245,10 +265,11 @@ class KrakenCoverageAuditor:
             tradeable_tickers = []
 
             for symbol, market in markets.items():
-                if (market.get('active', False) and
-                    market.get('type') == 'spot' and
-                    not market.get('info', {}).get('wsname', '').startswith('.')):  # Skip .d pairs
-
+                if (
+                    market.get("active", False)
+                    and market.get("type") == "spot"
+                    and not market.get("info", {}).get("wsname", "").startswith(".")
+                ):  # Skip .d pairs
                     tradeable_tickers.append(symbol)
 
             # Sort for consistent ordering
@@ -290,9 +311,7 @@ class KrakenCoverageAuditor:
             return []
 
     async def _detect_ticker_changes(
-        self,
-        tradeable_tickers: List[str],
-        covered_tickers: List[str]
+        self, tradeable_tickers: List[str], covered_tickers: List[str]
     ) -> List[TickerChange]:
         """Detect changes in ticker availability"""
 
@@ -312,60 +331,68 @@ class KrakenCoverageAuditor:
             volume_24h = await self._get_ticker_volume(symbol)
             market_cap_tier = self._classify_market_cap_tier(volume_24h)
 
-            changes.append(TickerChange(
-                symbol=symbol,
-                change_type=TickerChangeType.NEW_LISTING,
-                detected_at=current_time,
-                previous_status="not_listed",
-                current_status="tradeable",
-                impact_score=min(volume_24h / 1000000, 1.0),  # Impact based on volume
-                volume_24h=volume_24h,
-                market_cap_tier=market_cap_tier,
-                metadata={"first_detected": current_time.isoformat()}
-            ))
+            changes.append(
+                TickerChange(
+                    symbol=symbol,
+                    change_type=TickerChangeType.NEW_LISTING,
+                    detected_at=current_time,
+                    previous_status="not_listed",
+                    current_status="tradeable",
+                    impact_score=min(volume_24h / 1000000, 1.0),  # Impact based on volume
+                    volume_24h=volume_24h,
+                    market_cap_tier=market_cap_tier,
+                    metadata={"first_detected": current_time.isoformat()},
+                )
+            )
 
         # Detect delistings
         delistings = previous_tradeable - current_tradeable
         for symbol in delistings:
-            changes.append(TickerChange(
-                symbol=symbol,
-                change_type=TickerChangeType.DELISTED,
-                detected_at=current_time,
-                previous_status="tradeable",
-                current_status="delisted",
-                impact_score=0.5,  # Medium impact for delistings
-                metadata={"delisted_at": current_time.isoformat()}
-            ))
+            changes.append(
+                TickerChange(
+                    symbol=symbol,
+                    change_type=TickerChangeType.DELISTED,
+                    detected_at=current_time,
+                    previous_status="tradeable",
+                    current_status="delisted",
+                    impact_score=0.5,  # Medium impact for delistings
+                    metadata={"delisted_at": current_time.isoformat()},
+                )
+            )
 
         # Detect missing coverage
         missing_coverage = current_tradeable - current_covered
         for symbol in missing_coverage:
             volume_24h = await self._get_ticker_volume(symbol)
 
-            changes.append(TickerChange(
-                symbol=symbol,
-                change_type=TickerChangeType.MISSING,
-                detected_at=current_time,
-                previous_status="unknown",
-                current_status="tradeable_but_not_covered",
-                impact_score=min(volume_24h / 1000000, 1.0),
-                volume_24h=volume_24h,
-                market_cap_tier=self._classify_market_cap_tier(volume_24h),
-                metadata={"volume_24h": volume_24h}
-            ))
+            changes.append(
+                TickerChange(
+                    symbol=symbol,
+                    change_type=TickerChangeType.MISSING,
+                    detected_at=current_time,
+                    previous_status="unknown",
+                    current_status="tradeable_but_not_covered",
+                    impact_score=min(volume_24h / 1000000, 1.0),
+                    volume_24h=volume_24h,
+                    market_cap_tier=self._classify_market_cap_tier(volume_24h),
+                    metadata={"volume_24h": volume_24h},
+                )
+            )
 
         # Detect restored coverage
         restored_coverage = (current_covered & previous_tradeable) - previous_covered
         for symbol in restored_coverage:
-            changes.append(TickerChange(
-                symbol=symbol,
-                change_type=TickerChangeType.RESTORED,
-                detected_at=current_time,
-                previous_status="missing_coverage",
-                current_status="covered",
-                impact_score=0.3,
-                metadata={"restored_at": current_time.isoformat()}
-            ))
+            changes.append(
+                TickerChange(
+                    symbol=symbol,
+                    change_type=TickerChangeType.RESTORED,
+                    detected_at=current_time,
+                    previous_status="missing_coverage",
+                    current_status="covered",
+                    impact_score=0.3,
+                    metadata={"restored_at": current_time.isoformat()},
+                )
+            )
 
         return changes
 
@@ -374,7 +401,7 @@ class KrakenCoverageAuditor:
 
         try:
             ticker = await self.exchange.fetch_ticker(symbol)
-            return ticker.get('quoteVolume', 0.0) or ticker.get('baseVolume', 0.0) or 0.0
+            return ticker.get("quoteVolume", 0.0) or ticker.get("baseVolume", 0.0) or 0.0
         except Exception:
             return 0.0
 
@@ -405,46 +432,56 @@ class KrakenCoverageAuditor:
                     ticker = await self.exchange.fetch_ticker(symbol)
 
                     # Check for data quality issues
-                    if not ticker.get('last') or ticker['last'] <= 0:
-                        issues.append({
-                            "type": "invalid_price",
-                            "symbol": symbol,
-                            "description": "Price is zero or negative",
-                            "severity": "high"
-                        })
-
-                    if not ticker.get('baseVolume') and not ticker.get('quoteVolume'):
-                        issues.append({
-                            "type": "missing_volume",
-                            "symbol": symbol,
-                            "description": "Volume data missing",
-                            "severity": "medium"
-                        })
-
-                    if ticker.get('bid') and ticker.get('ask'):
-                        spread = abs(ticker['ask'] - ticker['bid']) / ticker['ask']
-                        if spread > 0.05:  # 5%+ spread
-                            issues.append({
-                                "type": "wide_spread",
+                    if not ticker.get("last") or ticker["last"] <= 0:
+                        issues.append(
+                            {
+                                "type": "invalid_price",
                                 "symbol": symbol,
-                                "description": f"Spread too wide: {spread:.1%}",
-                                "severity": "medium"
-                            })
+                                "description": "Price is zero or negative",
+                                "severity": "high",
+                            }
+                        )
+
+                    if not ticker.get("baseVolume") and not ticker.get("quoteVolume"):
+                        issues.append(
+                            {
+                                "type": "missing_volume",
+                                "symbol": symbol,
+                                "description": "Volume data missing",
+                                "severity": "medium",
+                            }
+                        )
+
+                    if ticker.get("bid") and ticker.get("ask"):
+                        spread = abs(ticker["ask"] - ticker["bid"]) / ticker["ask"]
+                        if spread > 0.05:  # 5%+ spread
+                            issues.append(
+                                {
+                                    "type": "wide_spread",
+                                    "symbol": symbol,
+                                    "description": f"Spread too wide: {spread:.1%}",
+                                    "severity": "medium",
+                                }
+                            )
 
                 except Exception as e:
-                    issues.append({
-                        "type": "fetch_error",
-                        "symbol": symbol,
-                        "description": f"Failed to fetch ticker: {e}",
-                        "severity": "high"
-                    })
+                    issues.append(
+                        {
+                            "type": "fetch_error",
+                            "symbol": symbol,
+                            "description": f"Failed to fetch ticker: {e}",
+                            "severity": "high",
+                        }
+                    )
 
         except Exception as e:
-            issues.append({
-                "type": "analysis_error",
-                "description": f"Data quality analysis failed: {e}",
-                "severity": "critical"
-            })
+            issues.append(
+                {
+                    "type": "analysis_error",
+                    "description": f"Data quality analysis failed: {e}",
+                    "severity": "critical",
+                }
+            )
 
         return issues
 
@@ -453,7 +490,7 @@ class KrakenCoverageAuditor:
         coverage_percentage: float,
         missing_tickers: Set[str],
         ticker_changes: List[TickerChange],
-        data_quality_issues: List[Dict[str, Any]]
+        data_quality_issues: List[Dict[str, Any]],
     ) -> List[str]:
         """Generate actionable recommendations"""
 
@@ -464,12 +501,15 @@ class KrakenCoverageAuditor:
             recommendations.append(f"Coverage at {coverage_percentage:.1f}% - target 99%+")
 
             high_impact_missing = [
-                change for change in ticker_changes
+                change
+                for change in ticker_changes
                 if change.change_type == TickerChangeType.MISSING and change.impact_score > 0.5
             ]
 
             if high_impact_missing:
-                recommendations.append(f"Priority: Add {len(high_impact_missing)} high-impact missing tickers")
+                recommendations.append(
+                    f"Priority: Add {len(high_impact_missing)} high-impact missing tickers"
+                )
 
         # New listings
         new_listings = [c for c in ticker_changes if c.change_type == TickerChangeType.NEW_LISTING]
@@ -509,7 +549,7 @@ class KrakenCoverageAuditor:
                     "covered_tickers": report.covered_tickers,
                     "missing_tickers": report.missing_tickers,
                     "coverage_percentage": report.coverage_percentage,
-                    "status": report.status.value
+                    "status": report.status.value,
                 },
                 "ticker_changes": [
                     {
@@ -519,24 +559,24 @@ class KrakenCoverageAuditor:
                         "impact_score": change.impact_score,
                         "volume_24h": change.volume_24h,
                         "market_cap_tier": change.market_cap_tier,
-                        "metadata": change.metadata
+                        "metadata": change.metadata,
                     }
                     for change in report.ticker_changes
                 ],
                 "data_quality_issues": report.data_quality_issues,
                 "performance_metrics": report.performance_metrics,
-                "recommendations": report.recommendations
+                "recommendations": report.recommendations,
             }
 
             # Write to file
             report_file = reports_dir / f"coverage_report_{report.audit_id}.json"
 
-            with open(report_file, 'w') as f:
+            with open(report_file, "w") as f:
                 json.dump(report_data, f, indent=2)
 
             # Also store as latest
             latest_file = reports_dir / "latest_coverage_report.json"
-            with open(latest_file, 'w') as f:
+            with open(latest_file, "w") as f:
                 json.dump(report_data, f, indent=2)
 
             self.logger.info(f"Coverage report stored: {report_file}")
@@ -550,8 +590,9 @@ class KrakenCoverageAuditor:
         self.ticker_history = {
             "tradeable": tradeable_tickers,
             "covered": covered_tickers,
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         }
+
 
 class DataCompletenessValidator:
     """Validates data completeness with hard gates"""
@@ -560,7 +601,9 @@ class DataCompletenessValidator:
         self.config = config or DataCompletenessConfig()
         self.logger = get_logger()
 
-    async def validate_completeness(self, coin_data: Dict[str, Any]) -> CompletenessValidationResult:
+    async def validate_completeness(
+        self, coin_data: Dict[str, Any]
+    ) -> CompletenessValidationResult:
         """Validate data completeness with strict gates"""
 
         validation_id = f"completeness_validation_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -573,7 +616,10 @@ class DataCompletenessValidator:
             excluded_coins = []
             exclusion_reasons = {}
             completeness_scores = []
-            feature_availability = {feature: 0 for feature in self.config.required_features + self.config.optional_features}
+            feature_availability = {
+                feature: 0
+                for feature in self.config.required_features + self.config.optional_features
+            }
 
             total_coins = len(coin_data)
 
@@ -596,8 +642,8 @@ class DataCompletenessValidator:
                         extra={
                             "symbol": symbol,
                             "reason": exclusion_reason,
-                            "completeness_score": completeness_score
-                        }
+                            "completeness_score": completeness_score,
+                        },
                     )
                 else:
                     passed_coins.append(symbol)
@@ -613,7 +659,9 @@ class DataCompletenessValidator:
 
             # Convert feature availability to percentages
             for feature in feature_availability:
-                feature_availability[feature] = (feature_availability[feature] / total_coins) * 100 if total_coins > 0 else 0
+                feature_availability[feature] = (
+                    (feature_availability[feature] / total_coins) * 100 if total_coins > 0 else 0
+                )
 
             result = CompletenessValidationResult(
                 validation_id=validation_id,
@@ -624,7 +672,7 @@ class DataCompletenessValidator:
                 exclusion_reasons=exclusion_reasons,
                 average_completeness=average_completeness,
                 feature_availability=feature_availability,
-                processing_latency_minutes=processing_latency
+                processing_latency_minutes=processing_latency,
             )
 
             self.logger.info(
@@ -635,8 +683,8 @@ class DataCompletenessValidator:
                     "passed": len(passed_coins),
                     "excluded": len(excluded_coins),
                     "average_completeness": average_completeness,
-                    "processing_latency_minutes": processing_latency
-                }
+                    "processing_latency_minutes": processing_latency,
+                },
             )
 
             return result
@@ -653,7 +701,7 @@ class DataCompletenessValidator:
                 exclusion_reasons={"validation_error": 1},
                 average_completeness=0.0,
                 feature_availability={},
-                processing_latency_minutes=0.0
+                processing_latency_minutes=0.0,
             )
 
     def _calculate_completeness_score(self, coin_data: Dict[str, Any]) -> float:
@@ -712,9 +760,11 @@ class DataCompletenessValidator:
 
         return bool(value)
 
+
 # Global instances
 _kraken_coverage_auditor = None
 _data_completeness_validator = None
+
 
 def get_kraken_coverage_auditor() -> KrakenCoverageAuditor:
     """Get global Kraken coverage auditor instance"""
@@ -723,7 +773,10 @@ def get_kraken_coverage_auditor() -> KrakenCoverageAuditor:
         _kraken_coverage_auditor = KrakenCoverageAuditor()
     return _kraken_coverage_auditor
 
-def get_data_completeness_validator(config: Optional[DataCompletenessConfig] = None) -> DataCompletenessValidator:
+
+def get_data_completeness_validator(
+    config: Optional[DataCompletenessConfig] = None,
+) -> DataCompletenessValidator:
     """Get global data completeness validator instance"""
     global _data_completeness_validator
     if _data_completeness_validator is None:

@@ -18,6 +18,7 @@ from .structured_logger import get_logger
 
 class OrderStatus(Enum):
     """Order execution status."""
+
     PENDING = "pending"
     SUBMITTED = "submitted"
     PARTIAL = "partial"
@@ -29,6 +30,7 @@ class OrderStatus(Enum):
 
 class TimeInForce(Enum):
     """Time in force options."""
+
     GTC = "gtc"  # Good Till Cancelled
     IOC = "ioc"  # Immediate Or Cancel
     FOK = "fok"  # Fill Or Kill
@@ -37,6 +39,7 @@ class TimeInForce(Enum):
 
 class OrderType(Enum):
     """Order type options."""
+
     MARKET = "market"
     LIMIT = "limit"
     STOP = "stop"
@@ -46,25 +49,28 @@ class OrderType(Enum):
 @dataclass
 class TradabilityGate:
     """Tradability assessment criteria."""
+
     min_volume_24h: float = 100000.0  # $100k minimum daily volume
-    max_spread_percent: float = 0.5    # 0.5% maximum spread
+    max_spread_percent: float = 0.5  # 0.5% maximum spread
     min_orderbook_depth: float = 10000.0  # $10k minimum depth
     max_price_impact_percent: float = 1.0  # 1% maximum price impact
-    min_liquidity_score: float = 0.6   # 0.6 minimum liquidity score
+    min_liquidity_score: float = 0.6  # 0.6 minimum liquidity score
 
 
 @dataclass
 class SlippageBudget:
     """Slippage budget configuration."""
-    max_slippage_percent: float = 0.3   # 0.3% maximum slippage
+
+    max_slippage_percent: float = 0.3  # 0.3% maximum slippage
     warning_threshold_percent: float = 0.2  # 0.2% warning threshold
-    adaptive_sizing: bool = True        # Reduce size on high slippage
-    emergency_stop_percent: float = 1.0 # 1% emergency stop
+    adaptive_sizing: bool = True  # Reduce size on high slippage
+    emergency_stop_percent: float = 1.0  # 1% emergency stop
 
 
 @dataclass
 class OrderRequest:
     """Order execution request."""
+
     client_order_id: str
     symbol: str
     side: str  # 'buy' or 'sell'
@@ -83,6 +89,7 @@ class OrderRequest:
 @dataclass
 class OrderResult:
     """Order execution result."""
+
     client_order_id: str
     exchange_order_id: Optional[str]
     status: OrderStatus
@@ -99,6 +106,7 @@ class OrderResult:
 @dataclass
 class MarketConditions:
     """Current market conditions for execution assessment."""
+
     bid_price: float
     ask_price: float
     mid_price: float
@@ -133,12 +141,12 @@ class ExecutionPolicy:
 
         # Execution metrics
         self.execution_stats = {
-            'total_orders': 0,
-            'successful_orders': 0,
-            'rejected_orders': 0,
-            'average_slippage': 0.0,
-            'average_execution_time': 0.0,
-            'retry_rate': 0.0
+            "total_orders": 0,
+            "successful_orders": 0,
+            "rejected_orders": 0,
+            "average_slippage": 0.0,
+            "average_execution_time": 0.0,
+            "retry_rate": 0.0,
         }
 
         # Market conditions cache
@@ -156,17 +164,19 @@ class ExecutionPolicy:
         self.max_retries = 3
         self.retry_delay_base = 1.0  # Exponential backoff base
 
-        self.logger.info("ExecutionPolicy initialized",
-                        tradability_gate=self.tradability_gate.__dict__,
-                        slippage_budget=self.slippage_budget.__dict__)
+        self.logger.info(
+            "ExecutionPolicy initialized",
+            tradability_gate=self.tradability_gate.__dict__,
+            slippage_budget=self.slippage_budget.__dict__,
+        )
 
     def _load_tradability_config(self, config_path: Optional[str]) -> TradabilityGate:
         """Load tradability gate configuration."""
         if config_path and Path(config_path).exists():
             try:
-                with open(config_path, 'r') as f:
+                with open(config_path, "r") as f:
                     config = json.load(f)
-                return TradabilityGate(**config.get('tradability_gate', {}))
+                return TradabilityGate(**config.get("tradability_gate", {}))
             except (json.JSONDecodeError, TypeError, ValueError) as e:
                 self.logger.warning(f"Failed to load tradability config: {e}")
 
@@ -176,24 +186,27 @@ class ExecutionPolicy:
         """Load slippage budget configuration."""
         if config_path and Path(config_path).exists():
             try:
-                with open(config_path, 'r') as f:
+                with open(config_path, "r") as f:
                     config = json.load(f)
-                return SlippageBudget(**config.get('slippage_budget', {}))
+                return SlippageBudget(**config.get("slippage_budget", {}))
             except (json.JSONDecodeError, TypeError, ValueError) as e:
                 self.logger.warning(f"Failed to load slippage config: {e}")
 
         return SlippageBudget()  # Use defaults
 
-    def generate_client_order_id(self, symbol: str, side: str, quantity: float,
-                                strategy_id: Optional[str] = None) -> str:
+    def generate_client_order_id(
+        self, symbol: str, side: str, quantity: float, strategy_id: Optional[str] = None
+    ) -> str:
         """Generate deterministic client order ID for idempotency."""
         # Create deterministic hash from order parameters
-        order_data = f"{symbol}:{side}:{quantity}:{strategy_id}:{datetime.now().strftime('%Y%m%d%H%M')}"
+        order_data = (
+            f"{symbol}:{side}:{quantity}:{strategy_id}:{datetime.now().strftime('%Y%m%d%H%M')}"
+        )
         order_hash = hashlib.sha256(order_data.encode()).hexdigest()[:16]
 
         # Format: CST_YYYYMMDD_HASH_UUID
-        timestamp = datetime.now().strftime('%Y%m%d')
-        unique_id = str(uuid.uuid4()).split('-')[0]
+        timestamp = datetime.now().strftime("%Y%m%d")
+        unique_id = str(uuid.uuid4()).split("-")[0]
 
         return f"CST_{timestamp}_{order_hash}_{unique_id}"
 
@@ -208,7 +221,8 @@ class ExecutionPolicy:
 
             # Clean expired hashes
             expired_hashes = [
-                h for h, ts in self.order_hashes.items()
+                h
+                for h, ts in self.order_hashes.items()
                 if (now - ts).total_seconds() > self.dedup_window_minutes * 60
             ]
             for h in expired_hashes:
@@ -216,9 +230,11 @@ class ExecutionPolicy:
 
             # Check for duplicate
             if content_hash in self.order_hashes:
-                self.logger.warning("Duplicate order detected within deduplication window",
-                                  content_hash=content_hash[:8],
-                                  original_time=self.order_hashes[content_hash])
+                self.logger.warning(
+                    "Duplicate order detected within deduplication window",
+                    content_hash=content_hash[:8],
+                    original_time=self.order_hashes[content_hash],
+                )
                 return True
 
             # Register new order
@@ -240,20 +256,28 @@ class ExecutionPolicy:
 
         # Volume check
         if conditions.volume_24h < self.tradability_gate.min_volume_24h:
-            issues.append(f"Volume {conditions.volume_24h:.0f} below minimum {self.tradability_gate.min_volume_24h:.0f}")
+            issues.append(
+                f"Volume {conditions.volume_24h:.0f} below minimum {self.tradability_gate.min_volume_24h:.0f}"
+            )
 
         # Spread check
         if conditions.spread_percent > self.tradability_gate.max_spread_percent:
-            issues.append(f"Spread {conditions.spread_percent:.3f}% above maximum {self.tradability_gate.max_spread_percent:.3f}%")
+            issues.append(
+                f"Spread {conditions.spread_percent:.3f}% above maximum {self.tradability_gate.max_spread_percent:.3f}%"
+            )
 
         # Orderbook depth check
         min_depth = min(conditions.orderbook_depth_bid, conditions.orderbook_depth_ask)
         if min_depth < self.tradability_gate.min_orderbook_depth:
-            issues.append(f"Orderbook depth {min_depth:.0f} below minimum {self.tradability_gate.min_orderbook_depth:.0f}")
+            issues.append(
+                f"Orderbook depth {min_depth:.0f} below minimum {self.tradability_gate.min_orderbook_depth:.0f}"
+            )
 
         # Liquidity score check
         if conditions.liquidity_score < self.tradability_gate.min_liquidity_score:
-            issues.append(f"Liquidity score {conditions.liquidity_score:.2f} below minimum {self.tradability_gate.min_liquidity_score:.2f}")
+            issues.append(
+                f"Liquidity score {conditions.liquidity_score:.2f} below minimum {self.tradability_gate.min_liquidity_score:.2f}"
+            )
 
         tradable = len(issues) == 0
         return tradable, issues
@@ -270,10 +294,15 @@ class ExecutionPolicy:
         base_slippage = conditions.spread_percent / 2
 
         # Size impact estimation
-        relevant_depth = (conditions.orderbook_depth_bid if order_request.side == 'sell'
-                         else conditions.orderbook_depth_ask)
+        relevant_depth = (
+            conditions.orderbook_depth_bid
+            if order_request.side == "sell"
+            else conditions.orderbook_depth_ask
+        )
 
-        size_impact = min(2.0, (order_request.quantity * conditions.mid_price) / relevant_depth * 100)
+        size_impact = min(
+            2.0, (order_request.quantity * conditions.mid_price) / relevant_depth * 100
+        )
 
         # Volatility adjustment
         volatility_adjustment = conditions.price_volatility * 0.5
@@ -290,8 +319,9 @@ class ExecutionPolicy:
         if not self.slippage_budget.adaptive_sizing:
             return order_request.quantity
 
-        max_slippage = (order_request.max_slippage_percent or
-                       self.slippage_budget.max_slippage_percent)
+        max_slippage = (
+            order_request.max_slippage_percent or self.slippage_budget.max_slippage_percent
+        )
 
         if estimated_slippage <= max_slippage:
             return order_request.quantity
@@ -300,11 +330,13 @@ class ExecutionPolicy:
         size_factor = max_slippage / estimated_slippage
         adjusted_quantity = order_request.quantity * size_factor
 
-        self.logger.info("Order size adjusted due to slippage",
-                        original_quantity=order_request.quantity,
-                        adjusted_quantity=adjusted_quantity,
-                        estimated_slippage=estimated_slippage,
-                        max_slippage=max_slippage)
+        self.logger.info(
+            "Order size adjusted due to slippage",
+            original_quantity=order_request.quantity,
+            adjusted_quantity=adjusted_quantity,
+            estimated_slippage=estimated_slippage,
+            max_slippage=max_slippage,
+        )
 
         return adjusted_quantity
 
@@ -316,7 +348,7 @@ class ExecutionPolicy:
         if order_request.quantity <= 0:
             issues.append("Invalid quantity: must be positive")
 
-        if order_request.side not in ['buy', 'sell']:
+        if order_request.side not in ["buy", "sell"]:
             issues.append("Invalid side: must be 'buy' or 'sell'")
 
         # Price validation for limit orders
@@ -331,11 +363,14 @@ class ExecutionPolicy:
 
         # Slippage check
         estimated_slippage = self.estimate_slippage(order_request)
-        max_slippage = (order_request.max_slippage_percent or
-                       self.slippage_budget.max_slippage_percent)
+        max_slippage = (
+            order_request.max_slippage_percent or self.slippage_budget.max_slippage_percent
+        )
 
         if estimated_slippage > self.slippage_budget.emergency_stop_percent:
-            issues.append(f"Estimated slippage {estimated_slippage:.2f}% exceeds emergency stop {self.slippage_budget.emergency_stop_percent:.2f}%")
+            issues.append(
+                f"Estimated slippage {estimated_slippage:.2f}% exceeds emergency stop {self.slippage_budget.emergency_stop_percent:.2f}%"
+            )
 
         # Deduplication check
         if self.check_order_deduplication(order_request):
@@ -343,8 +378,9 @@ class ExecutionPolicy:
 
         return len(issues) == 0, issues
 
-    async def execute_order_with_retry(self, order_request: OrderRequest,
-                                     exchange_client) -> OrderResult:
+    async def execute_order_with_retry(
+        self, order_request: OrderRequest, exchange_client
+    ) -> OrderResult:
         """Execute order with exponential backoff retry logic."""
         start_time = time.time()
 
@@ -360,7 +396,7 @@ class ExecutionPolicy:
                 total_fees=0.0,
                 slippage_percent=0.0,
                 execution_time_ms=0,
-                error_message=f"Validation failed: {'; '.join(validation_issues)}"
+                error_message=f"Validation failed: {'; '.join(validation_issues)}",
             )
 
         # Adjust order size if needed
@@ -388,12 +424,14 @@ class ExecutionPolicy:
                     self.execution_history.append(result)
                     self._update_execution_stats(result)
 
-                self.logger.info("Order executed successfully",
-                               client_order_id=order_request.client_order_id,
-                               status=result.status.value,
-                               filled_quantity=result.filled_quantity,
-                               slippage_percent=result.slippage_percent,
-                               retry_count=retry_count)
+                self.logger.info(
+                    "Order executed successfully",
+                    client_order_id=order_request.client_order_id,
+                    status=result.status.value,
+                    filled_quantity=result.filled_quantity,
+                    slippage_percent=result.slippage_percent,
+                    retry_count=retry_count,
+                )
 
                 return result
 
@@ -402,22 +440,28 @@ class ExecutionPolicy:
                 retry_count += 1
 
                 if attempt < self.max_retries:
-                    delay = self.retry_delay_base * (2 ** attempt)  # Exponential backoff
-                    self.logger.warning(f"Order execution failed, retrying in {delay}s",
-                                      client_order_id=order_request.client_order_id,
-                                      attempt=attempt + 1,
-                                      error=str(e))
+                    delay = self.retry_delay_base * (2**attempt)  # Exponential backoff
+                    self.logger.warning(
+                        f"Order execution failed, retrying in {delay}s",
+                        client_order_id=order_request.client_order_id,
+                        attempt=attempt + 1,
+                        error=str(e),
+                    )
                     await asyncio.sleep(delay)
                 else:
-                    self.logger.error("Order execution failed after all retries",
-                                    client_order_id=order_request.client_order_id,
-                                    final_error=str(e))
+                    self.logger.error(
+                        "Order execution failed after all retries",
+                        client_order_id=order_request.client_order_id,
+                        final_error=str(e),
+                    )
 
             except Exception as e:
                 # Non-retryable error
-                self.logger.error("Order execution failed with non-retryable error",
-                                client_order_id=order_request.client_order_id,
-                                error=str(e))
+                self.logger.error(
+                    "Order execution failed with non-retryable error",
+                    client_order_id=order_request.client_order_id,
+                    error=str(e),
+                )
                 last_error = str(e)
                 break
 
@@ -432,11 +476,12 @@ class ExecutionPolicy:
             slippage_percent=0.0,
             execution_time_ms=int((time.time() - start_time) * 1000),
             error_message=f"Execution failed after {retry_count} retries: {last_error}",
-            retry_count=retry_count
+            retry_count=retry_count,
         )
 
-    async def _execute_single_order(self, order_request: OrderRequest,
-                                   exchange_client) -> OrderResult:
+    async def _execute_single_order(
+        self, order_request: OrderRequest, exchange_client
+    ) -> OrderResult:
         """Execute single order attempt."""
         # This would integrate with actual exchange client
         # For now, return simulated result
@@ -451,7 +496,7 @@ class ExecutionPolicy:
 
         # Calculate execution price and slippage
         if order_request.order_type == OrderType.MARKET:
-            if order_request.side == 'buy':
+            if order_request.side == "buy":
                 execution_price = conditions.ask_price
                 expected_price = conditions.mid_price
             else:
@@ -474,41 +519,41 @@ class ExecutionPolicy:
             filled_quantity=order_request.quantity,
             avg_fill_price=execution_price,
             total_fees=total_fees,
-            slippage_percent=slippage_percent
+            slippage_percent=slippage_percent,
         )
 
     def _update_execution_stats(self, result: OrderResult) -> None:
         """Update execution statistics."""
-        self.execution_stats['total_orders'] += 1
+        self.execution_stats["total_orders"] += 1
 
         if result.status == OrderStatus.FILLED:
-            self.execution_stats['successful_orders'] += 1
+            self.execution_stats["successful_orders"] += 1
 
             # Update moving averages
-            n = self.execution_stats['successful_orders']
-            self.execution_stats['average_slippage'] = (
-                (self.execution_stats['average_slippage'] * (n - 1) + result.slippage_percent) / n
-            )
-            self.execution_stats['average_execution_time'] = (
-                (self.execution_stats['average_execution_time'] * (n - 1) + result.execution_time_ms) / n
-            )
+            n = self.execution_stats["successful_orders"]
+            self.execution_stats["average_slippage"] = (
+                self.execution_stats["average_slippage"] * (n - 1) + result.slippage_percent
+            ) / n
+            self.execution_stats["average_execution_time"] = (
+                self.execution_stats["average_execution_time"] * (n - 1) + result.execution_time_ms
+            ) / n
         else:
-            self.execution_stats['rejected_orders'] += 1
+            self.execution_stats["rejected_orders"] += 1
 
         # Update retry rate
         total_retries = sum(r.retry_count for r in self.execution_history[-100:])  # Last 100 orders
         recent_orders = min(100, len(self.execution_history))
-        self.execution_stats['retry_rate'] = total_retries / max(1, recent_orders)
+        self.execution_stats["retry_rate"] = total_retries / max(1, recent_orders)
 
     def get_execution_metrics(self) -> Dict[str, Any]:
         """Get current execution metrics."""
         with self._lock:
             return {
                 **self.execution_stats,
-                'cache_size': len(self.order_cache),
-                'history_size': len(self.execution_history),
-                'dedup_entries': len(self.order_hashes),
-                'market_conditions_count': len(self.market_conditions)
+                "cache_size": len(self.order_cache),
+                "history_size": len(self.execution_history),
+                "dedup_entries": len(self.order_hashes),
+                "market_conditions_count": len(self.market_conditions),
             }
 
     def get_order_status(self, client_order_id: str) -> Optional[OrderResult]:
@@ -522,7 +567,11 @@ class ExecutionPolicy:
         with self._lock:
             if client_order_id in self.order_cache:
                 result = self.order_cache[client_order_id]
-                if result.status in [OrderStatus.PENDING, OrderStatus.SUBMITTED, OrderStatus.PARTIAL]:
+                if result.status in [
+                    OrderStatus.PENDING,
+                    OrderStatus.SUBMITTED,
+                    OrderStatus.PARTIAL,
+                ]:
                     result.status = OrderStatus.CANCELLED
                     self.logger.info("Order cancelled", client_order_id=client_order_id)
                     return True

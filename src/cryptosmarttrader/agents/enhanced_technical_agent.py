@@ -18,9 +18,11 @@ import time
 
 from utils.daily_logger import get_daily_logger
 
+
 @dataclass
 class TechnicalSignal:
     """Enhanced technical signal with regime context"""
+
     coin: str
     timeframe: str
     signal_strength: float  # -1 to 1
@@ -31,44 +33,47 @@ class TechnicalSignal:
     computation_time: float
     timestamp: datetime
 
+
 @dataclass
 class MarketRegime:
     """Market regime classification"""
+
     regime_type: str  # bull, bear, sideways, volatile
     confidence: float
     trend_strength: float
     volatility_level: float
     indicators_used: List[str]
 
+
 class IndicatorSelection:
     """Dynamic indicator selection based on market conditions"""
 
     def __init__(self):
         self.indicator_registry = {
-            'trend': {
-                'sma_20': {'weight': 1.0, 'regimes': ['bull', 'bear']},
-                'ema_12': {'weight': 1.2, 'regimes': ['bull', 'bear']},
-                'macd': {'weight': 1.5, 'regimes': ['bull', 'bear']},
-                'adx': {'weight': 1.3, 'regimes': ['bull', 'bear']},
-                'parabolic_sar': {'weight': 1.1, 'regimes': ['bull', 'bear']},
+            "trend": {
+                "sma_20": {"weight": 1.0, "regimes": ["bull", "bear"]},
+                "ema_12": {"weight": 1.2, "regimes": ["bull", "bear"]},
+                "macd": {"weight": 1.5, "regimes": ["bull", "bear"]},
+                "adx": {"weight": 1.3, "regimes": ["bull", "bear"]},
+                "parabolic_sar": {"weight": 1.1, "regimes": ["bull", "bear"]},
             },
-            'momentum': {
-                'rsi': {'weight': 1.0, 'regimes': ['all']},
-                'stoch': {'weight': 0.9, 'regimes': ['sideways', 'volatile']},
-                'williams_r': {'weight': 0.8, 'regimes': ['sideways']},
-                'roc': {'weight': 1.1, 'regimes': ['bull', 'bear']},
+            "momentum": {
+                "rsi": {"weight": 1.0, "regimes": ["all"]},
+                "stoch": {"weight": 0.9, "regimes": ["sideways", "volatile"]},
+                "williams_r": {"weight": 0.8, "regimes": ["sideways"]},
+                "roc": {"weight": 1.1, "regimes": ["bull", "bear"]},
             },
-            'volatility': {
-                'bollinger': {'weight': 1.2, 'regimes': ['volatile', 'sideways']},
-                'atr': {'weight': 1.0, 'regimes': ['all']},
-                'keltner': {'weight': 0.9, 'regimes': ['volatile']},
+            "volatility": {
+                "bollinger": {"weight": 1.2, "regimes": ["volatile", "sideways"]},
+                "atr": {"weight": 1.0, "regimes": ["all"]},
+                "keltner": {"weight": 0.9, "regimes": ["volatile"]},
             },
-            'volume': {
-                'volume_sma': {'weight': 1.0, 'regimes': ['all']},
-                'obv': {'weight': 1.1, 'regimes': ['bull', 'bear']},
-                'mfi': {'weight': 0.9, 'regimes': ['all']},
-                'vwap': {'weight': 1.3, 'regimes': ['all']},
-            }
+            "volume": {
+                "volume_sma": {"weight": 1.0, "regimes": ["all"]},
+                "obv": {"weight": 1.1, "regimes": ["bull", "bear"]},
+                "mfi": {"weight": 0.9, "regimes": ["all"]},
+                "vwap": {"weight": 1.3, "regimes": ["all"]},
+            },
         }
 
     def select_indicators(self, regime: str, max_indicators: int = 12) -> List[str]:
@@ -77,9 +82,9 @@ class IndicatorSelection:
 
         for category, indicators in self.indicator_registry.items():
             for indicator, config in indicators.items():
-                regimes = config['regimes']
-                if regime in regimes or 'all' in regimes:
-                    score = config['weight']
+                regimes = config["regimes"]
+                if regime in regimes or "all" in regimes:
+                    score = config["weight"]
                     if regime in regimes:
                         score *= 1.2  # Boost regime-specific indicators
                     candidates.append((indicator, score))
@@ -90,16 +95,17 @@ class IndicatorSelection:
 
         return selected
 
+
 class RegimeDetector:
     """Advanced market regime detection"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('technical')
+        self.logger = get_daily_logger().get_logger("technical")
 
     def detect_regime(self, df: pd.DataFrame) -> MarketRegime:
         """Detect current market regime"""
         if len(df) < 50:
-            return MarketRegime('sideways', 0.5, 0.0, 0.5, [])
+            return MarketRegime("sideways", 0.5, 0.0, 0.5, [])
 
         # Calculate regime indicators
         indicators_used = []
@@ -107,40 +113,40 @@ class RegimeDetector:
         # Trend strength using ADX
         adx = self._calculate_adx(df)
         current_adx = adx.iloc[-1] if not adx.empty else 25
-        indicators_used.append('ADX')
+        indicators_used.append("ADX")
 
         # Price momentum
-        price_change_20 = (df['close'].iloc[-1] / df['close'].iloc[-20] - 1) * 100
-        price_change_50 = (df['close'].iloc[-1] / df['close'].iloc[-50] - 1) * 100
-        indicators_used.extend(['Price_20D', 'Price_50D'])
+        price_change_20 = (df["close"].iloc[-1] / df["close"].iloc[-20] - 1) * 100
+        price_change_50 = (df["close"].iloc[-1] / df["close"].iloc[-50] - 1) * 100
+        indicators_used.extend(["Price_20D", "Price_50D"])
 
         # Volatility
-        returns = df['close'].pct_change().dropna()
+        returns = df["close"].pct_change().dropna()
         volatility = returns.rolling(20).std().iloc[-1] * np.sqrt(252) * 100
-        indicators_used.append('Volatility')
+        indicators_used.append("Volatility")
 
         # Volume trend
-        volume_ma = df['volume'].rolling(20).mean()
+        volume_ma = df["volume"].rolling(20).mean()
         volume_trend = (volume_ma.iloc[-1] / volume_ma.iloc[-10] - 1) * 100
-        indicators_used.append('Volume_Trend')
+        indicators_used.append("Volume_Trend")
 
         # Regime classification logic
-        regime_type = 'sideways'
+        regime_type = "sideways"
         confidence = 0.5
         trend_strength = current_adx / 100
         volatility_level = min(volatility / 50, 1.0)  # Normalize
 
         if current_adx > 25 and price_change_20 > 5:
-            regime_type = 'bull'
+            regime_type = "bull"
             confidence = min((current_adx - 25) / 50 + abs(price_change_20) / 20, 1.0)
         elif current_adx > 25 and price_change_20 < -5:
-            regime_type = 'bear'
+            regime_type = "bear"
             confidence = min((current_adx - 25) / 50 + abs(price_change_20) / 20, 1.0)
         elif volatility > 40:
-            regime_type = 'volatile'
+            regime_type = "volatile"
             confidence = min(volatility / 80, 1.0)
         else:
-            regime_type = 'sideways'
+            regime_type = "sideways"
             confidence = 1.0 - min(current_adx / 50, 1.0)
 
         return MarketRegime(
@@ -148,15 +154,15 @@ class RegimeDetector:
             confidence=confidence,
             trend_strength=trend_strength,
             volatility_level=volatility_level,
-            indicators_used=indicators_used
+            indicators_used=indicators_used,
         )
 
     def _calculate_adx(self, df: pd.DataFrame, period: int = 14) -> pd.Series:
         """Calculate Average Directional Index"""
         try:
-            high = df['high']
-            low = df['low']
-            close = df['close']
+            high = df["high"]
+            low = df["low"]
+            close = df["close"]
 
             # True Range
             tr1 = high - low
@@ -165,10 +171,12 @@ class RegimeDetector:
             tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
 
             # Directional Movement
-            dm_plus = np.where((high - high.shift()) > (low.shift() - low),
-                              np.maximum(high - high.shift(), 0), 0)
-            dm_minus = np.where((low.shift() - low) > (high - high.shift()),
-                               np.maximum(low.shift() - low, 0), 0)
+            dm_plus = np.where(
+                (high - high.shift()) > (low.shift() - low), np.maximum(high - high.shift(), 0), 0
+            )
+            dm_minus = np.where(
+                (low.shift() - low) > (high - high.shift()), np.maximum(low.shift() - low, 0), 0
+            )
 
             # Smoothed averages
             tr_smooth = pd.Series(tr).rolling(period).mean()
@@ -187,6 +195,7 @@ class RegimeDetector:
         except Exception:
             return pd.Series([25] * len(df), index=df.index)
 
+
 class ParallelTechnicalComputer:
     """High-performance parallel technical analysis computation"""
 
@@ -194,11 +203,11 @@ class ParallelTechnicalComputer:
         self.max_workers = max_workers or min(mp.cpu_count(), 8)
         self.thread_executor = ThreadPoolExecutor(max_workers=self.max_workers)
         self.process_executor = ProcessPoolExecutor(max_workers=self.max_workers // 2)
-        self.logger = get_daily_logger().get_logger('technical')
+        self.logger = get_daily_logger().get_logger("technical")
 
-    async def compute_indicators_parallel(self,
-                                        coin_data: Dict[str, pd.DataFrame],
-                                        selected_indicators: List[str]) -> Dict[str, Dict]:
+    async def compute_indicators_parallel(
+        self, coin_data: Dict[str, pd.DataFrame], selected_indicators: List[str]
+    ) -> Dict[str, Dict]:
         """Compute indicators for multiple coins in parallel"""
 
         start_time = time.time()
@@ -206,7 +215,7 @@ class ParallelTechnicalComputer:
         # Group coins into batches for processing
         coins = list(coin_data.keys())
         batch_size = max(1, len(coins) // self.max_workers)
-        batches = [coins[i:i + batch_size] for i in range(0, len(coins), batch_size)]
+        batches = [coins[i : i + batch_size] for i in range(0, len(coins), batch_size)]
 
         # Process batches in parallel
         loop = asyncio.get_event_loop()
@@ -218,7 +227,7 @@ class ParallelTechnicalComputer:
                 self._compute_batch_indicators,
                 batch,
                 {coin: coin_data[coin] for coin in batch},
-                selected_indicators
+                selected_indicators,
             )
             tasks.append(task)
 
@@ -235,10 +244,9 @@ class ParallelTechnicalComputer:
 
         return all_results
 
-    def _compute_batch_indicators(self,
-                                coins: List[str],
-                                coin_data: Dict[str, pd.DataFrame],
-                                indicators: List[str]) -> Dict[str, Dict]:
+    def _compute_batch_indicators(
+        self, coins: List[str], coin_data: Dict[str, pd.DataFrame], indicators: List[str]
+    ) -> Dict[str, Dict]:
         """Compute indicators for a batch of coins"""
         results = {}
 
@@ -266,21 +274,21 @@ class ParallelTechnicalComputer:
     def _compute_single_indicator(self, df: pd.DataFrame, indicator: str) -> Optional[float]:
         """Compute single indicator efficiently"""
         try:
-            if indicator == 'rsi':
-                return self._rsi(df['close'])
-            elif indicator == 'macd':
-                return self._macd_signal(df['close'])
-            elif indicator == 'sma_20':
-                return df['close'].rolling(20).mean().iloc[-1]
-            elif indicator == 'ema_12':
-                return df['close'].ewm(span=12).mean().iloc[-1]
-            elif indicator == 'bollinger':
-                return self._bollinger_position(df['close'])
-            elif indicator == 'atr':
+            if indicator == "rsi":
+                return self._rsi(df["close"])
+            elif indicator == "macd":
+                return self._macd_signal(df["close"])
+            elif indicator == "sma_20":
+                return df["close"].rolling(20).mean().iloc[-1]
+            elif indicator == "ema_12":
+                return df["close"].ewm(span=12).mean().iloc[-1]
+            elif indicator == "bollinger":
+                return self._bollinger_position(df["close"])
+            elif indicator == "atr":
                 return self._atr(df)
-            elif indicator == 'volume_sma':
-                return df['volume'].rolling(20).mean().iloc[-1]
-            elif indicator == 'obv':
+            elif indicator == "volume_sma":
+                return df["volume"].rolling(20).mean().iloc[-1]
+            elif indicator == "obv":
                 return self._obv(df)
             # Add more indicators as needed
             else:
@@ -318,9 +326,9 @@ class ParallelTechnicalComputer:
 
     def _atr(self, df: pd.DataFrame, period: int = 14) -> float:
         """Calculate Average True Range"""
-        high = df['high']
-        low = df['low']
-        close = df['close']
+        high = df["high"]
+        low = df["low"]
+        close = df["close"]
 
         tr1 = high - low
         tr2 = abs(high - close.shift())
@@ -331,23 +339,24 @@ class ParallelTechnicalComputer:
 
     def _obv(self, df: pd.DataFrame) -> float:
         """Calculate On-Balance Volume"""
-        obv = (np.sign(df['close'].diff()) * df['volume']).fillna(0).cumsum()
+        obv = (np.sign(df["close"].diff()) * df["volume"]).fillna(0).cumsum()
         return obv.iloc[-1]
+
 
 class EnhancedTechnicalAgent:
     """Professional technical analysis with regime detection and optimization"""
 
     def __init__(self):
-        self.logger = get_daily_logger().get_logger('technical')
+        self.logger = get_daily_logger().get_logger("technical")
         self.regime_detector = RegimeDetector()
         self.indicator_selector = IndicatorSelection()
         self.parallel_computer = ParallelTechnicalComputer()
         self.cache = {}
         self.cache_ttl = 60  # 1 minute
 
-    async def analyze_multiple_coins(self,
-                                   coin_data: Dict[str, pd.DataFrame],
-                                   timeframes: List[str]) -> Dict[str, Dict[str, TechnicalSignal]]:
+    async def analyze_multiple_coins(
+        self, coin_data: Dict[str, pd.DataFrame], timeframes: List[str]
+    ) -> Dict[str, Dict[str, TechnicalSignal]]:
         """Analyze multiple coins across timeframes efficiently"""
 
         results = {}
@@ -369,7 +378,9 @@ class EnhancedTechnicalAgent:
             dominant_regime = max(regime_counts, key=regime_counts.get)
             selected_indicators = self.indicator_selector.select_indicators(dominant_regime)
 
-            self.logger.info(f"Selected {len(selected_indicators)} indicators for {dominant_regime} regime")
+            self.logger.info(
+                f"Selected {len(selected_indicators)} indicators for {dominant_regime} regime"
+            )
 
             # Compute indicators in parallel
             start_time = time.time()
@@ -390,19 +401,21 @@ class EnhancedTechnicalAgent:
                         indicator_results[coin],
                         regimes.get(coin),
                         selected_indicators,
-                        computation_time
+                        computation_time,
                     )
                     results[coin][timeframe] = signal
 
         return results
 
-    def _generate_signal(self,
-                        coin: str,
-                        timeframe: str,
-                        indicators: Dict[str, float],
-                        regime: Optional[MarketRegime],
-                        active_indicators: List[str],
-                        computation_time: float) -> TechnicalSignal:
+    def _generate_signal(
+        self,
+        coin: str,
+        timeframe: str,
+        indicators: Dict[str, float],
+        regime: Optional[MarketRegime],
+        active_indicators: List[str],
+        computation_time: float,
+    ) -> TechnicalSignal:
         """Generate trading signal from indicators"""
 
         if not indicators or not regime:
@@ -411,19 +424,19 @@ class EnhancedTechnicalAgent:
                 timeframe=timeframe,
                 signal_strength=0.0,
                 confidence=0.0,
-                regime='unknown',
+                regime="unknown",
                 active_indicators=[],
                 regime_confidence=0.0,
                 computation_time=computation_time,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
 
         # Calculate signal based on regime-weighted indicators
         signal_components = []
 
         # RSI signal
-        if 'rsi' in indicators:
-            rsi = indicators['rsi']
+        if "rsi" in indicators:
+            rsi = indicators["rsi"]
             if rsi < 30:
                 signal_components.append(0.6)  # Oversold - buy signal
             elif rsi > 70:
@@ -432,13 +445,13 @@ class EnhancedTechnicalAgent:
                 signal_components.append(0.0)
 
         # MACD signal
-        if 'macd' in indicators:
-            macd = indicators['macd']
+        if "macd" in indicators:
+            macd = indicators["macd"]
             signal_components.append(np.tanh(macd * 2))  # Normalize to -1,1
 
         # Bollinger position
-        if 'bollinger' in indicators:
-            bb_pos = indicators['bollinger']
+        if "bollinger" in indicators:
+            bb_pos = indicators["bollinger"]
             if bb_pos < 0.2:
                 signal_components.append(0.4)
             elif bb_pos > 0.8:
@@ -449,7 +462,9 @@ class EnhancedTechnicalAgent:
         # Calculate final signal
         if signal_components:
             signal_strength = np.mean(signal_components)
-            confidence = min(len(signal_components) / len(active_indicators), 1.0) * regime.confidence
+            confidence = (
+                min(len(signal_components) / len(active_indicators), 1.0) * regime.confidence
+            )
         else:
             signal_strength = 0.0
             confidence = 0.0
@@ -463,20 +478,21 @@ class EnhancedTechnicalAgent:
             active_indicators=active_indicators,
             regime_confidence=regime.confidence,
             computation_time=computation_time,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
     def get_status(self) -> Dict:
         """Get agent status"""
         return {
-            'agent': 'enhanced_technical',
-            'status': 'operational',
-            'max_workers': self.parallel_computer.max_workers,
-            'cache_size': len(self.cache),
-            'regime_detection': True,
-            'dynamic_indicators': True,
-            'parallel_processing': True
+            "agent": "enhanced_technical",
+            "status": "operational",
+            "max_workers": self.parallel_computer.max_workers,
+            "cache_size": len(self.cache),
+            "regime_detection": True,
+            "dynamic_indicators": True,
+            "parallel_processing": True,
         }
+
 
 # Global instance
 technical_agent = EnhancedTechnicalAgent()

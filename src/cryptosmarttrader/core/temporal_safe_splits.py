@@ -17,17 +17,21 @@ from pathlib import Path
 
 from ..core.consolidated_logging_manager import get_consolidated_logger
 
+
 class SplitStrategy(Enum):
     """Time series splitting strategies"""
+
     ROLLING_WINDOW = "rolling_window"
     EXPANDING_WINDOW = "expanding_window"
     WALK_FORWARD = "walk_forward"
     PURGED_CV = "purged_cv"
     BLOCKED_CV = "blocked_cv"
 
+
 @dataclass
 class SplitResult:
     """Result of temporal split operation"""
+
     train_indices: List[int]
     test_indices: List[int]
     train_start: datetime
@@ -39,17 +43,20 @@ class SplitResult:
     warnings: List[str] = field(default_factory=list)  # CRITICAL FIX: proper default factory
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class SplitConfig:
     """Configuration for temporal splitting"""
+
     strategy: SplitStrategy
     train_size: int  # Number of periods for training
-    test_size: int   # Number of periods for testing
+    test_size: int  # Number of periods for testing
     gap_hours: float = 0.0  # Gap between train and test to prevent leakage
     min_train_size: int = 100  # Minimum training samples
     max_splits: Optional[int] = None  # Maximum number of splits
     purge_buffer: float = 24.0  # Hours to purge around test set
     embargo_hours: float = 0.0  # Additional embargo period
+
 
 class TemporalSafeSplitter:
     """
@@ -76,7 +83,9 @@ class TemporalSafeSplitter:
 
         self.logger.info(f"Temporal splitter initialized with strategy: {config.strategy.value}")
 
-    def create_splits(self, df: pd.DataFrame, timestamp_col: str = 'timestamp') -> List[SplitResult]:
+    def create_splits(
+        self, df: pd.DataFrame, timestamp_col: str = "timestamp"
+    ) -> List[SplitResult]:
         """
         Create temporal splits for time series data
 
@@ -104,7 +113,7 @@ class TemporalSafeSplitter:
         timestamps = df[timestamp_col]
         validation_result = self._validate_timestamps(timestamps)
 
-        if not validation_result['is_valid']:
+        if not validation_result["is_valid"]:
             warnings.warn(f"Timestamp validation issues: {validation_result['issues']}")
 
         # Route to appropriate splitting strategy
@@ -129,11 +138,15 @@ class TemporalSafeSplitter:
         self.warning_count = sum(len(split.warnings) for split in valid_splits)
         self.last_split_time = datetime.now(timezone.utc)
 
-        self.logger.info(f"Created {len(valid_splits)} valid splits using {self.config.strategy.value}")
+        self.logger.info(
+            f"Created {len(valid_splits)} valid splits using {self.config.strategy.value}"
+        )
 
         return valid_splits
 
-    def _create_rolling_window_splits(self, df: pd.DataFrame, timestamp_col: str) -> List[SplitResult]:
+    def _create_rolling_window_splits(
+        self, df: pd.DataFrame, timestamp_col: str
+    ) -> List[SplitResult]:
         """Create rolling window splits"""
 
         splits = []
@@ -166,15 +179,22 @@ class TemporalSafeSplitter:
 
             # Create split result
             split = self._create_split_result(
-                df, timestamp_col, train_start_idx, train_end_idx,
-                test_start_idx, test_end_idx, len(splits)
+                df,
+                timestamp_col,
+                train_start_idx,
+                train_end_idx,
+                test_start_idx,
+                test_end_idx,
+                len(splits),
             )
 
             splits.append(split)
 
         return splits
 
-    def _create_expanding_window_splits(self, df: pd.DataFrame, timestamp_col: str) -> List[SplitResult]:
+    def _create_expanding_window_splits(
+        self, df: pd.DataFrame, timestamp_col: str
+    ) -> List[SplitResult]:
         """Create expanding window splits"""
 
         splits = []
@@ -192,9 +212,9 @@ class TemporalSafeSplitter:
         train_start_idx = 0
         initial_train_end = self.config.min_train_size
 
-        for train_end_idx in range(initial_train_end, len(df) - gap_rows - self.config.test_size,
-                                  self.config.test_size):
-
+        for train_end_idx in range(
+            initial_train_end, len(df) - gap_rows - self.config.test_size, self.config.test_size
+        ):
             if self.config.max_splits and len(splits) >= self.config.max_splits:
                 break
 
@@ -208,15 +228,22 @@ class TemporalSafeSplitter:
 
             # Create split result
             split = self._create_split_result(
-                df, timestamp_col, train_start_idx, train_end_idx,
-                test_start_idx, test_end_idx, len(splits)
+                df,
+                timestamp_col,
+                train_start_idx,
+                train_end_idx,
+                test_start_idx,
+                test_end_idx,
+                len(splits),
             )
 
             splits.append(split)
 
         return splits
 
-    def _create_walk_forward_splits(self, df: pd.DataFrame, timestamp_col: str) -> List[SplitResult]:
+    def _create_walk_forward_splits(
+        self, df: pd.DataFrame, timestamp_col: str
+    ) -> List[SplitResult]:
         """Create walk-forward analysis splits"""
 
         splits = []
@@ -250,8 +277,13 @@ class TemporalSafeSplitter:
 
             # Create split result
             split = self._create_split_result(
-                df, timestamp_col, train_start_idx, train_end_idx,
-                test_start_idx, test_end_idx, len(splits)
+                df,
+                timestamp_col,
+                train_start_idx,
+                train_end_idx,
+                test_start_idx,
+                test_end_idx,
+                len(splits),
             )
 
             splits.append(split)
@@ -282,10 +314,14 @@ class TemporalSafeSplitter:
         gap_rows = max(1, int(self.config.gap_hours / avg_interval_hours))
 
         # Calculate number of folds - CRITICAL FIX for small datasets
-        min_required_samples = self.config.test_size + 2 * purge_rows + 2 * gap_rows + self.config.min_train_size
+        min_required_samples = (
+            self.config.test_size + 2 * purge_rows + 2 * gap_rows + self.config.min_train_size
+        )
 
         if len(df) < min_required_samples:
-            self.logger.warning(f"Dataset too small for purged CV: {len(df)} < {min_required_samples} required")
+            self.logger.warning(
+                f"Dataset too small for purged CV: {len(df)} < {min_required_samples} required"
+            )
             return []
 
         total_test_samples = max(1, len(df) // (self.config.test_size + 2 * purge_rows))
@@ -319,7 +355,9 @@ class TemporalSafeSplitter:
 
             # Check minimum training size
             if len(train_indices) < self.config.min_train_size:
-                split_warnings = [f"Insufficient training data after purging: {len(train_indices)} < {self.config.min_train_size}"]
+                split_warnings = [
+                    f"Insufficient training data after purging: {len(train_indices)} < {self.config.min_train_size}"
+                ]
                 # Skip this split if insufficient training data
                 continue
             else:
@@ -329,19 +367,23 @@ class TemporalSafeSplitter:
             split = SplitResult(
                 train_indices=train_indices,
                 test_indices=list(range(test_start_idx, test_end_idx)),
-                train_start=timestamps.iloc[train_indices[0]] if train_indices else timestamps.iloc[0],
-                train_end=timestamps.iloc[train_indices[-1]] if train_indices else timestamps.iloc[0],
+                train_start=timestamps.iloc[train_indices[0]]
+                if train_indices
+                else timestamps.iloc[0],
+                train_end=timestamps.iloc[train_indices[-1]]
+                if train_indices
+                else timestamps.iloc[0],
                 test_start=timestamps.iloc[test_start_idx],
                 test_end=timestamps.iloc[test_end_idx - 1],
                 split_id=fold,
                 strategy=SplitStrategy.PURGED_CV,
                 warnings=split_warnings,
                 metadata={
-                    'purge_buffer_hours': self.config.purge_buffer,
-                    'purge_rows': purge_rows,
-                    'training_samples': len(train_indices),
-                    'test_samples': test_end_idx - test_start_idx
-                }
+                    "purge_buffer_hours": self.config.purge_buffer,
+                    "purge_rows": purge_rows,
+                    "training_samples": len(train_indices),
+                    "test_samples": test_end_idx - test_start_idx,
+                },
             )
 
             splits.append(split)
@@ -386,22 +428,33 @@ class TemporalSafeSplitter:
 
             # Create split result
             split = self._create_split_result(
-                df, timestamp_col, train_start_idx, train_end_idx,
-                test_start_idx, test_end_idx, block
+                df,
+                timestamp_col,
+                train_start_idx,
+                train_end_idx,
+                test_start_idx,
+                test_end_idx,
+                block,
             )
 
             # Add embargo metadata
-            split.metadata['embargo_hours'] = self.config.embargo_hours
-            split.metadata['embargo_rows'] = embargo_rows
+            split.metadata["embargo_hours"] = self.config.embargo_hours
+            split.metadata["embargo_rows"] = embargo_rows
 
             splits.append(split)
 
         return splits
 
-    def _create_split_result(self, df: pd.DataFrame, timestamp_col: str,
-                           train_start_idx: int, train_end_idx: int,
-                           test_start_idx: int, test_end_idx: int,
-                           split_id: int) -> SplitResult:
+    def _create_split_result(
+        self,
+        df: pd.DataFrame,
+        timestamp_col: str,
+        train_start_idx: int,
+        train_end_idx: int,
+        test_start_idx: int,
+        test_end_idx: int,
+        split_id: int,
+    ) -> SplitResult:
         """Create a SplitResult object from indices"""
 
         timestamps = df[timestamp_col]
@@ -425,10 +478,10 @@ class TemporalSafeSplitter:
             strategy=self.config.strategy,
             warnings=split_warnings,
             metadata={
-                'train_samples': train_end_idx - train_start_idx,
-                'test_samples': test_end_idx - test_start_idx,
-                'gap_hours': self.config.gap_hours
-            }
+                "train_samples": train_end_idx - train_start_idx,
+                "test_samples": test_end_idx - test_start_idx,
+                "gap_hours": self.config.gap_hours,
+            },
         )
 
     def _calculate_average_interval_hours(self, timestamps: pd.Series) -> float:
@@ -455,7 +508,9 @@ class TemporalSafeSplitter:
         non_zero_diffs = diffs[diffs > pd.Timedelta(0)]
 
         if len(non_zero_diffs) == 0:
-            self.logger.warning("All timestamp differences are zero - potential duplicate timestamps")
+            self.logger.warning(
+                "All timestamp differences are zero - potential duplicate timestamps"
+            )
             return 1e-6  # Very small value to prevent division by zero
 
         # Calculate median to be robust against outliers
@@ -496,10 +551,10 @@ class TemporalSafeSplitter:
                 issues.append("Non-positive time intervals detected")
 
         return {
-            'is_valid': len(issues) == 0,
-            'issues': issues,
-            'total_timestamps': len(timestamps),
-            'duplicate_count': duplicates if 'duplicates' in locals() else 0
+            "is_valid": len(issues) == 0,
+            "issues": issues,
+            "total_timestamps": len(timestamps),
+            "duplicate_count": duplicates if "duplicates" in locals() else 0,
         }
 
     def _filter_valid_splits(self, splits: List[SplitResult]) -> List[SplitResult]:
@@ -530,7 +585,7 @@ class TemporalSafeSplitter:
         """Get summary statistics for splits"""
 
         if not splits:
-            return {'total_splits': 0, 'warnings': ['No valid splits created']}
+            return {"total_splits": 0, "warnings": ["No valid splits created"]}
 
         train_sizes = [len(split.train_indices) for split in splits]
         test_sizes = [len(split.test_indices) for split in splits]
@@ -545,34 +600,34 @@ class TemporalSafeSplitter:
             all_test_indices.update(split.test_indices)
 
         return {
-            'total_splits': len(splits),
-            'strategy': splits[0].strategy.value,
-            'train_size_stats': {
-                'min': min(train_sizes),
-                'max': max(train_sizes),
-                'mean': np.mean(train_sizes),
-                'std': np.std(train_sizes)
+            "total_splits": len(splits),
+            "strategy": splits[0].strategy.value,
+            "train_size_stats": {
+                "min": min(train_sizes),
+                "max": max(train_sizes),
+                "mean": np.mean(train_sizes),
+                "std": np.std(train_sizes),
             },
-            'test_size_stats': {
-                'min': min(test_sizes),
-                'max': max(test_sizes),
-                'mean': np.mean(test_sizes),
-                'std': np.std(test_sizes)
+            "test_size_stats": {
+                "min": min(test_sizes),
+                "max": max(test_sizes),
+                "mean": np.mean(test_sizes),
+                "std": np.std(test_sizes),
             },
-            'coverage': {
-                'train_coverage': len(all_train_indices),
-                'test_coverage': len(all_test_indices),
-                'overlap': len(all_train_indices & all_test_indices)
+            "coverage": {
+                "train_coverage": len(all_train_indices),
+                "test_coverage": len(all_test_indices),
+                "overlap": len(all_train_indices & all_test_indices),
             },
-            'quality_metrics': {
-                'total_warnings': total_warnings,
-                'splits_with_warnings': sum(1 for split in splits if split.warnings),
-                'warning_rate': total_warnings / len(splits)
+            "quality_metrics": {
+                "total_warnings": total_warnings,
+                "splits_with_warnings": sum(1 for split in splits if split.warnings),
+                "warning_rate": total_warnings / len(splits),
             },
-            'time_range': {
-                'earliest_train': min(split.train_start for split in splits).isoformat(),
-                'latest_test': max(split.test_end for split in splits).isoformat()
-            }
+            "time_range": {
+                "earliest_train": min(split.train_start for split in splits).isoformat(),
+                "latest_test": max(split.test_end for split in splits).isoformat(),
+            },
         }
 
     def save_splits(self, splits: List[SplitResult], output_path: str) -> str:
@@ -585,38 +640,41 @@ class TemporalSafeSplitter:
             # Convert splits to serializable format
             splits_data = []
             for split in splits:
-                splits_data.append({
-                    'split_id': split.split_id,
-                    'train_indices': split.train_indices,
-                    'test_indices': split.test_indices,
-                    'train_start': split.train_start.isoformat(),
-                    'train_end': split.train_end.isoformat(),
-                    'test_start': split.test_start.isoformat(),
-                    'test_end': split.test_end.isoformat(),
-                    'strategy': split.strategy.value,
-                    'warnings': split.warnings,
-                    'metadata': split.metadata
-                })
+                splits_data.append(
+                    {
+                        "split_id": split.split_id,
+                        "train_indices": split.train_indices,
+                        "test_indices": split.test_indices,
+                        "train_start": split.train_start.isoformat(),
+                        "train_end": split.train_end.isoformat(),
+                        "test_start": split.test_start.isoformat(),
+                        "test_end": split.test_end.isoformat(),
+                        "strategy": split.strategy.value,
+                        "warnings": split.warnings,
+                        "metadata": split.metadata,
+                    }
+                )
 
             # Save with metadata
             save_data = {
-                'splits': splits_data,
-                'config': {
-                    'strategy': self.config.strategy.value,
-                    'train_size': self.config.train_size,
-                    'test_size': self.config.test_size,
-                    'gap_hours': self.config.gap_hours,
-                    'min_train_size': self.config.min_train_size,
-                    'max_splits': self.config.max_splits,
-                    'purge_buffer': self.config.purge_buffer,
-                    'embargo_hours': self.config.embargo_hours
+                "splits": splits_data,
+                "config": {
+                    "strategy": self.config.strategy.value,
+                    "train_size": self.config.train_size,
+                    "test_size": self.config.test_size,
+                    "gap_hours": self.config.gap_hours,
+                    "min_train_size": self.config.min_train_size,
+                    "max_splits": self.config.max_splits,
+                    "purge_buffer": self.config.purge_buffer,
+                    "embargo_hours": self.config.embargo_hours,
                 },
-                'summary': self.get_split_summary(splits),
-                'created_at': datetime.now(timezone.utc).isoformat()
+                "summary": self.get_split_summary(splits),
+                "created_at": datetime.now(timezone.utc).isoformat(),
             }
 
             import json
-            with open(output_file, 'w') as f:
+
+            with open(output_file, "w") as f:
                 json.dump(save_data, f, indent=2, default=str)
 
             self.logger.info(f"Splits saved to {output_file}")
@@ -626,24 +684,37 @@ class TemporalSafeSplitter:
             self.logger.error(f"Failed to save splits: {e}")
             return ""
 
+
 # Utility functions for common splitting patterns
 
-def create_simple_rolling_splits(df: pd.DataFrame, train_days: int = 30, test_days: int = 7,
-                                gap_hours: float = 0.0, timestamp_col: str = 'timestamp') -> List[SplitResult]:
+
+def create_simple_rolling_splits(
+    df: pd.DataFrame,
+    train_days: int = 30,
+    test_days: int = 7,
+    gap_hours: float = 0.0,
+    timestamp_col: str = "timestamp",
+) -> List[SplitResult]:
     """Create simple rolling window splits"""
 
     config = SplitConfig(
         strategy=SplitStrategy.ROLLING_WINDOW,
         train_size=train_days * 24,  # Convert to hours
         test_size=test_days * 24,
-        gap_hours=gap_hours
+        gap_hours=gap_hours,
     )
 
     splitter = TemporalSafeSplitter(config)
     return splitter.create_splits(df, timestamp_col)
 
-def create_walk_forward_splits(df: pd.DataFrame, train_weeks: int = 4, test_weeks: int = 1,
-                              max_splits: int = 10, timestamp_col: str = 'timestamp') -> List[SplitResult]:
+
+def create_walk_forward_splits(
+    df: pd.DataFrame,
+    train_weeks: int = 4,
+    test_weeks: int = 1,
+    max_splits: int = 10,
+    timestamp_col: str = "timestamp",
+) -> List[SplitResult]:
     """Create walk-forward analysis splits"""
 
     config = SplitConfig(
@@ -651,14 +722,20 @@ def create_walk_forward_splits(df: pd.DataFrame, train_weeks: int = 4, test_week
         train_size=train_weeks * 7 * 24,  # Convert to hours
         test_size=test_weeks * 7 * 24,
         gap_hours=0.0,
-        max_splits=max_splits
+        max_splits=max_splits,
     )
 
     splitter = TemporalSafeSplitter(config)
     return splitter.create_splits(df, timestamp_col)
 
-def create_purged_cv_splits(df: pd.DataFrame, test_size: int = 168, purge_hours: float = 24.0,
-                           n_splits: int = 5, timestamp_col: str = 'timestamp') -> List[SplitResult]:
+
+def create_purged_cv_splits(
+    df: pd.DataFrame,
+    test_size: int = 168,
+    purge_hours: float = 24.0,
+    n_splits: int = 5,
+    timestamp_col: str = "timestamp",
+) -> List[SplitResult]:
     """Create purged cross-validation splits"""
 
     config = SplitConfig(
@@ -667,32 +744,31 @@ def create_purged_cv_splits(df: pd.DataFrame, test_size: int = 168, purge_hours:
         test_size=test_size,
         gap_hours=0.0,
         purge_buffer=purge_hours,
-        max_splits=n_splits
+        max_splits=n_splits,
     )
 
     splitter = TemporalSafeSplitter(config)
     return splitter.create_splits(df, timestamp_col)
+
 
 if __name__ == "__main__":
     # Test temporal safe splitting
     print("Testing Temporal Safe Splits")
 
     # Create test data
-    dates = pd.date_range('2024-01-01', periods=1000, freq='H')
-    test_data = pd.DataFrame({
-        'timestamp': dates,
-        'value': np.random.randn(1000),
-        'feature1': np.random.randn(1000)
-    })
+    dates = pd.date_range("2024-01-01", periods=1000, freq="H")
+    test_data = pd.DataFrame(
+        {"timestamp": dates, "value": np.random.randn(1000), "feature1": np.random.randn(1000)}
+    )
 
     # Test rolling window splits
     print("\n1. Testing Rolling Window Splits...")
     config = SplitConfig(
         strategy=SplitStrategy.ROLLING_WINDOW,
         train_size=168,  # 1 week
-        test_size=24,    # 1 day
+        test_size=24,  # 1 day
         gap_hours=1.0,
-        max_splits=5
+        max_splits=5,
     )
 
     splitter = TemporalSafeSplitter(config)
@@ -700,7 +776,9 @@ if __name__ == "__main__":
 
     print(f"Created {len(splits)} rolling window splits")
     if splits:
-        print(f"First split: train={len(splits[0].train_indices)}, test={len(splits[0].test_indices)}")
+        print(
+            f"First split: train={len(splits[0].train_indices)}, test={len(splits[0].test_indices)}"
+        )
 
     # Test purged CV splits
     print("\n2. Testing Purged CV Splits...")
@@ -709,6 +787,8 @@ if __name__ == "__main__":
 
     # Test summary
     summary = splitter.get_split_summary(splits)
-    print(f"\nSplit summary: {summary['total_splits']} splits, {summary['quality_metrics']['total_warnings']} warnings")
+    print(
+        f"\nSplit summary: {summary['total_splits']} splits, {summary['quality_metrics']['total_warnings']} warnings"
+    )
 
     print("\n✅ TEMPORAL SAFE SPLITS VALIDATION COMPLETE")

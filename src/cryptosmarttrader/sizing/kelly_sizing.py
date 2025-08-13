@@ -20,22 +20,26 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
+
 class KellyMode(Enum):
     """Kelly calculation modes"""
+
     CONSERVATIVE = "conservative"  # k = 0.25
-    MODERATE = "moderate"         # k = 0.375
-    AGGRESSIVE = "aggressive"     # k = 0.5
+    MODERATE = "moderate"  # k = 0.375
+    AGGRESSIVE = "aggressive"  # k = 0.5
+
 
 @dataclass
 class KellyParameters:
     """Parameters for Kelly sizing calculation"""
-    win_probability: float      # Calibrated probability of winning
-    payoff_ratio: float        # Average win / Average loss
-    fraction_factor: float     # Risk control factor (0.25-0.5)
-    max_position_size: float   # Maximum allowed position (%)
-    min_position_size: float   # Minimum position for execution (%)
-    regime_adjustment: float   # Regime-based sizing adjustment
-    confidence_threshold: float # Minimum confidence to size position
+
+    win_probability: float  # Calibrated probability of winning
+    payoff_ratio: float  # Average win / Average loss
+    fraction_factor: float  # Risk control factor (0.25-0.5)
+    max_position_size: float  # Maximum allowed position (%)
+    min_position_size: float  # Minimum position for execution (%)
+    regime_adjustment: float  # Regime-based sizing adjustment
+    confidence_threshold: float  # Minimum confidence to size position
 
 
 class KellySizer:
@@ -43,11 +47,13 @@ class KellySizer:
     Fractional Kelly position sizing with risk controls
     """
 
-    def __init__(self,
-                 mode: KellyMode = KellyMode.MODERATE,
-                 max_position: float = 20.0,
-                 min_position: float = 0.5,
-                 confidence_threshold: float = 0.6):
+    def __init__(
+        self,
+        mode: KellyMode = KellyMode.MODERATE,
+        max_position: float = 20.0,
+        min_position: float = 0.5,
+        confidence_threshold: float = 0.6,
+    ):
         """
         Initialize Kelly sizer
 
@@ -66,7 +72,7 @@ class KellySizer:
         self.fraction_factors = {
             KellyMode.CONSERVATIVE: 0.25,
             KellyMode.MODERATE: 0.375,
-            KellyMode.AGGRESSIVE: 0.5
+            KellyMode.AGGRESSIVE: 0.5,
         }
 
         self.default_fraction = self.fraction_factors[mode]
@@ -74,12 +80,14 @@ class KellySizer:
         # Track sizing history for analysis
         self.sizing_history = []
 
-    def calculate_kelly_size(self,
-                           win_probability: float,
-                           payoff_ratio: float,
-                           confidence: float = 1.0,
-                           regime_factor: float = 1.0,
-                           custom_fraction: Optional[float] = None) -> Dict[str, Any]:
+    def calculate_kelly_size(
+        self,
+        win_probability: float,
+        payoff_ratio: float,
+        confidence: float = 1.0,
+        regime_factor: float = 1.0,
+        custom_fraction: Optional[float] = None,
+    ) -> Dict[str, Any]:
         """
         Calculate optimal position size using fractional Kelly
 
@@ -113,7 +121,7 @@ class KellySizer:
                     "raw_kelly": 0.0,
                     "reason": f"Confidence {confidence:.3f} below threshold {self.confidence_threshold}",
                     "should_trade": False,
-                    "risk_level": "high"
+                    "risk_level": "high",
                 }
 
             # Calculate raw Kelly fraction
@@ -131,8 +139,14 @@ class KellySizer:
 
             # Generate recommendation
             recommendation = self._generate_recommendation(
-                final_size, raw_kelly, kelly_fraction, adjusted_kelly,
-                win_probability, payoff_ratio, confidence, regime_factor
+                final_size,
+                raw_kelly,
+                kelly_fraction,
+                adjusted_kelly,
+                win_probability,
+                payoff_ratio,
+                confidence,
+                regime_factor,
             )
 
             # Store in history
@@ -144,8 +158,7 @@ class KellySizer:
             logger.error(f"Kelly sizing calculation failed: {e}")
             return self._error_response(str(e))
 
-    def calculate_batch_sizes(self,
-                            predictions: List[Dict[str, float]]) -> List[Dict[str, Any]]:
+    def calculate_batch_sizes(self, predictions: List[Dict[str, float]]) -> List[Dict[str, Any]]:
         """
         Calculate position sizes for multiple predictions
 
@@ -160,12 +173,12 @@ class KellySizer:
         for i, pred in enumerate(predictions):
             try:
                 rec = self.calculate_kelly_size(
-                    win_probability=pred.get('win_prob', 0.5),
-                    payoff_ratio=pred.get('payoff_ratio', 1.0),
-                    confidence=pred.get('confidence', 0.5),
-                    regime_factor=pred.get('regime_factor', 1.0)
+                    win_probability=pred.get("win_prob", 0.5),
+                    payoff_ratio=pred.get("payoff_ratio", 1.0),
+                    confidence=pred.get("confidence", 0.5),
+                    regime_factor=pred.get("regime_factor", 1.0),
                 )
-                rec['prediction_id'] = i
+                rec["prediction_id"] = i
                 recommendations.append(rec)
 
             except Exception as e:
@@ -174,10 +187,9 @@ class KellySizer:
 
         return recommendations
 
-    def estimate_payoff_ratio(self,
-                            historical_returns: pd.Series,
-                            take_profit_pct: float,
-                            stop_loss_pct: float) -> float:
+    def estimate_payoff_ratio(
+        self, historical_returns: pd.Series, take_profit_pct: float, stop_loss_pct: float
+    ) -> float:
         """
         Estimate payoff ratio from historical data and risk parameters
 
@@ -211,8 +223,10 @@ class KellySizer:
             # Sanity check and bounds
             payoff_ratio = max(0.1, min(10.0, payoff_ratio))
 
-            logger.info(f"Estimated payoff ratio: {payoff_ratio:.2f} "
-                       f"(avg win: {avg_win:.2f}%, avg loss: {avg_loss:.2f}%)")
+            logger.info(
+                f"Estimated payoff ratio: {payoff_ratio:.2f} "
+                f"(avg win: {avg_win:.2f}%, avg loss: {avg_loss:.2f}%)"
+            )
 
             return payoff_ratio
 
@@ -220,10 +234,12 @@ class KellySizer:
             logger.error(f"Payoff ratio estimation failed: {e}")
             return take_profit_pct / stop_loss_pct  # Fallback to theoretical
 
-    def optimize_fraction_factor(self,
-                                historical_predictions: List[Dict],
-                                historical_outcomes: List[float],
-                                test_fractions: Optional[List[float]] = None) -> Dict[str, Any]:
+    def optimize_fraction_factor(
+        self,
+        historical_predictions: List[Dict],
+        historical_outcomes: List[float],
+        test_fractions: Optional[List[float]] = None,
+    ) -> Dict[str, Any]:
         """
         Optimize fraction factor based on historical performance
 
@@ -253,13 +269,13 @@ class KellySizer:
 
                 for pred, outcome in zip(historical_predictions, historical_outcomes):
                     size_result = self.calculate_kelly_size(
-                        win_probability=pred.get('win_prob', 0.5),
-                        payoff_ratio=pred.get('payoff_ratio', 1.0),
-                        confidence=pred.get('confidence', 0.5),
-                        custom_fraction=fraction
+                        win_probability=pred.get("win_prob", 0.5),
+                        payoff_ratio=pred.get("payoff_ratio", 1.0),
+                        confidence=pred.get("confidence", 0.5),
+                        custom_fraction=fraction,
                     )
 
-                    position_size = size_result['position_size'] / 100  # Convert to fraction
+                    position_size = size_result["position_size"] / 100  # Convert to fraction
                     trade_return = position_size * outcome
 
                     total_return += trade_return
@@ -273,12 +289,12 @@ class KellySizer:
                 max_drawdown = self._calculate_max_drawdown(returns_array)
 
                 results[fraction] = {
-                    'total_return': total_return,
-                    'avg_return': avg_return,
-                    'volatility': volatility,
-                    'sharpe_ratio': sharpe,
-                    'max_drawdown': max_drawdown,
-                    'win_rate': np.mean([r > 0 for r in returns])
+                    "total_return": total_return,
+                    "avg_return": avg_return,
+                    "volatility": volatility,
+                    "sharpe_ratio": sharpe,
+                    "max_drawdown": max_drawdown,
+                    "win_rate": np.mean([r > 0 for r in returns]),
                 }
 
             # Select best fraction (optimize Sharpe ratio with drawdown constraint)
@@ -287,25 +303,27 @@ class KellySizer:
 
             for fraction, metrics in results.items():
                 # Composite score: Sharpe ratio penalized by drawdown
-                score = metrics['sharpe_ratio'] * (1 - min(0.5, metrics['max_drawdown']))
+                score = metrics["sharpe_ratio"] * (1 - min(0.5, metrics["max_drawdown"]))
 
                 if score > best_score:
                     best_score = score
                     best_fraction = fraction
 
-            logger.info(f"Optimal fraction factor: {best_fraction} "
-                       f"(Sharpe: {results[best_fraction]['sharpe_ratio']:.3f})")
+            logger.info(
+                f"Optimal fraction factor: {best_fraction} "
+                f"(Sharpe: {results[best_fraction]['sharpe_ratio']:.3f})"
+            )
 
             return {
-                'optimal_fraction': best_fraction,
-                'optimal_metrics': results[best_fraction],
-                'all_results': results,
-                'n_trades': len(historical_predictions)
+                "optimal_fraction": best_fraction,
+                "optimal_metrics": results[best_fraction],
+                "all_results": results,
+                "n_trades": len(historical_predictions),
             }
 
         except Exception as e:
             logger.error(f"Fraction optimization failed: {e}")
-            return {'optimal_fraction': self.default_fraction, 'error': str(e)}
+            return {"optimal_fraction": self.default_fraction, "error": str(e)}
 
     def _calculate_raw_kelly(self, win_prob: float, payoff_ratio: float) -> float:
         """Calculate raw Kelly fraction: f* = p - (1-p)/R"""
@@ -340,10 +358,17 @@ class KellySizer:
             logger.error(f"Size limit application failed: {e}")
             return 0.0
 
-    def _generate_recommendation(self, final_size: float, raw_kelly: float,
-                               kelly_fraction: float, adjusted_kelly: float,
-                               win_prob: float, payoff_ratio: float,
-                               confidence: float, regime_factor: float) -> Dict[str, Any]:
+    def _generate_recommendation(
+        self,
+        final_size: float,
+        raw_kelly: float,
+        kelly_fraction: float,
+        adjusted_kelly: float,
+        win_prob: float,
+        payoff_ratio: float,
+        confidence: float,
+        regime_factor: float,
+    ) -> Dict[str, Any]:
         """Generate comprehensive sizing recommendation"""
 
         # Determine if should trade
@@ -379,13 +404,13 @@ class KellySizer:
                 "payoff_ratio": payoff_ratio,
                 "confidence": confidence,
                 "regime_factor": regime_factor,
-                "fraction_factor": self.default_fraction
+                "fraction_factor": self.default_fraction,
             },
             "limits": {
                 "max_position": self.max_position,
                 "min_position": self.min_position,
-                "confidence_threshold": self.confidence_threshold
-            }
+                "confidence_threshold": self.confidence_threshold,
+            },
         }
 
     def _calculate_max_drawdown(self, returns: np.ndarray) -> float:
@@ -409,7 +434,7 @@ class KellySizer:
                 "risk_level": recommendation["risk_level"],
                 "win_probability": recommendation["parameters"]["win_probability"],
                 "payoff_ratio": recommendation["parameters"]["payoff_ratio"],
-                "confidence": recommendation["parameters"]["confidence"]
+                "confidence": recommendation["parameters"]["confidence"],
             }
 
             self.sizing_history.append(history_entry)
@@ -429,7 +454,7 @@ class KellySizer:
             "raw_kelly": 0.0,
             "reason": f"Invalid input: {message}",
             "should_trade": False,
-            "risk_level": "high"
+            "risk_level": "high",
         }
 
     def _error_response(self, error_msg: str) -> Dict[str, Any]:
@@ -441,7 +466,7 @@ class KellySizer:
             "reason": f"Calculation error: {error_msg}",
             "should_trade": False,
             "risk_level": "high",
-            "error": error_msg
+            "error": error_msg,
         }
 
     def get_sizing_analytics(self) -> Dict[str, Any]:
@@ -464,8 +489,8 @@ class KellySizer:
                 "avg_payoff_ratio": df["payoff_ratio"].mean(),
                 "recent_trend": {
                     "last_10_avg_size": df["position_size"].tail(10).mean(),
-                    "last_10_trade_rate": df["should_trade"].tail(10).mean()
-                }
+                    "last_10_trade_rate": df["should_trade"].tail(10).mean(),
+                },
             }
 
         except Exception as e:

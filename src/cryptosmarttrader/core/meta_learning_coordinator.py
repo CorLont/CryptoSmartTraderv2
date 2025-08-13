@@ -13,7 +13,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 import threading
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 try:
     import torch
@@ -21,11 +22,13 @@ try:
     import torch.nn.functional as F
     import torch.optim as optim
     from copy import deepcopy
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
 
 from .continual_learning_engine import get_continual_learning_engine
+
 
 class TaskType(Enum):
     NEW_COIN_ADAPTATION = "new_coin_adaptation"
@@ -34,15 +37,18 @@ class TaskType(Enum):
     CROSS_EXCHANGE_TRANSFER = "cross_exchange_transfer"
     TIMEFRAME_ADAPTATION = "timeframe_adaptation"
 
+
 class MetaObjective(Enum):
-    FAST_ADAPTATION = "fast_adaptation"         # Learn new tasks quickly
+    FAST_ADAPTATION = "fast_adaptation"  # Learn new tasks quickly
     ROBUST_GENERALIZATION = "robust_generalization"  # Generalize across markets
     CATASTROPHIC_FORGETTING_PREVENTION = "forgetting_prevention"
     MULTI_TASK_PERFORMANCE = "multi_task_performance"
 
+
 @dataclass
 class MetaTask:
     """Meta-learning task definition"""
+
     task_id: str
     task_type: TaskType
     support_set: Tuple[torch.Tensor, torch.Tensor]  # (features, targets)
@@ -52,9 +58,11 @@ class MetaTask:
     difficulty_score: float = 0.5
     priority: int = 1
 
+
 @dataclass
 class MetaLearningConfig:
     """Configuration for meta-learning coordinator"""
+
     # MAML settings
     inner_learning_rate: float = 1e-3
     meta_learning_rate: float = 1e-4
@@ -84,9 +92,11 @@ class MetaLearningConfig:
     adaptation_time_limit_seconds: int = 30
     min_adaptation_improvement: float = 0.05
 
+
 @dataclass
 class AdaptationResult:
     """Result of meta-learning adaptation"""
+
     task_id: str
     adapted_model_id: str
     adaptation_steps: int
@@ -95,6 +105,7 @@ class AdaptationResult:
     adaptation_time_seconds: float
     success: bool
     metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 class PortfolioMetaLearner(nn.Module):
     """Meta-learner for portfolio optimization across different market conditions"""
@@ -106,7 +117,7 @@ class PortfolioMetaLearner(nn.Module):
             nn.Linear(feature_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         # Portfolio allocation head
@@ -114,7 +125,7 @@ class PortfolioMetaLearner(nn.Module):
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
             nn.Linear(hidden_dim // 2, 1),  # Single asset allocation
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
         # Risk assessment head
@@ -122,27 +133,32 @@ class PortfolioMetaLearner(nn.Module):
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
             nn.Linear(hidden_dim // 2, 1),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
         # Market regime head
         self.regime_head = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
-            nn.Linear(hidden_dim // 2, 4)  # 4 market regimes
+            nn.Linear(hidden_dim // 2, 4),  # 4 market regimes
         )
 
     def forward(self, features: torch.Tensor) -> Dict[str, torch.Tensor]:
         encoded = self.feature_encoder(features)
 
         return {
-            'allocation': self.portfolio_head(encoded),
-            'risk': self.risk_head(encoded),
-            'regime': self.regime_head(encoded)
+            "allocation": self.portfolio_head(encoded),
+            "risk": self.risk_head(encoded),
+            "regime": self.regime_head(encoded),
         }
 
-    def adapt_to_market(self, support_x: torch.Tensor, support_y: torch.Tensor,
-                       adaptation_steps: int = 5, learning_rate: float = 1e-3) -> 'PortfolioMetaLearner':
+    def adapt_to_market(
+        self,
+        support_x: torch.Tensor,
+        support_y: torch.Tensor,
+        adaptation_steps: int = 5,
+        learning_rate: float = 1e-3,
+    ) -> "PortfolioMetaLearner":
         """Adapt portfolio strategy to new market conditions"""
         adapted_model = deepcopy(self)
         optimizer = optim.SGD(adapted_model.parameters(), lr=learning_rate)
@@ -153,11 +169,11 @@ class PortfolioMetaLearner(nn.Module):
             outputs = adapted_model(support_x)
 
             # Multi-objective loss
-            allocation_loss = F.mse_loss(outputs['allocation'], support_y[:, 0:1])
-            risk_loss = F.mse_loss(outputs['risk'], support_y[:, 1:2])
+            allocation_loss = F.mse_loss(outputs["allocation"], support_y[:, 0:1])
+            risk_loss = F.mse_loss(outputs["risk"], support_y[:, 1:2])
 
             if support_y.shape[1] > 2:
-                regime_loss = F.cross_entropy(outputs['regime'], support_y[:, 2].long())
+                regime_loss = F.cross_entropy(outputs["regime"], support_y[:, 2].long())
                 total_loss = allocation_loss + 0.5 * risk_loss + 0.3 * regime_loss
             else:
                 total_loss = allocation_loss + 0.5 * risk_loss
@@ -166,6 +182,7 @@ class PortfolioMetaLearner(nn.Module):
             optimizer.step()
 
         return adapted_model
+
 
 class TaskGenerator:
     """Generate meta-learning tasks from historical trading data"""
@@ -205,7 +222,7 @@ class TaskGenerator:
                             f"new_coin_{new_coin}_{ref_coin}_{period_start}",
                             TaskType.NEW_COIN_ADAPTATION,
                             new_coin_data.iloc[period_start:period_end],
-                            ref_coin
+                            ref_coin,
                         )
                         if task:
                             tasks.append(task)
@@ -255,9 +272,9 @@ class TaskGenerator:
             for symbol in self.market_data:
                 # Different strategy configurations to test
                 strategy_configs = [
-                    {'lookback': 20, 'threshold': 0.02},
-                    {'lookback': 50, 'threshold': 0.05},
-                    {'lookback': 100, 'threshold': 0.1}
+                    {"lookback": 20, "threshold": 0.02},
+                    {"lookback": 50, "threshold": 0.05},
+                    {"lookback": 100, "threshold": 0.1},
                 ]
 
                 for config in strategy_configs:
@@ -271,8 +288,9 @@ class TaskGenerator:
             self.logger.error(f"Strategy optimization task generation failed: {e}")
             return []
 
-    def _find_similar_market_periods(self, target_data: pd.DataFrame,
-                                   reference_data: pd.DataFrame) -> List[Tuple[int, int]]:
+    def _find_similar_market_periods(
+        self, target_data: pd.DataFrame, reference_data: pd.DataFrame
+    ) -> List[Tuple[int, int]]:
         """Find periods with similar market characteristics"""
         similar_periods = []
 
@@ -288,11 +306,11 @@ class TaskGenerator:
             window_size = min(50, len(target_features), len(ref_features))
 
             for i in range(len(ref_features) - window_size):
-                ref_window = ref_features[i:i+window_size]
+                ref_window = ref_features[i : i + window_size]
 
                 # Calculate similarity with target
                 for j in range(len(target_features) - window_size):
-                    target_window = target_features[j:j+window_size]
+                    target_window = target_features[j : j + window_size]
 
                     correlation = np.corrcoef(ref_window.flatten(), target_window.flatten())[0, 1]
 
@@ -309,10 +327,10 @@ class TaskGenerator:
     def _calculate_market_features(self, data: pd.DataFrame) -> Optional[np.ndarray]:
         """Calculate market features for similarity comparison"""
         try:
-            if 'close' not in data.columns and 'price' not in data.columns:
+            if "close" not in data.columns and "price" not in data.columns:
                 return None
 
-            price_col = 'close' if 'close' in data.columns else 'price'
+            price_col = "close" if "close" in data.columns else "price"
             prices = data[price_col].values
 
             if len(prices) < 20:
@@ -349,10 +367,10 @@ class TaskGenerator:
         regimes = []
 
         try:
-            if 'close' not in data.columns and 'price' not in data.columns:
+            if "close" not in data.columns and "price" not in data.columns:
                 return regimes
 
-            price_col = 'close' if 'close' in data.columns else 'price'
+            price_col = "close" if "close" in data.columns else "price"
             prices = data[price_col].values
 
             if len(prices) < 50:
@@ -361,12 +379,14 @@ class TaskGenerator:
             # Calculate regime indicators
             returns = pd.Series(prices).pct_change().fillna(0)
             volatility = returns.rolling(20).std()
-            trend = pd.Series(prices).rolling(20).apply(lambda x: np.polyfit(range(len(x)), x, 1)[0])
+            trend = (
+                pd.Series(prices).rolling(20).apply(lambda x: np.polyfit(range(len(x)), x, 1)[0])
+            )
 
             # Simple regime classification
             for i in range(20, len(prices), 20):  # 20-period regimes
-                period_vol = volatility.iloc[i-20:i].mean()
-                period_trend = trend.iloc[i-20:i].mean()
+                period_vol = volatility.iloc[i - 20 : i].mean()
+                period_trend = trend.iloc[i - 20 : i].mean()
 
                 if period_trend > 0.01 and period_vol < 0.02:
                     regime_type = "bull_low_vol"
@@ -379,13 +399,15 @@ class TaskGenerator:
                 else:
                     regime_type = "sideways"
 
-                regimes.append({
-                    'start_idx': i-20,
-                    'end_idx': i,
-                    'type': regime_type,
-                    'volatility': period_vol,
-                    'trend': period_trend
-                })
+                regimes.append(
+                    {
+                        "start_idx": i - 20,
+                        "end_idx": i,
+                        "type": regime_type,
+                        "volatility": period_vol,
+                        "trend": period_trend,
+                    }
+                )
 
             return regimes
 
@@ -393,8 +415,9 @@ class TaskGenerator:
             self.logger.error(f"Regime identification failed: {e}")
             return []
 
-    def _create_adaptation_task(self, task_id: str, task_type: TaskType,
-                              data: pd.DataFrame, reference_symbol: str) -> Optional[MetaTask]:
+    def _create_adaptation_task(
+        self, task_id: str, task_type: TaskType, data: pd.DataFrame, reference_symbol: str
+    ) -> Optional[MetaTask]:
         """Create adaptation task from market data"""
         try:
             if len(data) < self.config.min_support_samples + self.config.min_query_samples:
@@ -407,8 +430,10 @@ class TaskGenerator:
                 return None
 
             # Split into support and query sets
-            support_size = min(self.config.max_support_samples,
-                             max(self.config.min_support_samples, len(features) // 3))
+            support_size = min(
+                self.config.max_support_samples,
+                max(self.config.min_support_samples, len(features) // 3),
+            )
 
             support_x = torch.FloatTensor(features[:support_size])
             support_y = torch.FloatTensor(targets[:support_size])
@@ -420,28 +445,32 @@ class TaskGenerator:
                 task_type=task_type,
                 support_set=(support_x, support_y),
                 query_set=(query_x, query_y),
-                task_metadata={'reference_symbol': reference_symbol},
+                task_metadata={"reference_symbol": reference_symbol},
                 created_at=datetime.now(),
-                difficulty_score=np.std(targets)  # Higher volatility = harder task
+                difficulty_score=np.std(targets),  # Higher volatility = harder task
             )
 
         except Exception as e:
             self.logger.error(f"Task creation failed: {e}")
             return None
 
-    def _create_regime_transition_task(self, symbol: str, current_regime: Dict,
-                                     next_regime: Dict, data: pd.DataFrame) -> Optional[MetaTask]:
+    def _create_regime_transition_task(
+        self, symbol: str, current_regime: Dict, next_regime: Dict, data: pd.DataFrame
+    ) -> Optional[MetaTask]:
         """Create task for regime transition adaptation"""
         try:
             # Extract data for both regimes
-            current_data = data.iloc[current_regime['start_idx']:current_regime['end_idx']]
-            next_data = data.iloc[next_regime['start_idx']:next_regime['end_idx']]
+            current_data = data.iloc[current_regime["start_idx"] : current_regime["end_idx"]]
+            next_data = data.iloc[next_regime["start_idx"] : next_regime["end_idx"]]
 
             # Use current regime as support, next regime as query
             support_features, support_targets = self._extract_features_targets(current_data)
             query_features, query_targets = self._extract_features_targets(next_data)
 
-            if any(x is None for x in [support_features, support_targets, query_features, query_targets]):
+            if any(
+                x is None
+                for x in [support_features, support_targets, query_features, query_targets]
+            ):
                 return None
 
             task_id = f"regime_{symbol}_{current_regime['type']}_to_{next_regime['type']}"
@@ -449,15 +478,18 @@ class TaskGenerator:
             return MetaTask(
                 task_id=task_id,
                 task_type=TaskType.MARKET_REGIME_ADAPTATION,
-                support_set=(torch.FloatTensor(support_features), torch.FloatTensor(support_targets)),
+                support_set=(
+                    torch.FloatTensor(support_features),
+                    torch.FloatTensor(support_targets),
+                ),
                 query_set=(torch.FloatTensor(query_features), torch.FloatTensor(query_targets)),
                 task_metadata={
-                    'symbol': symbol,
-                    'from_regime': current_regime['type'],
-                    'to_regime': next_regime['type']
+                    "symbol": symbol,
+                    "from_regime": current_regime["type"],
+                    "to_regime": next_regime["type"],
                 },
                 created_at=datetime.now(),
-                difficulty_score=abs(current_regime['volatility'] - next_regime['volatility'])
+                difficulty_score=abs(current_regime["volatility"] - next_regime["volatility"]),
             )
 
         except Exception as e:
@@ -490,22 +522,23 @@ class TaskGenerator:
                 task_type=TaskType.STRATEGY_OPTIMIZATION,
                 support_set=(support_x, support_y),
                 query_set=(query_x, query_y),
-                task_metadata={'symbol': symbol, 'config': config},
-                created_at=datetime.now()
+                task_metadata={"symbol": symbol, "config": config},
+                created_at=datetime.now(),
             )
 
         except Exception as e:
             self.logger.error(f"Strategy optimization task creation failed: {e}")
             return None
 
-    def _extract_features_targets(self, data: pd.DataFrame,
-                                strategy_config: Optional[Dict] = None) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+    def _extract_features_targets(
+        self, data: pd.DataFrame, strategy_config: Optional[Dict] = None
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Extract features and targets from market data"""
         try:
             if data.empty:
                 return None, None
 
-            price_col = 'close' if 'close' in data.columns else 'price'
+            price_col = "close" if "close" in data.columns else "price"
             if price_col not in data.columns:
                 return None, None
 
@@ -537,8 +570,8 @@ class TaskGenerator:
 
             # Apply strategy config if provided
             if strategy_config:
-                lookback = strategy_config.get('lookback', 20)
-                threshold = strategy_config.get('threshold', 0.02)
+                lookback = strategy_config.get("lookback", 20)
+                threshold = strategy_config.get("threshold", 0.02)
 
                 # Filter based on signal strength
                 signal_strength = np.abs(feature_matrix[:, 0])  # Use first feature as signal
@@ -555,6 +588,7 @@ class TaskGenerator:
         except Exception as e:
             self.logger.error(f"Feature extraction failed: {e}")
             return None, None
+
 
 class MetaLearningCoordinator:
     """Main coordinator for meta-learning across trading strategies"""
@@ -582,12 +616,12 @@ class MetaLearningCoordinator:
 
         # Performance tracking
         self.meta_performance: Dict[str, List] = {
-            'adaptation_times': [],
-            'improvement_ratios': [],
-            'success_rates': []
+            "adaptation_times": [],
+            "improvement_ratios": [],
+            "success_rates": [],
         }
 
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._lock = threading.RLock()
 
         self.logger.info(f"Meta-Learning Coordinator initialized on {self.device}")
@@ -612,7 +646,9 @@ class MetaLearningCoordinator:
         with self._lock:
             try:
                 # Generate different types of tasks
-                new_coin_tasks = self.task_generator.generate_new_coin_tasks(new_coin, reference_coins)
+                new_coin_tasks = self.task_generator.generate_new_coin_tasks(
+                    new_coin, reference_coins
+                )
                 regime_tasks = self.task_generator.generate_regime_adaptation_tasks()
                 strategy_tasks = self.task_generator.generate_strategy_optimization_tasks()
 
@@ -630,7 +666,9 @@ class MetaLearningCoordinator:
                 self.logger.error(f"Task generation failed: {e}")
                 return 0
 
-    def execute_meta_learning_batch(self, batch_size: Optional[int] = None) -> List[AdaptationResult]:
+    def execute_meta_learning_batch(
+        self, batch_size: Optional[int] = None
+    ) -> List[AdaptationResult]:
         """Execute a batch of meta-learning tasks"""
         with self._lock:
             try:
@@ -697,10 +735,10 @@ class MetaLearningCoordinator:
                 adaptation_time_seconds=adaptation_time,
                 success=success,
                 metadata={
-                    'task_type': task.task_type.value,
-                    'difficulty_score': task.difficulty_score,
-                    'base_model_performance': self._get_baseline_performance(base_model, task)
-                }
+                    "task_type": task.task_type.value,
+                    "difficulty_score": task.difficulty_score,
+                    "base_model_performance": self._get_baseline_performance(base_model, task),
+                },
             )
 
             return result
@@ -719,7 +757,7 @@ class MetaLearningCoordinator:
 
             elif task.task_type == TaskType.MARKET_REGIME_ADAPTATION:
                 # Use regime-specific model if available
-                reference_symbol = task.task_metadata.get('symbol', 'default')
+                reference_symbol = task.task_metadata.get("symbol", "default")
                 if reference_symbol in self.meta_models:
                     return deepcopy(self.meta_models[reference_symbol])
                 elif self.portfolio_meta_learner is not None:
@@ -727,8 +765,8 @@ class MetaLearningCoordinator:
 
             elif task.task_type == TaskType.STRATEGY_OPTIMIZATION:
                 # Use strategy-specific model
-                if 'strategy' in self.meta_models:
-                    return deepcopy(self.meta_models['strategy'])
+                if "strategy" in self.meta_models:
+                    return deepcopy(self.meta_models["strategy"])
                 elif self.portfolio_meta_learner is not None:
                     return deepcopy(self.portfolio_meta_learner)
 
@@ -742,7 +780,9 @@ class MetaLearningCoordinator:
             self.logger.error(f"Base model selection failed: {e}")
             return None
 
-    def _adapt_model_to_task(self, base_model: nn.Module, task: MetaTask) -> Tuple[nn.Module, float, int]:
+    def _adapt_model_to_task(
+        self, base_model: nn.Module, task: MetaTask
+    ) -> Tuple[nn.Module, float, int]:
         """Adapt model to specific task"""
         try:
             adapted_model = deepcopy(base_model).to(self.device)
@@ -760,7 +800,7 @@ class MetaLearningCoordinator:
 
                 if isinstance(adapted_model, PortfolioMetaLearner):
                     outputs = adapted_model(support_x)
-                    loss = F.mse_loss(outputs['allocation'], support_y)
+                    loss = F.mse_loss(outputs["allocation"], support_y)
                 else:
                     outputs = adapted_model(support_x)
                     loss = F.mse_loss(outputs, support_y)
@@ -774,9 +814,11 @@ class MetaLearningCoordinator:
 
         except Exception as e:
             self.logger.error(f"Model adaptation failed: {e}")
-            return base_model, float('inf'), 0
+            return base_model, float("inf"), 0
 
-    def _evaluate_adaptation(self, base_model: nn.Module, adapted_model: nn.Module, task: MetaTask) -> float:
+    def _evaluate_adaptation(
+        self, base_model: nn.Module, adapted_model: nn.Module, task: MetaTask
+    ) -> float:
         """Evaluate adaptation improvement"""
         try:
             query_x, query_y = task.query_set
@@ -788,7 +830,7 @@ class MetaLearningCoordinator:
             with torch.no_grad():
                 if isinstance(base_model, PortfolioMetaLearner):
                     base_outputs = base_model(query_x)
-                    base_loss = F.mse_loss(base_outputs['allocation'], query_y)
+                    base_loss = F.mse_loss(base_outputs["allocation"], query_y)
                 else:
                     base_outputs = base_model(query_x)
                     base_loss = F.mse_loss(base_outputs, query_y)
@@ -798,7 +840,7 @@ class MetaLearningCoordinator:
             with torch.no_grad():
                 if isinstance(adapted_model, PortfolioMetaLearner):
                     adapted_outputs = adapted_model(query_x)
-                    adapted_loss = F.mse_loss(adapted_outputs['allocation'], query_y)
+                    adapted_loss = F.mse_loss(adapted_outputs["allocation"], query_y)
                 else:
                     adapted_outputs = adapted_model(query_x)
                     adapted_loss = F.mse_loss(adapted_outputs, query_y)
@@ -826,7 +868,7 @@ class MetaLearningCoordinator:
             with torch.no_grad():
                 if isinstance(model, PortfolioMetaLearner):
                     outputs = model(query_x)
-                    loss = F.mse_loss(outputs['allocation'], query_y)
+                    loss = F.mse_loss(outputs["allocation"], query_y)
                 else:
                     outputs = model(query_x)
                     loss = F.mse_loss(outputs, query_y)
@@ -848,9 +890,9 @@ class MetaLearningCoordinator:
             success_rate = sum(1 for r in results if r.success) / len(results)
 
             # Update history
-            self.meta_performance['adaptation_times'].extend(adaptation_times)
-            self.meta_performance['improvement_ratios'].extend(improvement_ratios)
-            self.meta_performance['success_rates'].append(success_rate)
+            self.meta_performance["adaptation_times"].extend(adaptation_times)
+            self.meta_performance["improvement_ratios"].extend(improvement_ratios)
+            self.meta_performance["success_rates"].append(success_rate)
 
             # Limit history size
             max_history = 1000
@@ -865,26 +907,34 @@ class MetaLearningCoordinator:
         """Get comprehensive meta-learning summary"""
         with self._lock:
             summary = {
-                'meta_models_registered': len(self.meta_models),
-                'portfolio_meta_learner_available': self.portfolio_meta_learner is not None,
-                'pending_tasks': len(self.task_queue),
-                'completed_tasks': len(self.completed_tasks),
-                'successful_adaptations': sum(1 for r in self.adaptation_results if r.success),
-                'total_adaptations': len(self.adaptation_results)
+                "meta_models_registered": len(self.meta_models),
+                "portfolio_meta_learner_available": self.portfolio_meta_learner is not None,
+                "pending_tasks": len(self.task_queue),
+                "completed_tasks": len(self.completed_tasks),
+                "successful_adaptations": sum(1 for r in self.adaptation_results if r.success),
+                "total_adaptations": len(self.adaptation_results),
             }
 
             # Performance metrics
-            if self.meta_performance['adaptation_times']:
-                summary['average_adaptation_time'] = np.mean(self.meta_performance['adaptation_times'])
-                summary['average_improvement_ratio'] = np.mean(self.meta_performance['improvement_ratios'])
-                summary['recent_success_rate'] = np.mean(self.meta_performance['success_rates'][-10:]) if self.meta_performance['success_rates'] else 0.0
+            if self.meta_performance["adaptation_times"]:
+                summary["average_adaptation_time"] = np.mean(
+                    self.meta_performance["adaptation_times"]
+                )
+                summary["average_improvement_ratio"] = np.mean(
+                    self.meta_performance["improvement_ratios"]
+                )
+                summary["recent_success_rate"] = (
+                    np.mean(self.meta_performance["success_rates"][-10:])
+                    if self.meta_performance["success_rates"]
+                    else 0.0
+                )
 
             # Task type breakdown
             task_types = {}
             for task in self.completed_tasks:
                 task_type = task.task_type.value
                 task_types[task_type] = task_types.get(task_type, 0) + 1
-            summary['completed_task_types'] = task_types
+            summary["completed_task_types"] = task_types
 
             return summary
 
@@ -893,7 +943,10 @@ class MetaLearningCoordinator:
 _meta_learning_coordinator = None
 _meta_lock = threading.Lock()
 
-def get_meta_learning_coordinator(config: Optional[MetaLearningConfig] = None) -> MetaLearningCoordinator:
+
+def get_meta_learning_coordinator(
+    config: Optional[MetaLearningConfig] = None,
+) -> MetaLearningCoordinator:
     """Get the singleton meta-learning coordinator"""
     global _meta_learning_coordinator
 
@@ -901,6 +954,7 @@ def get_meta_learning_coordinator(config: Optional[MetaLearningConfig] = None) -
         if _meta_learning_coordinator is None:
             _meta_learning_coordinator = MetaLearningCoordinator(config)
         return _meta_learning_coordinator
+
 
 def adapt_to_new_coin(new_coin: str, reference_coins: List[str]) -> int:
     """Convenient function to adapt models to new cryptocurrency"""

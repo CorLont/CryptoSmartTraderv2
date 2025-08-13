@@ -13,68 +13,65 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class DirectUnifiedReviewGenerator:
     """Generate unified technical review directly from project"""
-    
+
     def __init__(self):
         self.project_root = Path(".")
         self.output_dir = Path("exports/unified_technical_review")
-        
+
         # Clean and create output directory
         if self.output_dir.exists():
             shutil.rmtree(self.output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
     def create_review_structure(self):
         """Create organized review directory"""
         logger.info("📁 Creating unified technical review structure...")
-        
+
         # Create review structure
         review_dirs = {
-            'dependencies': self.output_dir / 'dependencies',
-            'source_code': self.output_dir / 'source_code',
-            'tests': self.output_dir / 'tests',
-            'docs': self.output_dir / 'docs', 
-            'config': self.output_dir / 'config',
-            'deployment': self.output_dir / 'deployment'
+            "dependencies": self.output_dir / "dependencies",
+            "source_code": self.output_dir / "source_code",
+            "tests": self.output_dir / "tests",
+            "docs": self.output_dir / "docs",
+            "config": self.output_dir / "config",
+            "deployment": self.output_dir / "deployment",
         }
-        
+
         for dir_path in review_dirs.values():
             dir_path.mkdir(exist_ok=True)
-        
+
         file_count = 0
-        
+
         # 1. Dependencies
-        file_count += self._copy_dependencies(review_dirs['dependencies'])
-        
+        file_count += self._copy_dependencies(review_dirs["dependencies"])
+
         # 2. Source code
-        file_count += self._copy_source_code(review_dirs['source_code'])
-        
+        file_count += self._copy_source_code(review_dirs["source_code"])
+
         # 3. Tests
-        file_count += self._copy_tests(review_dirs['tests'])
-        
+        file_count += self._copy_tests(review_dirs["tests"])
+
         # 4. Documentation
-        file_count += self._copy_docs(review_dirs['docs'])
-        
+        file_count += self._copy_docs(review_dirs["docs"])
+
         # 5. Configuration
-        file_count += self._copy_config(review_dirs['config'])
-        
+        file_count += self._copy_config(review_dirs["config"])
+
         # 6. Deployment
-        file_count += self._copy_deployment(review_dirs['deployment'])
-        
+        file_count += self._copy_deployment(review_dirs["deployment"])
+
         logger.info(f"✅ Created unified review with {file_count} files")
         return file_count
-    
+
     def _copy_dependencies(self, deps_dir):
         """Copy dependency files"""
         logger.info("  📋 Copying dependencies...")
-        
-        dep_files = [
-            'pyproject.toml',
-            'requirements.txt', 
-            'uv.lock'
-        ]
-        
+
+        dep_files = ["pyproject.toml", "requirements.txt", "uv.lock"]
+
         count = 0
         for dep_file in dep_files:
             source = self.project_root / dep_file
@@ -82,86 +79,103 @@ class DirectUnifiedReviewGenerator:
                 shutil.copy2(source, deps_dir / dep_file)
                 logger.info(f"    ✅ {dep_file}")
                 count += 1
-        
+
         return count
-    
+
     def _copy_source_code(self, src_dir):
         """Copy all source code"""
         logger.info("  🔧 Copying source code...")
-        
+
         count = 0
-        
+
         # Core directories
-        source_dirs = ['agents', 'api', 'ml', 'orchestration', 'utils', 'core', 'metrics', 'src', 'trading', 'integrations']
-        
+        source_dirs = [
+            "agents",
+            "api",
+            "ml",
+            "orchestration",
+            "utils",
+            "core",
+            "metrics",
+            "src",
+            "trading",
+            "integrations",
+        ]
+
         for source_name in source_dirs:
             source_path = self.project_root / source_name
             if source_path.exists() and source_path.is_dir():
                 dest_path = src_dir / source_name
-                shutil.copytree(source_path, dest_path, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
-                file_count = len(list(dest_path.rglob('*.py')))
+                shutil.copytree(
+                    source_path, dest_path, ignore=shutil.ignore_patterns("__pycache__", "*.pyc")
+                )
+                file_count = len(list(dest_path.rglob("*.py")))
                 logger.info(f"    ✅ {source_name}/ ({file_count} Python files)")
                 count += file_count
-        
+
         # Main application files
         main_files = [
-            'app_fixed_all_issues.py',
-            'generate_final_predictions.py',
-            'start_multi_service.py',
-            'run_demo_pipeline.py',
-            'start_agents.py',
-            'create_test_predictions.py'
+            "app_fixed_all_issues.py",
+            "generate_final_predictions.py",
+            "start_multi_service.py",
+            "run_demo_pipeline.py",
+            "start_agents.py",
+            "create_test_predictions.py",
         ]
-        
+
         for main_file in main_files:
             source = self.project_root / main_file
             if source.exists():
                 shutil.copy2(source, src_dir / main_file)
                 logger.info(f"    ✅ {main_file}")
                 count += 1
-        
+
         return count
-    
+
     def _copy_tests(self, tests_dir):
         """Copy test files"""
         logger.info("  🧪 Copying tests...")
-        
+
         count = 0
-        
+
         # Tests directory
-        source_tests = self.project_root / 'tests'
+        source_tests = self.project_root / "tests"
         if source_tests.exists():
-            shutil.copytree(source_tests, tests_dir / 'tests', ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
-            test_count = len(list((tests_dir / 'tests').rglob('*.py')))
+            shutil.copytree(
+                source_tests,
+                tests_dir / "tests",
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+            )
+            test_count = len(list((tests_dir / "tests").rglob("*.py")))
             logger.info(f"    ✅ tests/ ({test_count} test files)")
             count += test_count
-        
+
         # Individual test files
-        test_files = list(self.project_root.glob('test_*.py'))
+        test_files = list(self.project_root.glob("test_*.py"))
         for test_file in test_files:
             shutil.copy2(test_file, tests_dir / test_file.name)
             logger.info(f"    ✅ {test_file.name}")
             count += 1
-        
+
         return count
-    
+
     def _copy_docs(self, docs_dir):
         """Copy documentation"""
         logger.info("  📚 Copying documentation...")
-        
+
         doc_files = [
-            'README.md',
-            'README_QUICK_START.md',
-            'README_OPERATIONS.md',
-            'replit.md',
-            'CHANGELOG.md',
-            'FINAL_PRODUCTION_READINESS_REPORT.md',
-            'ARTIFICIAL_DATA_REMOVAL_REPORT.md',
-            'TECHNICAL_REVIEW_INDEX.md',
-            'MOCK_DATA_CLEANUP_REPORT.json',
-            'SETUP_GUIDE.md'
+            "README.md",
+            "README_QUICK_START.md",
+            "README_OPERATIONS.md",
+            "replit.md",
+            "CHANGELOG.md",
+            "FINAL_PRODUCTION_READINESS_REPORT.md",
+            "ARTIFICIAL_DATA_REMOVAL_REPORT.md",
+            "TECHNICAL_REVIEW_INDEX.md",
+            "MOCK_DATA_CLEANUP_REPORT.json",
+            "SETUP_GUIDE.md",
         ]
-        
+
         count = 0
         for doc_file in doc_files:
             source = self.project_root / doc_file
@@ -169,32 +183,36 @@ class DirectUnifiedReviewGenerator:
                 shutil.copy2(source, docs_dir / doc_file)
                 logger.info(f"    ✅ {doc_file}")
                 count += 1
-        
+
         # Copy docs directory if exists
-        source_docs = self.project_root / 'docs'
+        source_docs = self.project_root / "docs"
         if source_docs.exists():
-            shutil.copytree(source_docs, docs_dir / 'additional_docs', ignore=shutil.ignore_patterns('__pycache__'))
-            doc_count = len(list((docs_dir / 'additional_docs').rglob('*.*')))
+            shutil.copytree(
+                source_docs,
+                docs_dir / "additional_docs",
+                ignore=shutil.ignore_patterns("__pycache__"),
+            )
+            doc_count = len(list((docs_dir / "additional_docs").rglob("*.*")))
             logger.info(f"    ✅ docs/ ({doc_count} files)")
             count += doc_count
-        
+
         return count
-    
+
     def _copy_config(self, config_dir):
         """Copy configuration files"""
         logger.info("  ⚙️ Copying configuration...")
-        
+
         config_files = [
-            'config.json',
-            'production_gate_config.json', 
-            'training_status.json',
-            'pytest.ini',
-            '.gitignore',
-            '.pre-commit-config.yaml',
-            '.bandit',
-            'SECURITY.md'
+            "config.json",
+            "production_gate_config.json",
+            "training_status.json",
+            "pytest.ini",
+            ".gitignore",
+            ".pre-commit-config.yaml",
+            ".bandit",
+            "SECURITY.md",
         ]
-        
+
         count = 0
         for config_file in config_files:
             source = self.project_root / config_file
@@ -202,9 +220,9 @@ class DirectUnifiedReviewGenerator:
                 shutil.copy2(source, config_dir / config_file)
                 logger.info(f"    ✅ {config_file}")
                 count += 1
-        
+
         # Create .env.example
-        env_example = config_dir / '.env.example'
+        env_example = config_dir / ".env.example"
         env_content = """# CryptoSmartTrader V2 Environment Variables
 # Copy this file to .env and fill in your actual values
 
@@ -233,23 +251,23 @@ HEALTH_PORT=8001
         env_example.write_text(env_content)
         logger.info("    ✅ .env.example (created)")
         count += 1
-        
+
         return count
-    
+
     def _copy_deployment(self, deploy_dir):
         """Copy deployment files"""
         logger.info("  🚀 Copying deployment files...")
-        
+
         deploy_files = [
-            '.replit',
-            'replit.nix',
-            'start_uv_services.sh',
-            'start_replit_services.py',
-            '1_install_all_dependencies.bat',
-            '2_start_background_services.bat',
-            '3_start_dashboard.bat'
+            ".replit",
+            "replit.nix",
+            "start_uv_services.sh",
+            "start_replit_services.py",
+            "1_install_all_dependencies.bat",
+            "2_start_background_services.bat",
+            "3_start_dashboard.bat",
         ]
-        
+
         count = 0
         for deploy_file in deploy_files:
             source = self.project_root / deploy_file
@@ -257,13 +275,13 @@ HEALTH_PORT=8001
                 shutil.copy2(source, deploy_dir / deploy_file)
                 logger.info(f"    ✅ {deploy_file}")
                 count += 1
-        
+
         return count
-    
+
     def create_comprehensive_readme(self):
         """Create comprehensive README for technical review"""
         logger.info("📋 Creating comprehensive review README...")
-        
+
         readme_content = f"""# CryptoSmartTrader V2 - Technical Review Package
 
 **Generated:** {datetime.now().isoformat()}  
@@ -434,74 +452,76 @@ CryptoSmartTrader V2 represents a world-class cryptocurrency trading intelligenc
 
 *CryptoSmartTrader V2 - Professional Cryptocurrency Trading Intelligence Platform*
 """
-        
-        readme_file = self.output_dir / 'TECHNICAL_REVIEW_README.md'
+
+        readme_file = self.output_dir / "TECHNICAL_REVIEW_README.md"
         readme_file.write_text(readme_content)
         logger.info("📄 Created TECHNICAL_REVIEW_README.md")
-    
+
     def generate_review_package(self):
         """Generate complete unified technical review package"""
         logger.info("🚀 Generating unified technical review package...")
-        
+
         try:
             # Create organized structure
             file_count = self.create_review_structure()
-            
+
             # Create comprehensive README
             self.create_comprehensive_readme()
-            
+
             # Generate summary
             summary = {
-                'generation_time': datetime.now().isoformat(),
-                'total_files_organized': file_count,
-                'output_directory': str(self.output_dir),
-                'structure': [
-                    'dependencies/ - Project dependencies and lockfiles',
-                    'source_code/ - All Python source code (agents, ML, API)',
-                    'tests/ - Comprehensive test suite',
-                    'docs/ - Complete documentation',
-                    'config/ - Configuration and environment files',
-                    'deployment/ - Replit and deployment scripts'
+                "generation_time": datetime.now().isoformat(),
+                "total_files_organized": file_count,
+                "output_directory": str(self.output_dir),
+                "structure": [
+                    "dependencies/ - Project dependencies and lockfiles",
+                    "source_code/ - All Python source code (agents, ML, API)",
+                    "tests/ - Comprehensive test suite",
+                    "docs/ - Complete documentation",
+                    "config/ - Configuration and environment files",
+                    "deployment/ - Replit and deployment scripts",
                 ],
-                'ready_for_review': True,
-                'key_features': [
-                    '100% authentic data only - Zero artificial data',
-                    '28 specialized trading intelligence agents',
-                    'Enterprise-grade architecture and logging',
-                    'Comprehensive test coverage (85%+)',
-                    '12-week training requirement enforcement',
-                    'Production-ready multi-service deployment'
-                ]
+                "ready_for_review": True,
+                "key_features": [
+                    "100% authentic data only - Zero artificial data",
+                    "28 specialized trading intelligence agents",
+                    "Enterprise-grade architecture and logging",
+                    "Comprehensive test coverage (85%+)",
+                    "12-week training requirement enforcement",
+                    "Production-ready multi-service deployment",
+                ],
             }
-            
+
             logger.info("✅ Unified technical review package generated!")
             logger.info(f"📂 Output directory: {self.output_dir}")
             logger.info(f"📄 Total files: {file_count}")
-            
+
             return summary
-            
+
         except Exception as e:
             logger.error(f"❌ Review package generation failed: {e}")
             raise
+
 
 def main():
     """Generate unified technical review package"""
     generator = DirectUnifiedReviewGenerator()
     summary = generator.generate_review_package()
-    
-    print("\n" + "="*80)
+
+    print("\n" + "=" * 80)
     print("🎯 UNIFIED TECHNICAL REVIEW PACKAGE READY")
-    print("="*80)
+    print("=" * 80)
     print(f"📂 Location: {summary['output_directory']}")
     print(f"📄 Total files: {summary['total_files_organized']}")
     print(f"📅 Generated: {summary['generation_time'][:19]}")
     print("\n📁 Package structure:")
-    for item in summary['structure']:
+    for item in summary["structure"]:
         print(f"  ✅ {item}")
     print("\n🏆 Key features:")
-    for feature in summary['key_features']:
+    for feature in summary["key_features"]:
         print(f"  🎯 {feature}")
     print(f"\n✅ Technical review package ready for comprehensive code review!")
+
 
 if __name__ == "__main__":
     main()

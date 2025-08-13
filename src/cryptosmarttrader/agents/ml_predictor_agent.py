@@ -15,21 +15,25 @@ try:
     from sklearn.model_selection import train_test_split
     from sklearn.preprocessing import StandardScaler
     from sklearn.metrics import mean_squared_error, r2_score
+
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
 
 try:
     import xgboost as xgb
+
     XGBOOST_AVAILABLE = True
 except ImportError:
     XGBOOST_AVAILABLE = False
 
 try:
     import lightgbm as lgb
+
     LIGHTGBM_AVAILABLE = True
 except ImportError:
     LIGHTGBM_AVAILABLE = False
+
 
 class MLPredictorAgent:
     """Machine Learning Price Prediction Agent with ensemble models"""
@@ -85,7 +89,11 @@ class MLPredictorAgent:
         while self.active:
             try:
                 # Get update interval from config
-                interval = self.config_manager.get("agents", {}).get("ml_predictor", {}).get("update_interval", 900)
+                interval = (
+                    self.config_manager.get("agents", {})
+                    .get("ml_predictor", {})
+                    .get("update_interval", 900)
+                )
 
                 # Train models and make predictions
                 self._update_predictions()
@@ -157,7 +165,7 @@ class MLPredictorAgent:
 
         if historical_data is None or len(historical_data) < 50:
             # REMOVED: Mock data pattern not allowed in production
-            return self._generate_# REMOVED: Mock data pattern not allowed in productionsymbol)
+            return self._generate_  # REMOVED: Mock data pattern not allowed in productionsymbol)
 
         return historical_data
 
@@ -170,7 +178,7 @@ class MLPredictorAgent:
         if current_data is None or current_data.empty:
             base_price = 100.0
         else:
-            base_price = current_data.iloc[0].get('price', 100.0)
+            base_price = current_data.iloc[0].get("price", 100.0)
 
         # Generate 200 data points
         data = []
@@ -189,53 +197,55 @@ class MLPredictorAgent:
             high = price * random.choice
             low = price * random.choice
 
-            data.append({
-                'timestamp': timestamp,
-                'symbol': symbol,
-                'price': price,
-                'open': price,
-                'high': high,
-                'low': low,
-                'volume': volume
-            })
+            data.append(
+                {
+                    "timestamp": timestamp,
+                    "symbol": symbol,
+                    "price": price,
+                    "open": price,
+                    "high": high,
+                    "low": low,
+                    "volume": volume,
+                }
+            )
 
         return pd.DataFrame(data)
 
     def _create_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """Create features for ML model"""
         df = df.copy()
-        df = df.sort_values('timestamp')
+        df = df.sort_values("timestamp")
 
         # Price-based features
-        df['returns'] = df['price'].pct_change()
-        df['log_returns'] = np.log(df['price'] / df['price'].shift(1))
+        df["returns"] = df["price"].pct_change()
+        df["log_returns"] = np.log(df["price"] / df["price"].shift(1))
 
         # Moving averages
         for window in [5, 10, 20, 50]:
-            df[f'ma_{window}'] = df['price'].rolling(window=window).mean()
-            df[f'price_ma_ratio_{window}'] = df['price'] / df[f'ma_{window}']
+            df[f"ma_{window}"] = df["price"].rolling(window=window).mean()
+            df[f"price_ma_ratio_{window}"] = df["price"] / df[f"ma_{window}"]
 
         # Volatility features
-        df['volatility_5'] = df['returns'].rolling(window=5).std()
-        df['volatility_20'] = df['returns'].rolling(window=20).std()
+        df["volatility_5"] = df["returns"].rolling(window=5).std()
+        df["volatility_20"] = df["returns"].rolling(window=20).std()
 
         # Volume features
-        df['volume_ma_5'] = df['volume'].rolling(window=5).mean()
-        df['volume_ratio'] = df['volume'] / df['volume_ma_5']
+        df["volume_ma_5"] = df["volume"].rolling(window=5).mean()
+        df["volume_ratio"] = df["volume"] / df["volume_ma_5"]
 
         # Technical indicators
-        df['rsi'] = self._calculate_rsi(df['price'], 14)
-        df['bb_position'] = self._calculate_bollinger_position(df['price'], 20)
+        df["rsi"] = self._calculate_rsi(df["price"], 14)
+        df["bb_position"] = self._calculate_bollinger_position(df["price"], 20)
 
         # Lagged features
         for lag in [1, 2, 3, 5]:
-            df[f'price_lag_{lag}'] = df['price'].shift(lag)
-            df[f'returns_lag_{lag}'] = df['returns'].shift(lag)
+            df[f"price_lag_{lag}"] = df["price"].shift(lag)
+            df[f"returns_lag_{lag}"] = df["returns"].shift(lag)
 
         # Time features
-        df['hour'] = df['timestamp'].dt.hour
-        df['day_of_week'] = df['timestamp'].dt.dayofweek
-        df['day_of_month'] = df['timestamp'].dt.day
+        df["hour"] = df["timestamp"].dt.hour
+        df["day_of_week"] = df["timestamp"].dt.dayofweek
+        df["day_of_month"] = df["timestamp"].dt.day
 
         return df
 
@@ -257,7 +267,9 @@ class MLPredictorAgent:
         position = (prices - lower_band) / (upper_band - lower_band)
         return position
 
-    def _train_model(self, data: pd.DataFrame, symbol: str, horizon: str) -> Optional[Dict[str, Any]]:
+    def _train_model(
+        self, data: pd.DataFrame, symbol: str, horizon: str
+    ) -> Optional[Dict[str, Any]]:
         """Train ML models for prediction"""
         try:
             # Create features
@@ -265,7 +277,7 @@ class MLPredictorAgent:
 
             # Create target variable based on horizon
             horizon_hours = self._horizon_to_hours(horizon)
-            df_features[f'target_{horizon}'] = df_features['price'].shift(-horizon_hours)
+            df_features[f"target_{horizon}"] = df_features["price"].shift(-horizon_hours)
 
             # Remove NaN values
             df_clean = df_features.dropna()
@@ -274,12 +286,15 @@ class MLPredictorAgent:
                 return None
 
             # Select feature columns
-            feature_columns = [col for col in df_clean.columns if col not in
-                             ['timestamp', 'symbol', 'price', 'open', 'high', 'low', 'volume']
-                             and not col.startswith('target_')]
+            feature_columns = [
+                col
+                for col in df_clean.columns
+                if col not in ["timestamp", "symbol", "price", "open", "high", "low", "volume"]
+                and not col.startswith("target_")
+            ]
 
             X = df_clean[feature_columns]
-            y = df_clean[f'target_{horizon}']
+            y = df_clean[f"target_{horizon}"]
 
             # Split data
             train_size = int(len(X) * 0.8)
@@ -298,26 +313,27 @@ class MLPredictorAgent:
             if SKLEARN_AVAILABLE:
                 rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
                 rf_model.fit(X_train_scaled, y_train)
-                models['random_forest'] = rf_model
+                models["random_forest"] = rf_model
 
             # XGBoost
             if XGBOOST_AVAILABLE:
                 xgb_model = xgb.XGBRegressor(n_estimators=100, random_state=42)
                 xgb_model.fit(X_train_scaled, y_train)
-                models['xgboost'] = xgb_model
+                models["xgboost"] = xgb_model
 
             # LightGBM
             if LIGHTGBM_AVAILABLE:
                 lgb_model = lgb.LGBMRegressor(n_estimators=100, random_state=42)
                 lgb_model.fit(X_train_scaled, y_train)
-                models['lightgbm'] = lgb_model
+                models["lightgbm"] = lgb_model
 
             if not models:
                 # Fallback to simple linear model
                 from sklearn.linear_model import LinearRegression
+
                 lr_model = LinearRegression()
                 lr_model.fit(X_train_scaled, y_train)
-                models['linear'] = lr_model
+                models["linear"] = lr_model
 
             # Evaluate models
             model_scores = {}
@@ -329,7 +345,7 @@ class MLPredictorAgent:
                     mse = mean_squared_error(y_test, pred)
                     r2 = r2_score(y_test, pred)
 
-                    model_scores[model_name] = {'mse': mse, 'r2': r2}
+                    model_scores[model_name] = {"mse": mse, "r2": r2}
                     predictions[model_name] = pred
 
                 except Exception as e:
@@ -337,16 +353,16 @@ class MLPredictorAgent:
 
             # Save best model
             if model_scores:
-                best_model_name = min(model_scores.keys(), key=lambda x: model_scores[x]['mse'])
+                best_model_name = min(model_scores.keys(), key=lambda x: model_scores[x]["mse"])
                 best_model = models[best_model_name]
 
                 model_info = {
-                    'model': best_model,
-                    'scaler': scaler,
-                    'feature_columns': feature_columns,
-                    'model_name': best_model_name,
-                    'performance': model_scores[best_model_name],
-                    'trained_at': datetime.now().isoformat()
+                    "model": best_model,
+                    "scaler": scaler,
+                    "feature_columns": feature_columns,
+                    "model_name": best_model_name,
+                    "performance": model_scores[best_model_name],
+                    "trained_at": datetime.now().isoformat(),
                 }
 
                 # Store model
@@ -382,7 +398,9 @@ class MLPredictorAgent:
         else:
             return 24  # Default to 1 day
 
-    def _make_prediction(self, data: pd.DataFrame, model_info: Dict[str, Any], horizon: str) -> Optional[Dict[str, Any]]:
+    def _make_prediction(
+        self, data: pd.DataFrame, model_info: Dict[str, Any], horizon: str
+    ) -> Optional[Dict[str, Any]]:
         """Make price prediction using trained model"""
         try:
             # Create features for the latest data point
@@ -393,34 +411,34 @@ class MLPredictorAgent:
                 return None
 
             # Get latest features
-            feature_columns = model_info['feature_columns']
+            feature_columns = model_info["feature_columns"]
             latest_features = df_clean[feature_columns].iloc[-1:].values
 
             # Scale features
-            scaler = model_info['scaler']
+            scaler = model_info["scaler"]
             latest_features_scaled = scaler.transform(latest_features)
 
             # Make prediction
-            model = model_info['model']
+            model = model_info["model"]
             prediction = model.predict(latest_features_scaled)[0]
 
             # Calculate prediction metrics
-            current_price = data['price'].iloc[-1]
+            current_price = data["price"].iloc[-1]
             predicted_change = (prediction - current_price) / current_price
 
             # Estimate confidence based on model performance
-            r2_score = model_info['performance']['r2']
+            r2_score = model_info["performance"]["r2"]
             confidence = max(0.1, min(0.95, r2_score))
 
             return {
-                'timestamp': datetime.now().isoformat(),
-                'horizon': horizon,
-                'current_price': current_price,
-                'predicted_price': prediction,
-                'predicted_change_percent': predicted_change * 100,
-                'confidence': confidence,
-                'model_name': model_info['model_name'],
-                'model_performance': model_info['performance']
+                "timestamp": datetime.now().isoformat(),
+                "horizon": horizon,
+                "current_price": current_price,
+                "predicted_price": prediction,
+                "predicted_change_percent": predicted_change * 100,
+                "confidence": confidence,
+                "model_name": model_info["model_name"],
+                "model_performance": model_info["performance"],
             }
 
         except Exception as e:
@@ -433,18 +451,16 @@ class MLPredictorAgent:
             if symbol not in self.predictions:
                 self.predictions[symbol] = []
 
-            prediction_entry = {
-                'timestamp': datetime.now().isoformat(),
-                'predictions': predictions
-            }
+            prediction_entry = {"timestamp": datetime.now().isoformat(), "predictions": predictions}
 
             self.predictions[symbol].append(prediction_entry)
 
             # Keep only last 48 hours of predictions
             cutoff_time = datetime.now() - timedelta(hours=48)
             self.predictions[symbol] = [
-                pred for pred in self.predictions[symbol]
-                if datetime.fromisoformat(pred['timestamp']) > cutoff_time
+                pred
+                for pred in self.predictions[symbol]
+                if datetime.fromisoformat(pred["timestamp"]) > cutoff_time
             ]
 
     def _save_model(self, model_key: str, model_info: Dict[str, Any]):
@@ -454,13 +470,13 @@ class MLPredictorAgent:
 
             # Save model data (exclude the actual model object for disk storage)
             save_data = {
-                'feature_columns': model_info['feature_columns'],
-                'model_name': model_info['model_name'],
-                'performance': model_info['performance'],
-                'trained_at': model_info['trained_at']
+                "feature_columns": model_info["feature_columns"],
+                "model_name": model_info["model_name"],
+                "performance": model_info["performance"],
+                "trained_at": model_info["trained_at"],
             }
 
-            with open(model_file, 'wb') as f:
+            with open(model_file, "wb") as f:
                 pickle.dump(save_data, f)
 
         except Exception as e:
@@ -471,10 +487,10 @@ class MLPredictorAgent:
         try:
             for model_file in self.models_path.glob("*.pkl"):
                 try:
-                    with open(model_file, 'rb') as f:
+                    with open(model_file, "rb") as f:
                         model_data = pickle.load(f)
 
-                    model_key = model_file.stem.replace('_', '/')
+                    model_key = model_file.stem.replace("_", "/")
                     self.model_performance[model_key] = model_data
 
                 except Exception as e:
@@ -489,7 +505,7 @@ class MLPredictorAgent:
             if symbol not in self.predictions or not self.predictions[symbol]:
                 return None
 
-            latest_predictions = self.predictions[symbol][-1]['predictions']
+            latest_predictions = self.predictions[symbol][-1]["predictions"]
 
             if horizon:
                 return latest_predictions.get(horizon)
@@ -501,11 +517,11 @@ class MLPredictorAgent:
         with self._lock:
             if not self.predictions:
                 return {
-                    'total_symbols': 0,
-                    'total_predictions': 0,
-                    'bullish_predictions': 0,
-                    'bearish_predictions': 0,
-                    'avg_confidence': 0
+                    "total_symbols": 0,
+                    "total_predictions": 0,
+                    "bullish_predictions": 0,
+                    "bearish_predictions": 0,
+                    "avg_confidence": 0,
                 }
 
             total_predictions = 0
@@ -515,48 +531,48 @@ class MLPredictorAgent:
 
             for symbol, prediction_list in self.predictions.items():
                 if prediction_list:
-                    latest = prediction_list[-1]['predictions']
+                    latest = prediction_list[-1]["predictions"]
 
                     for horizon, pred in latest.items():
                         total_predictions += 1
-                        if pred['predicted_change_percent'] > 0:
+                        if pred["predicted_change_percent"] > 0:
                             bullish_count += 1
                         else:
                             bearish_count += 1
-                        confidence_sum += pred['confidence']
+                        confidence_sum += pred["confidence"]
 
             avg_confidence = confidence_sum / total_predictions if total_predictions > 0 else 0
 
             return {
-                'total_symbols': len(self.predictions),
-                'total_predictions': total_predictions,
-                'bullish_predictions': bullish_count,
-                'bearish_predictions': bearish_count,
-                'avg_confidence': avg_confidence,
-                'prediction_timestamp': datetime.now().isoformat()
+                "total_symbols": len(self.predictions),
+                "total_predictions": total_predictions,
+                "bullish_predictions": bullish_count,
+                "bearish_predictions": bearish_count,
+                "avg_confidence": avg_confidence,
+                "prediction_timestamp": datetime.now().isoformat(),
             }
 
     def get_model_performance(self) -> Dict[str, Any]:
         """Get model performance metrics"""
         with self._lock:
             return {
-                'active_models': len(self.models),
-                'model_performance': self.model_performance.copy(),
-                'available_libraries': {
-                    'sklearn': SKLEARN_AVAILABLE,
-                    'xgboost': XGBOOST_AVAILABLE,
-                    'lightgbm': LIGHTGBM_AVAILABLE
-                }
+                "active_models": len(self.models),
+                "model_performance": self.model_performance.copy(),
+                "available_libraries": {
+                    "sklearn": SKLEARN_AVAILABLE,
+                    "xgboost": XGBOOST_AVAILABLE,
+                    "lightgbm": LIGHTGBM_AVAILABLE,
+                },
             }
 
     def get_agent_status(self) -> Dict[str, Any]:
         """Get agent status information"""
         return {
-            'active': self.active,
-            'last_update': self.last_update.isoformat() if self.last_update else None,
-            'processed_count': self.processed_count,
-            'error_count': self.error_count,
-            'trained_models': len(self.models),
-            'predicted_symbols': len(self.predictions),
-            'horizons': self.horizons
+            "active": self.active,
+            "last_update": self.last_update.isoformat() if self.last_update else None,
+            "processed_count": self.processed_count,
+            "error_count": self.error_count,
+            "trained_models": len(self.models),
+            "predicted_symbols": len(self.predictions),
+            "horizons": self.horizons,
         }

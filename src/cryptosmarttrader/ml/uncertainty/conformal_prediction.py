@@ -13,6 +13,7 @@ import torch.nn as nn
 
 from ..core.structured_logger import get_logger
 
+
 class ConformalPredictor:
     """Conformal prediction for uncertainty quantification with coverage guarantees"""
 
@@ -34,8 +35,9 @@ class ConformalPredictor:
         self.quantile_threshold = None
         self.is_calibrated = False
 
-    def calibrate(self, X_cal: np.ndarray, y_cal: np.ndarray,
-                  base_model, base_predictions: np.ndarray = None) -> None:
+    def calibrate(
+        self, X_cal: np.ndarray, y_cal: np.ndarray, base_model, base_predictions: np.ndarray = None
+    ) -> None:
         """Calibrate conformal predictor using calibration set"""
 
         self.logger.info(f"Calibrating conformal predictor with {len(X_cal)} samples")
@@ -43,7 +45,7 @@ class ConformalPredictor:
         try:
             # Get predictions on calibration set if not provided
             if base_predictions is None:
-                if hasattr(base_model, 'predict'):
+                if hasattr(base_model, "predict"):
                     base_predictions = base_model.predict(X_cal)
                 else:
                     # For PyTorch models
@@ -76,8 +78,9 @@ class ConformalPredictor:
             self.logger.error(f"Conformal calibration failed: {e}")
             raise
 
-    def predict_with_intervals(self, X_test: np.ndarray, base_model,
-                              base_predictions: np.ndarray = None) -> Dict[str, np.ndarray]:
+    def predict_with_intervals(
+        self, X_test: np.ndarray, base_model, base_predictions: np.ndarray = None
+    ) -> Dict[str, np.ndarray]:
         """Generate predictions with conformal prediction intervals"""
 
         if not self.is_calibrated:
@@ -86,7 +89,7 @@ class ConformalPredictor:
         try:
             # Get base predictions if not provided
             if base_predictions is None:
-                if hasattr(base_model, 'predict'):
+                if hasattr(base_model, "predict"):
                     base_predictions = base_model.predict(X_test)
                 else:
                     # For PyTorch models
@@ -109,12 +112,12 @@ class ConformalPredictor:
             self.logger.info(f"Mean interval width: {np.mean(interval_widths):.4f}")
 
             return {
-                'predictions': base_predictions,
-                'lower_bounds': lower_bounds,
-                'upper_bounds': upper_bounds,
-                'interval_widths': interval_widths,
-                'efficiency_scores': efficiency_scores,
-                'coverage_level': self.coverage_level
+                "predictions": base_predictions,
+                "lower_bounds": lower_bounds,
+                "upper_bounds": upper_bounds,
+                "interval_widths": interval_widths,
+                "efficiency_scores": efficiency_scores,
+                "coverage_level": self.coverage_level,
             }
 
         except Exception as e:
@@ -135,15 +138,16 @@ class ConformalPredictor:
 
         return coverage
 
-    def adaptive_calibration(self, X_cal: np.ndarray, y_cal: np.ndarray,
-                           base_model, difficulty_scores: np.ndarray = None) -> None:
+    def adaptive_calibration(
+        self, X_cal: np.ndarray, y_cal: np.ndarray, base_model, difficulty_scores: np.ndarray = None
+    ) -> None:
         """Adaptive conformal prediction that adjusts intervals based on difficulty"""
 
         self.logger.info("Performing adaptive conformal calibration")
 
         try:
             # Get base predictions
-            if hasattr(base_model, 'predict'):
+            if hasattr(base_model, "predict"):
                 base_predictions = base_model.predict(X_cal)
             else:
                 base_model.eval()
@@ -160,7 +164,7 @@ class ConformalPredictor:
                 difficulty_scores = difficulty_scores / (np.std(difficulty_scores) + 1e-8)
 
             # Normalize difficulty scores
-            difficulty_scores = (difficulty_scores - np.min(difficulty_scores))
+            difficulty_scores = difficulty_scores - np.min(difficulty_scores)
             difficulty_scores = difficulty_scores / (np.max(difficulty_scores) + 1e-8)
 
             # Weight nonconformity scores by difficulty
@@ -177,8 +181,8 @@ class ConformalPredictor:
             # Store difficulty adjustment for future predictions
             self.difficulty_adjustment = True
             self.difficulty_calibration_data = {
-                'mean_difficulty': np.mean(difficulty_scores),
-                'std_difficulty': np.std(difficulty_scores)
+                "mean_difficulty": np.mean(difficulty_scores),
+                "std_difficulty": np.std(difficulty_scores),
             }
 
             self.logger.info(f"Adaptive conformal calibration complete")
@@ -187,6 +191,7 @@ class ConformalPredictor:
         except Exception as e:
             self.logger.error(f"Adaptive conformal calibration failed: {e}")
             raise
+
 
 class MonteCarloDropoutUncertainty:
     """Monte Carlo Dropout for epistemic uncertainty estimation"""
@@ -239,17 +244,18 @@ class MonteCarloDropoutUncertainty:
             self.logger.info(f"Mean epistemic uncertainty: {np.mean(epistemic_uncertainty):.4f}")
 
             return {
-                'predictions': mean_predictions,
-                'epistemic_uncertainty': epistemic_uncertainty,
-                'confidence_scores': confidence_scores,
-                'lower_bounds': lower_bounds,
-                'upper_bounds': upper_bounds,
-                'all_samples': predictions
+                "predictions": mean_predictions,
+                "epistemic_uncertainty": epistemic_uncertainty,
+                "confidence_scores": confidence_scores,
+                "lower_bounds": lower_bounds,
+                "upper_bounds": upper_bounds,
+                "all_samples": predictions,
             }
 
         except Exception as e:
             self.logger.error(f"MC Dropout prediction failed: {e}")
             raise
+
 
 class EnsembleUncertainty:
     """Uncertainty quantification using model ensemble"""
@@ -267,7 +273,7 @@ class EnsembleUncertainty:
             predictions = []
 
             for model in self.models:
-                if hasattr(model, 'predict'):
+                if hasattr(model, "predict"):
                     pred = model.predict(X)
                 else:
                     # PyTorch model
@@ -297,20 +303,22 @@ class EnsembleUncertainty:
             self.logger.info(f"Mean model disagreement: {np.mean(model_disagreement):.4f}")
 
             return {
-                'predictions': mean_predictions,
-                'model_disagreement': model_disagreement,
-                'confidence_scores': confidence_scores,
-                'lower_bounds': lower_bounds,
-                'upper_bounds': upper_bounds,
-                'individual_predictions': predictions
+                "predictions": mean_predictions,
+                "model_disagreement": model_disagreement,
+                "confidence_scores": confidence_scores,
+                "lower_bounds": lower_bounds,
+                "upper_bounds": upper_bounds,
+                "individual_predictions": predictions,
             }
 
         except Exception as e:
             self.logger.error(f"Ensemble prediction failed: {e}")
             raise
 
-def create_calibrated_confidence_gate(conformal_predictor: ConformalPredictor,
-                                     confidence_threshold: float = 0.8) -> callable:
+
+def create_calibrated_confidence_gate(
+    conformal_predictor: ConformalPredictor, confidence_threshold: float = 0.8
+) -> callable:
     """Create a calibrated confidence gate using conformal prediction"""
 
     def calibrated_gate(predictions: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -320,23 +328,25 @@ def create_calibrated_confidence_gate(conformal_predictor: ConformalPredictor,
 
         for pred in predictions:
             # Use conformal prediction intervals to assess confidence
-            interval_width = pred.get('interval_width', 0.1)
-            efficiency_score = pred.get('efficiency_score', 0.5)
+            interval_width = pred.get("interval_width", 0.1)
+            efficiency_score = pred.get("efficiency_score", 0.5)
 
             # Calibrated confidence combines efficiency and original confidence
-            original_confidence = pred.get('confidence', 0.5)
+            original_confidence = pred.get("confidence", 0.5)
             calibrated_confidence = 0.6 * original_confidence + 0.4 * efficiency_score
 
             if calibrated_confidence >= confidence_threshold:
-                pred['calibrated_confidence'] = calibrated_confidence
+                pred["calibrated_confidence"] = calibrated_confidence
                 filtered_predictions.append(pred)
 
         return {
-            'filtered_predictions': filtered_predictions,
-            'original_count': len(predictions),
-            'filtered_count': len(filtered_predictions),
-            'gate_passed': len(filtered_predictions) > 0,
-            'calibrated_pass_rate': len(filtered_predictions) / len(predictions) if predictions else 0
+            "filtered_predictions": filtered_predictions,
+            "original_count": len(predictions),
+            "filtered_count": len(filtered_predictions),
+            "gate_passed": len(filtered_predictions) > 0,
+            "calibrated_pass_rate": len(filtered_predictions) / len(predictions)
+            if predictions
+            else 0,
         }
 
     return calibrated_gate

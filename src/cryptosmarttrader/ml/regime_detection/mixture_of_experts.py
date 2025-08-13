@@ -15,12 +15,14 @@ from hmmlearn import hmm
 
 from ..core.structured_logger import get_logger
 
+
 class MarketRegime(Enum):
     BULL = "bull"
     BEAR = "bear"
     SIDEWAYS = "sideways"
     VOLATILE = "volatile"
     RECOVERY = "recovery"
+
 
 class RegimeDetector:
     """Market regime detection using multiple methods"""
@@ -30,10 +32,10 @@ class RegimeDetector:
         self.lookback_window = lookback_window
         self.hmm_model = None
         self.regime_thresholds = {
-            'bull_volatility': 0.02,      # Low volatility for bull markets
-            'bear_volatility': 0.05,      # High volatility for bear markets
-            'sideways_trend': 0.001,      # Low trend for sideways
-            'volatile_threshold': 0.04    # High volatility threshold
+            "bull_volatility": 0.02,  # Low volatility for bull markets
+            "bear_volatility": 0.05,  # High volatility for bear markets
+            "sideways_trend": 0.001,  # Low trend for sideways
+            "volatile_threshold": 0.04,  # High volatility threshold
         }
 
     def detect_regime_hmm(self, price_data: pd.DataFrame) -> np.ndarray:
@@ -47,7 +49,9 @@ class RegimeDetector:
 
             # Fit HMM model if not already fitted
             if self.hmm_model is None:
-                self.hmm_model = hmm.GaussianHMM(n_components=4, covariance_type="full", random_state=42)
+                self.hmm_model = hmm.GaussianHMM(
+                    n_components=4, covariance_type="full", random_state=42
+                )
                 self.hmm_model.fit(features)
 
             # Predict regimes
@@ -72,7 +76,7 @@ class RegimeDetector:
             self.logger.info("Detecting market regime using rules")
 
             # Calculate market indicators
-            returns = price_data['close'].pct_change().fillna(0)
+            returns = price_data["close"].pct_change().fillna(0)
             volatility = returns.rolling(self.lookback_window).std()
             trend = returns.rolling(self.lookback_window).mean()
 
@@ -83,10 +87,10 @@ class RegimeDetector:
                 tr = trend.iloc[i] if i < len(trend) else 0.0
 
                 # Rule-based regime classification
-                if vol > self.regime_thresholds['volatile_threshold']:
+                if vol > self.regime_thresholds["volatile_threshold"]:
                     regime = MarketRegime.VOLATILE
                 elif tr > 0.002:  # Strong positive trend
-                    if vol < self.regime_thresholds['bull_volatility']:
+                    if vol < self.regime_thresholds["bull_volatility"]:
                         regime = MarketRegime.BULL
                     else:
                         regime = MarketRegime.RECOVERY
@@ -108,32 +112,36 @@ class RegimeDetector:
         """Calculate features for regime detection"""
 
         # Price-based features
-        returns = price_data['close'].pct_change().fillna(0)
-        log_returns = np.log(price_data['close'] / price_data['close'].shift(1)).fillna(0)
+        returns = price_data["close"].pct_change().fillna(0)
+        log_returns = np.log(price_data["close"] / price_data["close"].shift(1)).fillna(0)
 
         # Volatility features
         volatility = returns.rolling(20).std().fillna(0.02)
 
         # Trend features
-        short_ma = price_data['close'].rolling(10).mean()
-        long_ma = price_data['close'].rolling(30).mean()
+        short_ma = price_data["close"].rolling(10).mean()
+        long_ma = price_data["close"].rolling(30).mean()
         trend_strength = ((short_ma - long_ma) / long_ma).fillna(0)
 
         # Volume features
-        volume_ma = price_data['volume'].rolling(20).mean()
-        volume_ratio = (price_data['volume'] / volume_ma).fillna(1.0)
+        volume_ma = price_data["volume"].rolling(20).mean()
+        volume_ratio = (price_data["volume"] / volume_ma).fillna(1.0)
 
         # Combine features
-        features = np.column_stack([
-            returns.values,
-            volatility.values,
-            trend_strength.values,
-            np.log(volume_ratio.values + 1e-8)
-        ])
+        features = np.column_stack(
+            [
+                returns.values,
+                volatility.values,
+                trend_strength.values,
+                np.log(volume_ratio.values + 1e-8),
+            ]
+        )
 
         return features
 
-    def _map_hmm_states_to_regimes(self, features: np.ndarray, states: np.ndarray) -> Dict[int, MarketRegime]:
+    def _map_hmm_states_to_regimes(
+        self, features: np.ndarray, states: np.ndarray
+    ) -> Dict[int, MarketRegime]:
         """Map HMM states to interpretable market regimes"""
 
         mapping = {}
@@ -161,10 +169,13 @@ class RegimeDetector:
 
         return mapping
 
+
 class ExpertModel(nn.Module):
     """Individual expert model for specific market regime"""
 
-    def __init__(self, input_size: int, hidden_size: int = 64, regime: MarketRegime = MarketRegime.BULL):
+    def __init__(
+        self, input_size: int, hidden_size: int = 64, regime: MarketRegime = MarketRegime.BULL
+    ):
         super(ExpertModel, self).__init__()
         self.regime = regime
         self.input_size = input_size
@@ -178,7 +189,7 @@ class ExpertModel(nn.Module):
                 nn.Dropout(0.1),
                 nn.Linear(hidden_size, hidden_size // 2),
                 nn.ReLU(),
-                nn.Linear(hidden_size // 2, 1)
+                nn.Linear(hidden_size // 2, 1),
             )
         elif regime == MarketRegime.BEAR:
             # Bear market expert: focus on risk and downside protection
@@ -188,7 +199,7 @@ class ExpertModel(nn.Module):
                 nn.Dropout(0.2),
                 nn.Linear(hidden_size, hidden_size // 2),
                 nn.LeakyReLU(0.1),
-                nn.Linear(hidden_size // 2, 1)
+                nn.Linear(hidden_size // 2, 1),
             )
         elif regime == MarketRegime.SIDEWAYS:
             # Sideways expert: focus on mean reversion
@@ -198,7 +209,7 @@ class ExpertModel(nn.Module):
                 nn.Dropout(0.1),
                 nn.Linear(hidden_size, hidden_size // 2),
                 nn.Tanh(),
-                nn.Linear(hidden_size // 2, 1)
+                nn.Linear(hidden_size // 2, 1),
             )
         else:  # VOLATILE or RECOVERY
             # Volatile market expert: robust to noise
@@ -209,11 +220,12 @@ class ExpertModel(nn.Module):
                 nn.Linear(hidden_size, hidden_size),
                 nn.ReLU(),
                 nn.Dropout(0.2),
-                nn.Linear(hidden_size, 1)
+                nn.Linear(hidden_size, 1),
             )
 
     def forward(self, x):
         return self.layers(x)
+
 
 class GatingNetwork(nn.Module):
     """Gating network to weight expert predictions"""
@@ -229,16 +241,17 @@ class GatingNetwork(nn.Module):
             nn.Linear(32, 16),
             nn.ReLU(),
             nn.Linear(16, n_experts),
-            nn.Softmax(dim=1)
+            nn.Softmax(dim=1),
         )
 
     def forward(self, x):
         return self.gating_layers(x)
 
+
 class MixtureOfExpertsRegimeRouter:
     """Complete Mixture of Experts system with regime-aware routing"""
 
-    def __init__(self, input_size: int, device: str = 'cpu'):
+    def __init__(self, input_size: int, device: str = "cpu"):
         self.logger = get_logger("MoE_RegimeRouter")
         self.device = device
         self.input_size = input_size
@@ -252,7 +265,7 @@ class MixtureOfExpertsRegimeRouter:
             MarketRegime.BEAR: ExpertModel(input_size, regime=MarketRegime.BEAR).to(device),
             MarketRegime.SIDEWAYS: ExpertModel(input_size, regime=MarketRegime.SIDEWAYS).to(device),
             MarketRegime.VOLATILE: ExpertModel(input_size, regime=MarketRegime.VOLATILE).to(device),
-            MarketRegime.RECOVERY: ExpertModel(input_size, regime=MarketRegime.RECOVERY).to(device)
+            MarketRegime.RECOVERY: ExpertModel(input_size, regime=MarketRegime.RECOVERY).to(device),
         }
 
         # Initialize gating network
@@ -260,8 +273,9 @@ class MixtureOfExpertsRegimeRouter:
 
         self.is_trained = False
 
-    def train_experts(self, X_train: np.ndarray, y_train: np.ndarray,
-                     price_data: pd.DataFrame, epochs: int = 100) -> Dict[str, Any]:
+    def train_experts(
+        self, X_train: np.ndarray, y_train: np.ndarray, price_data: pd.DataFrame, epochs: int = 100
+    ) -> Dict[str, Any]:
         """Train all expert models and gating network"""
 
         self.logger.info("Training mixture of experts system")
@@ -286,19 +300,16 @@ class MixtureOfExpertsRegimeRouter:
                 # Train expert
                 expert_loss = self._train_expert(expert_model, X_regime, y_regime, epochs)
                 training_results[regime.value] = {
-                    'samples': len(X_regime),
-                    'final_loss': expert_loss,
-                    'trained': True
+                    "samples": len(X_regime),
+                    "final_loss": expert_loss,
+                    "trained": True,
                 }
 
                 self.logger.info(f"Trained {regime.value} expert on {len(X_regime)} samples")
 
             # Train gating network
             gating_loss = self._train_gating_network(X_train, regimes, epochs)
-            training_results['gating_network'] = {
-                'final_loss': gating_loss,
-                'trained': True
-            }
+            training_results["gating_network"] = {"final_loss": gating_loss, "trained": True}
 
             self.is_trained = True
 
@@ -309,7 +320,9 @@ class MixtureOfExpertsRegimeRouter:
             self.logger.error(f"MoE training failed: {e}")
             return {}
 
-    def _train_expert(self, expert_model: ExpertModel, X: np.ndarray, y: np.ndarray, epochs: int) -> float:
+    def _train_expert(
+        self, expert_model: ExpertModel, X: np.ndarray, y: np.ndarray, epochs: int
+    ) -> float:
         """Train individual expert model"""
 
         expert_model.train()
@@ -351,7 +364,9 @@ class MixtureOfExpertsRegimeRouter:
 
         return loss.item()
 
-    def predict_with_routing(self, X: np.ndarray, price_data: pd.DataFrame = None) -> Dict[str, Any]:
+    def predict_with_routing(
+        self, X: np.ndarray, price_data: pd.DataFrame = None
+    ) -> Dict[str, Any]:
         """Generate predictions using mixture of experts with regime routing"""
 
         if not self.is_trained:
@@ -407,12 +422,12 @@ class MixtureOfExpertsRegimeRouter:
             self.logger.info(f"Mean expert agreement: {np.mean(expert_agreement):.3f}")
 
             return {
-                'predictions': final_predictions,
-                'confidence_scores': final_confidence,
-                'detected_regime': current_regime.value,
-                'expert_predictions': expert_predictions,
-                'gating_weights': gating_weights_np,
-                'expert_agreement': expert_agreement
+                "predictions": final_predictions,
+                "confidence_scores": final_confidence,
+                "detected_regime": current_regime.value,
+                "expert_predictions": expert_predictions,
+                "gating_weights": gating_weights_np,
+                "expert_agreement": expert_agreement,
             }
 
         except Exception as e:

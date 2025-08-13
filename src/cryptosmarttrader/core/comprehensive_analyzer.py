@@ -16,6 +16,7 @@ import time
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+
 class ComprehensiveAnalyzer:
     """Comprehensive analyzer integrating all analysis components"""
 
@@ -34,11 +35,11 @@ class ComprehensiveAnalyzer:
 
         # Analysis intervals (seconds)
         self.intervals = {
-            'market_scan': 300,      # 5 minutes
-            'sentiment_analysis': 600,  # 10 minutes
-            'whale_detection': 900,   # 15 minutes
-            'ml_prediction': 1800,    # 30 minutes
-            'openai_batch': 3600      # 1 hour for OpenAI analysis
+            "market_scan": 300,  # 5 minutes
+            "sentiment_analysis": 600,  # 10 minutes
+            "whale_detection": 900,  # 15 minutes
+            "ml_prediction": 1800,  # 30 minutes
+            "openai_batch": 3600,  # 1 hour for OpenAI analysis
         }
 
         # Batch processing for OpenAI
@@ -91,15 +92,15 @@ class ComprehensiveAnalyzer:
     def _run_analysis_type(self, analysis_type: str):
         """Run specific type of analysis"""
         try:
-            if analysis_type == 'market_scan':
+            if analysis_type == "market_scan":
                 self._run_market_scan()
-            elif analysis_type == 'sentiment_analysis':
+            elif analysis_type == "sentiment_analysis":
                 self._run_sentiment_analysis()
-            elif analysis_type == 'whale_detection':
+            elif analysis_type == "whale_detection":
                 self._run_whale_detection()
-            elif analysis_type == 'ml_prediction':
+            elif analysis_type == "ml_prediction":
                 self._run_ml_prediction()
-            elif analysis_type == 'openai_batch':
+            elif analysis_type == "openai_batch":
                 self._run_openai_batch_analysis()
 
         except Exception as e:
@@ -111,7 +112,8 @@ class ComprehensiveAnalyzer:
             # Get discovered coins
             discovered_data = self.market_scanner.get_all_discovered_coins()
             active_coins = [
-                symbol for symbol, metadata in discovered_data["metadata"].items()
+                symbol
+                for symbol, metadata in discovered_data["metadata"].items()
                 if metadata.get("active", False)
             ]
 
@@ -123,13 +125,13 @@ class ComprehensiveAnalyzer:
             # Store scan results
             if self.cache_manager:
                 self.cache_manager.set(
-                    'market_scan_results',
+                    "market_scan_results",
                     {
-                        'timestamp': datetime.now().isoformat(),
-                        'coins_analyzed': len(priority_coins),
-                        'total_active': len(active_coins)
+                        "timestamp": datetime.now().isoformat(),
+                        "coins_analyzed": len(priority_coins),
+                        "total_active": len(active_coins),
                     },
-                    ttl_minutes=60
+                    ttl_minutes=60,
                 )
 
         except Exception as e:
@@ -151,13 +153,13 @@ class ComprehensiveAnalyzer:
             # Store results
             if self.cache_manager:
                 self.cache_manager.set(
-                    'sentiment_analysis_results',
+                    "sentiment_analysis_results",
                     {
-                        'timestamp': datetime.now().isoformat(),
-                        'results': sentiment_results,
-                        'coins_analyzed': len(sentiment_results)
+                        "timestamp": datetime.now().isoformat(),
+                        "results": sentiment_results,
+                        "coins_analyzed": len(sentiment_results),
                     },
-                    ttl_minutes=120
+                    ttl_minutes=120,
                 )
 
             self.logger.info(f"Sentiment analysis completed for {len(sentiment_results)} coins")
@@ -180,13 +182,13 @@ class ComprehensiveAnalyzer:
             # Store results
             if self.cache_manager:
                 self.cache_manager.set(
-                    'whale_detection_results',
+                    "whale_detection_results",
                     {
-                        'timestamp': datetime.now().isoformat(),
-                        'results': whale_results,
-                        'coins_analyzed': len(whale_results)
+                        "timestamp": datetime.now().isoformat(),
+                        "results": whale_results,
+                        "coins_analyzed": len(whale_results),
                     },
-                    ttl_minutes=180
+                    ttl_minutes=180,
                 )
 
             self.logger.info(f"Whale detection completed for {len(whale_results)} coins")
@@ -209,13 +211,13 @@ class ComprehensiveAnalyzer:
             # Store results
             if self.cache_manager:
                 self.cache_manager.set(
-                    'ml_prediction_results',
+                    "ml_prediction_results",
                     {
-                        'timestamp': datetime.now().isoformat(),
-                        'results': ml_results,
-                        'coins_analyzed': len(ml_results)
+                        "timestamp": datetime.now().isoformat(),
+                        "results": ml_results,
+                        "coins_analyzed": len(ml_results),
                     },
-                    ttl_minutes=240
+                    ttl_minutes=240,
                 )
 
             self.logger.info(f"ML predictions completed for {len(ml_results)} coins")
@@ -236,7 +238,7 @@ class ComprehensiveAnalyzer:
             # Process in batches
             batch_results = []
             for i in range(0, len(complete_analyses), self.batch_size):
-                batch = complete_analyses[i:i + self.batch_size]
+                batch = complete_analyses[i : i + self.batch_size]
                 batch_result = self._process_openai_batch(batch)
                 if batch_result:
                     batch_results.extend(batch_result)
@@ -244,13 +246,13 @@ class ComprehensiveAnalyzer:
             # Store comprehensive results
             if self.cache_manager and batch_results:
                 self.cache_manager.set(
-                    'openai_comprehensive_analysis',
+                    "openai_comprehensive_analysis",
                     {
-                        'timestamp': datetime.now().isoformat(),
-                        'results': batch_results,
-                        'coins_analyzed': len(batch_results)
+                        "timestamp": datetime.now().isoformat(),
+                        "results": batch_results,
+                        "coins_analyzed": len(batch_results),
                     },
-                    ttl_minutes=480  # 8 hours
+                    ttl_minutes=480,  # 8 hours
                 )
 
             self.logger.info(f"OpenAI batch analysis completed for {len(batch_results)} coins")
@@ -265,7 +267,7 @@ class ComprehensiveAnalyzer:
 
             # Get trading opportunities
             opportunities = self.market_scanner.get_trading_opportunities(min_score=2)
-            opportunity_symbols = {opp['symbol'] for opp in opportunities}
+            opportunity_symbols = {opp["symbol"] for opp in opportunities}
 
             # Prioritize coins with opportunities
             for symbol in active_coins:
@@ -279,7 +281,7 @@ class ComprehensiveAnalyzer:
                     cache_key = f"analysis_{symbol}_1h"
                     if self.cache_manager:
                         analysis = self.cache_manager.get(cache_key)
-                        if analysis and analysis.get('volume_ratio', 0) > 1.5:
+                        if analysis and analysis.get("volume_ratio", 0) > 1.5:
                             priority_coins.append(symbol)
 
             # Limit to reasonable number
@@ -299,8 +301,8 @@ class ComprehensiveAnalyzer:
 
             # Search for recent technical analyses
             for cache_key in self.cache_manager._cache.keys():
-                if cache_key.startswith('analysis_') and '_1h' in cache_key:
-                    symbol = cache_key.split('_')[1]
+                if cache_key.startswith("analysis_") and "_1h" in cache_key:
+                    symbol = cache_key.split("_")[1]
                     analyzed_coins.append(symbol)
 
             return analyzed_coins
@@ -316,12 +318,12 @@ class ComprehensiveAnalyzer:
             # In real implementation, this would scrape social media, news, etc.
 
             sentiment_data = {
-                'sentiment_score': 0.6 + (hash(symbol) % 40) / 100,  # 0.6-1.0
-                'sentiment_trend': (hash(symbol + 'trend') % 20 - 10) / 100,  # -0.1 to 0.1
-                'mention_growth': 1.0 + (hash(symbol + 'mentions') % 30) / 10,  # 1.0-4.0
-                'news_sentiment': 0.5 + (hash(symbol + 'news') % 50) / 100,  # 0.5-1.0
-                'social_volume': hash(symbol + 'volume') % 1000,
-                'analysis_timestamp': datetime.now().isoformat()
+                "sentiment_score": 0.6 + (hash(symbol) % 40) / 100,  # 0.6-1.0
+                "sentiment_trend": (hash(symbol + "trend") % 20 - 10) / 100,  # -0.1 to 0.1
+                "mention_growth": 1.0 + (hash(symbol + "mentions") % 30) / 10,  # 1.0-4.0
+                "news_sentiment": 0.5 + (hash(symbol + "news") % 50) / 100,  # 0.5-1.0
+                "social_volume": hash(symbol + "volume") % 1000,
+                "analysis_timestamp": datetime.now().isoformat(),
             }
 
             return sentiment_data
@@ -337,7 +339,7 @@ class ComprehensiveAnalyzer:
             priority_coins = []
 
             opportunities = self.market_scanner.get_trading_opportunities(min_score=3)
-            priority_coins = [opp['symbol'] for opp in opportunities]
+            priority_coins = [opp["symbol"] for opp in opportunities]
 
             return priority_coins[:50]
 
@@ -350,12 +352,12 @@ class ComprehensiveAnalyzer:
         try:
             # REMOVED: Mock data pattern not allowed in production
             whale_data = {
-                'large_transactions_24h': hash(symbol + 'tx') % 20,
-                'net_whale_flow': (hash(symbol + 'flow') % 100 - 50) / 100,  # -0.5 to 0.5
-                'whale_address_growth': (hash(symbol + 'growth') % 20) / 100,  # 0-0.2
-                'average_transaction_size': 100000 + (hash(symbol + 'size') % 900000),
-                'whale_concentration': 0.3 + (hash(symbol + 'conc') % 40) / 100,  # 0.3-0.7
-                'analysis_timestamp': datetime.now().isoformat()
+                "large_transactions_24h": hash(symbol + "tx") % 20,
+                "net_whale_flow": (hash(symbol + "flow") % 100 - 50) / 100,  # -0.5 to 0.5
+                "whale_address_growth": (hash(symbol + "growth") % 20) / 100,  # 0-0.2
+                "average_transaction_size": 100000 + (hash(symbol + "size") % 900000),
+                "whale_concentration": 0.3 + (hash(symbol + "conc") % 40) / 100,  # 0.3-0.7
+                "analysis_timestamp": datetime.now().isoformat(),
             }
 
             return whale_data
@@ -377,13 +379,13 @@ class ComprehensiveAnalyzer:
             sentiment_coins = set()
 
             for cache_key in self.cache_manager._cache.keys():
-                if cache_key.startswith('analysis_'):
-                    symbol = cache_key.split('_')[1]
+                if cache_key.startswith("analysis_"):
+                    symbol = cache_key.split("_")[1]
                     technical_coins.add(symbol)
 
-            sentiment_results = self.cache_manager.get('sentiment_analysis_results')
-            if sentiment_results and 'results' in sentiment_results:
-                sentiment_coins = set(sentiment_results['results'].keys())
+            sentiment_results = self.cache_manager.get("sentiment_analysis_results")
+            if sentiment_results and "results" in sentiment_results:
+                sentiment_coins = set(sentiment_results["results"].keys())
 
             # Get intersection
             comprehensive_coins = list(technical_coins.intersection(sentiment_coins))
@@ -400,23 +402,23 @@ class ComprehensiveAnalyzer:
             # REMOVED: Mock data pattern not allowed in production
             # In real implementation, this would use trained models
 
-            base_score = (hash(symbol + 'ml') % 100) / 100  # 0-1
+            base_score = (hash(symbol + "ml") % 100) / 100  # 0-1
 
             ml_prediction = {
-                'price_prediction': {
-                    'return_7d': base_score * 0.5 - 0.25,  # -25% to +25%
-                    'return_30d': base_score * 1.5 - 0.75,  # -75% to +75%
-                    'confidence': 0.6 + (hash(symbol + 'conf') % 30) / 100  # 0.6-0.9
+                "price_prediction": {
+                    "return_7d": base_score * 0.5 - 0.25,  # -25% to +25%
+                    "return_30d": base_score * 1.5 - 0.75,  # -75% to +75%
+                    "confidence": 0.6 + (hash(symbol + "conf") % 30) / 100,  # 0.6-0.9
                 },
-                'ensemble_agreement': 0.5 + (hash(symbol + 'ensemble') % 40) / 100,  # 0.5-0.9
-                'historical_accuracy': 0.6 + (hash(symbol + 'accuracy') % 35) / 100,  # 0.6-0.95
-                'volatility_prediction': 20 + (hash(symbol + 'vol') % 60),  # 20-80%
-                'trend_probability': {
-                    'bullish': base_score,
-                    'bearish': 1 - base_score,
-                    'sideways': 0.5 - abs(base_score - 0.5)
+                "ensemble_agreement": 0.5 + (hash(symbol + "ensemble") % 40) / 100,  # 0.5-0.9
+                "historical_accuracy": 0.6 + (hash(symbol + "accuracy") % 35) / 100,  # 0.6-0.95
+                "volatility_prediction": 20 + (hash(symbol + "vol") % 60),  # 20-80%
+                "trend_probability": {
+                    "bullish": base_score,
+                    "bearish": 1 - base_score,
+                    "sideways": 0.5 - abs(base_score - 0.5),
                 },
-                'analysis_timestamp': datetime.now().isoformat()
+                "analysis_timestamp": datetime.now().isoformat(),
             }
 
             return ml_prediction
@@ -439,24 +441,24 @@ class ComprehensiveAnalyzer:
 
             # Technical analysis
             for cache_key in self.cache_manager._cache.keys():
-                if cache_key.startswith('analysis_'):
-                    symbol = cache_key.split('_')[1]
+                if cache_key.startswith("analysis_"):
+                    symbol = cache_key.split("_")[1]
                     technical_coins.add(symbol)
 
             # Sentiment analysis
-            sentiment_results = self.cache_manager.get('sentiment_analysis_results')
-            if sentiment_results and 'results' in sentiment_results:
-                sentiment_coins = set(sentiment_results['results'].keys())
+            sentiment_results = self.cache_manager.get("sentiment_analysis_results")
+            if sentiment_results and "results" in sentiment_results:
+                sentiment_coins = set(sentiment_results["results"].keys())
 
             # Whale detection
-            whale_results = self.cache_manager.get('whale_detection_results')
-            if whale_results and 'results' in whale_results:
-                whale_coins = set(whale_results['results'].keys())
+            whale_results = self.cache_manager.get("whale_detection_results")
+            if whale_results and "results" in whale_results:
+                whale_coins = set(whale_results["results"].keys())
 
             # ML predictions
-            ml_results = self.cache_manager.get('ml_prediction_results')
-            if ml_results and 'results' in ml_results:
-                ml_coins = set(ml_results['results'].keys())
+            ml_results = self.cache_manager.get("ml_prediction_results")
+            if ml_results and "results" in ml_results:
+                ml_coins = set(ml_results["results"].keys())
 
             # Find intersection of all analyses
             complete_coins = technical_coins.intersection(sentiment_coins, whale_coins, ml_coins)
@@ -484,11 +486,13 @@ class ComprehensiveAnalyzer:
                     openai_analysis = self._request_openai_analysis(symbol, comprehensive_data)
 
                     if openai_analysis:
-                        batch_results.append({
-                            'symbol': symbol,
-                            'openai_analysis': openai_analysis,
-                            'timestamp': datetime.now().isoformat()
-                        })
+                        batch_results.append(
+                            {
+                                "symbol": symbol,
+                                "openai_analysis": openai_analysis,
+                                "timestamp": datetime.now().isoformat(),
+                            }
+                        )
 
             return batch_results
 
@@ -499,32 +503,32 @@ class ComprehensiveAnalyzer:
     def _gather_comprehensive_data(self, symbol: str) -> Optional[Dict[str, Any]]:
         """Gather all available analysis data for a coin"""
         try:
-            comprehensive_data = {'symbol': symbol}
+            comprehensive_data = {"symbol": symbol}
 
             if not self.cache_manager:
                 return None
 
             # Technical analysis
-            for timeframe in ['1h', '4h', '1d']:
+            for timeframe in ["1h", "4h", "1d"]:
                 cache_key = f"analysis_{symbol}_{timeframe}"
                 technical_data = self.cache_manager.get(cache_key)
                 if technical_data:
-                    comprehensive_data[f'technical_{timeframe}'] = technical_data
+                    comprehensive_data[f"technical_{timeframe}"] = technical_data
 
             # Sentiment analysis
-            sentiment_results = self.cache_manager.get('sentiment_analysis_results')
-            if sentiment_results and symbol in sentiment_results.get('results', {}):
-                comprehensive_data['sentiment'] = sentiment_results['results'][symbol]
+            sentiment_results = self.cache_manager.get("sentiment_analysis_results")
+            if sentiment_results and symbol in sentiment_results.get("results", {}):
+                comprehensive_data["sentiment"] = sentiment_results["results"][symbol]
 
             # Whale activity
-            whale_results = self.cache_manager.get('whale_detection_results')
-            if whale_results and symbol in whale_results.get('results', {}):
-                comprehensive_data['whale'] = whale_results['results'][symbol]
+            whale_results = self.cache_manager.get("whale_detection_results")
+            if whale_results and symbol in whale_results.get("results", {}):
+                comprehensive_data["whale"] = whale_results["results"][symbol]
 
             # ML predictions
-            ml_results = self.cache_manager.get('ml_prediction_results')
-            if ml_results and symbol in ml_results.get('results', {}):
-                comprehensive_data['ml'] = ml_results['results'][symbol]
+            ml_results = self.cache_manager.get("ml_prediction_results")
+            if ml_results and symbol in ml_results.get("results", {}):
+                comprehensive_data["ml"] = ml_results["results"][symbol]
 
             # Only return if we have substantial data
             if len(comprehensive_data) > 2:  # More than just symbol
@@ -536,7 +540,9 @@ class ComprehensiveAnalyzer:
             self.logger.error(f"Data gathering failed for {symbol}: {e}")
             return None
 
-    def _request_openai_analysis(self, symbol: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _request_openai_analysis(
+        self, symbol: str, data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """Request OpenAI analysis for comprehensive data"""
         try:
             # Format data for OpenAI prompt
@@ -562,46 +568,46 @@ Technical Analysis:
 
             # Add technical data
             for key, value in data.items():
-                if key.startswith('technical_'):
-                    timeframe = key.split('_')[1]
+                if key.startswith("technical_"):
+                    timeframe = key.split("_")[1]
                     technical = value
                     prompt += f"""
 {timeframe} timeframe:
-- Price: ${technical.get('last_price', 0):.4f}
-- RSI: {technical.get('rsi', 0):.1f}
-- Volume Ratio: {technical.get('volume_ratio', 0):.1f}x
-- Trend: {technical.get('trend_direction', 'unknown')}
+- Price: ${technical.get("last_price", 0):.4f}
+- RSI: {technical.get("rsi", 0):.1f}
+- Volume Ratio: {technical.get("volume_ratio", 0):.1f}x
+- Trend: {technical.get("trend_direction", "unknown")}
 """
 
             # Add sentiment data
-            if 'sentiment' in data:
-                sentiment = data['sentiment']
+            if "sentiment" in data:
+                sentiment = data["sentiment"]
                 prompt += f"""
 Sentiment Analysis:
-- Sentiment Score: {sentiment.get('sentiment_score', 0):.2f}
-- Mention Growth: {sentiment.get('mention_growth', 0):.1f}x
-- News Sentiment: {sentiment.get('news_sentiment', 0):.2f}
+- Sentiment Score: {sentiment.get("sentiment_score", 0):.2f}
+- Mention Growth: {sentiment.get("mention_growth", 0):.1f}x
+- News Sentiment: {sentiment.get("news_sentiment", 0):.2f}
 """
 
             # Add whale data
-            if 'whale' in data:
-                whale = data['whale']
+            if "whale" in data:
+                whale = data["whale"]
                 prompt += f"""
 Whale Activity:
-- Large Transactions: {whale.get('large_transactions_24h', 0)}
-- Net Flow: {whale.get('net_whale_flow', 0):+.2f}
-- Address Growth: {whale.get('whale_address_growth', 0):.2f}
+- Large Transactions: {whale.get("large_transactions_24h", 0)}
+- Net Flow: {whale.get("net_whale_flow", 0):+.2f}
+- Address Growth: {whale.get("whale_address_growth", 0):.2f}
 """
 
             # Add ML predictions
-            if 'ml' in data:
-                ml = data['ml']
-                pred = ml.get('price_prediction', {})
+            if "ml" in data:
+                ml = data["ml"]
+                pred = ml.get("price_prediction", {})
                 prompt += f"""
 ML Predictions:
-- 7-day return: {pred.get('return_7d', 0):+.1%}
-- 30-day return: {pred.get('return_30d', 0):+.1%}
-- Confidence: {pred.get('confidence', 0):.2f}
+- 7-day return: {pred.get("return_7d", 0):+.1%}
+- 30-day return: {pred.get("return_30d", 0):+.1%}
+- Confidence: {pred.get("confidence", 0):.2f}
 """
 
             prompt += """
@@ -624,22 +630,30 @@ Respond in JSON format.
         """Get comprehensive analysis system status"""
         try:
             status = {
-                'analysis_active': self.analysis_active,
-                'last_analyses': {},
-                'data_availability': {}
+                "analysis_active": self.analysis_active,
+                "last_analyses": {},
+                "data_availability": {},
             }
 
             if self.cache_manager:
                 # Check last analysis times
-                for analysis_type in ['market_scan', 'sentiment_analysis', 'whale_detection', 'ml_prediction', 'openai_comprehensive_analysis']:
-                    cache_key = f'{analysis_type}_results'
+                for analysis_type in [
+                    "market_scan",
+                    "sentiment_analysis",
+                    "whale_detection",
+                    "ml_prediction",
+                    "openai_comprehensive_analysis",
+                ]:
+                    cache_key = f"{analysis_type}_results"
                     results = self.cache_manager.get(cache_key)
-                    if results and 'timestamp' in results:
-                        status['last_analyses'][analysis_type] = results['timestamp']
-                        status['data_availability'][analysis_type] = results.get('coins_analyzed', 0)
+                    if results and "timestamp" in results:
+                        status["last_analyses"][analysis_type] = results["timestamp"]
+                        status["data_availability"][analysis_type] = results.get(
+                            "coins_analyzed", 0
+                        )
 
             return status
 
         except Exception as e:
             self.logger.error(f"Status retrieval failed: {e}")
-            return {'analysis_active': False}
+            return {"analysis_active": False}

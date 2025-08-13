@@ -34,8 +34,12 @@ class AsyncHTTPClient:
         if self.session:
             await self.session.close()
 
-    async def fetch_json(self, url: str, headers: Optional[Dict[str, str]] = None,
-                        params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def fetch_json(
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """
         Fetch JSON data from URL with retry logic.
 
@@ -56,18 +60,18 @@ class AsyncHTTPClient:
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=1, max=10),
-            retry=retry_if_exception_type((
-                aiohttp.ClientError,
-                asyncio.TimeoutError,
-                aiohttp.ServerTimeoutError
-            )),
+            retry=retry_if_exception_type(
+                (aiohttp.ClientError, asyncio.TimeoutError, aiohttp.ServerTimeoutError)
+            ),
             reraise=True,
         ):
             with attempt:
                 if not self.session:
                     raise RuntimeError("HTTP session not initialized. Use async context manager.")
 
-                logger.debug(f"Fetching JSON from {url} (attempt {attempt.retry_state.attempt_number})")
+                logger.debug(
+                    f"Fetching JSON from {url} (attempt {attempt.retry_state.attempt_number})"
+                )
 
                 async with self.session.get(url, headers=headers, params=params) as response:
                     response.raise_for_status()
@@ -80,8 +84,9 @@ class AsyncHTTPClient:
                     logger.debug(f"Successfully fetched data from {url}")
                     return data
 
-    async def post_json(self, url: str, data: Dict[str, Any],
-                       headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    async def post_json(
+        self, url: str, data: Dict[str, Any], headers: Optional[Dict[str, str]] = None
+    ) -> Dict[str, Any]:
         """
         POST JSON data to URL with retry logic.
 
@@ -98,10 +103,7 @@ class AsyncHTTPClient:
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=1, max=10),
-            retry=retry_if_exception_type((
-                aiohttp.ClientError,
-                asyncio.TimeoutError
-            )),
+            retry=retry_if_exception_type((aiohttp.ClientError, asyncio.TimeoutError)),
             reraise=True,
         ):
             with attempt:
@@ -110,11 +112,7 @@ class AsyncHTTPClient:
 
                 logger.debug(f"POSTing to {url} (attempt {attempt.retry_state.attempt_number})")
 
-                async with self.session.post(
-                    url,
-                    json=data,
-                    headers=headers
-                ) as response:
+                async with self.session.post(url, json=data, headers=headers) as response:
                     response.raise_for_status()
                     result = await response.json()
 
@@ -125,9 +123,9 @@ class AsyncHTTPClient:
                     logger.debug(f"Successfully posted to {url}")
                     return result
 
-    async def fetch_multiple(self, urls: List[str],
-                           headers: Optional[Dict[str, str]] = None,
-                           max_concurrent: int = 10) -> List[Dict[str, Any]]:
+    async def fetch_multiple(
+        self, urls: List[str], headers: Optional[Dict[str, str]] = None, max_concurrent: int = 10
+    ) -> List[Dict[str, Any]]:
         """
         Fetch multiple URLs concurrently with rate limiting.
 
@@ -161,7 +159,7 @@ class AsyncMarketDataClient:
     """
 
     def __init__(self, base_url: str, api_key: Optional[str] = None):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.client = AsyncHTTPClient()
 
@@ -174,10 +172,7 @@ class AsyncMarketDataClient:
 
     def _get_headers(self) -> Dict[str, str]:
         """Get standard headers for API requests"""
-        headers = {
-            "User-Agent": "CryptoSmartTrader/2.0",
-            "Accept": "application/json"
-        }
+        headers = {"User-Agent": "CryptoSmartTrader/2.0", "Accept": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
@@ -196,18 +191,15 @@ class AsyncMarketDataClient:
         params = {"symbols": ",".join(symbols)}
 
         try:
-            return await self.client.fetch_json(
-                url,
-                headers=self._get_headers(),
-                params=params
-            )
+            return await self.client.fetch_json(url, headers=self._get_headers(), params=params)
         except Exception as e:
             logger.error(f"Failed to fetch market data: {e}")
             metrics_server.record_error("market_data_fetch", "async_client")
             raise
 
-    async def get_historical_data(self, symbol: str, timeframe: str = "1h",
-                                 limit: int = 100) -> Dict[str, Any]:
+    async def get_historical_data(
+        self, symbol: str, timeframe: str = "1h", limit: int = 100
+    ) -> Dict[str, Any]:
         """
         Fetch historical price data.
 
@@ -220,17 +212,10 @@ class AsyncMarketDataClient:
             Historical data dictionary
         """
         url = f"{self.base_url}/ohlcv/{symbol}"
-        params = {
-            "timeframe": timeframe,
-            "limit": limit
-        }
+        params = {"timeframe": timeframe, "limit": limit}
 
         try:
-            return await self.client.fetch_json(
-                url,
-                headers=self._get_headers(),
-                params=params
-            )
+            return await self.client.fetch_json(url, headers=self._get_headers(), params=params)
         except Exception as e:
             logger.error(f"Failed to fetch historical data for {symbol}: {e}")
             metrics_server.record_error("historical_data_fetch", "async_client")

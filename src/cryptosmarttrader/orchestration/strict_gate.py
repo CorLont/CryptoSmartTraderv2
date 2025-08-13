@@ -5,6 +5,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+
 def strict_filter(df: pd.DataFrame, pred="pred_720h", conf="conf_720h", thr=0.80):
     """
     Server-side strict confidence filtering - no exceptions
@@ -40,6 +41,7 @@ def strict_filter(df: pd.DataFrame, pred="pred_720h", conf="conf_720h", thr=0.80
 
     return result
 
+
 def multi_horizon_strict_filter(df: pd.DataFrame, horizons=None, thr=0.80):
     """
     Apply strict filtering across multiple horizons
@@ -58,14 +60,15 @@ def multi_horizon_strict_filter(df: pd.DataFrame, horizons=None, thr=0.80):
             passed = strict_filter(df, pred=pred_col, conf=conf_col, thr=thr)
 
             if not passed.empty:
-                passed['passed_horizon'] = h
+                passed["passed_horizon"] = h
                 all_passed = pd.concat([all_passed, passed], ignore_index=True)
 
     # Remove duplicates (same coin passing multiple horizons)
-    if not all_passed.empty and 'coin' in all_passed.columns:
-        all_passed = all_passed.drop_duplicates(subset=['coin'], keep='first')
+    if not all_passed.empty and "coin" in all_passed.columns:
+        all_passed = all_passed.drop_duplicates(subset=["coin"], keep="first")
 
     return all_passed
+
 
 def enterprise_confidence_gate(df: pd.DataFrame, min_threshold=0.80):
     """
@@ -76,7 +79,9 @@ def enterprise_confidence_gate(df: pd.DataFrame, min_threshold=0.80):
     """
     gate_id = f"enterprise_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-    logger.info(f"Enterprise confidence gate {gate_id}: Processing {len(df) if df is not None else 0} candidates")
+    logger.info(
+        f"Enterprise confidence gate {gate_id}: Processing {len(df) if df is not None else 0} candidates"
+    )
 
     if df is None or df.empty:
         logger.warning(f"Enterprise gate {gate_id}: Empty input - BLOCKING ALL")
@@ -91,11 +96,13 @@ def enterprise_confidence_gate(df: pd.DataFrame, min_threshold=0.80):
         "input_count": len(df),
         "passed_count": len(passed),
         "threshold": min_threshold,
-        "blocked_count": len(df) - len(passed)
+        "blocked_count": len(df) - len(passed),
     }
 
     if passed.empty:
-        logger.warning(f"Enterprise gate {gate_id}: BLOCKED ALL {len(df)} candidates - none met {min_threshold:.0%} threshold")
+        logger.warning(
+            f"Enterprise gate {gate_id}: BLOCKED ALL {len(df)} candidates - none met {min_threshold:.0%} threshold"
+        )
     else:
         logger.info(f"Enterprise gate {gate_id}: PASSED {len(passed)}/{len(df)} candidates")
 

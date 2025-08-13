@@ -22,5 +22,5 @@ __all__ = [
     "DriftMetrics",
     "DashboardAnalytics",
     "AnalyticsCache",
-    "RealtimeMetrics"
+    "RealtimeMetrics",
 ]

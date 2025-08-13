@@ -11,8 +11,10 @@ import pandas as pd
 from datetime import datetime
 from enum import Enum
 
+
 class DataSourceType(Enum):
     """Types of data sources available"""
+
     PRICE_DATA = "price_data"
     ORDERBOOK = "orderbook"
     SENTIMENT = "sentiment"
@@ -20,34 +22,51 @@ class DataSourceType(Enum):
     SOCIAL_MEDIA = "social_media"
     ON_CHAIN = "on_chain"
 
+
 class DataQuality(Enum):
     """Data quality levels"""
+
     AUTHENTIC = "authentic"
     CACHED = "cached"
     INTERPOLATED = "interpolated"
     UNAVAILABLE = "unavailable"
 
+
 class MarketDataRequest:
     """Request object for market data"""
 
-    def __init__(self, symbol: str, timeframe: str, start_time: Optional[datetime] = None,
-                 end_time: Optional[datetime] = None, limit: Optional[int] = None):
+    def __init__(
+        self,
+        symbol: str,
+        timeframe: str,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+        limit: Optional[int] = None,
+    ):
         self.symbol = symbol
         self.timeframe = timeframe
         self.start_time = start_time
         self.end_time = end_time
         self.limit = limit
 
+
 class MarketDataResponse:
     """Response object containing market data and metadata"""
 
-    def __init__(self, data: pd.DataFrame, quality: DataQuality,
-                 source: str, timestamp: datetime, metadata: Optional[Dict] = None):
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        quality: DataQuality,
+        source: str,
+        timestamp: datetime,
+        metadata: Optional[Dict] = None,
+    ):
         self.data = data
         self.quality = quality
         self.source = source
         self.timestamp = timestamp
         self.metadata = metadata or {}
+
 
 class DataProviderPort(ABC):
     """
@@ -140,6 +159,7 @@ class DataProviderPort(ABC):
         """
         pass
 
+
 class SentimentDataProviderPort(ABC):
     """Interface for sentiment data providers"""
 
@@ -158,14 +178,17 @@ class SentimentDataProviderPort(ABC):
         """Get social media sentiment"""
         pass
 
+
 class DataProviderError(Exception):
     """Exception raised by data provider implementations"""
 
-    def __init__(self, message: str, error_code: Optional[str] = None,
-                 source: Optional[str] = None):
+    def __init__(
+        self, message: str, error_code: Optional[str] = None, source: Optional[str] = None
+    ):
         super().__init__(message)
         self.error_code = error_code
         self.source = source
+
 
 class DataProviderRegistry:
     """Registry for managing multiple data provider implementations"""
@@ -201,6 +224,7 @@ class DataProviderRegistry:
             except Exception:
                 continue
         return healthy
+
 
 # Global registry instance
 data_provider_registry = DataProviderRegistry()

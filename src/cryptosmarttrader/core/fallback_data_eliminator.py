@@ -14,20 +14,24 @@ from enum import Enum
 import numpy as np
 import pandas as pd
 
+
 class DataValidationLevel(Enum):
-    STRICT = "strict"          # Zero tolerance for fallback/synthetic data
-    MODERATE = "moderate"      # Warning for fallback, error for synthetic
+    STRICT = "strict"  # Zero tolerance for fallback/synthetic data
+    MODERATE = "moderate"  # Warning for fallback, error for synthetic
     PERMISSIVE = "permissive"  # Log only, allow fallback in emergencies
 
+
 class DataSource(Enum):
-    AUTHENTIC = "authentic"    # Real data from exchanges/APIs
-    FALLBACK = "fallback"     # Cached/historical fallback data
-    SYNTHETIC = "synthetic"   # Generated/interpolated data
-    UNKNOWN = "unknown"       # Source cannot be determined
+    AUTHENTIC = "authentic"  # Real data from exchanges/APIs
+    FALLBACK = "fallback"  # Cached/historical fallback data
+    SYNTHETIC = "synthetic"  # Generated/interpolated data
+    UNKNOWN = "unknown"  # Source cannot be determined
+
 
 @dataclass
 class DataValidationRule:
     """Data validation rule configuration"""
+
     name: str
     check_function: Callable[[Any], bool]
     error_message: str
@@ -36,9 +40,11 @@ class DataValidationRule:
     require_recent: bool = True
     max_age_seconds: int = 300  # 5 minutes default
 
+
 @dataclass
 class ValidationResult:
     """Data validation result"""
+
     is_valid: bool
     data_source: DataSource
     validation_errors: List[str] = field(default_factory=list)
@@ -46,6 +52,7 @@ class ValidationResult:
     data_age_seconds: Optional[float] = None
     data_quality_score: float = 1.0  # 0.0 to 1.0
     timestamp: datetime = field(default_factory=datetime.now)
+
 
 class FallbackDataEliminator:
     """Enterprise-grade fallback and synthetic data eliminator"""
@@ -61,7 +68,7 @@ class FallbackDataEliminator:
             "fallback_data_rejected": 0,
             "synthetic_data_rejected": 0,
             "validation_failures": 0,
-            "last_validation_time": None
+            "last_validation_time": None,
         }
 
         # Validation rules registry
@@ -73,7 +80,9 @@ class FallbackDataEliminator:
         # Initialize standard validation rules
         self._initialize_standard_rules()
 
-        self.logger.info(f"Fallback Data Eliminator initialized with {validation_level.value} validation")
+        self.logger.info(
+            f"Fallback Data Eliminator initialized with {validation_level.value} validation"
+        )
 
     def _initialize_standard_rules(self):
         """Initialize standard data validation rules"""
@@ -81,43 +90,43 @@ class FallbackDataEliminator:
         price_rules = [
             DataValidationRule(
                 name="no_zero_prices",
-                check_function=lambda data: self._check_no_zero_values(data, 'price'),
-                error_message="Zero prices detected - indicates synthetic/fallback data"
+                check_function=lambda data: self._check_no_zero_values(data, "price"),
+                error_message="Zero prices detected - indicates synthetic/fallback data",
             ),
             DataValidationRule(
                 name="realistic_price_range",
                 check_function=lambda data: self._check_realistic_prices(data),
-                error_message="Unrealistic price values detected"
+                error_message="Unrealistic price values detected",
             ),
             DataValidationRule(
                 name="no_constant_prices",
-                check_function=lambda data: self._check_no_constant_values(data, 'price'),
-                error_message="Constant price values indicate synthetic data"
+                check_function=lambda data: self._check_no_constant_values(data, "price"),
+                error_message="Constant price values indicate synthetic data",
             ),
             DataValidationRule(
                 name="price_volatility_check",
                 check_function=lambda data: self._check_price_volatility(data),
-                error_message="Artificial price volatility patterns detected"
-            )
+                error_message="Artificial price volatility patterns detected",
+            ),
         ]
 
         # Volume data validation rules
         volume_rules = [
             DataValidationRule(
                 name="no_zero_volume",
-                check_function=lambda data: self._check_no_zero_values(data, 'volume'),
-                error_message="Zero volume detected - indicates synthetic data"
+                check_function=lambda data: self._check_no_zero_values(data, "volume"),
+                error_message="Zero volume detected - indicates synthetic data",
             ),
             DataValidationRule(
                 name="realistic_volume_range",
                 check_function=lambda data: self._check_realistic_volumes(data),
-                error_message="Unrealistic volume values detected"
+                error_message="Unrealistic volume values detected",
             ),
             DataValidationRule(
                 name="volume_distribution_check",
                 check_function=lambda data: self._check_volume_distribution(data),
-                error_message="Artificial volume distribution detected"
-            )
+                error_message="Artificial volume distribution detected",
+            ),
         ]
 
         # Timestamp validation rules
@@ -125,18 +134,18 @@ class FallbackDataEliminator:
             DataValidationRule(
                 name="recent_timestamps",
                 check_function=lambda data: self._check_timestamp_recency(data),
-                error_message="Stale data detected - may be fallback data"
+                error_message="Stale data detected - may be fallback data",
             ),
             DataValidationRule(
                 name="sequential_timestamps",
                 check_function=lambda data: self._check_timestamp_sequence(data),
-                error_message="Non-sequential timestamps indicate synthetic data"
+                error_message="Non-sequential timestamps indicate synthetic data",
             ),
             DataValidationRule(
                 name="realistic_intervals",
                 check_function=lambda data: self._check_realistic_intervals(data),
-                error_message="Unrealistic timestamp intervals detected"
-            )
+                error_message="Unrealistic timestamp intervals detected",
+            ),
         ]
 
         # General data validation rules
@@ -144,18 +153,18 @@ class FallbackDataEliminator:
             DataValidationRule(
                 name="no_missing_values",
                 check_function=lambda data: self._check_no_missing_values(data),
-                error_message="Missing values detected - incomplete authentic data"
+                error_message="Missing values detected - incomplete authentic data",
             ),
             DataValidationRule(
                 name="data_completeness",
                 check_function=lambda data: self._check_data_completeness(data),
-                error_message="Incomplete data suggests fallback/synthetic source"
+                error_message="Incomplete data suggests fallback/synthetic source",
             ),
             DataValidationRule(
                 name="authentic_data_patterns",
                 check_function=lambda data: self._check_authentic_patterns(data),
-                error_message="Data patterns suggest synthetic generation"
-            )
+                error_message="Data patterns suggest synthetic generation",
+            ),
         ]
 
         # Register rule sets
@@ -164,14 +173,16 @@ class FallbackDataEliminator:
         self.validation_rules["timestamp_data"] = timestamp_rules
         self.validation_rules["general"] = general_rules
 
-        self.logger.info(f"Initialized {sum(len(rules) for rules in self.validation_rules.values())} validation rules")
+        self.logger.info(
+            f"Initialized {sum(len(rules) for rules in self.validation_rules.values())} validation rules"
+        )
 
     def validate_data(
         self,
         data: Any,
         data_type: str = "general",
         require_authentic: bool = True,
-        custom_rules: Optional[List[DataValidationRule]] = None
+        custom_rules: Optional[List[DataValidationRule]] = None,
     ) -> ValidationResult:
         """
         Validate data for authenticity and quality
@@ -190,9 +201,7 @@ class FallbackDataEliminator:
             self.validation_stats["last_validation_time"] = datetime.now()
 
             result = ValidationResult(
-                is_valid=True,
-                data_source=DataSource.UNKNOWN,
-                data_quality_score=1.0
+                is_valid=True, data_source=DataSource.UNKNOWN, data_quality_score=1.0
             )
 
             try:
@@ -214,11 +223,17 @@ class FallbackDataEliminator:
                         result.validation_errors.append(
                             f"STRICT MODE: {result.data_source.value.title()} data rejected"
                         )
-                        self.validation_stats["fallback_data_rejected" if result.data_source == DataSource.FALLBACK else "synthetic_data_rejected"] += 1
+                        self.validation_stats[
+                            "fallback_data_rejected"
+                            if result.data_source == DataSource.FALLBACK
+                            else "synthetic_data_rejected"
+                        ] += 1
                         return result
 
                 # Get applicable validation rules
-                applicable_rules = self.validation_rules.get(data_type, self.validation_rules["general"])
+                applicable_rules = self.validation_rules.get(
+                    data_type, self.validation_rules["general"]
+                )
                 if custom_rules:
                     applicable_rules.extend(custom_rules)
 
@@ -226,7 +241,10 @@ class FallbackDataEliminator:
                 for rule in applicable_rules:
                     try:
                         if not rule.check_function(data):
-                            if rule.validation_level == DataValidationLevel.STRICT or self.validation_level == DataValidationLevel.STRICT:
+                            if (
+                                rule.validation_level == DataValidationLevel.STRICT
+                                or self.validation_level == DataValidationLevel.STRICT
+                            ):
                                 result.is_valid = False
                                 result.validation_errors.append(rule.error_message)
                             else:
@@ -242,12 +260,18 @@ class FallbackDataEliminator:
                 result.data_age_seconds = self._calculate_data_age(data)
 
                 # Check data recency requirements
-                if require_authentic and result.data_age_seconds and result.data_age_seconds > 300:  # 5 minutes
+                if (
+                    require_authentic and result.data_age_seconds and result.data_age_seconds > 300
+                ):  # 5 minutes
                     if self.validation_level == DataValidationLevel.STRICT:
                         result.is_valid = False
-                        result.validation_errors.append(f"Data too old ({result.data_age_seconds:.1f}s) - may be fallback")
+                        result.validation_errors.append(
+                            f"Data too old ({result.data_age_seconds:.1f}s) - may be fallback"
+                        )
                     else:
-                        result.validation_warnings.append(f"Data age warning: {result.data_age_seconds:.1f}s")
+                        result.validation_warnings.append(
+                            f"Data age warning: {result.data_age_seconds:.1f}s"
+                        )
                         result.data_quality_score *= 0.8
 
                 # Final validation outcome
@@ -272,21 +296,24 @@ class FallbackDataEliminator:
         """Determine the source of the data"""
         try:
             # Check for explicit source markers
-            if hasattr(data, 'attrs') and 'data_source' in data.attrs:
-                source_str = data.attrs['data_source'].lower()
-                if 'synthetic' in source_str or 'generated' in source_str:
+            if hasattr(data, "attrs") and "data_source" in data.attrs:
+                source_str = data.attrs["data_source"].lower()
+                if "synthetic" in source_str or "generated" in source_str:
                     return DataSource.SYNTHETIC
-                elif 'fallback' in source_str or 'cached' in source_str:
+                elif "fallback" in source_str or "cached" in source_str:
                     return DataSource.FALLBACK
-                elif 'authentic' in source_str or 'live' in source_str:
+                elif "authentic" in source_str or "live" in source_str:
                     return DataSource.AUTHENTIC
 
             # Check DataFrame metadata
             if isinstance(data, pd.DataFrame):
                 # Look for source indicators in column names or metadata
-                if any('synthetic' in str(col).lower() for col in data.columns):
+                if any("synthetic" in str(col).lower() for col in data.columns):
                     return DataSource.SYNTHETIC
-                elif any('fallback' in str(col).lower() or 'cached' in str(col).lower() for col in data.columns):
+                elif any(
+                    "fallback" in str(col).lower() or "cached" in str(col).lower()
+                    for col in data.columns
+                ):
                     return DataSource.FALLBACK
 
                 # Check for patterns that suggest synthetic data
@@ -294,12 +321,14 @@ class FallbackDataEliminator:
                     return DataSource.SYNTHETIC
 
                 # Check for fresh timestamps (likely authentic)
-                if 'timestamp' in data.columns or 'time' in data.columns:
-                    time_col = 'timestamp' if 'timestamp' in data.columns else 'time'
+                if "timestamp" in data.columns or "time" in data.columns:
+                    time_col = "timestamp" if "timestamp" in data.columns else "time"
                     if not data.empty:
                         latest_time = pd.to_datetime(data[time_col]).max()
                         if isinstance(latest_time, pd.Timestamp):
-                            age_minutes = (datetime.now() - latest_time.to_pydatetime()).total_seconds() / 60
+                            age_minutes = (
+                                datetime.now() - latest_time.to_pydatetime()
+                            ).total_seconds() / 60
                             if age_minutes < 10:  # Fresh data, likely authentic
                                 return DataSource.AUTHENTIC
 
@@ -328,7 +357,7 @@ class FallbackDataEliminator:
                     for window_size in [5, 10]:
                         if len(values) >= window_size * 3:
                             first_window = values[:window_size]
-                            second_window = values[window_size:window_size*2]
+                            second_window = values[window_size : window_size * 2]
                             if np.array_equal(first_window, second_window):
                                 return True
 
@@ -339,9 +368,9 @@ class FallbackDataEliminator:
                     decimal_places = []
                     for val in data[col].head(20):
                         if pd.notna(val):
-                            str_val = f"{val:.10f}".rstrip('0')
-                            if '.' in str_val:
-                                decimal_places.append(len(str_val.split('.')[1]))
+                            str_val = f"{val:.10f}".rstrip("0")
+                            if "." in str_val:
+                                decimal_places.append(len(str_val.split(".")[1]))
 
                     # If all values have same decimal places, might be synthetic
                     if len(set(decimal_places)) == 1 and decimal_places[0] > 6:
@@ -371,7 +400,7 @@ class FallbackDataEliminator:
         """Check for realistic price ranges"""
         try:
             if isinstance(data, pd.DataFrame):
-                price_cols = [col for col in data.columns if 'price' in col.lower()]
+                price_cols = [col for col in data.columns if "price" in col.lower()]
                 for col in price_cols:
                     prices = data[col].dropna()
                     if len(prices) == 0:
@@ -384,7 +413,9 @@ class FallbackDataEliminator:
                         return False
 
                     # Check for unrealistic precision
-                    if all(len(f"{p:.10f}".rstrip('0').split('.')[-1]) > 8 for p in prices.head(10)):
+                    if all(
+                        len(f"{p:.10f}".rstrip("0").split(".")[-1]) > 8 for p in prices.head(10)
+                    ):
                         return False
 
             return True
@@ -407,7 +438,7 @@ class FallbackDataEliminator:
         """Check for artificial price volatility patterns"""
         try:
             if isinstance(data, pd.DataFrame):
-                price_cols = [col for col in data.columns if 'price' in col.lower()]
+                price_cols = [col for col in data.columns if "price" in col.lower()]
                 for col in price_cols:
                     prices = data[col].dropna()
                     if len(prices) < 10:
@@ -435,7 +466,7 @@ class FallbackDataEliminator:
         """Check for realistic volume ranges"""
         try:
             if isinstance(data, pd.DataFrame):
-                volume_cols = [col for col in data.columns if 'volume' in col.lower()]
+                volume_cols = [col for col in data.columns if "volume" in col.lower()]
                 for col in volume_cols:
                     volumes = data[col].dropna()
                     if len(volumes) == 0:
@@ -457,7 +488,7 @@ class FallbackDataEliminator:
         """Check for artificial volume distributions"""
         try:
             if isinstance(data, pd.DataFrame):
-                volume_cols = [col for col in data.columns if 'volume' in col.lower()]
+                volume_cols = [col for col in data.columns if "volume" in col.lower()]
                 for col in volume_cols:
                     volumes = data[col].dropna()
                     if len(volumes) < 10:
@@ -494,11 +525,14 @@ class FallbackDataEliminator:
         """Check for sequential timestamps"""
         try:
             if isinstance(data, pd.DataFrame):
-                time_cols = [col for col in data.columns
-                           if any(word in col.lower() for word in ['time', 'timestamp', 'date'])]
+                time_cols = [
+                    col
+                    for col in data.columns
+                    if any(word in col.lower() for word in ["time", "timestamp", "date"])
+                ]
 
                 for col in time_cols:
-                    timestamps = pd.to_datetime(data[col], errors='coerce').dropna()
+                    timestamps = pd.to_datetime(data[col], errors="coerce").dropna()
                     if len(timestamps) < 2:
                         continue
 
@@ -518,11 +552,14 @@ class FallbackDataEliminator:
         """Check for realistic timestamp intervals"""
         try:
             if isinstance(data, pd.DataFrame):
-                time_cols = [col for col in data.columns
-                           if any(word in col.lower() for word in ['time', 'timestamp', 'date'])]
+                time_cols = [
+                    col
+                    for col in data.columns
+                    if any(word in col.lower() for word in ["time", "timestamp", "date"])
+                ]
 
                 for col in time_cols:
-                    timestamps = pd.to_datetime(data[col], errors='coerce').dropna()
+                    timestamps = pd.to_datetime(data[col], errors="coerce").dropna()
                     if len(timestamps) < 2:
                         continue
 
@@ -539,7 +576,15 @@ class FallbackDataEliminator:
                     if len(unique_intervals) == 1 and len(interval_seconds) > 10:
                         # Perfectly uniform intervals might be synthetic
                         interval_value = unique_intervals[0]
-                        if interval_value in [1, 5, 10, 30, 60, 300, 600]:  # Common synthetic intervals
+                        if interval_value in [
+                            1,
+                            5,
+                            10,
+                            30,
+                            60,
+                            300,
+                            600,
+                        ]:  # Common synthetic intervals
                             return False
 
             return True
@@ -564,14 +609,18 @@ class FallbackDataEliminator:
         try:
             if isinstance(data, pd.DataFrame):
                 # Check if we have minimum required columns
-                required_cols = ['price', 'volume', 'timestamp']
-                available_cols = [col for col in data.columns
-                                if any(req in col.lower() for req in required_cols)]
+                required_cols = ["price", "volume", "timestamp"]
+                available_cols = [
+                    col for col in data.columns if any(req in col.lower() for req in required_cols)
+                ]
 
                 # Should have at least price and timestamp data
-                has_price = any('price' in col.lower() for col in data.columns)
-                has_time = any(word in col.lower() for col in data.columns
-                             for word in ['time', 'timestamp', 'date'])
+                has_price = any("price" in col.lower() for col in data.columns)
+                has_time = any(
+                    word in col.lower()
+                    for col in data.columns
+                    for word in ["time", "timestamp", "date"]
+                )
 
                 return has_price and has_time
 
@@ -611,11 +660,14 @@ class FallbackDataEliminator:
             latest_timestamp = None
 
             if isinstance(data, pd.DataFrame):
-                time_cols = [col for col in data.columns
-                           if any(word in col.lower() for word in ['time', 'timestamp', 'date'])]
+                time_cols = [
+                    col
+                    for col in data.columns
+                    if any(word in col.lower() for word in ["time", "timestamp", "date"])
+                ]
 
                 for col in time_cols:
-                    timestamps = pd.to_datetime(data[col], errors='coerce').dropna()
+                    timestamps = pd.to_datetime(data[col], errors="coerce").dropna()
                     if not timestamps.empty:
                         col_latest = timestamps.max()
                         if latest_timestamp is None or col_latest > latest_timestamp:
@@ -623,7 +675,7 @@ class FallbackDataEliminator:
 
             elif isinstance(data, dict):
                 for key, value in data.items():
-                    if 'time' in key.lower():
+                    if "time" in key.lower():
                         try:
                             timestamp = pd.to_datetime(value)
                             if latest_timestamp is None or timestamp > latest_timestamp:
@@ -644,11 +696,17 @@ class FallbackDataEliminator:
     def _log_validation_result(self, result: ValidationResult, data_type: str):
         """Log validation result"""
         if not result.is_valid:
-            self.logger.error(f"Data validation FAILED for {data_type}: {'; '.join(result.validation_errors)}")
+            self.logger.error(
+                f"Data validation FAILED for {data_type}: {'; '.join(result.validation_errors)}"
+            )
         elif result.validation_warnings:
-            self.logger.warning(f"Data validation warnings for {data_type}: {'; '.join(result.validation_warnings)}")
+            self.logger.warning(
+                f"Data validation warnings for {data_type}: {'; '.join(result.validation_warnings)}"
+            )
         else:
-            self.logger.debug(f"Data validation PASSED for {data_type} (quality: {result.data_quality_score:.2f})")
+            self.logger.debug(
+                f"Data validation PASSED for {data_type} (quality: {result.data_quality_score:.2f})"
+            )
 
     def add_custom_rule(self, data_type: str, rule: DataValidationRule):
         """Add a custom validation rule"""
@@ -665,8 +723,12 @@ class FallbackDataEliminator:
 
             # Calculate success rates
             if stats["total_validations"] > 0:
-                stats["authentic_data_rate"] = stats["authentic_data_count"] / stats["total_validations"]
-                stats["validation_success_rate"] = (stats["total_validations"] - stats["validation_failures"]) / stats["total_validations"]
+                stats["authentic_data_rate"] = (
+                    stats["authentic_data_count"] / stats["total_validations"]
+                )
+                stats["validation_success_rate"] = (
+                    stats["total_validations"] - stats["validation_failures"]
+                ) / stats["total_validations"]
             else:
                 stats["authentic_data_rate"] = 0.0
                 stats["validation_success_rate"] = 0.0
@@ -682,7 +744,9 @@ class FallbackDataEliminator:
             base_score = stats.get("authentic_data_rate", 0.0)
 
             # Penalty for fallback/synthetic data
-            total_rejected = stats.get("fallback_data_rejected", 0) + stats.get("synthetic_data_rejected", 0)
+            total_rejected = stats.get("fallback_data_rejected", 0) + stats.get(
+                "synthetic_data_rejected", 0
+            )
             if stats.get("total_validations", 0) > 0:
                 rejection_penalty = total_rejected / stats["total_validations"]
                 base_score = max(0.0, base_score - rejection_penalty)
@@ -698,7 +762,10 @@ class FallbackDataEliminator:
 _fallback_eliminator = None
 _eliminator_lock = threading.Lock()
 
-def get_fallback_eliminator(validation_level: DataValidationLevel = DataValidationLevel.STRICT) -> FallbackDataEliminator:
+
+def get_fallback_eliminator(
+    validation_level: DataValidationLevel = DataValidationLevel.STRICT,
+) -> FallbackDataEliminator:
     """Get the singleton fallback data eliminator"""
     global _fallback_eliminator
 
@@ -706,6 +773,7 @@ def get_fallback_eliminator(validation_level: DataValidationLevel = DataValidati
         if _fallback_eliminator is None:
             _fallback_eliminator = FallbackDataEliminator(validation_level)
         return _fallback_eliminator
+
 
 def validate_authentic_data(data: Any, data_type: str = "general") -> ValidationResult:
     """Convenient function to validate authentic data"""

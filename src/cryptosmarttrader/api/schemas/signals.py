@@ -12,6 +12,7 @@ from .common import BaseResponse
 
 class TradingSignal(BaseModel):
     """Trading signal"""
+
     symbol: str = Field(description="Trading symbol")
     signal_type: str = Field(description="Signal type", example="BUY")
     strength: float = Field(description="Signal strength", ge=0, le=1)
@@ -21,6 +22,7 @@ class TradingSignal(BaseModel):
 
 class SignalMetrics(BaseModel):
     """Signal metrics"""
+
     total_signals: int = Field(description="Total signals", ge=0)
     success_rate: float = Field(description="Success rate", ge=0, le=1)
     avg_return: float = Field(description="Average return percentage")
@@ -28,5 +30,6 @@ class SignalMetrics(BaseModel):
 
 class SignalResponse(BaseResponse):
     """Signal response"""
+
     signals: List[TradingSignal] = Field(description="Trading signals")
     metrics: SignalMetrics = Field(description="Signal metrics")

@@ -28,8 +28,12 @@ from ..core.openai_enhanced_analyzer import OpenAIEnhancedAnalyzer
 class DailyAnalysisScheduler:
     """Scheduler for coordinating continuous analysis and daily reporting"""
 
-    def __init__(self, config_manager: ConfigManager, cache_manager: CacheManager,
-                 health_monitor: HealthMonitor):
+    def __init__(
+        self,
+        config_manager: ConfigManager,
+        cache_manager: CacheManager,
+        health_monitor: HealthMonitor,
+    ):
         self.config_manager = config_manager
         self.cache_manager = cache_manager
         self.health_monitor = health_monitor
@@ -67,28 +71,28 @@ class DailyAnalysisScheduler:
                     "status": "pending",
                     "predictions": [],
                     "accuracy_metrics": {},
-                    "last_update": None
+                    "last_update": None,
                 },
                 "social_sentiment": {
                     "status": "pending",
                     "reddit_data": [],
                     "twitter_data": [],
                     "sentiment_scores": {},
-                    "last_update": None
+                    "last_update": None,
                 },
                 "technical_analysis": {
                     "status": "pending",
                     "indicators": {},
                     "signals": [],
-                    "last_update": None
+                    "last_update": None,
                 },
                 "daily_summary": {
                     "market_trend": None,
                     "top_performers": [],
                     "sentiment_overview": None,
                     "recommendations": [],
-                    "generated_at": None
-                }
+                    "generated_at": None,
+                },
             }
             self.cache_manager.set(cache_key, daily_structure, ttl_minutes=1440)  # 24 hours
 
@@ -160,7 +164,7 @@ class DailyAnalysisScheduler:
 
     def _start_ml_service(self):
         """Start ML analysis background service"""
-        if sys.platform.startswith('win'):
+        if sys.platform.startswith("win"):
             script_path = self.project_root / "scripts" / "start_ml_analysis.bat"
             if script_path.exists():
                 process = subprocess.Popen(
@@ -168,9 +172,9 @@ class DailyAnalysisScheduler:
                     shell=True,
                     cwd=str(self.project_root),
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
+                    stderr=subprocess.PIPE,
                 )
-                self.running_services['ml_analysis'] = process
+                self.running_services["ml_analysis"] = process
                 self.logger.info("ML analysis service started")
         else:
             # For non-Windows systems, start Python service directly
@@ -178,7 +182,7 @@ class DailyAnalysisScheduler:
 
     def _start_social_service(self):
         """Start social scraping background service"""
-        if sys.platform.startswith('win'):
+        if sys.platform.startswith("win"):
             script_path = self.project_root / "scripts" / "start_social_scraper.bat"
             if script_path.exists():
                 process = subprocess.Popen(
@@ -186,9 +190,9 @@ class DailyAnalysisScheduler:
                     shell=True,
                     cwd=str(self.project_root),
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
+                    stderr=subprocess.PIPE,
                 )
-                self.running_services['social_scraper'] = process
+                self.running_services["social_scraper"] = process
                 self.logger.info("Social scraping service started")
         else:
             # For non-Windows systems, start Python service directly
@@ -203,9 +207,9 @@ class DailyAnalysisScheduler:
                     [sys.executable, str(ml_script)],
                     cwd=str(self.project_root),
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
+                    stderr=subprocess.PIPE,
                 )
-                self.running_services['ml_analysis'] = process
+                self.running_services["ml_analysis"] = process
                 self.logger.info("ML analysis Python service started")
         except Exception as e:
             self.logger.error(f"Failed to start ML Python service: {e}")
@@ -219,9 +223,9 @@ class DailyAnalysisScheduler:
                     [sys.executable, str(social_script)],
                     cwd=str(self.project_root),
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
+                    stderr=subprocess.PIPE,
                 )
-                self.running_services['social_scraper'] = process
+                self.running_services["social_scraper"] = process
                 self.logger.info("Social scraping Python service started")
         except Exception as e:
             self.logger.error(f"Failed to start social Python service: {e}")
@@ -326,7 +330,9 @@ class DailyAnalysisScheduler:
 
         if technical_results:
             daily_data = self.cache_manager.get(cache_key) or {}
-            daily_data["technical_analysis"]["indicators"].update(technical_results.get("indicators", {}))
+            daily_data["technical_analysis"]["indicators"].update(
+                technical_results.get("indicators", {})
+            )
             daily_data["technical_analysis"]["signals"].extend(technical_results.get("signals", []))
             daily_data["technical_analysis"]["last_update"] = datetime.now().isoformat()
             daily_data["technical_analysis"]["status"] = "active"
@@ -346,7 +352,7 @@ class DailyAnalysisScheduler:
             # Look for today's prediction files
             for file_path in ml_data_dir.glob(f"predictions_{today}*.json"):
                 try:
-                    with open(file_path, 'r') as f:
+                    with open(file_path, "r") as f:
                         data = json.load(f)
                         results.append(data)
                 except Exception as e:
@@ -370,13 +376,13 @@ class DailyAnalysisScheduler:
             # Collect Reddit data
             reddit_file = social_data_dir / f"reddit_{today}.json"
             if reddit_file.exists():
-                with open(reddit_file, 'r') as f:
+                with open(reddit_file, "r") as f:
                     results["reddit"] = json.load(f)
 
             # Collect Twitter data
             twitter_file = social_data_dir / f"twitter_{today}.json"
             if twitter_file.exists():
-                with open(twitter_file, 'r') as f:
+                with open(twitter_file, "r") as f:
                     results["twitter"] = json.load(f)
 
             return results
@@ -395,7 +401,7 @@ class DailyAnalysisScheduler:
             tech_file = tech_data_dir / f"technical_{today}.json"
 
             if tech_file.exists():
-                with open(tech_file, 'r') as f:
+                with open(tech_file, "r") as f:
                     return json.load(f)
 
             return {}
@@ -416,7 +422,7 @@ class DailyAnalysisScheduler:
             "top_performers": [],
             "sentiment_overview": "neutral",
             "recommendations": [],
-            "confidence_score": 0.5
+            "confidence_score": 0.5,
         }
 
         try:
@@ -433,7 +439,9 @@ class DailyAnalysisScheduler:
                     summary["market_trend"] = "bearish"
 
                 # Extract top performers
-                sorted_predictions = sorted(ml_predictions, key=lambda x: x.get("change", 0), reverse=True)
+                sorted_predictions = sorted(
+                    ml_predictions, key=lambda x: x.get("change", 0), reverse=True
+                )
                 summary["top_performers"] = sorted_predictions[:5]
 
             # Analyze sentiment
@@ -460,7 +468,9 @@ class DailyAnalysisScheduler:
             if summary["market_trend"] == "bullish" and summary["sentiment_overview"] == "positive":
                 recommendations.append("Strong buy signals detected across multiple indicators")
                 summary["confidence_score"] = 0.8
-            elif summary["market_trend"] == "bearish" and summary["sentiment_overview"] == "negative":
+            elif (
+                summary["market_trend"] == "bearish" and summary["sentiment_overview"] == "negative"
+            ):
                 recommendations.append("Caution advised - bearish signals detected")
                 summary["confidence_score"] = 0.7
             else:
@@ -470,9 +480,13 @@ class DailyAnalysisScheduler:
             # Technical analysis recommendations
             technical_data = daily_data.get("technical_analysis", {})
             if technical_data.get("signals"):
-                strong_signals = [s for s in technical_data["signals"] if s.get("strength", 0) > 0.7]
+                strong_signals = [
+                    s for s in technical_data["signals"] if s.get("strength", 0) > 0.7
+                ]
                 if strong_signals:
-                    recommendations.append(f"Strong technical signals detected for {len(strong_signals)} assets")
+                    recommendations.append(
+                        f"Strong technical signals detected for {len(strong_signals)} assets"
+                    )
 
             summary["recommendations"] = recommendations
 
@@ -490,7 +504,7 @@ class DailyAnalysisScheduler:
             today = datetime.now().strftime("%Y-%m-%d")
             report_file = reports_dir / f"daily_report_{today}.json"
 
-            with open(report_file, 'w') as f:
+            with open(report_file, "w") as f:
                 json.dump(daily_data, f, indent=2, default=str)
 
             self.logger.info(f"Daily report saved to {report_file}")
@@ -510,9 +524,11 @@ class DailyAnalysisScheduler:
             "scheduler_running": self.is_running,
             "services": {
                 "ml_analysis": "running" if "ml_analysis" in self.running_services else "stopped",
-                "social_scraper": "running" if "social_scraper" in self.running_services else "stopped"
+                "social_scraper": "running"
+                if "social_scraper" in self.running_services
+                else "stopped",
             },
-            "analysis_data": daily_data
+            "analysis_data": daily_data,
         }
 
         return status
@@ -549,9 +565,7 @@ class DailyAnalysisScheduler:
             if batch_data:
                 # Process with OpenAI (run in thread to avoid blocking)
                 threading.Thread(
-                    target=self._process_openai_batch,
-                    args=(batch_data, today),
-                    daemon=True
+                    target=self._process_openai_batch, args=(batch_data, today), daemon=True
                 ).start()
 
         except Exception as e:
@@ -575,7 +589,7 @@ class DailyAnalysisScheduler:
             daily_data["openai_enhanced"] = {
                 "enhanced_results": enhanced_results,
                 "enhancement_timestamp": datetime.now().isoformat(),
-                "batch_status": "completed"
+                "batch_status": "completed",
             }
 
             self.cache_manager.set(cache_key, daily_data, ttl_minutes=1440)
@@ -599,9 +613,7 @@ class DailyAnalysisScheduler:
             if daily_data:
                 # Generate comprehensive insights using OpenAI
                 threading.Thread(
-                    target=self._process_market_insights,
-                    args=(daily_data, today),
-                    daemon=True
+                    target=self._process_market_insights, args=(daily_data, today), daemon=True
                 ).start()
 
         except Exception as e:
@@ -629,13 +641,15 @@ class DailyAnalysisScheduler:
                 current_data["daily_summary"] = {}
 
             ai_insights = market_insights.get("ai_insights", {})
-            current_data["daily_summary"].update({
-                "ai_enhanced": True,
-                "ai_market_trend": ai_insights.get("market_trend", "neutral"),
-                "ai_confidence": ai_insights.get("confidence_score", 0.5),
-                "ai_recommendations": ai_insights.get("strategic_recommendations", []),
-                "ai_insights_timestamp": datetime.now().isoformat()
-            })
+            current_data["daily_summary"].update(
+                {
+                    "ai_enhanced": True,
+                    "ai_market_trend": ai_insights.get("market_trend", "neutral"),
+                    "ai_confidence": ai_insights.get("confidence_score", 0.5),
+                    "ai_recommendations": ai_insights.get("strategic_recommendations", []),
+                    "ai_insights_timestamp": datetime.now().isoformat(),
+                }
+            )
 
             self.cache_manager.set(cache_key, current_data, ttl_minutes=1440)
             self.logger.info("AI market insights generated successfully")

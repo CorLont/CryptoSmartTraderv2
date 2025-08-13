@@ -14,8 +14,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class EventType(Enum):
     """Types of market events"""
+
     FUNDING_FLIP = "funding_flip"
     OI_DIVERGENCE = "oi_divergence"
     BASIS_EXTREME = "basis_extreme"
@@ -26,6 +28,7 @@ class EventType(Enum):
 
 class EventSeverity(Enum):
     """Event severity levels"""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -34,6 +37,7 @@ class EventSeverity(Enum):
 
 class EventDirection(Enum):
     """Expected price direction from event"""
+
     BULLISH = "bullish"
     BEARISH = "bearish"
     NEUTRAL = "neutral"
@@ -43,6 +47,7 @@ class EventDirection(Enum):
 @dataclass
 class MarketEvent:
     """Unified market event"""
+
     event_id: str
     timestamp: datetime
     pair: str
@@ -52,7 +57,7 @@ class MarketEvent:
     event_type: EventType
     severity: EventSeverity
     direction: EventDirection
-    confidence: float           # Overall event confidence (0-1)
+    confidence: float  # Overall event confidence (0-1)
 
     # Component signals
     funding_component: Optional[Dict[str, Any]] = None
@@ -61,23 +66,23 @@ class MarketEvent:
 
     # Market context
     price_at_event: float
-    volume_context: str         # "high", "normal", "low"
-    volatility_context: str     # "high", "normal", "low"
+    volume_context: str  # "high", "normal", "low"
+    volatility_context: str  # "high", "normal", "low"
 
     # Timing predictions
-    expected_resolution_minutes: int    # Time to expected resolution
-    signal_decay_minutes: int          # When signal loses validity
+    expected_resolution_minutes: int  # Time to expected resolution
+    signal_decay_minutes: int  # When signal loses validity
 
     # Trade implications
-    suggested_direction: str           # "long", "short", "neutral"
-    suggested_size_pct: float         # Suggested position size
+    suggested_direction: str  # "long", "short", "neutral"
+    suggested_size_pct: float  # Suggested position size
     stop_loss_bp: int
     take_profit_bp: int
 
     # Performance tracking
-    hit_rate_30min: Optional[float] = None    # Historical 30min hit rate
-    hit_rate_2hr: Optional[float] = None      # Historical 2hr hit rate
-    avg_pnl_bp: Optional[float] = None        # Average PnL in basis points
+    hit_rate_30min: Optional[float] = None  # Historical 30min hit rate
+    hit_rate_2hr: Optional[float] = None  # Historical 2hr hit rate
+    avg_pnl_bp: Optional[float] = None  # Average PnL in basis points
 
     @property
     def risk_adjusted_score(self) -> float:
@@ -91,7 +96,7 @@ class MarketEvent:
             EventSeverity.LOW: 0.5,
             EventSeverity.MEDIUM: 0.75,
             EventSeverity.HIGH: 1.0,
-            EventSeverity.CRITICAL: 1.25
+            EventSeverity.CRITICAL: 1.25,
         }
         return multipliers.get(self.severity, 0.75)
 
@@ -121,21 +126,15 @@ class EventDetector:
             EventSeverity.LOW: 0.3,
             EventSeverity.MEDIUM: 0.5,
             EventSeverity.HIGH: 0.7,
-            EventSeverity.CRITICAL: 0.85
+            EventSeverity.CRITICAL: 0.85,
         }
 
         # Combination weights
-        self.component_weights = {
-            "funding": 0.35,
-            "oi": 0.35,
-            "basis": 0.30
-        }
+        self.component_weights = {"funding": 0.35, "oi": 0.35, "basis": 0.30}
 
-    def detect_market_events(self,
-                           exchange: str,
-                           pair: str,
-                           current_price: float,
-                           market_context: Dict[str, Any]) -> List[MarketEvent]:
+    def detect_market_events(
+        self, exchange: str, pair: str, current_price: float, market_context: Dict[str, Any]
+    ) -> List[MarketEvent]:
         """Detect unified market events from all components"""
         try:
             events = []
@@ -166,7 +165,9 @@ class EventDetector:
             # Store events
             for event in significant_events:
                 self.event_history.append(event)
-                logger.info(f"Market event detected: {event.event_type.value} for {pair} on {exchange}")
+                logger.info(
+                    f"Market event detected: {event.event_type.value} for {pair} on {exchange}"
+                )
 
             return significant_events
 
@@ -174,10 +175,9 @@ class EventDetector:
             logger.error(f"Event detection failed: {e}")
             return []
 
-    def get_event_forecast(self,
-                          exchange: str,
-                          pair: str,
-                          horizon_minutes: int = 120) -> Dict[str, Any]:
+    def get_event_forecast(
+        self, exchange: str, pair: str, horizon_minutes: int = 120
+    ) -> Dict[str, Any]:
         """Get event-based price forecast"""
         try:
             # Get recent events
@@ -188,8 +188,7 @@ class EventDetector:
 
             # Active events (not yet resolved)
             active_events = [
-                event for event in recent_events
-                if self._is_event_active(event, horizon_minutes)
+                event for event in recent_events if self._is_event_active(event, horizon_minutes)
             ]
 
             if not active_events:
@@ -204,20 +203,22 @@ class EventDetector:
             logger.error(f"Event forecast failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def get_event_analytics(self,
-                           exchange: Optional[str] = None,
-                           pair: Optional[str] = None,
-                           days_back: int = 30) -> Dict[str, Any]:
+    def get_event_analytics(
+        self, exchange: Optional[str] = None, pair: Optional[str] = None, days_back: int = 30
+    ) -> Dict[str, Any]:
         """Get comprehensive event analytics"""
         try:
             cutoff_time = datetime.now() - timedelta(days=days_back)
 
             # Filter events
             filtered_events = [
-                event for event in self.event_history
-                if (event.timestamp >= cutoff_time and
-                    (exchange is None or event.exchange == exchange) and
-                    (pair is None or event.pair == pair))
+                event
+                for event in self.event_history
+                if (
+                    event.timestamp >= cutoff_time
+                    and (exchange is None or event.exchange == exchange)
+                    and (pair is None or event.pair == pair)
+                )
             ]
 
             if not filtered_events:
@@ -231,7 +232,9 @@ class EventDetector:
             logger.error(f"Event analytics failed: {e}")
             return {"status": "error", "error": str(e)}
 
-    def _get_funding_signals(self, exchange: str, pair: str, current_price: float) -> Dict[str, Any]:
+    def _get_funding_signals(
+        self, exchange: str, pair: str, current_price: float
+    ) -> Dict[str, Any]:
         """Get funding-based signals"""
         try:
             return self.funding_analyzer.get_current_funding_signals(exchange, pair, current_price)
@@ -255,9 +258,9 @@ class EventDetector:
             logger.error(f"Failed to get basis signals: {e}")
             return []
 
-    def _detect_funding_events(self,
-                              funding_signals: Dict[str, Any],
-                              market_context: Dict[str, Any]) -> List[MarketEvent]:
+    def _detect_funding_events(
+        self, funding_signals: Dict[str, Any], market_context: Dict[str, Any]
+    ) -> List[MarketEvent]:
         """Detect funding-based events"""
         try:
             events = []
@@ -265,7 +268,6 @@ class EventDetector:
             if funding_signals.get("status") != "error" and "signals" in funding_signals:
                 for signal in funding_signals["signals"]:
                     if signal.get("confidence", 0) > 0.5:
-
                         # Determine severity
                         severity = self._classify_severity(signal["confidence"])
 
@@ -290,7 +292,7 @@ class EventDetector:
                             suggested_direction=signal["direction"],
                             suggested_size_pct=0.02,  # 2% default
                             stop_loss_bp=signal.get("stop_loss_bp", 150),
-                            take_profit_bp=signal.get("take_profit_bp", 300)
+                            take_profit_bp=signal.get("take_profit_bp", 300),
                         )
                         events.append(event)
 
@@ -300,9 +302,9 @@ class EventDetector:
             logger.error(f"Funding event detection failed: {e}")
             return []
 
-    def _detect_oi_events(self,
-                         oi_signals: Dict[str, Any],
-                         market_context: Dict[str, Any]) -> List[MarketEvent]:
+    def _detect_oi_events(
+        self, oi_signals: Dict[str, Any], market_context: Dict[str, Any]
+    ) -> List[MarketEvent]:
         """Detect OI-based events"""
         try:
             events = []
@@ -310,7 +312,6 @@ class EventDetector:
             if oi_signals.get("status") != "error" and "signals" in oi_signals:
                 for signal in oi_signals["signals"]:
                     if signal.get("confidence", 0) > 0.5:
-
                         severity = self._classify_severity(signal["confidence"])
                         direction = self._map_signal_direction(signal)
 
@@ -332,7 +333,7 @@ class EventDetector:
                             suggested_direction=signal["direction"],
                             suggested_size_pct=0.03,
                             stop_loss_bp=signal.get("stop_loss_bp", 150),
-                            take_profit_bp=signal.get("take_profit_bp", 300)
+                            take_profit_bp=signal.get("take_profit_bp", 300),
                         )
                         events.append(event)
 
@@ -342,16 +343,15 @@ class EventDetector:
             logger.error(f"OI event detection failed: {e}")
             return []
 
-    def _detect_basis_events(self,
-                            basis_signals: List[Any],
-                            market_context: Dict[str, Any]) -> List[MarketEvent]:
+    def _detect_basis_events(
+        self, basis_signals: List[Any], market_context: Dict[str, Any]
+    ) -> List[MarketEvent]:
         """Detect basis-based events"""
         try:
             events = []
 
             for signal in basis_signals:
                 if signal.confidence > 0.5:
-
                     severity = self._classify_severity(signal.confidence)
                     direction = self._map_basis_direction(signal)
 
@@ -373,7 +373,7 @@ class EventDetector:
                         suggested_direction=signal.direction,
                         suggested_size_pct=signal.max_position_size_pct,
                         stop_loss_bp=signal.stop_loss_bp,
-                        take_profit_bp=signal.take_profit_bp
+                        take_profit_bp=signal.take_profit_bp,
                     )
                     events.append(event)
 
@@ -383,11 +383,13 @@ class EventDetector:
             logger.error(f"Basis event detection failed: {e}")
             return []
 
-    def _detect_combined_events(self,
-                               funding_signals: Dict[str, Any],
-                               oi_signals: Dict[str, Any],
-                               basis_signals: List[Any],
-                               market_context: Dict[str, Any]) -> List[MarketEvent]:
+    def _detect_combined_events(
+        self,
+        funding_signals: Dict[str, Any],
+        oi_signals: Dict[str, Any],
+        basis_signals: List[Any],
+        market_context: Dict[str, Any],
+    ) -> List[MarketEvent]:
         """Detect combined multi-component events"""
         try:
             events = []
@@ -439,16 +441,17 @@ class EventDetector:
                             break
 
                     # Calculate combined confidence
-                    combined_confidence = np.mean([
-                        signal_confidences[comp] for comp in agreeing_components
-                    ])
+                    combined_confidence = np.mean(
+                        [signal_confidences[comp] for comp in agreeing_components]
+                    )
 
                     # Weight by number of agreeing components
-                    agreement_boost = 1 + (max_agreement - 1) * 0.2  # 20% boost per additional component
+                    agreement_boost = (
+                        1 + (max_agreement - 1) * 0.2
+                    )  # 20% boost per additional component
                     combined_confidence = min(0.95, combined_confidence * agreement_boost)
 
                     if combined_confidence > 0.6:  # Threshold for combined signals
-
                         severity = self._classify_severity(combined_confidence)
 
                         event = MarketEvent(
@@ -460,18 +463,25 @@ class EventDetector:
                             severity=severity,
                             direction=self._map_combined_direction(dominant_direction),
                             confidence=combined_confidence,
-                            funding_component=funding_signals.get("signals", [{}])[0] if "funding" in agreeing_components else None,
-                            oi_component=oi_signals.get("signals", [{}])[0] if "oi" in agreeing_components else None,
-                            basis_component=basis_signals[0] if basis_signals and "basis" in agreeing_components else None,
+                            funding_component=funding_signals.get("signals", [{}])[0]
+                            if "funding" in agreeing_components
+                            else None,
+                            oi_component=oi_signals.get("signals", [{}])[0]
+                            if "oi" in agreeing_components
+                            else None,
+                            basis_component=basis_signals[0]
+                            if basis_signals and "basis" in agreeing_components
+                            else None,
                             price_at_event=market_context.get("current_price", 0),
                             volume_context=self._classify_volume_context(market_context),
                             volatility_context=self._classify_volatility_context(market_context),
                             expected_resolution_minutes=90,  # 1.5 hours for combined signals
-                            signal_decay_minutes=240,        # 4 hours decay
+                            signal_decay_minutes=240,  # 4 hours decay
                             suggested_direction=dominant_direction,
-                            suggested_size_pct=0.05 * max_agreement,  # Larger size for combined signals
+                            suggested_size_pct=0.05
+                            * max_agreement,  # Larger size for combined signals
                             stop_loss_bp=200,
-                            take_profit_bp=400
+                            take_profit_bp=400,
                         )
                         events.append(event)
 
@@ -486,7 +496,8 @@ class EventDetector:
         try:
             # Filter by minimum confidence
             significant_events = [
-                event for event in events
+                event
+                for event in events
                 if event.confidence >= self.confidence_thresholds[EventSeverity.LOW]
             ]
 
@@ -495,11 +506,12 @@ class EventDetector:
             for event in significant_events:
                 is_duplicate = False
                 for existing in filtered_events:
-                    if (event.event_type == existing.event_type and
-                        event.pair == existing.pair and
-                        event.exchange == existing.exchange and
-                        abs((event.timestamp - existing.timestamp).total_seconds()) < 1800):  # 30 minutes
-
+                    if (
+                        event.event_type == existing.event_type
+                        and event.pair == existing.pair
+                        and event.exchange == existing.exchange
+                        and abs((event.timestamp - existing.timestamp).total_seconds()) < 1800
+                    ):  # 30 minutes
                         # Keep the higher confidence event
                         if event.confidence > existing.confidence:
                             filtered_events.remove(existing)
@@ -546,9 +558,9 @@ class EventDetector:
 
     def _map_basis_direction(self, signal) -> EventDirection:
         """Map basis signal direction to event direction"""
-        if hasattr(signal, 'signal_type') and "mean_reversion" in signal.signal_type.value:
+        if hasattr(signal, "signal_type") and "mean_reversion" in signal.signal_type.value:
             return EventDirection.MEAN_REVERSION
-        elif hasattr(signal, 'direction'):
+        elif hasattr(signal, "direction"):
             if signal.direction == "long":
                 return EventDirection.BULLISH
             elif signal.direction == "short":
@@ -613,10 +625,13 @@ class EventDetector:
             cutoff_time = datetime.now() - timedelta(hours=hours_back)
 
             return [
-                event for event in self.event_history
-                if (event.timestamp >= cutoff_time and
-                    event.exchange == exchange and
-                    event.pair == pair)
+                event
+                for event in self.event_history
+                if (
+                    event.timestamp >= cutoff_time
+                    and event.exchange == exchange
+                    and event.pair == pair
+                )
             ]
 
         except Exception as e:
@@ -628,16 +643,17 @@ class EventDetector:
         try:
             time_since_event = (datetime.now() - event.timestamp).total_seconds() / 60
 
-            return (time_since_event < event.signal_decay_minutes and
-                    time_since_event < horizon_minutes)
+            return (
+                time_since_event < event.signal_decay_minutes and time_since_event < horizon_minutes
+            )
 
         except Exception as e:
             logger.error(f"Event activity check failed: {e}")
             return False
 
-    def _aggregate_event_forecast(self,
-                                 active_events: List[MarketEvent],
-                                 horizon_minutes: int) -> Dict[str, Any]:
+    def _aggregate_event_forecast(
+        self, active_events: List[MarketEvent], horizon_minutes: int
+    ) -> Dict[str, Any]:
         """Aggregate forecast from active events"""
         try:
             if not active_events:
@@ -696,10 +712,10 @@ class EventDetector:
                         "event_type": event.event_type.value,
                         "confidence": event.confidence,
                         "direction": event.direction.value,
-                        "minutes_since": (datetime.now() - event.timestamp).total_seconds() / 60
+                        "minutes_since": (datetime.now() - event.timestamp).total_seconds() / 60,
                     }
                     for event in sorted(active_events, key=lambda e: e.confidence, reverse=True)[:3]
-                ]
+                ],
             }
 
             return forecast
@@ -725,8 +741,8 @@ class EventDetector:
                     "funding_only": 0,
                     "oi_only": 0,
                     "basis_only": 0,
-                    "combined": 0
-                }
+                    "combined": 0,
+                },
             }
 
             # Event type distribution
@@ -735,7 +751,11 @@ class EventDetector:
                 analytics["event_types"][event_type.value] = {
                     "count": count,
                     "percentage": count / len(events),
-                    "avg_confidence": np.mean([e.confidence for e in events if e.event_type == event_type]) if count > 0 else 0
+                    "avg_confidence": np.mean(
+                        [e.confidence for e in events if e.event_type == event_type]
+                    )
+                    if count > 0
+                    else 0,
                 }
 
             # Severity distribution
@@ -743,7 +763,7 @@ class EventDetector:
                 count = sum(1 for e in events if e.severity == severity)
                 analytics["severity_distribution"][severity.value] = {
                     "count": count,
-                    "percentage": count / len(events)
+                    "percentage": count / len(events),
                 }
 
             # Direction distribution
@@ -751,16 +771,18 @@ class EventDetector:
                 count = sum(1 for e in events if e.direction == direction)
                 analytics["direction_distribution"][direction.value] = {
                     "count": count,
-                    "percentage": count / len(events)
+                    "percentage": count / len(events),
                 }
 
             # Component usage analysis
             for event in events:
-                component_count = sum([
-                    1 if event.funding_component else 0,
-                    1 if event.oi_component else 0,
-                    1 if event.basis_component else 0
-                ])
+                component_count = sum(
+                    [
+                        1 if event.funding_component else 0,
+                        1 if event.oi_component else 0,
+                        1 if event.basis_component else 0,
+                    ]
+                )
 
                 if component_count > 1:
                     analytics["component_usage"]["combined"] += 1
@@ -775,9 +797,11 @@ class EventDetector:
             events_with_performance = [e for e in events if e.hit_rate_2hr is not None]
             if events_with_performance:
                 analytics["performance_metrics"] = {
-                    "avg_hit_rate_30min": np.mean([e.hit_rate_30min for e in events_with_performance]),
+                    "avg_hit_rate_30min": np.mean(
+                        [e.hit_rate_30min for e in events_with_performance]
+                    ),
                     "avg_hit_rate_2hr": np.mean([e.hit_rate_2hr for e in events_with_performance]),
-                    "avg_pnl_bp": np.mean([e.avg_pnl_bp for e in events_with_performance])
+                    "avg_pnl_bp": np.mean([e.avg_pnl_bp for e in events_with_performance]),
                 }
 
             return analytics

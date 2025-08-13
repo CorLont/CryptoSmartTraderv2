@@ -12,16 +12,20 @@ from typing import Dict, List, Tuple, Optional, Any
 import logging
 from dataclasses import dataclass
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 @dataclass
 class MCDropoutResult:
     """Result from MC Dropout inference"""
+
     mean_prediction: float
     uncertainty: float
     all_samples: List[float]
     confidence_interval: Tuple[float, float]
     mc_samples: int
+
 
 class MCDropoutInference:
     """Fast Monte Carlo Dropout inference for uncertainty estimation"""
@@ -44,10 +48,7 @@ class MCDropoutInference:
         self.model.apply(enable_dropout_layer)
 
     def predict_with_uncertainty(
-        self,
-        x: torch.Tensor,
-        n_samples: int = 100,
-        confidence_level: float = 0.95
+        self, x: torch.Tensor, n_samples: int = 100, confidence_level: float = 0.95
     ) -> MCDropoutResult:
         """Perform MC Dropout inference"""
 
@@ -87,25 +88,23 @@ class MCDropoutInference:
             uncertainty=uncertainty,
             all_samples=samples.tolist(),
             confidence_interval=(ci_lower, ci_upper),
-            mc_samples=n_samples
+            mc_samples=n_samples,
         )
 
     def batch_predict_with_uncertainty(
-        self,
-        X: torch.Tensor,
-        n_samples: int = 100,
-        confidence_level: float = 0.95
+        self, X: torch.Tensor, n_samples: int = 100, confidence_level: float = 0.95
     ) -> List[MCDropoutResult]:
         """Batch MC Dropout inference"""
 
         results = []
 
         for i in range(X.shape[0]):
-            x_single = X[i:i+1]  # Keep batch dimension
+            x_single = X[i : i + 1]  # Keep batch dimension
             result = self.predict_with_uncertainty(x_single, n_samples, confidence_level)
             results.append(result)
 
         return results
+
 
 class FastMCDropout:
     """Lightweight MC Dropout wrapper for existing models"""
@@ -118,8 +117,11 @@ class FastMCDropout:
             for name, child in module.named_children():
                 if isinstance(child, nn.Linear):
                     # Add dropout after linear layer
-                    setattr(module, name + '_with_dropout',
-                           nn.Sequential(child, nn.Dropout(dropout_rate)))
+                    setattr(
+                        module,
+                        name + "_with_dropout",
+                        nn.Sequential(child, nn.Dropout(dropout_rate)),
+                    )
                 else:
                     add_dropout_after_linear(child)
 
@@ -130,10 +132,7 @@ class FastMCDropout:
 
     @staticmethod
     def estimate_uncertainty(
-        model: nn.Module,
-        x: torch.Tensor,
-        n_samples: int = 50,
-        dropout_rate: float = 0.1
+        model: nn.Module, x: torch.Tensor, n_samples: int = 50, dropout_rate: float = 0.1
     ) -> Tuple[float, float]:
         """Quick uncertainty estimation for any model"""
 
@@ -164,6 +163,7 @@ class FastMCDropout:
 
         return mean_pred, uncertainty
 
+
 class UncertaintyAwarePredictor:
     """Wrapper to add uncertainty to any prediction model"""
 
@@ -173,22 +173,20 @@ class UncertaintyAwarePredictor:
         self.mc_samples = 100
 
     def predict_with_confidence(
-        self,
-        X: np.ndarray,
-        return_uncertainty: bool = True
+        self, X: np.ndarray, return_uncertainty: bool = True
     ) -> Dict[str, Any]:
         """Predict with uncertainty estimation"""
 
         # Get base prediction
-        if hasattr(self.base_model, 'predict'):
+        if hasattr(self.base_model, "predict"):
             base_pred = self.base_model.predict(X)
-        elif hasattr(self.base_model, '__call__'):
+        elif hasattr(self.base_model, "__call__"):
             base_pred = self.base_model(X)
         else:
             raise ValueError("Model must have predict method or be callable")
 
         if not return_uncertainty:
-            return {'prediction': base_pred, 'uncertainty': 0.0}
+            return {"prediction": base_pred, "uncertainty": 0.0}
 
         # Estimate uncertainty based on method
         if self.uncertainty_method == "mc_dropout":
@@ -201,9 +199,9 @@ class UncertaintyAwarePredictor:
             uncertainty = 0.1  # Default uncertainty
 
         return {
-            'prediction': base_pred,
-            'uncertainty': uncertainty,
-            'confidence_interval': self._calculate_confidence_interval(base_pred, uncertainty)
+            "prediction": base_pred,
+            "uncertainty": uncertainty,
+            "confidence_interval": self._calculate_confidence_interval(base_pred, uncertainty),
         }
 
     def _estimate_mc_dropout_uncertainty(self, X: np.ndarray) -> float:
@@ -224,7 +222,7 @@ class UncertaintyAwarePredictor:
                 try:
                     # Add small noise to simulate dropout effect
                     noise_scale = 0.01
-                    if hasattr(X, 'shape') and len(X.shape) > 1:
+                    if hasattr(X, "shape") and len(X.shape) > 1:
                         X_noisy = X + np.random.normal(0, 1)
                     else:
                         X_noisy = X + np.random.normal(0, 1)
@@ -247,10 +245,10 @@ class UncertaintyAwarePredictor:
 
         # This would require retraining on bootstrap samples
         # For now, return a heuristic uncertainty
-        if hasattr(X, 'shape') and len(X.shape) > 1:
+        if hasattr(X, "shape") and len(X.shape) > 1:
             feature_variance = np.var(X, axis=1).mean()
         else:
-            feature_variance = np.var(X) if hasattr(X, '__len__') else 0.1
+            feature_variance = np.var(X) if hasattr(X, "__len__") else 0.1
 
         # Scale feature variance to prediction uncertainty
         return np.sqrt(feature_variance) * 0.1
@@ -259,7 +257,7 @@ class UncertaintyAwarePredictor:
         """Estimate uncertainty from model internals if available"""
 
         # Check if model has uncertainty estimation
-        if hasattr(self.base_model, 'predict_proba'):
+        if hasattr(self.base_model, "predict_proba"):
             # For classifiers, use prediction probability as confidence proxy
             probas = self.base_model.predict_proba(X)
             max_proba = np.max(probas, axis=1)
@@ -267,7 +265,7 @@ class UncertaintyAwarePredictor:
             uncertainty = 1.0 - max_proba
             return np.mean(uncertainty)
 
-        elif hasattr(self.base_model, 'decision_function'):
+        elif hasattr(self.base_model, "decision_function"):
             # For SVMs, use decision function distance
             decision_scores = self.base_model.decision_function(X)
             # Lower absolute scores = higher uncertainty
@@ -279,10 +277,7 @@ class UncertaintyAwarePredictor:
             return 0.1
 
     def _calculate_confidence_interval(
-        self,
-        prediction: float,
-        uncertainty: float,
-        confidence_level: float = 0.95
+        self, prediction: float, uncertainty: float, confidence_level: float = 0.95
     ) -> Tuple[float, float]:
         """Calculate confidence interval from prediction and uncertainty"""
 
@@ -297,10 +292,9 @@ class UncertaintyAwarePredictor:
 
         return (prediction - margin, prediction + margin)
 
+
 def add_uncertainty_to_model(
-    model: Any,
-    uncertainty_method: str = "mc_dropout",
-    mc_samples: int = 100
+    model: Any, uncertainty_method: str = "mc_dropout", mc_samples: int = 100
 ) -> UncertaintyAwarePredictor:
     """Add uncertainty estimation to any model"""
 
@@ -309,15 +303,12 @@ def add_uncertainty_to_model(
 
     return wrapper
 
-def quick_uncertainty_estimate(
-    model: Any,
-    X: np.ndarray,
-    n_samples: int = 50
-) -> Dict[str, float]:
+
+def quick_uncertainty_estimate(model: Any, X: np.ndarray, n_samples: int = 50) -> Dict[str, float]:
     """Quick uncertainty estimation for any model"""
 
     # Get base prediction
-    if hasattr(model, 'predict'):
+    if hasattr(model, "predict"):
         base_prediction = model.predict(X)
     else:
         raise ValueError("Model must have predict method")
@@ -328,7 +319,7 @@ def quick_uncertainty_estimate(
     for _ in range(n_samples):
         try:
             # Add small perturbation to input
-            if hasattr(X, 'shape') and len(X.shape) > 1:
+            if hasattr(X, "shape") and len(X.shape) > 1:
                 X_perturbed = X + np.random.normal(0, 1)
             else:
                 X_perturbed = X + np.random.normal(0, 1)
@@ -343,10 +334,10 @@ def quick_uncertainty_estimate(
     predictions = np.array(predictions)
 
     return {
-        'prediction': float(np.mean(predictions)),
-        'uncertainty': float(np.std(predictions)),
-        'confidence_interval': (
+        "prediction": float(np.mean(predictions)),
+        "uncertainty": float(np.std(predictions)),
+        "confidence_interval": (
             float(np.quantile(predictions, 0.025)),
-            float(np.quantile(predictions, 0.975))
-        )
+            float(np.quantile(predictions, 0.975)),
+        ),
     }

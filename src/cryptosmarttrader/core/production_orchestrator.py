@@ -19,18 +19,17 @@ import numpy as np
 from ..core.structured_logger import get_logger
 from utils.timestamp_validator import normalize_timestamp, validate_timestamp_sequence
 from ..core.data_completeness_gate import DataCompletenessGate
+
 try:
     from orchestration.strict_gate import apply_strict_gate_orchestration
 except ImportError:
     # Fallback implementation
     def apply_strict_gate_orchestration(all_preds, thr=0.80):
-        return {
-            "gate_status": "OK",
-            "total_candidates": 0,
-            "total_passed": 0,
-            "per_horizon": {}
-        }
+        return {"gate_status": "OK", "total_candidates": 0, "total_passed": 0, "per_horizon": {}}
+
+
 from ml.models.predict import predict_all, get_model_status
+
 
 class ProductionOrchestrator:
     """Complete production orchestrator with no fallback data tolerance"""
@@ -64,7 +63,7 @@ class ProductionOrchestrator:
             "status": "RUNNING",
             "steps": {},
             "errors": [],
-            "warnings": []
+            "warnings": [],
         }
 
         try:
@@ -101,7 +100,9 @@ class ProductionOrchestrator:
 
             # Step 6: Atomic write to production outputs
             self.logger.info("Step 6: Writing production outputs")
-            output_status = await self._write_production_outputs(gate_status["filtered_predictions"])
+            output_status = await self._write_production_outputs(
+                gate_status["filtered_predictions"]
+            )
             results["steps"]["output_generation"] = output_status
 
             # Pipeline completed successfully
@@ -110,7 +111,9 @@ class ProductionOrchestrator:
             results["duration_seconds"] = pipeline_duration
             results["end_time"] = datetime.now(timezone.utc).isoformat()
 
-            self.logger.info(f"Production pipeline completed successfully in {pipeline_duration:.2f}s")
+            self.logger.info(
+                f"Production pipeline completed successfully in {pipeline_duration:.2f}s"
+            )
 
         except Exception as e:
             pipeline_duration = time.time() - pipeline_start
@@ -163,7 +166,7 @@ class ProductionOrchestrator:
             "missing_models": missing_models,
             "stale_models": stale_models,
             "total_required": len(required_horizons),
-            "total_available": len(available_models)
+            "total_available": len(available_models),
         }
 
     async def _collect_and_validate_data(self) -> Dict[str, Any]:
@@ -207,7 +210,9 @@ class ProductionOrchestrator:
             "data_quality_score": gate_result["coverage_percentage"],
             "file_age_hours": file_age_hours,
             "total_samples": len(features_df),
-            "timestamp_validation": timestamp_validation if "timestamp" in features_df.columns else None
+            "timestamp_validation": timestamp_validation
+            if "timestamp" in features_df.columns
+            else None,
         }
 
     async def _engineer_features(self, data: pd.DataFrame) -> Dict[str, Any]:
@@ -238,7 +243,7 @@ class ProductionOrchestrator:
             "feature_columns": feature_cols,
             "feature_completeness": feature_completeness,
             "samples_after_cleaning": len(features_clean),
-            "samples_removed": len(data) - len(features_clean)
+            "samples_removed": len(data) - len(features_clean),
         }
 
     async def _generate_predictions(self, features: pd.DataFrame) -> Dict[str, Any]:
@@ -273,14 +278,14 @@ class ProductionOrchestrator:
                 "std_prediction": predictions_df[pred_col].std(),
                 "mean_confidence": predictions_df[conf_col].mean(),
                 "min_confidence": predictions_df[conf_col].min(),
-                "max_confidence": predictions_df[conf_col].max()
+                "max_confidence": predictions_df[conf_col].max(),
             }
 
         return {
             "predictions": predictions_df,
             "total_predictions": len(predictions_df),
             "prediction_statistics": pred_stats,
-            "prediction_columns": required_cols
+            "prediction_columns": required_cols,
         }
 
     async def _apply_confidence_gates(self, predictions: pd.DataFrame) -> Dict[str, Any]:
@@ -291,7 +296,9 @@ class ProductionOrchestrator:
         predictions_by_horizon = {}
 
         for horizon in horizons:
-            horizon_df = predictions[["coin", "timestamp", f"pred_{horizon}", f"conf_{horizon}"]].copy()
+            horizon_df = predictions[
+                ["coin", "timestamp", f"pred_{horizon}", f"conf_{horizon}"]
+            ].copy()
             predictions_by_horizon[horizon] = horizon_df
 
         # Apply strict gate orchestration
@@ -321,10 +328,11 @@ class ProductionOrchestrator:
                 horizon: {
                     "candidates": len(predictions_by_horizon[horizon]),
                     "passed": len(gate_results["per_horizon"][horizon]),
-                    "pass_rate": len(gate_results["per_horizon"][horizon]) / max(len(predictions_by_horizon[horizon]), 1)
+                    "pass_rate": len(gate_results["per_horizon"][horizon])
+                    / max(len(predictions_by_horizon[horizon]), 1),
                 }
                 for horizon in horizons
-            }
+            },
         }
 
     async def _write_production_outputs(self, filtered_predictions: pd.DataFrame) -> Dict[str, Any]:
@@ -352,14 +360,18 @@ class ProductionOrchestrator:
                 "run_id": self.run_id,
                 "timestamp": self.start_time.isoformat(),
                 "total_predictions": len(filtered_predictions),
-                "horizons": filtered_predictions["horizon"].unique().tolist() if "horizon" in filtered_predictions.columns else [],
-                "coins": filtered_predictions["coin"].nunique() if "coin" in filtered_predictions.columns else 0
+                "horizons": filtered_predictions["horizon"].unique().tolist()
+                if "horizon" in filtered_predictions.columns
+                else [],
+                "coins": filtered_predictions["coin"].nunique()
+                if "coin" in filtered_predictions.columns
+                else 0,
             }
 
             summary_file = self.output_dir / "predictions_summary.json"
             temp_summary = summary_file.with_suffix(".tmp")
 
-            with open(temp_summary, 'w') as f:
+            with open(temp_summary, "w") as f:
                 json.dump(summary, f, indent=2)
             temp_summary.rename(summary_file)  # Atomic rename
             output_files.append(str(summary_file))
@@ -368,7 +380,7 @@ class ProductionOrchestrator:
                 "success": True,
                 "output_files": output_files,
                 "total_predictions": len(filtered_predictions),
-                "summary": summary
+                "summary": summary,
             }
 
         except Exception as e:
@@ -386,20 +398,17 @@ class ProductionOrchestrator:
 
         # Load existing log or create new
         if log_file.exists():
-            with open(log_file, 'r') as f:
+            with open(log_file, "r") as f:
                 daily_log = json.load(f)
         else:
-            daily_log = {
-                "date": today,
-                "runs": []
-            }
+            daily_log = {"date": today, "runs": []}
 
         # Add this run
         daily_log["runs"].append(results)
 
         # Write atomically
         temp_log = log_file.with_suffix(".tmp")
-        with open(temp_log, 'w') as f:
+        with open(temp_log, "w") as f:
             json.dump(daily_log, f, indent=2)
         temp_log.rename(log_file)
 
@@ -413,7 +422,7 @@ class ProductionOrchestrator:
             "run_id": self.run_id,
             "error": results.get("error"),
             "failed_step": None,
-            "partial_results": results.get("steps", {})
+            "partial_results": results.get("steps", {}),
         }
 
         # Find failed step
@@ -427,18 +436,19 @@ class ProductionOrchestrator:
         # Append to failures log
         failures = []
         if failure_file.exists():
-            with open(failure_file, 'r') as f:
+            with open(failure_file, "r") as f:
                 failures = json.load(f)
 
         failures.append(failure_log)
 
         # Write atomically
         temp_failures = failure_file.with_suffix(".tmp")
-        with open(temp_failures, 'w') as f:
+        with open(temp_failures, "w") as f:
             json.dump(failures, f, indent=2)
         temp_failures.rename(failure_file)
 
         self.logger.error(f"Failure logged: {failure_file}")
+
 
 async def run_production_pipeline():
     """Main entry point for production pipeline"""
@@ -457,6 +467,7 @@ async def run_production_pipeline():
         print(f"   Error: {results['error']}")
 
     return results
+
 
 if __name__ == "__main__":
     asyncio.run(run_production_pipeline())

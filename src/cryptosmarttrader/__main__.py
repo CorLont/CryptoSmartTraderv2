@@ -53,8 +53,7 @@ def start_services(settings):
 
     with LogContext() as correlation_id:
         logger.info(
-            "Starting CryptoSmartTrader V2 services",
-            extra={"correlation_id": correlation_id}
+            "Starting CryptoSmartTrader V2 services", extra={"correlation_id": correlation_id}
         )
 
         # Import service modules
@@ -94,9 +93,7 @@ def main():
         # 3. Setup logging with validated settings
         print("📋 Setting up logging...")
         setup_logging(
-            level=settings.LOG_LEVEL,
-            log_dir=settings.LOGS_DIR,
-            service_name="cryptosmarttrader"
+            level=settings.LOG_LEVEL, log_dir=settings.LOGS_DIR, service_name="cryptosmarttrader"
         )
 
         logger = get_logger(__name__)
@@ -118,6 +115,7 @@ def main():
         # Keep main thread alive
         try:
             import signal
+
             signal.pause()
         except KeyboardInterrupt:
             logger.info("Shutdown signal received")
@@ -131,6 +129,7 @@ def main():
         print(f"❌ Startup failed: {e}")
         if "--debug" in sys.argv:
             import traceback
+
             traceback.print_exc()
         sys.exit(1)
 
@@ -143,8 +142,12 @@ def main_simple() -> None:
     # Hier kun je start-logica plaatsen (API, dashboard, agents) obv toggles
     # Voor nu alleen een startmelding:
     log = logging.getLogger(__name__)
-    log.info("CryptoSmartTrader gestart met API op %s:%s (dashboard %s)",
-             settings.API_HOST, settings.API_PORT, settings.DASH_PORT)
+    log.info(
+        "CryptoSmartTrader gestart met API op %s:%s (dashboard %s)",
+        settings.API_HOST,
+        settings.API_PORT,
+        settings.DASH_PORT,
+    )
 
 
 if __name__ == "__main__":

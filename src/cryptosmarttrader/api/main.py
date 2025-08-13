@@ -28,6 +28,7 @@ from ..core.logging_config import setup_logging
 # Pydantic models for API documentation
 class HealthResponse(BaseModel):
     """Health check response model."""
+
     status: str = Field(..., description="Service health status")
     timestamp: datetime = Field(..., description="Response timestamp")
     version: str = Field(..., description="Application version")
@@ -37,6 +38,7 @@ class HealthResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Error response model."""
+
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
     details: Dict[str, Any] = Field(default={}, description="Additional error details")
@@ -46,6 +48,7 @@ class ErrorResponse(BaseModel):
 
 class VersionResponse(BaseModel):
     """Version information response model."""
+
     version: str = Field(..., description="Application version")
     build_date: str = Field(..., description="Build timestamp")
     git_commit: str = Field(..., description="Git commit hash")
@@ -64,14 +67,14 @@ async def lifespan(app: FastAPI):
     # Startup
     logger = logging.getLogger(__name__)
     logger.info("CryptoSmartTrader API starting up...")
-    
+
     # Initialize services
     settings = get_settings()
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("CryptoSmartTrader API shutting down...")
 
@@ -129,7 +132,7 @@ app = FastAPI(
     docs_url=None,  # We'll serve custom docs
     redoc_url=None,  # We'll serve custom redoc
     openapi_url="/api/v1/openapi.json",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add middleware
@@ -150,14 +153,14 @@ async def request_middleware(request: Request, call_next):
     """Request middleware for logging and metrics."""
     global request_count
     request_count += 1
-    
+
     # Generate request ID
     request_id = str(uuid.uuid4())
     request.state.request_id = request_id
-    
+
     # Start timing
     start_time = time.time()
-    
+
     # Log request
     logger = logging.getLogger(__name__)
     logger.info(
@@ -166,43 +169,40 @@ async def request_middleware(request: Request, call_next):
             "request_id": request_id,
             "method": request.method,
             "url": str(request.url),
-            "client_ip": request.client.host
-        }
+            "client_ip": request.client.host,
+        },
     )
-    
+
     # Process request
     try:
         response = await call_next(request)
-        
+
         # Calculate duration
         duration = time.time() - start_time
-        
+
         # Log response
         logger.info(
             f"Response {request_id}: {response.status_code} ({duration:.3f}s)",
             extra={
                 "request_id": request_id,
                 "status_code": response.status_code,
-                "duration": duration
-            }
+                "duration": duration,
+            },
         )
-        
+
         # Add headers
         response.headers["X-Request-ID"] = request_id
         response.headers["X-Response-Time"] = f"{duration:.3f}s"
-        
+
         return response
-        
+
     except Exception as e:
         # Log error
         logger.error(
             f"Request {request_id} failed: {str(e)}",
-            extra={
-                "request_id": request_id,
-                "error": str(e)
-            }
+            extra={"request_id": request_id, "error": str(e)},
         )
-        
+
         # Return error response
         return JSONResponse(
             status_code=500,
@@ -211,8 +211,8 @@ async def request_middleware(request: Request, call_next):
                 "message": "An internal server error occurred",
                 "details": {"error_type": type(e).__name__},
                 "timestamp": datetime.utcnow().isoformat(),
-                "request_id": request_id
-            }
+                "request_id": request_id,
+            },
         )
 
 
@@ -243,46 +243,35 @@ def custom_openapi():
     """Generate custom OpenAPI schema with enhanced metadata."""
     if app.openapi_schema:
         return app.openapi_schema
-    
+
     openapi_schema = get_openapi(
         title=app.title,
         version=app.version,
         description=app.description,
         routes=app.routes,
     )
-    
+
     # Add custom metadata
     openapi_schema["info"]["contact"] = {
         "name": "CryptoSmartTrader Support",
         "email": "support@cryptosmarttrader.com",
-        "url": "https://github.com/clont1/cryptosmarttrader"
+        "url": "https://github.com/clont1/cryptosmarttrader",
     }
-    
+
     openapi_schema["info"]["license"] = {
         "name": "MIT",
-        "url": "https://opensource.org/licenses/MIT"
+        "url": "https://opensource.org/licenses/MIT",
     }
-    
+
     # Add security schemes
     openapi_schema["components"]["securitySchemes"] = {
-        "BearerAuth": {
-            "type": "http",
-            "scheme": "bearer",
-            "bearerFormat": "JWT"
-        },
-        "ApiKeyAuth": {
-            "type": "apiKey",
-            "in": "header",
-            "name": "X-API-Key"
-        }
+        "BearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"},
+        "ApiKeyAuth": {"type": "apiKey", "in": "header", "name": "X-API-Key"},
     }
-    
+
     # Add global security
-    openapi_schema["security"] = [
-        {"BearerAuth": []},
-        {"ApiKeyAuth": []}
-    ]
-    
+    openapi_schema["security"] = [{"BearerAuth": []}, {"ApiKeyAuth": []}]
+
     # Add tags
     openapi_schema["tags"] = [
         {"name": "health", "description": "Health check and system status"},
@@ -293,7 +282,7 @@ def custom_openapi():
         {"name": "security", "description": "Security and compliance features"},
         {"name": "ml", "description": "Machine learning and model management"},
     ]
-    
+
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
@@ -302,57 +291,46 @@ app.openapi = custom_openapi
 
 
 # Root endpoint
-@app.get("/", 
-         response_model=Dict[str, Any],
-         tags=["root"],
-         summary="API Root Information")
+@app.get("/", response_model=Dict[str, Any], tags=["root"], summary="API Root Information")
 async def root():
     """Get API root information and available endpoints."""
     return {
         "name": "CryptoSmartTrader V2 API",
         "version": app.version,
         "description": "Enterprise cryptocurrency trading intelligence system",
-        "documentation": {
-            "swagger": "/docs",
-            "redoc": "/redoc",
-            "openapi": "/api/v1/openapi.json"
-        },
+        "documentation": {"swagger": "/docs", "redoc": "/redoc", "openapi": "/api/v1/openapi.json"},
         "endpoints": {
             "health": "/health",
             "trading": "/api/v1/trading",
-            "portfolio": "/api/v1/portfolio", 
+            "portfolio": "/api/v1/portfolio",
             "market": "/api/v1/market",
             "agents": "/api/v1/agents",
-            "security": "/api/v1/security"
+            "security": "/api/v1/security",
         },
-        "monitoring": {
-            "metrics": ":8000/metrics",
-            "dashboard": ":5000"
-        },
+        "monitoring": {"metrics": ":8000/metrics", "dashboard": ":5000"},
         "support": {
             "documentation": "README_OPERATIONS.md",
             "security": "SECURITY.md",
-            "changelog": "CHANGELOG.md"
-        }
+            "changelog": "CHANGELOG.md",
+        },
     }
 
 
 # Version endpoint
-@app.get("/version",
-         response_model=VersionResponse,
-         tags=["root"],
-         summary="Get version information")
+@app.get(
+    "/version", response_model=VersionResponse, tags=["root"], summary="Get version information"
+)
 async def get_version():
     """Get detailed version information."""
     import sys
     import os
-    
+
     return VersionResponse(
         version=app.version,
         build_date=datetime.utcnow().isoformat(),
         git_commit=os.getenv("GIT_COMMIT", "unknown"),
         environment=os.getenv("ENVIRONMENT", "development"),
-        python_version=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        python_version=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
     )
 
 
@@ -367,6 +345,7 @@ app.include_router(security.router, prefix="/api/v1/security", tags=["security"]
 # Import and include deployment router
 try:
     from cryptosmarttrader.api.routers import deployment
+
     app.include_router(deployment.router, prefix="/api/v1/deployment", tags=["deployment"])
 except ImportError:
     logger.warning("Deployment router not available - some endpoints may be missing")
@@ -383,8 +362,8 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             "message": exc.detail,
             "details": {},
             "timestamp": datetime.utcnow().isoformat(),
-            "request_id": getattr(request.state, "request_id", "unknown")
-        }
+            "request_id": getattr(request.state, "request_id", "unknown"),
+        },
     )
 
 
@@ -393,7 +372,7 @@ async def general_exception_handler(request: Request, exc: Exception):
     """Handle general exceptions with standardized error responses."""
     logger = logging.getLogger(__name__)
     logger.exception(f"Unhandled exception: {exc}")
-    
+
     return JSONResponse(
         status_code=500,
         content={
@@ -401,8 +380,8 @@ async def general_exception_handler(request: Request, exc: Exception):
             "message": "An internal server error occurred",
             "details": {"error_type": type(exc).__name__},
             "timestamp": datetime.utcnow().isoformat(),
-            "request_id": getattr(request.state, "request_id", "unknown")
-        }
+            "request_id": getattr(request.state, "request_id", "unknown"),
+        },
     )
 
 
@@ -415,10 +394,4 @@ def create_app() -> FastAPI:
 
 if __name__ == "__main__":
     # Development server
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8001,
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True, log_level="info")

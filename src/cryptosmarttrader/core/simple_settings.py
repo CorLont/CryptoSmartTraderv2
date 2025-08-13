@@ -81,7 +81,7 @@ class CryptoTraderSettings:
         for port_name, port_value in [
             ("dashboard_port", self.dashboard_port),
             ("api_port", self.api_port),
-            ("metrics_port", self.metrics_port)
+            ("metrics_port", self.metrics_port),
         ]:
             if not (1024 <= port_value <= 65535):
                 raise ValueError(f"{port_name} must be between 1024 and 65535")
@@ -127,7 +127,9 @@ class CryptoTraderSettings:
         data = {}
 
         for key, value in self.__dict__.items():
-            if not include_secrets and any(secret in key.lower() for secret in ["key", "secret", "password"]):
+            if not include_secrets and any(
+                secret in key.lower() for secret in ["key", "secret", "password"]
+            ):
                 data[key] = "***MASKED***"
             else:
                 data[key] = value

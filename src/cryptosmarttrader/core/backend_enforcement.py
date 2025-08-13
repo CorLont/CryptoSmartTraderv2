@@ -2,6 +2,7 @@
 """
 Backend enforcement of 80% confidence gate and readiness checks
 """
+
 import pandas as pd
 from pathlib import Path
 import json
@@ -10,6 +11,7 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 
 logger = logging.getLogger(__name__)
+
 
 class BackendEnforcement:
     """Enforce production-grade confidence gating and readiness"""
@@ -25,15 +27,15 @@ class BackendEnforcement:
         original_count = len(predictions_df)
 
         # Find confidence columns
-        confidence_cols = [col for col in predictions_df.columns if col.startswith('confidence_')]
+        confidence_cols = [col for col in predictions_df.columns if col.startswith("confidence_")]
 
         if not confidence_cols:
             logger.warning("No confidence columns found - cannot enforce gate")
             return predictions_df, {
-                'enforced': False,
-                'reason': 'no_confidence_columns',
-                'original_count': original_count,
-                'filtered_count': original_count
+                "enforced": False,
+                "reason": "no_confidence_columns",
+                "original_count": original_count,
+                "filtered_count": original_count,
             }
 
         # Apply confidence filtering
@@ -47,9 +49,9 @@ class BackendEnforcement:
             if max_confidence >= self.confidence_threshold:
                 # Add enforcement metadata
                 row_dict = row.to_dict()
-                row_dict['_enforcement_passed'] = True
-                row_dict['_max_confidence'] = max_confidence
-                row_dict['_enforcement_timestamp'] = enforcement_start.isoformat()
+                row_dict["_enforcement_passed"] = True
+                row_dict["_max_confidence"] = max_confidence
+                row_dict["_enforcement_timestamp"] = enforcement_start.isoformat()
 
                 filtered_predictions.append(row_dict)
 
@@ -58,18 +60,22 @@ class BackendEnforcement:
 
         # Log enforcement action
         enforcement_result = {
-            'enforced': True,
-            'threshold': self.confidence_threshold,
-            'original_count': original_count,
-            'filtered_count': filtered_count,
-            'rejection_rate': (original_count - filtered_count) / original_count if original_count > 0 else 0,
-            'enforcement_timestamp': enforcement_start.isoformat(),
-            'confidence_columns_used': confidence_cols
+            "enforced": True,
+            "threshold": self.confidence_threshold,
+            "original_count": original_count,
+            "filtered_count": filtered_count,
+            "rejection_rate": (original_count - filtered_count) / original_count
+            if original_count > 0
+            else 0,
+            "enforcement_timestamp": enforcement_start.isoformat(),
+            "confidence_columns_used": confidence_cols,
         }
 
         self.enforcement_log.append(enforcement_result)
 
-        logger.info(f"Confidence gate enforced: {filtered_count}/{original_count} predictions passed (≥{self.confidence_threshold}%)")
+        logger.info(
+            f"Confidence gate enforced: {filtered_count}/{original_count} predictions passed (≥{self.confidence_threshold}%)"
+        )
 
         return filtered_df, enforcement_result
 
@@ -77,10 +83,10 @@ class BackendEnforcement:
         """Check system readiness for production"""
 
         readiness_checks = {
-            'timestamp': datetime.now().isoformat(),
-            'checks': {},
-            'overall_ready': False,
-            'go_no_go': 'NO-GO'  # Default to NO-GO
+            "timestamp": datetime.now().isoformat(),
+            "checks": {},
+            "overall_ready": False,
+            "go_no_go": "NO-GO",  # Default to NO-GO
         }
 
         # Check 1: Models available
@@ -89,24 +95,21 @@ class BackendEnforcement:
 
         if metadata_file.exists():
             try:
-                with open(metadata_file, 'r') as f:
+                with open(metadata_file, "r") as f:
                     metadata = json.load(f)
 
-                models_count = len(metadata.get('models_trained', []))
-                readiness_checks['checks']['models'] = {
-                    'status': 'ready' if models_count > 0 else 'not_ready',
-                    'models_count': models_count,
-                    'last_training': metadata.get('timestamp')
+                models_count = len(metadata.get("models_trained", []))
+                readiness_checks["checks"]["models"] = {
+                    "status": "ready" if models_count > 0 else "not_ready",
+                    "models_count": models_count,
+                    "last_training": metadata.get("timestamp"),
                 }
             except Exception as e:
-                readiness_checks['checks']['models'] = {
-                    'status': 'error',
-                    'error': str(e)
-                }
+                readiness_checks["checks"]["models"] = {"status": "error", "error": str(e)}
         else:
-            readiness_checks['checks']['models'] = {
-                'status': 'not_ready',
-                'reason': 'no_trained_models'
+            readiness_checks["checks"]["models"] = {
+                "status": "not_ready",
+                "reason": "no_trained_models",
             }
 
         # Check 2: Recent data availability
@@ -117,20 +120,17 @@ class BackendEnforcement:
                 # Check file age
                 file_age_hours = (datetime.now().timestamp() - features_file.stat().st_mtime) / 3600
 
-                readiness_checks['checks']['data'] = {
-                    'status': 'ready' if file_age_hours < 24 else 'stale',
-                    'file_age_hours': file_age_hours,
-                    'file_path': str(features_file)
+                readiness_checks["checks"]["data"] = {
+                    "status": "ready" if file_age_hours < 24 else "stale",
+                    "file_age_hours": file_age_hours,
+                    "file_path": str(features_file),
                 }
             except Exception as e:
-                readiness_checks['checks']['data'] = {
-                    'status': 'error',
-                    'error': str(e)
-                }
+                readiness_checks["checks"]["data"] = {"status": "error", "error": str(e)}
         else:
-            readiness_checks['checks']['data'] = {
-                'status': 'not_ready',
-                'reason': 'no_processed_data'
+            readiness_checks["checks"]["data"] = {
+                "status": "not_ready",
+                "reason": "no_processed_data",
             }
 
         # Check 3: Predictions quality
@@ -140,13 +140,13 @@ class BackendEnforcement:
 
         if pred_file.exists():
             try:
-                if pred_file.suffix == '.parquet':
+                if pred_file.suffix == ".parquet":
                     pred_df = pd.read_parquet(pred_file)
                 else:
                     pred_df = pd.read_csv(pred_file)
 
                 # Check prediction quality
-                confidence_cols = [col for col in pred_df.columns if col.startswith('confidence_')]
+                confidence_cols = [col for col in pred_df.columns if col.startswith("confidence_")]
 
                 if confidence_cols:
                     all_confidences = []
@@ -154,43 +154,41 @@ class BackendEnforcement:
                         all_confidences.extend(pred_df[col].dropna().tolist())
 
                     if all_confidences:
-                        high_conf_rate = (pd.Series(all_confidences) >= self.confidence_threshold).mean()
+                        high_conf_rate = (
+                            pd.Series(all_confidences) >= self.confidence_threshold
+                        ).mean()
 
-                        readiness_checks['checks']['predictions'] = {
-                            'status': 'ready' if high_conf_rate > 0.1 else 'low_quality',
-                            'total_predictions': len(pred_df),
-                            'high_confidence_rate': high_conf_rate,
-                            'mean_confidence': pd.Series(all_confidences).mean()
+                        readiness_checks["checks"]["predictions"] = {
+                            "status": "ready" if high_conf_rate > 0.1 else "low_quality",
+                            "total_predictions": len(pred_df),
+                            "high_confidence_rate": high_conf_rate,
+                            "mean_confidence": pd.Series(all_confidences).mean(),
                         }
                     else:
-                        readiness_checks['checks']['predictions'] = {
-                            'status': 'not_ready',
-                            'reason': 'no_confidence_data'
+                        readiness_checks["checks"]["predictions"] = {
+                            "status": "not_ready",
+                            "reason": "no_confidence_data",
                         }
                 else:
-                    readiness_checks['checks']['predictions'] = {
-                        'status': 'not_ready',
-                        'reason': 'no_confidence_columns'
+                    readiness_checks["checks"]["predictions"] = {
+                        "status": "not_ready",
+                        "reason": "no_confidence_columns",
                     }
             except Exception as e:
-                readiness_checks['checks']['predictions'] = {
-                    'status': 'error',
-                    'error': str(e)
-                }
+                readiness_checks["checks"]["predictions"] = {"status": "error", "error": str(e)}
         else:
-            readiness_checks['checks']['predictions'] = {
-                'status': 'not_ready',
-                'reason': 'no_predictions_file'
+            readiness_checks["checks"]["predictions"] = {
+                "status": "not_ready",
+                "reason": "no_predictions_file",
             }
 
         # Determine overall readiness
         all_ready = all(
-            check.get('status') == 'ready'
-            for check in readiness_checks['checks'].values()
+            check.get("status") == "ready" for check in readiness_checks["checks"].values()
         )
 
-        readiness_checks['overall_ready'] = all_ready
-        readiness_checks['go_no_go'] = 'GO' if all_ready else 'NO-GO'
+        readiness_checks["overall_ready"] = all_ready
+        readiness_checks["go_no_go"] = "GO" if all_ready else "NO-GO"
 
         # Log readiness check
         logger.info(f"Readiness check: {readiness_checks['go_no_go']} - Ready: {all_ready}")
@@ -205,17 +203,20 @@ class BackendEnforcement:
         log_file = log_dir / f"enforcement_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 
         enforcement_data = {
-            'timestamp': datetime.now().isoformat(),
-            'confidence_threshold': self.confidence_threshold,
-            'enforcement_log': self.enforcement_log
+            "timestamp": datetime.now().isoformat(),
+            "confidence_threshold": self.confidence_threshold,
+            "enforcement_log": self.enforcement_log,
         }
 
-        with open(log_file, 'w') as f:
+        with open(log_file, "w") as f:
             json.dump(enforcement_data, f, indent=2)
 
         logger.info(f"Enforcement log saved to {log_file}")
 
-def apply_backend_enforcement(predictions_df: pd.DataFrame, confidence_threshold: float = 80.0) -> Tuple[pd.DataFrame, Dict, Dict]:
+
+def apply_backend_enforcement(
+    predictions_df: pd.DataFrame, confidence_threshold: float = 80.0
+) -> Tuple[pd.DataFrame, Dict, Dict]:
     """Apply complete backend enforcement"""
 
     enforcer = BackendEnforcement(confidence_threshold)
@@ -231,14 +232,15 @@ def apply_backend_enforcement(predictions_df: pd.DataFrame, confidence_threshold
 
     return filtered_df, gate_result, readiness_result
 
+
 if __name__ == "__main__":
     # Test enforcement
 
     # Create test predictions
     test_data = [
-        {'coin': 'BTC', 'confidence_1h': 85, 'confidence_24h': 90},
-        {'coin': 'ETH', 'confidence_1h': 75, 'confidence_24h': 82},
-        {'coin': 'ADA', 'confidence_1h': 60, 'confidence_24h': 70}
+        {"coin": "BTC", "confidence_1h": 85, "confidence_24h": 90},
+        {"coin": "ETH", "confidence_1h": 75, "confidence_24h": 82},
+        {"coin": "ADA", "confidence_1h": 60, "confidence_24h": 70},
     ]
 
     test_df = pd.DataFrame(test_data)

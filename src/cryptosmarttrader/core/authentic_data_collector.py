@@ -15,11 +15,14 @@ from dataclasses import dataclass
 import ccxt.async_support as ccxt
 from ..core.strict_data_integrity import DataSource, StrictDataIntegrityEnforcer
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 @dataclass
 class AuthenticDataPoint:
     """Authentic data point with source verification"""
+
     symbol: str
     timestamp: datetime
     price: float
@@ -31,9 +34,11 @@ class AuthenticDataPoint:
     api_response_time_ms: float
     data_quality_score: float  # 0-1, based on freshness and completeness
 
+
 @dataclass
 class DataCollectionResult:
     """Result of authentic data collection"""
+
     success: bool
     symbols_collected: List[str]
     symbols_failed: List[str]
@@ -42,6 +47,7 @@ class DataCollectionResult:
     total_api_calls: int
     average_response_time_ms: float
     data_integrity_score: float  # 0-1, overall data quality
+
 
 class AuthenticDataCollector:
     """Collects only authentic data from exchanges - zero fallbacks"""
@@ -65,30 +71,36 @@ class AuthenticDataCollector:
 
         try:
             # Primary exchanges for authentic data
-            self.exchanges['kraken'] = ccxt.kraken({
-                'enableRateLimit': True,
-                'timeout': self.timeout_seconds * 1000,
-            })
+            self.exchanges["kraken"] = ccxt.kraken(
+                {
+                    "enableRateLimit": True,
+                    "timeout": self.timeout_seconds * 1000,
+                }
+            )
 
-            self.exchanges['binance'] = ccxt.binance({
-                'enableRateLimit': True,
-                'timeout': self.timeout_seconds * 1000,
-            })
+            self.exchanges["binance"] = ccxt.binance(
+                {
+                    "enableRateLimit": True,
+                    "timeout": self.timeout_seconds * 1000,
+                }
+            )
 
-            self.exchanges['kucoin'] = ccxt.kucoin({
-                'enableRateLimit': True,
-                'timeout': self.timeout_seconds * 1000,
-            })
+            self.exchanges["kucoin"] = ccxt.kucoin(
+                {
+                    "enableRateLimit": True,
+                    "timeout": self.timeout_seconds * 1000,
+                }
+            )
 
-            self.logger.info(f"Initialized {len(self.exchanges)} exchanges for authentic data collection")
+            self.logger.info(
+                f"Initialized {len(self.exchanges)} exchanges for authentic data collection"
+            )
 
         except Exception as e:
             self.logger.error(f"Exchange initialization error: {e}")
 
     async def collect_authentic_market_data(
-        self,
-        symbols: List[str],
-        require_all_symbols: bool = True
+        self, symbols: List[str], require_all_symbols: bool = True
     ) -> DataCollectionResult:
         """Collect authentic market data with zero fallbacks"""
 
@@ -105,7 +117,9 @@ class AuthenticDataCollector:
         symbols_to_collect = [s for s in symbols if s not in self.failed_symbols]
 
         if len(symbols_to_collect) < len(symbols):
-            self.logger.warning(f"Skipping {len(symbols) - len(symbols_to_collect)} previously failed symbols")
+            self.logger.warning(
+                f"Skipping {len(symbols) - len(symbols_to_collect)} previously failed symbols"
+            )
 
         # Collect data for each symbol
         for symbol in symbols_to_collect:
@@ -138,22 +152,32 @@ class AuthenticDataCollector:
                         # Create authentic data point
                         data_point = AuthenticDataPoint(
                             symbol=symbol,
-                            timestamp=datetime.utcfromtimestamp(ticker['timestamp'] / 1000) if ticker['timestamp'] else datetime.utcnow(),
-                            price=float(ticker['last']) if ticker['last'] else 0.0,
-                            volume_24h=float(ticker['quoteVolume']) if ticker['quoteVolume'] else 0.0,
-                            change_24h=float(ticker['percentage']) / 100 if ticker['percentage'] else 0.0,
+                            timestamp=datetime.utcfromtimestamp(ticker["timestamp"] / 1000)
+                            if ticker["timestamp"]
+                            else datetime.utcnow(),
+                            price=float(ticker["last"]) if ticker["last"] else 0.0,
+                            volume_24h=float(ticker["quoteVolume"])
+                            if ticker["quoteVolume"]
+                            else 0.0,
+                            change_24h=float(ticker["percentage"]) / 100
+                            if ticker["percentage"]
+                            else 0.0,
                             market_cap=None,  # Will be calculated separately if needed
                             source_exchange=exchange_name,
                             data_source=DataSource.AUTHENTIC,
                             api_response_time_ms=response_time,
-                            data_quality_score=self._calculate_data_quality_score(ticker, response_time)
+                            data_quality_score=self._calculate_data_quality_score(
+                                ticker, response_time
+                            ),
                         )
 
                         authentic_data_points.append(data_point)
                         symbols_collected.append(symbol)
                         symbol_success = True
 
-                        self.logger.debug(f"Collected authentic data for {symbol} from {exchange_name}")
+                        self.logger.debug(
+                            f"Collected authentic data for {symbol} from {exchange_name}"
+                        )
                         break  # Success - move to next symbol
 
                 except Exception as e:
@@ -166,7 +190,9 @@ class AuthenticDataCollector:
                 self.failed_symbols.add(symbol)  # Track for future optimization
 
                 if require_all_symbols:
-                    self.logger.error(f"CRITICAL: Failed to collect authentic data for required symbol {symbol}")
+                    self.logger.error(
+                        f"CRITICAL: Failed to collect authentic data for required symbol {symbol}"
+                    )
 
         # Close exchange connections
         await self._close_exchanges()
@@ -176,9 +202,8 @@ class AuthenticDataCollector:
         data_integrity_score = len(symbols_collected) / len(symbols) if symbols else 0
 
         # Determine collection success
-        collection_success = (
-            len(symbols_collected) > 0 and
-            (not require_all_symbols or len(symbols_failed) == 0)
+        collection_success = len(symbols_collected) > 0 and (
+            not require_all_symbols or len(symbols_failed) == 0
         )
 
         result = DataCollectionResult(
@@ -189,11 +214,13 @@ class AuthenticDataCollector:
             collection_timestamp=collection_start,
             total_api_calls=total_api_calls,
             average_response_time_ms=avg_response_time,
-            data_integrity_score=data_integrity_score
+            data_integrity_score=data_integrity_score,
         )
 
-        self.logger.info(f"Collection complete: {len(symbols_collected)}/{len(symbols)} symbols, "
-                        f"{total_api_calls} API calls, {avg_response_time:.1f}ms avg response")
+        self.logger.info(
+            f"Collection complete: {len(symbols_collected)}/{len(symbols)} symbols, "
+            f"{total_api_calls} API calls, {avg_response_time:.1f}ms avg response"
+        )
 
         return result
 
@@ -201,12 +228,7 @@ class AuthenticDataCollector:
         """Get correct trading pair for symbol on exchange"""
 
         # Common trading pair patterns
-        possible_pairs = [
-            f"{symbol}/USDT",
-            f"{symbol}/USD",
-            f"{symbol}/BTC",
-            f"{symbol}/ETH"
-        ]
+        possible_pairs = [f"{symbol}/USDT", f"{symbol}/USD", f"{symbol}/BTC", f"{symbol}/ETH"]
 
         for pair in possible_pairs:
             if pair in exchange.markets:
@@ -218,21 +240,23 @@ class AuthenticDataCollector:
         """Validate that ticker data is authentic and complete"""
 
         # Check required fields
-        required_fields = ['last', 'timestamp', 'quoteVolume']
+        required_fields = ["last", "timestamp", "quoteVolume"]
 
         for field in required_fields:
             if ticker.get(field) is None:
                 return False
 
         # Check data freshness (within last hour)
-        if ticker['timestamp']:
-            data_age_hours = (datetime.utcnow().timestamp() * 1000 - ticker['timestamp']) / (1000 * 3600)
+        if ticker["timestamp"]:
+            data_age_hours = (datetime.utcnow().timestamp() * 1000 - ticker["timestamp"]) / (
+                1000 * 3600
+            )
             if data_age_hours > 1:  # Data older than 1 hour
                 return False
 
         # Check realistic values
-        price = ticker.get('last', 0)
-        volume = ticker.get('quoteVolume', 0)
+        price = ticker.get("last", 0)
+        volume = ticker.get("quoteVolume", 0)
 
         if price <= 0 or volume < 0:
             return False
@@ -256,14 +280,16 @@ class AuthenticDataCollector:
             score -= 0.1
 
         # Check data completeness
-        optional_fields = ['high', 'low', 'open', 'close', 'percentage']
+        optional_fields = ["high", "low", "open", "close", "percentage"]
         present_optional = sum(1 for field in optional_fields if ticker.get(field) is not None)
         completeness_score = present_optional / len(optional_fields)
-        score *= (0.8 + 0.2 * completeness_score)  # Weight completeness 20%
+        score *= 0.8 + 0.2 * completeness_score  # Weight completeness 20%
 
         # Check data freshness
-        if ticker.get('timestamp'):
-            data_age_minutes = (datetime.utcnow().timestamp() * 1000 - ticker['timestamp']) / (1000 * 60)
+        if ticker.get("timestamp"):
+            data_age_minutes = (datetime.utcnow().timestamp() * 1000 - ticker["timestamp"]) / (
+                1000 * 60
+            )
             if data_age_minutes < 5:  # Very fresh data
                 score *= 1.0
             elif data_age_minutes < 15:  # Reasonably fresh
@@ -294,21 +320,21 @@ class AuthenticDataCollector:
 
         for dp in data_points:
             record = {
-                'symbol': dp.symbol,
-                'timestamp': dp.timestamp,
-                'price': dp.price,
-                'volume_24h': dp.volume_24h,
-                'change_24h': dp.change_24h,
-                'market_cap': dp.market_cap,
-                'source_exchange': dp.source_exchange,
-                'api_response_time_ms': dp.api_response_time_ms,
-                'data_quality_score': dp.data_quality_score
+                "symbol": dp.symbol,
+                "timestamp": dp.timestamp,
+                "price": dp.price,
+                "volume_24h": dp.volume_24h,
+                "change_24h": dp.change_24h,
+                "market_cap": dp.market_cap,
+                "source_exchange": dp.source_exchange,
+                "api_response_time_ms": dp.api_response_time_ms,
+                "data_quality_score": dp.data_quality_score,
             }
 
             data_records.append(record)
 
             # Track data sources for integrity validation
-            for col in ['price', 'volume_24h', 'change_24h']:
+            for col in ["price", "volume_24h", "change_24h"]:
                 data_sources[f"{dp.symbol}_{col}"] = dp.data_source
 
         df = pd.DataFrame(data_records)
@@ -317,10 +343,16 @@ class AuthenticDataCollector:
         integrity_report = self.integrity_enforcer.validate_data_integrity(df, data_sources)
 
         if not integrity_report.is_production_ready:
-            self.logger.error(f"Authentic data failed integrity check: {integrity_report.critical_violations} critical violations")
-            raise ValueError(f"Collected data failed integrity validation: {integrity_report.critical_violations} critical issues")
+            self.logger.error(
+                f"Authentic data failed integrity check: {integrity_report.critical_violations} critical violations"
+            )
+            raise ValueError(
+                f"Collected data failed integrity validation: {integrity_report.critical_violations} critical issues"
+            )
 
-        self.logger.info(f"Created authentic DataFrame: {len(df)} records, {integrity_report.authentic_data_percentage:.1f}% authentic")
+        self.logger.info(
+            f"Created authentic DataFrame: {len(df)} records, {integrity_report.authentic_data_percentage:.1f}% authentic"
+        )
 
         return df
 
@@ -328,10 +360,11 @@ class AuthenticDataCollector:
         """Get report of symbols that consistently fail data collection"""
 
         return {
-            'failed_symbols': list(self.failed_symbols),
-            'failed_count': len(self.failed_symbols),
-            'recommendation': 'Remove failed symbols from universe or investigate API issues'
+            "failed_symbols": list(self.failed_symbols),
+            "failed_count": len(self.failed_symbols),
+            "recommendation": "Remove failed symbols from universe or investigate API issues",
         }
+
 
 class ProductionDataValidator:
     """Validates data before production use - blocks any non-authentic data"""
@@ -344,7 +377,7 @@ class ProductionDataValidator:
         self,
         df: pd.DataFrame,
         data_sources: Dict[str, DataSource] = None,
-        block_on_violation: bool = True
+        block_on_violation: bool = True,
     ) -> Tuple[bool, str]:
         """Validate data for production use"""
 
@@ -352,8 +385,10 @@ class ProductionDataValidator:
         integrity_report = self.integrity_enforcer.validate_data_integrity(df, data_sources)
 
         if not integrity_report.is_production_ready:
-            violation_summary = f"Critical violations: {integrity_report.critical_violations}, " \
-                              f"Authentic data: {integrity_report.authentic_data_percentage:.1f}%"
+            violation_summary = (
+                f"Critical violations: {integrity_report.critical_violations}, "
+                f"Authentic data: {integrity_report.authentic_data_percentage:.1f}%"
+            )
 
             if block_on_violation:
                 self.logger.error(f"PRODUCTION BLOCKED: {violation_summary}")
@@ -362,10 +397,15 @@ class ProductionDataValidator:
                 self.logger.warning(f"Data validation warnings: {violation_summary}")
                 return False, violation_summary
 
-        self.logger.info(f"Production validation PASSED: {integrity_report.authentic_data_percentage:.1f}% authentic data")
+        self.logger.info(
+            f"Production validation PASSED: {integrity_report.authentic_data_percentage:.1f}% authentic data"
+        )
         return True, "Production validation passed"
 
-async def collect_authentic_crypto_data(symbols: List[str], require_all: bool = True) -> pd.DataFrame:
+
+async def collect_authentic_crypto_data(
+    symbols: List[str], require_all: bool = True
+) -> pd.DataFrame:
     """Collect authentic cryptocurrency data with zero fallbacks"""
 
     collector = AuthenticDataCollector()
@@ -375,7 +415,9 @@ async def collect_authentic_crypto_data(symbols: List[str], require_all: bool = 
         result = await collector.collect_authentic_market_data(symbols, require_all)
 
         if not result.success:
-            raise ValueError(f"Failed to collect authentic data: {len(result.symbols_failed)} failed symbols")
+            raise ValueError(
+                f"Failed to collect authentic data: {len(result.symbols_failed)} failed symbols"
+            )
 
         # Create DataFrame from authentic data
         df = collector.create_authentic_dataframe(result.authentic_data_points)
@@ -386,10 +428,13 @@ async def collect_authentic_crypto_data(symbols: List[str], require_all: bool = 
         logging.getLogger(__name__).error(f"Authentic data collection failed: {e}")
         raise
 
+
 def validate_production_ready(df: pd.DataFrame, data_sources: Dict[str, DataSource] = None) -> bool:
     """Quick validation that data is production ready"""
 
     validator = ProductionDataValidator()
-    is_valid, message = validator.validate_for_production(df, data_sources, block_on_violation=False)
+    is_valid, message = validator.validate_for_production(
+        df, data_sources, block_on_violation=False
+    )
 
     return is_valid

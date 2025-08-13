@@ -17,6 +17,7 @@ import json
 
 from ..core.structured_logger import get_logger
 
+
 class ProbabilityCalibrator:
     """Advanced probability calibration for meaningful confidence scores"""
 
@@ -26,7 +27,9 @@ class ProbabilityCalibrator:
         self.calibration_stats = {}
         self.is_fitted = False
 
-    def fit_calibration(self, predictions: pd.DataFrame, actual_outcomes: pd.DataFrame) -> Dict[str, Any]:
+    def fit_calibration(
+        self, predictions: pd.DataFrame, actual_outcomes: pd.DataFrame
+    ) -> Dict[str, Any]:
         """
         Fit calibration models for each horizon
 
@@ -61,14 +64,14 @@ class ProbabilityCalibrator:
             actual_data = actual_data[valid_mask]
 
             if len(pred_data) < 100:
-                self.logger.warning(f"Insufficient data for {horizon} calibration: {len(pred_data)} samples")
+                self.logger.warning(
+                    f"Insufficient data for {horizon} calibration: {len(pred_data)} samples"
+                )
                 continue
 
             # Fit calibration
             horizon_results = self._fit_horizon_calibration(
-                pred_data[conf_col].values,
-                actual_data.values,
-                horizon
+                pred_data[conf_col].values, actual_data.values, horizon
             )
 
             calibration_results[horizon] = horizon_results
@@ -83,10 +86,12 @@ class ProbabilityCalibrator:
         return {
             "success": self.is_fitted,
             "calibrated_horizons": list(calibration_results.keys()),
-            "calibration_stats": calibration_results
+            "calibration_stats": calibration_results,
         }
 
-    def _fit_horizon_calibration(self, confidence_scores: np.ndarray, binary_outcomes: np.ndarray, horizon: str) -> Dict[str, Any]:
+    def _fit_horizon_calibration(
+        self, confidence_scores: np.ndarray, binary_outcomes: np.ndarray, horizon: str
+    ) -> Dict[str, Any]:
         """Fit calibration for a single horizon"""
 
         # Method 1: Isotonic Regression (non-parametric, monotonic)
@@ -106,7 +111,7 @@ class ProbabilityCalibrator:
         self.calibrators[horizon] = {
             "isotonic": isotonic_cal,
             "platt": platt_cal,
-            "method": "isotonic" if calibration_stats["isotonic_better"] else "platt"
+            "method": "isotonic" if calibration_stats["isotonic_better"] else "platt",
         }
 
         self.calibration_stats[horizon] = calibration_stats
@@ -118,10 +123,12 @@ class ProbabilityCalibrator:
             "resolution": calibration_stats["resolution"],
             "sharpness": calibration_stats["sharpness"],
             "method_used": self.calibrators[horizon]["method"],
-            "samples": len(confidence_scores)
+            "samples": len(confidence_scores),
         }
 
-    def _evaluate_calibration(self, confidence_scores: np.ndarray, binary_outcomes: np.ndarray) -> Dict[str, Any]:
+    def _evaluate_calibration(
+        self, confidence_scores: np.ndarray, binary_outcomes: np.ndarray
+    ) -> Dict[str, Any]:
         """Evaluate calibration quality with multiple metrics"""
 
         # Expected Calibration Error (ECE)
@@ -206,7 +213,7 @@ class ProbabilityCalibrator:
             "bin_counts": bin_counts,
             "isotonic_brier": isotonic_brier,
             "platt_brier": platt_brier,
-            "isotonic_better": isotonic_brier < platt_brier
+            "isotonic_better": isotonic_brier < platt_brier,
         }
 
     def calibrate_predictions(self, predictions: pd.DataFrame) -> pd.DataFrame:
@@ -263,7 +270,7 @@ class ProbabilityCalibrator:
         calibration_data = {
             "calibrators": self.calibrators,
             "calibration_stats": self.calibration_stats,
-            "is_fitted": self.is_fitted
+            "is_fitted": self.is_fitted,
         }
 
         joblib.dump(calibration_data, filepath)
@@ -292,7 +299,7 @@ class ProbabilityCalibrator:
         report = {
             "fitted": True,
             "calibrated_horizons": list(self.calibrators.keys()),
-            "calibration_quality": {}
+            "calibration_quality": {},
         }
 
         for horizon, stats in self.calibration_stats.items():
@@ -302,7 +309,7 @@ class ProbabilityCalibrator:
                 "reliability": stats["reliability"],
                 "resolution": stats["resolution"],
                 "method_used": self.calibrators[horizon]["method"],
-                "quality_grade": self._grade_calibration_quality(stats["calibration_error"])
+                "quality_grade": self._grade_calibration_quality(stats["calibration_error"]),
             }
 
         return report
@@ -318,6 +325,7 @@ class ProbabilityCalibrator:
             return "FAIR"
         else:
             return "POOR"
+
 
 def create_synthetic_calibration_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Create synthetic data for calibration testing"""
@@ -349,16 +357,11 @@ def create_synthetic_calibration_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
             accuracy_prob = 0.3 + 0.4 * confidence  # Base accuracy + confidence boost
             actual_correct = np.random.binomial(1, accuracy_prob)
 
-            predictions_data.append({
-                "coin": coin,
-                f"pred_{horizon}": prediction,
-                f"conf_{horizon}": confidence
-            })
+            predictions_data.append(
+                {"coin": coin, f"pred_{horizon}": prediction, f"conf_{horizon}": confidence}
+            )
 
-            outcomes_data.append({
-                "coin": coin,
-                f"actual_{horizon}": actual_correct
-            })
+            outcomes_data.append({"coin": coin, f"actual_{horizon}": actual_correct})
 
     predictions_df = pd.DataFrame(predictions_data)
     outcomes_df = pd.DataFrame(outcomes_data)
@@ -372,6 +375,7 @@ def create_synthetic_calibration_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
         outcomes_df[f"actual_{horizon}"] = (outcomes_df[f"actual_{horizon}"] > 0.5).astype(int)
 
     return predictions_df, outcomes_df
+
 
 if __name__ == "__main__":
     print("Testing Probability Calibrator...")

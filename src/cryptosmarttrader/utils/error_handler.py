@@ -21,8 +21,9 @@ class ErrorHandler:
         self.recovery_strategies = {}
         self._lock = threading.Lock()
 
-    def register_recovery_strategy(self, error_type: Type[Exception],
-                                 strategy: Callable[[Exception], Any]):
+    def register_recovery_strategy(
+        self, error_type: Type[Exception], strategy: Callable[[Exception], Any]
+    ):
         """Register a recovery strategy for specific error types"""
         self.recovery_strategies[error_type] = strategy
         logger.info(f"Registered recovery strategy for {error_type.__name__}")
@@ -39,11 +40,11 @@ class ErrorHandler:
             bool: True if error was handled/recovered, False otherwise
         """
         error_info = {
-            'timestamp': time.time(),
-            'type': type(error).__name__,
-            'message': str(error),
-            'traceback': traceback.format_exc(),
-            'context': context or {}
+            "timestamp": time.time(),
+            "type": type(error).__name__,
+            "message": str(error),
+            "traceback": traceback.format_exc(),
+            "context": context or {},
         }
 
         with self._lock:
@@ -51,12 +52,14 @@ class ErrorHandler:
             self.error_counts[type(error).__name__] += 1
 
         # Log the error
-        logger.error(f"Error handled: {type(error).__name__}: {str(error)}",
-                    extra={
-                        'error_type': type(error).__name__,
-                        'error_context': context,
-                        'traceback': error_info['traceback']
-                    })
+        logger.error(
+            f"Error handled: {type(error).__name__}: {str(error)}",
+            extra={
+                "error_type": type(error).__name__,
+                "error_context": context,
+                "traceback": error_info["traceback"],
+            },
+        )
 
         # Try recovery strategies
         return self._attempt_recovery(error, context)
@@ -79,7 +82,9 @@ class ErrorHandler:
             if isinstance(error, registered_type):
                 try:
                     strategy(error)
-                    logger.info(f"Successfully recovered from {error_type.__name__} using {registered_type.__name__} strategy")
+                    logger.info(
+                        f"Successfully recovered from {error_type.__name__} using {registered_type.__name__} strategy"
+                    )
                     return True
                 except Exception as recovery_error:
                     logger.error(f"Recovery strategy failed: {recovery_error}")
@@ -90,17 +95,19 @@ class ErrorHandler:
         """Get error statistics and patterns"""
         with self._lock:
             total_errors = sum(self.error_counts.values())
-            recent_errors = [e for e in self.error_history
-                           if time.time() - e['timestamp'] < 3600]  # Last hour
+            recent_errors = [
+                e for e in self.error_history if time.time() - e["timestamp"] < 3600
+            ]  # Last hour
 
             return {
-                'total_errors': total_errors,
-                'recent_errors_count': len(recent_errors),
-                'error_types': dict(self.error_counts),
-                'most_common_error': max(self.error_counts.items(),
-                                       key=lambda x: x[1])[0] if self.error_counts else None,
-                'error_rate_per_hour': len(recent_errors),
-                'registered_recovery_strategies': list(self.recovery_strategies.keys())
+                "total_errors": total_errors,
+                "recent_errors_count": len(recent_errors),
+                "error_types": dict(self.error_counts),
+                "most_common_error": max(self.error_counts.items(), key=lambda x: x[1])[0]
+                if self.error_counts
+                else None,
+                "error_rate_per_hour": len(recent_errors),
+                "registered_recovery_strategies": list(self.recovery_strategies.keys()),
             }
 
     def clear_error_history(self):
@@ -115,9 +122,11 @@ class ErrorHandler:
 error_handler = ErrorHandler()
 
 
-def handle_errors(recovery_strategy: Optional[Callable[[Exception], Any]] = None,
-                 log_errors: bool = True,
-                 reraise: bool = False):
+def handle_errors(
+    recovery_strategy: Optional[Callable[[Exception], Any]] = None,
+    log_errors: bool = True,
+    reraise: bool = False,
+):
     """
     Decorator for automatic error handling
 
@@ -126,6 +135,7 @@ def handle_errors(recovery_strategy: Optional[Callable[[Exception], Any]] = None
         log_errors: Whether to log errors
         reraise: Whether to reraise errors after handling
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -133,9 +143,9 @@ def handle_errors(recovery_strategy: Optional[Callable[[Exception], Any]] = None
                 return func(*args, **kwargs)
             except Exception as e:
                 context = {
-                    'function': func.__name__,
-                    'args': str(args)[:200],  # Limit length
-                    'kwargs': str(kwargs)[:200]
+                    "function": func.__name__,
+                    "args": str(args)[:200],  # Limit length
+                    "kwargs": str(kwargs)[:200],
                 }
 
                 recovered = error_handler.handle_error(e, context)
@@ -152,6 +162,7 @@ def handle_errors(recovery_strategy: Optional[Callable[[Exception], Any]] = None
                 return None
 
         return wrapper
+
     return decorator
 
 
@@ -161,7 +172,7 @@ def error_context(context_name: str, **context_data):
     try:
         yield
     except Exception as e:
-        context = {'context_name': context_name, **context_data}
+        context = {"context_name": context_name, **context_data}
         error_handler.handle_error(e, context)
         raise
 
@@ -176,6 +187,7 @@ def api_timeout_recovery(error: Exception) -> None:
 def memory_error_recovery(error: Exception) -> None:
     """Recovery strategy for memory errors"""
     import gc
+
     logger.info("Implementing memory error recovery: forcing garbage collection")
     gc.collect()
 

@@ -11,6 +11,7 @@ from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import brier_score_loss
 from typing import Tuple, Dict, Any
 
+
 class EnhancedCalibratorV2:
     """Advanced probability calibration with validation"""
 
@@ -19,11 +20,13 @@ class EnhancedCalibratorV2:
         self.calibration_curve = None
         self.is_fitted = False
 
-    def fit_and_validate(self, probabilities: np.ndarray, true_labels: np.ndarray) -> Dict[str, float]:
+    def fit_and_validate(
+        self, probabilities: np.ndarray, true_labels: np.ndarray
+    ) -> Dict[str, float]:
         """Fit calibrator and validate performance"""
 
         # Fit isotonic regression calibrator
-        self.calibrator = IsotonicRegression(out_of_bounds='clip')
+        self.calibrator = IsotonicRegression(out_of_bounds="clip")
         self.calibrator.fit(probabilities, true_labels)
         self.is_fitted = True
 
@@ -44,7 +47,7 @@ class EnhancedCalibratorV2:
             "brier_improvement": brier_original - brier_calibrated,
             "ece_original": ece_original,
             "ece_calibrated": ece_calibrated,
-            "ece_improvement": ece_original - ece_calibrated
+            "ece_improvement": ece_original - ece_calibrated,
         }
 
     def calibrate_probabilities(self, probabilities: np.ndarray) -> np.ndarray:
@@ -55,7 +58,9 @@ class EnhancedCalibratorV2:
 
         return self.calibrator.transform(probabilities)
 
-    def _calculate_ece(self, probabilities: np.ndarray, true_labels: np.ndarray, n_bins: int = 10) -> float:
+    def _calculate_ece(
+        self, probabilities: np.ndarray, true_labels: np.ndarray, n_bins: int = 10
+    ) -> float:
         """Calculate Expected Calibration Error"""
 
         bin_boundaries = np.linspace(0, 1, n_bins + 1)
@@ -74,24 +79,28 @@ class EnhancedCalibratorV2:
 
         return ece
 
+
 def create_confidence_gate_with_calibration(threshold: float = 0.8) -> callable:
     """Create calibrated confidence gate function"""
 
-    def calibrated_confidence_gate(predictions_df: pd.DataFrame,
-                                  calibrator: EnhancedCalibratorV2 = None) -> pd.DataFrame:
+    def calibrated_confidence_gate(
+        predictions_df: pd.DataFrame, calibrator: EnhancedCalibratorV2 = None
+    ) -> pd.DataFrame:
         """Apply calibrated confidence gate"""
 
         if calibrator and calibrator.is_fitted:
             # Apply calibration to confidence scores
             for col in predictions_df.columns:
-                if col.startswith('conf_'):
-                    predictions_df[col] = calibrator.calibrate_probabilities(predictions_df[col].values)
+                if col.startswith("conf_"):
+                    predictions_df[col] = calibrator.calibrate_probabilities(
+                        predictions_df[col].values
+                    )
 
         # Apply threshold filter
         confidence_mask = True
         for col in predictions_df.columns:
-            if col.startswith('conf_'):
-                confidence_mask &= (predictions_df[col] >= threshold)
+            if col.startswith("conf_"):
+                confidence_mask &= predictions_df[col] >= threshold
 
         return predictions_df[confidence_mask]
 

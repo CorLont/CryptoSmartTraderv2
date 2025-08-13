@@ -32,5 +32,5 @@ __all__ = [
     "EventSignalGenerator",
     "EventSignal",
     "EventAnalytics",
-    "EventMetrics"
+    "EventMetrics",
 ]

@@ -9,7 +9,4 @@ except ImportError:
     ModelFactory = None
     BaseModel = None
 
-__all__ = [
-    'ModelFactory',
-    'BaseModel'
-]
+__all__ = ["ModelFactory", "BaseModel"]

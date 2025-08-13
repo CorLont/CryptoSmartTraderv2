@@ -12,10 +12,12 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional, Union
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 # Import core components
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from ..core.structured_logger import get_logger
 
@@ -25,10 +27,12 @@ try:
     import mlflow.sklearn
     import mlflow.pytorch
     from mlflow.tracking import MlflowClient
+
     MLFLOW_AVAILABLE = True
 except ImportError:
     MLFLOW_AVAILABLE = False
     print("MLflow not available - using local file-based model tracking")
+
 
 class MLflowManager:
     """MLflow integration for model tracking, versioning, and registry"""
@@ -38,25 +42,25 @@ class MLflowManager:
 
         # Configuration
         self.config = {
-            'mlflow_tracking_uri': 'file:./mlruns',
-            'experiment_name': 'CryptoSmartTrader',
-            'artifact_location': './mlartifacts',
-            'enable_mlflow': MLFLOW_AVAILABLE,
-            'local_backup_dir': './model_backup',
-            'model_registry_prefix': 'cryptosmarttrader',
-            'auto_register_models': True,
-            'retention_days': 90
+            "mlflow_tracking_uri": "file:./mlruns",
+            "experiment_name": "CryptoSmartTrader",
+            "artifact_location": "./mlartifacts",
+            "enable_mlflow": MLFLOW_AVAILABLE,
+            "local_backup_dir": "./model_backup",
+            "model_registry_prefix": "cryptosmarttrader",
+            "auto_register_models": True,
+            "retention_days": 90,
         }
 
         if config:
             self.config.update(config)
 
         # Create directories
-        for dir_path in [self.config['artifact_location'], self.config['local_backup_dir']]:
+        for dir_path in [self.config["artifact_location"], self.config["local_backup_dir"]]:
             Path(dir_path).mkdir(parents=True, exist_ok=True)
 
         # Initialize MLflow if available
-        if self.config['enable_mlflow'] and MLFLOW_AVAILABLE:
+        if self.config["enable_mlflow"] and MLFLOW_AVAILABLE:
             self._initialize_mlflow()
         else:
             self.logger.warning("MLflow not available - using local file tracking")
@@ -68,15 +72,15 @@ class MLflowManager:
 
         try:
             # Set tracking URI
-            mlflow.set_tracking_uri(self.config['mlflow_tracking_uri'])
+            mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
 
             # Create or get experiment
             try:
-                experiment = mlflow.get_experiment_by_name(self.config['experiment_name'])
+                experiment = mlflow.get_experiment_by_name(self.config["experiment_name"])
                 if experiment is None:
                     self.experiment_id = mlflow.create_experiment(
-                        name=self.config['experiment_name'],
-                        artifact_location=self.config['artifact_location']
+                        name=self.config["experiment_name"],
+                        artifact_location=self.config["artifact_location"],
                     )
                 else:
                     self.experiment_id = experiment.experiment_id
@@ -91,34 +95,41 @@ class MLflowManager:
 
         except Exception as e:
             self.logger.error(f"MLflow initialization failed: {e}")
-            self.config['enable_mlflow'] = False
+            self.config["enable_mlflow"] = False
             self.mlflow_client = None
 
-    def start_run(self, run_name: str, horizon: str, regime: str = "normal",
-                  tags: Optional[Dict[str, str]] = None) -> Optional[str]:
+    def start_run(
+        self,
+        run_name: str,
+        horizon: str,
+        regime: str = "normal",
+        tags: Optional[Dict[str, str]] = None,
+    ) -> Optional[str]:
         """Start MLflow run with horizon and regime tags"""
 
-        if not self.config['enable_mlflow']:
+        if not self.config["enable_mlflow"]:
             return self._start_local_run(run_name, horizon, regime, tags)
 
         try:
             # Prepare tags
             run_tags = {
-                'horizon': horizon,
-                'regime': regime,
-                'model_type': 'crypto_predictor',
-                'framework': 'pytorch',
-                'created_at': datetime.now().isoformat()
+                "horizon": horizon,
+                "regime": regime,
+                "model_type": "crypto_predictor",
+                "framework": "pytorch",
+                "created_at": datetime.now().isoformat(),
             }
 
             if tags:
                 run_tags.update(tags)
 
             # Start MLflow run
-            mlflow.set_experiment(self.config['experiment_name'])
+            mlflow.set_experiment(self.config["experiment_name"])
             run = mlflow.start_run(run_name=run_name, tags=run_tags)
 
-            self.logger.info(f"Started MLflow run: {run_name} (horizon: {horizon}, regime: {regime})")
+            self.logger.info(
+                f"Started MLflow run: {run_name} (horizon: {horizon}, regime: {regime})"
+            )
 
             return run.info.run_id
 
@@ -126,27 +137,28 @@ class MLflowManager:
             self.logger.error(f"Failed to start MLflow run: {e}")
             return self._start_local_run(run_name, horizon, regime, tags)
 
-    def _start_local_run(self, run_name: str, horizon: str, regime: str,
-                        tags: Optional[Dict[str, str]] = None) -> str:
+    def _start_local_run(
+        self, run_name: str, horizon: str, regime: str, tags: Optional[Dict[str, str]] = None
+    ) -> str:
         """Start local file-based run tracking"""
 
         run_id = f"{run_name}_{horizon}_{regime}_{int(datetime.now().timestamp())}"
 
-        run_dir = Path(self.config['local_backup_dir']) / 'runs' / run_id
+        run_dir = Path(self.config["local_backup_dir"]) / "runs" / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
 
         # Save run metadata
         run_metadata = {
-            'run_id': run_id,
-            'run_name': run_name,
-            'horizon': horizon,
-            'regime': regime,
-            'tags': tags or {},
-            'start_time': datetime.now().isoformat(),
-            'status': 'RUNNING'
+            "run_id": run_id,
+            "run_name": run_name,
+            "horizon": horizon,
+            "regime": regime,
+            "tags": tags or {},
+            "start_time": datetime.now().isoformat(),
+            "status": "RUNNING",
         }
 
-        with open(run_dir / 'metadata.json', 'w') as f:
+        with open(run_dir / "metadata.json", "w") as f:
             json.dump(run_metadata, f, indent=2)
 
         self.logger.info(f"Started local run: {run_name} (horizon: {horizon}, regime: {regime})")
@@ -156,7 +168,7 @@ class MLflowManager:
     def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None) -> None:
         """Log metrics to MLflow or local storage"""
 
-        if self.config['enable_mlflow'] and mlflow.active_run():
+        if self.config["enable_mlflow"] and mlflow.active_run():
             try:
                 for metric_name, value in metrics.items():
                     mlflow.log_metric(metric_name, value, step=step)
@@ -174,7 +186,7 @@ class MLflowManager:
 
         try:
             # Find current run directory
-            runs_dir = Path(self.config['local_backup_dir']) / 'runs'
+            runs_dir = Path(self.config["local_backup_dir"]) / "runs"
             if not runs_dir.exists():
                 return
 
@@ -186,16 +198,16 @@ class MLflowManager:
             latest_run = max(run_dirs, key=lambda x: x.stat().st_mtime)
 
             # Log metrics
-            metrics_file = latest_run / 'metrics.jsonl'
+            metrics_file = latest_run / "metrics.jsonl"
 
             metric_entry = {
-                'timestamp': datetime.now().isoformat(),
-                'step': step,
-                'metrics': metrics
+                "timestamp": datetime.now().isoformat(),
+                "step": step,
+                "metrics": metrics,
             }
 
-            with open(metrics_file, 'a') as f:
-                f.write(json.dumps(metric_entry) + '\n')
+            with open(metrics_file, "a") as f:
+                f.write(json.dumps(metric_entry) + "\n")
 
             self.logger.debug(f"Logged metrics locally: {list(metrics.keys())}")
 
@@ -205,7 +217,7 @@ class MLflowManager:
     def log_parameters(self, params: Dict[str, Any]) -> None:
         """Log parameters to MLflow or local storage"""
 
-        if self.config['enable_mlflow'] and mlflow.active_run():
+        if self.config["enable_mlflow"] and mlflow.active_run():
             try:
                 for param_name, value in params.items():
                     mlflow.log_param(param_name, value)
@@ -223,7 +235,7 @@ class MLflowManager:
 
         try:
             # Find current run directory
-            runs_dir = Path(self.config['local_backup_dir']) / 'runs'
+            runs_dir = Path(self.config["local_backup_dir"]) / "runs"
             if not runs_dir.exists():
                 return
 
@@ -234,17 +246,17 @@ class MLflowManager:
             latest_run = max(run_dirs, key=lambda x: x.stat().st_mtime)
 
             # Log parameters
-            params_file = latest_run / 'params.json'
+            params_file = latest_run / "params.json"
 
             if params_file.exists():
-                with open(params_file, 'r') as f:
+                with open(params_file, "r") as f:
                     existing_params = json.load(f)
             else:
                 existing_params = {}
 
             existing_params.update(params)
 
-            with open(params_file, 'w') as f:
+            with open(params_file, "w") as f:
                 json.dump(existing_params, f, indent=2)
 
             self.logger.debug(f"Logged parameters locally: {list(params.keys())}")
@@ -252,18 +264,25 @@ class MLflowManager:
         except Exception as e:
             self.logger.error(f"Failed to log parameters locally: {e}")
 
-    def log_model(self, model: Any, model_name: str, horizon: str, regime: str,
-                  model_type: str = "pytorch", metadata: Optional[Dict[str, Any]] = None) -> None:
+    def log_model(
+        self,
+        model: Any,
+        model_name: str,
+        horizon: str,
+        regime: str,
+        model_type: str = "pytorch",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Log model with horizon/regime tags"""
 
-        if self.config['enable_mlflow'] and mlflow.active_run():
+        if self.config["enable_mlflow"] and mlflow.active_run():
             try:
                 # Prepare model metadata
                 model_metadata = {
-                    'horizon': horizon,
-                    'regime': regime,
-                    'model_type': model_type,
-                    'created_at': datetime.now().isoformat()
+                    "horizon": horizon,
+                    "regime": regime,
+                    "model_type": model_type,
+                    "created_at": datetime.now().isoformat(),
                 }
 
                 if metadata:
@@ -275,20 +294,22 @@ class MLflowManager:
                         pytorch_model=model,
                         artifact_path=model_name,
                         registered_model_name=f"{self.config['model_registry_prefix']}_{model_name}",
-                        metadata=model_metadata
+                        metadata=model_metadata,
                     )
                 elif model_type == "sklearn":
                     mlflow.sklearn.log_model(
                         sk_model=model,
                         artifact_path=model_name,
                         registered_model_name=f"{self.config['model_registry_prefix']}_{model_name}",
-                        metadata=model_metadata
+                        metadata=model_metadata,
                     )
                 else:
                     # Generic model logging
                     mlflow.log_artifact(model, artifact_path=model_name)
 
-                self.logger.info(f"Logged model: {model_name} (horizon: {horizon}, regime: {regime})")
+                self.logger.info(
+                    f"Logged model: {model_name} (horizon: {horizon}, regime: {regime})"
+                )
 
             except Exception as e:
                 self.logger.error(f"Failed to log model to MLflow: {e}")
@@ -296,13 +317,20 @@ class MLflowManager:
         else:
             self._log_model_local(model, model_name, horizon, regime, model_type, metadata)
 
-    def _log_model_local(self, model: Any, model_name: str, horizon: str, regime: str,
-                        model_type: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def _log_model_local(
+        self,
+        model: Any,
+        model_name: str,
+        horizon: str,
+        regime: str,
+        model_type: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Log model to local storage"""
 
         try:
             # Find current run directory
-            runs_dir = Path(self.config['local_backup_dir']) / 'runs'
+            runs_dir = Path(self.config["local_backup_dir"]) / "runs"
             if not runs_dir.exists():
                 return
 
@@ -313,30 +341,32 @@ class MLflowManager:
             latest_run = max(run_dirs, key=lambda x: x.stat().st_mtime)
 
             # Create model directory
-            model_dir = latest_run / 'models' / model_name
+            model_dir = latest_run / "models" / model_name
             model_dir.mkdir(parents=True, exist_ok=True)
 
             # Save model
-            model_file = model_dir / 'model.pkl'
-            with open(model_file, 'wb') as f:
+            model_file = model_dir / "model.pkl"
+            with open(model_file, "wb") as f:
                 pickle.dump(model, f)
 
             # Save metadata
             model_metadata = {
-                'model_name': model_name,
-                'horizon': horizon,
-                'regime': regime,
-                'model_type': model_type,
-                'created_at': datetime.now().isoformat()
+                "model_name": model_name,
+                "horizon": horizon,
+                "regime": regime,
+                "model_type": model_type,
+                "created_at": datetime.now().isoformat(),
             }
 
             if metadata:
                 model_metadata.update(metadata)
 
-            with open(model_dir / 'metadata.json', 'w') as f:
+            with open(model_dir / "metadata.json", "w") as f:
                 json.dump(model_metadata, f, indent=2)
 
-            self.logger.info(f"Logged model locally: {model_name} (horizon: {horizon}, regime: {regime})")
+            self.logger.info(
+                f"Logged model locally: {model_name} (horizon: {horizon}, regime: {regime})"
+            )
 
         except Exception as e:
             self.logger.error(f"Failed to log model locally: {e}")
@@ -344,7 +374,7 @@ class MLflowManager:
     def end_run(self, status: str = "FINISHED") -> None:
         """End current MLflow run"""
 
-        if self.config['enable_mlflow'] and mlflow.active_run():
+        if self.config["enable_mlflow"] and mlflow.active_run():
             try:
                 mlflow.end_run(status=status)
                 self.logger.info("Ended MLflow run")
@@ -359,7 +389,7 @@ class MLflowManager:
         """End local run tracking"""
 
         try:
-            runs_dir = Path(self.config['local_backup_dir']) / 'runs'
+            runs_dir = Path(self.config["local_backup_dir"]) / "runs"
             if not runs_dir.exists():
                 return
 
@@ -368,16 +398,16 @@ class MLflowManager:
                 return
 
             latest_run = max(run_dirs, key=lambda x: x.stat().st_mtime)
-            metadata_file = latest_run / 'metadata.json'
+            metadata_file = latest_run / "metadata.json"
 
             if metadata_file.exists():
-                with open(metadata_file, 'r') as f:
+                with open(metadata_file, "r") as f:
                     metadata = json.load(f)
 
-                metadata['status'] = status
-                metadata['end_time'] = datetime.now().isoformat()
+                metadata["status"] = status
+                metadata["end_time"] = datetime.now().isoformat()
 
-                with open(metadata_file, 'w') as f:
+                with open(metadata_file, "w") as f:
                     json.dump(metadata, f, indent=2)
 
             self.logger.info(f"Ended local run with status: {status}")
@@ -388,7 +418,7 @@ class MLflowManager:
     def get_model_by_tags(self, horizon: str, regime: str = None) -> Optional[Any]:
         """Get model by horizon and regime tags"""
 
-        if self.config['enable_mlflow'] and self.mlflow_client:
+        if self.config["enable_mlflow"] and self.mlflow_client:
             try:
                 # Search for models with matching tags
                 query = f"tags.horizon = '{horizon}'"
@@ -399,7 +429,7 @@ class MLflowManager:
                     experiment_ids=[self.experiment_id],
                     filter_string=query,
                     order_by=["start_time DESC"],
-                    max_results=1
+                    max_results=1,
                 )
 
                 if runs:
@@ -421,7 +451,7 @@ class MLflowManager:
         """Get model from local storage"""
 
         try:
-            runs_dir = Path(self.config['local_backup_dir']) / 'runs'
+            runs_dir = Path(self.config["local_backup_dir"]) / "runs"
 
             if not runs_dir.exists():
                 return None
@@ -433,34 +463,36 @@ class MLflowManager:
                 if not run_dir.is_dir():
                     continue
 
-                metadata_file = run_dir / 'metadata.json'
+                metadata_file = run_dir / "metadata.json"
                 if not metadata_file.exists():
                     continue
 
-                with open(metadata_file, 'r') as f:
+                with open(metadata_file, "r") as f:
                     metadata = json.load(f)
 
-                if metadata.get('horizon') == horizon:
-                    if regime is None or metadata.get('regime') == regime:
+                if metadata.get("horizon") == horizon:
+                    if regime is None or metadata.get("regime") == regime:
                         matching_runs.append((run_dir, metadata))
 
             if not matching_runs:
                 return None
 
             # Get most recent run
-            latest_run_dir, _ = max(matching_runs, key=lambda x: x[1].get('start_time', ''))
+            latest_run_dir, _ = max(matching_runs, key=lambda x: x[1].get("start_time", ""))
 
             # Load model
-            models_dir = latest_run_dir / 'models'
+            models_dir = latest_run_dir / "models"
             if models_dir.exists():
                 model_dirs = [d for d in models_dir.iterdir() if d.is_dir()]
                 if model_dirs:
-                    model_file = model_dirs[0] / 'model.pkl'
+                    model_file = model_dirs[0] / "model.pkl"
                     if model_file.exists():
-                        with open(model_file, 'rb') as f:
+                        with open(model_file, "rb") as f:
                             model = pickle.load(f)
 
-                        self.logger.info(f"Loaded local model for horizon: {horizon}, regime: {regime}")
+                        self.logger.info(
+                            f"Loaded local model for horizon: {horizon}, regime: {regime}"
+                        )
                         return model
 
             return None
@@ -474,7 +506,7 @@ class MLflowManager:
 
         models = []
 
-        if self.config['enable_mlflow'] and self.mlflow_client:
+        if self.config["enable_mlflow"] and self.mlflow_client:
             try:
                 # Build query
                 query_parts = []
@@ -488,18 +520,20 @@ class MLflowManager:
                 runs = self.mlflow_client.search_runs(
                     experiment_ids=[self.experiment_id],
                     filter_string=query,
-                    order_by=["start_time DESC"]
+                    order_by=["start_time DESC"],
                 )
 
                 for run in runs:
-                    models.append({
-                        'run_id': run.info.run_id,
-                        'horizon': run.data.tags.get('horizon'),
-                        'regime': run.data.tags.get('regime'),
-                        'created_at': run.info.start_time,
-                        'status': run.info.status,
-                        'source': 'mlflow'
-                    })
+                    models.append(
+                        {
+                            "run_id": run.info.run_id,
+                            "horizon": run.data.tags.get("horizon"),
+                            "regime": run.data.tags.get("regime"),
+                            "created_at": run.info.start_time,
+                            "status": run.info.status,
+                            "source": "mlflow",
+                        }
+                    )
 
             except Exception as e:
                 self.logger.error(f"Failed to list MLflow models: {e}")
@@ -516,7 +550,7 @@ class MLflowManager:
         models = []
 
         try:
-            runs_dir = Path(self.config['local_backup_dir']) / 'runs'
+            runs_dir = Path(self.config["local_backup_dir"]) / "runs"
 
             if not runs_dir.exists():
                 return models
@@ -525,27 +559,29 @@ class MLflowManager:
                 if not run_dir.is_dir():
                     continue
 
-                metadata_file = run_dir / 'metadata.json'
+                metadata_file = run_dir / "metadata.json"
                 if not metadata_file.exists():
                     continue
 
-                with open(metadata_file, 'r') as f:
+                with open(metadata_file, "r") as f:
                     metadata = json.load(f)
 
                 # Apply filters
-                if horizon and metadata.get('horizon') != horizon:
+                if horizon and metadata.get("horizon") != horizon:
                     continue
-                if regime and metadata.get('regime') != regime:
+                if regime and metadata.get("regime") != regime:
                     continue
 
-                models.append({
-                    'run_id': metadata.get('run_id'),
-                    'horizon': metadata.get('horizon'),
-                    'regime': metadata.get('regime'),
-                    'created_at': metadata.get('start_time'),
-                    'status': metadata.get('status'),
-                    'source': 'local'
-                })
+                models.append(
+                    {
+                        "run_id": metadata.get("run_id"),
+                        "horizon": metadata.get("horizon"),
+                        "regime": metadata.get("regime"),
+                        "created_at": metadata.get("start_time"),
+                        "status": metadata.get("status"),
+                        "source": "local",
+                    }
+                )
 
         except Exception as e:
             self.logger.error(f"Failed to list local models: {e}")
@@ -555,12 +591,12 @@ class MLflowManager:
     def cleanup_old_runs(self, retention_days: int = None) -> None:
         """Clean up old runs and artifacts"""
 
-        retention_days = retention_days or self.config['retention_days']
+        retention_days = retention_days or self.config["retention_days"]
         cutoff_date = datetime.now().timestamp() - (retention_days * 24 * 3600)
 
         # Clean up local runs
         try:
-            runs_dir = Path(self.config['local_backup_dir']) / 'runs'
+            runs_dir = Path(self.config["local_backup_dir"]) / "runs"
 
             if runs_dir.exists():
                 for run_dir in runs_dir.iterdir():
@@ -571,7 +607,9 @@ class MLflowManager:
         except Exception as e:
             self.logger.error(f"Failed to cleanup old runs: {e}")
 
+
 if __name__ == "__main__":
+
     async def test_mlflow_manager():
         """Test MLflow manager"""
 
@@ -588,20 +626,15 @@ if __name__ == "__main__":
         print("\n📊 Logging parameters and metrics...")
 
         # Log parameters
-        params = {
-            'learning_rate': 0.001,
-            'batch_size': 32,
-            'epochs': 100,
-            'model_type': 'LSTM'
-        }
+        params = {"learning_rate": 0.001, "batch_size": 32, "epochs": 100, "model_type": "LSTM"}
         manager.log_parameters(params)
 
         # Log metrics
         for epoch in range(5):
             metrics = {
-                'loss': 0.5 - epoch * 0.1,
-                'accuracy': 0.6 + epoch * 0.08,
-                'val_loss': 0.6 - epoch * 0.09
+                "loss": 0.5 - epoch * 0.1,
+                "accuracy": 0.6 + epoch * 0.08,
+                "val_loss": 0.6 - epoch * 0.09,
             }
             manager.log_metrics(metrics, step=epoch)
 
@@ -611,10 +644,11 @@ if __name__ == "__main__":
         print("\n🤖 Logging test model...")
 
         import numpy as np
+
         dummy_model = {
-            'weights': np.random.random((10, 5)),
-            'bias': np.random.random(5),
-            'architecture': 'LSTM'
+            "weights": np.random.random((10, 5)),
+            "bias": np.random.random(5),
+            "architecture": "LSTM",
         }
 
         manager.log_model(
@@ -623,7 +657,7 @@ if __name__ == "__main__":
             horizon="1H",
             regime="bull_market",
             model_type="pytorch",
-            metadata={'version': '1.0', 'features': 20}
+            metadata={"version": "1.0", "features": 20},
         )
 
         print("   Model logged successfully")
@@ -655,5 +689,6 @@ if __name__ == "__main__":
 
     # Run test
     import asyncio
+
     success = asyncio.run(test_mlflow_manager())
     print(f"\nTest result: {'PASSED' if success else 'FAILED'}")

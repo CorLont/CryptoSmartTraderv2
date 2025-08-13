@@ -12,7 +12,4 @@ FastAPI-based REST API for system integration and monitoring:
 from .main import app
 from .health_endpoint import health_router
 
-__all__ = [
-    'app',
-    'health_router'
-]
+__all__ = ["app", "health_router"]

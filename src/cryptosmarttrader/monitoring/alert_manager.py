@@ -22,6 +22,7 @@ import schedule
 
 try:
     import requests
+
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False
@@ -30,33 +31,45 @@ except ImportError:
 try:
     from slack_sdk import WebClient
     from slack_sdk.errors import SlackApiError
+
     SLACK_AVAILABLE = True
 except ImportError:
     SLACK_AVAILABLE = False
+
     class WebClient:
-        def __init__(self, token): pass
-        def chat_postMessage(self, **kwargs): pass
+        def __init__(self, token):
+            pass
+
+        def chat_postMessage(self, **kwargs):
+            pass
+
 
 logger = logging.getLogger(__name__)
 
+
 class AlertSeverity(Enum):
     """Alert severity levels"""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
 
+
 class AlertChannel(Enum):
     """Alert delivery channels"""
+
     TELEGRAM = "telegram"  # Primary channel
     SLACK = "slack"
     EMAIL = "email"
     WEBHOOK = "webhook"
     SMS = "sms"  # Future implementation
 
+
 @dataclass
 class AlertRule:
     """Alert rule configuration"""
+
     name: str
     description: str
     metric_name: str
@@ -83,21 +96,25 @@ class AlertRule:
     currently_firing: bool = False
     first_trigger_time: Optional[datetime] = None
 
+
 @dataclass
 class SilenceSchedule:
     """Silence schedule configuration"""
+
     name: str
     description: str
     start_time: dt_time  # Daily start time
-    end_time: dt_time    # Daily end time
+    end_time: dt_time  # Daily end time
     days_of_week: List[int]  # 0=Monday, 6=Sunday
     severity_filter: Optional[List[AlertSeverity]] = None
     metric_filter: Optional[List[str]] = None
     active: bool = True
 
+
 @dataclass
 class Alert:
     """Alert instance"""
+
     timestamp: datetime
     rule_name: str
     severity: AlertSeverity
@@ -116,22 +133,24 @@ class Alert:
     delivery_attempts: int = 0
     successful_delivery: bool = False
 
+
 class AlertManager:
     """
     Comprehensive 24/7 alert management system
     """
 
-    def __init__(self,
-                 telegram_token: Optional[str] = None,
-                 telegram_chat_id: Optional[str] = None,
-                 slack_token: Optional[str] = None,
-                 slack_channel: Optional[str] = None,
-                 smtp_server: Optional[str] = None,
-                 smtp_port: int = 587,
-                 email_username: Optional[str] = None,
-                 email_password: Optional[str] = None,
-                 email_recipients: Optional[List[str]] = None):
-
+    def __init__(
+        self,
+        telegram_token: Optional[str] = None,
+        telegram_chat_id: Optional[str] = None,
+        slack_token: Optional[str] = None,
+        slack_channel: Optional[str] = None,
+        smtp_server: Optional[str] = None,
+        smtp_port: int = 587,
+        email_username: Optional[str] = None,
+        email_password: Optional[str] = None,
+        email_recipients: Optional[List[str]] = None,
+    ):
         # Configuration
         self.telegram_token = telegram_token
         self.telegram_chat_id = telegram_chat_id
@@ -165,11 +184,11 @@ class AlertManager:
 
         # Statistics
         self.alert_stats = {
-            'total_alerts': 0,
-            'alerts_by_severity': {sev.value: 0 for sev in AlertSeverity},
-            'alerts_by_channel': {ch.value: 0 for ch in AlertChannel},
-            'delivery_failures': 0,
-            'silenced_alerts': 0
+            "total_alerts": 0,
+            "alerts_by_severity": {sev.value: 0 for sev in AlertSeverity},
+            "alerts_by_channel": {ch.value: 0 for ch in AlertChannel},
+            "delivery_failures": 0,
+            "silenced_alerts": 0,
         }
 
         # Setup default alert rules
@@ -182,201 +201,225 @@ class AlertManager:
         """Setup default alert rules for trading system"""
 
         # High error rate
-        self.add_alert_rule(AlertRule(
-            name="high_error_rate",
-            description="High error rate detected",
-            metric_name="trading_errors_total",
-            threshold_value=10.0,
-            comparison="gte",
-            severity=AlertSeverity.ERROR,
-            channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
-            evaluation_interval_seconds=60,
-            for_duration_seconds=180,  # 3 minutes
-            annotations={
-                "summary": "High error rate in trading system",
-                "description": "Error rate has exceeded 10 errors in the last 3 minutes"
-            }
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="high_error_rate",
+                description="High error rate detected",
+                metric_name="trading_errors_total",
+                threshold_value=10.0,
+                comparison="gte",
+                severity=AlertSeverity.ERROR,
+                channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
+                evaluation_interval_seconds=60,
+                for_duration_seconds=180,  # 3 minutes
+                annotations={
+                    "summary": "High error rate in trading system",
+                    "description": "Error rate has exceeded 10 errors in the last 3 minutes",
+                },
+            )
+        )
 
         # High API latency
-        self.add_alert_rule(AlertRule(
-            name="high_api_latency",
-            description="High API latency detected",
-            metric_name="api_request_duration_seconds",
-            threshold_value=2.0,
-            comparison="gt",
-            severity=AlertSeverity.WARNING,
-            channels=[AlertChannel.SLACK],
-            evaluation_interval_seconds=30,
-            for_duration_seconds=300,  # 5 minutes
-            annotations={
-                "summary": "High API latency detected",
-                "description": "API requests taking longer than 2 seconds"
-            }
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="high_api_latency",
+                description="High API latency detected",
+                metric_name="api_request_duration_seconds",
+                threshold_value=2.0,
+                comparison="gt",
+                severity=AlertSeverity.WARNING,
+                channels=[AlertChannel.SLACK],
+                evaluation_interval_seconds=30,
+                for_duration_seconds=300,  # 5 minutes
+                annotations={
+                    "summary": "High API latency detected",
+                    "description": "API requests taking longer than 2 seconds",
+                },
+            )
+        )
 
         # High slippage
-        self.add_alert_rule(AlertRule(
-            name="high_slippage",
-            description="High trading slippage detected",
-            metric_name="trading_slippage_bps",
-            threshold_value=50.0,
-            comparison="gt",
-            severity=AlertSeverity.WARNING,
-            channels=[AlertChannel.SLACK],
-            evaluation_interval_seconds=60,
-            for_duration_seconds=300,
-            annotations={
-                "summary": "High trading slippage",
-                "description": "Trading slippage exceeds 50 basis points"
-            }
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="high_slippage",
+                description="High trading slippage detected",
+                metric_name="trading_slippage_bps",
+                threshold_value=50.0,
+                comparison="gt",
+                severity=AlertSeverity.WARNING,
+                channels=[AlertChannel.SLACK],
+                evaluation_interval_seconds=60,
+                for_duration_seconds=300,
+                annotations={
+                    "summary": "High trading slippage",
+                    "description": "Trading slippage exceeds 50 basis points",
+                },
+            )
+        )
 
         # Large daily loss
-        self.add_alert_rule(AlertRule(
-            name="large_daily_loss",
-            description="Large daily loss detected",
-            metric_name="portfolio_pnl_usd",
-            threshold_value=-5000.0,
-            comparison="lt",
-            severity=AlertSeverity.CRITICAL,
-            channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
-            evaluation_interval_seconds=300,  # 5 minutes
-            for_duration_seconds=0,  # Immediate
-            max_alerts_per_hour=3,
-            annotations={
-                "summary": "Large daily loss alert",
-                "description": "Daily P&L loss exceeds $5,000"
-            }
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="large_daily_loss",
+                description="Large daily loss detected",
+                metric_name="portfolio_pnl_usd",
+                threshold_value=-5000.0,
+                comparison="lt",
+                severity=AlertSeverity.CRITICAL,
+                channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
+                evaluation_interval_seconds=300,  # 5 minutes
+                for_duration_seconds=0,  # Immediate
+                max_alerts_per_hour=3,
+                annotations={
+                    "summary": "Large daily loss alert",
+                    "description": "Daily P&L loss exceeds $5,000",
+                },
+            )
+        )
 
         # High drawdown
-        self.add_alert_rule(AlertRule(
-            name="high_drawdown",
-            description="High portfolio drawdown",
-            metric_name="portfolio_drawdown_percent",
-            threshold_value=8.0,
-            comparison="gt",
-            severity=AlertSeverity.ERROR,
-            channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
-            evaluation_interval_seconds=300,
-            for_duration_seconds=600,  # 10 minutes
-            annotations={
-                "summary": "High portfolio drawdown",
-                "description": "Portfolio drawdown exceeds 8%"
-            }
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="high_drawdown",
+                description="High portfolio drawdown",
+                metric_name="portfolio_drawdown_percent",
+                threshold_value=8.0,
+                comparison="gt",
+                severity=AlertSeverity.ERROR,
+                channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
+                evaluation_interval_seconds=300,
+                for_duration_seconds=600,  # 10 minutes
+                annotations={
+                    "summary": "High portfolio drawdown",
+                    "description": "Portfolio drawdown exceeds 8%",
+                },
+            )
+        )
 
         # System health critical
-        self.add_alert_rule(AlertRule(
-            name="system_health_critical",
-            description="System health critically low",
-            metric_name="system_health_score",
-            threshold_value=30.0,
-            comparison="lt",
-            severity=AlertSeverity.CRITICAL,
-            channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
-            evaluation_interval_seconds=30,
-            for_duration_seconds=180,
-            annotations={
-                "summary": "System health critical",
-                "description": "System health score below 30%"
-            }
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="system_health_critical",
+                description="System health critically low",
+                metric_name="system_health_score",
+                threshold_value=30.0,
+                comparison="lt",
+                severity=AlertSeverity.CRITICAL,
+                channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
+                evaluation_interval_seconds=30,
+                for_duration_seconds=180,
+                annotations={
+                    "summary": "System health critical",
+                    "description": "System health score below 30%",
+                },
+            )
+        )
 
         # Circuit breaker triggered
-        self.add_alert_rule(AlertRule(
-            name="circuit_breaker_triggered",
-            description="Circuit breaker activated",
-            metric_name="circuit_breaker_triggers_total",
-            threshold_value=0.0,
-            comparison="gt",
-            severity=AlertSeverity.ERROR,
-            channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
-            evaluation_interval_seconds=30,
-            for_duration_seconds=0,  # Immediate
-            annotations={
-                "summary": "Circuit breaker activated",
-                "description": "Trading circuit breaker has been triggered"
-            }
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="circuit_breaker_triggered",
+                description="Circuit breaker activated",
+                metric_name="circuit_breaker_triggers_total",
+                threshold_value=0.0,
+                comparison="gt",
+                severity=AlertSeverity.ERROR,
+                channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
+                evaluation_interval_seconds=30,
+                for_duration_seconds=0,  # Immediate
+                annotations={
+                    "summary": "Circuit breaker activated",
+                    "description": "Trading circuit breaker has been triggered",
+                },
+            )
+        )
 
         # Kill switch activation
-        self.add_alert_rule(AlertRule(
-            name="kill_switch_activation",
-            description="Kill switch activated",
-            metric_name="kill_switch_activations_total",
-            threshold_value=0.0,
-            comparison="gt",
-            severity=AlertSeverity.CRITICAL,
-            channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
-            evaluation_interval_seconds=10,
-            for_duration_seconds=0,  # Immediate
-            max_alerts_per_hour=10,  # Important enough to repeat
-            annotations={
-                "summary": "🚨 KILL SWITCH ACTIVATED 🚨",
-                "description": "Emergency kill switch has been activated - immediate action required"
-            }
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="kill_switch_activation",
+                description="Kill switch activated",
+                metric_name="kill_switch_activations_total",
+                threshold_value=0.0,
+                comparison="gt",
+                severity=AlertSeverity.CRITICAL,
+                channels=[AlertChannel.SLACK, AlertChannel.EMAIL],
+                evaluation_interval_seconds=10,
+                for_duration_seconds=0,  # Immediate
+                max_alerts_per_hour=10,  # Important enough to repeat
+                annotations={
+                    "summary": "🚨 KILL SWITCH ACTIVATED 🚨",
+                    "description": "Emergency kill switch has been activated - immediate action required",
+                },
+            )
+        )
 
         # Data staleness
-        self.add_alert_rule(AlertRule(
-            name="stale_data",
-            description="Market data is stale",
-            metric_name="data_freshness_seconds",
-            threshold_value=300.0,  # 5 minutes
-            comparison="gt",
-            severity=AlertSeverity.WARNING,
-            channels=[AlertChannel.SLACK],
-            evaluation_interval_seconds=60,
-            for_duration_seconds=180,
-            annotations={
-                "summary": "Stale market data",
-                "description": "Market data is older than 5 minutes"
-            }
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="stale_data",
+                description="Market data is stale",
+                metric_name="data_freshness_seconds",
+                threshold_value=300.0,  # 5 minutes
+                comparison="gt",
+                severity=AlertSeverity.WARNING,
+                channels=[AlertChannel.SLACK],
+                evaluation_interval_seconds=60,
+                for_duration_seconds=180,
+                annotations={
+                    "summary": "Stale market data",
+                    "description": "Market data is older than 5 minutes",
+                },
+            )
+        )
 
         # High memory usage
-        self.add_alert_rule(AlertRule(
-            name="high_memory_usage",
-            description="High system memory usage",
-            metric_name="system_memory_usage_percent",
-            threshold_value=85.0,
-            comparison="gt",
-            severity=AlertSeverity.WARNING,
-            channels=[AlertChannel.SLACK],
-            evaluation_interval_seconds=120,
-            for_duration_seconds=600,  # 10 minutes
-            annotations={
-                "summary": "High memory usage",
-                "description": "System memory usage exceeds 85%"
-            }
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="high_memory_usage",
+                description="High system memory usage",
+                metric_name="system_memory_usage_percent",
+                threshold_value=85.0,
+                comparison="gt",
+                severity=AlertSeverity.WARNING,
+                channels=[AlertChannel.SLACK],
+                evaluation_interval_seconds=120,
+                for_duration_seconds=600,  # 10 minutes
+                annotations={
+                    "summary": "High memory usage",
+                    "description": "System memory usage exceeds 85%",
+                },
+            )
+        )
 
     def _setup_default_silence_schedules(self):
         """Setup default silence schedules"""
 
         # Night silence (reduce non-critical alerts)
-        self.add_silence_schedule(SilenceSchedule(
-            name="night_silence",
-            description="Reduce alerts during night hours",
-            start_time=dt_time(22, 0),  # 10 PM
-            end_time=dt_time(6, 0),     # 6 AM
-            days_of_week=[0, 1, 2, 3, 4, 5, 6],  # All days
-            severity_filter=[AlertSeverity.INFO, AlertSeverity.WARNING],
-            active=True
-        ))
+        self.add_silence_schedule(
+            SilenceSchedule(
+                name="night_silence",
+                description="Reduce alerts during night hours",
+                start_time=dt_time(22, 0),  # 10 PM
+                end_time=dt_time(6, 0),  # 6 AM
+                days_of_week=[0, 1, 2, 3, 4, 5, 6],  # All days
+                severity_filter=[AlertSeverity.INFO, AlertSeverity.WARNING],
+                active=True,
+            )
+        )
 
         # Weekend silence (reduce non-critical alerts)
-        self.add_silence_schedule(SilenceSchedule(
-            name="weekend_silence",
-            description="Reduce alerts during weekends",
-            start_time=dt_time(0, 0),   # Midnight
-            end_time=dt_time(23, 59),   # End of day
-            days_of_week=[5, 6],        # Saturday, Sunday
-            severity_filter=[AlertSeverity.INFO, AlertSeverity.WARNING],
-            active=True
-        ))
+        self.add_silence_schedule(
+            SilenceSchedule(
+                name="weekend_silence",
+                description="Reduce alerts during weekends",
+                start_time=dt_time(0, 0),  # Midnight
+                end_time=dt_time(23, 59),  # End of day
+                days_of_week=[5, 6],  # Saturday, Sunday
+                severity_filter=[AlertSeverity.INFO, AlertSeverity.WARNING],
+                active=True,
+            )
+        )
 
     def add_alert_rule(self, rule: AlertRule):
         """Add an alert rule"""
@@ -452,9 +495,10 @@ class AlertManager:
                     rule.first_trigger_time = now
 
                 # Check if condition has been true for required duration
-                if (rule.first_trigger_time and
-                    (now - rule.first_trigger_time).total_seconds() >= rule.for_duration_seconds):
-
+                if (
+                    rule.first_trigger_time
+                    and (now - rule.first_trigger_time).total_seconds() >= rule.for_duration_seconds
+                ):
                     # Check if we should fire the alert
                     if self._should_fire_alert(rule, now):
                         alert = self._create_alert(rule, current_value, now)
@@ -500,18 +544,21 @@ class AlertManager:
 
         # Check silence schedules
         if self._is_silenced(rule, now):
-            self.alert_stats['silenced_alerts'] += 1
+            self.alert_stats["silenced_alerts"] += 1
             return False
 
         # Check suppression duration
-        if (rule.last_triggered and
-            (now - rule.last_triggered).total_seconds() < rule.suppress_duration_seconds):
+        if (
+            rule.last_triggered
+            and (now - rule.last_triggered).total_seconds() < rule.suppress_duration_seconds
+        ):
             return False
 
         # Check max alerts per hour
         hour_ago = now - timedelta(hours=1)
         recent_alerts = [
-            alert for alert in self.alert_history
+            alert
+            for alert in self.alert_history
             if alert.rule_name == rule.name and alert.timestamp >= hour_ago
         ]
 
@@ -540,19 +587,19 @@ class AlertManager:
                 in_time_range = schedule.start_time <= current_time <= schedule.end_time
             else:
                 # Overnight range
-                in_time_range = current_time >= schedule.start_time or current_time <= schedule.end_time
+                in_time_range = (
+                    current_time >= schedule.start_time or current_time <= schedule.end_time
+                )
 
             if not in_time_range:
                 continue
 
             # Check severity filter
-            if (schedule.severity_filter and
-                rule.severity not in schedule.severity_filter):
+            if schedule.severity_filter and rule.severity not in schedule.severity_filter:
                 continue
 
             # Check metric filter
-            if (schedule.metric_filter and
-                rule.metric_name not in schedule.metric_filter):
+            if schedule.metric_filter and rule.metric_name not in schedule.metric_filter:
                 continue
 
             return True
@@ -578,10 +625,12 @@ class AlertManager:
             current_value=current_value,
             threshold_value=rule.threshold_value,
             labels=rule.labels.copy(),
-            annotations=rule.annotations.copy()
+            annotations=rule.annotations.copy(),
         )
 
-    def _create_resolution_alert(self, rule: AlertRule, current_value: float, timestamp: datetime) -> Alert:
+    def _create_resolution_alert(
+        self, rule: AlertRule, current_value: float, timestamp: datetime
+    ) -> Alert:
         """Create alert resolution notification"""
 
         title = f"RESOLVED: {rule.annotations.get('summary', rule.name)}"
@@ -598,7 +647,7 @@ class AlertManager:
             current_value=current_value,
             threshold_value=rule.threshold_value,
             labels=rule.labels.copy(),
-            annotations={"resolution": "true"}
+            annotations={"resolution": "true"},
         )
 
     def _fire_alert(self, alert: Alert):
@@ -618,23 +667,23 @@ class AlertManager:
                 if success:
                     alert.channels_sent.append(channel)
                     alert.successful_delivery = True
-                    self.alert_stats['alerts_by_channel'][channel.value] += 1
+                    self.alert_stats["alerts_by_channel"][channel.value] += 1
                 else:
-                    self.alert_stats['delivery_failures'] += 1
+                    self.alert_stats["delivery_failures"] += 1
 
                 alert.delivery_attempts += 1
 
             except Exception as e:
                 logger.error(f"Failed to send alert via {channel.value}: {e}")
-                self.alert_stats['delivery_failures'] += 1
+                self.alert_stats["delivery_failures"] += 1
 
         # Store alert in history
         self.alert_history.append(alert)
         self.active_alerts[alert.rule_name] = alert
 
         # Update statistics
-        self.alert_stats['total_alerts'] += 1
-        self.alert_stats['alerts_by_severity'][alert.severity.value] += 1
+        self.alert_stats["total_alerts"] += 1
+        self.alert_stats["alerts_by_severity"][alert.severity.value] += 1
 
         logger.warning(f"Alert fired: {alert.title} ({alert.severity.value})")
 
@@ -649,7 +698,7 @@ class AlertManager:
                 AlertSeverity.INFO: "#36a64f",
                 AlertSeverity.WARNING: "#ff9500",
                 AlertSeverity.ERROR: "#ff4444",
-                AlertSeverity.CRITICAL: "#ff0000"
+                AlertSeverity.CRITICAL: "#ff0000",
             }
             color = color_map.get(alert.severity, "#ff9500")
 
@@ -657,42 +706,27 @@ class AlertManager:
             blocks = [
                 {
                     "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"*{alert.title}*\n{alert.message}"
-                    }
+                    "text": {"type": "mrkdwn", "text": f"*{alert.title}*\n{alert.message}"},
                 },
                 {
                     "type": "section",
                     "fields": [
+                        {"type": "mrkdwn", "text": f"*Severity:*\n{alert.severity.value.upper()}"},
+                        {"type": "mrkdwn", "text": f"*Metric:*\n{alert.metric_name}"},
                         {
                             "type": "mrkdwn",
-                            "text": f"*Severity:*\n{alert.severity.value.upper()}"
+                            "text": f"*Time:*\n{alert.timestamp.strftime('%Y-%m-%d %H:%M:%S')}",
                         },
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*Metric:*\n{alert.metric_name}"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*Time:*\n{alert.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*Value:*\n{alert.current_value:.2f}"
-                        }
-                    ]
-                }
+                        {"type": "mrkdwn", "text": f"*Value:*\n{alert.current_value:.2f}"},
+                    ],
+                },
             ]
 
             response = self.slack_client.chat_postMessage(
                 channel=self.slack_channel,
                 text=alert.title,
                 blocks=blocks,
-                attachments=[{
-                    "color": color,
-                    "fallback": alert.message
-                }]
+                attachments=[{"color": color, "fallback": alert.message}],
             )
 
             return response.get("ok", False)
@@ -703,14 +737,16 @@ class AlertManager:
 
     def _send_email_alert(self, alert: Alert) -> bool:
         """Send alert via email"""
-        if not all([self.smtp_server, self.email_username, self.email_password, self.email_recipients]):
+        if not all(
+            [self.smtp_server, self.email_username, self.email_password, self.email_recipients]
+        ):
             return False
 
         try:
             msg = MIMEMultipart()
-            msg['From'] = self.email_username
-            msg['To'] = ', '.join(self.email_recipients)
-            msg['Subject'] = f"[{alert.severity.value.upper()}] {alert.title}"
+            msg["From"] = self.email_username
+            msg["To"] = ", ".join(self.email_recipients)
+            msg["Subject"] = f"[{alert.severity.value.upper()}] {alert.title}"
 
             # Create email body
             body = f"""
@@ -720,7 +756,7 @@ Severity: {alert.severity.value.upper()}
 Metric: {alert.metric_name}
 Current Value: {alert.current_value:.2f}
 Threshold: {alert.threshold_value:.2f}
-Time: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S')}
+Time: {alert.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
 
 Description:
 {alert.message}
@@ -729,7 +765,7 @@ Description:
 CryptoSmartTrader Alert System
             """
 
-            msg.attach(MIMEText(body, 'plain'))
+            msg.attach(MIMEText(body, "plain"))
 
             # Send email
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
@@ -747,8 +783,7 @@ CryptoSmartTrader Alert System
         """Clean up old alerts from history"""
         cutoff_time = datetime.now() - timedelta(days=7)
         self.alert_history = [
-            alert for alert in self.alert_history
-            if alert.timestamp >= cutoff_time
+            alert for alert in self.alert_history if alert.timestamp >= cutoff_time
         ]
 
         # Clean up resolved active alerts
@@ -760,7 +795,9 @@ CryptoSmartTrader Alert System
         for rule_name in resolved_alerts:
             del self.active_alerts[rule_name]
 
-    def manual_alert(self, title: str, message: str, severity: AlertSeverity = AlertSeverity.INFO) -> bool:
+    def manual_alert(
+        self, title: str, message: str, severity: AlertSeverity = AlertSeverity.INFO
+    ) -> bool:
         """Send manual alert"""
         alert = Alert(
             timestamp=datetime.now(),
@@ -770,7 +807,7 @@ CryptoSmartTrader Alert System
             message=message,
             metric_name="manual",
             current_value=0.0,
-            threshold_value=0.0
+            threshold_value=0.0,
         )
 
         self._fire_alert(alert)
@@ -788,7 +825,7 @@ CryptoSmartTrader Alert System
             message="This is a test alert to verify delivery channels are working correctly.",
             metric_name="test",
             current_value=0.0,
-            threshold_value=0.0
+            threshold_value=0.0,
         )
 
         # Test Slack
@@ -818,17 +855,16 @@ CryptoSmartTrader Alert System
             "total_rules": len(self.alert_rules),
             "active_alerts": len(self.active_alerts),
             "silence_schedules": len(self.silence_schedules),
-
             "recent_activity": {
                 "alerts_last_hour": len(recent_alerts_1h),
                 "alerts_last_24h": len(recent_alerts_24h),
-                "currently_firing": sum(1 for rule in self.alert_rules.values() if rule.currently_firing)
+                "currently_firing": sum(
+                    1 for rule in self.alert_rules.values() if rule.currently_firing
+                ),
             },
-
             "statistics": self.alert_stats,
-
             "channel_status": {
                 "slack_configured": bool(self.slack_client and self.slack_channel),
-                "email_configured": bool(self.email_recipients and self.smtp_server)
-            }
+                "email_configured": bool(self.email_recipients and self.smtp_server),
+            },
         }

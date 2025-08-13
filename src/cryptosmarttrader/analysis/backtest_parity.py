@@ -16,6 +16,7 @@ from ..core.structured_logger import get_logger
 @dataclass
 class ExecutionSlippage:
     """Detailed slippage analysis."""
+
     symbol: str
     order_size: float
     market_impact: float
@@ -28,6 +29,7 @@ class ExecutionSlippage:
 @dataclass
 class TradeExecution:
     """Complete trade execution record."""
+
     trade_id: str
     symbol: str
     side: str  # 'buy' or 'sell'
@@ -45,6 +47,7 @@ class TradeExecution:
 @dataclass
 class PerformanceAttribution:
     """Performance attribution analysis."""
+
     period_start: datetime
     period_end: datetime
     total_return: float
@@ -60,6 +63,7 @@ class PerformanceAttribution:
 @dataclass
 class ParityMetrics:
     """Backtest-live parity tracking metrics."""
+
     tracking_error_bps: float
     correlation: float
     alpha_difference: float
@@ -91,25 +95,25 @@ class BacktestParityAnalyzer:
 
         # Market microstructure simulation
         self.latency_model = {
-            'mean_latency_ms': 50,
-            'latency_std_ms': 20,
-            'network_delay_ms': 10,
-            'exchange_processing_ms': 15
+            "mean_latency_ms": 50,
+            "latency_std_ms": 20,
+            "network_delay_ms": 10,
+            "exchange_processing_ms": 15,
         }
 
         self.slippage_model = {
-            'base_spread_bps': 8,  # Base bid-ask spread
-            'impact_coefficient': 0.5,  # Price impact per $1M trade
-            'volatility_multiplier': 1.5,  # Volatility impact on slippage
-            'liquidity_threshold': 10000  # Minimum liquidity for normal execution
+            "base_spread_bps": 8,  # Base bid-ask spread
+            "impact_coefficient": 0.5,  # Price impact per $1M trade
+            "volatility_multiplier": 1.5,  # Volatility impact on slippage
+            "liquidity_threshold": 10000,  # Minimum liquidity for normal execution
         }
 
         # Fee structures
         self.fee_schedule = {
-            'maker_fee_bps': 10,  # 0.1% maker fee
-            'taker_fee_bps': 15,  # 0.15% taker fee
-            'funding_rate_bps': 5,  # Average funding rate
-            'gas_fee_fixed': 2.0   # Fixed gas fee in USD
+            "maker_fee_bps": 10,  # 0.1% maker fee
+            "taker_fee_bps": 15,  # 0.15% taker fee
+            "funding_rate_bps": 5,  # Average funding rate
+            "gas_fee_fixed": 2.0,  # Fixed gas fee in USD
         }
 
         # Thread safety
@@ -119,53 +123,68 @@ class BacktestParityAnalyzer:
         self.data_path = Path("data/backtest_parity")
         self.data_path.mkdir(parents=True, exist_ok=True)
 
-        self.logger.info("Backtest parity analyzer initialized",
-                        target_tracking_error_bps=target_tracking_error_bps)
+        self.logger.info(
+            "Backtest parity analyzer initialized",
+            target_tracking_error_bps=target_tracking_error_bps,
+        )
 
-    def simulate_execution(self, symbol: str, quantity: float, side: str,
-                          market_conditions: Dict[str, float],
-                          execution_type: str = 'backtest') -> TradeExecution:
+    def simulate_execution(
+        self,
+        symbol: str,
+        quantity: float,
+        side: str,
+        market_conditions: Dict[str, float],
+        execution_type: str = "backtest",
+    ) -> TradeExecution:
         """Simulate realistic order execution with market microstructure."""
 
         # Extract market conditions
-        bid_price = market_conditions.get('bid', 0.0)
-        ask_price = market_conditions.get('ask', 0.0)
-        mid_price = (bid_price + ask_price) / 2 if bid_price > 0 and ask_price > 0 else market_conditions.get('price', 0.0)
-        volume_24h = market_conditions.get('volume_24h', 1000000)
-        volatility = market_conditions.get('volatility', 0.02)
-        orderbook_depth = market_conditions.get('orderbook_depth', 50000)
+        bid_price = market_conditions.get("bid", 0.0)
+        ask_price = market_conditions.get("ask", 0.0)
+        mid_price = (
+            (bid_price + ask_price) / 2
+            if bid_price > 0 and ask_price > 0
+            else market_conditions.get("price", 0.0)
+        )
+        volume_24h = market_conditions.get("volume_24h", 1000000)
+        volatility = market_conditions.get("volatility", 0.02)
+        orderbook_depth = market_conditions.get("orderbook_depth", 50000)
 
         # Calculate intended price
-        if side == 'buy':
+        if side == "buy":
             intended_price = ask_price if ask_price > 0 else mid_price
         else:
             intended_price = bid_price if bid_price > 0 else mid_price
 
         # Simulate latency (more realistic for live trading)
-        if execution_type == 'live':
-            latency_ms = max(5, np.random.normal(
-                self.latency_model['mean_latency_ms'],
-                self.latency_model['latency_std_ms']
-            ))
+        if execution_type == "live":
+            latency_ms = max(
+                5,
+                np.random.normal(
+                    self.latency_model["mean_latency_ms"], self.latency_model["latency_std_ms"]
+                ),
+            )
         else:
             latency_ms = 0  # Perfect execution in backtest
 
         # Calculate market impact
         trade_value = quantity * mid_price
         impact_factor = min(0.01, trade_value / (orderbook_depth * 1000))  # Liquidity impact
-        market_impact = impact_factor * self.slippage_model['impact_coefficient']
+        market_impact = impact_factor * self.slippage_model["impact_coefficient"]
 
         # Volatility impact during execution delay
-        volatility_impact = volatility * np.sqrt(latency_ms / (1000 * 60 * 60 * 24 * 365))  # Annualized vol
+        volatility_impact = volatility * np.sqrt(
+            latency_ms / (1000 * 60 * 60 * 24 * 365)
+        )  # Annualized vol
 
         # Bid-ask spread cost
         spread = ask_price - bid_price if ask_price > bid_price else mid_price * 0.001
         spread_cost = spread / 2 / mid_price  # Half spread cost
 
         # Total slippage calculation
-        if execution_type == 'live':
+        if execution_type == "live":
             # Live execution: more realistic slippage
-            direction_multiplier = 1 if side == 'buy' else -1
+            direction_multiplier = 1 if side == "buy" else -1
             price_movement = (market_impact + volatility_impact) * direction_multiplier
             total_slippage = spread_cost + abs(price_movement)
         else:
@@ -173,13 +192,13 @@ class BacktestParityAnalyzer:
             total_slippage = spread_cost * 0.5  # Assume better execution
 
         # Calculate executed price
-        if side == 'buy':
+        if side == "buy":
             executed_price = intended_price * (1 + total_slippage)
         else:
             executed_price = intended_price * (1 - total_slippage)
 
         # Calculate fees
-        fee_bps = self.fee_schedule['taker_fee_bps']  # Assume taker orders
+        fee_bps = self.fee_schedule["taker_fee_bps"]  # Assume taker orders
         if trade_value < 1000:  # Small trade
             fee_bps += 5  # Additional 0.05% for small trades
 
@@ -197,7 +216,7 @@ class BacktestParityAnalyzer:
             fees_bps=fee_bps,
             latency_ms=int(latency_ms),
             market_conditions=market_conditions,
-            execution_type=execution_type
+            execution_type=execution_type,
         )
 
         return execution
@@ -205,7 +224,7 @@ class BacktestParityAnalyzer:
     def record_execution(self, execution: TradeExecution) -> None:
         """Record a trade execution for parity analysis."""
         with self._lock:
-            if execution.execution_type == 'backtest':
+            if execution.execution_type == "backtest":
                 self.backtest_executions.append(execution)
             else:
                 self.live_executions.append(execution)
@@ -217,15 +236,17 @@ class BacktestParityAnalyzer:
                 market_impact=execution.slippage_bps * 0.4,  # Estimate 40% market impact
                 bid_ask_spread=execution.slippage_bps * 0.3,  # Estimate 30% spread
                 timing_slippage=execution.slippage_bps * 0.3,  # Estimate 30% timing
-                total_slippage=execution.slippage_bps
+                total_slippage=execution.slippage_bps,
             )
 
             self.slippage_history.append(slippage_breakdown)
 
-            self.logger.debug(f"Recorded {execution.execution_type} execution",
-                            symbol=execution.symbol,
-                            slippage_bps=execution.slippage_bps,
-                            fees_bps=execution.fees_bps)
+            self.logger.debug(
+                f"Recorded {execution.execution_type} execution",
+                symbol=execution.symbol,
+                slippage_bps=execution.slippage_bps,
+                fees_bps=execution.fees_bps,
+            )
 
     def calculate_parity_metrics(self, lookback_hours: int = 24) -> Optional[ParityMetrics]:
         """Calculate backtest-live parity metrics."""
@@ -241,31 +262,35 @@ class BacktestParityAnalyzer:
 
         try:
             # Convert to DataFrames for analysis
-            bt_df = pd.DataFrame([
-                {
-                    'timestamp': e.timestamp,
-                    'symbol': e.symbol,
-                    'slippage_bps': e.slippage_bps,
-                    'fees_bps': e.fees_bps,
-                    'return': (e.executed_price - e.intended_price) / e.intended_price * 10000
-                }
-                for e in recent_backtest
-            ])
+            bt_df = pd.DataFrame(
+                [
+                    {
+                        "timestamp": e.timestamp,
+                        "symbol": e.symbol,
+                        "slippage_bps": e.slippage_bps,
+                        "fees_bps": e.fees_bps,
+                        "return": (e.executed_price - e.intended_price) / e.intended_price * 10000,
+                    }
+                    for e in recent_backtest
+                ]
+            )
 
-            live_df = pd.DataFrame([
-                {
-                    'timestamp': e.timestamp,
-                    'symbol': e.symbol,
-                    'slippage_bps': e.slippage_bps,
-                    'fees_bps': e.fees_bps,
-                    'return': (e.executed_price - e.intended_price) / e.intended_price * 10000
-                }
-                for e in recent_live
-            ])
+            live_df = pd.DataFrame(
+                [
+                    {
+                        "timestamp": e.timestamp,
+                        "symbol": e.symbol,
+                        "slippage_bps": e.slippage_bps,
+                        "fees_bps": e.fees_bps,
+                        "return": (e.executed_price - e.intended_price) / e.intended_price * 10000,
+                    }
+                    for e in recent_live
+                ]
+            )
 
             # Align executions by symbol and time (simplified)
-            aligned_bt = bt_df.groupby('symbol')['return'].mean()
-            aligned_live = live_df.groupby('symbol')['return'].mean()
+            aligned_bt = bt_df.groupby("symbol")["return"].mean()
+            aligned_live = live_df.groupby("symbol")["return"].mean()
 
             # Find common symbols
             common_symbols = set(aligned_bt.index) & set(aligned_live.index)
@@ -280,19 +305,23 @@ class BacktestParityAnalyzer:
             tracking_error_bps = return_diff.std()
 
             # Calculate correlation
-            correlation = np.corrcoef(bt_returns.values, live_returns.values)[0, 1] if len(bt_returns) > 1 else 0.0
+            correlation = (
+                np.corrcoef(bt_returns.values, live_returns.values)[0, 1]
+                if len(bt_returns) > 1
+                else 0.0
+            )
 
             # Alpha difference (systematic bias)
             alpha_difference = return_diff.mean()
 
             # Slippage difference
-            bt_slippage = bt_df['slippage_bps'].mean()
-            live_slippage = live_df['slippage_bps'].mean()
+            bt_slippage = bt_df["slippage_bps"].mean()
+            live_slippage = live_df["slippage_bps"].mean()
             slippage_difference = live_slippage - bt_slippage
 
             # Fee difference
-            bt_fees = bt_df['fees_bps'].mean()
-            live_fees = live_df['fees_bps'].mean()
+            bt_fees = bt_df["fees_bps"].mean()
+            live_fees = live_df["fees_bps"].mean()
             fee_difference = live_fees - bt_fees
 
             # Execution quality score (0-100)
@@ -303,7 +332,7 @@ class BacktestParityAnalyzer:
             std_error = tracking_error_bps / np.sqrt(n_obs)
             confidence_interval = (
                 tracking_error_bps - 1.96 * std_error,
-                tracking_error_bps + 1.96 * std_error
+                tracking_error_bps + 1.96 * std_error,
             )
 
             return ParityMetrics(
@@ -314,16 +343,16 @@ class BacktestParityAnalyzer:
                 fee_difference=fee_difference,
                 execution_quality_score=quality_score,
                 sample_size=len(common_symbols),
-                confidence_interval=confidence_interval
+                confidence_interval=confidence_interval,
             )
 
         except Exception as e:
             self.logger.error(f"Error calculating parity metrics: {e}")
             return None
 
-    def analyze_return_attribution(self, portfolio_returns: pd.Series,
-                                 benchmark_returns: pd.Series,
-                                 period_days: int = 7) -> PerformanceAttribution:
+    def analyze_return_attribution(
+        self, portfolio_returns: pd.Series, benchmark_returns: pd.Series, period_days: int = 7
+    ) -> PerformanceAttribution:
         """Analyze return attribution with component breakdown."""
 
         if len(portfolio_returns) < period_days or len(benchmark_returns) < period_days:
@@ -338,7 +367,7 @@ class BacktestParityAnalyzer:
                 timing_impact=0.0,
                 sizing_impact=0.0,
                 market_impact=0.0,
-                attribution_confidence=0.0
+                attribution_confidence=0.0,
             )
 
         # Calculate period returns
@@ -353,7 +382,8 @@ class BacktestParityAnalyzer:
 
         # Estimate component impacts
         recent_executions = [
-            e for e in (self.backtest_executions + self.live_executions)
+            e
+            for e in (self.backtest_executions + self.live_executions)
             if e.timestamp >= period_start
         ]
 
@@ -395,21 +425,23 @@ class BacktestParityAnalyzer:
             timing_impact=timing_impact,
             sizing_impact=sizing_impact,
             market_impact=market_impact,
-            attribution_confidence=attribution_confidence
+            attribution_confidence=attribution_confidence,
         )
 
-    def get_slippage_analysis(self, symbol: Optional[str] = None,
-                            hours: int = 24) -> Dict[str, Any]:
+    def get_slippage_analysis(
+        self, symbol: Optional[str] = None, hours: int = 24
+    ) -> Dict[str, Any]:
         """Get detailed slippage analysis."""
         cutoff_time = datetime.now() - timedelta(hours=hours)
 
         filtered_slippage = [
-            s for s in self.slippage_history
+            s
+            for s in self.slippage_history
             if s.timestamp >= cutoff_time and (symbol is None or s.symbol == symbol)
         ]
 
         if not filtered_slippage:
-            return {'error': 'No slippage data available'}
+            return {"error": "No slippage data available"}
 
         # Calculate statistics
         total_slippages = [s.total_slippage for s in filtered_slippage]
@@ -418,20 +450,20 @@ class BacktestParityAnalyzer:
         timing_costs = [s.timing_slippage for s in filtered_slippage]
 
         return {
-            'period_hours': hours,
-            'sample_size': len(filtered_slippage),
-            'total_slippage': {
-                'mean_bps': np.mean(total_slippages),
-                'median_bps': np.median(total_slippages),
-                'p95_bps': np.percentile(total_slippages, 95),
-                'std_bps': np.std(total_slippages)
+            "period_hours": hours,
+            "sample_size": len(filtered_slippage),
+            "total_slippage": {
+                "mean_bps": np.mean(total_slippages),
+                "median_bps": np.median(total_slippages),
+                "p95_bps": np.percentile(total_slippages, 95),
+                "std_bps": np.std(total_slippages),
             },
-            'component_breakdown': {
-                'market_impact_bps': np.mean(market_impacts),
-                'spread_cost_bps': np.mean(spread_costs),
-                'timing_cost_bps': np.mean(timing_costs)
+            "component_breakdown": {
+                "market_impact_bps": np.mean(market_impacts),
+                "spread_cost_bps": np.mean(spread_costs),
+                "timing_cost_bps": np.mean(timing_costs),
             },
-            'within_budget': np.percentile(total_slippages, 95) <= 30.0  # 30 bps budget
+            "within_budget": np.percentile(total_slippages, 95) <= 30.0,  # 30 bps budget
         }
 
     def is_tracking_error_acceptable(self) -> Tuple[bool, Optional[ParityMetrics]]:
@@ -452,53 +484,70 @@ class BacktestParityAnalyzer:
 
         # Recent performance
         recent_executions = [
-            e for e in (self.backtest_executions + self.live_executions)
+            e
+            for e in (self.backtest_executions + self.live_executions)
             if e.timestamp >= datetime.now() - timedelta(hours=24)
         ]
 
         if recent_executions:
-            avg_latency = np.mean([e.latency_ms for e in recent_executions if e.execution_type == 'live'])
-            execution_success_rate = len([e for e in recent_executions if e.slippage_bps < 50]) / len(recent_executions)
+            avg_latency = np.mean(
+                [e.latency_ms for e in recent_executions if e.execution_type == "live"]
+            )
+            execution_success_rate = len(
+                [e for e in recent_executions if e.slippage_bps < 50]
+            ) / len(recent_executions)
         else:
             avg_latency = 0
             execution_success_rate = 0
 
         return {
-            'parity_metrics': {
-                'tracking_error_bps': parity_metrics.tracking_error_bps if parity_metrics else None,
-                'correlation': parity_metrics.correlation if parity_metrics else None,
-                'within_target': parity_metrics.tracking_error_bps <= self.target_tracking_error_bps if parity_metrics else False
+            "parity_metrics": {
+                "tracking_error_bps": parity_metrics.tracking_error_bps if parity_metrics else None,
+                "correlation": parity_metrics.correlation if parity_metrics else None,
+                "within_target": parity_metrics.tracking_error_bps <= self.target_tracking_error_bps
+                if parity_metrics
+                else False,
             },
-            'slippage_analysis': slippage_analysis,
-            'execution_performance': {
-                'avg_latency_ms': avg_latency,
-                'success_rate': execution_success_rate,
-                'total_executions_24h': len(recent_executions)
+            "slippage_analysis": slippage_analysis,
+            "execution_performance": {
+                "avg_latency_ms": avg_latency,
+                "success_rate": execution_success_rate,
+                "total_executions_24h": len(recent_executions),
             },
-            'quality_score': parity_metrics.execution_quality_score if parity_metrics else 0,
-            'report_timestamp': datetime.now().isoformat()
+            "quality_score": parity_metrics.execution_quality_score if parity_metrics else 0,
+            "report_timestamp": datetime.now().isoformat(),
         }
 
     def save_parity_state(self) -> None:
         """Save parity analysis state."""
         # Save recent executions (last 1000)
-        recent_bt = self.backtest_executions[-1000:] if len(self.backtest_executions) > 1000 else self.backtest_executions
-        recent_live = self.live_executions[-1000:] if len(self.live_executions) > 1000 else self.live_executions
+        recent_bt = (
+            self.backtest_executions[-1000:]
+            if len(self.backtest_executions) > 1000
+            else self.backtest_executions
+        )
+        recent_live = (
+            self.live_executions[-1000:]
+            if len(self.live_executions) > 1000
+            else self.live_executions
+        )
 
         state = {
-            'backtest_executions': len(self.backtest_executions),
-            'live_executions': len(self.live_executions),
-            'last_parity_check': datetime.now().isoformat(),
-            'target_tracking_error_bps': self.target_tracking_error_bps
+            "backtest_executions": len(self.backtest_executions),
+            "live_executions": len(self.live_executions),
+            "last_parity_check": datetime.now().isoformat(),
+            "target_tracking_error_bps": self.target_tracking_error_bps,
         }
 
         try:
-            with open(self.data_path / "parity_state.json", 'w') as f:
+            with open(self.data_path / "parity_state.json", "w") as f:
                 json.dump(state, f, indent=2)
         except Exception as e:
             self.logger.error(f"Failed to save parity state: {e}")
 
 
-def create_backtest_parity_analyzer(target_tracking_error_bps: float = 20.0) -> BacktestParityAnalyzer:
+def create_backtest_parity_analyzer(
+    target_tracking_error_bps: float = 20.0,
+) -> BacktestParityAnalyzer:
     """Factory function to create BacktestParityAnalyzer instance."""
     return BacktestParityAnalyzer(target_tracking_error_bps=target_tracking_error_bps)

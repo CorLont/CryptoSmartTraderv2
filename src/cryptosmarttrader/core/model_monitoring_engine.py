@@ -20,8 +20,10 @@ import time
 import traceback
 from abc import ABC, abstractmethod
 
+
 class ModelStatus(Enum):
     """Model status types"""
+
     HEALTHY = "healthy"
     WARNING = "warning"
     DEGRADED = "degraded"
@@ -29,23 +31,29 @@ class ModelStatus(Enum):
     DISABLED = "disabled"
     RETRAINING = "retraining"
 
+
 class AlertSeverity(Enum):
     """Alert severity levels"""
+
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
     EMERGENCY = "emergency"
 
+
 class DriftType(Enum):
     """Types of model drift"""
+
     DATA_DRIFT = "data_drift"
     CONCEPT_DRIFT = "concept_drift"
     PREDICTION_DRIFT = "prediction_drift"
     PERFORMANCE_DRIFT = "performance_drift"
 
+
 @dataclass
 class ModelMetrics:
     """Model performance metrics"""
+
     model_id: str
     timestamp: datetime
     accuracy: float
@@ -59,9 +67,11 @@ class ModelMetrics:
     error_rate: float
     throughput: float
 
+
 @dataclass
 class DriftAlert:
     """Model drift alert"""
+
     model_id: str
     drift_type: DriftType
     severity: AlertSeverity
@@ -72,9 +82,11 @@ class DriftAlert:
     affected_features: List[str]
     recommended_actions: List[str]
 
+
 @dataclass
 class HealthCheckResult:
     """Model health check result"""
+
     model_id: str
     status: ModelStatus
     overall_score: float
@@ -82,6 +94,7 @@ class HealthCheckResult:
     alerts: List[DriftAlert]
     recommendations: List[str]
     last_update: datetime
+
 
 class DataQualityMonitor:
     """Monitor data quality and detect anomalies"""
@@ -91,51 +104,51 @@ class DataQualityMonitor:
         self.logger = logging.getLogger(__name__)
         self.quality_history = {}
         self.quality_thresholds = {
-            'missing_data_threshold': 0.05,  # 5% missing data max
-            'outlier_threshold': 0.02,       # 2% outliers max
-            'drift_threshold': 0.1,          # 10% distribution drift max
-            'correlation_threshold': 0.8     # 80% correlation minimum
+            "missing_data_threshold": 0.05,  # 5% missing data max
+            "outlier_threshold": 0.02,  # 2% outliers max
+            "drift_threshold": 0.1,  # 10% distribution drift max
+            "correlation_threshold": 0.8,  # 80% correlation minimum
         }
 
     def assess_data_quality(self, data: pd.DataFrame, model_id: str) -> Dict[str, Any]:
         """Comprehensive data quality assessment"""
         try:
             quality_assessment = {
-                'model_id': model_id,
-                'timestamp': datetime.now().isoformat(),
-                'overall_score': 0.0,
-                'metrics': {},
-                'issues': [],
-                'recommendations': []
+                "model_id": model_id,
+                "timestamp": datetime.now().isoformat(),
+                "overall_score": 0.0,
+                "metrics": {},
+                "issues": [],
+                "recommendations": [],
             }
 
             # 1. Missing data assessment
             missing_metrics = self._assess_missing_data(data)
-            quality_assessment['metrics']['missing_data'] = missing_metrics
+            quality_assessment["metrics"]["missing_data"] = missing_metrics
 
             # 2. Outlier detection
             outlier_metrics = self._detect_outliers(data)
-            quality_assessment['metrics']['outliers'] = outlier_metrics
+            quality_assessment["metrics"]["outliers"] = outlier_metrics
 
             # 3. Distribution drift
             drift_metrics = self._detect_distribution_drift(data, model_id)
-            quality_assessment['metrics']['distribution_drift'] = drift_metrics
+            quality_assessment["metrics"]["distribution_drift"] = drift_metrics
 
             # 4. Feature correlation changes
             correlation_metrics = self._assess_feature_correlations(data, model_id)
-            quality_assessment['metrics']['correlations'] = correlation_metrics
+            quality_assessment["metrics"]["correlations"] = correlation_metrics
 
             # 5. Data freshness
             freshness_metrics = self._assess_data_freshness(data)
-            quality_assessment['metrics']['freshness'] = freshness_metrics
+            quality_assessment["metrics"]["freshness"] = freshness_metrics
 
             # Calculate overall score
-            overall_score = self._calculate_overall_quality_score(quality_assessment['metrics'])
-            quality_assessment['overall_score'] = overall_score
+            overall_score = self._calculate_overall_quality_score(quality_assessment["metrics"])
+            quality_assessment["overall_score"] = overall_score
 
             # Generate recommendations
-            recommendations = self._generate_quality_recommendations(quality_assessment['metrics'])
-            quality_assessment['recommendations'] = recommendations
+            recommendations = self._generate_quality_recommendations(quality_assessment["metrics"])
+            quality_assessment["recommendations"] = recommendations
 
             # Store in history
             if model_id not in self.quality_history:
@@ -151,10 +164,10 @@ class DataQualityMonitor:
         except Exception as e:
             self.logger.error(f"Data quality assessment failed: {e}")
             return {
-                'model_id': model_id,
-                'error': str(e),
-                'overall_score': 0.0,
-                'timestamp': datetime.now().isoformat()
+                "model_id": model_id,
+                "error": str(e),
+                "overall_score": 0.0,
+                "timestamp": datetime.now().isoformat(),
             }
 
     def _assess_missing_data(self, data: pd.DataFrame) -> Dict[str, Any]:
@@ -171,17 +184,18 @@ class DataQualityMonitor:
                 column_missing[col] = float(col_missing)
 
             return {
-                'total_missing_ratio': float(missing_ratio),
-                'column_missing_ratios': column_missing,
-                'columns_with_high_missing': [
-                    col for col, ratio in column_missing.items()
-                    if ratio > self.quality_thresholds['missing_data_threshold']
+                "total_missing_ratio": float(missing_ratio),
+                "column_missing_ratios": column_missing,
+                "columns_with_high_missing": [
+                    col
+                    for col, ratio in column_missing.items()
+                    if ratio > self.quality_thresholds["missing_data_threshold"]
                 ],
-                'score': max(0.0, 1.0 - missing_ratio * 10)  # Penalize missing data
+                "score": max(0.0, 1.0 - missing_ratio * 10),  # Penalize missing data
             }
 
         except Exception as e:
-            return {'error': str(e), 'score': 0.0}
+            return {"error": str(e), "score": 0.0}
 
     def _detect_outliers(self, data: pd.DataFrame) -> Dict[str, Any]:
         """Detect outliers in numerical data"""
@@ -215,30 +229,33 @@ class DataQualityMonitor:
                 total_outliers += outliers
                 total_numerical_values += len(col_data)
 
-            overall_outlier_ratio = total_outliers / total_numerical_values if total_numerical_values > 0 else 0
+            overall_outlier_ratio = (
+                total_outliers / total_numerical_values if total_numerical_values > 0 else 0
+            )
 
             return {
-                'overall_outlier_ratio': float(overall_outlier_ratio),
-                'column_outlier_ratios': outlier_ratios,
-                'columns_with_high_outliers': [
-                    col for col, ratio in outlier_ratios.items()
-                    if ratio > self.quality_thresholds['outlier_threshold']
+                "overall_outlier_ratio": float(overall_outlier_ratio),
+                "column_outlier_ratios": outlier_ratios,
+                "columns_with_high_outliers": [
+                    col
+                    for col, ratio in outlier_ratios.items()
+                    if ratio > self.quality_thresholds["outlier_threshold"]
                 ],
-                'score': max(0.0, 1.0 - overall_outlier_ratio * 20)  # Penalize outliers
+                "score": max(0.0, 1.0 - overall_outlier_ratio * 20),  # Penalize outliers
             }
 
         except Exception as e:
-            return {'error': str(e), 'score': 0.5}
+            return {"error": str(e), "score": 0.5}
 
     def _detect_distribution_drift(self, data: pd.DataFrame, model_id: str) -> Dict[str, Any]:
         """Detect distribution drift compared to historical data"""
         try:
             if model_id not in self.quality_history or len(self.quality_history[model_id]) == 0:
                 return {
-                    'drift_detected': False,
-                    'drift_score': 0.0,
-                    'score': 1.0,
-                    'note': 'No historical data for comparison'
+                    "drift_detected": False,
+                    "drift_score": 0.0,
+                    "score": 1.0,
+                    "note": "No historical data for comparison",
                 }
 
             # Get recent historical data for comparison
@@ -260,21 +277,22 @@ class DataQualityMonitor:
                     drift_scores[col] = float(min(1.0, drift_score))
 
             overall_drift = np.mean(list(drift_scores.values())) if drift_scores else 0.0
-            drift_detected = overall_drift > self.quality_thresholds['drift_threshold']
+            drift_detected = overall_drift > self.quality_thresholds["drift_threshold"]
 
             return {
-                'drift_detected': drift_detected,
-                'drift_score': float(overall_drift),
-                'column_drift_scores': drift_scores,
-                'drifted_columns': [
-                    col for col, score in drift_scores.items()
-                    if score > self.quality_thresholds['drift_threshold']
+                "drift_detected": drift_detected,
+                "drift_score": float(overall_drift),
+                "column_drift_scores": drift_scores,
+                "drifted_columns": [
+                    col
+                    for col, score in drift_scores.items()
+                    if score > self.quality_thresholds["drift_threshold"]
                 ],
-                'score': max(0.0, 1.0 - overall_drift)
+                "score": max(0.0, 1.0 - overall_drift),
             }
 
         except Exception as e:
-            return {'error': str(e), 'score': 0.5}
+            return {"error": str(e), "score": 0.5}
 
     def _assess_feature_correlations(self, data: pd.DataFrame, model_id: str) -> Dict[str, Any]:
         """Assess feature correlation stability"""
@@ -283,9 +301,9 @@ class DataQualityMonitor:
 
             if len(numerical_cols) < 2:
                 return {
-                    'correlation_stability': 1.0,
-                    'score': 1.0,
-                    'note': 'Insufficient numerical columns for correlation analysis'
+                    "correlation_stability": 1.0,
+                    "score": 1.0,
+                    "note": "Insufficient numerical columns for correlation analysis",
                 }
 
             # Calculate current correlation matrix
@@ -297,7 +315,7 @@ class DataQualityMonitor:
             total_pairs = 0
 
             for i in range(len(numerical_cols)):
-                for j in range(i+1, len(numerical_cols)):
+                for j in range(i + 1, len(numerical_cols)):
                     corr_val = abs(current_corr.iloc[i, j])
                     if not np.isnan(corr_val):
                         total_pairs += 1
@@ -307,14 +325,14 @@ class DataQualityMonitor:
             high_corr_ratio = high_corr_count / total_pairs if total_pairs > 0 else 0
 
             return {
-                'high_correlation_ratio': float(high_corr_ratio),
-                'correlation_matrix_size': len(numerical_cols),
-                'total_correlation_pairs': total_pairs,
-                'score': max(0.0, 1.0 - high_corr_ratio * 2)  # Penalize high correlations
+                "high_correlation_ratio": float(high_corr_ratio),
+                "correlation_matrix_size": len(numerical_cols),
+                "total_correlation_pairs": total_pairs,
+                "score": max(0.0, 1.0 - high_corr_ratio * 2),  # Penalize high correlations
             }
 
         except Exception as e:
-            return {'error': str(e), 'score': 0.5}
+            return {"error": str(e), "score": 0.5}
 
     def _assess_data_freshness(self, data: pd.DataFrame) -> Dict[str, Any]:
         """Assess data freshness and recency"""
@@ -334,36 +352,36 @@ class DataQualityMonitor:
                     freshness_score = max(0.1, 1.0 - (hours_old - 24) / (24 * 7))  # Decay over week
 
                 return {
-                    'latest_data_timestamp': latest_data.isoformat(),
-                    'hours_since_latest': float(hours_old),
-                    'freshness_score': freshness_score,
-                    'score': freshness_score
+                    "latest_data_timestamp": latest_data.isoformat(),
+                    "hours_since_latest": float(hours_old),
+                    "freshness_score": freshness_score,
+                    "score": freshness_score,
                 }
             else:
                 return {
-                    'freshness_score': 0.8,  # Neutral score for non-datetime data
-                    'score': 0.8,
-                    'note': 'No datetime index found'
+                    "freshness_score": 0.8,  # Neutral score for non-datetime data
+                    "score": 0.8,
+                    "note": "No datetime index found",
                 }
 
         except Exception as e:
-            return {'error': str(e), 'score': 0.5}
+            return {"error": str(e), "score": 0.5}
 
     def _calculate_overall_quality_score(self, metrics: Dict[str, Any]) -> float:
         """Calculate overall data quality score"""
         try:
             scores = []
             weights = {
-                'missing_data': 0.25,
-                'outliers': 0.20,
-                'distribution_drift': 0.25,
-                'correlations': 0.15,
-                'freshness': 0.15
+                "missing_data": 0.25,
+                "outliers": 0.20,
+                "distribution_drift": 0.25,
+                "correlations": 0.15,
+                "freshness": 0.15,
             }
 
             for metric_name, weight in weights.items():
-                if metric_name in metrics and 'score' in metrics[metric_name]:
-                    score = metrics[metric_name]['score']
+                if metric_name in metrics and "score" in metrics[metric_name]:
+                    score = metrics[metric_name]["score"]
                     scores.append(score * weight)
 
             return sum(scores) if scores else 0.0
@@ -377,34 +395,43 @@ class DataQualityMonitor:
 
         try:
             # Missing data recommendations
-            if 'missing_data' in metrics:
-                if metrics['missing_data'].get('score', 1.0) < 0.7:
-                    recommendations.append("Consider data imputation or collection improvement for missing values")
+            if "missing_data" in metrics:
+                if metrics["missing_data"].get("score", 1.0) < 0.7:
+                    recommendations.append(
+                        "Consider data imputation or collection improvement for missing values"
+                    )
 
             # Outlier recommendations
-            if 'outliers' in metrics:
-                if metrics['outliers'].get('score', 1.0) < 0.7:
-                    recommendations.append("Review outlier detection and consider data cleaning procedures")
+            if "outliers" in metrics:
+                if metrics["outliers"].get("score", 1.0) < 0.7:
+                    recommendations.append(
+                        "Review outlier detection and consider data cleaning procedures"
+                    )
 
             # Drift recommendations
-            if 'distribution_drift' in metrics:
-                if metrics['distribution_drift'].get('drift_detected', False):
-                    recommendations.append("Data distribution drift detected - consider model retraining")
+            if "distribution_drift" in metrics:
+                if metrics["distribution_drift"].get("drift_detected", False):
+                    recommendations.append(
+                        "Data distribution drift detected - consider model retraining"
+                    )
 
             # Correlation recommendations
-            if 'correlations' in metrics:
-                if metrics['correlations'].get('score', 1.0) < 0.7:
-                    recommendations.append("High feature correlations detected - consider feature selection")
+            if "correlations" in metrics:
+                if metrics["correlations"].get("score", 1.0) < 0.7:
+                    recommendations.append(
+                        "High feature correlations detected - consider feature selection"
+                    )
 
             # Freshness recommendations
-            if 'freshness' in metrics:
-                if metrics['freshness'].get('score', 1.0) < 0.7:
+            if "freshness" in metrics:
+                if metrics["freshness"].get("score", 1.0) < 0.7:
                     recommendations.append("Data freshness issue - update data pipeline frequency")
 
         except Exception as e:
             recommendations.append(f"Error generating recommendations: {e}")
 
         return recommendations
+
 
 class ModelPerformanceMonitor:
     """Monitor model performance and detect degradation"""
@@ -414,25 +441,33 @@ class ModelPerformanceMonitor:
         self.logger = logging.getLogger(__name__)
         self.performance_history = {}
         self.performance_thresholds = {
-            'accuracy_threshold': 0.7,
-            'latency_threshold': 1.0,  # seconds
-            'error_rate_threshold': 0.1,
-            'confidence_threshold': 0.6
+            "accuracy_threshold": 0.7,
+            "latency_threshold": 1.0,  # seconds
+            "error_rate_threshold": 0.1,
+            "confidence_threshold": 0.6,
         }
 
-    def monitor_model_performance(self, model_id: str, predictions: np.ndarray,
-                                true_values: Optional[np.ndarray] = None,
-                                prediction_times: Optional[List[float]] = None) -> ModelMetrics:
+    def monitor_model_performance(
+        self,
+        model_id: str,
+        predictions: np.ndarray,
+        true_values: Optional[np.ndarray] = None,
+        prediction_times: Optional[List[float]] = None,
+    ) -> ModelMetrics:
         """Monitor comprehensive model performance"""
         try:
             timestamp = datetime.now()
 
             # Calculate performance metrics
             if true_values is not None and len(true_values) == len(predictions):
-                accuracy, precision, recall, f1 = self._calculate_accuracy_metrics(predictions, true_values)
+                accuracy, precision, recall, f1 = self._calculate_accuracy_metrics(
+                    predictions, true_values
+                )
             else:
                 # Use prediction confidence as proxy
-                accuracy = precision = recall = f1 = np.mean(np.abs(predictions)) if len(predictions) > 0 else 0.0
+                accuracy = precision = recall = f1 = (
+                    np.mean(np.abs(predictions)) if len(predictions) > 0 else 0.0
+                )
 
             # Calculate latency metrics
             if prediction_times:
@@ -459,7 +494,9 @@ class ModelPerformanceMonitor:
                 throughput = 0.0
 
             # Data quality score (simplified)
-            data_quality_score = 1.0 - (np.isnan(predictions).sum() / len(predictions) if len(predictions) > 0 else 0)
+            data_quality_score = 1.0 - (
+                np.isnan(predictions).sum() / len(predictions) if len(predictions) > 0 else 0
+            )
 
             # Feature drift score (placeholder)
             feature_drift_score = 0.0  # Would be calculated based on feature distribution changes
@@ -476,7 +513,7 @@ class ModelPerformanceMonitor:
                 feature_drift_score=float(feature_drift_score),
                 prediction_confidence=float(prediction_confidence),
                 error_rate=float(error_rate),
-                throughput=float(throughput)
+                throughput=float(throughput),
             )
 
             # Store in history
@@ -495,14 +532,21 @@ class ModelPerformanceMonitor:
             return ModelMetrics(
                 model_id=model_id,
                 timestamp=datetime.now(),
-                accuracy=0.0, precision=0.0, recall=0.0, f1_score=0.0,
-                prediction_latency=999.0, data_quality_score=0.0,
-                feature_drift_score=1.0, prediction_confidence=0.0,
-                error_rate=1.0, throughput=0.0
+                accuracy=0.0,
+                precision=0.0,
+                recall=0.0,
+                f1_score=0.0,
+                prediction_latency=999.0,
+                data_quality_score=0.0,
+                feature_drift_score=1.0,
+                prediction_confidence=0.0,
+                error_rate=1.0,
+                throughput=0.0,
             )
 
-    def _calculate_accuracy_metrics(self, predictions: np.ndarray,
-                                  true_values: np.ndarray) -> Tuple[float, float, float, float]:
+    def _calculate_accuracy_metrics(
+        self, predictions: np.ndarray, true_values: np.ndarray
+    ) -> Tuple[float, float, float, float]:
         """Calculate accuracy, precision, recall, and F1 score"""
         try:
             from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
@@ -517,9 +561,11 @@ class ModelPerformanceMonitor:
                 pred_binary = np.round(predictions).astype(int)
 
             accuracy = accuracy_score(true_binary, pred_binary)
-            precision = precision_score(true_binary, pred_binary, average='weighted', zero_division=0)
-            recall = recall_score(true_binary, pred_binary, average='weighted', zero_division=0)
-            f1 = f1_score(true_binary, pred_binary, average='weighted', zero_division=0)
+            precision = precision_score(
+                true_binary, pred_binary, average="weighted", zero_division=0
+            )
+            recall = recall_score(true_binary, pred_binary, average="weighted", zero_division=0)
+            f1 = f1_score(true_binary, pred_binary, average="weighted", zero_division=0)
 
             return accuracy, precision, recall, f1
 
@@ -527,8 +573,9 @@ class ModelPerformanceMonitor:
             self.logger.warning(f"Accuracy calculation failed: {e}")
             return 0.0, 0.0, 0.0, 0.0
 
-    def detect_performance_degradation(self, model_id: str,
-                                     lookback_periods: int = 10) -> List[DriftAlert]:
+    def detect_performance_degradation(
+        self, model_id: str, lookback_periods: int = 10
+    ) -> List[DriftAlert]:
         """Detect performance degradation over time"""
         try:
             alerts = []
@@ -542,7 +589,11 @@ class ModelPerformanceMonitor:
 
             # Compare recent performance with baseline
             recent_metrics = history[-lookback_periods:]
-            baseline_metrics = history[:-lookback_periods] if len(history) > lookback_periods else history[:len(history)//2]
+            baseline_metrics = (
+                history[:-lookback_periods]
+                if len(history) > lookback_periods
+                else history[: len(history) // 2]
+            )
 
             if not baseline_metrics:
                 return alerts
@@ -552,40 +603,50 @@ class ModelPerformanceMonitor:
             baseline_accuracy = np.mean([m.accuracy for m in baseline_metrics])
 
             if recent_accuracy < baseline_accuracy * 0.9:  # 10% degradation
-                alerts.append(DriftAlert(
-                    model_id=model_id,
-                    drift_type=DriftType.PERFORMANCE_DRIFT,
-                    severity=AlertSeverity.WARNING if recent_accuracy > baseline_accuracy * 0.8 else AlertSeverity.CRITICAL,
-                    drift_score=float(baseline_accuracy - recent_accuracy),
-                    threshold=baseline_accuracy * 0.9,
-                    description=f"Accuracy degraded from {baseline_accuracy:.3f} to {recent_accuracy:.3f}",
-                    timestamp=datetime.now(),
-                    affected_features=['accuracy'],
-                    recommended_actions=['Investigate data quality', 'Consider model retraining']
-                ))
+                alerts.append(
+                    DriftAlert(
+                        model_id=model_id,
+                        drift_type=DriftType.PERFORMANCE_DRIFT,
+                        severity=AlertSeverity.WARNING
+                        if recent_accuracy > baseline_accuracy * 0.8
+                        else AlertSeverity.CRITICAL,
+                        drift_score=float(baseline_accuracy - recent_accuracy),
+                        threshold=baseline_accuracy * 0.9,
+                        description=f"Accuracy degraded from {baseline_accuracy:.3f} to {recent_accuracy:.3f}",
+                        timestamp=datetime.now(),
+                        affected_features=["accuracy"],
+                        recommended_actions=[
+                            "Investigate data quality",
+                            "Consider model retraining",
+                        ],
+                    )
+                )
 
             # Check latency degradation
             recent_latency = np.mean([m.prediction_latency for m in recent_metrics])
             baseline_latency = np.mean([m.prediction_latency for m in baseline_metrics])
 
             if recent_latency > baseline_latency * 1.5:  # 50% increase
-                alerts.append(DriftAlert(
-                    model_id=model_id,
-                    drift_type=DriftType.PERFORMANCE_DRIFT,
-                    severity=AlertSeverity.WARNING,
-                    drift_score=float(recent_latency - baseline_latency),
-                    threshold=baseline_latency * 1.5,
-                    description=f"Latency increased from {baseline_latency:.3f}s to {recent_latency:.3f}s",
-                    timestamp=datetime.now(),
-                    affected_features=['latency'],
-                    recommended_actions=['Check system resources', 'Optimize model inference']
-                ))
+                alerts.append(
+                    DriftAlert(
+                        model_id=model_id,
+                        drift_type=DriftType.PERFORMANCE_DRIFT,
+                        severity=AlertSeverity.WARNING,
+                        drift_score=float(recent_latency - baseline_latency),
+                        threshold=baseline_latency * 1.5,
+                        description=f"Latency increased from {baseline_latency:.3f}s to {recent_latency:.3f}s",
+                        timestamp=datetime.now(),
+                        affected_features=["latency"],
+                        recommended_actions=["Check system resources", "Optimize model inference"],
+                    )
+                )
 
             return alerts
 
         except Exception as e:
             self.logger.error(f"Performance degradation detection failed: {e}")
             return []
+
 
 class AutoHealingEngine:
     """Automatic model healing and recovery system"""
@@ -596,8 +657,9 @@ class AutoHealingEngine:
         self.healing_actions = {}
         self.healing_history = []
 
-    def register_healing_action(self, model_id: str, alert_type: DriftType,
-                              action: Callable[[str, DriftAlert], bool]):
+    def register_healing_action(
+        self, model_id: str, alert_type: DriftType, action: Callable[[str, DriftAlert], bool]
+    ):
         """Register an automatic healing action for specific alert types"""
         try:
             if model_id not in self.healing_actions:
@@ -613,49 +675,62 @@ class AutoHealingEngine:
         """Execute healing actions for detected alerts"""
         try:
             healing_result = {
-                'model_id': model_id,
-                'timestamp': datetime.now().isoformat(),
-                'alerts_processed': len(alerts),
-                'actions_taken': [],
-                'success_count': 0,
-                'failure_count': 0
+                "model_id": model_id,
+                "timestamp": datetime.now().isoformat(),
+                "alerts_processed": len(alerts),
+                "actions_taken": [],
+                "success_count": 0,
+                "failure_count": 0,
             }
 
             for alert in alerts:
-                if model_id in self.healing_actions and alert.drift_type in self.healing_actions[model_id]:
+                if (
+                    model_id in self.healing_actions
+                    and alert.drift_type in self.healing_actions[model_id]
+                ):
                     action = self.healing_actions[model_id][alert.drift_type]
 
                     try:
                         success = action(model_id, alert)
 
                         action_result = {
-                            'alert_type': alert.drift_type.value,
-                            'action_taken': action.__name__ if hasattr(action, '__name__') else 'unknown',
-                            'success': success,
-                            'timestamp': datetime.now().isoformat()
+                            "alert_type": alert.drift_type.value,
+                            "action_taken": action.__name__
+                            if hasattr(action, "__name__")
+                            else "unknown",
+                            "success": success,
+                            "timestamp": datetime.now().isoformat(),
                         }
 
-                        healing_result['actions_taken'].append(action_result)
+                        healing_result["actions_taken"].append(action_result)
 
                         if success:
-                            healing_result['success_count'] += 1
-                            self.logger.info(f"Healing action successful for {model_id} - {alert.drift_type.value}")
+                            healing_result["success_count"] += 1
+                            self.logger.info(
+                                f"Healing action successful for {model_id} - {alert.drift_type.value}"
+                            )
                         else:
-                            healing_result['failure_count'] += 1
-                            self.logger.warning(f"Healing action failed for {model_id} - {alert.drift_type.value}")
+                            healing_result["failure_count"] += 1
+                            self.logger.warning(
+                                f"Healing action failed for {model_id} - {alert.drift_type.value}"
+                            )
 
                     except Exception as e:
-                        healing_result['failure_count'] += 1
-                        healing_result['actions_taken'].append({
-                            'alert_type': alert.drift_type.value,
-                            'action_taken': 'error',
-                            'success': False,
-                            'error': str(e),
-                            'timestamp': datetime.now().isoformat()
-                        })
+                        healing_result["failure_count"] += 1
+                        healing_result["actions_taken"].append(
+                            {
+                                "alert_type": alert.drift_type.value,
+                                "action_taken": "error",
+                                "success": False,
+                                "error": str(e),
+                                "timestamp": datetime.now().isoformat(),
+                            }
+                        )
                         self.logger.error(f"Healing action error for {model_id}: {e}")
                 else:
-                    self.logger.info(f"No healing action registered for {model_id} - {alert.drift_type.value}")
+                    self.logger.info(
+                        f"No healing action registered for {model_id} - {alert.drift_type.value}"
+                    )
 
             # Store healing history
             self.healing_history.append(healing_result)
@@ -664,11 +739,8 @@ class AutoHealingEngine:
 
         except Exception as e:
             self.logger.error(f"Healing execution failed: {e}")
-            return {
-                'model_id': model_id,
-                'error': str(e),
-                'timestamp': datetime.now().isoformat()
-            }
+            return {"model_id": model_id, "error": str(e), "timestamp": datetime.now().isoformat()}
+
 
 class ModelMonitoringCoordinator:
     """Main coordinator for model monitoring and auto-healing"""
@@ -694,10 +766,10 @@ class ModelMonitoringCoordinator:
         """Register a model for monitoring"""
         try:
             self.monitored_models[model_id] = {
-                'config': model_config or {},
-                'status': ModelStatus.HEALTHY,
-                'last_health_check': datetime.now(),
-                'alert_count': 0
+                "config": model_config or {},
+                "status": ModelStatus.HEALTHY,
+                "last_health_check": datetime.now(),
+                "alert_count": 0,
             }
 
             self.logger.info(f"Model {model_id} registered for monitoring")
@@ -705,10 +777,13 @@ class ModelMonitoringCoordinator:
         except Exception as e:
             self.logger.error(f"Failed to register model {model_id}: {e}")
 
-    def conduct_comprehensive_health_check(self, model_id: str,
-                                         data: pd.DataFrame,
-                                         predictions: Optional[np.ndarray] = None,
-                                         true_values: Optional[np.ndarray] = None) -> HealthCheckResult:
+    def conduct_comprehensive_health_check(
+        self,
+        model_id: str,
+        data: pd.DataFrame,
+        predictions: Optional[np.ndarray] = None,
+        true_values: Optional[np.ndarray] = None,
+    ) -> HealthCheckResult:
         """Conduct comprehensive health check for a model"""
         try:
             # Data quality assessment
@@ -727,10 +802,12 @@ class ModelMonitoringCoordinator:
 
             # Calculate overall health scores
             individual_scores = {
-                'data_quality': data_quality.get('overall_score', 0.0),
-                'performance': performance_metrics.accuracy if performance_metrics else 0.5,
-                'latency': 1.0 - min(1.0, performance_metrics.prediction_latency) if performance_metrics else 0.5,
-                'stability': 1.0 - len(degradation_alerts) * 0.2  # Penalize alerts
+                "data_quality": data_quality.get("overall_score", 0.0),
+                "performance": performance_metrics.accuracy if performance_metrics else 0.5,
+                "latency": 1.0 - min(1.0, performance_metrics.prediction_latency)
+                if performance_metrics
+                else 0.5,
+                "stability": 1.0 - len(degradation_alerts) * 0.2,  # Penalize alerts
             }
 
             overall_score = np.mean(list(individual_scores.values()))
@@ -747,7 +824,7 @@ class ModelMonitoringCoordinator:
 
             # Generate recommendations
             recommendations = []
-            recommendations.extend(data_quality.get('recommendations', []))
+            recommendations.extend(data_quality.get("recommendations", []))
 
             if performance_metrics and performance_metrics.prediction_latency > 1.0:
                 recommendations.append("Optimize model inference for better latency")
@@ -763,19 +840,23 @@ class ModelMonitoringCoordinator:
                 individual_scores=individual_scores,
                 alerts=degradation_alerts,
                 recommendations=recommendations,
-                last_update=datetime.now()
+                last_update=datetime.now(),
             )
 
             # Update model status
             if model_id in self.monitored_models:
-                self.monitored_models[model_id]['status'] = status
-                self.monitored_models[model_id]['last_health_check'] = datetime.now()
-                self.monitored_models[model_id]['alert_count'] = len(degradation_alerts)
+                self.monitored_models[model_id]["status"] = status
+                self.monitored_models[model_id]["last_health_check"] = datetime.now()
+                self.monitored_models[model_id]["alert_count"] = len(degradation_alerts)
 
             # Execute auto-healing if needed
             if degradation_alerts:
-                healing_result = self.auto_healing_engine.execute_healing(model_id, degradation_alerts)
-                self.logger.info(f"Auto-healing executed for {model_id}: {healing_result['success_count']} successes")
+                healing_result = self.auto_healing_engine.execute_healing(
+                    model_id, degradation_alerts
+                )
+                self.logger.info(
+                    f"Auto-healing executed for {model_id}: {healing_result['success_count']} successes"
+                )
 
             return health_result
 
@@ -788,7 +869,7 @@ class ModelMonitoringCoordinator:
                 individual_scores={},
                 alerts=[],
                 recommendations=[f"Health check failed: {e}"],
-                last_update=datetime.now()
+                last_update=datetime.now(),
             )
 
     def start_continuous_monitoring(self, check_interval: int = 300):
@@ -798,9 +879,7 @@ class ModelMonitoringCoordinator:
 
             if self.monitoring_thread is None or not self.monitoring_thread.is_alive():
                 self.monitoring_thread = threading.Thread(
-                    target=self._monitoring_loop,
-                    args=(check_interval,),
-                    daemon=True
+                    target=self._monitoring_loop, args=(check_interval,), daemon=True
                 )
                 self.monitoring_thread.start()
 
@@ -832,7 +911,7 @@ class ModelMonitoringCoordinator:
                         self.logger.debug(f"Monitoring check for {model_id}")
 
                         # Update last check time
-                        self.monitored_models[model_id]['last_health_check'] = datetime.now()
+                        self.monitored_models[model_id]["last_health_check"] = datetime.now()
 
                     except Exception as e:
                         self.logger.error(f"Monitoring check failed for {model_id}: {e}")
@@ -846,32 +925,36 @@ class ModelMonitoringCoordinator:
         """Generate comprehensive monitoring report"""
         try:
             return {
-                'monitoring_active': self.monitoring_active,
-                'total_models': len(self.monitored_models),
-                'model_statuses': {
+                "monitoring_active": self.monitoring_active,
+                "total_models": len(self.monitored_models),
+                "model_statuses": {
                     model_id: {
-                        'status': info['status'].value,
-                        'last_check': info['last_health_check'].isoformat(),
-                        'alert_count': info['alert_count']
+                        "status": info["status"].value,
+                        "last_check": info["last_health_check"].isoformat(),
+                        "alert_count": info["alert_count"],
                     }
                     for model_id, info in self.monitored_models.items()
                 },
-                'system_health': {
-                    'data_quality_monitor_active': self.data_quality_monitor is not None,
-                    'performance_monitor_active': self.performance_monitor is not None,
-                    'auto_healing_active': self.auto_healing_engine is not None
+                "system_health": {
+                    "data_quality_monitor_active": self.data_quality_monitor is not None,
+                    "performance_monitor_active": self.performance_monitor is not None,
+                    "auto_healing_active": self.auto_healing_engine is not None,
                 },
-                'healing_history_count': len(self.auto_healing_engine.healing_history),
-                'timestamp': datetime.now().isoformat()
+                "healing_history_count": len(self.auto_healing_engine.healing_history),
+                "timestamp": datetime.now().isoformat(),
             }
 
         except Exception as e:
-            return {'error': str(e), 'timestamp': datetime.now().isoformat()}
+            return {"error": str(e), "timestamp": datetime.now().isoformat()}
+
 
 # Convenience function
-def get_model_monitoring_coordinator(config_manager=None, cache_manager=None) -> ModelMonitoringCoordinator:
+def get_model_monitoring_coordinator(
+    config_manager=None, cache_manager=None
+) -> ModelMonitoringCoordinator:
     """Get configured model monitoring coordinator"""
     return ModelMonitoringCoordinator(config_manager, cache_manager)
+
 
 if __name__ == "__main__":
     # Test the model monitoring engine
@@ -880,25 +963,27 @@ if __name__ == "__main__":
     print("Testing Model Monitoring Engine...")
 
     # Register a test model
-    coordinator.register_model('test_model_v1', {'type': 'LSTM', 'version': '1.0'})
+    coordinator.register_model("test_model_v1", {"type": "LSTM", "version": "1.0"})
 
     # Create test data
 
     np.random.seed(42)
-    test_data = pd.DataFrame({
-        'feature1': np.random.randn(100),
-        'feature2': np.random.randn(100),
-        'feature3': np.random.randn(100),
-        'target': np.random.randn(100)
-    })
+    test_data = pd.DataFrame(
+        {
+            "feature1": np.random.randn(100),
+            "feature2": np.random.randn(100),
+            "feature3": np.random.randn(100),
+            "target": np.random.randn(100),
+        }
+    )
 
     # REMOVED: Mock data pattern not allowed in production
     test_predictions = np.random.randn(100)
-    test_true_values = test_data['target'].values
+    test_true_values = test_data["target"].values
 
     # Conduct health check
     health_result = coordinator.conduct_comprehensive_health_check(
-        'test_model_v1', test_data, test_predictions, test_true_values
+        "test_model_v1", test_data, test_predictions, test_true_values
     )
 
     print(f"\nHealth Check Result:")

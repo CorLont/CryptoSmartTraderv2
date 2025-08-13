@@ -21,8 +21,10 @@ import asyncio
 
 logger = logging.getLogger(__name__)
 
+
 class HeatmapType(Enum):
     """Types of attribution heatmaps"""
+
     PAIR_REGIME = "pair_regime"
     PAIR_TIME = "pair_time"
     COMPONENT_TIME = "component_time"
@@ -32,6 +34,7 @@ class HeatmapType(Enum):
 
 class TimeGranularity(Enum):
     """Time granularity options"""
+
     HOUR = "hour"
     DAY = "day"
     WEEK = "week"
@@ -41,6 +44,7 @@ class TimeGranularity(Enum):
 @dataclass
 class RealtimeMetrics:
     """Real-time performance metrics"""
+
     timestamp: datetime
 
     # Current performance
@@ -108,10 +112,7 @@ class DashboardAnalytics:
     Advanced analytics backend for Return Attribution dashboard
     """
 
-    def __init__(self,
-                 cache_ttl_minutes: int = 15,
-                 max_data_points: int = 10000):
-
+    def __init__(self, cache_ttl_minutes: int = 15, max_data_points: int = 10000):
         self.cache = AnalyticsCache(cache_ttl_minutes=cache_ttl_minutes)
         self.max_data_points = max_data_points
 
@@ -124,34 +125,36 @@ class DashboardAnalytics:
         # Attribution color schemes
         self.color_schemes = {
             "attribution": {
-                "alpha": "#2E8B57",      # Sea green (positive)
-                "fees": "#DC143C",       # Crimson (negative)
-                "slippage": "#FF4500",   # Orange red (negative)
-                "timing": "#4169E1",     # Royal blue (variable)
-                "sizing": "#9370DB",     # Medium purple (variable)
-                "market_impact": "#FF6347"  # Tomato (negative)
+                "alpha": "#2E8B57",  # Sea green (positive)
+                "fees": "#DC143C",  # Crimson (negative)
+                "slippage": "#FF4500",  # Orange red (negative)
+                "timing": "#4169E1",  # Royal blue (variable)
+                "sizing": "#9370DB",  # Medium purple (variable)
+                "market_impact": "#FF6347",  # Tomato (negative)
             },
             "performance": {
-                "excellent": "#006400",   # Dark green
-                "good": "#32CD32",       # Lime green
-                "neutral": "#FFD700",    # Gold
-                "poor": "#FF4500",       # Orange red
-                "critical": "#DC143C"    # Crimson
-            }
+                "excellent": "#006400",  # Dark green
+                "good": "#32CD32",  # Lime green
+                "neutral": "#FFD700",  # Gold
+                "poor": "#FF4500",  # Orange red
+                "critical": "#DC143C",  # Crimson
+            },
         }
 
-    def update_realtime_metrics(self,
-                               performance_data: Dict[str, Any],
-                               attribution_result: Any = None,
-                               alerts: List[Any] = None) -> RealtimeMetrics:
+    def update_realtime_metrics(
+        self,
+        performance_data: Dict[str, Any],
+        attribution_result: Any = None,
+        alerts: List[Any] = None,
+    ) -> RealtimeMetrics:
         """Update real-time metrics display"""
         try:
             timestamp = datetime.now()
 
             # Extract performance metrics
-            current_pnl = performance_data.get('total_pnl_bps', 0.0)
-            current_sharpe = performance_data.get('sharpe_ratio', 0.0)
-            current_drawdown = performance_data.get('drawdown_pct', 0.0)
+            current_pnl = performance_data.get("total_pnl_bps", 0.0)
+            current_sharpe = performance_data.get("sharpe_ratio", 0.0)
+            current_drawdown = performance_data.get("drawdown_pct", 0.0)
 
             # Extract attribution metrics
             alpha_contrib = 0.0
@@ -167,7 +170,11 @@ class DashboardAnalytics:
 
             # Alert metrics
             active_alerts = len(alerts) if alerts else 0
-            critical_alerts = len([a for a in alerts if getattr(a, 'severity', None) == 'critical']) if alerts else 0
+            critical_alerts = (
+                len([a for a in alerts if getattr(a, "severity", None) == "critical"])
+                if alerts
+                else 0
+            )
 
             # System status
             if critical_alerts > 0:
@@ -192,7 +199,7 @@ class DashboardAnalytics:
                 active_alerts=active_alerts,
                 critical_alerts=critical_alerts,
                 system_status=system_status,
-                last_update=timestamp
+                last_update=timestamp,
             )
 
             return self.current_metrics
@@ -201,11 +208,13 @@ class DashboardAnalytics:
             logger.error(f"Real-time metrics update failed: {e}")
             return self.current_metrics
 
-    def generate_attribution_heatmap(self,
-                                   trade_data: pd.DataFrame,
-                                   heatmap_type: HeatmapType = HeatmapType.PAIR_REGIME,
-                                   time_granularity: TimeGranularity = TimeGranularity.DAY,
-                                   days_back: int = 30) -> Dict[str, Any]:
+    def generate_attribution_heatmap(
+        self,
+        trade_data: pd.DataFrame,
+        heatmap_type: HeatmapType = HeatmapType.PAIR_REGIME,
+        time_granularity: TimeGranularity = TimeGranularity.DAY,
+        days_back: int = 30,
+    ) -> Dict[str, Any]:
         """Generate interactive attribution heatmap"""
         try:
             cache_key = f"heatmap_{heatmap_type.value}_{time_granularity.value}_{days_back}"
@@ -216,7 +225,7 @@ class DashboardAnalytics:
 
             # Filter data to time period
             cutoff_date = datetime.now() - timedelta(days=days_back)
-            filtered_data = trade_data[trade_data['timestamp'] >= cutoff_date].copy()
+            filtered_data = trade_data[trade_data["timestamp"] >= cutoff_date].copy()
 
             if len(filtered_data) == 0:
                 return self._create_empty_heatmap(heatmap_type)
@@ -247,30 +256,34 @@ class DashboardAnalytics:
         """Create pair vs regime attribution heatmap"""
         try:
             # Aggregate by pair and regime
-            if 'pair' not in data.columns or 'regime' not in data.columns:
+            if "pair" not in data.columns or "regime" not in data.columns:
                 return self._create_empty_heatmap(HeatmapType.PAIR_REGIME)
 
-            pivot_data = data.groupby(['pair', 'regime'])['realized_pnl'].sum().unstack(fill_value=0)
+            pivot_data = (
+                data.groupby(["pair", "regime"])["realized_pnl"].sum().unstack(fill_value=0)
+            )
 
             # Create plotly heatmap
-            fig = go.Figure(data=go.Heatmap(
-                z=pivot_data.values,
-                x=pivot_data.columns,
-                y=pivot_data.index,
-                colorscale='RdYlGn',
-                text=pivot_data.values,
-                texttemplate="%{text:.1f}",
-                textfont={"size": 10},
-                hoverongaps=False,
-                hovertemplate='<b>%{y}</b><br>Regime: %{x}<br>PnL: %{z:.1f} bps<extra></extra>'
-            ))
+            fig = go.Figure(
+                data=go.Heatmap(
+                    z=pivot_data.values,
+                    x=pivot_data.columns,
+                    y=pivot_data.index,
+                    colorscale="RdYlGn",
+                    text=pivot_data.values,
+                    texttemplate="%{text:.1f}",
+                    textfont={"size": 10},
+                    hoverongaps=False,
+                    hovertemplate="<b>%{y}</b><br>Regime: %{x}<br>PnL: %{z:.1f} bps<extra></extra>",
+                )
+            )
 
             fig.update_layout(
                 title="Return Attribution: Pair vs Regime",
                 xaxis_title="Market Regime",
                 yaxis_title="Trading Pair",
                 height=max(400, len(pivot_data.index) * 25),
-                width=800
+                width=800,
             )
 
             return {
@@ -279,65 +292,69 @@ class DashboardAnalytics:
                     "total_pairs": len(pivot_data.index),
                     "total_regimes": len(pivot_data.columns),
                     "best_pair": pivot_data.sum(axis=1).idxmax() if not pivot_data.empty else "N/A",
-                    "best_regime": pivot_data.sum(axis=0).idxmax() if not pivot_data.empty else "N/A",
-                    "total_pnl": pivot_data.values.sum()
-                }
+                    "best_regime": pivot_data.sum(axis=0).idxmax()
+                    if not pivot_data.empty
+                    else "N/A",
+                    "total_pnl": pivot_data.values.sum(),
+                },
             }
 
         except Exception as e:
             logger.error(f"Pair-regime heatmap creation failed: {e}")
             return self._create_empty_heatmap(HeatmapType.PAIR_REGIME)
 
-    def _create_component_time_heatmap(self,
-                                     data: pd.DataFrame,
-                                     time_granularity: TimeGranularity) -> Dict[str, Any]:
+    def _create_component_time_heatmap(
+        self, data: pd.DataFrame, time_granularity: TimeGranularity
+    ) -> Dict[str, Any]:
         """Create attribution component vs time heatmap"""
         try:
             # Add time grouping column
             data_copy = data.copy()
-            data_copy['timestamp'] = pd.to_datetime(data_copy['timestamp'])
+            data_copy["timestamp"] = pd.to_datetime(data_copy["timestamp"])
 
             if time_granularity == TimeGranularity.HOUR:
-                data_copy['time_group'] = data_copy['timestamp'].dt.strftime('%Y-%m-%d %H:00')
+                data_copy["time_group"] = data_copy["timestamp"].dt.strftime("%Y-%m-%d %H:00")
             elif time_granularity == TimeGranularity.DAY:
-                data_copy['time_group'] = data_copy['timestamp'].dt.strftime('%Y-%m-%d')
+                data_copy["time_group"] = data_copy["timestamp"].dt.strftime("%Y-%m-%d")
             elif time_granularity == TimeGranularity.WEEK:
-                data_copy['time_group'] = data_copy['timestamp'].dt.strftime('%Y-W%U')
+                data_copy["time_group"] = data_copy["timestamp"].dt.strftime("%Y-W%U")
             else:  # MONTH
-                data_copy['time_group'] = data_copy['timestamp'].dt.strftime('%Y-%m')
+                data_copy["time_group"] = data_copy["timestamp"].dt.strftime("%Y-%m")
 
             # Create attribution components matrix
-            components = ['alpha', 'fees', 'slippage', 'timing', 'sizing']
-            time_groups = sorted(data_copy['time_group'].unique())
+            components = ["alpha", "fees", "slippage", "timing", "sizing"]
+            time_groups = sorted(data_copy["time_group"].unique())
 
             # Initialize matrix
             attribution_matrix = np.zeros((len(components), len(time_groups)))
 
             for i, component in enumerate(components):
-                if f'{component}_contribution' in data_copy.columns:
-                    time_series = data_copy.groupby('time_group')[f'{component}_contribution'].sum()
+                if f"{component}_contribution" in data_copy.columns:
+                    time_series = data_copy.groupby("time_group")[f"{component}_contribution"].sum()
                     for j, time_group in enumerate(time_groups):
                         attribution_matrix[i, j] = time_series.get(time_group, 0)
 
             # Create heatmap
-            fig = go.Figure(data=go.Heatmap(
-                z=attribution_matrix,
-                x=time_groups,
-                y=components,
-                colorscale='RdYlGn',
-                text=attribution_matrix,
-                texttemplate="%{text:.1f}",
-                textfont={"size": 10},
-                hoverongaps=False,
-                hovertemplate='<b>%{y}</b><br>Time: %{x}<br>Contribution: %{z:.1f} bps<extra></extra>'
-            ))
+            fig = go.Figure(
+                data=go.Heatmap(
+                    z=attribution_matrix,
+                    x=time_groups,
+                    y=components,
+                    colorscale="RdYlGn",
+                    text=attribution_matrix,
+                    texttemplate="%{text:.1f}",
+                    textfont={"size": 10},
+                    hoverongaps=False,
+                    hovertemplate="<b>%{y}</b><br>Time: %{x}<br>Contribution: %{z:.1f} bps<extra></extra>",
+                )
+            )
 
             fig.update_layout(
                 title=f"Attribution Components Over Time ({time_granularity.value.title()})",
                 xaxis_title=f"Time ({time_granularity.value.title()})",
                 yaxis_title="Attribution Component",
                 height=400,
-                width=max(800, len(time_groups) * 40)
+                width=max(800, len(time_groups) * 40),
             )
 
             return {
@@ -347,24 +364,24 @@ class DashboardAnalytics:
                     "components": len(components),
                     "best_component": components[np.argmax(np.sum(attribution_matrix, axis=1))],
                     "worst_component": components[np.argmin(np.sum(attribution_matrix, axis=1))],
-                    "total_attribution": float(np.sum(attribution_matrix))
-                }
+                    "total_attribution": float(np.sum(attribution_matrix)),
+                },
             }
 
         except Exception as e:
             logger.error(f"Component-time heatmap creation failed: {e}")
             return self._create_empty_heatmap(HeatmapType.COMPONENT_TIME)
 
-    def _create_pair_time_heatmap(self,
-                                data: pd.DataFrame,
-                                time_granularity: TimeGranularity) -> Dict[str, Any]:
+    def _create_pair_time_heatmap(
+        self, data: pd.DataFrame, time_granularity: TimeGranularity
+    ) -> Dict[str, Any]:
         """Create pair performance vs time heatmap"""
         # Implementation similar to component_time but for pairs
         return self._create_empty_heatmap(HeatmapType.PAIR_TIME)
 
-    def _create_regime_time_heatmap(self,
-                                  data: pd.DataFrame,
-                                  time_granularity: TimeGranularity) -> Dict[str, Any]:
+    def _create_regime_time_heatmap(
+        self, data: pd.DataFrame, time_granularity: TimeGranularity
+    ) -> Dict[str, Any]:
         """Create regime performance vs time heatmap"""
         # Implementation similar to component_time but for regimes
         return self._create_empty_heatmap(HeatmapType.REGIME_TIME)
@@ -379,30 +396,34 @@ class DashboardAnalytics:
         fig = go.Figure()
         fig.add_annotation(
             text="No data available for this time period",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, xanchor='center', yanchor='middle',
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            xanchor="center",
+            yanchor="middle",
             showarrow=False,
-            font=dict(size=16, color="gray")
+            font=dict(size=16, color="gray"),
         )
 
         fig.update_layout(
             title=f"{heatmap_type.value.replace('_', ' ').title()} Attribution",
             height=400,
             width=800,
-            showlegend=False
+            showlegend=False,
         )
 
         return {
             "figure": fig.to_dict(),
             "data_summary": {
                 "status": "no_data",
-                "message": "No data available for the selected time period"
-            }
+                "message": "No data available for the selected time period",
+            },
         }
 
-    def generate_performance_trends(self,
-                                  attribution_history: List[Any],
-                                  days_back: int = 30) -> Dict[str, Any]:
+    def generate_performance_trends(
+        self, attribution_history: List[Any], days_back: int = 30
+    ) -> Dict[str, Any]:
         """Generate performance trend analysis"""
         try:
             cache_key = f"trends_{days_back}"
@@ -425,26 +446,35 @@ class DashboardAnalytics:
             # Create multi-line chart
             fig = go.Figure()
 
-            fig.add_trace(go.Scatter(
-                x=timestamps, y=total_pnl,
-                mode='lines+markers',
-                name='Total PnL',
-                line=dict(color='blue', width=2)
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=timestamps,
+                    y=total_pnl,
+                    mode="lines+markers",
+                    name="Total PnL",
+                    line=dict(color="blue", width=2),
+                )
+            )
 
-            fig.add_trace(go.Scatter(
-                x=timestamps, y=alpha_contrib,
-                mode='lines+markers',
-                name='Alpha Contribution',
-                line=dict(color='green', width=2)
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=timestamps,
+                    y=alpha_contrib,
+                    mode="lines+markers",
+                    name="Alpha Contribution",
+                    line=dict(color="green", width=2),
+                )
+            )
 
-            fig.add_trace(go.Scatter(
-                x=timestamps, y=cost_drag,
-                mode='lines+markers',
-                name='Cost Drag',
-                line=dict(color='red', width=2)
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=timestamps,
+                    y=cost_drag,
+                    mode="lines+markers",
+                    name="Cost Drag",
+                    line=dict(color="red", width=2),
+                )
+            )
 
             fig.update_layout(
                 title="Performance Attribution Trends",
@@ -452,7 +482,7 @@ class DashboardAnalytics:
                 yaxis_title="Contribution (bps)",
                 height=400,
                 width=800,
-                hovermode='x unified'
+                hovermode="x unified",
             )
 
             # Calculate trend statistics
@@ -470,8 +500,8 @@ class DashboardAnalytics:
                     "alpha_trend_bps_per_day": alpha_trend,
                     "current_pnl": total_pnl[-1] if total_pnl else 0,
                     "current_alpha": alpha_contrib[-1] if alpha_contrib else 0,
-                    "data_points": len(recent_results)
-                }
+                    "data_points": len(recent_results),
+                },
             }
 
             # Cache result
@@ -495,43 +525,45 @@ class DashboardAnalytics:
             severity_dist = {}
 
             for alert in alerts:
-                alert_type = getattr(alert, 'alert_type', 'unknown')
-                severity = getattr(alert, 'severity', 'unknown')
+                alert_type = getattr(alert, "alert_type", "unknown")
+                severity = getattr(alert, "severity", "unknown")
 
-                if hasattr(alert_type, 'value'):
+                if hasattr(alert_type, "value"):
                     alert_type = alert_type.value
-                if hasattr(severity, 'value'):
+                if hasattr(severity, "value"):
                     severity = severity.value
 
                 alert_types[alert_type] = alert_types.get(alert_type, 0) + 1
                 severity_dist[severity] = severity_dist.get(severity, 0) + 1
 
             # Create alert type pie chart
-            fig_types = go.Figure(data=[go.Pie(
-                labels=list(alert_types.keys()),
-                values=list(alert_types.values()),
-                hole=0.3
-            )])
-
-            fig_types.update_layout(
-                title="Alert Distribution by Type",
-                height=400,
-                width=400
+            fig_types = go.Figure(
+                data=[
+                    go.Pie(
+                        labels=list(alert_types.keys()), values=list(alert_types.values()), hole=0.3
+                    )
+                ]
             )
 
+            fig_types.update_layout(title="Alert Distribution by Type", height=400, width=400)
+
             # Create severity bar chart
-            fig_severity = go.Figure(data=[go.Bar(
-                x=list(severity_dist.keys()),
-                y=list(severity_dist.values()),
-                marker_color=['green', 'yellow', 'orange', 'red'][:len(severity_dist)]
-            )])
+            fig_severity = go.Figure(
+                data=[
+                    go.Bar(
+                        x=list(severity_dist.keys()),
+                        y=list(severity_dist.values()),
+                        marker_color=["green", "yellow", "orange", "red"][: len(severity_dist)],
+                    )
+                ]
+            )
 
             fig_severity.update_layout(
                 title="Alert Distribution by Severity",
                 xaxis_title="Severity Level",
                 yaxis_title="Number of Alerts",
                 height=400,
-                width=400
+                width=400,
             )
 
             return {
@@ -541,8 +573,10 @@ class DashboardAnalytics:
                     "total_alerts": len(alerts),
                     "alert_types": alert_types,
                     "severity_distribution": severity_dist,
-                    "most_common_type": max(alert_types, key=alert_types.get) if alert_types else "none"
-                }
+                    "most_common_type": max(alert_types, key=alert_types.get)
+                    if alert_types
+                    else "none",
+                },
             }
 
         except Exception as e:
@@ -561,19 +595,19 @@ class DashboardAnalytics:
                     "cost_drag": self.current_metrics.cost_drag,
                     "attribution_accuracy": self.current_metrics.attribution_accuracy,
                     "system_status": self.current_metrics.system_status,
-                    "last_update": self.current_metrics.last_update.isoformat()
+                    "last_update": self.current_metrics.last_update.isoformat(),
                 },
                 "cache_status": {
                     "cached_items": len(self.cache.cache_timestamps),
                     "cache_hit_rate": self._calculate_cache_hit_rate(),
-                    "oldest_cache_age_minutes": self._get_oldest_cache_age()
+                    "oldest_cache_age_minutes": self._get_oldest_cache_age(),
                 },
                 "system_health": {
                     "active_alerts": self.current_metrics.active_alerts,
                     "critical_alerts": self.current_metrics.critical_alerts,
                     "data_quality_score": self.current_metrics.data_quality_score,
-                    "system_status": self.current_metrics.system_status
-                }
+                    "system_status": self.current_metrics.system_status,
+                },
             }
 
         except Exception as e:

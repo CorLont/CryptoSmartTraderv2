@@ -17,8 +17,10 @@ from collections import deque
 
 logger = logging.getLogger(__name__)
 
+
 class DegradationType(Enum):
     """Types of performance degradation"""
+
     ALPHA_DECAY = "alpha_decay"
     SLIPPAGE_DRIFT = "slippage_drift"
     EXECUTION_QUALITY_DROP = "execution_quality_drop"
@@ -31,6 +33,7 @@ class DegradationType(Enum):
 
 class DriftSeverity(Enum):
     """Severity levels for drift detection"""
+
     NONE = "none"
     MILD = "mild"
     MODERATE = "moderate"
@@ -41,16 +44,17 @@ class DriftSeverity(Enum):
 @dataclass
 class DriftMetrics:
     """Comprehensive drift detection metrics"""
+
     timestamp: datetime
 
     # Statistical metrics
-    ks_statistic: float         # Kolmogorov-Smirnov test
+    ks_statistic: float  # Kolmogorov-Smirnov test
     ks_p_value: float
-    psi_score: float            # Population Stability Index
-    js_divergence: float        # Jensen-Shannon divergence
+    psi_score: float  # Population Stability Index
+    js_divergence: float  # Jensen-Shannon divergence
 
     # Performance metrics
-    performance_shift: float    # Performance change in bps
+    performance_shift: float  # Performance change in bps
     confidence_interval: Tuple[float, float]
     statistical_significance: bool
 
@@ -67,6 +71,7 @@ class DriftMetrics:
 @dataclass
 class DegradationAlert:
     """Degradation detection alert"""
+
     alert_id: str
     timestamp: datetime
     degradation_type: DegradationType
@@ -97,12 +102,13 @@ class DegradationDetector:
     Advanced degradation detection system with statistical testing
     """
 
-    def __init__(self,
-                 baseline_window_hours: int = 168,    # 1 week baseline
-                 detection_window_hours: int = 24,     # 1 day detection window
-                 significance_level: float = 0.05,    # 5% significance level
-                 min_sample_size: int = 100):
-
+    def __init__(
+        self,
+        baseline_window_hours: int = 168,  # 1 week baseline
+        detection_window_hours: int = 24,  # 1 day detection window
+        significance_level: float = 0.05,  # 5% significance level
+        min_sample_size: int = 100,
+    ):
         self.baseline_window = timedelta(hours=baseline_window_hours)
         self.detection_window = timedelta(hours=detection_window_hours)
         self.significance_level = significance_level
@@ -119,17 +125,19 @@ class DegradationDetector:
             "psi_severe": 0.5,
             "performance_shift_bps": 10,
             "js_divergence_threshold": 0.1,
-            "correlation_threshold": 0.7
+            "correlation_threshold": 0.7,
         }
 
         # Alert management
         self.degradation_alerts = []
         self.baseline_stats = {}
 
-    def update_performance_data(self,
-                               timestamp: datetime,
-                               performance_metrics: Dict[str, float],
-                               feature_values: Dict[str, float] = None) -> Optional[DegradationAlert]:
+    def update_performance_data(
+        self,
+        timestamp: datetime,
+        performance_metrics: Dict[str, float],
+        feature_values: Dict[str, float] = None,
+    ) -> Optional[DegradationAlert]:
         """Update performance data and check for degradation"""
         try:
             # Store performance data
@@ -151,7 +159,9 @@ class DegradationDetector:
 
             if alert:
                 self.degradation_alerts.append(alert)
-                logger.warning(f"Degradation detected: {alert.degradation_type.value} - {alert.severity.value}")
+                logger.warning(
+                    f"Degradation detected: {alert.degradation_type.value} - {alert.severity.value}"
+                )
 
             return alert
 
@@ -172,7 +182,10 @@ class DegradationDetector:
             baseline_data = self._extract_window_data(baseline_start, baseline_end)
             current_data = self._extract_window_data(detection_start, detection_end)
 
-            if len(baseline_data) < self.min_sample_size or len(current_data) < self.min_sample_size:
+            if (
+                len(baseline_data) < self.min_sample_size
+                or len(current_data) < self.min_sample_size
+            ):
                 return None
 
             # Perform statistical tests
@@ -195,7 +208,9 @@ class DegradationDetector:
             logger.error(f"Degradation detection failed: {e}")
             return None
 
-    def _extract_window_data(self, start_time: datetime, end_time: datetime) -> List[Dict[str, float]]:
+    def _extract_window_data(
+        self, start_time: datetime, end_time: datetime
+    ) -> List[Dict[str, float]]:
         """Extract performance data for a time window"""
         window_data = []
 
@@ -205,14 +220,14 @@ class DegradationDetector:
 
         return window_data
 
-    def _calculate_drift_metrics(self,
-                                baseline_data: List[Dict[str, float]],
-                                current_data: List[Dict[str, float]]) -> DriftMetrics:
+    def _calculate_drift_metrics(
+        self, baseline_data: List[Dict[str, float]], current_data: List[Dict[str, float]]
+    ) -> DriftMetrics:
         """Calculate comprehensive drift detection metrics"""
         try:
             # Extract key performance metrics
-            baseline_returns = [d.get('return_bps', 0) for d in baseline_data]
-            current_returns = [d.get('return_bps', 0) for d in current_data]
+            baseline_returns = [d.get("return_bps", 0) for d in baseline_data]
+            current_returns = [d.get("return_bps", 0) for d in current_data]
 
             # Kolmogorov-Smirnov test
             ks_stat, ks_p = stats.ks_2samp(baseline_returns, current_returns)
@@ -229,13 +244,11 @@ class DegradationDetector:
             performance_shift = current_mean - baseline_mean
 
             # Confidence interval for the shift
-            pooled_std = np.sqrt(
-                (np.var(baseline_returns) + np.var(current_returns)) / 2
-            )
+            pooled_std = np.sqrt((np.var(baseline_returns) + np.var(current_returns)) / 2)
             margin_of_error = 1.96 * pooled_std / np.sqrt(len(current_returns))
             confidence_interval = (
                 performance_shift - margin_of_error,
-                performance_shift + margin_of_error
+                performance_shift + margin_of_error,
             )
 
             # Statistical significance
@@ -285,14 +298,21 @@ class DegradationDetector:
                 most_drifted_feature=most_drifted_feature,
                 baseline_period=f"{len(baseline_data)} samples",
                 comparison_period=f"{len(current_data)} samples",
-                sample_size=len(current_data)
+                sample_size=len(current_data),
             )
 
         except Exception as e:
             logger.error(f"Drift metrics calculation failed: {e}")
-            return DriftMetrics(timestamp=datetime.now(), ks_statistic=0, ks_p_value=1,
-                              psi_score=0, js_divergence=0, performance_shift=0,
-                              confidence_interval=(0, 0), statistical_significance=False)
+            return DriftMetrics(
+                timestamp=datetime.now(),
+                ks_statistic=0,
+                ks_p_value=1,
+                psi_score=0,
+                js_divergence=0,
+                performance_shift=0,
+                confidence_interval=(0, 0),
+                statistical_significance=False,
+            )
 
     def _calculate_psi(self, baseline: List[float], current: List[float]) -> float:
         """Calculate Population Stability Index"""
@@ -361,7 +381,9 @@ class DegradationDetector:
             logger.error(f"JS divergence calculation failed: {e}")
             return 0.0
 
-    def _classify_degradation(self, drift_metrics: DriftMetrics) -> Tuple[DegradationType, DriftSeverity]:
+    def _classify_degradation(
+        self, drift_metrics: DriftMetrics
+    ) -> Tuple[DegradationType, DriftSeverity]:
         """Classify degradation type and severity"""
         try:
             # Determine primary degradation type
@@ -401,8 +423,7 @@ class DegradationDetector:
                 severity = DriftSeverity.SEVERE
 
             # Upgrade severity if statistically significant and large impact
-            if (drift_metrics.statistical_significance and
-                abs(drift_metrics.performance_shift) > 20):
+            if drift_metrics.statistical_significance and abs(drift_metrics.performance_shift) > 20:
                 if severity == DriftSeverity.SEVERE:
                     severity = DriftSeverity.CRITICAL
                 elif severity in [DriftSeverity.MILD, DriftSeverity.MODERATE]:
@@ -414,11 +435,13 @@ class DegradationDetector:
             logger.error(f"Degradation classification failed: {e}")
             return DegradationType.ALPHA_DECAY, DriftSeverity.MILD
 
-    def _create_degradation_alert(self,
-                                 degradation_type: DegradationType,
-                                 severity: DriftSeverity,
-                                 drift_metrics: DriftMetrics,
-                                 timestamp: datetime) -> DegradationAlert:
+    def _create_degradation_alert(
+        self,
+        degradation_type: DegradationType,
+        severity: DriftSeverity,
+        drift_metrics: DriftMetrics,
+        timestamp: datetime,
+    ) -> DegradationAlert:
         """Create comprehensive degradation alert"""
 
         # Generate alert ID
@@ -428,10 +451,11 @@ class DegradationDetector:
         impact_estimate = abs(drift_metrics.performance_shift)
 
         # Calculate confidence score
-        confidence_score = min(1.0,
-            (1 - drift_metrics.ks_p_value) * 0.5 +
-            min(drift_metrics.psi_score / 0.5, 1.0) * 0.3 +
-            min(drift_metrics.js_divergence / 0.2, 1.0) * 0.2
+        confidence_score = min(
+            1.0,
+            (1 - drift_metrics.ks_p_value) * 0.5
+            + min(drift_metrics.psi_score / 0.5, 1.0) * 0.3
+            + min(drift_metrics.js_divergence / 0.2, 1.0) * 0.2,
         )
 
         # Generate message
@@ -446,7 +470,7 @@ class DegradationDetector:
         # Auto-remediation availability
         auto_remediation = degradation_type in [
             DegradationType.SLIPPAGE_DRIFT,
-            DegradationType.EXECUTION_QUALITY_DROP
+            DegradationType.EXECUTION_QUALITY_DROP,
         ] and severity in [DriftSeverity.MILD, DriftSeverity.MODERATE]
 
         return DegradationAlert(
@@ -461,13 +485,15 @@ class DegradationDetector:
             affected_components=self._identify_affected_components(degradation_type),
             root_cause_analysis=root_cause,
             recommended_actions=recommendations,
-            auto_remediation_available=auto_remediation
+            auto_remediation_available=auto_remediation,
         )
 
-    def _generate_alert_message(self,
-                               degradation_type: DegradationType,
-                               severity: DriftSeverity,
-                               drift_metrics: DriftMetrics) -> str:
+    def _generate_alert_message(
+        self,
+        degradation_type: DegradationType,
+        severity: DriftSeverity,
+        drift_metrics: DriftMetrics,
+    ) -> str:
         """Generate human-readable alert message"""
 
         severity_text = severity.value.upper()
@@ -482,16 +508,16 @@ class DegradationDetector:
             DegradationType.REGIME_MISMATCH: f"Market regime mismatch detected",
             DegradationType.VOLATILITY_ANOMALY: f"Volatility pattern anomaly detected",
             DegradationType.MODEL_OVERFIT: f"Potential model overfitting detected",
-            DegradationType.CORRELATION_BREAK: f"Correlation structure breakdown detected"
+            DegradationType.CORRELATION_BREAK: f"Correlation structure breakdown detected",
         }
 
         base_message = base_messages.get(degradation_type, "Performance degradation detected")
 
         return f"[{severity_text}] {base_message} ({shift_text}, {psi_text})"
 
-    def _analyze_root_cause(self,
-                           degradation_type: DegradationType,
-                           drift_metrics: DriftMetrics) -> str:
+    def _analyze_root_cause(
+        self, degradation_type: DegradationType, drift_metrics: DriftMetrics
+    ) -> str:
         """Perform automated root cause analysis"""
 
         root_causes = {
@@ -502,7 +528,7 @@ class DegradationDetector:
             DegradationType.REGIME_MISMATCH: "Market regime changed - model trained on different conditions",
             DegradationType.VOLATILITY_ANOMALY: "Volatility patterns outside normal ranges - check risk management",
             DegradationType.MODEL_OVERFIT: "Model showing signs of overfitting - validation performance diverging",
-            DegradationType.CORRELATION_BREAK: "Asset correlations changed - portfolio assumptions invalid"
+            DegradationType.CORRELATION_BREAK: "Asset correlations changed - portfolio assumptions invalid",
         }
 
         base_cause = root_causes.get(degradation_type, "Unknown degradation cause")
@@ -513,9 +539,9 @@ class DegradationDetector:
 
         return base_cause
 
-    def _get_remediation_recommendations(self,
-                                       degradation_type: DegradationType,
-                                       severity: DriftSeverity) -> List[str]:
+    def _get_remediation_recommendations(
+        self, degradation_type: DegradationType, severity: DriftSeverity
+    ) -> List[str]:
         """Get automated remediation recommendations"""
 
         base_recommendations = {
@@ -523,39 +549,42 @@ class DegradationDetector:
                 "Retrain model with recent data",
                 "Review feature engineering pipeline",
                 "Check for regime changes in market conditions",
-                "Consider ensemble methods or model averaging"
+                "Consider ensemble methods or model averaging",
             ],
             DegradationType.SLIPPAGE_DRIFT: [
                 "Review execution timing and order routing",
                 "Check liquidity provider relationships",
                 "Analyze market microstructure changes",
-                "Consider order size optimization"
+                "Consider order size optimization",
             ],
             DegradationType.EXECUTION_QUALITY_DROP: [
                 "Audit execution algorithms and parameters",
                 "Check system latency and connectivity",
                 "Review order type selection logic",
-                "Consider execution venue diversification"
+                "Consider execution venue diversification",
             ],
             DegradationType.FEATURE_DRIFT: [
                 "Investigate data source changes",
                 "Update feature calculation methods",
                 "Implement adaptive feature scaling",
-                "Consider feature selection review"
+                "Consider feature selection review",
             ],
             DegradationType.REGIME_MISMATCH: [
                 "Update regime detection parameters",
                 "Retrain models with regime-aware features",
                 "Implement adaptive model switching",
-                "Review risk management parameters"
-            ]
+                "Review risk management parameters",
+            ],
         }
 
-        recommendations = base_recommendations.get(degradation_type, [
-            "Investigate performance degradation",
-            "Review model and execution parameters",
-            "Consider system diagnostic checks"
-        ])
+        recommendations = base_recommendations.get(
+            degradation_type,
+            [
+                "Investigate performance degradation",
+                "Review model and execution parameters",
+                "Consider system diagnostic checks",
+            ],
+        )
 
         # Add severity-specific recommendations
         if severity in [DriftSeverity.SEVERE, DriftSeverity.CRITICAL]:
@@ -568,14 +597,46 @@ class DegradationDetector:
         """Identify system components affected by degradation"""
 
         component_mapping = {
-            DegradationType.ALPHA_DECAY: ["prediction_models", "feature_pipeline", "signal_generation"],
-            DegradationType.SLIPPAGE_DRIFT: ["execution_engine", "order_routing", "market_interface"],
-            DegradationType.EXECUTION_QUALITY_DROP: ["execution_engine", "order_management", "venue_selection"],
-            DegradationType.FEATURE_DRIFT: ["data_pipeline", "feature_engineering", "data_validation"],
-            DegradationType.REGIME_MISMATCH: ["regime_detection", "model_selection", "risk_management"],
-            DegradationType.VOLATILITY_ANOMALY: ["risk_management", "position_sizing", "volatility_models"],
-            DegradationType.MODEL_OVERFIT: ["model_training", "validation_system", "hyperparameter_tuning"],
-            DegradationType.CORRELATION_BREAK: ["portfolio_optimization", "risk_models", "correlation_tracking"]
+            DegradationType.ALPHA_DECAY: [
+                "prediction_models",
+                "feature_pipeline",
+                "signal_generation",
+            ],
+            DegradationType.SLIPPAGE_DRIFT: [
+                "execution_engine",
+                "order_routing",
+                "market_interface",
+            ],
+            DegradationType.EXECUTION_QUALITY_DROP: [
+                "execution_engine",
+                "order_management",
+                "venue_selection",
+            ],
+            DegradationType.FEATURE_DRIFT: [
+                "data_pipeline",
+                "feature_engineering",
+                "data_validation",
+            ],
+            DegradationType.REGIME_MISMATCH: [
+                "regime_detection",
+                "model_selection",
+                "risk_management",
+            ],
+            DegradationType.VOLATILITY_ANOMALY: [
+                "risk_management",
+                "position_sizing",
+                "volatility_models",
+            ],
+            DegradationType.MODEL_OVERFIT: [
+                "model_training",
+                "validation_system",
+                "hyperparameter_tuning",
+            ],
+            DegradationType.CORRELATION_BREAK: [
+                "portfolio_optimization",
+                "risk_models",
+                "correlation_tracking",
+            ],
         }
 
         return component_mapping.get(degradation_type, ["unknown_component"])
@@ -584,7 +645,9 @@ class DegradationDetector:
         """Get degradation detection summary"""
         try:
             cutoff_time = datetime.now() - timedelta(days=days_back)
-            recent_alerts = [alert for alert in self.degradation_alerts if alert.timestamp >= cutoff_time]
+            recent_alerts = [
+                alert for alert in self.degradation_alerts if alert.timestamp >= cutoff_time
+            ]
 
             if not recent_alerts:
                 return {"status": "no_degradation", "period_days": days_back}
@@ -614,10 +677,10 @@ class DegradationDetector:
                 "severity_distribution": severity_distribution,
                 "average_impact_bps": avg_impact,
                 "remediation_rate": remediation_rate,
-                "top_degradation_types": sorted(degradation_frequency.items(),
-                                              key=lambda x: x[1],
-                                              reverse=True)[:3],
-                "current_status": self._get_current_status()
+                "top_degradation_types": sorted(
+                    degradation_frequency.items(), key=lambda x: x[1], reverse=True
+                )[:3],
+                "current_status": self._get_current_status(),
             }
 
         except Exception as e:
@@ -626,8 +689,11 @@ class DegradationDetector:
 
     def _get_current_status(self) -> Dict[str, Any]:
         """Get current system degradation status"""
-        active_alerts = [alert for alert in self.degradation_alerts
-                        if not alert.remediated and not alert.false_positive]
+        active_alerts = [
+            alert
+            for alert in self.degradation_alerts
+            if not alert.remediated and not alert.false_positive
+        ]
 
         if not active_alerts:
             return {"status": "healthy", "active_alerts": 0}
@@ -639,12 +705,12 @@ class DegradationDetector:
             DriftSeverity.MILD: "monitoring",
             DriftSeverity.MODERATE: "degraded",
             DriftSeverity.SEVERE: "impaired",
-            DriftSeverity.CRITICAL: "critical"
+            DriftSeverity.CRITICAL: "critical",
         }
 
         return {
             "status": status_mapping.get(worst_severity, "unknown"),
             "active_alerts": len(active_alerts),
             "worst_severity": worst_severity.value,
-            "requires_attention": worst_severity in [DriftSeverity.SEVERE, DriftSeverity.CRITICAL]
+            "requires_attention": worst_severity in [DriftSeverity.SEVERE, DriftSeverity.CRITICAL],
         }

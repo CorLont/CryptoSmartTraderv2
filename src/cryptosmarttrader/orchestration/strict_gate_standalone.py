@@ -4,7 +4,8 @@ import pandas as pd
 from pathlib import Path
 
 # Configureerbare horizon-lijst - gemakkelijk aan te passen bij modelset wijzigingen
-DEFAULT_HORIZONS = ['1h', '24h', '168h', '720h']
+DEFAULT_HORIZONS = ["1h", "24h", "168h", "720h"]
+
 
 def get_available_horizons(pred_df: pd.DataFrame) -> list:
     """
@@ -16,15 +17,20 @@ def get_available_horizons(pred_df: pd.DataFrame) -> list:
 
     horizons = []
     for col in pred_df.columns:
-        if col.startswith('pred_') and col.replace('pred_', '') not in [h.replace('pred_', '') for h in horizons]:
-            horizon = col.replace('pred_', '')
-            conf_col = f'conf_{horizon}'
+        if col.startswith("pred_") and col.replace("pred_", "") not in [
+            h.replace("pred_", "") for h in horizons
+        ]:
+            horizon = col.replace("pred_", "")
+            conf_col = f"conf_{horizon}"
             if conf_col in pred_df.columns:
                 horizons.append(horizon)
 
     return horizons
 
-def apply_strict_gate_orchestration(pred_df: pd.DataFrame, pred_col="pred_720h", conf_col="conf_720h", threshold=0.80):
+
+def apply_strict_gate_orchestration(
+    pred_df: pd.DataFrame, pred_col="pred_720h", conf_col="conf_720h", threshold=0.80
+):
     """
     Strict backend enforcement van confidence gate
     Returnt lege DataFrame als geen data voldoet aan threshold
@@ -52,6 +58,7 @@ def apply_strict_gate_orchestration(pred_df: pd.DataFrame, pred_col="pred_720h",
 
     return filtered
 
+
 def strict_toplist_multi_horizon(pred_df: pd.DataFrame, threshold=0.80):
     """
     Multi-horizon strict filtering voor alle timeframes
@@ -66,18 +73,17 @@ def strict_toplist_multi_horizon(pred_df: pd.DataFrame, threshold=0.80):
         horizons = DEFAULT_HORIZONS
 
     for h in horizons:
-        pred_col = f'pred_{h}'
-        conf_col = f'conf_{h}'
+        pred_col = f"pred_{h}"
+        conf_col = f"conf_{h}"
 
         if pred_col in pred_df.columns and conf_col in pred_df.columns:
-            filtered = apply_strict_gate_orchestration(
-                pred_df, pred_col, conf_col, threshold
-            )
+            filtered = apply_strict_gate_orchestration(pred_df, pred_col, conf_col, threshold)
             results[h] = filtered
         else:
             results[h] = pd.DataFrame()
 
     return results
+
 
 def get_strict_opportunities_count(pred_df: pd.DataFrame, threshold=0.80):
     """
@@ -93,8 +99,8 @@ def get_strict_opportunities_count(pred_df: pd.DataFrame, threshold=0.80):
     total_opportunities = 0
 
     for h in horizons:
-        pred_col = f'pred_{h}'
-        conf_col = f'conf_{h}'
+        pred_col = f"pred_{h}"
+        conf_col = f"conf_{h}"
 
         if pred_col in pred_df.columns and conf_col in pred_df.columns:
             clean = pred_df.dropna(subset=[pred_col, conf_col])
@@ -102,6 +108,7 @@ def get_strict_opportunities_count(pred_df: pd.DataFrame, threshold=0.80):
             total_opportunities += len(high_conf)
 
     return total_opportunities
+
 
 def validate_predictions_authentic(pred_df: pd.DataFrame):
     """
@@ -117,7 +124,7 @@ def validate_predictions_authentic(pred_df: pd.DataFrame):
     required_cols = []
 
     for h in horizons:
-        required_cols.extend([f'pred_{h}', f'conf_{h}'])
+        required_cols.extend([f"pred_{h}", f"conf_{h}"])
 
     missing_cols = [col for col in required_cols if col not in pred_df.columns]
     if missing_cols:
@@ -125,7 +132,7 @@ def validate_predictions_authentic(pred_df: pd.DataFrame):
 
     # Check for authentic confidence values (ensemble-based should vary)
     for h in horizons:
-        conf_col = f'conf_{h}'
+        conf_col = f"conf_{h}"
         conf_values = pred_df[conf_col].dropna()
 
         if len(conf_values) == 0:
@@ -133,8 +140,13 @@ def validate_predictions_authentic(pred_df: pd.DataFrame):
 
         # Minder agressieve authenticiteitscheck - voorkom false positives
         # Bij kleine sets of sterke kalibratie kan std laag zijn
-        if len(conf_values) > 10 and conf_values.std() < 0.0001:  # Nog steeds detectie van echte fake data
-            return False, f"Suspicious uniform confidence in {conf_col} (std: {conf_values.std():.6f})"
+        if (
+            len(conf_values) > 10 and conf_values.std() < 0.0001
+        ):  # Nog steeds detectie van echte fake data
+            return (
+                False,
+                f"Suspicious uniform confidence in {conf_col} (std: {conf_values.std():.6f})",
+            )
 
         # Should be in reasonable range
         if conf_values.min() < 0 or conf_values.max() > 1:

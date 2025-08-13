@@ -10,9 +10,4 @@ from .regime_features import RegimeFeatures
 from .regime_models import RegimeClassifier
 from .regime_strategies import RegimeStrategies
 
-__all__ = [
-    "RegimeDetector",
-    "RegimeFeatures",
-    "RegimeClassifier",
-    "RegimeStrategies"
-]
+__all__ = ["RegimeDetector", "RegimeFeatures", "RegimeClassifier", "RegimeStrategies"]

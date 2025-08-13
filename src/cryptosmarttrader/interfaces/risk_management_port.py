@@ -12,8 +12,10 @@ from datetime import datetime
 from enum import Enum
 from dataclasses import dataclass
 
+
 class RiskLevel(Enum):
     """Risk level classifications"""
+
     VERY_LOW = "very_low"
     LOW = "low"
     MEDIUM = "medium"
@@ -21,8 +23,10 @@ class RiskLevel(Enum):
     VERY_HIGH = "very_high"
     EXTREME = "extreme"
 
+
 class RiskType(Enum):
     """Types of risks to assess"""
+
     MARKET_RISK = "market_risk"
     LIQUIDITY_RISK = "liquidity_risk"
     CONCENTRATION_RISK = "concentration_risk"
@@ -31,9 +35,11 @@ class RiskType(Enum):
     LEVERAGE_RISK = "leverage_risk"
     OPERATIONAL_RISK = "operational_risk"
 
+
 @dataclass
 class RiskAssessment:
     """Risk assessment result"""
+
     symbol: str
     risk_level: RiskLevel
     risk_score: float  # 0-100
@@ -42,9 +48,11 @@ class RiskAssessment:
     timestamp: datetime
     metadata: Optional[Dict] = None
 
+
 @dataclass
 class PositionRisk:
     """Position-level risk metrics"""
+
     symbol: str
     position_size: float
     market_value: float
@@ -54,6 +62,7 @@ class PositionRisk:
     max_drawdown: float
     sharpe_ratio: Optional[float] = None
     beta: Optional[float] = None
+
 
 class RiskManagementPort(ABC):
     """
@@ -91,8 +100,9 @@ class RiskManagementPort(ABC):
         pass
 
     @abstractmethod
-    def calculate_position_size(self, symbol: str, risk_budget: float,
-                              confidence: float, price: float) -> float:
+    def calculate_position_size(
+        self, symbol: str, risk_budget: float, confidence: float, price: float
+    ) -> float:
         """
         Calculate appropriate position size based on risk
 
@@ -108,8 +118,9 @@ class RiskManagementPort(ABC):
         pass
 
     @abstractmethod
-    def validate_trade(self, symbol: str, size: float, price: float,
-                      current_positions: Dict[str, float]) -> Tuple[bool, str]:
+    def validate_trade(
+        self, symbol: str, size: float, price: float, current_positions: Dict[str, float]
+    ) -> Tuple[bool, str]:
         """
         Validate if a trade is within risk limits
 
@@ -147,17 +158,18 @@ class RiskManagementPort(ABC):
         """
         pass
 
+
 class NotificationPort(ABC):
     """Interface for notification systems"""
 
     @abstractmethod
-    def send_alert(self, message: str, severity: str = "info",
-                  channels: Optional[List[str]] = None) -> bool:
+    def send_alert(
+        self, message: str, severity: str = "info", channels: Optional[List[str]] = None
+    ) -> bool:
         """Send alert notification"""
         pass
 
     @abstractmethod
-    def send_report(self, report_data: Dict[str, Any],
-                   report_type: str = "daily") -> bool:
+    def send_report(self, report_data: Dict[str, Any], report_type: str = "daily") -> bool:
         """Send periodic report"""
         pass

@@ -4,6 +4,7 @@
 import pandas as pd
 from pathlib import Path
 
+
 def get_authentic_opportunities_count(threshold=0.80):
     """
     Get AUTHENTIC count van high-confidence opportunities
@@ -24,12 +25,12 @@ def get_authentic_opportunities_count(threshold=0.80):
             return 0
 
         # Check alle horizons voor high confidence predictions
-        horizons = ['1h', '24h', '168h', '720h']
+        horizons = ["1h", "24h", "168h", "720h"]
         total_opportunities = 0
 
         for h in horizons:
-            pred_col = f'pred_{h}'
-            conf_col = f'conf_{h}'
+            pred_col = f"pred_{h}"
+            conf_col = f"conf_{h}"
 
             if pred_col in pred_df.columns and conf_col in pred_df.columns:
                 # Drop NaN values (no fallback allowed)
@@ -44,6 +45,7 @@ def get_authentic_opportunities_count(threshold=0.80):
     except Exception as e:
         print(f"Error reading predictions: {e}")
         return 0
+
 
 def get_strict_filtered_predictions(threshold=0.80):
     """
@@ -63,11 +65,11 @@ def get_strict_filtered_predictions(threshold=0.80):
 
         # Multi-horizon filtering
         results = []
-        horizons = ['1h', '24h', '168h', '720h']
+        horizons = ["1h", "24h", "168h", "720h"]
 
         for h in horizons:
-            pred_col = f'pred_{h}'
-            conf_col = f'conf_{h}'
+            pred_col = f"pred_{h}"
+            conf_col = f"conf_{h}"
 
             if pred_col in pred_df.columns and conf_col in pred_df.columns:
                 # Strict filtering: drop NaN, filter by confidence
@@ -77,7 +79,7 @@ def get_strict_filtered_predictions(threshold=0.80):
                 if not filtered.empty:
                     # Add horizon info en sort by prediction strength
                     filtered = filtered.copy()
-                    filtered['horizon'] = h
+                    filtered["horizon"] = h
                     filtered = filtered.sort_values(pred_col, ascending=False)
                     results.append(filtered)
 
@@ -90,6 +92,7 @@ def get_strict_filtered_predictions(threshold=0.80):
     except Exception as e:
         print(f"Error filtering predictions: {e}")
         return pd.DataFrame()
+
 
 def validate_opportunities_authentic():
     """
@@ -107,10 +110,10 @@ def validate_opportunities_authentic():
             return False, "Empty predictions"
 
         # Check dat confidence values niet uniform zijn (teken van fake data)
-        horizons = ['1h', '24h', '168h', '720h']
+        horizons = ["1h", "24h", "168h", "720h"]
 
         for h in horizons:
-            conf_col = f'conf_{h}'
+            conf_col = f"conf_{h}"
             if conf_col in pred_df.columns:
                 conf_values = pred_df[conf_col].dropna()
 

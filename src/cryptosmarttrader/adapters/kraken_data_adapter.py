@@ -12,15 +12,20 @@ import time
 import logging
 
 from ..interfaces.data_provider_port import (
-    DataProviderPort, MarketDataRequest, MarketDataResponse,
-    DataQuality, DataProviderError
+    DataProviderPort,
+    MarketDataRequest,
+    MarketDataResponse,
+    DataQuality,
+    DataProviderError,
 )
+
 
 class KrakenDataAdapter(DataProviderPort):
     """Kraken exchange data provider implementation"""
 
-    def __init__(self, api_key: Optional[str] = None, secret: Optional[str] = None,
-                 rate_limit: bool = True):
+    def __init__(
+        self, api_key: Optional[str] = None, secret: Optional[str] = None, rate_limit: bool = True
+    ):
         """
         Initialize Kraken data adapter
 
@@ -29,12 +34,14 @@ class KrakenDataAdapter(DataProviderPort):
             secret: Kraken secret key (optional for public data)
             rate_limit: Enable rate limiting
         """
-        self.exchange = ccxt.kraken({
-            'apiKey': api_key,
-            'secret': secret,
-            'rateLimit': rate_limit,
-            'enableRateLimit': rate_limit
-        })
+        self.exchange = ccxt.kraken(
+            {
+                "apiKey": api_key,
+                "secret": secret,
+                "rateLimit": rate_limit,
+                "enableRateLimit": rate_limit,
+            }
+        )
 
         self.logger = logging.getLogger(__name__)
         self._markets_cache: Optional[Dict] = None
@@ -56,28 +63,30 @@ class KrakenDataAdapter(DataProviderPort):
             # Prepare parameters
             params = {}
             if request.start_time:
-                params['since'] = int(request.start_time.timestamp() * 1000)
+                params["since"] = int(request.start_time.timestamp() * 1000)
 
             # Fetch OHLCV data
             ohlcv_data = self.exchange.fetch_ohlcv(
                 symbol=kraken_symbol,
                 timeframe=request.timeframe,
-                since=params.get('since'),
-                limit=request.limit
+                since=params.get("since"),
+                limit=request.limit,
             )
 
             if not ohlcv_data:
                 raise DataProviderError(f"No data available for {request.symbol}")
 
             # Convert to DataFrame
-            df = pd.DataFrame(ohlcv_data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms', utc=True)
+            df = pd.DataFrame(
+                ohlcv_data, columns=["timestamp", "open", "high", "low", "close", "volume"]
+            )
+            df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
 
             # Apply time filtering if specified
             if request.start_time:
-                df = df[df['timestamp'] >= request.start_time]
+                df = df[df["timestamp"] >= request.start_time]
             if request.end_time:
-                df = df[df['timestamp'] <= request.end_time]
+                df = df[df["timestamp"] <= request.end_time]
 
             return MarketDataResponse(
                 data=df,
@@ -85,14 +94,14 @@ class KrakenDataAdapter(DataProviderPort):
                 source="kraken",
                 timestamp=datetime.now(timezone.utc),
                 metadata={
-                    'symbol': request.symbol,
-                    'timeframe': request.timeframe,
-                    'records_count': len(df),
-                    'data_range': {
-                        'start': df['timestamp'].min().isoformat() if len(df) > 0 else None,
-                        'end': df['timestamp'].max().isoformat() if len(df) > 0 else None
-                    }
-                }
+                    "symbol": request.symbol,
+                    "timeframe": request.timeframe,
+                    "records_count": len(df),
+                    "data_range": {
+                        "start": df["timestamp"].min().isoformat() if len(df) > 0 else None,
+                        "end": df["timestamp"].max().isoformat() if len(df) > 0 else None,
+                    },
+                },
             )
 
         except ccxt.BaseError as e:
@@ -114,14 +123,14 @@ class KrakenDataAdapter(DataProviderPort):
             orderbook = self.exchange.fetch_order_book(kraken_symbol, limit=depth)
 
             # Convert to DataFrame format
-            bids_df = pd.DataFrame(orderbook['bids'], columns=['price', 'amount'])
-            asks_df = pd.DataFrame(orderbook['asks'], columns=['price', 'amount'])
+            bids_df = pd.DataFrame(orderbook["bids"], columns=["price", "amount"])
+            asks_df = pd.DataFrame(orderbook["asks"], columns=["price", "amount"])
 
-            bids_df['side'] = 'bid'
-            asks_df['side'] = 'ask'
+            bids_df["side"] = "bid"
+            asks_df["side"] = "ask"
 
             df = pd.concat([bids_df, asks_df], ignore_index=True)
-            df['timestamp'] = pd.Timestamp.utcnow()
+            df["timestamp"] = pd.Timestamp.utcnow()
 
             return MarketDataResponse(
                 data=df,
@@ -129,12 +138,14 @@ class KrakenDataAdapter(DataProviderPort):
                 source="kraken",
                 timestamp=datetime.now(timezone.utc),
                 metadata={
-                    'symbol': symbol,
-                    'depth': depth,
-                    'bids_count': len(bids_df),
-                    'asks_count': len(asks_df),
-                    'spread': asks_df['price'].min() - bids_df['price'].max() if len(bids_df) > 0 and len(asks_df) > 0 else None
-                }
+                    "symbol": symbol,
+                    "depth": depth,
+                    "bids_count": len(bids_df),
+                    "asks_count": len(asks_df),
+                    "spread": asks_df["price"].min() - bids_df["price"].max()
+                    if len(bids_df) > 0 and len(asks_df) > 0
+                    else None,
+                },
             )
 
         except ccxt.BaseError as e:
@@ -149,8 +160,9 @@ class KrakenDataAdapter(DataProviderPort):
                 self._refresh_markets_cache()
 
             # Filter for USD pairs only
-            usd_symbols = [symbol for symbol in self._markets_cache.keys()
-                          if symbol.endswith('/USD')]
+            usd_symbols = [
+                symbol for symbol in self._markets_cache.keys() if symbol.endswith("/USD")
+            ]
 
             return sorted(usd_symbols)
 
@@ -173,14 +185,14 @@ class KrakenDataAdapter(DataProviderPort):
             market_info = self._markets_cache[kraken_symbol]
 
             return {
-                'symbol': symbol,
-                'base': market_info.get('base'),
-                'quote': market_info.get('quote'),
-                'active': market_info.get('active', False),
-                'precision': market_info.get('precision', {}),
-                'limits': market_info.get('limits', {}),
-                'fees': market_info.get('fees', {}),
-                'info': market_info.get('info', {})
+                "symbol": symbol,
+                "base": market_info.get("base"),
+                "quote": market_info.get("quote"),
+                "active": market_info.get("active", False),
+                "precision": market_info.get("precision", {}),
+                "limits": market_info.get("limits", {}),
+                "fees": market_info.get("fees", {}),
+                "info": market_info.get("info", {}),
             }
 
         except ccxt.BaseError as e:
@@ -202,10 +214,10 @@ class KrakenDataAdapter(DataProviderPort):
         """Get current rate limiting information"""
 
         return {
-            'requests_per_minute': 60,  # Kraken typical limit
-            'current_request_count': self._request_count,
-            'rate_limit_enabled': self.exchange.rateLimit,
-            'last_request_time': self._last_request_time
+            "requests_per_minute": 60,  # Kraken typical limit
+            "current_request_count": self._request_count,
+            "rate_limit_enabled": self.exchange.rateLimit,
+            "last_request_time": self._last_request_time,
         }
 
     def get_data_quality_metrics(self) -> Dict[str, Any]:
@@ -213,17 +225,17 @@ class KrakenDataAdapter(DataProviderPort):
 
         # This would be enhanced with actual quality tracking
         return {
-            'uptime_percentage': 99.5,  # Placeholder - would track actual uptime
-            'average_latency_ms': 150,  # Placeholder - would track actual latency
-            'data_freshness_seconds': 1,  # Real-time data
-            'error_rate_percentage': 0.1,  # Placeholder - would track actual errors
-            'last_quality_check': datetime.now(timezone.utc).isoformat()
+            "uptime_percentage": 99.5,  # Placeholder - would track actual uptime
+            "average_latency_ms": 150,  # Placeholder - would track actual latency
+            "data_freshness_seconds": 1,  # Real-time data
+            "error_rate_percentage": 0.1,  # Placeholder - would track actual errors
+            "last_quality_check": datetime.now(timezone.utc).isoformat(),
         }
 
     def _convert_symbol_to_kraken(self, symbol: str) -> str:
         """Convert standard symbol format to Kraken format"""
         # Standard format: BTCUSD -> Kraken format: BTC/USD
-        if '/' not in symbol and len(symbol) >= 6:
+        if "/" not in symbol and len(symbol) >= 6:
             # Assume format like BTCUSD
             base = symbol[:-3]  # Everything except last 3 chars
             quote = symbol[-3:]  # Last 3 chars

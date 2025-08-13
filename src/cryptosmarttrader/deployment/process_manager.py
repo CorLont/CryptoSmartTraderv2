@@ -23,8 +23,10 @@ import tempfile
 
 logger = logging.getLogger(__name__)
 
+
 class ProcessState(Enum):
     """Process states"""
+
     STOPPED = "stopped"
     STARTING = "starting"
     RUNNING = "running"
@@ -32,16 +34,20 @@ class ProcessState(Enum):
     FAILED = "failed"
     RECOVERING = "recovering"
 
+
 class HealthStatus(Enum):
     """Health check statuses"""
+
     HEALTHY = "healthy"
     UNHEALTHY = "unhealthy"
     UNKNOWN = "unknown"
     DEGRADED = "degraded"
 
+
 @dataclass
 class ProcessConfig:
     """Configuration for a managed process"""
+
     name: str
     command: str
     args: List[str] = field(default_factory=list)
@@ -69,9 +75,11 @@ class ProcessConfig:
     grace_period: float = 30.0  # Time to wait for graceful shutdown
     kill_timeout: float = 10.0  # Time to wait before SIGKILL
 
+
 @dataclass
 class ProcessStatus:
     """Current status of a managed process"""
+
     name: str
     state: ProcessState
     pid: Optional[int] = None
@@ -97,8 +105,11 @@ class ProcessStatus:
 
     @property
     def is_healthy(self) -> bool:
-        return (self.state == ProcessState.RUNNING and
-                self.health_status in [HealthStatus.HEALTHY, HealthStatus.DEGRADED])
+        return self.state == ProcessState.RUNNING and self.health_status in [
+            HealthStatus.HEALTHY,
+            HealthStatus.DEGRADED,
+        ]
+
 
 class ProcessManager:
     """
@@ -138,8 +149,7 @@ class ProcessManager:
         try:
             self.process_configs[config.name] = config
             self.process_status[config.name] = ProcessStatus(
-                name=config.name,
-                state=ProcessState.STOPPED
+                name=config.name, state=ProcessState.STOPPED
             )
             self.restart_delays[config.name] = config.restart_delay
 
@@ -178,7 +188,7 @@ class ProcessManager:
                 env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                universal_newlines=True
+                universal_newlines=True,
             )
 
             # Store process reference
@@ -264,8 +274,8 @@ class ProcessManager:
             # Apply exponential backoff
             if config.exponential_backoff and status.restart_count > 0:
                 delay = min(
-                    self.restart_delays[name] * (2 ** status.consecutive_failures),
-                    config.max_backoff_delay
+                    self.restart_delays[name] * (2**status.consecutive_failures),
+                    config.max_backoff_delay,
                 )
                 logger.info(f"Applying restart delay: {delay:.1f}s for {name}")
                 time.sleep(delay)
@@ -304,10 +314,11 @@ class ProcessManager:
             config = self.process_configs[name]
             status = self.process_status[name]
 
-            while (not self.shutdown_requested and
-                   name in self.processes and
-                   status.state == ProcessState.RUNNING):
-
+            while (
+                not self.shutdown_requested
+                and name in self.processes
+                and status.state == ProcessState.RUNNING
+            ):
                 try:
                     # Perform health check
                     health_result = self._perform_health_check(name)
@@ -356,10 +367,10 @@ class ProcessManager:
             # URL-based health check
             if config.health_check_url:
                 import requests
+
                 try:
                     response = requests.get(
-                        config.health_check_url,
-                        timeout=config.health_check_timeout
+                        config.health_check_url, timeout=config.health_check_timeout
                     )
                     if response.status_code == 200:
                         return HealthStatus.HEALTHY
@@ -376,9 +387,11 @@ class ProcessManager:
                     result = subprocess.run(
                         config.health_check_command.split(),
                         timeout=config.health_check_timeout,
-                        capture_output=True
+                        capture_output=True,
                     )
-                    return HealthStatus.HEALTHY if result.returncode == 0 else HealthStatus.UNHEALTHY
+                    return (
+                        HealthStatus.HEALTHY if result.returncode == 0 else HealthStatus.UNHEALTHY
+                    )
                 except subprocess.TimeoutExpired:
                     return HealthStatus.UNHEALTHY
 
@@ -411,13 +424,15 @@ class ProcessManager:
                 # Check resource limits
                 config = self.process_configs[name]
 
-                if (config.max_memory_mb and
-                    status.memory_mb > config.max_memory_mb):
-                    logger.warning(f"Process {name} exceeds memory limit: {status.memory_mb:.1f}MB > {config.max_memory_mb}MB")
+                if config.max_memory_mb and status.memory_mb > config.max_memory_mb:
+                    logger.warning(
+                        f"Process {name} exceeds memory limit: {status.memory_mb:.1f}MB > {config.max_memory_mb}MB"
+                    )
 
-                if (config.max_cpu_percent and
-                    status.cpu_percent > config.max_cpu_percent):
-                    logger.warning(f"Process {name} exceeds CPU limit: {status.cpu_percent:.1f}% > {config.max_cpu_percent}%")
+                if config.max_cpu_percent and status.cpu_percent > config.max_cpu_percent:
+                    logger.warning(
+                        f"Process {name} exceeds CPU limit: {status.cpu_percent:.1f}% > {config.max_cpu_percent}%"
+                    )
 
         except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
             logger.debug(f"Could not get resource usage for {name}: {e}")
@@ -435,7 +450,8 @@ class ProcessManager:
     def is_healthy(self) -> bool:
         """Check if all processes are healthy"""
         return all(
-            status.is_healthy for status in self.process_status.values()
+            status.is_healthy
+            for status in self.process_status.values()
             if self.process_configs[status.name].auto_restart
         )
 
@@ -498,22 +514,19 @@ class ProcessManager:
     def save_status_snapshot(self, filepath: str):
         """Save current status to file for recovery"""
         try:
-            snapshot = {
-                'timestamp': datetime.now().isoformat(),
-                'processes': {}
-            }
+            snapshot = {"timestamp": datetime.now().isoformat(), "processes": {}}
 
             for name, status in self.process_status.items():
-                snapshot['processes'][name] = {
-                    'state': status.state.value,
-                    'restart_count': status.restart_count,
-                    'health_status': status.health_status.value,
-                    'uptime_seconds': status.uptime_seconds,
-                    'memory_mb': status.memory_mb,
-                    'cpu_percent': status.cpu_percent
+                snapshot["processes"][name] = {
+                    "state": status.state.value,
+                    "restart_count": status.restart_count,
+                    "health_status": status.health_status.value,
+                    "uptime_seconds": status.uptime_seconds,
+                    "memory_mb": status.memory_mb,
+                    "cpu_percent": status.cpu_percent,
                 }
 
-            with open(filepath, 'w') as f:
+            with open(filepath, "w") as f:
                 json.dump(snapshot, f, indent=2)
 
             logger.debug(f"Status snapshot saved to {filepath}")
@@ -527,7 +540,7 @@ class ProcessManager:
             if not os.path.exists(filepath):
                 return False
 
-            with open(filepath, 'r') as f:
+            with open(filepath, "r") as f:
                 snapshot = json.load(f)
 
             logger.info(f"Loaded status snapshot from {snapshot['timestamp']}")

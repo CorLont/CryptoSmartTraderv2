@@ -16,6 +16,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
 
+
 @router.get("/coins", summary="Get available cryptocurrencies")
 @limiter.limit("100/minute")
 async def get_coins(request, limit: int = Query(100, le=500)) -> BaseResponse:

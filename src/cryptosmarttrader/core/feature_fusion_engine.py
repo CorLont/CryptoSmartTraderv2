@@ -15,19 +15,23 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 try:
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
 
+
 @dataclass
 class FeatureFusionConfig:
     """Configuration for feature fusion engine"""
+
     enable_attention_mechanism: bool = True
     enable_cross_feature_interactions: bool = True
     enable_temporal_fusion: bool = True
@@ -39,6 +43,7 @@ class FeatureFusionConfig:
     feature_selection_k: int = 50
     pca_components: int = 20
     interaction_degree: int = 2
+
 
 class AttentionFusionModule(nn.Module):
     """Advanced attention mechanism for feature fusion"""
@@ -70,7 +75,7 @@ class AttentionFusionModule(nn.Module):
             nn.Linear(hidden_dim, hidden_dim * 4),
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Linear(hidden_dim * 4, hidden_dim)
+            nn.Linear(hidden_dim * 4, hidden_dim),
         )
 
     def forward(self, features: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -101,8 +106,8 @@ class AttentionFusionModule(nn.Module):
         attended_values = torch.matmul(attention_weights, V)
 
         # Concatenate heads
-        attended_values = attended_values.transpose(1, 2).contiguous().view(
-            batch_size, seq_len, self.hidden_dim
+        attended_values = (
+            attended_values.transpose(1, 2).contiguous().view(batch_size, seq_len, self.hidden_dim)
         )
 
         # Output projection
@@ -117,6 +122,7 @@ class AttentionFusionModule(nn.Module):
 
         return output
 
+
 class CrossFeatureInteractionEngine:
     """Engine for generating cross-feature interactions"""
 
@@ -126,15 +132,15 @@ class CrossFeatureInteractionEngine:
         self.interaction_cache = {}
         self._lock = threading.RLock()
 
-    def generate_polynomial_interactions(self, features: np.ndarray, feature_names: List[str]) -> Tuple[np.ndarray, List[str]]:
+    def generate_polynomial_interactions(
+        self, features: np.ndarray, feature_names: List[str]
+    ) -> Tuple[np.ndarray, List[str]]:
         """Generate polynomial feature interactions"""
         from sklearn.preprocessing import PolynomialFeatures
 
         with self._lock:
             poly = PolynomialFeatures(
-                degree=self.config.interaction_degree,
-                interaction_only=True,
-                include_bias=False
+                degree=self.config.interaction_degree, interaction_only=True, include_bias=False
             )
 
             interaction_features = poly.fit_transform(features)
@@ -143,7 +149,9 @@ class CrossFeatureInteractionEngine:
             self.logger.debug(f"Generated {interaction_features.shape[1]} polynomial interactions")
             return interaction_features, list(interaction_names)
 
-    def generate_ratio_interactions(self, features: np.ndarray, feature_names: List[str]) -> Tuple[np.ndarray, List[str]]:
+    def generate_ratio_interactions(
+        self, features: np.ndarray, feature_names: List[str]
+    ) -> Tuple[np.ndarray, List[str]]:
         """Generate ratio-based feature interactions"""
         n_features = features.shape[1]
         ratio_features = []
@@ -175,7 +183,9 @@ class CrossFeatureInteractionEngine:
         else:
             return np.array([]).reshape(features.shape[0], 0), []
 
-    def generate_statistical_interactions(self, features: np.ndarray, feature_names: List[str], window_size: int = 10) -> Tuple[np.ndarray, List[str]]:
+    def generate_statistical_interactions(
+        self, features: np.ndarray, feature_names: List[str], window_size: int = 10
+    ) -> Tuple[np.ndarray, List[str]]:
         """Generate statistical interactions (rolling statistics)"""
         stat_features = []
         stat_names = []
@@ -193,15 +203,22 @@ class CrossFeatureInteractionEngine:
             stat_names.append(f"{name}_rolling_mean_{window_size}")
 
             # Rolling std
-            rolling_std = feature_series.rolling(window=window_size, min_periods=1).std().fillna(0).values
+            rolling_std = (
+                feature_series.rolling(window=window_size, min_periods=1).std().fillna(0).values
+            )
             stat_features.append(rolling_std)
             stat_names.append(f"{name}_rolling_std_{window_size}")
 
             # Rolling correlation with price (if price feature exists)
-            price_cols = [j for j, fname in enumerate(feature_names) if 'price' in fname.lower()]
+            price_cols = [j for j, fname in enumerate(feature_names) if "price" in fname.lower()]
             if price_cols and i not in price_cols:
                 price_series = pd.Series(features[:, price_cols[0]])
-                rolling_corr = feature_series.rolling(window=window_size, min_periods=1).corr(price_series).fillna(0).values
+                rolling_corr = (
+                    feature_series.rolling(window=window_size, min_periods=1)
+                    .corr(price_series)
+                    .fillna(0)
+                    .values
+                )
                 stat_features.append(rolling_corr)
                 stat_names.append(f"{name}_price_corr_{window_size}")
 
@@ -211,6 +228,7 @@ class CrossFeatureInteractionEngine:
             return stat_array, stat_names
         else:
             return np.array([]).reshape(features.shape[0], 0), []
+
 
 class FeatureFusionEngine:
     """Advanced feature fusion engine with multi-modal capabilities"""
@@ -232,13 +250,13 @@ class FeatureFusionEngine:
 
         # Feature metadata
         self.feature_metadata = {
-            'price_features': [],
-            'volume_features': [],
-            'technical_features': [],
-            'sentiment_features': [],
-            'whale_features': [],
-            'macro_features': [],
-            'interaction_features': []
+            "price_features": [],
+            "volume_features": [],
+            "technical_features": [],
+            "sentiment_features": [],
+            "whale_features": [],
+            "macro_features": [],
+            "interaction_features": [],
         }
 
         self._lock = threading.RLock()
@@ -254,7 +272,9 @@ class FeatureFusionEngine:
             self.logger.warning(f"Failed to initialize attention module: {e}")
             self.attention_module = None
 
-    def fuse_multi_modal_features(self, feature_dict: Dict[str, np.ndarray], target: Optional[np.ndarray] = None) -> Dict[str, Any]:
+    def fuse_multi_modal_features(
+        self, feature_dict: Dict[str, np.ndarray], target: Optional[np.ndarray] = None
+    ) -> Dict[str, Any]:
         """
         Fuse features from multiple modalities with advanced interactions
 
@@ -285,13 +305,15 @@ class FeatureFusionEngine:
 
                 # Stage 2: Cross-modality interactions
                 if self.config.enable_cross_feature_interactions:
-                    interaction_features = self._generate_cross_modality_interactions(processed_modalities)
-                    processed_modalities['interactions'] = interaction_features
+                    interaction_features = self._generate_cross_modality_interactions(
+                        processed_modalities
+                    )
+                    processed_modalities["interactions"] = interaction_features
 
                 # Stage 3: Temporal fusion (if enabled)
                 if self.config.enable_temporal_fusion:
                     temporal_features = self._apply_temporal_fusion(processed_modalities)
-                    processed_modalities['temporal'] = temporal_features
+                    processed_modalities["temporal"] = temporal_features
 
                 # Stage 4: Attention-based fusion
                 fused_features = self._apply_attention_fusion(processed_modalities)
@@ -303,21 +325,27 @@ class FeatureFusionEngine:
 
                 # Generate metadata
                 fusion_metadata = {
-                    'input_modalities': list(feature_dict.keys()),
-                    'input_feature_counts': {k: v.shape[1] for k, v in feature_dict.items()},
-                    'final_feature_count': final_features.shape[1],
-                    'selected_feature_indices': selected_indices,
-                    'fusion_time_seconds': (datetime.now() - start_time).total_seconds(),
-                    'fusion_timestamp': start_time.isoformat()
+                    "input_modalities": list(feature_dict.keys()),
+                    "input_feature_counts": {k: v.shape[1] for k, v in feature_dict.items()},
+                    "final_feature_count": final_features.shape[1],
+                    "selected_feature_indices": selected_indices,
+                    "fusion_time_seconds": (datetime.now() - start_time).total_seconds(),
+                    "fusion_timestamp": start_time.isoformat(),
                 }
 
-                self.logger.info(f"Feature fusion completed: {sum(fusion_metadata['input_feature_counts'].values())} -> {fusion_metadata['final_feature_count']} features")
+                self.logger.info(
+                    f"Feature fusion completed: {sum(fusion_metadata['input_feature_counts'].values())} -> {fusion_metadata['final_feature_count']} features"
+                )
 
                 return {
-                    'fused_features': final_features,
-                    'metadata': fusion_metadata,
-                    'feature_importance': self._calculate_feature_importance(final_features, target),
-                    'modality_contributions': self._calculate_modality_contributions(processed_modalities)
+                    "fused_features": final_features,
+                    "metadata": fusion_metadata,
+                    "feature_importance": self._calculate_feature_importance(
+                        final_features, target
+                    ),
+                    "modality_contributions": self._calculate_modality_contributions(
+                        processed_modalities
+                    ),
                 }
 
             except Exception as e:
@@ -339,10 +367,12 @@ class FeatureFusionEngine:
 
         return aligned_dict
 
-    def _process_single_modality(self, features: np.ndarray, modality: str, target: Optional[np.ndarray] = None) -> Dict[str, Any]:
+    def _process_single_modality(
+        self, features: np.ndarray, modality: str, target: Optional[np.ndarray] = None
+    ) -> Dict[str, Any]:
         """Process features from a single modality"""
         if features.size == 0:
-            return {'features': features, 'feature_names': [], 'scaler': None}
+            return {"features": features, "feature_names": [], "scaler": None}
 
         # Generate feature names
         feature_names = [f"{modality}_feat_{i}" for i in range(features.shape[1])]
@@ -356,16 +386,20 @@ class FeatureFusionEngine:
 
         # Generate interactions within modality
         if self.config.enable_cross_feature_interactions and features.shape[1] > 1:
-            poly_features, poly_names = self.cross_interaction_engine.generate_polynomial_interactions(
-                scaled_features, feature_names
+            poly_features, poly_names = (
+                self.cross_interaction_engine.generate_polynomial_interactions(
+                    scaled_features, feature_names
+                )
             )
 
             ratio_features, ratio_names = self.cross_interaction_engine.generate_ratio_interactions(
                 scaled_features, feature_names
             )
 
-            stat_features, stat_names = self.cross_interaction_engine.generate_statistical_interactions(
-                scaled_features, feature_names
+            stat_features, stat_names = (
+                self.cross_interaction_engine.generate_statistical_interactions(
+                    scaled_features, feature_names
+                )
             )
 
             # Combine all features
@@ -395,23 +429,29 @@ class FeatureFusionEngine:
             if selector_key not in self.feature_selectors:
                 self.feature_selectors[selector_key] = SelectKBest(
                     score_func=mutual_info_regression,
-                    k=min(self.config.feature_selection_k, combined_features.shape[1])
+                    k=min(self.config.feature_selection_k, combined_features.shape[1]),
                 )
 
-            selected_features = self.feature_selectors[selector_key].fit_transform(combined_features, target)
-            selected_names = [all_names[i] for i in self.feature_selectors[selector_key].get_support(indices=True)]
+            selected_features = self.feature_selectors[selector_key].fit_transform(
+                combined_features, target
+            )
+            selected_names = [
+                all_names[i] for i in self.feature_selectors[selector_key].get_support(indices=True)
+            ]
         else:
             selected_features = combined_features
             selected_names = all_names
 
         return {
-            'features': selected_features,
-            'feature_names': selected_names,
-            'scaler': self.scalers[scaler_key],
-            'original_shape': features.shape
+            "features": selected_features,
+            "feature_names": selected_names,
+            "scaler": self.scalers[scaler_key],
+            "original_shape": features.shape,
         }
 
-    def _generate_cross_modality_interactions(self, processed_modalities: Dict[str, Dict]) -> Dict[str, Any]:
+    def _generate_cross_modality_interactions(
+        self, processed_modalities: Dict[str, Dict]
+    ) -> Dict[str, Any]:
         """Generate interactions between different modalities"""
         interaction_features = []
         interaction_names = []
@@ -420,9 +460,9 @@ class FeatureFusionEngine:
 
         # Cross-modality correlations
         for i, mod1 in enumerate(modality_names):
-            for j, mod2 in enumerate(modality_names[i+1:], i+1):
-                feat1 = processed_modalities[mod1]['features']
-                feat2 = processed_modalities[mod2]['features']
+            for j, mod2 in enumerate(modality_names[i + 1 :], i + 1):
+                feat1 = processed_modalities[mod1]["features"]
+                feat2 = processed_modalities[mod2]["features"]
 
                 if feat1.size == 0 or feat2.size == 0:
                     continue
@@ -446,17 +486,17 @@ class FeatureFusionEngine:
             interaction_array = np.column_stack(interaction_features)
 
             return {
-                'features': interaction_array,
-                'feature_names': interaction_names,
-                'scaler': None,
-                'original_shape': interaction_array.shape
+                "features": interaction_array,
+                "feature_names": interaction_names,
+                "scaler": None,
+                "original_shape": interaction_array.shape,
             }
         else:
             return {
-                'features': np.array([]).reshape(0, 0),
-                'feature_names': [],
-                'scaler': None,
-                'original_shape': (0, 0)
+                "features": np.array([]).reshape(0, 0),
+                "feature_names": [],
+                "scaler": None,
+                "original_shape": (0, 0),
             }
 
     def _apply_temporal_fusion(self, processed_modalities: Dict[str, Dict]) -> Dict[str, Any]:
@@ -467,18 +507,20 @@ class FeatureFusionEngine:
         window_sizes = [5, 10, 20]
 
         for modality, data in processed_modalities.items():
-            features = data['features']
+            features = data["features"]
             if features.size == 0:
                 continue
 
-            feature_names = data['feature_names']
+            feature_names = data["feature_names"]
 
             for window in window_sizes:
                 if len(features) < window:
                     continue
 
                 # Rolling statistics
-                for i, name in enumerate(feature_names[:min(10, len(feature_names))]):  # Limit features
+                for i, name in enumerate(
+                    feature_names[: min(10, len(feature_names))]
+                ):  # Limit features
                     if i >= features.shape[1]:
                         continue
 
@@ -490,7 +532,9 @@ class FeatureFusionEngine:
                     temporal_names.append(f"{name}_rolling_mean_{window}")
 
                     # Rolling volatility
-                    rolling_std = series.rolling(window=window, min_periods=1).std().fillna(0).values
+                    rolling_std = (
+                        series.rolling(window=window, min_periods=1).std().fillna(0).values
+                    )
                     temporal_features.append(rolling_std)
                     temporal_names.append(f"{name}_rolling_std_{window}")
 
@@ -498,17 +542,17 @@ class FeatureFusionEngine:
             temporal_array = np.column_stack(temporal_features)
 
             return {
-                'features': temporal_array,
-                'feature_names': temporal_names,
-                'scaler': None,
-                'original_shape': temporal_array.shape
+                "features": temporal_array,
+                "feature_names": temporal_names,
+                "scaler": None,
+                "original_shape": temporal_array.shape,
             }
         else:
             return {
-                'features': np.array([]).reshape(0, 0),
-                'feature_names': [],
-                'scaler': None,
-                'original_shape': (0, 0)
+                "features": np.array([]).reshape(0, 0),
+                "feature_names": [],
+                "scaler": None,
+                "original_shape": (0, 0),
             }
 
     def _apply_attention_fusion(self, processed_modalities: Dict[str, Dict]) -> np.ndarray:
@@ -517,7 +561,7 @@ class FeatureFusionEngine:
         all_features = []
 
         for modality, data in processed_modalities.items():
-            features = data['features']
+            features = data["features"]
             if features.size > 0:
                 all_features.append(features)
 
@@ -535,7 +579,7 @@ class FeatureFusionEngine:
                 self.attention_module = AttentionFusionModule(
                     input_dim=input_dim,
                     hidden_dim=min(self.config.fusion_hidden_dim, input_dim),
-                    num_heads=min(self.config.attention_heads, input_dim // 8)
+                    num_heads=min(self.config.attention_heads, input_dim // 8),
                 )
                 self.attention_module.eval()
             except Exception as e:
@@ -545,11 +589,15 @@ class FeatureFusionEngine:
         if self.attention_module is not None:
             try:
                 # Convert to torch tensor
-                features_tensor = torch.FloatTensor(concatenated_features).unsqueeze(0)  # Add batch dimension
+                features_tensor = torch.FloatTensor(concatenated_features).unsqueeze(
+                    0
+                )  # Add batch dimension
 
                 with torch.no_grad():
                     attended_features = self.attention_module(features_tensor)
-                    attended_features = attended_features.squeeze(0).numpy()  # Remove batch dimension
+                    attended_features = attended_features.squeeze(
+                        0
+                    ).numpy()  # Remove batch dimension
 
                 return attended_features
             except Exception as e:
@@ -558,7 +606,9 @@ class FeatureFusionEngine:
         else:
             return concatenated_features
 
-    def _final_feature_selection(self, features: np.ndarray, target: Optional[np.ndarray] = None) -> Tuple[np.ndarray, List[int]]:
+    def _final_feature_selection(
+        self, features: np.ndarray, target: Optional[np.ndarray] = None
+    ) -> Tuple[np.ndarray, List[int]]:
         """Apply final feature selection and dimensionality reduction"""
         if features.size == 0:
             return features, []
@@ -585,7 +635,9 @@ class FeatureFusionEngine:
                         high_corr_mask[j] = False
 
             features = features[:, high_corr_mask]
-            selected_indices = [non_constant_indices[i] for i, mask in enumerate(high_corr_mask) if mask]
+            selected_indices = [
+                non_constant_indices[i] for i, mask in enumerate(high_corr_mask) if mask
+            ]
         else:
             selected_indices = non_constant_indices
 
@@ -601,7 +653,9 @@ class FeatureFusionEngine:
 
         return features, selected_indices
 
-    def _calculate_feature_importance(self, features: np.ndarray, target: Optional[np.ndarray] = None) -> List[float]:
+    def _calculate_feature_importance(
+        self, features: np.ndarray, target: Optional[np.ndarray] = None
+    ) -> List[float]:
         """Calculate feature importance scores"""
         if target is None or features.size == 0:
             return [1.0] * features.shape[1]
@@ -620,19 +674,22 @@ class FeatureFusionEngine:
             self.logger.warning(f"Feature importance calculation failed: {e}")
             return [1.0 / features.shape[1]] * features.shape[1]
 
-    def _calculate_modality_contributions(self, processed_modalities: Dict[str, Dict]) -> Dict[str, float]:
+    def _calculate_modality_contributions(
+        self, processed_modalities: Dict[str, Dict]
+    ) -> Dict[str, float]:
         """Calculate contribution of each modality to final features"""
         contributions = {}
         total_features = sum(
-            data['features'].shape[1] for data in processed_modalities.values()
-            if data['features'].size > 0
+            data["features"].shape[1]
+            for data in processed_modalities.values()
+            if data["features"].size > 0
         )
 
         if total_features == 0:
             return contributions
 
         for modality, data in processed_modalities.items():
-            feature_count = data['features'].shape[1] if data['features'].size > 0 else 0
+            feature_count = data["features"].shape[1] if data["features"].size > 0 else 0
             contributions[modality] = feature_count / total_features
 
         return contributions
@@ -641,17 +698,17 @@ class FeatureFusionEngine:
         """Get feature fusion statistics"""
         with self._lock:
             stats = {
-                'scalers_trained': len(self.scalers),
-                'feature_selectors_trained': len(self.feature_selectors),
-                'pca_models_trained': len(self.pca_models),
-                'attention_module_available': self.attention_module is not None,
-                'torch_available': HAS_TORCH,
-                'config': {
-                    'attention_enabled': self.config.enable_attention_mechanism,
-                    'cross_interactions_enabled': self.config.enable_cross_feature_interactions,
-                    'temporal_fusion_enabled': self.config.enable_temporal_fusion,
-                    'feature_selection_k': self.config.feature_selection_k
-                }
+                "scalers_trained": len(self.scalers),
+                "feature_selectors_trained": len(self.feature_selectors),
+                "pca_models_trained": len(self.pca_models),
+                "attention_module_available": self.attention_module is not None,
+                "torch_available": HAS_TORCH,
+                "config": {
+                    "attention_enabled": self.config.enable_attention_mechanism,
+                    "cross_interactions_enabled": self.config.enable_cross_feature_interactions,
+                    "temporal_fusion_enabled": self.config.enable_temporal_fusion,
+                    "feature_selection_k": self.config.feature_selection_k,
+                },
             }
 
             return stats
@@ -660,6 +717,7 @@ class FeatureFusionEngine:
 # Singleton fusion engine
 _fusion_engine = None
 _fusion_lock = threading.Lock()
+
 
 def get_feature_fusion_engine(config: Optional[FeatureFusionConfig] = None) -> FeatureFusionEngine:
     """Get the singleton feature fusion engine"""
@@ -670,9 +728,9 @@ def get_feature_fusion_engine(config: Optional[FeatureFusionConfig] = None) -> F
             _fusion_engine = FeatureFusionEngine(config)
         return _fusion_engine
 
+
 def fuse_multi_modal_features(
-    feature_dict: Dict[str, np.ndarray],
-    target: Optional[np.ndarray] = None
+    feature_dict: Dict[str, np.ndarray], target: Optional[np.ndarray] = None
 ) -> Dict[str, Any]:
     """Convenient function to fuse multi-modal features"""
     engine = get_feature_fusion_engine()

@@ -24,17 +24,22 @@ try:
     from sklearn.model_selection import cross_val_score
     import scipy.optimize as optimize
     from scipy import stats
+
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
-    warnings.warn("Scikit-learn not available, portfolio optimization will have limited functionality")
+    warnings.warn(
+        "Scikit-learn not available, portfolio optimization will have limited functionality"
+    )
 
 # Advanced optimization
 try:
     import cvxpy as cp
+
     HAS_CVXPY = True
 except ImportError:
     HAS_CVXPY = False
+
 
 @dataclass
 class PortfolioConfig:
@@ -43,7 +48,7 @@ class PortfolioConfig:
     # Risk parameters
     max_position_size: float = 0.25  # Max 25% in single asset
     min_position_size: float = 0.01  # Min 1% position
-    risk_tolerance: float = 0.15     # Maximum portfolio volatility
+    risk_tolerance: float = 0.15  # Maximum portfolio volatility
 
     # Optimization settings
     lookback_days: int = 90
@@ -66,9 +71,11 @@ class PortfolioConfig:
     track_performance: bool = True
     performance_benchmark: str = "equal_weight"
 
+
 @dataclass
 class AssetSignal:
     """Individual asset signal and prediction"""
+
     symbol: str
     expected_return: float
     expected_volatility: float
@@ -80,9 +87,11 @@ class AssetSignal:
     risk_score: float
     timestamp: datetime
 
+
 @dataclass
 class PortfolioAllocation:
     """Portfolio allocation result"""
+
     allocations: Dict[str, float]
     expected_return: float
     expected_volatility: float
@@ -93,6 +102,7 @@ class PortfolioAllocation:
     rebalance_cost: float
     confidence_score: float
     creation_timestamp: datetime
+
 
 class MLReturnPredictor:
     """ML-based return prediction for portfolio optimization"""
@@ -136,6 +146,7 @@ class MLReturnPredictor:
 
                     # Train model
                     from sklearn.ensemble import RandomForestRegressor
+
                     model = RandomForestRegressor(n_estimators=100, random_state=42)
                     model.fit(X_scaled, y_aligned)
 
@@ -156,9 +167,7 @@ class MLReturnPredictor:
             return {"error": str(e)}
 
     def predict_returns(
-        self,
-        current_features: pd.Series,
-        horizon_days: int = 1
+        self, current_features: pd.Series, horizon_days: int = 1
     ) -> Dict[str, float]:
         """Predict expected returns using ML models"""
 
@@ -187,6 +196,7 @@ class MLReturnPredictor:
         except Exception as e:
             logging.error(f"Return prediction failed: {e}")
             return {symbol: 0.0 for symbol in current_features.index}
+
 
 class RiskModel:
     """Advanced risk modeling for portfolio optimization"""
@@ -221,10 +231,7 @@ class RiskModel:
         cov_estimator = LedoitWolf()
         cov_matrix = cov_estimator.fit(returns.dropna()).covariance_
 
-        return cov_matrix, {
-            "method": "ledoit_wolf",
-            "shrinkage": cov_estimator.shrinkage_
-        }
+        return cov_matrix, {"method": "ledoit_wolf", "shrinkage": cov_estimator.shrinkage_}
 
     def _factor_model_covariance(self, returns: pd.DataFrame) -> Tuple[np.ndarray, Dict[str, Any]]:
         """Factor model risk estimation"""
@@ -240,7 +247,9 @@ class RiskModel:
         factor_cov = np.cov(factors.T)
 
         # Specific risk (diagonal)
-        explained_var = np.sum((loadings @ factor_cov @ loadings.T) * np.eye(len(returns.columns)), axis=1)
+        explained_var = np.sum(
+            (loadings @ factor_cov @ loadings.T) * np.eye(len(returns.columns)), axis=1
+        )
         total_var = np.diag(returns.cov())
         specific_var = np.maximum(total_var - explained_var, 0.01 * total_var)
 
@@ -250,13 +259,14 @@ class RiskModel:
         return cov_matrix, {
             "method": "factor_model",
             "factors": pca.n_components_,
-            "explained_variance": np.sum(pca.explained_variance_ratio_)
+            "explained_variance": np.sum(pca.explained_variance_ratio_),
         }
 
     def _sample_covariance(self, returns: pd.DataFrame) -> Tuple[np.ndarray, Dict[str, Any]]:
         """Simple sample covariance"""
 
         return returns.cov().values, {"method": "sample"}
+
 
 class PortfolioOptimizer:
     """Advanced portfolio optimization engine"""
@@ -269,13 +279,15 @@ class PortfolioOptimizer:
         self,
         asset_signals: List[AssetSignal],
         current_prices: Dict[str, float],
-        current_allocation: Dict[str, float] = None
+        current_allocation: Dict[str, float] = None,
     ) -> PortfolioAllocation:
         """Optimize portfolio allocation"""
 
         try:
             # Prepare optimization inputs
-            symbols, expected_returns, risk_matrix = self._prepare_optimization_inputs(asset_signals)
+            symbols, expected_returns, risk_matrix = self._prepare_optimization_inputs(
+                asset_signals
+            )
 
             if len(symbols) == 0:
                 return self._empty_allocation()
@@ -299,9 +311,7 @@ class PortfolioOptimizer:
             )
 
             # Calculate rebalancing cost
-            rebalance_cost = self._calculate_rebalance_cost(
-                allocations, current_allocation or {}
-            )
+            rebalance_cost = self._calculate_rebalance_cost(allocations, current_allocation or {})
 
             return PortfolioAllocation(
                 allocations=allocations,
@@ -313,7 +323,7 @@ class PortfolioOptimizer:
                 constraints_active=portfolio_metrics["constraints_active"],
                 rebalance_cost=rebalance_cost,
                 confidence_score=portfolio_metrics["confidence_score"],
-                creation_timestamp=datetime.now()
+                creation_timestamp=datetime.now(),
             )
 
         except Exception as e:
@@ -321,23 +331,19 @@ class PortfolioOptimizer:
             return self._empty_allocation()
 
     def _prepare_optimization_inputs(
-        self,
-        asset_signals: List[AssetSignal]
+        self, asset_signals: List[AssetSignal]
     ) -> Tuple[List[str], np.ndarray, np.ndarray]:
         """Prepare inputs for optimization"""
 
         # Filter high-confidence signals
-        high_conf_signals = [
-            signal for signal in asset_signals
-            if signal.confidence >= 0.5
-        ]
+        high_conf_signals = [signal for signal in asset_signals if signal.confidence >= 0.5]
 
         if not high_conf_signals:
             return [], np.array([]), np.array([[]])
 
         # Sort by confidence and limit number
         high_conf_signals.sort(key=lambda x: x.confidence, reverse=True)
-        selected_signals = high_conf_signals[:self.config.max_assets]
+        selected_signals = high_conf_signals[: self.config.max_assets]
 
         # Extract data
         symbols = [signal.symbol for signal in selected_signals]
@@ -349,7 +355,7 @@ class PortfolioOptimizer:
 
         # Add some realistic correlations
         for i in range(len(symbols)):
-            for j in range(i+1, len(symbols)):
+            for j in range(i + 1, len(symbols)):
                 correlation_matrix[i, j] = correlation_matrix[j, i] = np.random.normal(0, 1)
 
         risk_matrix = np.outer(volatilities, volatilities) * correlation_matrix
@@ -357,10 +363,7 @@ class PortfolioOptimizer:
         return symbols, expected_returns, risk_matrix
 
     def _cvxpy_optimization(
-        self,
-        expected_returns: np.ndarray,
-        risk_matrix: np.ndarray,
-        symbols: List[str]
+        self, expected_returns: np.ndarray, risk_matrix: np.ndarray, symbols: List[str]
     ) -> np.ndarray:
         """Portfolio optimization using CVXPY"""
 
@@ -378,12 +381,14 @@ class PortfolioOptimizer:
         constraints = [
             cp.sum(weights) == 1,  # Fully invested
             weights >= self.config.min_position_size,  # Minimum position
-            weights <= self.config.max_position_size   # Maximum position
+            weights <= self.config.max_position_size,  # Maximum position
         ]
 
         # Portfolio volatility constraint
         if self.config.risk_tolerance:
-            constraints.append(cp.sqrt(cp.quad_form(weights, risk_matrix)) <= self.config.risk_tolerance)
+            constraints.append(
+                cp.sqrt(cp.quad_form(weights, risk_matrix)) <= self.config.risk_tolerance
+            )
 
         # Solve optimization
         problem = cp.Problem(objective, constraints)
@@ -396,10 +401,7 @@ class PortfolioOptimizer:
             return self._equal_weight_fallback(n_assets)
 
     def _scipy_optimization(
-        self,
-        expected_returns: np.ndarray,
-        risk_matrix: np.ndarray,
-        symbols: List[str]
+        self, expected_returns: np.ndarray, risk_matrix: np.ndarray, symbols: List[str]
     ) -> np.ndarray:
         """Portfolio optimization using SciPy"""
 
@@ -412,22 +414,20 @@ class PortfolioOptimizer:
 
         # Constraints
         constraints = [
-            {'type': 'eq', 'fun': lambda x: np.sum(x) - 1},  # Fully invested
+            {"type": "eq", "fun": lambda x: np.sum(x) - 1},  # Fully invested
         ]
 
         # Bounds
-        bounds = [(self.config.min_position_size, self.config.max_position_size) for _ in range(n_assets)]
+        bounds = [
+            (self.config.min_position_size, self.config.max_position_size) for _ in range(n_assets)
+        ]
 
         # Initial guess
         x0 = np.ones(n_assets) / n_assets
 
         # Optimize
         result = optimize.minimize(
-            objective_function,
-            x0,
-            method='SLSQP',
-            bounds=bounds,
-            constraints=constraints
+            objective_function, x0, method="SLSQP", bounds=bounds, constraints=constraints
         )
 
         if result.success:
@@ -441,10 +441,7 @@ class PortfolioOptimizer:
         return np.ones(n_assets) / n_assets
 
     def _calculate_portfolio_metrics(
-        self,
-        allocations: Dict[str, float],
-        expected_returns: np.ndarray,
-        risk_matrix: np.ndarray
+        self, allocations: Dict[str, float], expected_returns: np.ndarray, risk_matrix: np.ndarray
     ) -> Dict[str, Any]:
         """Calculate portfolio performance metrics"""
 
@@ -473,7 +470,7 @@ class PortfolioOptimizer:
             constraints_active.append("risk_tolerance")
 
         # Confidence score based on concentration and diversification
-        concentration = np.sum(weights ** 2)  # Herfindahl index
+        concentration = np.sum(weights**2)  # Herfindahl index
         diversification_score = 1 - concentration
         confidence_score = min(diversification_score * 2, 1.0)
 
@@ -483,13 +480,11 @@ class PortfolioOptimizer:
             "sharpe_ratio": float(sharpe_ratio),
             "max_drawdown": float(max_drawdown),
             "constraints_active": constraints_active,
-            "confidence_score": float(confidence_score)
+            "confidence_score": float(confidence_score),
         }
 
     def _calculate_rebalance_cost(
-        self,
-        new_allocation: Dict[str, float],
-        current_allocation: Dict[str, float]
+        self, new_allocation: Dict[str, float], current_allocation: Dict[str, float]
     ) -> float:
         """Calculate estimated rebalancing cost"""
 
@@ -522,8 +517,9 @@ class PortfolioOptimizer:
             constraints_active=[],
             rebalance_cost=0.0,
             confidence_score=0.0,
-            creation_timestamp=datetime.now()
+            creation_timestamp=datetime.now(),
         )
+
 
 class PerformanceTracker:
     """Track portfolio performance over time"""
@@ -537,7 +533,7 @@ class PerformanceTracker:
         self,
         allocation: PortfolioAllocation,
         actual_returns: Dict[str, float],
-        benchmark_return: float = None
+        benchmark_return: float = None,
     ):
         """Record actual performance"""
 
@@ -552,7 +548,7 @@ class PerformanceTracker:
             "portfolio_return": portfolio_return,
             "benchmark_return": benchmark_return or 0,
             "allocation": allocation.allocations.copy(),
-            "rebalance_cost": allocation.rebalance_cost
+            "rebalance_cost": allocation.rebalance_cost,
         }
 
         self.performance_history.append(performance_record)
@@ -586,11 +582,12 @@ class PerformanceTracker:
             "portfolio_volatility": portfolio_vol,
             "benchmark_volatility": benchmark_vol,
             "sharpe_ratio": np.mean(portfolio_returns) / np.std(portfolio_returns) * np.sqrt(252),
-            "tracking_error": np.std([p - b for p, b in zip(portfolio_returns, benchmark_returns)]) * np.sqrt(252),
-            "information_ratio": (np.mean(portfolio_returns) - np.mean(benchmark_returns)) /
-                               np.std([p - b for p, b in zip(portfolio_returns, benchmark_returns)]),
+            "tracking_error": np.std([p - b for p, b in zip(portfolio_returns, benchmark_returns)])
+            * np.sqrt(252),
+            "information_ratio": (np.mean(portfolio_returns) - np.mean(benchmark_returns))
+            / np.std([p - b for p, b in zip(portfolio_returns, benchmark_returns)]),
             "max_drawdown": self._calculate_max_drawdown(portfolio_returns),
-            "win_rate": len([r for r in portfolio_returns if r > 0]) / len(portfolio_returns)
+            "win_rate": len([r for r in portfolio_returns if r > 0]) / len(portfolio_returns),
         }
 
     def _calculate_max_drawdown(self, returns: List[float]) -> float:
@@ -599,6 +596,7 @@ class PerformanceTracker:
         running_max = np.maximum.accumulate(cumulative)
         drawdown = (cumulative - running_max) / running_max
         return float(np.min(drawdown))
+
 
 class AIPortfolioOptimizerCoordinator:
     """Main coordinator for AI-driven portfolio optimization"""
@@ -623,7 +621,7 @@ class AIPortfolioOptimizerCoordinator:
         self,
         asset_signals: List[AssetSignal],
         current_prices: Dict[str, float],
-        historical_data: pd.DataFrame = None
+        historical_data: pd.DataFrame = None,
     ) -> Dict[str, Any]:
         """Main portfolio optimization function"""
 
@@ -638,9 +636,7 @@ class AIPortfolioOptimizerCoordinator:
 
                 # Optimize allocation
                 allocation = self.optimizer.optimize_portfolio(
-                    asset_signals,
-                    current_prices,
-                    self.current_allocation
+                    asset_signals, current_prices, self.current_allocation
                 )
 
                 # Update current allocation
@@ -658,7 +654,7 @@ class AIPortfolioOptimizerCoordinator:
                     "optimization_method": allocation.optimization_method,
                     "constraints_active": allocation.constraints_active,
                     "optimization_timestamp": allocation.creation_timestamp.isoformat(),
-                    "total_assets": len(allocation.allocations)
+                    "total_assets": len(allocation.allocations),
                 }
 
         except Exception as e:
@@ -666,9 +662,7 @@ class AIPortfolioOptimizerCoordinator:
             return {"error": str(e)}
 
     def update_performance(
-        self,
-        actual_returns: Dict[str, float],
-        benchmark_return: float = None
+        self, actual_returns: Dict[str, float], benchmark_return: float = None
     ) -> Dict[str, Any]:
         """Update performance tracking"""
 
@@ -687,7 +681,7 @@ class AIPortfolioOptimizerCoordinator:
                 constraints_active=[],
                 rebalance_cost=0,
                 confidence_score=0,
-                creation_timestamp=datetime.now()
+                creation_timestamp=datetime.now(),
             )
 
             self.performance_tracker.record_performance(
@@ -700,7 +694,7 @@ class AIPortfolioOptimizerCoordinator:
             return {
                 "success": True,
                 "performance_recorded": True,
-                "recent_metrics": performance_metrics
+                "recent_metrics": performance_metrics,
             }
 
         except Exception as e:
@@ -713,9 +707,11 @@ class AIPortfolioOptimizerCoordinator:
         with self._lock:
             analysis = {
                 "current_allocation": self.current_allocation,
-                "last_optimization": self.last_optimization.isoformat() if self.last_optimization else None,
+                "last_optimization": self.last_optimization.isoformat()
+                if self.last_optimization
+                else None,
                 "ml_models_trained": self.ml_predictor.is_trained,
-                "configuration": asdict(self.config)
+                "configuration": asdict(self.config),
             }
 
             # Add performance metrics if available
@@ -753,21 +749,24 @@ class AIPortfolioOptimizerCoordinator:
             "ml_predictor_trained": self.ml_predictor.is_trained,
             "models_count": len(self.ml_predictor.models),
             "current_allocation_assets": len(self.current_allocation),
-            "last_optimization": self.last_optimization.isoformat() if self.last_optimization else None,
+            "last_optimization": self.last_optimization.isoformat()
+            if self.last_optimization
+            else None,
             "performance_history_length": len(self.performance_tracker.performance_history),
             "should_rebalance": self.should_rebalance(),
-            "dependencies": {
-                "sklearn": HAS_SKLEARN,
-                "cvxpy": HAS_CVXPY
-            },
-            "config": asdict(self.config)
+            "dependencies": {"sklearn": HAS_SKLEARN, "cvxpy": HAS_CVXPY},
+            "config": asdict(self.config),
         }
+
 
 # Singleton coordinator instance
 _portfolio_optimizer_coordinator = None
 _coordinator_lock = threading.Lock()
 
-def get_ai_portfolio_optimizer_coordinator(config: PortfolioConfig = None) -> AIPortfolioOptimizerCoordinator:
+
+def get_ai_portfolio_optimizer_coordinator(
+    config: PortfolioConfig = None,
+) -> AIPortfolioOptimizerCoordinator:
     """Get the singleton AI portfolio optimizer coordinator"""
     global _portfolio_optimizer_coordinator
 
@@ -776,6 +775,7 @@ def get_ai_portfolio_optimizer_coordinator(config: PortfolioConfig = None) -> AI
             _portfolio_optimizer_coordinator = AIPortfolioOptimizerCoordinator(config)
 
         return _portfolio_optimizer_coordinator
+
 
 # Test function
 def test_ai_portfolio_optimizer():
@@ -797,7 +797,7 @@ def test_ai_portfolio_optimizer():
             technical_score=0.7,
             fundamental_score=0.8,
             risk_score=0.3,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         ),
         AssetSignal(
             symbol="ETH",
@@ -809,8 +809,8 @@ def test_ai_portfolio_optimizer():
             technical_score=0.6,
             fundamental_score=0.7,
             risk_score=0.4,
-            timestamp=datetime.now()
-        )
+            timestamp=datetime.now(),
+        ),
     ]
 
     current_prices = {"BTC": 45000, "ETH": 3000}
@@ -824,6 +824,7 @@ def test_ai_portfolio_optimizer():
     print(f"System status: {status}")
 
     print("AI Portfolio Optimizer test completed!")
+
 
 if __name__ == "__main__":
     test_ai_portfolio_optimizer()

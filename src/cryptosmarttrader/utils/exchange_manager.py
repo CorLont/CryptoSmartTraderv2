@@ -5,6 +5,7 @@ from typing import Dict, List, Any, Optional
 import logging
 from datetime import datetime, timedelta
 
+
 class ExchangeManager:
     """Enhanced exchange manager for multi-exchange connectivity"""
 
@@ -40,7 +41,7 @@ class ExchangeManager:
             "kucoin": ccxt.kucoin,
             "huobi": ccxt.huobi,
             "coinbase": ccxt.coinbasepro,
-            "bitfinex": ccxt.bitfinex
+            "bitfinex": ccxt.bitfinex,
         }
 
         for exchange_name in enabled_exchanges:
@@ -57,17 +58,17 @@ class ExchangeManager:
 
                 # Exchange configuration
                 config = {
-                    'apiKey': api_key,
-                    'secret': secret,
-                    'timeout': self.config_manager.get("timeout_seconds", 30) * 1000,
-                    'rateLimit': 60000 / self.config_manager.get("api_rate_limit", 100),
-                    'enableRateLimit': True,
-                    'sandbox': False
+                    "apiKey": api_key,
+                    "secret": secret,
+                    "timeout": self.config_manager.get("timeout_seconds", 30) * 1000,
+                    "rateLimit": 60000 / self.config_manager.get("api_rate_limit", 100),
+                    "enableRateLimit": True,
+                    "sandbox": False,
                 }
 
                 # Add passphrase for exchanges that need it
-                if passphrase and exchange_name in ['kucoin', 'coinbase']:
-                    config['passphrase'] = passphrase
+                if passphrase and exchange_name in ["kucoin", "coinbase"]:
+                    config["passphrase"] = passphrase
 
                 # Initialize exchange
                 exchange = exchange_class(config)
@@ -76,29 +77,29 @@ class ExchangeManager:
                 if self._test_exchange_connection(exchange):
                     self.exchanges[exchange_name] = exchange
                     self.exchange_status[exchange_name] = {
-                        'status': 'connected',
-                        'last_check': datetime.now().isoformat(),
-                        'error_count': 0,
-                        'success_count': 0
+                        "status": "connected",
+                        "last_check": datetime.now().isoformat(),
+                        "error_count": 0,
+                        "success_count": 0,
                     }
                     self.logger.info(f"Successfully initialized {exchange_name}")
                 else:
                     self.exchange_status[exchange_name] = {
-                        'status': 'failed',
-                        'last_check': datetime.now().isoformat(),
-                        'error_count': 1,
-                        'success_count': 0
+                        "status": "failed",
+                        "last_check": datetime.now().isoformat(),
+                        "error_count": 1,
+                        "success_count": 0,
                     }
                     self.logger.error(f"Failed to connect to {exchange_name}")
 
             except Exception as e:
                 self.logger.error(f"Error initializing {exchange_name}: {str(e)}")
                 self.exchange_status[exchange_name] = {
-                    'status': 'error',
-                    'last_check': datetime.now().isoformat(),
-                    'error': str(e),
-                    'error_count': 1,
-                    'success_count': 0
+                    "status": "error",
+                    "last_check": datetime.now().isoformat(),
+                    "error": str(e),
+                    "error_count": 1,
+                    "success_count": 0,
                 }
 
     def _test_exchange_connection(self, exchange) -> bool:
@@ -120,19 +121,21 @@ class ExchangeManager:
                         # Test exchange connectivity
                         if self._test_exchange_connection(exchange):
                             with self._lock:
-                                self.exchange_status[exchange_name]['status'] = 'connected'
-                                self.exchange_status[exchange_name]['last_check'] = datetime.now().isoformat()
-                                self.exchange_status[exchange_name]['success_count'] += 1
+                                self.exchange_status[exchange_name]["status"] = "connected"
+                                self.exchange_status[exchange_name]["last_check"] = (
+                                    datetime.now().isoformat()
+                                )
+                                self.exchange_status[exchange_name]["success_count"] += 1
                         else:
                             with self._lock:
-                                self.exchange_status[exchange_name]['status'] = 'disconnected'
-                                self.exchange_status[exchange_name]['error_count'] += 1
+                                self.exchange_status[exchange_name]["status"] = "disconnected"
+                                self.exchange_status[exchange_name]["error_count"] += 1
 
                     except Exception as e:
                         with self._lock:
-                            self.exchange_status[exchange_name]['status'] = 'error'
-                            self.exchange_status[exchange_name]['error'] = str(e)
-                            self.exchange_status[exchange_name]['error_count'] += 1
+                            self.exchange_status[exchange_name]["status"] = "error"
+                            self.exchange_status[exchange_name]["error"] = str(e)
+                            self.exchange_status[exchange_name]["error_count"] += 1
 
                 # Sleep for 5 minutes between checks
                 time.sleep(300)
@@ -164,8 +167,9 @@ class ExchangeManager:
         """Get list of available and connected exchanges"""
         with self._lock:
             return [
-                name for name, status in self.exchange_status.items()
-                if status.get('status') == 'connected'
+                name
+                for name, status in self.exchange_status.items()
+                if status.get("status") == "connected"
             ]
 
     def fetch_ticker(self, symbol: str, exchange_name: str = None) -> Optional[Dict[str, Any]]:
@@ -185,8 +189,8 @@ class ExchangeManager:
                     ticker = exchange.fetch_ticker(symbol)
 
                     # Add exchange info to ticker
-                    ticker['exchange'] = exch_name
-                    ticker['timestamp_fetched'] = datetime.now().isoformat()
+                    ticker["exchange"] = exch_name
+                    ticker["timestamp_fetched"] = datetime.now().isoformat()
 
                     return ticker
 
@@ -220,8 +224,8 @@ class ExchangeManager:
 
                     # Add exchange info to each ticker
                     for symbol, ticker in tickers.items():
-                        ticker['exchange'] = exch_name
-                        ticker['timestamp_fetched'] = datetime.now().isoformat()
+                        ticker["exchange"] = exch_name
+                        ticker["timestamp_fetched"] = datetime.now().isoformat()
 
                         # Use exchange-specific key to avoid conflicts
                         key = f"{symbol}_{exch_name}"
@@ -241,8 +245,9 @@ class ExchangeManager:
             self.logger.error(f"Tickers fetch error: {str(e)}")
             return {}
 
-    def fetch_ohlcv(self, symbol: str, timeframe: str = '1d', limit: int = 100,
-                    exchange_name: str = None) -> Optional[List[List]]:
+    def fetch_ohlcv(
+        self, symbol: str, timeframe: str = "1d", limit: int = 100, exchange_name: str = None
+    ) -> Optional[List[List]]:
         """Fetch OHLCV data from exchange"""
         try:
             if exchange_name:
@@ -258,7 +263,7 @@ class ExchangeManager:
                     exchange = self.exchanges[exch_name]
 
                     # Check if exchange supports OHLCV
-                    if not exchange.has['fetchOHLCV']:
+                    if not exchange.has["fetchOHLCV"]:
                         continue
 
                     ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
@@ -274,8 +279,9 @@ class ExchangeManager:
             self.logger.error(f"OHLCV fetch error: {str(e)}")
             return None
 
-    def fetch_order_book(self, symbol: str, limit: int = 100,
-                        exchange_name: str = None) -> Optional[Dict[str, Any]]:
+    def fetch_order_book(
+        self, symbol: str, limit: int = 100, exchange_name: str = None
+    ) -> Optional[Dict[str, Any]]:
         """Fetch order book from exchange"""
         try:
             if exchange_name:
@@ -292,8 +298,8 @@ class ExchangeManager:
                     order_book = exchange.fetch_order_book(symbol, limit)
 
                     # Add exchange info
-                    order_book['exchange'] = exch_name
-                    order_book['timestamp_fetched'] = datetime.now().isoformat()
+                    order_book["exchange"] = exch_name
+                    order_book["timestamp_fetched"] = datetime.now().isoformat()
 
                     return order_book
 
@@ -342,20 +348,20 @@ class ExchangeManager:
             exchange = self.exchanges[exchange_name]
 
             return {
-                'id': exchange.id,
-                'name': exchange.name,
-                'countries': getattr(exchange, 'countries', []),
-                'urls': getattr(exchange, 'urls', {}),
-                'api': getattr(exchange, 'api', {}),
-                'has': getattr(exchange, 'has', {}),
-                'timeframes': getattr(exchange, 'timeframes', {}),
-                'markets_count': len(exchange.markets) if exchange.markets else 0,
-                'status': self.exchange_status.get(exchange_name, {})
+                "id": exchange.id,
+                "name": exchange.name,
+                "countries": getattr(exchange, "countries", []),
+                "urls": getattr(exchange, "urls", {}),
+                "api": getattr(exchange, "api", {}),
+                "has": getattr(exchange, "has", {}),
+                "timeframes": getattr(exchange, "timeframes", {}),
+                "markets_count": len(exchange.markets) if exchange.markets else 0,
+                "status": self.exchange_status.get(exchange_name, {}),
             }
 
         except Exception as e:
             self.logger.error(f"Error getting exchange info for {exchange_name}: {str(e)}")
-            return {'error': str(e)}
+            return {"error": str(e)}
 
     def refresh_exchange_connection(self, exchange_name: str) -> bool:
         """Refresh connection to a specific exchange"""
@@ -387,11 +393,13 @@ class ExchangeManager:
             can_request = time_since_last >= min_interval
 
             status[exchange_name] = {
-                'last_request': datetime.fromtimestamp(last_request).isoformat() if last_request > 0 else None,
-                'time_since_last': time_since_last,
-                'can_request': can_request,
-                'rate_limit_per_minute': rate_limit,
-                'min_interval_seconds': min_interval
+                "last_request": datetime.fromtimestamp(last_request).isoformat()
+                if last_request > 0
+                else None,
+                "time_since_last": time_since_last,
+                "can_request": can_request,
+                "rate_limit_per_minute": rate_limit,
+                "min_interval_seconds": min_interval,
             }
 
         return status

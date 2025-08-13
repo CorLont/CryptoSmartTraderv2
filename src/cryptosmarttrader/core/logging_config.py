@@ -16,9 +16,9 @@ from python_json_logger import jsonlogger
 
 
 # Context variables for correlation tracking
-correlation_id_ctx: ContextVar[Optional[str]] = ContextVar('correlation_id', default=None)
-user_id_ctx: ContextVar[Optional[str]] = ContextVar('user_id', default=None)
-request_path_ctx: ContextVar[Optional[str]] = ContextVar('request_path', default=None)
+correlation_id_ctx: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
+user_id_ctx: ContextVar[Optional[str]] = ContextVar("user_id", default=None)
+request_path_ctx: ContextVar[Optional[str]] = ContextVar("request_path", default=None)
 
 
 class CorrelationIdFilter(logging.Filter):
@@ -44,7 +44,7 @@ class TradingEventFilter(logging.Filter):
 
     def filter(self, record):
         # Only pass trading-related logs
-        trading_keywords = ['trade', 'order', 'signal', 'position', 'pnl', 'slippage', 'fee']
+        trading_keywords = ["trade", "order", "signal", "position", "pnl", "slippage", "fee"]
 
         message = record.getMessage().lower()
         return any(keyword in message for keyword in trading_keywords)
@@ -53,7 +53,7 @@ class TradingEventFilter(logging.Filter):
 class SecurityFilter(logging.Filter):
     """Filter to redact sensitive information"""
 
-    SENSITIVE_FIELDS = ['api_key', 'secret', 'password', 'token', 'auth']
+    SENSITIVE_FIELDS = ["api_key", "secret", "password", "token", "auth"]
 
     def filter(self, record):
         # Redact sensitive information from message
@@ -75,26 +75,28 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         super().add_fields(log_record, record, message_dict)
 
         # Add standard enterprise fields
-        log_record['@timestamp'] = getattr(record, 'timestamp_iso', datetime.utcnow().isoformat() + "Z")
-        log_record['level'] = record.levelname
-        log_record['logger'] = record.name
-        log_record['service'] = getattr(record, 'service', 'cryptosmarttrader')
-        log_record['correlation_id'] = getattr(record, 'correlation_id', None)
-        log_record['user_id'] = getattr(record, 'user_id', None)
-        log_record['request_path'] = getattr(record, 'request_path', None)
+        log_record["@timestamp"] = getattr(
+            record, "timestamp_iso", datetime.utcnow().isoformat() + "Z"
+        )
+        log_record["level"] = record.levelname
+        log_record["logger"] = record.name
+        log_record["service"] = getattr(record, "service", "cryptosmarttrader")
+        log_record["correlation_id"] = getattr(record, "correlation_id", None)
+        log_record["user_id"] = getattr(record, "user_id", None)
+        log_record["request_path"] = getattr(record, "request_path", None)
 
         # Add file and line info for debugging
-        if hasattr(record, 'pathname'):
-            log_record['file'] = Path(record.pathname).name
-            log_record['line'] = record.lineno
-            log_record['function'] = record.funcName
+        if hasattr(record, "pathname"):
+            log_record["file"] = Path(record.pathname).name
+            log_record["line"] = record.lineno
+            log_record["function"] = record.funcName
 
         # Add thread info
-        log_record['thread'] = record.thread
-        log_record['thread_name'] = record.threadName
+        log_record["thread"] = record.thread
+        log_record["thread_name"] = record.threadName
 
         # Add process info
-        log_record['process'] = record.process
+        log_record["process"] = record.process
 
         # Clean up None values
         log_record = {k: v for k, v in log_record.items() if v is not None}
@@ -104,7 +106,7 @@ def setup_logging(
     log_level: str = "INFO",
     log_file: Optional[str] = None,
     enable_json: bool = True,
-    enable_trading_logs: bool = True
+    enable_trading_logs: bool = True,
 ):
     """
     Setup enterprise logging configuration
@@ -125,13 +127,10 @@ def setup_logging(
 
     # Create formatters
     if enable_json:
-        formatter = CustomJsonFormatter(
-            format="%(timestamp_iso)s %(level)s %(name)s %(message)s"
-        )
+        formatter = CustomJsonFormatter(format="%(timestamp_iso)s %(level)s %(name)s %(message)s")
     else:
         formatter = logging.Formatter(
-            fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
 
     # Console handler
@@ -191,10 +190,7 @@ def get_correlation_id() -> Optional[str]:
 
 
 def log_trading_event(
-    event_type: str,
-    symbol: str,
-    data: Dict[str, Any],
-    logger: Optional[logging.Logger] = None
+    event_type: str, symbol: str, data: Dict[str, Any], logger: Optional[logging.Logger] = None
 ):
     """
     Log structured trading event
@@ -213,13 +209,10 @@ def log_trading_event(
         "event_type": event_type,
         "symbol": symbol,
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        **data
+        **data,
     }
 
-    logger.info(
-        f"Trading event: {event_type} for {symbol}",
-        extra={"trading_event": event_data}
-    )
+    logger.info(f"Trading event: {event_type} for {symbol}", extra={"trading_event": event_data})
 
 
 def log_signal_event(
@@ -228,7 +221,7 @@ def log_signal_event(
     confidence: float,
     direction: str,
     price: float,
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None,
 ):
     """Log trading signal event"""
 
@@ -237,7 +230,7 @@ def log_signal_event(
         "confidence": confidence,
         "direction": direction,
         "price": price,
-        "metadata": metadata or {}
+        "metadata": metadata or {},
     }
 
     log_trading_event("signal", symbol, data)
@@ -251,7 +244,7 @@ def log_order_event(
     price: float,
     order_type: str,
     status: str,
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None,
 ):
     """Log order event"""
 
@@ -262,7 +255,7 @@ def log_order_event(
         "price": price,
         "order_type": order_type,
         "status": status,
-        "metadata": metadata or {}
+        "metadata": metadata or {},
     }
 
     log_trading_event("order", symbol, data)
@@ -277,7 +270,7 @@ def log_trade_execution(
     slippage: float,
     fees: float,
     pnl: Optional[float] = None,
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None,
 ):
     """Log trade execution event"""
 
@@ -289,7 +282,7 @@ def log_trade_execution(
         "slippage": slippage,
         "fees": fees,
         "pnl": pnl,
-        "metadata": metadata or {}
+        "metadata": metadata or {},
     }
 
     log_trading_event("trade_execution", symbol, data)
@@ -301,7 +294,7 @@ def log_position_update(
     avg_price: float,
     unrealized_pnl: float,
     realized_pnl: float,
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None,
 ):
     """Log position update event"""
 
@@ -310,7 +303,7 @@ def log_position_update(
         "avg_price": avg_price,
         "unrealized_pnl": unrealized_pnl,
         "realized_pnl": realized_pnl,
-        "metadata": metadata or {}
+        "metadata": metadata or {},
     }
 
     log_trading_event("position_update", symbol, data)
@@ -321,15 +314,11 @@ def log_risk_event(
     severity: str,
     message: str,
     symbol: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None,
 ):
     """Log risk management event"""
 
-    data = {
-        "severity": severity,
-        "message": message,
-        "metadata": metadata or {}
-    }
+    data = {"severity": severity, "message": message, "metadata": metadata or {}}
 
     log_trading_event(f"risk_{event_type}", symbol or "SYSTEM", data)
 

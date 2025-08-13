@@ -18,26 +18,31 @@ import logging
 try:
     from ..core.consolidated_logging_manager import get_consolidated_logger
 except ImportError:
+
     def get_consolidated_logger(name: str) -> logging.Logger:
         logger = logging.getLogger(name)
         if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             logger.addHandler(handler)
             logger.setLevel(logging.INFO)
         return logger
 
+
 class ReadinessStatus(Enum):
     """System readiness status levels"""
-    READY = "ready"                 # All systems go
-    WARNING = "warning"             # Some issues but operational
-    NOT_READY = "not_ready"         # Critical issues prevent operation
-    UNKNOWN = "unknown"             # Cannot determine status
+
+    READY = "ready"  # All systems go
+    WARNING = "warning"  # Some issues but operational
+    NOT_READY = "not_ready"  # Critical issues prevent operation
+    UNKNOWN = "unknown"  # Cannot determine status
+
 
 @dataclass
 class ComponentReadiness:
     """Readiness status for individual system component"""
+
     component: str
     status: ReadinessStatus
     score: float  # 0-100
@@ -45,9 +50,11 @@ class ComponentReadiness:
     details: Dict[str, Any] = field(default_factory=dict)
     last_check: Optional[datetime] = None
 
+
 @dataclass
 class SystemReadinessReport:
     """Complete system readiness assessment"""
+
     overall_status: ReadinessStatus
     overall_score: float
     go_no_go_decision: bool
@@ -56,6 +63,7 @@ class SystemReadinessReport:
     summary: str = ""
     recommendations: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 class SystemReadinessChecker:
     """
@@ -94,65 +102,46 @@ class SystemReadinessChecker:
             # Model validation - CONSISTENT NAMING PATTERN
             "models": {
                 "required_horizons": ["1h", "24h", "7d", "30d"],
-                "model_directories": [
-                    "models",
-                    "ml/models",
-                    "data/models",
-                    "cache/models"
-                ],
+                "model_directories": ["models", "ml/models", "data/models", "cache/models"],
                 "naming_patterns": {
-                    "xgboost": "{horizon}_xgb.pkl",      # Consistent: 1h_xgb.pkl, 24h_xgb.pkl
-                    "tree": "{horizon}_tree.pkl",        # Consistent: 1h_tree.pkl, 24h_tree.pkl
-                    "neural": "{horizon}_nn.pkl",        # Consistent: 1h_nn.pkl, 24h_nn.pkl
-                    "ensemble": "{horizon}_ensemble.pkl" # Consistent: 1h_ensemble.pkl
+                    "xgboost": "{horizon}_xgb.pkl",  # Consistent: 1h_xgb.pkl, 24h_xgb.pkl
+                    "tree": "{horizon}_tree.pkl",  # Consistent: 1h_tree.pkl, 24h_tree.pkl
+                    "neural": "{horizon}_nn.pkl",  # Consistent: 1h_nn.pkl, 24h_nn.pkl
+                    "ensemble": "{horizon}_ensemble.pkl",  # Consistent: 1h_ensemble.pkl
                 },
-                "minimum_model_age_hours": 1,           # Models must be at least 1 hour old
-                "maximum_model_age_days": 7             # Models must be younger than 7 days
+                "minimum_model_age_hours": 1,  # Models must be at least 1 hour old
+                "maximum_model_age_days": 7,  # Models must be younger than 7 days
             },
-
             # Data validation
             "data": {
-                "required_files": [
-                    "data/market_data",
-                    "data/cache",
-                    "logs"
-                ],
-                "minimum_data_age_hours": 1,            # Data must be recent
-                "coverage_threshold": 0.8,              # 80% coverage required
-                "integrity_violation_threshold": 5      # Max 5 recent violations
+                "required_files": ["data/market_data", "data/cache", "logs"],
+                "minimum_data_age_hours": 1,  # Data must be recent
+                "coverage_threshold": 0.8,  # 80% coverage required
+                "integrity_violation_threshold": 5,  # Max 5 recent violations
             },
-
             # Calibration validation
             "calibration": {
-                "confidence_threshold": 0.7,            # 70% minimum confidence
-                "calibration_files": [
-                    "data/calibration.json",
-                    "models/calibration_metrics.json"
-                ],
-                "drift_threshold": 0.1                  # 10% maximum drift
+                "confidence_threshold": 0.7,  # 70% minimum confidence
+                "calibration_files": ["data/calibration.json", "models/calibration_metrics.json"],
+                "drift_threshold": 0.1,  # 10% maximum drift
             },
-
             # Health status validation - ROBUST FILE HANDLING
             "health": {
-                "required_files": [
-                    "health_status.json",
-                    "logs/current_trading_status.json"
-                ],
-                "health_score_threshold": 70.0,         # Minimum health score
-                "trading_status_required": True,        # Trading status must be available
-                "fallback_behavior": "strict"           # strict/lenient fallback
+                "required_files": ["health_status.json", "logs/current_trading_status.json"],
+                "health_score_threshold": 70.0,  # Minimum health score
+                "trading_status_required": True,  # Trading status must be available
+                "fallback_behavior": "strict",  # strict/lenient fallback
             },
-
             # Overall readiness criteria
             "readiness": {
-                "minimum_overall_score": 75.0,          # 75% minimum for GO
-                "critical_components": [                 # Must be ready
+                "minimum_overall_score": 75.0,  # 75% minimum for GO
+                "critical_components": [  # Must be ready
                     "models",
                     "data",
-                    "health"
+                    "health",
                 ],
-                "warning_threshold": 60.0                # Warning below 60%
-            }
+                "warning_threshold": 60.0,  # Warning below 60%
+            },
         }
 
         if config:
@@ -208,10 +197,12 @@ class SystemReadinessChecker:
                 summary=self._generate_summary(overall_status, overall_score, go_no_go),
                 recommendations=recommendations,
                 metadata={
-                    "check_duration_seconds": (datetime.now(timezone.utc) - start_time).total_seconds(),
+                    "check_duration_seconds": (
+                        datetime.now(timezone.utc) - start_time
+                    ).total_seconds(),
                     "components_checked": len(components),
-                    "config_version": "2.0.0"
-                }
+                    "config_version": "2.0.0",
+                },
             )
 
             # Update state
@@ -224,7 +215,9 @@ class SystemReadinessChecker:
             self.total_check_time += report.metadata["check_duration_seconds"]
 
             decision = "GO" if go_no_go else "NO-GO"
-            self.logger.info(f"Readiness check completed: {overall_status.value} ({overall_score:.1f}%) - {decision}")
+            self.logger.info(
+                f"Readiness check completed: {overall_status.value} ({overall_score:.1f}%) - {decision}"
+            )
 
             return report
 
@@ -272,15 +265,19 @@ class SystemReadinessChecker:
                                 horizon_models[model_type] = {
                                     "path": str(model_path),
                                     "age_hours": model_age,
-                                    "size_mb": model_path.stat().st_size / (1024 * 1024)
+                                    "size_mb": model_path.stat().st_size / (1024 * 1024),
                                 }
                                 total_models_found += 1
                             else:
                                 # Add issue for age problems
                                 if model_age < min_age:
-                                    issues.append(f"{model_filename} too recent ({model_age:.1f}h < {min_age}h)")
+                                    issues.append(
+                                        f"{model_filename} too recent ({model_age:.1f}h < {min_age}h)"
+                                    )
                                 else:
-                                    issues.append(f"{model_filename} too old ({model_age:.1f}h > {max_age}h)")
+                                    issues.append(
+                                        f"{model_filename} too old ({model_age:.1f}h > {max_age}h)"
+                                    )
 
                     if horizon_models:
                         horizon_coverage[horizon] = horizon_models
@@ -327,9 +324,9 @@ class SystemReadinessChecker:
                     "coverage_percentage": coverage_percentage,
                     "horizon_coverage": horizon_coverage,
                     "model_details": model_details,
-                    "naming_patterns": naming_patterns
+                    "naming_patterns": naming_patterns,
                 },
-                last_check=datetime.now(timezone.utc)
+                last_check=datetime.now(timezone.utc),
             )
 
         except Exception as e:
@@ -339,7 +336,7 @@ class SystemReadinessChecker:
                 status=ReadinessStatus.NOT_READY,
                 score=0.0,
                 issues=[f"Model check failed: {str(e)}"],
-                last_check=datetime.now(timezone.utc)
+                last_check=datetime.now(timezone.utc),
             )
 
     def _check_data_readiness(self) -> ComponentReadiness:
@@ -370,25 +367,39 @@ class SystemReadinessChecker:
                     file_details[required_file] = {
                         "exists": True,
                         "age_hours": age_hours,
-                        "size_mb": self._get_directory_size_mb(file_path) if file_path.is_dir() else file_path.stat().st_size / (1024 * 1024)
+                        "size_mb": self._get_directory_size_mb(file_path)
+                        if file_path.is_dir()
+                        else file_path.stat().st_size / (1024 * 1024),
                     }
                 else:
                     file_details[required_file] = {"exists": False}
 
             # Check data coverage (mock calculation for now - would be replaced with real logic)
-            coverage_percentage = min(1.0, existing_files / len(required_files)) if required_files else 0.0
+            coverage_percentage = (
+                min(1.0, existing_files / len(required_files)) if required_files else 0.0
+            )
             coverage_compliance = coverage_percentage >= coverage_threshold
 
             # Check integrity violations (would integrate with real integrity system)
             recent_violations = 0  # Would be populated from actual integrity logs
 
             # Generate clean issues list - FILTER OUT NONE VALUES
-            data_issues = [issue for issue in [
-                "No recent data files found" if recent_data_files == 0 else None,
-                f"Data coverage non-compliant: {coverage_percentage:.1%} < {coverage_threshold:.1%}" if not coverage_compliance else None,
-                f"Recent integrity violations detected: {recent_violations}" if recent_violations > violation_threshold else None,
-                f"Missing required files: {len(required_files) - existing_files}/{len(required_files)}" if existing_files < len(required_files) else None
-            ] if issue is not None]
+            data_issues = [
+                issue
+                for issue in [
+                    "No recent data files found" if recent_data_files == 0 else None,
+                    f"Data coverage non-compliant: {coverage_percentage:.1%} < {coverage_threshold:.1%}"
+                    if not coverage_compliance
+                    else None,
+                    f"Recent integrity violations detected: {recent_violations}"
+                    if recent_violations > violation_threshold
+                    else None,
+                    f"Missing required files: {len(required_files) - existing_files}/{len(required_files)}"
+                    if existing_files < len(required_files)
+                    else None,
+                ]
+                if issue is not None
+            ]
 
             # Calculate score
             file_score = (existing_files / len(required_files)) * 40 if required_files else 0
@@ -418,9 +429,9 @@ class SystemReadinessChecker:
                     "coverage_percentage": coverage_percentage,
                     "coverage_compliance": coverage_compliance,
                     "recent_violations": recent_violations,
-                    "file_details": file_details
+                    "file_details": file_details,
                 },
-                last_check=datetime.now(timezone.utc)
+                last_check=datetime.now(timezone.utc),
             )
 
         except Exception as e:
@@ -430,7 +441,7 @@ class SystemReadinessChecker:
                 status=ReadinessStatus.NOT_READY,
                 score=0.0,
                 issues=[f"Data check failed: {str(e)}"],
-                last_check=datetime.now(timezone.utc)
+                last_check=datetime.now(timezone.utc),
             )
 
     def _check_calibration_readiness(self) -> ComponentReadiness:
@@ -452,7 +463,7 @@ class SystemReadinessChecker:
 
                 if file_path.exists():
                     try:
-                        with open(file_path, 'r') as f:
+                        with open(file_path, "r") as f:
                             data = json.load(f)
 
                         calibration_data[calibration_file] = data
@@ -461,23 +472,33 @@ class SystemReadinessChecker:
                         # Check confidence levels
                         confidence = data.get("confidence", 0.0)
                         if confidence < confidence_threshold:
-                            calibration_issues.append(f"Low confidence in {calibration_file}: {confidence:.1%} < {confidence_threshold:.1%}")
+                            calibration_issues.append(
+                                f"Low confidence in {calibration_file}: {confidence:.1%} < {confidence_threshold:.1%}"
+                            )
 
                         # Check drift levels
                         drift = data.get("drift", 0.0)
                         if drift > drift_threshold:
-                            calibration_issues.append(f"High drift in {calibration_file}: {drift:.1%} > {drift_threshold:.1%}")
+                            calibration_issues.append(
+                                f"High drift in {calibration_file}: {drift:.1%} > {drift_threshold:.1%}"
+                            )
 
                     except (json.JSONDecodeError, IOError) as e:
-                        calibration_issues.append(f"Cannot read calibration file {calibration_file}: {e}")
+                        calibration_issues.append(
+                            f"Cannot read calibration file {calibration_file}: {e}"
+                        )
 
             if not calibration_found:
                 calibration_issues.append("No calibration files found")
 
             # Calculate score based on calibration quality
             if calibration_found:
-                avg_confidence = sum(data.get("confidence", 0.0) for data in calibration_data.values()) / len(calibration_data)
-                avg_drift = sum(data.get("drift", 1.0) for data in calibration_data.values()) / len(calibration_data)
+                avg_confidence = sum(
+                    data.get("confidence", 0.0) for data in calibration_data.values()
+                ) / len(calibration_data)
+                avg_drift = sum(data.get("drift", 1.0) for data in calibration_data.values()) / len(
+                    calibration_data
+                )
 
                 confidence_score = min(100, (avg_confidence / confidence_threshold) * 70)
                 drift_score = min(30, (1 - (avg_drift / drift_threshold)) * 30)
@@ -502,9 +523,9 @@ class SystemReadinessChecker:
                     "calibration_files_found": len(calibration_data),
                     "calibration_data": calibration_data,
                     "confidence_threshold": confidence_threshold,
-                    "drift_threshold": drift_threshold
+                    "drift_threshold": drift_threshold,
                 },
-                last_check=datetime.now(timezone.utc)
+                last_check=datetime.now(timezone.utc),
             )
 
         except Exception as e:
@@ -514,7 +535,7 @@ class SystemReadinessChecker:
                 status=ReadinessStatus.NOT_READY,
                 score=0.0,
                 issues=[f"Calibration check failed: {str(e)}"],
-                last_check=datetime.now(timezone.utc)
+                last_check=datetime.now(timezone.utc),
             )
 
     def _check_health_readiness(self) -> ComponentReadiness:
@@ -537,7 +558,7 @@ class SystemReadinessChecker:
 
                 if file_path.exists():
                     try:
-                        with open(file_path, 'r') as f:
+                        with open(file_path, "r") as f:
                             data = json.load(f)
 
                         health_data[health_file] = data
@@ -546,7 +567,9 @@ class SystemReadinessChecker:
                         # Validate health score
                         health_score = data.get("health_score", 0.0)
                         if health_score < health_threshold:
-                            health_issues.append(f"Low health score in {health_file}: {health_score:.1f} < {health_threshold}")
+                            health_issues.append(
+                                f"Low health score in {health_file}: {health_score:.1f} < {health_threshold}"
+                            )
 
                         # Check trading status if required
                         if trading_required and "trading" in health_file:
@@ -558,12 +581,16 @@ class SystemReadinessChecker:
                         if fallback_behavior == "strict":
                             health_issues.append(f"Cannot read health file {health_file}: {e}")
                         else:
-                            self.logger.warning(f"Health file {health_file} unreadable, using lenient fallback: {e}")
+                            self.logger.warning(
+                                f"Health file {health_file} unreadable, using lenient fallback: {e}"
+                            )
                 else:
                     if fallback_behavior == "strict":
                         health_issues.append(f"Required health file missing: {health_file}")
                     else:
-                        self.logger.warning(f"Health file {health_file} missing, using lenient fallback")
+                        self.logger.warning(
+                            f"Health file {health_file} missing, using lenient fallback"
+                        )
 
             # Calculate score based on health status
             if files_found > 0:
@@ -579,7 +606,9 @@ class SystemReadinessChecker:
                     health_quality = min(70, (avg_health_score / health_threshold) * 70)
                     score = file_coverage + health_quality
                 else:
-                    score = (files_found / len(required_files)) * 50  # Partial credit for file existence
+                    score = (
+                        files_found / len(required_files)
+                    ) * 50  # Partial credit for file existence
             else:
                 if fallback_behavior == "strict":
                     score = 0.0
@@ -613,9 +642,9 @@ class SystemReadinessChecker:
                     "total_required": len(required_files),
                     "health_data": health_data,
                     "fallback_behavior": fallback_behavior,
-                    "health_threshold": health_threshold
+                    "health_threshold": health_threshold,
                 },
-                last_check=datetime.now(timezone.utc)
+                last_check=datetime.now(timezone.utc),
             )
 
         except Exception as e:
@@ -625,7 +654,7 @@ class SystemReadinessChecker:
                 status=ReadinessStatus.NOT_READY,
                 score=0.0,
                 issues=[f"Health check failed: {str(e)}"],
-                last_check=datetime.now(timezone.utc)
+                last_check=datetime.now(timezone.utc),
             )
 
     def _calculate_overall_score(self, components: List[ComponentReadiness]) -> float:
@@ -635,12 +664,7 @@ class SystemReadinessChecker:
             return 0.0
 
         # Weighted scoring based on component importance
-        weights = {
-            "models": 0.3,
-            "data": 0.3,
-            "calibration": 0.2,
-            "health": 0.2
-        }
+        weights = {"models": 0.3, "data": 0.3, "calibration": 0.2, "health": 0.2}
 
         total_weighted_score = 0.0
         total_weight = 0.0
@@ -652,7 +676,9 @@ class SystemReadinessChecker:
 
         return total_weighted_score / total_weight if total_weight > 0 else 0.0
 
-    def _determine_overall_status(self, overall_score: float, components: List[ComponentReadiness]) -> ReadinessStatus:
+    def _determine_overall_status(
+        self, overall_score: float, components: List[ComponentReadiness]
+    ) -> ReadinessStatus:
         """Determine overall readiness status"""
 
         readiness_config = self.config["readiness"]
@@ -661,7 +687,10 @@ class SystemReadinessChecker:
 
         # Check if any critical component is not ready
         for component in components:
-            if component.component in critical_components and component.status == ReadinessStatus.NOT_READY:
+            if (
+                component.component in critical_components
+                and component.status == ReadinessStatus.NOT_READY
+            ):
                 return ReadinessStatus.NOT_READY
 
         # Overall score-based determination
@@ -672,7 +701,9 @@ class SystemReadinessChecker:
         else:
             return ReadinessStatus.NOT_READY
 
-    def _make_go_no_go_decision(self, overall_score: float, components: List[ComponentReadiness]) -> bool:
+    def _make_go_no_go_decision(
+        self, overall_score: float, components: List[ComponentReadiness]
+    ) -> bool:
         """Make GO/NO-GO decision for system operation"""
 
         readiness_config = self.config["readiness"]
@@ -685,22 +716,30 @@ class SystemReadinessChecker:
 
         # All critical components must be ready or warning (not not_ready)
         for component in components:
-            if (component.component in critical_components and
-                component.status == ReadinessStatus.NOT_READY):
+            if (
+                component.component in critical_components
+                and component.status == ReadinessStatus.NOT_READY
+            ):
                 return False
 
         return True
 
-    def _generate_recommendations(self, components: List[ComponentReadiness], overall_status: ReadinessStatus) -> List[str]:
+    def _generate_recommendations(
+        self, components: List[ComponentReadiness], overall_status: ReadinessStatus
+    ) -> List[str]:
         """Generate actionable recommendations"""
 
         recommendations = []
 
         # Overall recommendations
         if overall_status == ReadinessStatus.NOT_READY:
-            recommendations.append("System not ready for operation - address critical issues before deployment")
+            recommendations.append(
+                "System not ready for operation - address critical issues before deployment"
+            )
         elif overall_status == ReadinessStatus.WARNING:
-            recommendations.append("System operational with warnings - monitor closely and address issues")
+            recommendations.append(
+                "System operational with warnings - monitor closely and address issues"
+            )
 
         # Component-specific recommendations
         for component in components:
@@ -731,7 +770,7 @@ class SystemReadinessChecker:
             timestamp=datetime.now(timezone.utc),
             summary=f"Readiness check failed: {error_message}",
             recommendations=["Fix readiness checker system before proceeding"],
-            metadata={"emergency_report": True, "error": error_message}
+            metadata={"emergency_report": True, "error": error_message},
         )
 
     def _get_file_age_hours(self, file_path: Path) -> float:
@@ -749,18 +788,18 @@ class SystemReadinessChecker:
                     age_seconds = datetime.now().timestamp() - newest_time
                     return age_seconds / 3600
                 else:
-                    return float('inf')  # Empty directory
+                    return float("inf")  # Empty directory
             else:
                 age_seconds = datetime.now().timestamp() - file_path.stat().st_mtime
                 return age_seconds / 3600
         except OSError:
-            return float('inf')
+            return float("inf")
 
     def _get_directory_size_mb(self, dir_path: Path) -> float:
         """Get directory size in MB"""
 
         try:
-            total_size = sum(f.stat().st_size for f in dir_path.rglob('*') if f.is_file())
+            total_size = sum(f.stat().st_size for f in dir_path.rglob("*") if f.is_file())
             return total_size / (1024 * 1024)
         except OSError:
             return 0.0
@@ -791,12 +830,16 @@ class SystemReadinessChecker:
             "last_check": self.last_check.timestamp.isoformat() if self.last_check else None,
             "total_checks": self.check_count,
             "average_check_time": self.total_check_time / max(1, self.check_count),
-            "current_status": self.last_check.overall_status.value if self.last_check else "unknown",
+            "current_status": self.last_check.overall_status.value
+            if self.last_check
+            else "unknown",
             "current_score": self.last_check.overall_score if self.last_check else 0.0,
-            "go_no_go_decision": self.last_check.go_no_go_decision if self.last_check else False
+            "go_no_go_decision": self.last_check.go_no_go_decision if self.last_check else False,
         }
 
+
 # Utility functions
+
 
 def quick_readiness_check() -> Dict[str, Any]:
     """Perform quick system readiness check"""
@@ -810,8 +853,9 @@ def quick_readiness_check() -> Dict[str, Any]:
         "go_no_go": report.go_no_go_decision,
         "summary": report.summary,
         "issues": sum(len(c.issues) for c in report.components),
-        "timestamp": report.timestamp.isoformat()
+        "timestamp": report.timestamp.isoformat(),
     }
+
 
 if __name__ == "__main__":
     # Test system readiness checking

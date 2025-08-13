@@ -13,7 +13,8 @@ from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 # RL and ML imports
 from sklearn.preprocessing import StandardScaler
@@ -24,9 +25,11 @@ import torch.optim as optim
 from collections import deque
 import random
 
+
 @dataclass
 class PortfolioState:
     """Portfolio state representation"""
+
     timestamp: datetime
     prices: np.ndarray
     returns: np.ndarray
@@ -37,9 +40,11 @@ class PortfolioState:
     portfolio_value: float
     cash_ratio: float
 
+
 @dataclass
 class AllocationAction:
     """Portfolio allocation action"""
+
     timestamp: datetime
     target_allocation: np.ndarray
     rebalance_amount: np.ndarray
@@ -47,9 +52,11 @@ class AllocationAction:
     confidence: float
     reasoning: str
 
+
 @dataclass
 class PortfolioPerformance:
     """Portfolio performance metrics"""
+
     timestamp: datetime
     portfolio_value: float
     returns: float
@@ -59,6 +66,7 @@ class PortfolioPerformance:
     win_rate: float
     total_transactions: int
     transaction_costs: float
+
 
 class PPOActor(nn.Module):
     """PPO Actor Network for continuous portfolio allocation"""
@@ -75,7 +83,7 @@ class PPOActor(nn.Module):
             nn.Dropout(0.1),
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
-            nn.Linear(hidden_dim // 2, action_dim)
+            nn.Linear(hidden_dim // 2, action_dim),
         )
 
         # Initialize weights
@@ -94,6 +102,7 @@ class PPOActor(nn.Module):
 
         return allocation_probs
 
+
 class PPOCritic(nn.Module):
     """PPO Critic Network for value estimation"""
 
@@ -109,7 +118,7 @@ class PPOCritic(nn.Module):
             nn.Dropout(0.1),
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
-            nn.Linear(hidden_dim // 2, 1)
+            nn.Linear(hidden_dim // 2, 1),
         )
 
         # Initialize weights
@@ -122,11 +131,16 @@ class PPOCritic(nn.Module):
         """Forward pass through critic network"""
         return self.network(state)
 
+
 class TradingEnvironment:
     """Cryptocurrency trading environment for RL training"""
 
-    def __init__(self, market_data: pd.DataFrame, initial_capital: float = 100000.0,
-                 transaction_cost: float = 0.001):
+    def __init__(
+        self,
+        market_data: pd.DataFrame,
+        initial_capital: float = 100000.0,
+        transaction_cost: float = 0.001,
+    ):
         self.market_data = market_data
         self.initial_capital = initial_capital
         self.transaction_cost = transaction_cost
@@ -140,7 +154,7 @@ class TradingEnvironment:
         self.performance_history = []
 
         # Market features
-        self.coin_columns = [col for col in market_data.columns if 'price' in col.lower()]
+        self.coin_columns = [col for col in market_data.columns if "price" in col.lower()]
         self.n_assets = len(self.coin_columns)
 
         # Preprocessors
@@ -154,18 +168,30 @@ class TradingEnvironment:
         # Calculate returns
         for col in self.coin_columns:
             self.market_data[f"{col}_return"] = self.market_data[col].pct_change()
-            self.market_data[f"{col}_volatility"] = self.market_data[f"{col}_return"].rolling(24).std()
+            self.market_data[f"{col}_volatility"] = (
+                self.market_data[f"{col}_return"].rolling(24).std()
+            )
 
         # Calculate market features
-        self.market_data['market_volatility'] = self.market_data[[f"{col}_return" for col in self.coin_columns]].std(axis=1)
-        self.market_data['market_momentum'] = self.market_data[[f"{col}_return" for col in self.coin_columns]].mean(axis=1)
+        self.market_data["market_volatility"] = self.market_data[
+            [f"{col}_return" for col in self.coin_columns]
+        ].std(axis=1)
+        self.market_data["market_momentum"] = self.market_data[
+            [f"{col}_return" for col in self.coin_columns]
+        ].mean(axis=1)
 
         # Drop NaN values
         self.market_data = self.market_data.dropna()
 
         # Normalize features
-        feature_columns = [col for col in self.market_data.columns if 'return' in col or 'volatility' in col or 'momentum' in col]
-        self.market_data[feature_columns] = self.scaler.fit_transform(self.market_data[feature_columns])
+        feature_columns = [
+            col
+            for col in self.market_data.columns
+            if "return" in col or "volatility" in col or "momentum" in col
+        ]
+        self.market_data[feature_columns] = self.scaler.fit_transform(
+            self.market_data[feature_columns]
+        )
 
     def reset(self) -> np.ndarray:
         """Reset environment to initial state"""
@@ -195,26 +221,24 @@ class TradingEnvironment:
         volatilities = np.array([current_data[f"{col}_volatility"] for col in self.coin_columns])
 
         # Market features
-        market_features = np.array([
-            current_data['market_volatility'],
-            current_data['market_momentum']
-        ])
+        market_features = np.array(
+            [current_data["market_volatility"], current_data["market_momentum"]]
+        )
 
         # Portfolio features
-        current_allocation = np.array([self.holdings.get(coin, 0.0) / max(self.portfolio_value, 1.0)
-                                     for coin in self.coin_columns])
+        current_allocation = np.array(
+            [
+                self.holdings.get(coin, 0.0) / max(self.portfolio_value, 1.0)
+                for coin in self.coin_columns
+            ]
+        )
 
         cash_ratio = self.cash / max(self.portfolio_value, 1.0)
 
         # Combine all features
-        state = np.concatenate([
-            prices,
-            returns,
-            volatilities,
-            market_features,
-            current_allocation,
-            [cash_ratio]
-        ])
+        state = np.concatenate(
+            [prices, returns, volatilities, market_features, current_allocation, [cash_ratio]]
+        )
 
         return state.astype(np.float32)
 
@@ -225,14 +249,20 @@ class TradingEnvironment:
         action = np.clip(action, 0.0, 1.0)
 
         # Calculate current portfolio value
-        current_prices = np.array([self.market_data.iloc[self.current_step][col] for col in self.coin_columns])
+        current_prices = np.array(
+            [self.market_data.iloc[self.current_step][col] for col in self.coin_columns]
+        )
 
         # Calculate target allocation in dollars
         target_allocation_dollars = action * self.portfolio_value
 
         # Calculate rebalancing needed
-        current_allocation_dollars = np.array([self.holdings.get(coin, 0.0) * current_prices[i]
-                                             for i, coin in enumerate(self.coin_columns)])
+        current_allocation_dollars = np.array(
+            [
+                self.holdings.get(coin, 0.0) * current_prices[i]
+                for i, coin in enumerate(self.coin_columns)
+            ]
+        )
 
         rebalance_amounts = target_allocation_dollars - current_allocation_dollars
 
@@ -245,16 +275,27 @@ class TradingEnvironment:
                 self.holdings[coin] = target_allocation_dollars[i] / current_prices[i]
 
         # Update cash
-        self.cash = max(0.0, self.portfolio_value - np.sum(target_allocation_dollars) - transaction_cost_total)
+        self.cash = max(
+            0.0, self.portfolio_value - np.sum(target_allocation_dollars) - transaction_cost_total
+        )
 
         # Move to next step
         self.current_step += 1
 
         # Calculate new portfolio value
         if self.current_step < len(self.market_data):
-            new_prices = np.array([self.market_data.iloc[self.current_step][col] for col in self.coin_columns])
-            new_portfolio_value = np.sum([self.holdings.get(coin, 0.0) * new_prices[i]
-                                        for i, coin in enumerate(self.coin_columns)]) + self.cash
+            new_prices = np.array(
+                [self.market_data.iloc[self.current_step][col] for col in self.coin_columns]
+            )
+            new_portfolio_value = (
+                np.sum(
+                    [
+                        self.holdings.get(coin, 0.0) * new_prices[i]
+                        for i, coin in enumerate(self.coin_columns)
+                    ]
+                )
+                + self.cash
+            )
         else:
             new_portfolio_value = self.portfolio_value
 
@@ -270,30 +311,37 @@ class TradingEnvironment:
 
         # Create info
         info = {
-            'portfolio_value': self.portfolio_value,
-            'transaction_cost': transaction_cost_total,
-            'allocation': action.copy(),
-            'return': (new_portfolio_value - previous_value) / previous_value if previous_value > 0 else 0.0
+            "portfolio_value": self.portfolio_value,
+            "transaction_cost": transaction_cost_total,
+            "allocation": action.copy(),
+            "return": (new_portfolio_value - previous_value) / previous_value
+            if previous_value > 0
+            else 0.0,
         }
 
         # Store allocation history
-        self.allocation_history.append({
-            'timestamp': self.market_data.index[self.current_step - 1],
-            'allocation': action.copy(),
-            'portfolio_value': self.portfolio_value,
-            'transaction_cost': transaction_cost_total
-        })
+        self.allocation_history.append(
+            {
+                "timestamp": self.market_data.index[self.current_step - 1],
+                "allocation": action.copy(),
+                "portfolio_value": self.portfolio_value,
+                "transaction_cost": transaction_cost_total,
+            }
+        )
 
         return self._get_state(), reward, done, info
 
-    def _calculate_reward(self, new_portfolio_value: float, transaction_cost: float,
-                         allocation: np.ndarray) -> float:
+    def _calculate_reward(
+        self, new_portfolio_value: float, transaction_cost: float, allocation: np.ndarray
+    ) -> float:
         """Calculate reward for the current action"""
         # Portfolio return
-        portfolio_return = (new_portfolio_value - self.portfolio_value) / max(self.portfolio_value, 1.0)
+        portfolio_return = (new_portfolio_value - self.portfolio_value) / max(
+            self.portfolio_value, 1.0
+        )
 
         # Risk penalty (concentration penalty)
-        concentration_penalty = np.sum(allocation ** 2)  # Herfindahl index
+        concentration_penalty = np.sum(allocation**2)  # Herfindahl index
 
         # Transaction cost penalty
         cost_penalty = transaction_cost / max(self.portfolio_value, 1.0)
@@ -306,6 +354,7 @@ class TradingEnvironment:
             reward += 0.1 * portfolio_return
 
         return reward
+
 
 class PPOPortfolioAgent:
     """PPO-based portfolio allocation agent"""
@@ -362,8 +411,15 @@ class PPOPortfolioAgent:
 
         return action, log_prob
 
-    def store_transition(self, state: np.ndarray, action: np.ndarray, reward: float,
-                        value: float, log_prob: float, done: bool):
+    def store_transition(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: float,
+        value: float,
+        log_prob: float,
+        done: bool,
+    ):
         """Store transition for training"""
         self.states.append(state)
         self.actions.append(action)
@@ -410,7 +466,9 @@ class PPOPortfolioAgent:
         returns_tensor = torch.FloatTensor(returns)
 
         # Normalize advantages
-        advantages_tensor = (advantages_tensor - advantages_tensor.mean()) / (advantages_tensor.std() + 1e-8)
+        advantages_tensor = (advantages_tensor - advantages_tensor.mean()) / (
+            advantages_tensor.std() + 1e-8
+        )
 
         # PPO update
         for epoch in range(n_epochs):
@@ -451,7 +509,10 @@ class PPOPortfolioAgent:
         self.log_probs.clear()
         self.dones.clear()
 
-        self.logger.info(f"PPO update completed - Action Loss: {action_loss:.4f}, Value Loss: {value_loss:.4f}")
+        self.logger.info(
+            f"PPO update completed - Action Loss: {action_loss:.4f}, Value Loss: {value_loss:.4f}"
+        )
+
 
 class ReinforcementPortfolioAllocator:
     """Main RL-based portfolio allocation system"""
@@ -481,29 +542,24 @@ class ReinforcementPortfolioAllocator:
                 "episodes": 1000,
                 "learning_rate": 3e-4,
                 "update_frequency": 10,
-                "batch_size": 64
+                "batch_size": 64,
             },
             "environment": {
                 "initial_capital": 100000.0,
                 "transaction_cost": 0.001,
-                "lookback_window": 24
+                "lookback_window": 24,
             },
-            "agent": {
-                "hidden_dim": 256,
-                "epsilon": 0.2,
-                "gamma": 0.99,
-                "lambda_gae": 0.95
-            },
+            "agent": {"hidden_dim": 256, "epsilon": 0.2, "gamma": 0.99, "lambda_gae": 0.95},
             "risk_management": {
                 "max_allocation_per_asset": 0.4,
                 "min_allocation_per_asset": 0.02,
-                "rebalance_threshold": 0.05
-            }
+                "rebalance_threshold": 0.05,
+            },
         }
 
         try:
             if self.config_path.exists():
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path, "r") as f:
                     loaded_config = json.load(f)
                     default_config.update(loaded_config)
         except Exception as e:
@@ -517,7 +573,7 @@ class ReinforcementPortfolioAllocator:
             self.environment = TradingEnvironment(
                 market_data,
                 initial_capital=self.config["environment"]["initial_capital"],
-                transaction_cost=self.config["environment"]["transaction_cost"]
+                transaction_cost=self.config["environment"]["transaction_cost"],
             )
 
             # Setup agent
@@ -527,10 +583,12 @@ class ReinforcementPortfolioAllocator:
             self.agent = PPOPortfolioAgent(
                 state_dim=state_dim,
                 action_dim=action_dim,
-                lr=self.config["training"]["learning_rate"]
+                lr=self.config["training"]["learning_rate"],
             )
 
-            self.logger.info(f"Environment setup: {action_dim} assets, {state_dim} state dimensions")
+            self.logger.info(
+                f"Environment setup: {action_dim} assets, {state_dim} state dimensions"
+            )
 
         except Exception as e:
             self.logger.error(f"Error setting up environment: {e}")
@@ -548,7 +606,7 @@ class ReinforcementPortfolioAllocator:
             "episodes": [],
             "rewards": [],
             "portfolio_values": [],
-            "sharpe_ratios": []
+            "sharpe_ratios": [],
         }
 
         try:
@@ -573,7 +631,7 @@ class ReinforcementPortfolioAllocator:
                     self.agent.store_transition(state, action, reward, value, log_prob, done)
 
                     episode_reward += reward
-                    episode_returns.append(info['return'])
+                    episode_returns.append(info["return"])
 
                     state = next_state
 
@@ -596,9 +654,11 @@ class ReinforcementPortfolioAllocator:
 
                 # Log progress
                 if episode % 100 == 0:
-                    self.logger.info(f"Episode {episode}: Reward={episode_reward:.4f}, "
-                                   f"Portfolio Value=${final_portfolio_value:.2f}, "
-                                   f"Sharpe Ratio={episode_sharpe:.4f}")
+                    self.logger.info(
+                        f"Episode {episode}: Reward={episode_reward:.4f}, "
+                        f"Portfolio Value=${final_portfolio_value:.2f}, "
+                        f"Sharpe Ratio={episode_sharpe:.4f}"
+                    )
 
             self.is_trained = True
             self.training_history = training_results
@@ -611,7 +671,7 @@ class ReinforcementPortfolioAllocator:
                 "final_portfolio_value": training_results["portfolio_values"][-1],
                 "final_sharpe_ratio": training_results["sharpe_ratios"][-1],
                 "average_reward": np.mean(training_results["rewards"][-100:]),  # Last 100 episodes
-                "training_results": training_results
+                "training_results": training_results,
             }
 
         except Exception as e:
@@ -623,7 +683,7 @@ class ReinforcementPortfolioAllocator:
         try:
             if not self.is_trained or self.agent is None:
                 # Fallback to equal weight allocation
-                n_assets = len(current_state.get('prices', []))
+                n_assets = len(current_state.get("prices", []))
                 if n_assets == 0:
                     n_assets = 5  # Default
 
@@ -635,7 +695,7 @@ class ReinforcementPortfolioAllocator:
                     rebalance_amount=np.zeros(n_assets),
                     transaction_cost=0.0,
                     confidence=0.5,
-                    reasoning="Equal weight allocation (agent not trained)"
+                    reasoning="Equal weight allocation (agent not trained)",
                 )
 
             # Prepare state vector
@@ -648,11 +708,13 @@ class ReinforcementPortfolioAllocator:
             allocation = self._apply_risk_constraints(allocation)
 
             # Calculate rebalancing needed
-            current_allocation = np.array(current_state.get('current_allocation', allocation))
+            current_allocation = np.array(current_state.get("current_allocation", allocation))
             rebalance_amount = allocation - current_allocation
 
             # Estimate transaction cost
-            transaction_cost = np.sum(np.abs(rebalance_amount)) * self.config["environment"]["transaction_cost"]
+            transaction_cost = (
+                np.sum(np.abs(rebalance_amount)) * self.config["environment"]["transaction_cost"]
+            )
 
             # Calculate confidence based on action certainty
             confidence = self._calculate_confidence(allocation)
@@ -666,7 +728,7 @@ class ReinforcementPortfolioAllocator:
                 rebalance_amount=rebalance_amount,
                 transaction_cost=transaction_cost,
                 confidence=confidence,
-                reasoning=reasoning
+                reasoning=reasoning,
             )
 
         except Exception as e:
@@ -681,28 +743,23 @@ class ReinforcementPortfolioAllocator:
                 rebalance_amount=np.zeros(n_assets),
                 transaction_cost=0.0,
                 confidence=0.1,
-                reasoning=f"Error in allocation calculation: {e}"
+                reasoning=f"Error in allocation calculation: {e}",
             )
 
     def _prepare_state_vector(self, current_state: Dict[str, Any]) -> np.ndarray:
         """Prepare state vector from current market state"""
         # Extract features from current state
-        prices = np.array(current_state.get('prices', [1.0] * 5))
-        returns = np.array(current_state.get('returns', [0.0] * 5))
-        volatilities = np.array(current_state.get('volatilities', [0.1] * 5))
-        market_features = np.array(current_state.get('market_features', [0.0, 0.0]))
-        current_allocation = np.array(current_state.get('current_allocation', [0.2] * 5))
-        cash_ratio = current_state.get('cash_ratio', 0.0)
+        prices = np.array(current_state.get("prices", [1.0] * 5))
+        returns = np.array(current_state.get("returns", [0.0] * 5))
+        volatilities = np.array(current_state.get("volatilities", [0.1] * 5))
+        market_features = np.array(current_state.get("market_features", [0.0, 0.0]))
+        current_allocation = np.array(current_state.get("current_allocation", [0.2] * 5))
+        cash_ratio = current_state.get("cash_ratio", 0.0)
 
         # Combine all features
-        state_vector = np.concatenate([
-            prices,
-            returns,
-            volatilities,
-            market_features,
-            current_allocation,
-            [cash_ratio]
-        ])
+        state_vector = np.concatenate(
+            [prices, returns, volatilities, market_features, current_allocation, [cash_ratio]]
+        )
 
         return state_vector.astype(np.float32)
 
@@ -722,7 +779,7 @@ class ReinforcementPortfolioAllocator:
     def _calculate_confidence(self, allocation: np.ndarray) -> float:
         """Calculate confidence in allocation decision"""
         # Higher concentration = higher confidence in specific assets
-        concentration = np.sum(allocation ** 2)  # Herfindahl index
+        concentration = np.sum(allocation**2)  # Herfindahl index
 
         # Convert to confidence score (0 to 1)
         # More concentrated allocations get higher confidence
@@ -730,20 +787,21 @@ class ReinforcementPortfolioAllocator:
 
         return confidence
 
-    def _generate_allocation_reasoning(self, allocation: np.ndarray,
-                                     current_state: Dict[str, Any]) -> str:
+    def _generate_allocation_reasoning(
+        self, allocation: np.ndarray, current_state: Dict[str, Any]
+    ) -> str:
         """Generate human-readable reasoning for allocation"""
         # Find top allocations
         top_indices = np.argsort(allocation)[-3:][::-1]  # Top 3
 
         reasoning_parts = []
 
-        coin_names = current_state.get('coin_names', [f'Asset_{i}' for i in range(len(allocation))])
+        coin_names = current_state.get("coin_names", [f"Asset_{i}" for i in range(len(allocation))])
 
         for i in top_indices:
             percentage = allocation[i] * 100
             if percentage > 5:  # Only mention significant allocations
-                coin_name = coin_names[i] if i < len(coin_names) else f'Asset_{i}'
+                coin_name = coin_names[i] if i < len(coin_names) else f"Asset_{i}"
                 reasoning_parts.append(f"{coin_name}: {percentage:.1f}%")
 
         if len(reasoning_parts) > 0:
@@ -752,7 +810,7 @@ class ReinforcementPortfolioAllocator:
             reasoning = "Diversified allocation across all assets"
 
         # Add market context
-        returns = current_state.get('returns', [])
+        returns = current_state.get("returns", [])
         if len(returns) > 0:
             avg_return = np.mean(returns)
             if avg_return > 0.02:
@@ -803,10 +861,10 @@ class ReinforcementPortfolioAllocator:
                 next_state, reward, done, info = self.environment.step(action)
 
                 # Store metrics
-                portfolio_values.append(info['portfolio_value'])
-                returns.append(info['return'])
-                transaction_costs.append(info['transaction_cost'])
-                allocations.append(info['allocation'])
+                portfolio_values.append(info["portfolio_value"])
+                returns.append(info["return"])
+                transaction_costs.append(info["transaction_cost"])
+                allocations.append(info["allocation"])
 
                 state = next_state
 
@@ -838,13 +896,15 @@ class ReinforcementPortfolioAllocator:
                 max_drawdown=abs(max_drawdown),
                 win_rate=win_rate,
                 total_transactions=len(transaction_costs),
-                transaction_costs=sum(transaction_costs)
+                transaction_costs=sum(transaction_costs),
             )
 
             self.performance_metrics.append(performance)
 
-            self.logger.info(f"Performance evaluation: Return={total_return:.2%}, "
-                           f"Sharpe={sharpe_ratio:.4f}, Max DD={abs(max_drawdown):.2%}")
+            self.logger.info(
+                f"Performance evaluation: Return={total_return:.2%}, "
+                f"Sharpe={sharpe_ratio:.4f}, Max DD={abs(max_drawdown):.2%}"
+            )
 
             return performance
 
@@ -857,20 +917,30 @@ class ReinforcementPortfolioAllocator:
         try:
             summary = {
                 "training_status": self.is_trained,
-                "training_episodes": len(self.training_history.get("episodes", [])) if self.training_history else 0,
+                "training_episodes": len(self.training_history.get("episodes", []))
+                if self.training_history
+                else 0,
                 "performance_evaluations": len(self.performance_metrics),
-                "last_updated": datetime.now().isoformat()
+                "last_updated": datetime.now().isoformat(),
             }
 
             # Add training results if available
             if self.training_history:
-                recent_rewards = self.training_history["rewards"][-100:] if self.training_history["rewards"] else []
-                recent_values = self.training_history["portfolio_values"][-100:] if self.training_history["portfolio_values"] else []
+                recent_rewards = (
+                    self.training_history["rewards"][-100:]
+                    if self.training_history["rewards"]
+                    else []
+                )
+                recent_values = (
+                    self.training_history["portfolio_values"][-100:]
+                    if self.training_history["portfolio_values"]
+                    else []
+                )
 
                 summary["training_results"] = {
                     "average_recent_reward": np.mean(recent_rewards) if recent_rewards else 0.0,
                     "best_portfolio_value": max(recent_values) if recent_values else 0.0,
-                    "final_portfolio_value": recent_values[-1] if recent_values else 0.0
+                    "final_portfolio_value": recent_values[-1] if recent_values else 0.0,
                 }
 
             # Add latest performance if available
@@ -888,6 +958,7 @@ class ReinforcementPortfolioAllocator:
 # Singleton instance
 _rl_portfolio_allocator = None
 
+
 def get_rl_portfolio_allocator() -> ReinforcementPortfolioAllocator:
     """Get or create RL portfolio allocator singleton"""
     global _rl_portfolio_allocator
@@ -895,16 +966,19 @@ def get_rl_portfolio_allocator() -> ReinforcementPortfolioAllocator:
         _rl_portfolio_allocator = ReinforcementPortfolioAllocator()
     return _rl_portfolio_allocator
 
+
 def train_rl_allocator(market_data: pd.DataFrame, n_episodes: int = 500) -> Dict[str, Any]:
     """Convenient function to train RL allocator"""
     allocator = get_rl_portfolio_allocator()
     allocator.setup_environment(market_data)
     return allocator.train_agent(n_episodes)
 
+
 def get_optimal_allocation(current_state: Dict[str, Any]) -> AllocationAction:
     """Convenient function to get optimal allocation"""
     allocator = get_rl_portfolio_allocator()
     return allocator.get_optimal_allocation(current_state)
+
 
 def evaluate_rl_performance(market_data: pd.DataFrame) -> PortfolioPerformance:
     """Convenient function to evaluate RL performance"""

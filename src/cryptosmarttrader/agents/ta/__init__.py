@@ -9,11 +9,13 @@ Advanced technical indicator computation and pattern recognition
 # from .patterns import PatternRecognition
 # from .ta_models import TechnicalEnsemble
 
+
 # Stub for workstation compatibility
 class TechnicalAnalysisAgent:
     def __init__(self):
         pass
 
+
 __all__ = [
-    'TechnicalAnalysisAgent',
+    "TechnicalAnalysisAgent",
 ]

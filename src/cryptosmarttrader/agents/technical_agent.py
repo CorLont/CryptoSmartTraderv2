@@ -17,12 +17,14 @@ import logging
 # Try TA-Lib import with fallback
 try:
     import talib
+
     TA_AVAILABLE = True
 except ImportError:
     TA_AVAILABLE = False
     talib = None
 
 from ..core.consolidated_logging_manager import get_consolidated_logger
+
 
 class TechnicalAgent:
     """Enterprise threaded TA agent with proper lifecycle and authentic indicators"""
@@ -84,7 +86,7 @@ class TechnicalAgent:
                 start_time = time.time()
 
                 # Perform analysis for major pairs
-                major_pairs = ['BTCUSD', 'ETHUSD', 'ADAUSD', 'SOLUSD', 'DOTUSD']
+                major_pairs = ["BTCUSD", "ETHUSD", "ADAUSD", "SOLUSD", "DOTUSD"]
 
                 analysis_results = {}
                 for pair in major_pairs:
@@ -106,11 +108,15 @@ class TechnicalAgent:
                         self.last_analysis_time = datetime.now(timezone.utc)
 
                     self.analysis_count += 1
-                    self.logger.info(f"Technical analysis completed for {len(analysis_results)} pairs")
+                    self.logger.info(
+                        f"Technical analysis completed for {len(analysis_results)} pairs"
+                    )
 
                 # Performance logging
                 elapsed = time.time() - start_time
-                self.logger.log_performance_metric("technical_analysis_duration", elapsed, "seconds")
+                self.logger.log_performance_metric(
+                    "technical_analysis_duration", elapsed, "seconds"
+                )
 
                 # Sleep until next analysis
                 if self.active:
@@ -146,15 +152,15 @@ class TechnicalAgent:
             )
 
             analysis_result = {
-                'pair': pair,
-                'timestamp': datetime.now(timezone.utc).isoformat(),
-                'trend': trend_analysis,
-                'momentum': momentum_analysis,
-                'volatility': volatility_analysis,
-                'support_resistance': support_resistance,
-                'overall_signal': overall_signal,
-                'data_quality': 'authentic',
-                'analysis_method': 'talib' if TA_AVAILABLE else 'custom_safe'
+                "pair": pair,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "trend": trend_analysis,
+                "momentum": momentum_analysis,
+                "volatility": volatility_analysis,
+                "support_resistance": support_resistance,
+                "overall_signal": overall_signal,
+                "data_quality": "authentic",
+                "analysis_method": "talib" if TA_AVAILABLE else "custom_safe",
             }
 
             return analysis_result
@@ -171,26 +177,26 @@ class TechnicalAgent:
             data_paths = [
                 f"data/market_data/{pair.lower()}_1h.csv",
                 f"data/historical/{pair.lower()}.csv",
-                f"cache/market_data/{pair.lower()}.json"
+                f"cache/market_data/{pair.lower()}.json",
             ]
 
             for data_path in data_paths:
                 path = Path(data_path)
                 if path.exists():
                     try:
-                        if path.suffix == '.csv':
+                        if path.suffix == ".csv":
                             df = pd.read_csv(path)
-                        elif path.suffix == '.json':
+                        elif path.suffix == ".json":
                             df = pd.read_json(path)
                         else:
                             continue
 
                         # Validate data structure
-                        required_columns = ['open', 'high', 'low', 'close', 'volume']
+                        required_columns = ["open", "high", "low", "close", "volume"]
                         if all(col in df.columns for col in required_columns):
                             # Safe timestamp handling
-                            if 'timestamp' in df.columns:
-                                df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+                            if "timestamp" in df.columns:
+                                df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
                             return df.tail(100)  # Last 100 candles
                     except Exception as e:
                         self.logger.warning(f"Failed to load {data_path}: {e}")
@@ -207,7 +213,7 @@ class TechnicalAgent:
     def _analyze_trend(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Analyze trend using EMA and SMA with safe calculations"""
 
-        close = df['close'].astype(float)
+        close = df["close"].astype(float)
 
         try:
             if TA_AVAILABLE and talib:
@@ -235,29 +241,29 @@ class TechnicalAgent:
             ema_26_val = ema_26.iloc[-1] if not pd.isna(ema_26.iloc[-1]) else current_price
             sma_50_val = sma_50.iloc[-1] if not pd.isna(sma_50.iloc[-1]) else current_price
 
-            trend_direction = 'neutral'
+            trend_direction = "neutral"
             if ema_12_val > ema_26_val and current_price > sma_50_val:
-                trend_direction = 'bullish'
+                trend_direction = "bullish"
             elif ema_12_val < ema_26_val and current_price < sma_50_val:
-                trend_direction = 'bearish'
+                trend_direction = "bearish"
 
             return {
-                'direction': trend_direction,
-                'ema_12': float(ema_12_val),
-                'ema_26': float(ema_26_val),
-                'sma_50': float(sma_50_val),
-                'current_price': float(current_price),
-                'strength': abs(ema_12_val - ema_26_val) / max(current_price, 1e-9)
+                "direction": trend_direction,
+                "ema_12": float(ema_12_val),
+                "ema_26": float(ema_26_val),
+                "sma_50": float(sma_50_val),
+                "current_price": float(current_price),
+                "strength": abs(ema_12_val - ema_26_val) / max(current_price, 1e-9),
             }
 
         except Exception as e:
             self.logger.error(f"Trend analysis error: {e}")
-            return {'direction': 'neutral', 'error': str(e)}
+            return {"direction": "neutral", "error": str(e)}
 
     def _analyze_momentum(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Analyze momentum with MACD bias fix and safe calculations"""
 
-        close = df['close'].astype(float)
+        close = df["close"].astype(float)
 
         try:
             if TA_AVAILABLE and talib:
@@ -287,7 +293,11 @@ class TechnicalAgent:
 
             # Safe value extraction with proper Series handling
             macd_val = float(macd.iloc[-1]) if len(macd) > 0 and not pd.isna(macd.iloc[-1]) else 0.0
-            macd_signal_val = float(macd_signal.iloc[-1]) if len(macd_signal) > 0 and not pd.isna(macd_signal.iloc[-1]) else 0.0
+            macd_signal_val = (
+                float(macd_signal.iloc[-1])
+                if len(macd_signal) > 0 and not pd.isna(macd_signal.iloc[-1])
+                else 0.0
+            )
             rsi_val = float(rsi.iloc[-1]) if len(rsi) > 0 and not pd.isna(rsi.iloc[-1]) else 50.0
 
             # MACD bias fix - explicit True/False/None handling
@@ -296,24 +306,24 @@ class TechnicalAgent:
                 macd_bullish = macd_val > macd_signal_val
 
             return {
-                'macd_bullish': macd_bullish,
-                'macd_value': float(macd_val),
-                'macd_signal': float(macd_signal_val),
-                'rsi': float(rsi_val),
-                'rsi_overbought': rsi_val > 70,
-                'rsi_oversold': rsi_val < 30
+                "macd_bullish": macd_bullish,
+                "macd_value": float(macd_val),
+                "macd_signal": float(macd_signal_val),
+                "rsi": float(rsi_val),
+                "rsi_overbought": rsi_val > 70,
+                "rsi_oversold": rsi_val < 30,
             }
 
         except Exception as e:
             self.logger.error(f"Momentum analysis error: {e}")
-            return {'macd_bullish': None, 'error': str(e)}
+            return {"macd_bullish": None, "error": str(e)}
 
     def _analyze_volatility(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Analyze volatility with Bollinger Bands - division by zero fix"""
 
-        close = df['close'].astype(float)
-        high = df['high'].astype(float)
-        low = df['low'].astype(float)
+        close = df["close"].astype(float)
+        high = df["high"].astype(float)
+        low = df["low"].astype(float)
 
         try:
             if TA_AVAILABLE and talib:
@@ -342,9 +352,21 @@ class TechnicalAgent:
 
             # Safe value extraction with division by zero protection
             current_price = float(close.iloc[-1])
-            bb_upper_val = float(bb_upper.iloc[-1]) if len(bb_upper) > 0 and not pd.isna(bb_upper.iloc[-1]) else current_price
-            bb_lower_val = float(bb_lower.iloc[-1]) if len(bb_lower) > 0 and not pd.isna(bb_lower.iloc[-1]) else current_price
-            bb_middle_val = float(bb_middle.iloc[-1]) if len(bb_middle) > 0 and not pd.isna(bb_middle.iloc[-1]) else current_price
+            bb_upper_val = (
+                float(bb_upper.iloc[-1])
+                if len(bb_upper) > 0 and not pd.isna(bb_upper.iloc[-1])
+                else current_price
+            )
+            bb_lower_val = (
+                float(bb_lower.iloc[-1])
+                if len(bb_lower) > 0 and not pd.isna(bb_lower.iloc[-1])
+                else current_price
+            )
+            bb_middle_val = (
+                float(bb_middle.iloc[-1])
+                if len(bb_middle) > 0 and not pd.isna(bb_middle.iloc[-1])
+                else current_price
+            )
             atr_val = float(atr.iloc[-1]) if len(atr) > 0 and not pd.isna(atr.iloc[-1]) else 0.0
 
             # Bollinger width with safe division
@@ -354,34 +376,38 @@ class TechnicalAgent:
             bb_position = (current_price - bb_lower_val) / max(bb_upper_val - bb_lower_val, 1e-9)
 
             return {
-                'bb_upper': float(bb_upper_val),
-                'bb_middle': float(bb_middle_val),
-                'bb_lower': float(bb_lower_val),
-                'bb_width': bb_width,
-                'bb_position': float(bb_position),
-                'atr': float(atr_val),
-                'volatility_level': 'high' if bb_width > 0.1 else 'normal' if bb_width > 0.05 else 'low'
+                "bb_upper": float(bb_upper_val),
+                "bb_middle": float(bb_middle_val),
+                "bb_lower": float(bb_lower_val),
+                "bb_width": bb_width,
+                "bb_position": float(bb_position),
+                "atr": float(atr_val),
+                "volatility_level": "high"
+                if bb_width > 0.1
+                else "normal"
+                if bb_width > 0.05
+                else "low",
             }
 
         except Exception as e:
             self.logger.error(f"Volatility analysis error: {e}")
-            return {'bb_width': 0, 'atr': 0, 'error': str(e)}
+            return {"bb_width": 0, "atr": 0, "error": str(e)}
 
     def _analyze_support_resistance(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Analyze support and resistance with proper length guards"""
 
         if len(df) < 5:  # Proper guard for rolling window
             return {
-                'support': float(df['low'].min()),
-                'resistance': float(df['high'].max()),
-                'pivot': float(df['close'].iloc[-1]),
-                'note': 'Insufficient data for full analysis'
+                "support": float(df["low"].min()),
+                "resistance": float(df["high"].max()),
+                "pivot": float(df["close"].iloc[-1]),
+                "note": "Insufficient data for full analysis",
             }
 
         try:
-            high = df['high'].astype(float)
-            low = df['low'].astype(float)
-            close = df['close'].astype(float)
+            high = df["high"].astype(float)
+            low = df["low"].astype(float)
+            close = df["close"].astype(float)
 
             # Safe pivot calculation with proper rolling
             typical_price = (high + low + close) / 3
@@ -389,28 +415,31 @@ class TechnicalAgent:
 
             # Support and resistance levels
             recent_data = df.tail(20)  # Last 20 periods
-            support_level = recent_data['low'].min()
-            resistance_level = recent_data['high'].max()
+            support_level = recent_data["low"].min()
+            resistance_level = recent_data["high"].max()
 
             # Additional pivot levels
             pivot_high = high.rolling(5).max().iloc[-1]
             pivot_low = low.rolling(5).min().iloc[-1]
 
             return {
-                'support': float(support_level),
-                'resistance': float(resistance_level),
-                'pivot': float(pivot),
-                'pivot_high': float(pivot_high),
-                'pivot_low': float(pivot_low),
-                'range_pct': float((resistance_level - support_level) / max(close.iloc[-1], 1e-9) * 100)
+                "support": float(support_level),
+                "resistance": float(resistance_level),
+                "pivot": float(pivot),
+                "pivot_high": float(pivot_high),
+                "pivot_low": float(pivot_low),
+                "range_pct": float(
+                    (resistance_level - support_level) / max(close.iloc[-1], 1e-9) * 100
+                ),
             }
 
         except Exception as e:
             self.logger.error(f"Support/Resistance analysis error: {e}")
-            return {'support': 0, 'resistance': 0, 'pivot': 0, 'error': str(e)}
+            return {"support": 0, "resistance": 0, "pivot": 0, "error": str(e)}
 
-    def _generate_overall_signal_fixed(self, trend_data: Dict, momentum_data: Dict,
-                                     volatility_data: Dict) -> Dict[str, Any]:
+    def _generate_overall_signal_fixed(
+        self, trend_data: Dict, momentum_data: Dict, volatility_data: Dict
+    ) -> Dict[str, Any]:
         """Generate overall signal with MACD bias fix"""
 
         signals = []
@@ -418,68 +447,74 @@ class TechnicalAgent:
 
         try:
             # Trend signals
-            if trend_data.get('direction') == 'bullish':
-                signals.append('buy')
+            if trend_data.get("direction") == "bullish":
+                signals.append("buy")
                 confidence_scores.append(0.4)
-            elif trend_data.get('direction') == 'bearish':
-                signals.append('sell')
+            elif trend_data.get("direction") == "bearish":
+                signals.append("sell")
                 confidence_scores.append(0.4)
 
             # Momentum signals with bias fix
-            macd_bull = momentum_data.get('macd_bullish')
+            macd_bull = momentum_data.get("macd_bullish")
             if macd_bull is True:  # Explicit True check
-                signals.append('buy')
+                signals.append("buy")
                 confidence_scores.append(0.3)
             elif macd_bull is False:  # Explicit False check
-                signals.append('sell')
+                signals.append("sell")
                 confidence_scores.append(0.3)
             # No signal added if macd_bullish is None (key missing or calculation failed)
 
             # RSI signals
-            if momentum_data.get('rsi_oversold'):
-                signals.append('buy')
+            if momentum_data.get("rsi_oversold"):
+                signals.append("buy")
                 confidence_scores.append(0.2)
-            elif momentum_data.get('rsi_overbought'):
-                signals.append('sell')
+            elif momentum_data.get("rsi_overbought"):
+                signals.append("sell")
                 confidence_scores.append(0.2)
 
             # Volatility considerations
-            volatility_level = volatility_data.get('volatility_level', 'normal')
-            volatility_penalty = 0.1 if volatility_level == 'high' else 0
+            volatility_level = volatility_data.get("volatility_level", "normal")
+            volatility_penalty = 0.1 if volatility_level == "high" else 0
 
             # Calculate final signal
             if not signals:
-                final_signal = 'hold'
+                final_signal = "hold"
                 final_confidence = 0.5
             else:
-                buy_signals = signals.count('buy') if signals else 0
-                sell_signals = signals.count('sell') if signals else 0
+                buy_signals = signals.count("buy") if signals else 0
+                sell_signals = signals.count("sell") if signals else 0
 
                 if buy_signals > sell_signals:
-                    final_signal = 'buy'
-                    final_confidence = min(sum(confidence_scores) / len(confidence_scores) - volatility_penalty, 1.0)
+                    final_signal = "buy"
+                    final_confidence = min(
+                        sum(confidence_scores) / len(confidence_scores) - volatility_penalty, 1.0
+                    )
                 elif sell_signals > buy_signals:
-                    final_signal = 'sell'
-                    final_confidence = min(sum(confidence_scores) / len(confidence_scores) - volatility_penalty, 1.0)
+                    final_signal = "sell"
+                    final_confidence = min(
+                        sum(confidence_scores) / len(confidence_scores) - volatility_penalty, 1.0
+                    )
                 else:
-                    final_signal = 'hold'
+                    final_signal = "hold"
                     final_confidence = 0.5
 
             return {
-                'signal': final_signal,
-                'confidence': max(final_confidence, 0.0),
-                'signal_count': {'buy': buy_signals, 'sell': sell_signals} if signals else {'buy': 0, 'sell': 0},
-                'volatility_penalty': volatility_penalty,
-                'timestamp': datetime.now(timezone.utc).isoformat()
+                "signal": final_signal,
+                "confidence": max(final_confidence, 0.0),
+                "signal_count": {"buy": buy_signals, "sell": sell_signals}
+                if signals
+                else {"buy": 0, "sell": 0},
+                "volatility_penalty": volatility_penalty,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
             self.logger.error(f"Signal generation error: {e}")
             return {
-                'signal': 'hold',
-                'confidence': 0.0,
-                'error': str(e),
-                'timestamp': datetime.now(timezone.utc).isoformat()
+                "signal": "hold",
+                "confidence": 0.0,
+                "error": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def get_latest_analysis(self, pair: Optional[str] = None) -> Dict[str, Any]:
@@ -494,14 +529,16 @@ class TechnicalAgent:
         """Get technical agent status"""
 
         return {
-            'active': self.active,
-            'thread_alive': self.agent_thread.is_alive() if self.agent_thread else False,
-            'analysis_count': self.analysis_count,
-            'error_count': self.error_count,
-            'last_analysis': self.last_analysis_time.isoformat() if self.last_analysis_time else None,
-            'talib_available': TA_AVAILABLE,
-            'cached_pairs': list(self.latest_analysis.keys()),
-            'update_interval': self.update_interval
+            "active": self.active,
+            "thread_alive": self.agent_thread.is_alive() if self.agent_thread else False,
+            "analysis_count": self.analysis_count,
+            "error_count": self.error_count,
+            "last_analysis": self.last_analysis_time.isoformat()
+            if self.last_analysis_time
+            else None,
+            "talib_available": TA_AVAILABLE,
+            "cached_pairs": list(self.latest_analysis.keys()),
+            "update_interval": self.update_interval,
         }
 
     def force_analysis(self, pair: str) -> Optional[Dict[str, Any]]:
@@ -517,9 +554,11 @@ class TechnicalAgent:
 
         return result
 
+
 def create_technical_agent(update_interval: int = 300) -> TechnicalAgent:
     """Factory function to create technical agent"""
     return TechnicalAgent(update_interval)
+
 
 if __name__ == "__main__":
     # Test technical agent
@@ -537,7 +576,7 @@ if __name__ == "__main__":
         print(f"Agent status: {status}")
 
         # Test force analysis
-        result = agent.force_analysis('BTCUSD')
+        result = agent.force_analysis("BTCUSD")
         if result:
             print(f"Forced analysis result: {json.dumps(result, indent=2)}")
         else:

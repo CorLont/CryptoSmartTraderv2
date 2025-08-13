@@ -18,11 +18,14 @@ from ..core.unified_structured_logger import get_unified_logger
 # Import OpenAI intelligence with fallback
 try:
     from integrations.openai_enhanced_intelligence import get_openai_intelligence
+
     OPENAI_INTEGRATION_AVAILABLE = True
 except ImportError:
     OPENAI_INTEGRATION_AVAILABLE = False
+
     def get_openai_intelligence():
         return None
+
 
 class UnifiedConfidenceGate:
     """Single reliable confidence gate - replaces both class and standalone versions"""
@@ -34,14 +37,11 @@ class UnifiedConfidenceGate:
 
         # Tracking for consistency
         self.gate_applications = []
-        self.rejection_counts = {
-            'low_confidence': 0,
-            'missing_data': 0,
-            'invalid_predictions': 0
-        }
+        self.rejection_counts = {"low_confidence": 0, "missing_data": 0, "invalid_predictions": 0}
 
-    async def apply_gate_with_explanations(self, predictions_df: pd.DataFrame,
-                                         gate_id: Optional[str] = None) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    async def apply_gate_with_explanations(
+        self, predictions_df: pd.DataFrame, gate_id: Optional[str] = None
+    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """Apply confidence gate with authentic AI-powered explanations"""
 
         if gate_id is None:
@@ -57,20 +57,35 @@ class UnifiedConfidenceGate:
 
             # Generate authentic explanations for passed candidates
             explanations = {}
-            if not filtered_df.empty and self.ai_intelligence and hasattr(self.ai_intelligence, 'is_available') and self.ai_intelligence.is_available():
+            if (
+                not filtered_df.empty
+                and self.ai_intelligence
+                and hasattr(self.ai_intelligence, "is_available")
+                and self.ai_intelligence.is_available()
+            ):
                 explanations = await self._generate_authentic_explanations(filtered_df)
             elif not filtered_df.empty:
                 # Fallback to feature-based explanations (not random)
                 explanations = self._generate_feature_explanations(filtered_df)
 
             # Add explanations to gate report
-            gate_report['explanations'] = explanations
-            gate_report['processing_time'] = time.time() - start_time
-            gate_report['explanation_method'] = 'ai_powered' if (self.ai_intelligence and hasattr(self.ai_intelligence, 'is_available') and self.ai_intelligence.is_available()) else 'feature_based'
+            gate_report["explanations"] = explanations
+            gate_report["processing_time"] = time.time() - start_time
+            gate_report["explanation_method"] = (
+                "ai_powered"
+                if (
+                    self.ai_intelligence
+                    and hasattr(self.ai_intelligence, "is_available")
+                    and self.ai_intelligence.is_available()
+                )
+                else "feature_based"
+            )
 
             # Log results with explanation quality
             explanation_count = len(explanations)
-            self.logger.info(f"Gate {gate_id}: {len(filtered_df)} candidates passed with {explanation_count} explanations")
+            self.logger.info(
+                f"Gate {gate_id}: {len(filtered_df)} candidates passed with {explanation_count} explanations"
+            )
 
             return filtered_df, gate_report
 
@@ -85,9 +100,9 @@ class UnifiedConfidenceGate:
             return pd.DataFrame()
 
         # Validate required columns
-        required_columns = ['coin']
-        confidence_columns = [col for col in predictions_df.columns if col.startswith('conf_')]
-        prediction_columns = [col for col in predictions_df.columns if col.startswith('pred_')]
+        required_columns = ["coin"]
+        confidence_columns = [col for col in predictions_df.columns if col.startswith("conf_")]
+        prediction_columns = [col for col in predictions_df.columns if col.startswith("pred_")]
 
         if not all(col in predictions_df.columns for col in required_columns):
             self.logger.warning("Missing required columns for fast gate")
@@ -102,19 +117,19 @@ class UnifiedConfidenceGate:
 
         for conf_col in confidence_columns:
             if conf_col in predictions_df.columns:
-                conf_values = pd.to_numeric(predictions_df[conf_col], errors='coerce')
-                confidence_mask &= (conf_values >= self.confidence_threshold)
+                conf_values = pd.to_numeric(predictions_df[conf_col], errors="coerce")
+                confidence_mask &= conf_values >= self.confidence_threshold
 
         # Apply validity filters
         validity_mask = pd.Series([True] * len(predictions_df), index=predictions_df.index)
 
         for pred_col in prediction_columns:
             if pred_col in predictions_df.columns:
-                pred_values = pd.to_numeric(predictions_df[pred_col], errors='coerce')
+                pred_values = pd.to_numeric(predictions_df[pred_col], errors="coerce")
                 validity_mask &= (
-                    pred_values.notna() &
-                    np.isfinite(pred_values) &
-                    (np.abs(pred_values) < 10.0)  # No extreme predictions
+                    pred_values.notna()
+                    & np.isfinite(pred_values)
+                    & (np.abs(pred_values) < 10.0)  # No extreme predictions
                 )
 
         # Combine filters
@@ -123,12 +138,16 @@ class UnifiedConfidenceGate:
         # Apply filter and sort
         filtered_df = predictions_df[final_mask].copy()
 
-        if not filtered_df.empty and 'pred_30d' in filtered_df.columns:
-            filtered_df = filtered_df.sort_values('pred_30d', ascending=False).reset_index(drop=True)
+        if not filtered_df.empty and "pred_30d" in filtered_df.columns:
+            filtered_df = filtered_df.sort_values("pred_30d", ascending=False).reset_index(
+                drop=True
+            )
 
         return filtered_df
 
-    def _apply_core_filtering(self, predictions_df: pd.DataFrame, gate_id: str) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def _apply_core_filtering(
+        self, predictions_df: pd.DataFrame, gate_id: str
+    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """Core filtering logic (consistent between fast and explained versions)"""
 
         if predictions_df.empty:
@@ -143,11 +162,13 @@ class UnifiedConfidenceGate:
         # Calculate rejection reasons
         low_confidence_count = original_count - passed_count  # Simplified for now
 
-        self.rejection_counts['low_confidence'] += low_confidence_count
+        self.rejection_counts["low_confidence"] += low_confidence_count
 
         return filtered_df, self._create_gate_report(
-            gate_id, original_count, passed_count,
-            "success" if passed_count > 0 else "no_candidates"
+            gate_id,
+            original_count,
+            passed_count,
+            "success" if passed_count > 0 else "no_candidates",
         )
 
     async def _generate_authentic_explanations(self, filtered_df: pd.DataFrame) -> Dict[str, str]:
@@ -160,22 +181,24 @@ class UnifiedConfidenceGate:
             top_candidates = filtered_df.head(5)
 
             for _, row in top_candidates.iterrows():
-                coin = row.get('coin', 'Unknown')
+                coin = row.get("coin", "Unknown")
 
                 # Extract features for explanation
                 features = {}
                 for col in row.index:
-                    if col.startswith(('pred_', 'conf_', 'sentiment_', 'whale_')):
+                    if col.startswith(("pred_", "conf_", "sentiment_", "whale_")):
                         features[col] = row[col]
 
                 # Get authentic AI explanation
                 explanation = None
-                if self.ai_intelligence and hasattr(self.ai_intelligence, 'explain_prediction_confidence'):
+                if self.ai_intelligence and hasattr(
+                    self.ai_intelligence, "explain_prediction_confidence"
+                ):
                     explanation = await self.ai_intelligence.explain_prediction_confidence(
                         coin=coin,
-                        prediction=row.get('pred_30d', 0),
-                        confidence=row.get('conf_30d', 0),
-                        features=features
+                        prediction=row.get("pred_30d", 0),
+                        confidence=row.get("conf_30d", 0),
+                        features=features,
                     )
 
                 if explanation:
@@ -200,7 +223,7 @@ class UnifiedConfidenceGate:
         explanations = {}
 
         for _, row in filtered_df.head(5).iterrows():
-            coin = row.get('coin', 'Unknown')
+            coin = row.get("coin", "Unknown")
             explanations[coin] = self._generate_single_feature_explanation(row)
 
         return explanations
@@ -208,9 +231,9 @@ class UnifiedConfidenceGate:
     def _generate_single_feature_explanation(self, row: pd.Series) -> str:
         """Generate explanation based on actual feature values"""
 
-        coin = row.get('coin', 'Unknown')
-        pred_30d = row.get('pred_30d', 0)
-        conf_30d = row.get('conf_30d', 0)
+        coin = row.get("coin", "Unknown")
+        pred_30d = row.get("pred_30d", 0)
+        conf_30d = row.get("conf_30d", 0)
 
         # Build explanation based on actual features
         factors = []
@@ -230,46 +253,49 @@ class UnifiedConfidenceGate:
             factors.append("positive growth prediction")
 
         # Add sentiment/whale factors if available
-        if 'sentiment_score' in row and row['sentiment_score'] > 0.6:
+        if "sentiment_score" in row and row["sentiment_score"] > 0.6:
             factors.append("positive sentiment indicators")
 
-        if 'whale_activity' in row and row['whale_activity'] > 0.7:
+        if "whale_activity" in row and row["whale_activity"] > 0.7:
             factors.append("significant whale activity")
 
         explanation = f"{coin} passed the {self.confidence_threshold:.0%} confidence gate due to: {', '.join(factors)}. Predicted 30-day growth: {pred_30d:.1%} with {conf_30d:.1%} confidence."
 
         return explanation
 
-    def _create_gate_report(self, gate_id: str, input_count: int,
-                           output_count: int, status: str) -> Dict[str, Any]:
+    def _create_gate_report(
+        self, gate_id: str, input_count: int, output_count: int, status: str
+    ) -> Dict[str, Any]:
         """Create standardized gate report"""
 
         return {
-            'gate_id': gate_id,
-            'timestamp': datetime.now().isoformat(),
-            'input_count': input_count,
-            'output_count': output_count,
-            'status': status,
-            'confidence_threshold': self.confidence_threshold,
-            'rejection_rate': (input_count - output_count) / max(input_count, 1),
-            'gate_type': 'unified'
+            "gate_id": gate_id,
+            "timestamp": datetime.now().isoformat(),
+            "input_count": input_count,
+            "output_count": output_count,
+            "status": status,
+            "confidence_threshold": self.confidence_threshold,
+            "rejection_rate": (input_count - output_count) / max(input_count, 1),
+            "gate_type": "unified",
         }
 
     def _create_error_report(self, gate_id: str, error: str) -> Dict[str, Any]:
         """Create error report"""
 
         return {
-            'gate_id': gate_id,
-            'timestamp': datetime.now().isoformat(),
-            'input_count': 0,
-            'output_count': 0,
-            'status': 'error',
-            'error': error,
-            'gate_type': 'unified'
+            "gate_id": gate_id,
+            "timestamp": datetime.now().isoformat(),
+            "input_count": 0,
+            "output_count": 0,
+            "status": "error",
+            "error": error,
+            "gate_type": "unified",
         }
+
 
 # Global instance for consistent usage
 _unified_gate: Optional[UnifiedConfidenceGate] = None
+
 
 def get_unified_confidence_gate(threshold: float = 0.80) -> UnifiedConfidenceGate:
     """Get global unified confidence gate instance"""
@@ -278,12 +304,15 @@ def get_unified_confidence_gate(threshold: float = 0.80) -> UnifiedConfidenceGat
         _unified_gate = UnifiedConfidenceGate(threshold)
     return _unified_gate
 
+
 # Compatibility functions to replace old gates
-def apply_strict_gate_orchestration(pred_df: pd.DataFrame, pred_col="pred_720h",
-                                  conf_col="conf_720h", threshold=0.80) -> pd.DataFrame:
+def apply_strict_gate_orchestration(
+    pred_df: pd.DataFrame, pred_col="pred_720h", conf_col="conf_720h", threshold=0.80
+) -> pd.DataFrame:
     """Compatibility function replacing standalone gate"""
     gate = get_unified_confidence_gate(threshold)
     return gate.apply_gate_fast(pred_df)
+
 
 def strict_toplist_multi_horizon(pred_df: pd.DataFrame, threshold=0.80) -> Dict[str, pd.DataFrame]:
     """Compatibility function for multi-horizon filtering"""
@@ -293,16 +322,18 @@ def strict_toplist_multi_horizon(pred_df: pd.DataFrame, threshold=0.80) -> Dict[
         return {}
 
     results = {}
-    horizons = ['1h', '24h', '168h', '720h']  # Standard horizons
+    horizons = ["1h", "24h", "168h", "720h"]  # Standard horizons
 
     for h in horizons:
-        pred_col = f'pred_{h}'
-        conf_col = f'conf_{h}'
+        pred_col = f"pred_{h}"
+        conf_col = f"conf_{h}"
 
         if pred_col in pred_df.columns and conf_col in pred_df.columns:
             # Create subset with relevant columns
-            subset_cols = ['coin', pred_col, conf_col]
-            subset_cols.extend([col for col in pred_df.columns if col.startswith(('sentiment_', 'whale_'))])
+            subset_cols = ["coin", pred_col, conf_col]
+            subset_cols.extend(
+                [col for col in pred_df.columns if col.startswith(("sentiment_", "whale_"))]
+            )
 
             subset_df = pred_df[subset_cols].copy()
             filtered = gate.apply_gate_fast(subset_df)

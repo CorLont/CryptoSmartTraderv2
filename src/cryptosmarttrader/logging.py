@@ -32,29 +32,48 @@ class StructuredFormatter(logging.Formatter):
             "message": record.getMessage(),
             "module": record.module,
             "function": record.funcName,
-            "line": record.lineno
+            "line": record.lineno,
         }
 
         # Add correlation ID if available
-        if hasattr(record, 'correlation_id'):
-            log_entry["correlation_id"] = getattr(record, 'correlation_id', None)
+        if hasattr(record, "correlation_id"):
+            log_entry["correlation_id"] = getattr(record, "correlation_id", None)
 
         # Add exception info if present
         if record.exc_info and record.exc_info[0] is not None:
             log_entry["exception"] = {
                 "type": record.exc_info[0].__name__,
                 "message": str(record.exc_info[1]),
-                "traceback": self.formatException(record.exc_info)
+                "traceback": self.formatException(record.exc_info),
             }
 
         # Add extra fields from record
         extra_fields = {}
         for key, value in record.__dict__.items():
-            if key not in ['name', 'msg', 'args', 'levelname', 'levelno', 'pathname',
-                          'filename', 'module', 'lineno', 'funcName', 'created',
-                          'msecs', 'relativeCreated', 'thread', 'threadName',
-                          'processName', 'process', 'getMessage', 'exc_info',
-                          'exc_text', 'stack_info', 'correlation_id']:
+            if key not in [
+                "name",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "getMessage",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "correlation_id",
+            ]:
                 extra_fields[key] = value
 
         if extra_fields:
@@ -68,7 +87,7 @@ class CorrelationFilter(logging.Filter):
 
     def filter(self, record: logging.LogRecord) -> bool:
         """Add correlation ID if not already present"""
-        if not hasattr(record, 'correlation_id'):
+        if not hasattr(record, "correlation_id"):
             record.correlation_id = str(uuid.uuid4())[:8]
         return True
 
@@ -96,7 +115,7 @@ def setup_logging(
     enable_console: bool = True,
     enable_file: bool = True,
     max_bytes: int = 50 * 1024 * 1024,  # 50MB
-    backup_count: int = 10
+    backup_count: int = 10,
 ) -> logging.Logger:
     """
     Setup enterprise logging configuration with structured JSON output
@@ -128,8 +147,7 @@ def setup_logging(
     # Create formatters
     json_formatter = StructuredFormatter(service_name)
     console_formatter = logging.Formatter(
-        fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
 
     # Add correlation filter
@@ -147,10 +165,7 @@ def setup_logging(
     if enable_file:
         log_file = log_dir / "app.log"
         file_handler = logging.handlers.RotatingFileHandler(
-            filename=log_file,
-            maxBytes=max_bytes,
-            backupCount=backup_count,
-            encoding='utf-8'
+            filename=log_file, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
         )
         file_handler.setLevel(numeric_level)
         file_handler.setFormatter(json_formatter)
@@ -161,10 +176,7 @@ def setup_logging(
     if enable_file:
         error_file = log_dir / "error.log"
         error_handler = logging.handlers.RotatingFileHandler(
-            filename=error_file,
-            maxBytes=max_bytes,
-            backupCount=backup_count,
-            encoding='utf-8'
+            filename=error_file, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
         )
         error_handler.setLevel(logging.ERROR)
         error_handler.setFormatter(json_formatter)
@@ -183,8 +195,8 @@ def setup_logging(
             "log_dir": str(log_dir),
             "service": service_name,
             "console_enabled": enable_console,
-            "file_enabled": enable_file
-        }
+            "file_enabled": enable_file,
+        },
     )
 
     return root_logger
@@ -195,20 +207,20 @@ def configure_third_party_loggers(level: int):
 
     # Reduce noise from third-party libraries
     noisy_loggers = [
-        'urllib3.connectionpool',
-        'requests.packages.urllib3',
-        'ccxt.base.exchange',
-        'matplotlib',
-        'PIL'
+        "urllib3.connectionpool",
+        "requests.packages.urllib3",
+        "ccxt.base.exchange",
+        "matplotlib",
+        "PIL",
     ]
 
     for logger_name in noisy_loggers:
         logging.getLogger(logger_name).setLevel(max(level, logging.WARNING))
 
     # Set specific levels for key libraries
-    logging.getLogger('streamlit').setLevel(max(level, logging.WARNING))
-    logging.getLogger('uvicorn').setLevel(max(level, logging.INFO))
-    logging.getLogger('fastapi').setLevel(max(level, logging.INFO))
+    logging.getLogger("streamlit").setLevel(max(level, logging.WARNING))
+    logging.getLogger("uvicorn").setLevel(max(level, logging.INFO))
+    logging.getLogger("fastapi").setLevel(max(level, logging.INFO))
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -238,10 +250,7 @@ class LogContext:
 
 # Trading-specific logging helpers
 def log_trading_event(
-    event_type: str,
-    symbol: str,
-    data: Dict[str, Any],
-    correlation_id: Optional[str] = None
+    event_type: str, symbol: str, data: Dict[str, Any], correlation_id: Optional[str] = None
 ):
     """Log structured trading events"""
     logger = get_logger("trading")
@@ -251,27 +260,19 @@ def log_trading_event(
             "event_type": event_type,
             "symbol": symbol,
             "trading_data": data,
-            "correlation_id": correlation_id or str(uuid.uuid4())[:8]
-        }
+            "correlation_id": correlation_id or str(uuid.uuid4())[:8],
+        },
     )
 
 
 def log_performance_metric(
-    metric_name: str,
-    value: float,
-    unit: str = "",
-    tags: Optional[Dict[str, str]] = None
+    metric_name: str, value: float, unit: str = "", tags: Optional[Dict[str, str]] = None
 ):
     """Log performance metrics"""
     logger = get_logger("performance")
     logger.info(
         f"Performance metric: {metric_name}",
-        extra={
-            "metric_name": metric_name,
-            "value": value,
-            "unit": unit,
-            "tags": tags or {}
-        }
+        extra={"metric_name": metric_name, "value": value, "unit": unit, "tags": tags or {}},
     )
 
 
@@ -279,9 +280,5 @@ def log_security_event(event_type: str, details: Dict[str, Any]):
     """Log security-related events"""
     logger = get_logger("security")
     logger.warning(
-        f"Security event: {event_type}",
-        extra={
-            "security_event": event_type,
-            "details": details
-        }
+        f"Security event: {event_type}", extra={"security_event": event_type, "details": details}
     )

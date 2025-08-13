@@ -2,6 +2,7 @@
 """
 Fixed app - alle kritische issues uit code review opgelost
 """
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -19,7 +20,13 @@ if not logger.handlers:
 
 # Import advanced logging system
 try:
-    from utils.logging_manager import get_advanced_logger, log_user_action, log_performance, PerformanceTimer
+    from utils.logging_manager import (
+        get_advanced_logger,
+        log_user_action,
+        log_performance,
+        PerformanceTimer,
+    )
+
     HAS_ADVANCED_LOGGING = True
     advanced_logger = get_advanced_logger()
 except ImportError:
@@ -27,130 +34,137 @@ except ImportError:
     advanced_logger = None
     logging.warning("Advanced logging niet beschikbaar")
 
-st.set_page_config(
-    page_title="CryptoSmartTrader V2 - Fixed",
-    page_icon="🚀",
-    layout="wide"
-)
+st.set_page_config(page_title="CryptoSmartTrader V2 - Fixed", page_icon="🚀", layout="wide")
+
 
 # FIXED: Lazy imports - avoid heavy top-level imports
 def get_ccxt_client():
     """Lazy import of CCXT client"""
     try:
         import ccxt
-        return ccxt.kraken({'enableRateLimit': True})
+
+        return ccxt.kraken({"enableRateLimit": True})
     except ImportError as e:
         logger.error(f"CCXT not available: {e}")
         return None
+
 
 def get_openai_client():
     """Lazy import of OpenAI client"""
     try:
         import openai
-        api_key = os.getenv('OPENAI_API_KEY')
+
+        api_key = os.getenv("OPENAI_API_KEY")
         if api_key:
             return openai.OpenAI(api_key=api_key)
     except ImportError as e:
         logger.error(f"OpenAI not available: {e}")
     return None
 
+
 class SystemStatusChecker:
     """FIXED: Granular error handling for each dependency"""
-    
+
     @staticmethod
     def check_api_keys() -> Dict[str, bool]:
         """Check API keys availability"""
         return {
-            'KRAKEN_API_KEY': bool(os.getenv('KRAKEN_API_KEY')),
-            'KRAKEN_SECRET': bool(os.getenv('KRAKEN_SECRET')),
-            'OPENAI_API_KEY': bool(os.getenv('OPENAI_API_KEY'))
+            "KRAKEN_API_KEY": bool(os.getenv("KRAKEN_API_KEY")),
+            "KRAKEN_SECRET": bool(os.getenv("KRAKEN_SECRET")),
+            "OPENAI_API_KEY": bool(os.getenv("OPENAI_API_KEY")),
         }
-    
+
     @staticmethod
     def check_models() -> Dict[str, bool]:
         """FIXED: Consistent RF model check only"""
         model_files = [
-            'models/saved/rf_1h.pkl',
-            'models/saved/rf_24h.pkl',
-            'models/saved/rf_168h.pkl',
-            'models/saved/rf_720h.pkl'
+            "models/saved/rf_1h.pkl",
+            "models/saved/rf_24h.pkl",
+            "models/saved/rf_168h.pkl",
+            "models/saved/rf_720h.pkl",
         ]
-        
+
         model_status = {}
         for model_file in model_files:
-            horizon = Path(model_file).stem.replace('rf_', '')
+            horizon = Path(model_file).stem.replace("rf_", "")
             model_status[horizon] = Path(model_file).exists()
-        
+
         return model_status
-    
+
     @staticmethod
     def check_predictions() -> Dict:
         """Check production predictions availability"""
         pred_file = Path("exports/production/predictions.csv")
         enhanced_file = Path("exports/production/enhanced_predictions.json")
-        
+
         if pred_file.exists():
             try:
                 df = pd.read_csv(pred_file)
-                return {'available': True, 'count': len(df), 'source': 'csv'}
+                return {"available": True, "count": len(df), "source": "csv"}
             except Exception as e:
                 logger.error(f"Failed to load CSV predictions: {e}")
-        
+
         if enhanced_file.exists():
             try:
-                with open(enhanced_file, 'r') as f:
+                with open(enhanced_file, "r") as f:
                     data = json.load(f)
-                return {'available': True, 'count': len(data), 'source': 'json'}
+                return {"available": True, "count": len(data), "source": "json"}
             except Exception as e:
                 logger.error(f"Failed to load JSON predictions: {e}")
-        
-        return {'available': False, 'count': 0, 'source': None}
+
+        return {"available": False, "count": 0, "source": None}
+
 
 class DataManager:
     """FIXED: No dummy data, clear labeling when unavailable"""
-    
+
     def __init__(self):
         self.client = None
-    
+
     def get_live_market_data(self) -> List[Dict]:
         """Get live Kraken data - no demo limits"""
         if not self.client:
             self.client = get_ccxt_client()
-        
+
         if not self.client:
             return []
-        
+
         try:
             tickers = self.client.fetch_tickers()
-            
+
             # ALL USD pairs - no capping
-            usd_pairs = {k: v for k, v in tickers.items() if k.endswith('/USD')}
-            
+            usd_pairs = {k: v for k, v in tickers.items() if k.endswith("/USD")}
+
             market_data = []
             for symbol, ticker in usd_pairs.items():
-                if ticker['last'] is not None:
-                    market_data.append({
-                        'symbol': symbol,
-                        'coin': symbol.split('/')[0],
-                        'price': ticker['last'],
-                        'change_24h': ticker.get('percentage', 0),
-                        'volume_24h': ticker.get('baseVolume', 0),
-                        'high_24h': ticker.get('high', ticker['last']),
-                        'low_24h': ticker.get('low', ticker['last'])
-                    })
-            
+                if ticker["last"] is not None:
+                    market_data.append(
+                        {
+                            "symbol": symbol,
+                            "coin": symbol.split("/")[0],
+                            "price": ticker["last"],
+                            "change_24h": ticker.get("percentage", 0),
+                            "volume_24h": ticker.get("baseVolume", 0),
+                            "high_24h": ticker.get("high", ticker["last"]),
+                            "low_24h": ticker.get("low", ticker["last"]),
+                        }
+                    )
+
             logger.info(f"Retrieved {len(market_data)} Kraken USD pairs (ALL, no capping)")
             return market_data
-            
+
         except Exception as e:
             logger.error(f"Failed to get live market data: {e}")
             return []
 
+
 class ConfidenceGateManager:
     """FIXED: Consistent confidence gate implementation"""
-    
+
     @staticmethod
-    def apply_80_percent_gate(predictions: Union[List[Dict], pd.DataFrame]) -> Union[List[Dict], pd.DataFrame]:
+    def apply_80_percent_gate(
+        predictions: Union[List[Dict], pd.DataFrame],
+    ) -> Union[List[Dict], pd.DataFrame]:
         """
         FIXED: Apply consistent 80% confidence gate
         Uses ensemble-based confidence (not score normalization)
@@ -162,145 +176,154 @@ class ConfidenceGateManager:
         else:
             logger.error(f"Unsupported predictions type: {type(predictions)}")
             return predictions
-    
+
     @staticmethod
     def _apply_gate_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         """Apply gate to DataFrame - FIXED: explicit copy to avoid SettingWithCopyWarning"""
         if df.empty:
             return df
-        
+
         original_count = len(df)
-        
+
         # Find confidence columns
-        conf_cols = [col for col in df.columns if 'confidence' in col.lower()]
-        
+        conf_cols = [col for col in df.columns if "confidence" in col.lower()]
+
         if not conf_cols:
             logger.warning("No confidence columns found")
             return df
-        
+
         # Calculate max confidence per row
         max_confidences = df[conf_cols].max(axis=1)
-        
+
         # Apply 80% threshold
         passed_mask = max_confidences >= 0.80
         filtered_df = df[passed_mask].copy()  # FIXED: explicit copy
-        
+
         # FIXED: Use .loc to avoid SettingWithCopyWarning
         filtered_df = filtered_df.assign(
-            gate_confidence=max_confidences[passed_mask],
-            gate_passed=True
+            gate_confidence=max_confidences[passed_mask], gate_passed=True
         )
-        
+
         passed_count = len(filtered_df)
         logger.info(f"80% gate: {passed_count}/{original_count} passed")
-        
+
         return filtered_df
-    
+
     @staticmethod
     def _apply_gate_list(predictions: List[Dict]) -> List[Dict]:
         """Apply gate to list of predictions"""
         if not predictions:
             return predictions
-        
+
         original_count = len(predictions)
         filtered_predictions = []
-        
+
         for pred in predictions:
             # Find confidence values
-            conf_values = [v for k, v in pred.items() if 'confidence' in k.lower()]
-            
+            conf_values = [v for k, v in pred.items() if "confidence" in k.lower()]
+
             if conf_values:
                 max_confidence = max(conf_values)
                 if max_confidence >= 0.80:
                     pred_copy = pred.copy()
-                    pred_copy['gate_confidence'] = max_confidence
-                    pred_copy['gate_passed'] = True
+                    pred_copy["gate_confidence"] = max_confidence
+                    pred_copy["gate_passed"] = True
                     filtered_predictions.append(pred_copy)
-        
+
         passed_count = len(filtered_predictions)
         logger.info(f"80% gate: {passed_count}/{original_count} passed")
-        
+
         return filtered_predictions
+
 
 def render_system_status():
     """FIXED: Clear system status without misleading claims"""
     st.subheader("⚙️ System Status")
-    
+
     checker = SystemStatusChecker()
-    
+
     # Check components
     api_status = checker.check_api_keys()
     model_status = checker.check_models()
     pred_status = checker.check_predictions()
-    
+
     # Summary metrics
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
         api_ready = all(api_status.values())
         st.metric("API Keys", "✅ Complete" if api_ready else "⚠️ Missing")
-    
+
     with col2:
         models_ready = all(model_status.values())
         st.metric("RF Models", "✅ Complete" if models_ready else "❌ Missing")
-    
+
     with col3:
-        preds_ready = pred_status['available']
+        preds_ready = pred_status["available"]
         st.metric("Predictions", f"✅ {pred_status['count']}" if preds_ready else "❌ None")
-    
+
     # Detailed status
     st.subheader("Detailed Component Status")
-    
+
     status_data = []
-    
+
     # API status
     for key, available in api_status.items():
-        status_data.append({
-            'Component': key,
-            'Status': '✅ Available' if available else '❌ Missing',
-            'Type': 'API Key'
-        })
-    
+        status_data.append(
+            {
+                "Component": key,
+                "Status": "✅ Available" if available else "❌ Missing",
+                "Type": "API Key",
+            }
+        )
+
     # Model status - FIXED: RF only
     for horizon, exists in model_status.items():
-        status_data.append({
-            'Component': f'RF Model ({horizon})',
-            'Status': '✅ Available' if exists else '❌ Missing',
-            'Type': 'Model'
-        })
-    
+        status_data.append(
+            {
+                "Component": f"RF Model ({horizon})",
+                "Status": "✅ Available" if exists else "❌ Missing",
+                "Type": "Model",
+            }
+        )
+
     # Predictions status
-    status_data.append({
-        'Component': 'Production Predictions',
-        'Status': f"✅ {pred_status['count']} available ({pred_status['source']})" if pred_status['available'] else '❌ Not Available',
-        'Type': 'Data'
-    })
-    
+    status_data.append(
+        {
+            "Component": "Production Predictions",
+            "Status": f"✅ {pred_status['count']} available ({pred_status['source']})"
+            if pred_status["available"]
+            else "❌ Not Available",
+            "Type": "Data",
+        }
+    )
+
     status_df = pd.DataFrame(status_data)
     st.dataframe(status_df, use_container_width=True)
+
 
 def render_market_overview():
     """FIXED: No dummy data - clear labeling when unavailable"""
     st.subheader("📊 Market Overview - Live Data Only")
-    
+
     data_manager = DataManager()
     market_data = data_manager.get_live_market_data()
-    
+
     if not market_data:
         st.error("❌ No live market data available")
         st.info("Configure Kraken API keys to see live data")
         st.warning("🏷️ NO DEMO DATA SHOWN - Live data required")
         return
-    
+
     st.success(f"✅ Live Kraken Data: {len(market_data)} USD pairs")
-    
+
     # Summary metrics
     col1, col2, col3, col4 = st.columns(4)
-    
-    total_volume = sum([d.get('volume_24h', 0) for d in market_data if d.get('volume_24h')])
-    avg_change = np.mean([d.get('change_24h', 0) for d in market_data if d.get('change_24h')])
-    gainers = len([d for d in market_data if d.get('change_24h', 0) > 0])
-    
+
+    total_volume = sum([d.get("volume_24h", 0) for d in market_data if d.get("volume_24h")])
+    avg_change = np.mean([d.get("change_24h", 0) for d in market_data if d.get("change_24h")])
+    gainers = len([d for d in market_data if d.get("change_24h", 0) > 0])
+
     with col1:
         st.metric("Total Pairs", len(market_data))
     with col2:
@@ -309,155 +332,168 @@ def render_market_overview():
         st.metric("Avg Change", f"{avg_change:+.2f}%")
     with col4:
         st.metric("Gainers", f"{gainers}/{len(market_data)}")
-    
+
     # Top performers - FIXED: authentic data only
     top_gainers = sorted(
-        [d for d in market_data if d.get('change_24h', 0) > 0],
-        key=lambda x: x['change_24h'],
-        reverse=True
+        [d for d in market_data if d.get("change_24h", 0) > 0],
+        key=lambda x: x["change_24h"],
+        reverse=True,
     )[:10]
-    
+
     if top_gainers:
         st.subheader("🚀 Top Gainers (Live Data)")
-        gainers_data = [{
-            'Coin': g['coin'],
-            'Price': f"${g['price']:.4f}",
-            '24h Change': f"{g['change_24h']:+.2f}%",
-            'Volume': f"${g.get('volume_24h', 0):,.0f}"
-        } for g in top_gainers]
-        
+        gainers_data = [
+            {
+                "Coin": g["coin"],
+                "Price": f"${g['price']:.4f}",
+                "24h Change": f"{g['change_24h']:+.2f}%",
+                "Volume": f"${g.get('volume_24h', 0):,.0f}",
+            }
+            for g in top_gainers
+        ]
+
         df = pd.DataFrame(gainers_data)
         st.dataframe(df, use_container_width=True)
+
 
 def render_ai_predictions():
     """FIXED: Production predictions only, consistent confidence gate"""
     st.subheader("🤖 AI Predictions - Production Pipeline Only")
-    
+
     checker = SystemStatusChecker()
     pred_status = checker.check_predictions()
-    
-    if not pred_status['available']:
+
+    if not pred_status["available"]:
         st.error("❌ No production predictions available")
         st.info("Generate predictions: python generate_final_predictions.py")
-        
+
         # Check for authentic data status
         status_file = Path("exports/production/authentic_data_status.json")
         if status_file.exists():
-            with open(status_file, 'r') as f:
+            with open(status_file, "r") as f:
                 status = json.load(f)
-            
+
             st.subheader("🔒 Authentic Data Status")
-            
+
             # Display requirements
-            for req, status_text in status['requirements'].items():
+            for req, status_text in status["requirements"].items():
                 if "✅" in status_text:
                     st.success(f"{req.replace('_', ' ').title()}: {status_text}")
                 else:
                     st.error(f"{req.replace('_', ' ').title()}: {status_text}")
-            
+
             # Display next steps
             st.subheader("🎯 Next Steps for Production")
-            for step in status['next_steps']:
+            for step in status["next_steps"]:
                 st.write(f"• {step}")
-        
+
         st.warning("🏷️ NO ARTIFICIAL PREDICTIONS SHOWN - Only authentic data allowed")
         return
-    
+
     # Load predictions
-    if pred_status['source'] == 'csv':
+    if pred_status["source"] == "csv":
         pred_file = Path("exports/production/predictions.csv")
         df = pd.read_csv(pred_file)
         predictions_data = df
     else:  # json
         enhanced_file = Path("exports/production/enhanced_predictions.json")
-        with open(enhanced_file, 'r') as f:
+        with open(enhanced_file, "r") as f:
             predictions_data = json.load(f)
-    
+
     st.success(f"✅ Loaded {pred_status['count']} production predictions")
-    
+
     # FIXED: Apply consistent confidence gate
     gate_manager = ConfidenceGateManager()
     filtered_predictions = gate_manager.apply_80_percent_gate(predictions_data)
-    
+
     if isinstance(filtered_predictions, pd.DataFrame):
         passed_count = len(filtered_predictions)
-        prediction_records = filtered_predictions.to_dict('records')
+        prediction_records = filtered_predictions.to_dict("records")
     else:
         passed_count = len(filtered_predictions)
         prediction_records = filtered_predictions
-    
+
     if passed_count == 0:
         st.warning("⚠️ No predictions passed 80% confidence gate")
         st.info(f"Total predictions: {pred_status['count']} | Passed gate: 0")
         return
-    
+
     st.info(f"Showing {passed_count} high-confidence predictions (≥80%)")
-    
+
     # Display predictions
     if prediction_records:
         display_data = []
         for pred in prediction_records:
-            coin = pred.get('coin', 'N/A')
-            expected_return = pred.get('expected_return_pct', pred.get('expected_return_24h', 0))
-            confidence = pred.get('gate_confidence', pred.get('max_confidence', 0))
-            
-            display_data.append({
-                'Coin': coin,
-                'Expected Return': f"{expected_return:+.1f}%",
-                'Confidence': f"{confidence*100:.0f}%",
-                'Regime': pred.get('regime', 'N/A'),
-                'Sentiment': pred.get('sentiment_label', 'neutral').title(),
-                'Whale Risk': pred.get('large_transaction_risk', 'low').title(),
-                'Meta Quality': f"{pred.get('meta_label_quality', 0):.2f}",
-                'Uncertainty': f"{pred.get('total_uncertainty', 0):.3f}"
-            })
-        
+            coin = pred.get("coin", "N/A")
+            expected_return = pred.get("expected_return_pct", pred.get("expected_return_24h", 0))
+            confidence = pred.get("gate_confidence", pred.get("max_confidence", 0))
+
+            display_data.append(
+                {
+                    "Coin": coin,
+                    "Expected Return": f"{expected_return:+.1f}%",
+                    "Confidence": f"{confidence * 100:.0f}%",
+                    "Regime": pred.get("regime", "N/A"),
+                    "Sentiment": pred.get("sentiment_label", "neutral").title(),
+                    "Whale Risk": pred.get("large_transaction_risk", "low").title(),
+                    "Meta Quality": f"{pred.get('meta_label_quality', 0):.2f}",
+                    "Uncertainty": f"{pred.get('total_uncertainty', 0):.3f}",
+                }
+            )
+
         if display_data:
             pred_df = pd.DataFrame(display_data)
             st.dataframe(pred_df, use_container_width=True)
+
 
 def main():
     """FIXED: Main function with proper error handling and no side effects"""
     st.title("🚀 CryptoSmartTrader V2 - Complete Analysis System")
     st.markdown("### Advanced Cryptocurrency Trading Intelligence")
-    
+
     # Early Listing Detection Status
     try:
         from src.cryptosmarttrader.agents.listing_detection_agent import ListingDetectionAgent
         from src.cryptosmarttrader.agents.early_mover_system import EarlyMoverSystem
-        
+
         listing_agent = ListingDetectionAgent()
         mover_system = EarlyMoverSystem()
-        mover_system.connect_agent('listing_detection', listing_agent)
-        
+        mover_system.connect_agent("listing_detection", listing_agent)
+
         st.info("🚀 **EARLY LISTING DETECTION SYSTEM ACTIVE**")
-        
+
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
             st.metric("🔍 Listing Monitor", "ACTIVE", delta="Real-time")
         with col2:
-            st.metric("📊 Exchanges", f"{len(listing_agent.exchange_announcement_sources)}", delta="Multi-source")
+            st.metric(
+                "📊 Exchanges",
+                f"{len(listing_agent.exchange_announcement_sources)}",
+                delta="Multi-source",
+            )
         with col3:
             st.metric("⚡ Speed", "< 1 min", delta="API advantage")
         with col4:
             st.metric("🎯 Target Return", "300%+", delta="New listings")
-            
+
         # Show system capabilities
-        st.success("✅ Exchange announcement monitoring • API pair detection • Social media tracking • AI analysis")
-        
+        st.success(
+            "✅ Exchange announcement monitoring • API pair detection • Social media tracking • AI analysis"
+        )
+
         # Add Cross-Exchange Arbitrage Status
         try:
             from src.cryptosmarttrader.agents.arbitrage_detector_agent import ArbitrageDetectorAgent
             from src.cryptosmarttrader.agents.funding_rate_monitor import FundingRateMonitor
-            
+
             arbitrage_agent = ArbitrageDetectorAgent()
             funding_monitor = FundingRateMonitor()
-            
+
             st.info("⚡ **CROSS-EXCHANGE ARBITRAGE & FUNDING RATE OPPORTUNITIES**")
-            
+
             col1, col2, col3, col4 = st.columns(4)
-            
+
             with col1:
                 st.metric("🔄 Arbitrage Scanner", "ACTIVE", delta="Multi-exchange")
             with col2:
@@ -466,208 +502,284 @@ def main():
                 st.metric("💰 Profit Target", "0.5%+", delta="Per opportunity")
             with col4:
                 st.metric("⚖️ Risk Level", "LOW-MOD", delta="Hedged positions")
-                
+
             # Show arbitrage capabilities
             arb_status = arbitrage_agent.get_arbitrage_summary()
             funding_summary = funding_monitor.get_funding_summary()
-            
-            st.success(f"✅ Monitoring {arb_status['exchanges_monitored']} exchanges • {arb_status['symbols_monitored']} symbols • Funding rate analysis • Basis tracking")
-            
+
+            st.success(
+                f"✅ Monitoring {arb_status['exchanges_monitored']} exchanges • {arb_status['symbols_monitored']} symbols • Funding rate analysis • Basis tracking"
+            )
+
         except Exception as e:
             st.warning(f"Arbitrage System: {str(e)[:100]}...")
-        
+
         # Add Live AI Ensemble Voting Status
         try:
-            from src.cryptosmarttrader.agents.ensemble_voting_agent import EnsembleVotingAgent, ModelType, VotingMethod
-            
+            from src.cryptosmarttrader.agents.ensemble_voting_agent import (
+                EnsembleVotingAgent,
+                ModelType,
+                VotingMethod,
+            )
+
             ensemble_agent = EnsembleVotingAgent()
-            
+
             st.info("🧠 **LIVE AI ENSEMBLE VOTING VOOR REAL-TIME VOORSPELLINGEN**")
-            
+
             col1, col2, col3, col4 = st.columns(4)
-            
+
             with col1:
-                st.metric("🤖 AI Models", f"{ensemble_agent.stats['models_registered']}", delta="Multi-model")
+                st.metric(
+                    "🤖 AI Models",
+                    f"{ensemble_agent.stats['models_registered']}",
+                    delta="Multi-model",
+                )
             with col2:
                 st.metric("🎯 Ensemble Voting", "ACTIVE", delta="Real-time")
             with col3:
-                st.metric("📊 Confidence", f"{ensemble_agent.stats['average_confidence']:.1%}", delta="Live scoring")
+                st.metric(
+                    "📊 Confidence",
+                    f"{ensemble_agent.stats['average_confidence']:.1%}",
+                    delta="Live scoring",
+                )
             with col4:
-                st.metric("🔮 Predictions", f"{ensemble_agent.stats['total_predictions']}", delta="Generated")
-                
+                st.metric(
+                    "🔮 Predictions",
+                    f"{ensemble_agent.stats['total_predictions']}",
+                    delta="Generated",
+                )
+
             # Show ensemble capabilities
             ensemble_summary = ensemble_agent.get_ensemble_summary()
-            
-            st.success(f"✅ {ensemble_summary['models_registered']} AI models registered • Random Forest + XGBoost + Technical Analysis + Sentiment + OpenAI GPT-4o")
-            
+
+            st.success(
+                f"✅ {ensemble_summary['models_registered']} AI models registered • Random Forest + XGBoost + Technical Analysis + Sentiment + OpenAI GPT-4o"
+            )
+
             # Show high confidence predictions if available
             high_conf_preds = ensemble_agent.get_high_confidence_predictions()
             if high_conf_preds:
-                st.success(f"🔥 {len(high_conf_preds)} High Confidence Ensemble Predictions Active!")
+                st.success(
+                    f"🔥 {len(high_conf_preds)} High Confidence Ensemble Predictions Active!"
+                )
                 for pred in high_conf_preds[:3]:  # Show top 3
-                    st.info(f"💎 {pred.symbol} {pred.horizon.value}: {pred.ensemble_return:.2f}% expected • {pred.ensemble_confidence:.1%} confidence • Action: {pred.recommended_action}")
+                    st.info(
+                        f"💎 {pred.symbol} {pred.horizon.value}: {pred.ensemble_return:.2f}% expected • {pred.ensemble_confidence:.1%} confidence • Action: {pred.recommended_action}"
+                    )
             else:
                 st.info("🔍 Generating ensemble predictions...")
-            
+
         except Exception as e:
             st.warning(f"Ensemble Voting System: {str(e)[:100]}...")
-        
+
         # Add Advanced Portfolio Optimization Status
         try:
-            from src.cryptosmarttrader.agents.portfolio_optimizer_agent import PortfolioOptimizerAgent, OptimizationMethod
-            
+            from src.cryptosmarttrader.agents.portfolio_optimizer_agent import (
+                PortfolioOptimizerAgent,
+                OptimizationMethod,
+            )
+
             portfolio_agent = PortfolioOptimizerAgent()
-            
+
             st.info("⚙️ **ADVANCED PORTFOLIO OPTIMIZATION MET KELLY CALIBRATIE**")
-            
+
             col1, col2, col3, col4 = st.columns(4)
-            
+
             with col1:
-                st.metric("📊 Optimization", f"{portfolio_agent.default_method.value.replace('_', ' ').title()}", delta="Active")
+                st.metric(
+                    "📊 Optimization",
+                    f"{portfolio_agent.default_method.value.replace('_', ' ').title()}",
+                    delta="Active",
+                )
             with col2:
-                st.metric("🎯 Kelly Scaling", f"{portfolio_agent.kelly_scaling_factor:.0%}", delta="Conservative")
+                st.metric(
+                    "🎯 Kelly Scaling",
+                    f"{portfolio_agent.kelly_scaling_factor:.0%}",
+                    delta="Conservative",
+                )
             with col3:
-                st.metric("⚖️ Max Position", f"{portfolio_agent.max_single_position:.0%}", delta="Risk limit")
+                st.metric(
+                    "⚖️ Max Position",
+                    f"{portfolio_agent.max_single_position:.0%}",
+                    delta="Risk limit",
+                )
             with col4:
-                st.metric("🔄 Rebalancing", f"{portfolio_agent.rebalancing_frequency.value.title()}", delta="Dynamic")
-                
+                st.metric(
+                    "🔄 Rebalancing",
+                    f"{portfolio_agent.rebalancing_frequency.value.title()}",
+                    delta="Dynamic",
+                )
+
             # Show portfolio capabilities
             portfolio_summary = portfolio_agent.get_portfolio_summary()
-            
-            if portfolio_summary.get('optimization_method') != 'None':
-                st.success(f"✅ Portfolio optimized • Sharpe: {portfolio_summary['sharpe_ratio']:.2f} • Expected Return: {portfolio_summary['expected_return']:.2f}% • {portfolio_summary['number_of_positions']} positions")
-                
+
+            if portfolio_summary.get("optimization_method") != "None":
+                st.success(
+                    f"✅ Portfolio optimized • Sharpe: {portfolio_summary['sharpe_ratio']:.2f} • Expected Return: {portfolio_summary['expected_return']:.2f}% • {portfolio_summary['number_of_positions']} positions"
+                )
+
                 # Show top positions
-                if portfolio_summary.get('top_positions'):
+                if portfolio_summary.get("top_positions"):
                     st.success("🏆 **Top Portfolio Positions:**")
-                    for pos in portfolio_summary['top_positions'][:3]:
-                        kelly_display = f"Kelly: {pos['kelly_fraction']:.1%}" if pos['kelly_fraction'] > 0 else ""
-                        st.info(f"📈 {pos['symbol']}: {pos['weight']:.1%} weight • {pos['expected_return']:.2f}% return • {kelly_display}")
+                    for pos in portfolio_summary["top_positions"][:3]:
+                        kelly_display = (
+                            f"Kelly: {pos['kelly_fraction']:.1%}"
+                            if pos["kelly_fraction"] > 0
+                            else ""
+                        )
+                        st.info(
+                            f"📈 {pos['symbol']}: {pos['weight']:.1%} weight • {pos['expected_return']:.2f}% return • {kelly_display}"
+                        )
             else:
                 st.info("🔍 Initializing portfolio optimization...")
-            
+
         except Exception as e:
             st.warning(f"Portfolio Optimization System: {str(e)[:100]}...")
-        
+
         # Add News Speed Advantage Status
         try:
-            from src.cryptosmarttrader.agents.news_speed_agent import NewsSpeedAgent, NewsImpact, TradingDirection
-            
+            from src.cryptosmarttrader.agents.news_speed_agent import (
+                NewsSpeedAgent,
+                NewsImpact,
+                TradingDirection,
+            )
+
             news_agent = NewsSpeedAgent()
-            
+
             st.info("⚡ **NEWS SPEED ADVANTAGE VOOR MILLISECONDE TRADING REACTIES**")
-            
+
             col1, col2, col3, col4 = st.columns(4)
-            
+
             with col1:
                 st.metric("🚀 Speed Target", "< 50ms", delta="Ultra-fast")
             with col2:
-                st.metric("📰 News Sources", f"{news_agent.get_agent_status()['news_sources_configured']}", delta="Real-time")
+                st.metric(
+                    "📰 News Sources",
+                    f"{news_agent.get_agent_status()['news_sources_configured']}",
+                    delta="Real-time",
+                )
             with col3:
-                st.metric("⚡ Processing", f"{news_agent.monitoring_interval * 1000:.0f}ms", delta="Polling")
+                st.metric(
+                    "⚡ Processing",
+                    f"{news_agent.monitoring_interval * 1000:.0f}ms",
+                    delta="Polling",
+                )
             with col4:
                 st.metric("🎯 Signals Generated", f"{news_agent.signals_generated}", delta="Live")
-                
+
             # Show news capabilities
             speed_summary = news_agent.get_speed_summary()
-            
-            if speed_summary.get('total_signals_generated', 0) > 0:
-                st.success(f"✅ {speed_summary['total_signals_generated']} signals generated • Avg: {speed_summary['average_generation_time_ms']:.1f}ms • Fastest: {speed_summary['fastest_signal_ms']:.1f}ms")
-                
+
+            if speed_summary.get("total_signals_generated", 0) > 0:
+                st.success(
+                    f"✅ {speed_summary['total_signals_generated']} signals generated • Avg: {speed_summary['average_generation_time_ms']:.1f}ms • Fastest: {speed_summary['fastest_signal_ms']:.1f}ms"
+                )
+
                 # Show recent signals
                 recent_signals = news_agent.get_recent_signals(3)
                 if recent_signals:
                     st.success("⚡ **Recent Speed Signals:**")
                     for signal in recent_signals:
                         time_ago = (datetime.now() - signal.timestamp).total_seconds()
-                        st.info(f"📈 {signal.symbol} {signal.direction.value} • Strength: {signal.signal_strength:.2f} • {signal.generated_in_ms:.1f}ms • {time_ago:.0f}s ago")
+                        st.info(
+                            f"📈 {signal.symbol} {signal.direction.value} • Strength: {signal.signal_strength:.2f} • {signal.generated_in_ms:.1f}ms • {time_ago:.0f}s ago"
+                        )
             else:
                 st.info("🔍 Monitoring news feeds for speed signals...")
-            
-            st.success("✅ Ultra-fast news processing • CoinDesk + Cointelegraph + The Block + Decrypt • Sentiment analysis • Impact assessment • Milliseconde signalen")
-            
+
+            st.success(
+                "✅ Ultra-fast news processing • CoinDesk + Cointelegraph + The Block + Decrypt • Sentiment analysis • Impact assessment • Milliseconde signalen"
+            )
+
         except Exception as e:
             st.warning(f"News Speed System: {str(e)[:100]}...")
-        
+
         st.divider()
-            
+
     except Exception as e:
         st.warning(f"Early Listing Detection: {str(e)[:100]}...")
         st.divider()
-    
+
     # GROTE START ANALYSE SECTIE
-    st.markdown("""
+    st.markdown(
+        """
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                 padding: 2rem; border-radius: 15px; color: white; margin: 2rem 0; text-align: center;">
         <h2>🎯 START UITGEBREIDE ANALYSE</h2>
         <p>Comprehensive analysis van alle cryptocurrencies met ML predictions, sentiment en whale activity</p>
     </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
         if st.button("🚀 START VOLLEDIGE ANALYSE", type="primary", use_container_width=True):
-            st.session_state['analysis_started'] = True
-            
+            st.session_state["analysis_started"] = True
+
     with col2:
         if st.button("⚡ QUICK SCAN (30 sec)", use_container_width=True):
-            st.session_state['quick_scan'] = True
-            
+            st.session_state["quick_scan"] = True
+
     with col3:
         if st.button("🐋 WHALE ANALYSIS", use_container_width=True):
-            st.session_state['whale_focus'] = True
-    
+            st.session_state["whale_focus"] = True
+
     # FIXED: Initialize session state consistently
-    if 'system_checked' not in st.session_state:
+    if "system_checked" not in st.session_state:
         st.session_state.system_checked = False
-    if 'analysis_started' not in st.session_state:
+    if "analysis_started" not in st.session_state:
         st.session_state.analysis_started = False
-    if 'quick_scan' not in st.session_state:
+    if "quick_scan" not in st.session_state:
         st.session_state.quick_scan = False
-    if 'whale_focus' not in st.session_state:
+    if "whale_focus" not in st.session_state:
         st.session_state.whale_focus = False
-    
+
     # System status check
     try:
         checker = SystemStatusChecker()
         model_status = checker.check_models()
         all_models_ready = all(model_status.values())
-        
+
         # FIXED: Hard gate with clear path - no unreachable code
         if not all_models_ready:
             st.error("❌ RF Models Not Ready - AI Features Disabled")
             st.info("Train RF models: python ml/train_baseline.py")
-            
+
             # Show what's available without models
             st.subheader("Available Features (No Models)")
             render_market_overview()
             render_system_status()
-            
+
             st.stop()  # FIXED: Clear stop, no unreachable code after
-        
+
         # Models available - show sidebar
         with st.sidebar:
             st.header("🎛️ System Status")
             st.success("✅ RF Models Ready")
             st.success("✅ All Issues Fixed")
-            
+
             # Show fixes applied
             st.subheader("🔧 Issues Fixed")
             fixes = [
                 "No dummy data",
-                "Consistent confidence gate", 
+                "Consistent confidence gate",
                 "No provider conflicts",
                 "Proper error handling",
                 "No false success claims",
                 "SettingWithCopyWarning fixed",
-                "Unreachable code removed"
+                "Unreachable code removed",
             ]
             for fix in fixes:
                 st.success(f"✅ {fix}")
-        
+
         # Check if analysis was started
-        if st.session_state.analysis_started or st.session_state.quick_scan or st.session_state.whale_focus:
+        if (
+            st.session_state.analysis_started
+            or st.session_state.quick_scan
+            or st.session_state.whale_focus
+        ):
             st.markdown("---")
             render_comprehensive_analysis()
         else:
@@ -675,158 +787,171 @@ def main():
             st.markdown("---")
             st.header("⚡ Quick System Overview")
             render_quick_overview()
-            
+
             # Main application tabs
             tab1, tab2, tab3 = st.tabs(["📊 Market", "🤖 Predictions", "⚙️ Status"])
-            
+
             with tab1:
                 render_market_overview()
-            
+
             with tab2:
                 render_ai_predictions()
-            
+
             with tab3:
                 render_system_status()
-    
+
     # FIXED: Single except block with proper error context
     except Exception as e:
         st.error(f"System Error: {str(e)}")
         logger.exception("Main application error", exc_info=True)
-        
+
         # Still show basic status on error
         st.subheader("System Status (Error Mode)")
         render_system_status()
 
+
 def render_quick_overview():
     """Quick system overview"""
     pred_data = SystemStatusChecker.check_predictions()
-    
-    if pred_data['available']:
+
+    if pred_data["available"]:
         try:
             predictions_file = Path("exports/production/predictions.csv")
             if predictions_file.exists():
                 df = pd.read_csv(predictions_file)
-                
+
                 col1, col2, col3, col4 = st.columns(4)
-                
+
                 with col1:
                     st.metric("Total Coins", len(df))
-                
+
                 with col2:
-                    gate_passed = len(df[df['gate_passed'] == True])
+                    gate_passed = len(df[df["gate_passed"] == True])
                     st.metric("80% Gate Passed", gate_passed)
-                
+
                 with col3:
-                    avg_conf = df['max_confidence'].mean()
+                    avg_conf = df["max_confidence"].mean()
                     st.metric("Avg Confidence", f"{avg_conf:.3f}")
-                
+
                 with col4:
-                    whale_count = len(df[df['whale_activity_detected'] == True])
+                    whale_count = len(df[df["whale_activity_detected"] == True])
                     st.metric("Whale Activity", whale_count)
-                
+
                 # Top 3 opportunities
                 st.subheader("🎯 Top 3 Quick Opportunities")
-                high_conf = df[df['gate_passed'] == True]
+                high_conf = df[df["gate_passed"] == True]
                 if len(high_conf) > 0:
-                    top_3 = high_conf.nlargest(3, 'expected_return_pct', keep='first')
+                    top_3 = high_conf.nlargest(3, "expected_return_pct", keep="first")
                     for idx, row in top_3.iterrows():
-                        whale_indicator = "🐋" if bool(row['whale_activity_detected']) else ""
-                        st.write(f"{whale_indicator} **{row['coin']}**: {row['expected_return_pct']:.2f}% expected return")
+                        whale_indicator = "🐋" if bool(row["whale_activity_detected"]) else ""
+                        st.write(
+                            f"{whale_indicator} **{row['coin']}**: {row['expected_return_pct']:.2f}% expected return"
+                        )
         except Exception as e:
             st.error(f"Error loading quick overview: {e}")
     else:
         st.info("No predictions available for quick overview")
 
+
 def render_comprehensive_analysis():
     """Comprehensive analysis based on user selection"""
-    
+
     # Reset button
     if st.button("🔄 Back to Dashboard"):
         st.session_state.analysis_started = False
         st.session_state.quick_scan = False
         st.session_state.whale_focus = False
         st.rerun()
-    
+
     try:
         predictions_file = Path("exports/production/predictions.csv")
         if not predictions_file.exists():
             st.error("Predictions data niet beschikbaar - run generate_final_predictions.py")
             return
-        
+
         df = pd.read_csv(predictions_file)
-        high_conf = df[df['gate_passed'] == True]
-        
+        high_conf = df[df["gate_passed"] == True]
+
         if st.session_state.analysis_started:
             st.header("🚀 VOLLEDIGE COMPREHENSIVE ANALYSE")
-            
+
             # Comprehensive overview
             st.subheader("📊 Complete System Overview")
             col1, col2, col3, col4, col5 = st.columns(5)
-            
+
             with col1:
                 st.metric("Total Cryptocurrencies", len(df))
             with col2:
-                gate_pct = (len(high_conf)/len(df)*100) if len(df) > 0 else 0
+                gate_pct = (len(high_conf) / len(df) * 100) if len(df) > 0 else 0
                 st.metric("80% Confidence Gate", f"{len(high_conf)}", f"{gate_pct:.1f}% passed")
             with col3:
                 st.metric("Avg Confidence", f"{df['max_confidence'].mean():.3f}")
             with col4:
-                whale_count = len(df[df['whale_activity_detected'] == True])
-                st.metric("Whale Activity", f"{whale_count}", f"{whale_count/len(df)*100:.1f}% of coins")
+                whale_count = len(df[df["whale_activity_detected"] == True])
+                st.metric(
+                    "Whale Activity",
+                    f"{whale_count}",
+                    f"{whale_count / len(df) * 100:.1f}% of coins",
+                )
             with col5:
-                positive = len(df[df['expected_return_pct'] > 0])
-                st.metric("Positive Predictions", f"{positive}", f"{positive/len(df)*100:.1f}%")
-            
+                positive = len(df[df["expected_return_pct"] > 0])
+                st.metric("Positive Predictions", f"{positive}", f"{positive / len(df) * 100:.1f}%")
+
             # Top opportunities
             st.subheader("🎯 Top Trading Opportunities")
-            
+
             # Ensure we're working with a DataFrame, not array
-            high_conf_df = pd.DataFrame(high_conf) if not isinstance(high_conf, pd.DataFrame) else high_conf
+            high_conf_df = (
+                pd.DataFrame(high_conf) if not isinstance(high_conf, pd.DataFrame) else high_conf
+            )
             strong_buys = high_conf_df[
-                (high_conf_df['expected_return_pct'] > 5) & 
-                (high_conf_df['max_confidence'] > 0.85)
-            ].sort_values('expected_return_pct', ascending=False)
-            
+                (high_conf_df["expected_return_pct"] > 5) & (high_conf_df["max_confidence"] > 0.85)
+            ].sort_values("expected_return_pct", ascending=False)
+
             st.write(f"**{len(strong_buys)} Strong Buy Opportunities:**")
-            
+
             for idx, row in strong_buys.head(15).iterrows():
-                whale_indicator = "🐋" if bool(row['whale_activity_detected']) else ""
-                
-                with st.expander(f"{whale_indicator} {row['coin']} - {row['expected_return_pct']:.2f}% Expected Return"):
+                whale_indicator = "🐋" if bool(row["whale_activity_detected"]) else ""
+
+                with st.expander(
+                    f"{whale_indicator} {row['coin']} - {row['expected_return_pct']:.2f}% Expected Return"
+                ):
                     col_a, col_b, col_c = st.columns(3)
-                    
+
                     with col_a:
                         st.write("**Market Data**")
                         st.write(f"Price: ${row['price']:.6f}")
                         st.write(f"24h Change: {row['change_24h']:.2f}%")
                         st.write(f"Volume: ${row['volume_24h']:,.0f}")
-                    
+
                     with col_b:
                         st.write("**ML Predictions**")
                         st.write(f"1h: {row['expected_return_1h']:.2f}%")
                         st.write(f"24h: {row['expected_return_24h']:.2f}%")
                         st.write(f"7d: {row['expected_return_168h']:.2f}%")
                         st.write(f"30d: {row['expected_return_720h']:.2f}%")
-                    
+
                     with col_c:
                         st.write("**Intelligence**")
                         st.write(f"Confidence: {row['max_confidence']:.3f}")
                         st.write(f"Sentiment: {row['sentiment_label']}")
                         st.write(f"Whale: {'YES' if row['whale_activity_detected'] else 'NO'}")
-            
+
             # Whale analysis
-            whale_coins = df[df['whale_activity_detected'] == True]
+            whale_coins = df[df["whale_activity_detected"] == True]
             if len(whale_coins) > 0:
                 st.subheader(f"🐋 Whale Activity Analysis ({len(whale_coins)} coins)")
-                
-                whale_sorted = pd.DataFrame(whale_coins).sort_values('whale_score', ascending=False)
+
+                whale_sorted = pd.DataFrame(whale_coins).sort_values("whale_score", ascending=False)
                 st.write("**Top Whale Opportunities:**")
                 for idx, row in whale_sorted.head(10).iterrows():
-                    st.write(f"🐋 **{row['coin']}**: {row['expected_return_pct']:.2f}% return (Whale Score: {row['whale_score']:.2f})")
-        
+                    st.write(
+                        f"🐋 **{row['coin']}**: {row['expected_return_pct']:.2f}% return (Whale Score: {row['whale_score']:.2f})"
+                    )
+
         elif st.session_state.quick_scan:
             st.header("⚡ QUICK SCAN RESULTS")
-            
+
             # Quick metrics
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -834,42 +959,55 @@ def render_comprehensive_analysis():
             with col2:
                 st.metric("High Confidence", len(high_conf))
             with col3:
-                whale_count = len(df[df['whale_activity_detected'] == True])
+                whale_count = len(df[df["whale_activity_detected"] == True])
                 st.metric("Whale Activity", whale_count)
-            
+
             # Quick top picks
             if len(high_conf) > 0:
-                high_conf_df = pd.DataFrame(high_conf) if not isinstance(high_conf, pd.DataFrame) else high_conf
+                high_conf_df = (
+                    pd.DataFrame(high_conf)
+                    if not isinstance(high_conf, pd.DataFrame)
+                    else high_conf
+                )
                 strong_buys = high_conf_df[
-                    (high_conf_df['expected_return_pct'] > 5) & 
-                    (high_conf_df['max_confidence'] > 0.85)
-                ].sort_values('expected_return_pct', ascending=False)
-                
+                    (high_conf_df["expected_return_pct"] > 5)
+                    & (high_conf_df["max_confidence"] > 0.85)
+                ].sort_values("expected_return_pct", ascending=False)
+
                 st.subheader(f"🎯 Top {min(10, len(strong_buys))} Quick Picks")
-                
+
                 for idx, row in strong_buys.head(10).iterrows():
-                    whale_indicator = "🐋" if bool(row['whale_activity_detected']) else ""
-                    st.write(f"{whale_indicator} **{row['coin']}**: {row['expected_return_pct']:.2f}% return (confidence: {row['max_confidence']:.3f})")
-        
+                    whale_indicator = "🐋" if bool(row["whale_activity_detected"]) else ""
+                    st.write(
+                        f"{whale_indicator} **{row['coin']}**: {row['expected_return_pct']:.2f}% return (confidence: {row['max_confidence']:.3f})"
+                    )
+
         elif st.session_state.whale_focus:
             st.header("🐋 WHALE FOCUS ANALYSIS")
-            
-            whale_coins = df[df['whale_activity_detected'] == True]
-            
+
+            whale_coins = df[df["whale_activity_detected"] == True]
+
             if len(whale_coins) > 0:
                 st.metric("Coins with Whale Activity", len(whale_coins))
-                st.metric("Average Whale Return", f"{whale_coins['expected_return_pct'].mean():.2f}%")
-                
+                st.metric(
+                    "Average Whale Return", f"{whale_coins['expected_return_pct'].mean():.2f}%"
+                )
+
                 st.subheader("Top Whale Opportunities")
-                whale_sorted = pd.DataFrame(whale_coins).sort_values(['whale_score', 'expected_return_pct'], ascending=False)
-                
+                whale_sorted = pd.DataFrame(whale_coins).sort_values(
+                    ["whale_score", "expected_return_pct"], ascending=False
+                )
+
                 for idx, row in whale_sorted.head(15).iterrows():
-                    st.write(f"🐋 **{row['coin']}**: {row['expected_return_pct']:.2f}% return | Whale Score: {row['whale_score']:.2f} | Confidence: {row['max_confidence']:.3f}")
+                    st.write(
+                        f"🐋 **{row['coin']}**: {row['expected_return_pct']:.2f}% return | Whale Score: {row['whale_score']:.2f} | Confidence: {row['max_confidence']:.3f}"
+                    )
             else:
                 st.info("Geen significante whale activity gedetecteerd in current dataset")
-        
+
     except Exception as e:
         st.error(f"Error in comprehensive analysis: {e}")
+
 
 @st.cache_data(ttl=60)
 def health_check():
@@ -878,7 +1016,7 @@ def health_check():
         "status": "healthy",
         "service": "dashboard",
         "timestamp": datetime.now().isoformat(),
-        "port": 5000
+        "port": 5000,
     }
 
 

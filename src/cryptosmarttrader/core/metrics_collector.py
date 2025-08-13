@@ -11,11 +11,20 @@ from enum import Enum
 from collections import defaultdict, deque
 from threading import Lock
 
-from prometheus_client import Counter, Histogram, Gauge, Info, Summary, CollectorRegistry, generate_latest
+from prometheus_client import (
+    Counter,
+    Histogram,
+    Gauge,
+    Info,
+    Summary,
+    CollectorRegistry,
+    generate_latest,
+)
 
 
 class MetricType(Enum):
     """Metric types"""
+
     COUNTER = "counter"
     GAUGE = "gauge"
     HISTOGRAM = "histogram"
@@ -26,6 +35,7 @@ class MetricType(Enum):
 @dataclass
 class MetricConfig:
     """Metric configuration"""
+
     name: str
     help_text: str
     metric_type: MetricType
@@ -55,16 +65,48 @@ class CardinalityController:
         """Get allowed trading symbols (top coins + major pairs)"""
         # Top 100 cryptocurrencies by market cap + major fiat pairs
         top_symbols = {
-            "BTC/USD", "ETH/USD", "BNB/USD", "XRP/USD", "ADA/USD",
-            "SOL/USD", "DOGE/USD", "DOT/USD", "MATIC/USD", "LTC/USD",
-            "SHIB/USD", "TRX/USD", "AVAX/USD", "UNI/USD", "ATOM/USD",
-            "LINK/USD", "XLM/USD", "BCH/USD", "ALGO/USD", "VET/USD",
-            "ICP/USD", "FIL/USD", "APE/USD", "MANA/USD", "SAND/USD",
-            "CRO/USD", "LRC/USD", "FTM/USD", "AXS/USD", "THETA/USD",
+            "BTC/USD",
+            "ETH/USD",
+            "BNB/USD",
+            "XRP/USD",
+            "ADA/USD",
+            "SOL/USD",
+            "DOGE/USD",
+            "DOT/USD",
+            "MATIC/USD",
+            "LTC/USD",
+            "SHIB/USD",
+            "TRX/USD",
+            "AVAX/USD",
+            "UNI/USD",
+            "ATOM/USD",
+            "LINK/USD",
+            "XLM/USD",
+            "BCH/USD",
+            "ALGO/USD",
+            "VET/USD",
+            "ICP/USD",
+            "FIL/USD",
+            "APE/USD",
+            "MANA/USD",
+            "SAND/USD",
+            "CRO/USD",
+            "LRC/USD",
+            "FTM/USD",
+            "AXS/USD",
+            "THETA/USD",
             # Add EUR pairs for major coins
-            "BTC/EUR", "ETH/EUR", "BNB/EUR", "XRP/EUR", "ADA/EUR",
+            "BTC/EUR",
+            "ETH/EUR",
+            "BNB/EUR",
+            "XRP/EUR",
+            "ADA/EUR",
             # Add BTC pairs
-            "ETH/BTC", "BNB/BTC", "XRP/BTC", "ADA/BTC", "DOT/BTC"
+            "ETH/BTC",
+            "BNB/BTC",
+            "XRP/BTC",
+            "ADA/BTC",
+            "DOT/BTC",
         }
 
         return top_symbols
@@ -180,58 +222,58 @@ class EnterpriseMetricsCollector:
             "cryptotrader_trades_total",
             "Total number of trades executed",
             ["symbol", "exchange", "side", "status"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["trade_value_usd"] = Histogram(
             "cryptotrader_trade_value_usd",
             "Trade value in USD",
             ["symbol", "exchange", "side"],
-            buckets=[100, 500, 1000, 5000, 10000, 50000, 100000, 500000, float('inf')],
-            registry=self.registry
+            buckets=[100, 500, 1000, 5000, 10000, 50000, 100000, 500000, float("inf")],
+            registry=self.registry,
         )
 
         self.metrics["slippage_bps"] = Histogram(
             "cryptotrader_slippage_bps",
             "Trade slippage in basis points",
             ["symbol", "exchange"],
-            buckets=[0, 5, 10, 25, 50, 100, 250, 500, float('inf')],
-            registry=self.registry
+            buckets=[0, 5, 10, 25, 50, 100, 250, 500, float("inf")],
+            registry=self.registry,
         )
 
         self.metrics["trading_fees_usd"] = Counter(
             "cryptotrader_trading_fees_usd_total",
             "Total trading fees paid in USD",
             ["exchange", "fee_type"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         # Portfolio metrics
         self.metrics["portfolio_value_usd"] = Gauge(
             "cryptotrader_portfolio_value_usd",
             "Current portfolio value in USD",
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["position_count"] = Gauge(
             "cryptotrader_positions_count",
             "Number of open positions",
             ["exchange"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["unrealized_pnl_usd"] = Gauge(
             "cryptotrader_unrealized_pnl_usd",
             "Unrealized P&L in USD",
             ["symbol"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["realized_pnl_usd"] = Counter(
             "cryptotrader_realized_pnl_usd_total",
             "Cumulative realized P&L in USD",
             ["symbol"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         # Signal metrics
@@ -239,14 +281,14 @@ class EnterpriseMetricsCollector:
             "cryptotrader_signals_generated_total",
             "Total signals generated",
             ["symbol", "signal_type", "confidence_bucket"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["signal_accuracy"] = Gauge(
             "cryptotrader_signal_accuracy_ratio",
             "Signal accuracy ratio (0-1)",
             ["symbol", "signal_type", "timeframe"],
-            registry=self.registry
+            registry=self.registry,
         )
 
     def _init_system_metrics(self):
@@ -255,35 +297,35 @@ class EnterpriseMetricsCollector:
         self.metrics["system_health_score"] = Gauge(
             "cryptotrader_system_health_score",
             "Overall system health score (0-1)",
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["component_health"] = Gauge(
             "cryptotrader_component_health_score",
             "Component health score (0-1)",
             ["component"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["data_drift_score"] = Gauge(
             "cryptotrader_data_drift_score",
             "Data drift score (0-1)",
             ["model", "feature_group"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["model_inference_count"] = Counter(
             "cryptotrader_model_inference_total",
             "Model inference requests",
             ["model", "version", "status"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["circuit_breaker_state"] = Gauge(
             "cryptotrader_circuit_breaker_state",
             "Circuit breaker state (0=closed, 1=open, 2=half-open)",
             ["service"],
-            registry=self.registry
+            registry=self.registry,
         )
 
     def _init_api_metrics(self):
@@ -293,29 +335,29 @@ class EnterpriseMetricsCollector:
             "cryptotrader_http_requests_total",
             "Total HTTP requests",
             ["method", "endpoint", "status_code"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["http_request_duration"] = Histogram(
             "cryptotrader_http_request_duration_seconds",
             "HTTP request duration",
             ["method", "endpoint"],
-            buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, float('inf')],
-            registry=self.registry
+            buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, float("inf")],
+            registry=self.registry,
         )
 
         self.metrics["api_rate_limit_hits"] = Counter(
             "cryptotrader_api_rate_limit_hits_total",
             "API rate limit violations",
             ["service", "endpoint"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["cache_operations"] = Counter(
             "cryptotrader_cache_operations_total",
             "Cache operations",
             ["operation", "status"],
-            registry=self.registry
+            registry=self.registry,
         )
 
     def _init_ml_metrics(self):
@@ -325,15 +367,15 @@ class EnterpriseMetricsCollector:
             "cryptotrader_model_training_duration_seconds",
             "Model training duration",
             ["model", "algorithm"],
-            buckets=[60, 300, 900, 1800, 3600, 7200, 14400, float('inf')],
-            registry=self.registry
+            buckets=[60, 300, 900, 1800, 3600, 7200, 14400, float("inf")],
+            registry=self.registry,
         )
 
         self.metrics["model_accuracy"] = Gauge(
             "cryptotrader_model_accuracy_score",
             "Model accuracy score (0-1)",
             ["model", "version", "dataset"],
-            registry=self.registry
+            registry=self.registry,
         )
 
         self.metrics["prediction_confidence"] = Histogram(
@@ -341,7 +383,7 @@ class EnterpriseMetricsCollector:
             "Prediction confidence distribution",
             ["model", "symbol"],
             buckets=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-            registry=self.registry
+            registry=self.registry,
         )
 
     def record_trade(
@@ -352,18 +394,12 @@ class EnterpriseMetricsCollector:
         value_usd: float,
         slippage_bps: float,
         fees_usd: float,
-        status: str = "executed"
+        status: str = "executed",
     ):
         """Record trade execution metrics"""
 
         labels = self.cardinality_controller.validate_labels(
-            "trades",
-            {
-                "symbol": symbol,
-                "exchange": exchange,
-                "side": side,
-                "status": status
-            }
+            "trades", {"symbol": symbol, "exchange": exchange, "side": side, "status": status}
         )
 
         self.metrics["trades_total"].labels(**labels).inc()
@@ -375,17 +411,12 @@ class EnterpriseMetricsCollector:
         self.metrics["slippage_bps"].labels(**slippage_labels).observe(slippage_bps)
 
         fee_labels = self.cardinality_controller.validate_labels(
-            "fees",
-            {"exchange": exchange, "fee_type": "trading"}
+            "fees", {"exchange": exchange, "fee_type": "trading"}
         )
         self.metrics["trading_fees_usd"].labels(**fee_labels).inc(fees_usd)
 
     def record_signal(
-        self,
-        symbol: str,
-        signal_type: str,
-        confidence: float,
-        timeframe: str = "1h"
+        self, symbol: str, signal_type: str, confidence: float, timeframe: str = "1h"
     ):
         """Record trading signal metrics"""
 
@@ -399,11 +430,7 @@ class EnterpriseMetricsCollector:
 
         labels = self.cardinality_controller.validate_labels(
             "signals",
-            {
-                "symbol": symbol,
-                "signal_type": signal_type,
-                "confidence_bucket": confidence_bucket
-            }
+            {"symbol": symbol, "signal_type": signal_type, "confidence_bucket": confidence_bucket},
         )
 
         self.metrics["signals_generated"].labels(**labels).inc()
@@ -413,29 +440,20 @@ class EnterpriseMetricsCollector:
 
         if component:
             labels = self.cardinality_controller.validate_labels(
-                "component_health",
-                {"component": component}
+                "component_health", {"component": component}
             )
             self.metrics["component_health"].labels(**labels).set(score)
         else:
             self.metrics["system_health_score"].set(score)
 
     def record_http_request(
-        self,
-        method: str,
-        endpoint: str,
-        status_code: int,
-        duration_seconds: float
+        self, method: str, endpoint: str, status_code: int, duration_seconds: float
     ):
         """Record HTTP request metrics"""
 
         labels = self.cardinality_controller.validate_labels(
             "http_requests",
-            {
-                "method": method.upper(),
-                "endpoint": endpoint,
-                "status_code": str(status_code)
-            }
+            {"method": method.upper(), "endpoint": endpoint, "status_code": str(status_code)},
         )
 
         self.metrics["http_requests_total"].labels(**labels).inc()
@@ -443,21 +461,11 @@ class EnterpriseMetricsCollector:
         duration_labels = {k: v for k, v in labels.items() if k != "status_code"}
         self.metrics["http_request_duration"].labels(**duration_labels).observe(duration_seconds)
 
-    def record_model_inference(
-        self,
-        model: str,
-        version: str,
-        status: str = "success"
-    ):
+    def record_model_inference(self, model: str, version: str, status: str = "success"):
         """Record model inference metrics"""
 
         labels = self.cardinality_controller.validate_labels(
-            "model_inference",
-            {
-                "model": model,
-                "version": version,
-                "status": status
-            }
+            "model_inference", {"model": model, "version": version, "status": status}
         )
 
         self.metrics["model_inference_count"].labels(**labels).inc()
@@ -468,15 +476,14 @@ class EnterpriseMetricsCollector:
         state_value = {"closed": 0, "open": 1, "half_open": 2}.get(state, 0)
 
         labels = self.cardinality_controller.validate_labels(
-            "circuit_breaker",
-            {"service": service}
+            "circuit_breaker", {"service": service}
         )
 
         self.metrics["circuit_breaker_state"].labels(**labels).set(state_value)
 
     def get_metrics(self) -> str:
         """Get metrics in Prometheus format"""
-        return generate_latest(self.registry).decode('utf-8')
+        return generate_latest(self.registry).decode("utf-8")
 
     def get_cardinality_stats(self) -> Dict[str, int]:
         """Get cardinality statistics"""

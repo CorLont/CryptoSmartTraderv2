@@ -15,17 +15,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class ValidationStrategy(Enum):
     """Validation strategies"""
-    EXPANDING_WINDOW = "expanding_window"      # Expanding training window
-    ROLLING_WINDOW = "rolling_window"          # Fixed-size rolling window
-    ANCHORED_WALK_FORWARD = "anchored_wf"      # Anchored at start, expanding
-    PURGED_WALK_FORWARD = "purged_wf"          # With purging period between train/test
+
+    EXPANDING_WINDOW = "expanding_window"  # Expanding training window
+    ROLLING_WINDOW = "rolling_window"  # Fixed-size rolling window
+    ANCHORED_WALK_FORWARD = "anchored_wf"  # Anchored at start, expanding
+    PURGED_WALK_FORWARD = "purged_wf"  # With purging period between train/test
 
 
 @dataclass
 class ValidationWindow:
     """Single validation window"""
+
     fold_id: int
     train_start: int
     train_end: int
@@ -53,6 +56,7 @@ class ValidationWindow:
 @dataclass
 class ValidationMetrics:
     """Metrics for a single validation fold"""
+
     fold_id: int
 
     # Performance metrics
@@ -96,6 +100,7 @@ class ValidationMetrics:
 @dataclass
 class ValidationResult:
     """Complete validation result"""
+
     strategy: ValidationStrategy
     total_folds: int
 
@@ -122,9 +127,9 @@ class ValidationResult:
     def is_stable(self) -> bool:
         """Check if validation results are stable"""
         return (
-            self.sharpe_stability_score > 0.6 and
-            self.return_consistency > 0.5 and
-            self.overfitting_ratio < 1.5
+            self.sharpe_stability_score > 0.6
+            and self.return_consistency > 0.5
+            and self.overfitting_ratio < 1.5
         )
 
 
@@ -133,21 +138,23 @@ class TimeSeriesCV:
     Time series cross-validation generator
     """
 
-    def __init__(self,
-                 min_train_size: int = 252,      # 1 year minimum
-                 validation_size: int = 63,       # 3 months validation
-                 step_size: int = 21,             # 3 weeks step
-                 purge_size: int = 0,             # No purge by default
-                 max_folds: int = None):
-
+    def __init__(
+        self,
+        min_train_size: int = 252,  # 1 year minimum
+        validation_size: int = 63,  # 3 months validation
+        step_size: int = 21,  # 3 weeks step
+        purge_size: int = 0,  # No purge by default
+        max_folds: int = None,
+    ):
         self.min_train_size = min_train_size
         self.validation_size = validation_size
         self.step_size = step_size
         self.purge_size = purge_size
         self.max_folds = max_folds
 
-    def split(self, data: pd.DataFrame,
-              strategy: ValidationStrategy = ValidationStrategy.EXPANDING_WINDOW) -> Generator[ValidationWindow, None, None]:
+    def split(
+        self, data: pd.DataFrame, strategy: ValidationStrategy = ValidationStrategy.EXPANDING_WINDOW
+    ) -> Generator[ValidationWindow, None, None]:
         """Generate validation windows"""
 
         n_samples = len(data)
@@ -202,7 +209,7 @@ class TimeSeriesCV:
                 validation_start=validation_start,
                 validation_end=validation_end,
                 purge_start=current_train_end if self.purge_size > 0 else None,
-                purge_end=validation_start if self.purge_size > 0 else None
+                purge_end=validation_start if self.purge_size > 0 else None,
             )
 
             yield window
@@ -214,8 +221,9 @@ class TimeSeriesCV:
             if self.max_folds and fold_id >= self.max_folds:
                 break
 
-    def get_fold_count(self, data: pd.DataFrame,
-                       strategy: ValidationStrategy = ValidationStrategy.EXPANDING_WINDOW) -> int:
+    def get_fold_count(
+        self, data: pd.DataFrame, strategy: ValidationStrategy = ValidationStrategy.EXPANDING_WINDOW
+    ) -> int:
         """Get number of validation folds"""
         return len(list(self.split(data, strategy)))
 
@@ -225,33 +233,36 @@ class WalkForwardValidator:
     Advanced walk-forward validation system for time series data
     """
 
-    def __init__(self,
-                 min_train_size: int = 252,
-                 validation_size: int = 63,
-                 step_size: int = 21,
-                 purge_size: int = 0,
-                 max_folds: int = None,
-                 n_jobs: int = 1):
-
+    def __init__(
+        self,
+        min_train_size: int = 252,
+        validation_size: int = 63,
+        step_size: int = 21,
+        purge_size: int = 0,
+        max_folds: int = None,
+        n_jobs: int = 1,
+    ):
         self.cv = TimeSeriesCV(
             min_train_size=min_train_size,
             validation_size=validation_size,
             step_size=step_size,
             purge_size=purge_size,
-            max_folds=max_folds
+            max_folds=max_folds,
         )
         self.n_jobs = n_jobs
 
         # Results storage
         self.validation_history = []
 
-    def validate(self,
-                 model_func: callable,
-                 data: pd.DataFrame,
-                 target_column: str,
-                 feature_columns: List[str] = None,
-                 strategy: ValidationStrategy = ValidationStrategy.EXPANDING_WINDOW,
-                 params: Dict[str, Any] = None) -> ValidationResult:
+    def validate(
+        self,
+        model_func: callable,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str] = None,
+        strategy: ValidationStrategy = ValidationStrategy.EXPANDING_WINDOW,
+        params: Dict[str, Any] = None,
+    ) -> ValidationResult:
         """
         Perform walk-forward validation
         """
@@ -296,14 +307,14 @@ class WalkForwardValidator:
                     in_sample_sharpes.append(0.0)
 
             # Calculate aggregate results
-            validation_result = self._aggregate_results(
-                strategy, fold_metrics, in_sample_sharpes
-            )
+            validation_result = self._aggregate_results(strategy, fold_metrics, in_sample_sharpes)
 
             # Store results
             self.validation_history.append(validation_result)
 
-            logger.info(f"Validation completed: OOS Sharpe = {validation_result.mean_oos_sharpe:.3f} ± {validation_result.std_oos_sharpe:.3f}")
+            logger.info(
+                f"Validation completed: OOS Sharpe = {validation_result.mean_oos_sharpe:.3f} ± {validation_result.std_oos_sharpe:.3f}"
+            )
 
             return validation_result
 
@@ -311,20 +322,22 @@ class WalkForwardValidator:
             logger.error(f"Walk-forward validation failed: {e}")
             return self._create_empty_result(strategy)
 
-    def _validate_fold(self,
-                       model_func: callable,
-                       data: pd.DataFrame,
-                       target_column: str,
-                       feature_columns: List[str],
-                       window: ValidationWindow,
-                       params: Dict[str, Any]) -> ValidationMetrics:
+    def _validate_fold(
+        self,
+        model_func: callable,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str],
+        window: ValidationWindow,
+        params: Dict[str, Any],
+    ) -> ValidationMetrics:
         """Validate single fold"""
 
         start_time = datetime.now()
 
         # Extract data splits
-        train_data = data.iloc[window.train_start:window.train_end]
-        val_data = data.iloc[window.validation_start:window.validation_end]
+        train_data = data.iloc[window.train_start : window.train_end]
+        val_data = data.iloc[window.validation_start : window.validation_end]
 
         X_train = train_data[feature_columns]
         y_train = train_data[target_column]
@@ -360,17 +373,19 @@ class WalkForwardValidator:
 
         return metrics
 
-    def _calculate_in_sample_performance(self,
-                                       model_func: callable,
-                                       data: pd.DataFrame,
-                                       target_column: str,
-                                       feature_columns: List[str],
-                                       window: ValidationWindow,
-                                       params: Dict[str, Any]) -> float:
+    def _calculate_in_sample_performance(
+        self,
+        model_func: callable,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str],
+        window: ValidationWindow,
+        params: Dict[str, Any],
+    ) -> float:
         """Calculate in-sample performance for overfitting detection"""
         try:
             # Use training data for both training and testing (in-sample)
-            train_data = data.iloc[window.train_start:window.train_end]
+            train_data = data.iloc[window.train_start : window.train_end]
 
             X_train = train_data[feature_columns]
             y_train = train_data[target_column]
@@ -383,7 +398,9 @@ class WalkForwardValidator:
             X_val_subset = X_train.iloc[split_point:]
             y_val_subset = y_train.iloc[split_point:]
 
-            predictions = model_func(X_train_subset, y_train_subset, X_val_subset, y_val_subset, params)
+            predictions = model_func(
+                X_train_subset, y_train_subset, X_val_subset, y_val_subset, params
+            )
 
             if isinstance(predictions, dict):
                 returns = predictions.get("returns", [])
@@ -403,12 +420,14 @@ class WalkForwardValidator:
             logger.warning(f"In-sample performance calculation failed: {e}")
             return 0.0
 
-    def _calculate_fold_metrics(self,
-                               fold_id: int,
-                               returns: List[float],
-                               predictions: List[float],
-                               training_time: float,
-                               prediction_time: float) -> ValidationMetrics:
+    def _calculate_fold_metrics(
+        self,
+        fold_id: int,
+        returns: List[float],
+        predictions: List[float],
+        training_time: float,
+        prediction_time: float,
+    ) -> ValidationMetrics:
         """Calculate comprehensive metrics for a fold"""
 
         if not returns or len(returns) == 0:
@@ -468,13 +487,15 @@ class WalkForwardValidator:
             profit_factor=profit_factor,
             avg_trade_return=mean_return,
             training_time_seconds=training_time,
-            prediction_time_seconds=prediction_time
+            prediction_time_seconds=prediction_time,
         )
 
-    def _aggregate_results(self,
-                          strategy: ValidationStrategy,
-                          fold_metrics: List[ValidationMetrics],
-                          in_sample_sharpes: List[float]) -> ValidationResult:
+    def _aggregate_results(
+        self,
+        strategy: ValidationStrategy,
+        fold_metrics: List[ValidationMetrics],
+        in_sample_sharpes: List[float],
+    ) -> ValidationResult:
         """Aggregate fold results into final validation result"""
 
         if not fold_metrics:
@@ -520,7 +541,7 @@ class WalkForwardValidator:
             performance_decay=performance_decay,
             in_sample_sharpe=mean_in_sample_sharpe,
             out_of_sample_sharpe=mean_oos_sharpe,
-            overfitting_ratio=overfitting_ratio
+            overfitting_ratio=overfitting_ratio,
         )
 
     def _create_empty_result(self, strategy: ValidationStrategy) -> ValidationResult:
@@ -538,7 +559,7 @@ class WalkForwardValidator:
             performance_decay=0.0,
             in_sample_sharpe=0.0,
             out_of_sample_sharpe=0.0,
-            overfitting_ratio=1.0
+            overfitting_ratio=1.0,
         )
 
     def analyze_validation_quality(self, result: ValidationResult) -> Dict[str, Any]:
@@ -580,9 +601,15 @@ class WalkForwardValidator:
         if result.return_consistency > 0.6:
             quality_score += 10
 
-        quality_assessment = "excellent" if quality_score >= 80 else \
-                           "good" if quality_score >= 60 else \
-                           "acceptable" if quality_score >= 40 else "poor"
+        quality_assessment = (
+            "excellent"
+            if quality_score >= 80
+            else "good"
+            if quality_score >= 60
+            else "acceptable"
+            if quality_score >= 40
+            else "poor"
+        )
 
         return {
             "quality_score": quality_score,
@@ -590,22 +617,26 @@ class WalkForwardValidator:
             "issues": issues,
             "recommendations": recommendations,
             "is_stable": result.is_stable,
-            "fold_consistency": np.std([m.sharpe_ratio for m in result.fold_metrics]) if result.fold_metrics else 0
+            "fold_consistency": np.std([m.sharpe_ratio for m in result.fold_metrics])
+            if result.fold_metrics
+            else 0,
         }
 
-    def compare_strategies(self,
-                          model_func: callable,
-                          data: pd.DataFrame,
-                          target_column: str,
-                          feature_columns: List[str] = None,
-                          params: Dict[str, Any] = None) -> Dict[ValidationStrategy, ValidationResult]:
+    def compare_strategies(
+        self,
+        model_func: callable,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str] = None,
+        params: Dict[str, Any] = None,
+    ) -> Dict[ValidationStrategy, ValidationResult]:
         """Compare different validation strategies"""
 
         results = {}
         strategies = [
             ValidationStrategy.EXPANDING_WINDOW,
             ValidationStrategy.ROLLING_WINDOW,
-            ValidationStrategy.ANCHORED_WALK_FORWARD
+            ValidationStrategy.ANCHORED_WALK_FORWARD,
         ]
 
         for strategy in strategies:
@@ -617,17 +648,19 @@ class WalkForwardValidator:
 
         return results
 
-    def get_optimal_window_sizes(self,
-                                model_func: callable,
-                                data: pd.DataFrame,
-                                target_column: str,
-                                feature_columns: List[str] = None,
-                                params: Dict[str, Any] = None) -> Dict[str, int]:
+    def get_optimal_window_sizes(
+        self,
+        model_func: callable,
+        data: pd.DataFrame,
+        target_column: str,
+        feature_columns: List[str] = None,
+        params: Dict[str, Any] = None,
+    ) -> Dict[str, int]:
         """Find optimal window sizes through grid search"""
 
         train_sizes = [126, 252, 378, 504]  # 6M, 1Y, 1.5Y, 2Y
-        val_sizes = [21, 42, 63, 84]        # 1M, 2M, 3M, 4M
-        step_sizes = [7, 14, 21, 28]        # 1W, 2W, 3W, 4W
+        val_sizes = [21, 42, 63, 84]  # 1M, 2M, 3M, 4M
+        step_sizes = [7, 14, 21, 28]  # 1W, 2W, 3W, 4W
 
         best_score = -999
         best_params = {"train": 252, "val": 63, "step": 21}
@@ -638,14 +671,16 @@ class WalkForwardValidator:
                     try:
                         # Create temporary validator
                         temp_validator = WalkForwardValidator(
-                            min_train_size=train_size,
-                            validation_size=val_size,
-                            step_size=step_size
+                            min_train_size=train_size, validation_size=val_size, step_size=step_size
                         )
 
                         result = temp_validator.validate(
-                            model_func, data, target_column, feature_columns,
-                            ValidationStrategy.EXPANDING_WINDOW, params
+                            model_func,
+                            data,
+                            target_column,
+                            feature_columns,
+                            ValidationStrategy.EXPANDING_WINDOW,
+                            params,
                         )
 
                         # Score based on Sharpe stability
@@ -653,13 +688,11 @@ class WalkForwardValidator:
 
                         if score > best_score:
                             best_score = score
-                            best_params = {
-                                "train": train_size,
-                                "val": val_size,
-                                "step": step_size
-                            }
+                            best_params = {"train": train_size, "val": val_size, "step": step_size}
 
-                        logger.info(f"Window sizes ({train_size}, {val_size}, {step_size}): Score = {score:.3f}")
+                        logger.info(
+                            f"Window sizes ({train_size}, {val_size}, {step_size}): Score = {score:.3f}"
+                        )
 
                     except Exception as e:
                         logger.warning(f"Window size test failed: {e}")

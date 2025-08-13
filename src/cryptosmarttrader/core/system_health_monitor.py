@@ -26,33 +26,40 @@ except ImportError:
         logger = logging.getLogger(name)
         if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             logger.addHandler(handler)
             logger.setLevel(logging.INFO)
         return logger
 
+
 try:
     from ..core.config_manager import ConfigManager
+
     CONFIG_AVAILABLE = True
 except ImportError:
     CONFIG_AVAILABLE = False
 
 try:
     from ..core.data_manager import DataManager
+
     DATA_MANAGER_AVAILABLE = True
 except ImportError:
     DATA_MANAGER_AVAILABLE = False
 
+
 class HealthStatus(Enum):
     """System health status levels"""
-    HEALTHY = "healthy"          # > 80%
-    WARNING = "warning"          # 60-80%
-    CRITICAL = "critical"        # 40-60%
-    FAILURE = "failure"          # < 40%
+
+    HEALTHY = "healthy"  # > 80%
+    WARNING = "warning"  # 60-80%
+    CRITICAL = "critical"  # 40-60%
+    FAILURE = "failure"  # < 40%
+
 
 class ComponentType(Enum):
     """Types of system components to monitor"""
+
     DATA_PIPELINE = "data_pipeline"
     ML_MODELS = "ml_models"
     TRADING_ENGINE = "trading_engine"
@@ -60,9 +67,11 @@ class ComponentType(Enum):
     EXTERNAL_APIS = "external_apis"
     PERFORMANCE = "performance"
 
+
 @dataclass
 class ComponentHealth:
     """Health status for individual system component"""
+
     name: str
     component_type: ComponentType
     status: HealthStatus
@@ -72,9 +81,11 @@ class ComponentHealth:
     last_check: Optional[datetime] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class SystemHealthReport:
     """Complete system health assessment"""
+
     overall_status: HealthStatus
     overall_score: float
     components: List[ComponentHealth]
@@ -83,6 +94,7 @@ class SystemHealthReport:
     recommendations: List[str] = field(default_factory=list)
     summary: str = ""
     metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 class SystemHealthMonitor:
     """
@@ -121,80 +133,80 @@ class SystemHealthMonitor:
         default_config = {
             # Threshold configuration - FIXED: proper threshold hierarchy
             "thresholds": {
-                "healthy_threshold": 80.0,      # > 80% = healthy
-                "warning_threshold": 60.0,      # 60-80% = warning
-                "critical_threshold": 40.0,     # 40-60% = critical
-                "failure_threshold": 0.0        # < 40% = failure
+                "healthy_threshold": 80.0,  # > 80% = healthy
+                "warning_threshold": 60.0,  # 60-80% = warning
+                "critical_threshold": 40.0,  # 40-60% = critical
+                "failure_threshold": 0.0,  # < 40% = failure
             },
-
             # GO/NO-GO decision criteria
             "go_nogo": {
-                "minimum_score": 70.0,          # Minimum overall score for GO
-                "critical_components": [        # Components that must be healthy
+                "minimum_score": 70.0,  # Minimum overall score for GO
+                "critical_components": [  # Components that must be healthy
                     "data_pipeline",
                     "ml_models",
-                    "trading_engine"
+                    "trading_engine",
                 ],
-                "required_healthy_percentage": 80.0  # % of components that must be healthy
+                "required_healthy_percentage": 80.0,  # % of components that must be healthy
             },
-
             # Component monitoring settings
             "components": {
                 "data_pipeline": {
                     "weight": 0.3,
-                    "required_metrics": ["completeness", "freshness", "quality"]
+                    "required_metrics": ["completeness", "freshness", "quality"],
                 },
                 "ml_models": {
                     "weight": 0.25,
-                    "required_metrics": ["accuracy", "confidence", "drift"]
+                    "required_metrics": ["accuracy", "confidence", "drift"],
                 },
                 "trading_engine": {
                     "weight": 0.2,
-                    "required_metrics": ["execution_rate", "latency", "errors"]
+                    "required_metrics": ["execution_rate", "latency", "errors"],
                 },
                 "storage_system": {
                     "weight": 0.1,
-                    "required_metrics": ["availability", "performance", "capacity"]
+                    "required_metrics": ["availability", "performance", "capacity"],
                 },
                 "external_apis": {
                     "weight": 0.1,
-                    "required_metrics": ["uptime", "response_time", "rate_limits"]
+                    "required_metrics": ["uptime", "response_time", "rate_limits"],
                 },
                 "performance": {
                     "weight": 0.05,
-                    "required_metrics": ["cpu_usage", "memory_usage", "disk_usage"]
-                }
+                    "required_metrics": ["cpu_usage", "memory_usage", "disk_usage"],
+                },
             },
-
             # Monitoring intervals
             "intervals": {
                 "health_check_minutes": 5,
                 "detailed_report_hours": 1,
-                "history_retention_days": 7
+                "history_retention_days": 7,
             },
-
             # Alert configuration
             "alerts": {
                 "enabled": True,
                 "warning_threshold": 70.0,
                 "critical_threshold": 50.0,
-                "notification_channels": ["log", "file"]
-            }
+                "notification_channels": ["log", "file"],
+            },
         }
 
         if config_path and Path(config_path).exists():
             try:
-                with open(config_path, 'r') as f:
+                with open(config_path, "r") as f:
                     user_config = json.load(f)
                 # Merge user config with defaults
                 self._deep_merge_dict(default_config, user_config)
                 self.logger.info(f"Configuration loaded from {config_path}")
             except Exception as e:
-                self.logger.warning(f"Failed to load config from {config_path}: {e}, using defaults")
+                self.logger.warning(
+                    f"Failed to load config from {config_path}: {e}, using defaults"
+                )
 
         return default_config
 
-    async def perform_health_check(self, components: Optional[List[str]] = None) -> SystemHealthReport:
+    async def perform_health_check(
+        self, components: Optional[List[str]] = None
+    ) -> SystemHealthReport:
         """
         Perform comprehensive system health assessment
 
@@ -234,8 +246,8 @@ class SystemHealthMonitor:
                 metadata={
                     "check_duration_seconds": time.time() - start_time,
                     "components_checked": len(component_healths),
-                    "config_version": "2.0.0"
-                }
+                    "config_version": "2.0.0",
+                },
             )
 
             # Update monitoring state
@@ -247,7 +259,9 @@ class SystemHealthMonitor:
             self.check_count += 1
             self.total_check_time += report.metadata["check_duration_seconds"]
 
-            self.logger.info(f"Health check completed: {overall_status.value} ({overall_score:.1f}%) - GO/NO-GO: {'GO' if go_nogo_decision else 'NO-GO'}")
+            self.logger.info(
+                f"Health check completed: {overall_status.value} ({overall_score:.1f}%) - GO/NO-GO: {'GO' if go_nogo_decision else 'NO-GO'}"
+            )
 
             return report
 
@@ -257,7 +271,9 @@ class SystemHealthMonitor:
             # Return emergency report
             return self._create_emergency_report(str(e))
 
-    async def _assess_all_components(self, components: Optional[List[str]] = None) -> List[ComponentHealth]:
+    async def _assess_all_components(
+        self, components: Optional[List[str]] = None
+    ) -> List[ComponentHealth]:
         """Assess health of all system components"""
 
         if components is None:
@@ -336,8 +352,8 @@ class SystemHealthMonitor:
                 last_check=datetime.now(timezone.utc),
                 metadata={
                     "weight": component_config.get("weight", 0.1),
-                    "required_metrics": component_config.get("required_metrics", [])
-                }
+                    "required_metrics": component_config.get("required_metrics", []),
+                },
             )
 
         except Exception as e:
@@ -352,7 +368,7 @@ class SystemHealthMonitor:
                 metrics={},
                 issues=[f"Assessment failed: {str(e)}"],
                 last_check=datetime.now(timezone.utc),
-                metadata={"error": True}
+                metadata={"error": True},
             )
 
     async def _assess_data_pipeline_health(self) -> Dict[str, float]:
@@ -381,7 +397,9 @@ class SystemHealthMonitor:
                 try:
                     last_update = data_manager.get_last_update_time()
                     if last_update:
-                        age_minutes = (datetime.now(timezone.utc) - last_update).total_seconds() / 60
+                        age_minutes = (
+                            datetime.now(timezone.utc) - last_update
+                        ).total_seconds() / 60
                         # Consider data fresh if < 10 minutes old
                         freshness = max(0.0, 100.0 - (age_minutes * 2))  # Decay 2% per minute
                         metrics["freshness"] = min(100.0, freshness)
@@ -415,7 +433,7 @@ class SystemHealthMonitor:
                 metrics = {
                     "completeness": file_system_health,
                     "freshness": file_system_health * 0.8,  # Assume slightly stale
-                    "quality": file_system_health * 0.9     # Assume decent quality
+                    "quality": file_system_health * 0.9,  # Assume decent quality
                 }
 
                 self.logger.warning("Using file system health as data pipeline proxy")
@@ -438,7 +456,9 @@ class SystemHealthMonitor:
 
             for model_path in model_paths:
                 if Path(model_path).exists():
-                    model_files = list(Path(model_path).glob("*.pkl")) + list(Path(model_path).glob("*.joblib"))
+                    model_files = list(Path(model_path).glob("*.pkl")) + list(
+                        Path(model_path).glob("*.joblib")
+                    )
                     model_files_found += len(model_files)
 
             # Base health on model availability
@@ -459,8 +479,10 @@ class SystemHealthMonitor:
 
                 metrics = {
                     "accuracy": availability_score * 0.9,  # Assume good but not perfect accuracy
-                    "confidence": availability_score * 0.8, # Conservative confidence estimate
-                    "drift": max(0.0, 100.0 - (model_files_found * 5))  # Less drift with more models
+                    "confidence": availability_score * 0.8,  # Conservative confidence estimate
+                    "drift": max(
+                        0.0, 100.0 - (model_files_found * 5)
+                    ),  # Less drift with more models
                 }
             else:
                 # No models found
@@ -501,8 +523,12 @@ class SystemHealthMonitor:
 
                 metrics = {
                     "execution_rate": availability * 0.8,
-                    "latency": min(100.0, 100.0 - (recent_activity * 2)),  # Lower latency with more activity
-                    "errors": max(0.0, 90.0 - (recent_activity * 5))       # Fewer errors with healthy activity
+                    "latency": min(
+                        100.0, 100.0 - (recent_activity * 2)
+                    ),  # Lower latency with more activity
+                    "errors": max(
+                        0.0, 90.0 - (recent_activity * 5)
+                    ),  # Fewer errors with healthy activity
                 }
             else:
                 metrics = {"execution_rate": 0.0, "latency": 100.0, "errors": 100.0}
@@ -522,7 +548,7 @@ class SystemHealthMonitor:
             import psutil
 
             # Check disk usage
-            disk_usage = psutil.disk_usage('.')
+            disk_usage = psutil.disk_usage(".")
             available_percentage = (disk_usage.free / disk_usage.total) * 100.0
 
             # Check if critical directories exist and are writable
@@ -546,7 +572,7 @@ class SystemHealthMonitor:
             metrics = {
                 "availability": accessibility,
                 "performance": min(100.0, available_percentage + 20.0),  # Bonus for free space
-                "capacity": available_percentage
+                "capacity": available_percentage,
             }
 
         except Exception as e:
@@ -582,7 +608,9 @@ class SystemHealthMonitor:
                 metrics = {
                     "uptime": config_score * 0.9,
                     "response_time": activity_score,
-                    "rate_limits": max(50.0, 100.0 - (recent_logs * 10))  # Conservative rate limit usage
+                    "rate_limits": max(
+                        50.0, 100.0 - (recent_logs * 10)
+                    ),  # Conservative rate limit usage
                 }
             else:
                 metrics = {"uptime": 0.0, "response_time": 0.0, "rate_limits": 0.0}
@@ -599,11 +627,10 @@ class SystemHealthMonitor:
         metrics = {}
 
         try:
-
             # Get actual system metrics
             cpu_percent = psutil.cpu_percent(interval=1)
             memory = psutil.virtual_memory()
-            disk = psutil.disk_usage('.')
+            disk = psutil.disk_usage(".")
 
             # Convert to health scores (lower usage = better health)
             cpu_health = max(0.0, 100.0 - cpu_percent)
@@ -613,10 +640,12 @@ class SystemHealthMonitor:
             metrics = {
                 "cpu_usage": cpu_health,
                 "memory_usage": memory_health,
-                "disk_usage": disk_health
+                "disk_usage": disk_health,
             }
 
-            self.logger.debug(f"Performance metrics - CPU: {cpu_percent:.1f}%, Memory: {memory.percent:.1f}%, Disk: {100-disk_health:.1f}%")
+            self.logger.debug(
+                f"Performance metrics - CPU: {cpu_percent:.1f}%, Memory: {memory.percent:.1f}%, Disk: {100 - disk_health:.1f}%"
+            )
 
         except Exception as e:
             self.logger.error(f"Performance assessment failed: {e}")
@@ -624,7 +653,9 @@ class SystemHealthMonitor:
 
         return metrics
 
-    def _calculate_component_score(self, metrics: Dict[str, float], config: Dict[str, Any]) -> float:
+    def _calculate_component_score(
+        self, metrics: Dict[str, float], config: Dict[str, Any]
+    ) -> float:
         """Calculate overall score for component based on metrics"""
 
         if not metrics:
@@ -678,7 +709,9 @@ class SystemHealthMonitor:
         else:
             return HealthStatus.FAILURE
 
-    def _make_go_nogo_decision(self, component_healths: List[ComponentHealth], overall_score: float) -> bool:
+    def _make_go_nogo_decision(
+        self, component_healths: List[ComponentHealth], overall_score: float
+    ) -> bool:
         """Make GO/NO-GO decision based on health assessment"""
 
         go_nogo_config = self.config["go_nogo"]
@@ -703,7 +736,9 @@ class SystemHealthMonitor:
 
         return True
 
-    def _identify_component_issues(self, metrics: Dict[str, float], config: Dict[str, Any]) -> List[str]:
+    def _identify_component_issues(
+        self, metrics: Dict[str, float], config: Dict[str, Any]
+    ) -> List[str]:
         """Identify specific issues with component based on metrics"""
 
         issues = []
@@ -720,14 +755,18 @@ class SystemHealthMonitor:
 
         return issues
 
-    def _generate_recommendations(self, component_healths: List[ComponentHealth], overall_status: HealthStatus) -> List[str]:
+    def _generate_recommendations(
+        self, component_healths: List[ComponentHealth], overall_status: HealthStatus
+    ) -> List[str]:
         """Generate actionable recommendations based on health assessment"""
 
         recommendations = []
 
         # Overall system recommendations
         if overall_status == HealthStatus.FAILURE:
-            recommendations.append("URGENT: System requires immediate attention - multiple critical failures detected")
+            recommendations.append(
+                "URGENT: System requires immediate attention - multiple critical failures detected"
+            )
         elif overall_status == HealthStatus.CRITICAL:
             recommendations.append("System requires prompt attention - critical issues detected")
         elif overall_status == HealthStatus.WARNING:
@@ -747,7 +786,9 @@ class SystemHealthMonitor:
         """Generate human-readable summary"""
 
         decision = "GO" if go_nogo else "NO-GO"
-        return f"System status: {status.value.upper()} ({score:.1f}%) - Trading decision: {decision}"
+        return (
+            f"System status: {status.value.upper()} ({score:.1f}%) - Trading decision: {decision}"
+        )
 
     def _create_emergency_report(self, error_message: str) -> SystemHealthReport:
         """Create emergency health report when assessment fails"""
@@ -758,9 +799,11 @@ class SystemHealthMonitor:
             components=[],
             go_nogo_decision=False,
             timestamp=datetime.now(timezone.utc),
-            recommendations=["CRITICAL: Health assessment system failure - manual intervention required"],
+            recommendations=[
+                "CRITICAL: Health assessment system failure - manual intervention required"
+            ],
             summary=f"Health monitoring system failure: {error_message}",
-            metadata={"emergency_report": True, "error": error_message}
+            metadata={"emergency_report": True, "error": error_message},
         )
 
     def _cleanup_history(self):
@@ -770,8 +813,7 @@ class SystemHealthMonitor:
         cutoff_time = datetime.now(timezone.utc).timestamp() - (retention_days * 24 * 3600)
 
         self.health_history = [
-            report for report in self.health_history
-            if report.timestamp.timestamp() > cutoff_time
+            report for report in self.health_history if report.timestamp.timestamp() > cutoff_time
         ]
 
     def _deep_merge_dict(self, base: Dict, update: Dict) -> Dict:
@@ -795,7 +837,7 @@ class SystemHealthMonitor:
             "average_check_time": self.total_check_time / max(1, self.check_count),
             "history_length": len(self.health_history),
             "config_loaded": bool(self.config),
-            "components_monitored": len(self.config.get("components", {}))
+            "components_monitored": len(self.config.get("components", {})),
         }
 
     async def save_health_report(self, report: SystemHealthReport, output_path: str) -> bool:
@@ -822,14 +864,14 @@ class SystemHealthMonitor:
                         "metrics": c.metrics,
                         "issues": c.issues,
                         "last_check": c.last_check.isoformat() if c.last_check else None,
-                        "metadata": c.metadata
+                        "metadata": c.metadata,
                     }
                     for c in report.components
                 ],
-                "metadata": report.metadata
+                "metadata": report.metadata,
             }
 
-            with open(output_file, 'w') as f:
+            with open(output_file, "w") as f:
                 json.dump(report_data, f, indent=2, default=str)
 
             self.logger.info(f"Health report saved to {output_file}")
@@ -839,7 +881,9 @@ class SystemHealthMonitor:
             self.logger.error(f"Failed to save health report: {e}")
             return False
 
+
 # Utility functions for health monitoring
+
 
 async def quick_health_check() -> Dict[str, Any]:
     """Perform quick system health check"""
@@ -852,14 +896,16 @@ async def quick_health_check() -> Dict[str, Any]:
         "score": report.overall_score,
         "go_nogo": report.go_nogo_decision,
         "summary": report.summary,
-        "timestamp": report.timestamp.isoformat()
+        "timestamp": report.timestamp.isoformat(),
     }
+
 
 async def detailed_health_assessment(components: Optional[List[str]] = None) -> SystemHealthReport:
     """Perform detailed health assessment"""
 
     monitor = SystemHealthMonitor()
     return await monitor.perform_health_check(components)
+
 
 if __name__ == "__main__":
     # Test system health monitoring

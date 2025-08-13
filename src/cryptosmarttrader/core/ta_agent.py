@@ -17,37 +17,44 @@ import logging
 try:
     from ..core.consolidated_logging_manager import get_consolidated_logger
 except ImportError:
+
     def get_consolidated_logger(name: str) -> logging.Logger:
         logger = logging.getLogger(name)
         if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             logger.addHandler(handler)
             logger.setLevel(logging.INFO)
         return logger
 
+
 # Technical Analysis Library fallback
 try:
     import talib
+
     TALIB_AVAILABLE = True
 except ImportError:
     TALIB_AVAILABLE = False
 
+
 @dataclass
 class TASignal:
     """Technical analysis signal result"""
+
     indicator: str
     signal_type: str  # 'buy', 'sell', 'neutral'
-    strength: float   # 0.0 to 1.0
+    strength: float  # 0.0 to 1.0
     value: float
     message: str
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class TAResult:
     """Complete technical analysis result"""
+
     symbol: str
     timeframe: str
     indicators: Dict[str, Any]
@@ -55,6 +62,7 @@ class TAResult:
     overall_signal: str
     confidence: float
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
 
 class TechnicalAnalysisAgent:
     """
@@ -84,7 +92,9 @@ class TechnicalAnalysisAgent:
         self.analysis_count = 0
         self.total_analysis_time = 0.0
 
-        self.logger.info(f"Technical Analysis Agent initialized {'with TA-Lib' if TALIB_AVAILABLE else 'with native implementation'}")
+        self.logger.info(
+            f"Technical Analysis Agent initialized {'with TA-Lib' if TALIB_AVAILABLE else 'with native implementation'}"
+        )
 
     def _load_config(self, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Load TA configuration with enterprise defaults"""
@@ -92,57 +102,47 @@ class TechnicalAnalysisAgent:
         default_config = {
             # Indicator parameters
             "indicators": {
-                "sma": {
-                    "periods": [20, 50, 200],
-                    "enabled": True
-                },
+                "sma": {"periods": [20, 50, 200], "enabled": True},
                 "rsi": {
                     "period": 14,
                     "overbought": 70,
                     "oversold": 30,
                     "enabled": True,
-                    "use_wilder_smoothing": True  # Authentic RSI calculation
+                    "use_wilder_smoothing": True,  # Authentic RSI calculation
                 },
                 "macd": {
                     "fast_period": 12,
                     "slow_period": 26,
                     "signal_period": 9,
                     "enabled": True,
-                    "use_ema": True  # Authentic MACD with EMA
+                    "use_ema": True,  # Authentic MACD with EMA
                 },
                 "bollinger": {
                     "period": 20,
                     "std_dev": 2.0,
                     "enabled": True,
-                    "min_data_points": 20  # No fallback below this
-                }
+                    "min_data_points": 20,  # No fallback below this
+                },
             },
-
             # Signal generation
             "signals": {
-                "strength_thresholds": {
-                    "strong": 0.8,
-                    "moderate": 0.6,
-                    "weak": 0.4
-                },
+                "strength_thresholds": {"strong": 0.8, "moderate": 0.6, "weak": 0.4},
                 "rsi_divergence_enabled": True,
                 "macd_crossover_enabled": True,
-                "bollinger_breakout_enabled": True
+                "bollinger_breakout_enabled": True,
             },
-
             # Data integrity
             "data_quality": {
-                "min_data_points": 50,      # Minimum data for reliable analysis
+                "min_data_points": 50,  # Minimum data for reliable analysis
                 "max_missing_percentage": 0.05,  # 5% max missing data
                 "require_recent_data": True,
-                "max_age_hours": 24
+                "max_age_hours": 24,
             },
-
             # Performance
             "async_enabled": True,
             "concurrent_indicators": True,
             "cache_results": True,
-            "cache_ttl_seconds": 300
+            "cache_ttl_seconds": 300,
         }
 
         if config:
@@ -150,8 +150,9 @@ class TechnicalAnalysisAgent:
 
         return default_config
 
-    async def analyze_symbol(self, symbol: str, price_data: pd.DataFrame,
-                           timeframe: str = "1h") -> TAResult:
+    async def analyze_symbol(
+        self, symbol: str, price_data: pd.DataFrame, timeframe: str = "1h"
+    ) -> TAResult:
         """
         Perform comprehensive technical analysis on symbol
 
@@ -192,7 +193,7 @@ class TechnicalAnalysisAgent:
                 signals=signals,
                 overall_signal=overall_signal,
                 confidence=confidence,
-                timestamp=start_time
+                timestamp=start_time,
             )
 
             # Update state
@@ -205,8 +206,10 @@ class TechnicalAnalysisAgent:
             analysis_time = (datetime.now(timezone.utc) - start_time).total_seconds()
             self.total_analysis_time += analysis_time
 
-            self.logger.info(f"TA analysis completed for {symbol}: {overall_signal} "
-                           f"(confidence: {confidence:.1%}, duration: {analysis_time:.2f}s)")
+            self.logger.info(
+                f"TA analysis completed for {symbol}: {overall_signal} "
+                f"(confidence: {confidence:.1%}, duration: {analysis_time:.2f}s)"
+            )
 
             return result
 
@@ -217,11 +220,13 @@ class TechnicalAnalysisAgent:
     def _validate_price_data(self, data: pd.DataFrame) -> bool:
         """Validate price data quality and completeness"""
 
-        required_columns = ['open', 'high', 'low', 'close']
+        required_columns = ["open", "high", "low", "close"]
 
         # Check required columns
         if not all(col in data.columns for col in required_columns):
-            self.logger.error(f"Missing required columns. Expected: {required_columns}, Got: {list(data.columns)}")
+            self.logger.error(
+                f"Missing required columns. Expected: {required_columns}, Got: {list(data.columns)}"
+            )
             return False
 
         # Check minimum data points
@@ -231,16 +236,20 @@ class TechnicalAnalysisAgent:
             return False
 
         # Check for missing data
-        missing_percentage = data[required_columns].isnull().sum().sum() / (len(data) * len(required_columns))
+        missing_percentage = data[required_columns].isnull().sum().sum() / (
+            len(data) * len(required_columns)
+        )
         max_missing = self.config["data_quality"]["max_missing_percentage"]
 
         if missing_percentage > max_missing:
-            self.logger.error(f"Too much missing data: {missing_percentage:.1%} > {max_missing:.1%}")
+            self.logger.error(
+                f"Too much missing data: {missing_percentage:.1%} > {max_missing:.1%}"
+            )
             return False
 
         # Check data recency if required
         if self.config["data_quality"]["require_recent_data"]:
-            if hasattr(data.index, 'max'):
+            if hasattr(data.index, "max"):
                 latest_time = data.index.max()
                 if pd.notna(latest_time):
                     age_hours = (datetime.now() - latest_time).total_seconds() / 3600
@@ -319,7 +328,7 @@ class TechnicalAnalysisAgent:
     def _calculate_sma(self, data: pd.DataFrame) -> Dict[str, Any]:
         """Calculate Simple Moving Averages"""
 
-        close_prices = data['close']
+        close_prices = data["close"]
         periods = self.config["indicators"]["sma"]["periods"]
 
         sma_results = {}
@@ -333,11 +342,15 @@ class TechnicalAnalysisAgent:
 
                 sma_results[f"sma_{period}"] = {
                     "values": sma_values,
-                    "current": float(sma_values.iloc[-1]) if hasattr(sma_values, 'iloc') else float(sma_values[-1]),
-                    "period": period
+                    "current": float(sma_values.iloc[-1])
+                    if hasattr(sma_values, "iloc")
+                    else float(sma_values[-1]),
+                    "period": period,
                 }
             else:
-                self.logger.warning(f"Insufficient data for SMA-{period}: {len(close_prices)} < {period}")
+                self.logger.warning(
+                    f"Insufficient data for SMA-{period}: {len(close_prices)} < {period}"
+                )
 
         return {"sma": sma_results}
 
@@ -348,7 +361,7 @@ class TechnicalAnalysisAgent:
     def _calculate_rsi(self, data: pd.DataFrame) -> Dict[str, Any]:
         """Calculate RSI with WILDER SMOOTHING (authentic implementation)"""
 
-        close_prices = data['close']
+        close_prices = data["close"]
         period = self.config["indicators"]["rsi"]["period"]
         use_wilder = self.config["indicators"]["rsi"]["use_wilder_smoothing"]
 
@@ -379,7 +392,9 @@ class TechnicalAnalysisAgent:
                 rs = avg_gains / avg_losses
                 rsi_values = 100 - (100 / (1 + rs))
 
-            current_rsi = float(rsi_values.iloc[-1]) if hasattr(rsi_values, 'iloc') else float(rsi_values[-1])
+            current_rsi = (
+                float(rsi_values.iloc[-1]) if hasattr(rsi_values, "iloc") else float(rsi_values[-1])
+            )
 
             return {
                 "rsi": {
@@ -388,7 +403,7 @@ class TechnicalAnalysisAgent:
                     "period": period,
                     "overbought": self.config["indicators"]["rsi"]["overbought"],
                     "oversold": self.config["indicators"]["rsi"]["oversold"],
-                    "wilder_smoothing": use_wilder
+                    "wilder_smoothing": use_wilder,
                 }
             }
 
@@ -403,14 +418,16 @@ class TechnicalAnalysisAgent:
     def _calculate_macd(self, data: pd.DataFrame) -> Dict[str, Any]:
         """Calculate MACD with AUTHENTIC EMA IMPLEMENTATION"""
 
-        close_prices = data['close']
+        close_prices = data["close"]
         fast_period = self.config["indicators"]["macd"]["fast_period"]
         slow_period = self.config["indicators"]["macd"]["slow_period"]
         signal_period = self.config["indicators"]["macd"]["signal_period"]
         use_ema = self.config["indicators"]["macd"]["use_ema"]
 
         if len(close_prices) < slow_period + signal_period:
-            self.logger.warning(f"Insufficient data for MACD: {len(close_prices)} < {slow_period + signal_period}")
+            self.logger.warning(
+                f"Insufficient data for MACD: {len(close_prices)} < {slow_period + signal_period}"
+            )
             return {"macd": None}
 
         try:
@@ -420,7 +437,7 @@ class TechnicalAnalysisAgent:
                     close_prices.values,
                     fastperiod=fast_period,
                     slowperiod=slow_period,
-                    signalperiod=signal_period
+                    signalperiod=signal_period,
                 )
             else:
                 if use_ema:
@@ -438,9 +455,19 @@ class TechnicalAnalysisAgent:
 
                 macd_histogram = macd_line - macd_signal
 
-            current_macd = float(macd_line.iloc[-1]) if hasattr(macd_line, 'iloc') else float(macd_line[-1])
-            current_signal = float(macd_signal.iloc[-1]) if hasattr(macd_signal, 'iloc') else float(macd_signal[-1])
-            current_histogram = float(macd_histogram.iloc[-1]) if hasattr(macd_histogram, 'iloc') else float(macd_histogram[-1])
+            current_macd = (
+                float(macd_line.iloc[-1]) if hasattr(macd_line, "iloc") else float(macd_line[-1])
+            )
+            current_signal = (
+                float(macd_signal.iloc[-1])
+                if hasattr(macd_signal, "iloc")
+                else float(macd_signal[-1])
+            )
+            current_histogram = (
+                float(macd_histogram.iloc[-1])
+                if hasattr(macd_histogram, "iloc")
+                else float(macd_histogram[-1])
+            )
 
             return {
                 "macd": {
@@ -453,7 +480,7 @@ class TechnicalAnalysisAgent:
                     "fast_period": fast_period,
                     "slow_period": slow_period,
                     "signal_period": signal_period,
-                    "uses_ema": use_ema
+                    "uses_ema": use_ema,
                 }
             }
 
@@ -468,14 +495,16 @@ class TechnicalAnalysisAgent:
     def _calculate_bollinger(self, data: pd.DataFrame) -> Dict[str, Any]:
         """Calculate Bollinger Bands with AUTHENTIC CALCULATION (no fallback dummy data)"""
 
-        close_prices = data['close']
+        close_prices = data["close"]
         period = self.config["indicators"]["bollinger"]["period"]
         std_dev_multiplier = self.config["indicators"]["bollinger"]["std_dev"]
         min_data_points = self.config["indicators"]["bollinger"]["min_data_points"]
 
         # AUTHENTIC IMPLEMENTATION: Return None if insufficient data
         if len(close_prices) < min_data_points:
-            self.logger.warning(f"Insufficient data for Bollinger Bands: {len(close_prices)} < {min_data_points}")
+            self.logger.warning(
+                f"Insufficient data for Bollinger Bands: {len(close_prices)} < {min_data_points}"
+            )
             return {"bollinger": None}
 
         try:
@@ -485,7 +514,7 @@ class TechnicalAnalysisAgent:
                     timeperiod=period,
                     nbdevup=std_dev_multiplier,
                     nbdevdn=std_dev_multiplier,
-                    matype=0  # Simple Moving Average
+                    matype=0,  # Simple Moving Average
                 )
             else:
                 # Manual calculation with authentic statistics
@@ -495,9 +524,17 @@ class TechnicalAnalysisAgent:
                 lower_band = middle_band - (rolling_std * std_dev_multiplier)
 
             # Get current values (only if we have valid data)
-            current_upper = float(upper_band.iloc[-1]) if hasattr(upper_band, 'iloc') else float(upper_band[-1])
-            current_middle = float(middle_band.iloc[-1]) if hasattr(middle_band, 'iloc') else float(middle_band[-1])
-            current_lower = float(lower_band.iloc[-1]) if hasattr(lower_band, 'iloc') else float(lower_band[-1])
+            current_upper = (
+                float(upper_band.iloc[-1]) if hasattr(upper_band, "iloc") else float(upper_band[-1])
+            )
+            current_middle = (
+                float(middle_band.iloc[-1])
+                if hasattr(middle_band, "iloc")
+                else float(middle_band[-1])
+            )
+            current_lower = (
+                float(lower_band.iloc[-1]) if hasattr(lower_band, "iloc") else float(lower_band[-1])
+            )
             current_price = float(close_prices.iloc[-1])
 
             # Calculate band width and position
@@ -515,7 +552,7 @@ class TechnicalAnalysisAgent:
                     "band_width": band_width,
                     "price_position": price_position,
                     "period": period,
-                    "std_dev": std_dev_multiplier
+                    "std_dev": std_dev_multiplier,
                 }
             }
 
@@ -527,7 +564,7 @@ class TechnicalAnalysisAgent:
         """Generate trading signals from indicators"""
 
         signals = []
-        current_price = float(data['close'].iloc[-1])
+        current_price = float(data["close"].iloc[-1])
 
         # RSI signals
         if indicators.get("rsi") and indicators["rsi"]["current"] is not None:
@@ -555,7 +592,9 @@ class TechnicalAnalysisAgent:
 
         return signals
 
-    def _generate_rsi_signal(self, rsi_data: Dict[str, Any], current_price: float) -> Optional[TASignal]:
+    def _generate_rsi_signal(
+        self, rsi_data: Dict[str, Any], current_price: float
+    ) -> Optional[TASignal]:
         """Generate RSI-based signal"""
 
         current_rsi = rsi_data["current"]
@@ -570,7 +609,7 @@ class TechnicalAnalysisAgent:
                 strength=strength,
                 value=current_rsi,
                 message=f"RSI overbought at {current_rsi:.1f} (>{overbought})",
-                metadata={"rsi_value": current_rsi, "threshold": overbought}
+                metadata={"rsi_value": current_rsi, "threshold": overbought},
             )
         elif current_rsi <= oversold:
             strength = min(1.0, (oversold - current_rsi) / oversold)
@@ -580,12 +619,14 @@ class TechnicalAnalysisAgent:
                 strength=strength,
                 value=current_rsi,
                 message=f"RSI oversold at {current_rsi:.1f} (<{oversold})",
-                metadata={"rsi_value": current_rsi, "threshold": oversold}
+                metadata={"rsi_value": current_rsi, "threshold": oversold},
             )
 
         return None
 
-    def _generate_macd_signal(self, macd_data: Dict[str, Any], current_price: float) -> Optional[TASignal]:
+    def _generate_macd_signal(
+        self, macd_data: Dict[str, Any], current_price: float
+    ) -> Optional[TASignal]:
         """Generate MACD-based signal"""
 
         current_macd = macd_data["current_macd"]
@@ -604,8 +645,8 @@ class TechnicalAnalysisAgent:
                 metadata={
                     "macd": current_macd,
                     "signal": current_signal,
-                    "histogram": current_histogram
-                }
+                    "histogram": current_histogram,
+                },
             )
         elif current_macd < current_signal and current_histogram < 0:
             strength = min(1.0, abs(current_histogram) / (abs(current_macd) + 1e-8))
@@ -618,13 +659,15 @@ class TechnicalAnalysisAgent:
                 metadata={
                     "macd": current_macd,
                     "signal": current_signal,
-                    "histogram": current_histogram
-                }
+                    "histogram": current_histogram,
+                },
             )
 
         return None
 
-    def _generate_bollinger_signal(self, bb_data: Dict[str, Any], current_price: float) -> Optional[TASignal]:
+    def _generate_bollinger_signal(
+        self, bb_data: Dict[str, Any], current_price: float
+    ) -> Optional[TASignal]:
         """Generate Bollinger Bands signal"""
 
         upper_band = bb_data["current_upper"]
@@ -642,8 +685,8 @@ class TechnicalAnalysisAgent:
                 metadata={
                     "price": current_price,
                     "upper_band": upper_band,
-                    "price_position": price_position
-                }
+                    "price_position": price_position,
+                },
             )
         elif current_price <= lower_band:
             strength = min(1.0, 1 - price_position)
@@ -656,13 +699,15 @@ class TechnicalAnalysisAgent:
                 metadata={
                     "price": current_price,
                     "lower_band": lower_band,
-                    "price_position": price_position
-                }
+                    "price_position": price_position,
+                },
             )
 
         return None
 
-    def _generate_sma_signal(self, sma_data: Dict[str, Any], current_price: float) -> Optional[TASignal]:
+    def _generate_sma_signal(
+        self, sma_data: Dict[str, Any], current_price: float
+    ) -> Optional[TASignal]:
         """Generate SMA-based signal"""
 
         # Use multiple SMAs for trend confirmation
@@ -687,7 +732,7 @@ class TechnicalAnalysisAgent:
                     strength=strength,
                     value=current_price,
                     message=f"Price above all SMAs - uptrend confirmed",
-                    metadata={"sma_values": dict(sma_values), "above_count": above_count}
+                    metadata={"sma_values": dict(sma_values), "above_count": above_count},
                 )
             elif below_count == len(sma_values):
                 strength = 0.6
@@ -697,7 +742,7 @@ class TechnicalAnalysisAgent:
                     strength=strength,
                     value=current_price,
                     message=f"Price below all SMAs - downtrend confirmed",
-                    metadata={"sma_values": dict(sma_values), "below_count": below_count}
+                    metadata={"sma_values": dict(sma_values), "below_count": below_count},
                 )
 
         return None
@@ -761,18 +806,22 @@ class TechnicalAnalysisAgent:
         return {
             "agent_status": "active",
             "talib_available": TALIB_AVAILABLE,
-            "last_analysis": self.last_analysis.timestamp.isoformat() if self.last_analysis else None,
+            "last_analysis": self.last_analysis.timestamp.isoformat()
+            if self.last_analysis
+            else None,
             "total_analyses": self.analysis_count,
             "average_analysis_time": self.total_analysis_time / max(1, self.analysis_count),
             "indicators_enabled": {
                 "sma": self.config["indicators"]["sma"]["enabled"],
                 "rsi": self.config["indicators"]["rsi"]["enabled"],
                 "macd": self.config["indicators"]["macd"]["enabled"],
-                "bollinger": self.config["indicators"]["bollinger"]["enabled"]
-            }
+                "bollinger": self.config["indicators"]["bollinger"]["enabled"],
+            },
         }
 
+
 # Utility functions
+
 
 async def quick_ta_analysis(symbol: str, price_data: pd.DataFrame) -> Dict[str, Any]:
     """Perform quick TA analysis"""
@@ -785,8 +834,9 @@ async def quick_ta_analysis(symbol: str, price_data: pd.DataFrame) -> Dict[str, 
         "overall_signal": result.overall_signal,
         "confidence": result.confidence,
         "signal_count": len(result.signals),
-        "timestamp": result.timestamp.isoformat()
+        "timestamp": result.timestamp.isoformat(),
     }
+
 
 if __name__ == "__main__":
     # Test TA agent
@@ -795,7 +845,7 @@ if __name__ == "__main__":
         print("Testing Technical Analysis Agent")
 
         # Create sample data
-        dates = pd.date_range('2024-01-01', periods=100, freq='H')
+        dates = pd.date_range("2024-01-01", periods=100, freq="H")
         np.random.seed(42)
 
         # Generate realistic price data
@@ -808,13 +858,16 @@ if __name__ == "__main__":
             prices.append(price)
 
         # Create OHLCV data
-        data = pd.DataFrame({
-            'open': prices,
-            'high': [p * (1 + abs(np.random.normal(0, 1))) for p in prices],
-            'low': [p * (1 - abs(np.random.normal(0, 1))) for p in prices],
-            'close': prices,
-            'volume': np.random.normal(0, 1)
-        }, index=dates)
+        data = pd.DataFrame(
+            {
+                "open": prices,
+                "high": [p * (1 + abs(np.random.normal(0, 1))) for p in prices],
+                "low": [p * (1 - abs(np.random.normal(0, 1))) for p in prices],
+                "close": prices,
+                "volume": np.random.normal(0, 1),
+            },
+            index=dates,
+        )
 
         # Test TA analysis
         agent = TechnicalAnalysisAgent()

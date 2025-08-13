@@ -15,9 +15,13 @@ import logging
 import fnmatch
 
 from ..interfaces.storage_port import (
-    StoragePort, StorageRequest, StorageResponse,
-    DataFormat, StorageError
+    StoragePort,
+    StorageRequest,
+    StorageResponse,
+    DataFormat,
+    StorageError,
 )
+
 
 class FileStorageAdapter(StoragePort):
     """File system storage implementation"""
@@ -39,14 +43,15 @@ class FileStorageAdapter(StoragePort):
 
         # Storage statistics
         self._stats = {
-            'total_files': 0,
-            'total_size_bytes': 0,
-            'operations_count': 0,
-            'last_cleanup': None
+            "total_files": 0,
+            "total_size_bytes": 0,
+            "operations_count": 0,
+            "last_cleanup": None,
         }
 
-    def store(self, key: str, data: Any, ttl: Optional[int] = None,
-              metadata: Optional[Dict] = None) -> StorageResponse:
+    def store(
+        self, key: str, data: Any, ttl: Optional[int] = None, metadata: Optional[Dict] = None
+    ) -> StorageResponse:
         """Store data to file system"""
 
         try:
@@ -55,56 +60,56 @@ class FileStorageAdapter(StoragePort):
 
             # Prepare storage object
             storage_obj = {
-                'data': data,
-                'metadata': metadata or {},
-                'timestamp': datetime.now(timezone.utc).isoformat(),
-                'ttl': ttl,
-                'key': key
+                "data": data,
+                "metadata": metadata or {},
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "ttl": ttl,
+                "key": key,
             }
 
             # Determine format and save
             format_type = self._determine_format(data)
 
             if format_type == DataFormat.JSON:
-                with open(file_path.with_suffix('.json'), 'w') as f:
+                with open(file_path.with_suffix(".json"), "w") as f:
                     json.dump(storage_obj, f, indent=2, default=self._json_serializer)
 
             elif format_type == DataFormat.PARQUET and isinstance(data, pd.DataFrame):
                 # Store DataFrame as parquet with metadata as separate JSON
-                data.to_parquet(file_path.with_suffix('.parquet'))
-                metadata_path = file_path.with_suffix('.meta.json')
-                with open(metadata_path, 'w') as f:
-                    json.dump({
-                        'metadata': metadata or {},
-                        'timestamp': storage_obj['timestamp'],
-                        'ttl': ttl,
-                        'key': key,
-                        'format': 'parquet'
-                    }, f, indent=2)
+                data.to_parquet(file_path.with_suffix(".parquet"))
+                metadata_path = file_path.with_suffix(".meta.json")
+                with open(metadata_path, "w") as f:
+                    json.dump(
+                        {
+                            "metadata": metadata or {},
+                            "timestamp": storage_obj["timestamp"],
+                            "ttl": ttl,
+                            "key": key,
+                            "format": "parquet",
+                        },
+                        f,
+                        indent=2,
+                    )
 
             elif format_type == DataFormat.PICKLE:
-                with open(file_path.with_suffix('.pkl'), 'wb') as f:
+                with open(file_path.with_suffix(".pkl"), "wb") as f:
                     pickle.dump(storage_obj, f)
 
             else:
                 # Default to JSON
-                with open(file_path.with_suffix('.json'), 'w') as f:
+                with open(file_path.with_suffix(".json"), "w") as f:
                     json.dump(storage_obj, f, indent=2, default=self._json_serializer)
 
             self._update_stats()
             self.logger.debug(f"Stored data for key: {key}")
 
             return StorageResponse(
-                success=True,
-                metadata={'file_path': str(file_path), 'format': format_type.value}
+                success=True, metadata={"file_path": str(file_path), "format": format_type.value}
             )
 
         except Exception as e:
             self.logger.error(f"Failed to store data for key {key}: {e}")
-            return StorageResponse(
-                success=False,
-                error=f"Storage failed: {str(e)}"
-            )
+            return StorageResponse(success=False, error=f"Storage failed: {str(e)}")
 
     def retrieve(self, key: str) -> StorageResponse:
         """Retrieve data from file system"""
@@ -114,86 +119,67 @@ class FileStorageAdapter(StoragePort):
 
             # Try different formats
             formats_to_try = [
-                (file_path.with_suffix('.json'), DataFormat.JSON),
-                (file_path.with_suffix('.parquet'), DataFormat.PARQUET),
-                (file_path.with_suffix('.pkl'), DataFormat.PICKLE)
+                (file_path.with_suffix(".json"), DataFormat.JSON),
+                (file_path.with_suffix(".parquet"), DataFormat.PARQUET),
+                (file_path.with_suffix(".pkl"), DataFormat.PICKLE),
             ]
 
             for path, format_type in formats_to_try:
                 if path.exists():
                     if format_type == DataFormat.JSON:
-                        with open(path, 'r') as f:
+                        with open(path, "r") as f:
                             storage_obj = json.load(f)
 
                         # Check TTL
                         if self._is_expired(storage_obj):
                             self.delete(key)
-                            return StorageResponse(
-                                success=False,
-                                error="Data expired"
-                            )
+                            return StorageResponse(success=False, error="Data expired")
 
                         return StorageResponse(
                             success=True,
-                            data=storage_obj['data'],
-                            metadata=storage_obj.get('metadata', {})
+                            data=storage_obj["data"],
+                            metadata=storage_obj.get("metadata", {}),
                         )
 
                     elif format_type == DataFormat.PARQUET:
                         # Load DataFrame and metadata
                         df = pd.read_parquet(path)
-                        metadata_path = path.with_suffix('.meta.json')
+                        metadata_path = path.with_suffix(".meta.json")
 
                         metadata = {}
                         if metadata_path.exists():
-                            with open(metadata_path, 'r') as f:
+                            with open(metadata_path, "r") as f:
                                 meta_obj = json.load(f)
 
                             # Check TTL
                             if self._is_expired(meta_obj):
                                 self.delete(key)
-                                return StorageResponse(
-                                    success=False,
-                                    error="Data expired"
-                                )
+                                return StorageResponse(success=False, error="Data expired")
 
-                            metadata = meta_obj.get('metadata', {})
+                            metadata = meta_obj.get("metadata", {})
 
-                        return StorageResponse(
-                            success=True,
-                            data=df,
-                            metadata=metadata
-                        )
+                        return StorageResponse(success=True, data=df, metadata=metadata)
 
                     elif format_type == DataFormat.PICKLE:
-                        with open(path, 'rb') as f:
+                        with open(path, "rb") as f:
                             storage_obj = pickle.load(f)
 
                         # Check TTL
                         if self._is_expired(storage_obj):
                             self.delete(key)
-                            return StorageResponse(
-                                success=False,
-                                error="Data expired"
-                            )
+                            return StorageResponse(success=False, error="Data expired")
 
                         return StorageResponse(
                             success=True,
-                            data=storage_obj['data'],
-                            metadata=storage_obj.get('metadata', {})
+                            data=storage_obj["data"],
+                            metadata=storage_obj.get("metadata", {}),
                         )
 
-            return StorageResponse(
-                success=False,
-                error=f"Key '{key}' not found"
-            )
+            return StorageResponse(success=False, error=f"Key '{key}' not found")
 
         except Exception as e:
             self.logger.error(f"Failed to retrieve data for key {key}: {e}")
-            return StorageResponse(
-                success=False,
-                error=f"Retrieval failed: {str(e)}"
-            )
+            return StorageResponse(success=False, error=f"Retrieval failed: {str(e)}")
 
     def exists(self, key: str) -> bool:
         """Check if key exists in storage"""
@@ -202,9 +188,9 @@ class FileStorageAdapter(StoragePort):
 
         # Check for any of the possible formats
         return (
-            file_path.with_suffix('.json').exists() or
-            file_path.with_suffix('.parquet').exists() or
-            file_path.with_suffix('.pkl').exists()
+            file_path.with_suffix(".json").exists()
+            or file_path.with_suffix(".parquet").exists()
+            or file_path.with_suffix(".pkl").exists()
         )
 
     def delete(self, key: str) -> StorageResponse:
@@ -215,7 +201,7 @@ class FileStorageAdapter(StoragePort):
             deleted_files = []
 
             # Try to delete all possible format files
-            for suffix in ['.json', '.parquet', '.pkl', '.meta.json']:
+            for suffix in [".json", ".parquet", ".pkl", ".meta.json"]:
                 path = file_path.with_suffix(suffix)
                 if path.exists():
                     path.unlink()
@@ -223,22 +209,13 @@ class FileStorageAdapter(StoragePort):
 
             if deleted_files:
                 self.logger.debug(f"Deleted files for key {key}: {deleted_files}")
-                return StorageResponse(
-                    success=True,
-                    metadata={'deleted_files': deleted_files}
-                )
+                return StorageResponse(success=True, metadata={"deleted_files": deleted_files})
             else:
-                return StorageResponse(
-                    success=False,
-                    error=f"Key '{key}' not found"
-                )
+                return StorageResponse(success=False, error=f"Key '{key}' not found")
 
         except Exception as e:
             self.logger.error(f"Failed to delete key {key}: {e}")
-            return StorageResponse(
-                success=False,
-                error=f"Deletion failed: {str(e)}"
-            )
+            return StorageResponse(success=False, error=f"Deletion failed: {str(e)}")
 
     def list_keys(self, pattern: Optional[str] = None) -> List[str]:
         """List all keys, optionally filtered by pattern"""
@@ -247,7 +224,7 @@ class FileStorageAdapter(StoragePort):
             keys = set()
 
             # Walk through all files in base path
-            for file_path in self.base_path.rglob('*'):
+            for file_path in self.base_path.rglob("*"):
                 if file_path.is_file():
                     # Extract key from file path
                     relative_path = file_path.relative_to(self.base_path)
@@ -257,11 +234,11 @@ class FileStorageAdapter(StoragePort):
                     filename = relative_path.stem
 
                     # Handle metadata files
-                    if filename.endswith('.meta'):
+                    if filename.endswith(".meta"):
                         filename = filename[:-5]  # Remove .meta suffix
 
                     key_parts.append(filename)
-                    key = '/'.join(key_parts)
+                    key = "/".join(key_parts)
 
                     # Apply pattern filter if specified
                     if pattern is None or fnmatch.fnmatch(key, pattern):
@@ -300,12 +277,12 @@ class FileStorageAdapter(StoragePort):
             return self._stats.copy()
         except Exception as e:
             self.logger.error(f"Failed to get stats: {e}")
-            return {'error': str(e)}
+            return {"error": str(e)}
 
     def _get_file_path(self, key: str) -> Path:
         """Convert key to file path"""
         # Replace special characters and create nested structure
-        safe_key = key.replace(':', '/').replace('*', '_star_').replace('?', '_q_')
+        safe_key = key.replace(":", "/").replace("*", "_star_").replace("?", "_q_")
         return self.base_path / safe_key
 
     def _determine_format(self, data: Any) -> DataFormat:
@@ -319,16 +296,16 @@ class FileStorageAdapter(StoragePort):
 
     def _is_expired(self, storage_obj: Dict) -> bool:
         """Check if stored object has expired"""
-        ttl = storage_obj.get('ttl')
+        ttl = storage_obj.get("ttl")
         if ttl is None:
             return False
 
-        timestamp_str = storage_obj.get('timestamp')
+        timestamp_str = storage_obj.get("timestamp")
         if not timestamp_str:
             return True
 
         try:
-            stored_time = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+            stored_time = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
             current_time = datetime.now(timezone.utc)
             age_seconds = (current_time - stored_time).total_seconds()
 
@@ -341,8 +318,8 @@ class FileStorageAdapter(StoragePort):
         if isinstance(obj, datetime):
             return obj.isoformat()
         elif isinstance(obj, pd.DataFrame):
-            return obj.to_dict('records')
-        elif hasattr(obj, 'tolist'):  # NumPy arrays
+            return obj.to_dict("records")
+        elif hasattr(obj, "tolist"):  # NumPy arrays
             return obj.tolist()
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
@@ -352,17 +329,19 @@ class FileStorageAdapter(StoragePort):
             total_files = 0
             total_size = 0
 
-            for file_path in self.base_path.rglob('*'):
+            for file_path in self.base_path.rglob("*"):
                 if file_path.is_file():
                     total_files += 1
                     total_size += file_path.stat().st_size
 
-            self._stats.update({
-                'total_files': total_files,
-                'total_size_bytes': total_size,
-                'operations_count': self._stats.get('operations_count', 0) + 1,
-                'last_update': datetime.now(timezone.utc).isoformat()
-            })
+            self._stats.update(
+                {
+                    "total_files": total_files,
+                    "total_size_bytes": total_size,
+                    "operations_count": self._stats.get("operations_count", 0) + 1,
+                    "last_update": datetime.now(timezone.utc).isoformat(),
+                }
+            )
 
         except Exception as e:
             self.logger.warning(f"Failed to update stats: {e}")

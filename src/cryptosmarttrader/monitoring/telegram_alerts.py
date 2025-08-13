@@ -18,23 +18,29 @@ import os
 
 logger = logging.getLogger(__name__)
 
+
 class TelegramMessageType(Enum):
     """Telegram message types"""
+
     TEXT = "text"
     MARKDOWN = "markdown"
     HTML = "html"
 
+
 class AlertPriority(Enum):
     """Alert priority levels"""
+
     LOW = "🟢"
     MEDIUM = "🟡"
     HIGH = "🟠"
     CRITICAL = "🔴"
     EMERGENCY = "🚨"
 
+
 @dataclass
 class TelegramAlert:
     """Telegram alert message"""
+
     title: str
     message: str
     priority: AlertPriority = AlertPriority.MEDIUM
@@ -53,6 +59,7 @@ class TelegramAlert:
     delivery_attempts: int = 0
     error_message: Optional[str] = None
 
+
 class TelegramAlertsManager:
     """
     Advanced Telegram alerting system for CryptoSmartTrader
@@ -64,7 +71,9 @@ class TelegramAlertsManager:
         self.chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
         # API configuration
-        self.api_base_url = f"https://api.telegram.org/bot{self.bot_token}" if self.bot_token else None
+        self.api_base_url = (
+            f"https://api.telegram.org/bot{self.bot_token}" if self.bot_token else None
+        )
         self.timeout_seconds = 30
         self.max_retries = 3
 
@@ -79,11 +88,11 @@ class TelegramAlertsManager:
 
         # Statistics
         self.stats = {
-            'total_alerts': 0,
-            'successful_deliveries': 0,
-            'failed_deliveries': 0,
-            'rate_limited': 0,
-            'uptime_start': datetime.now()
+            "total_alerts": 0,
+            "successful_deliveries": 0,
+            "failed_deliveries": 0,
+            "rate_limited": 0,
+            "uptime_start": datetime.now(),
         }
 
         # Validate configuration
@@ -104,14 +113,11 @@ class TelegramAlertsManager:
 
         # Test connection
         try:
-            response = requests.get(
-                f"{self.api_base_url}/getMe",
-                timeout=10
-            )
+            response = requests.get(f"{self.api_base_url}/getMe", timeout=10)
 
             if response.status_code == 200:
                 bot_info = response.json()
-                if bot_info.get('ok'):
+                if bot_info.get("ok"):
                     logger.info(f"Telegram bot connected: {bot_info['result']['username']}")
                     return True
                 else:
@@ -124,12 +130,14 @@ class TelegramAlertsManager:
 
         return False
 
-    def send_alert(self,
-                   title: str,
-                   message: str,
-                   priority: AlertPriority = AlertPriority.MEDIUM,
-                   tags: Optional[List[str]] = None,
-                   disable_notification: bool = False) -> bool:
+    def send_alert(
+        self,
+        title: str,
+        message: str,
+        priority: AlertPriority = AlertPriority.MEDIUM,
+        tags: Optional[List[str]] = None,
+        disable_notification: bool = False,
+    ) -> bool:
         """Send immediate Telegram alert"""
 
         alert = TelegramAlert(
@@ -138,16 +146,18 @@ class TelegramAlertsManager:
             priority=priority,
             tags=tags or [],
             disable_notification=disable_notification,
-            alert_id=f"alert_{int(time.time())}"
+            alert_id=f"alert_{int(time.time())}",
         )
 
         return self._send_telegram_message(alert)
 
-    def send_trading_alert(self,
-                          symbol: str,
-                          action: str,
-                          details: Dict[str, Any],
-                          priority: AlertPriority = AlertPriority.HIGH) -> bool:
+    def send_trading_alert(
+        self,
+        symbol: str,
+        action: str,
+        details: Dict[str, Any],
+        priority: AlertPriority = AlertPriority.HIGH,
+    ) -> bool:
         """Send specialized trading alert"""
 
         # Format trading message
@@ -157,32 +167,31 @@ class TelegramAlertsManager:
         message += f"**Action:** {action}\n"
 
         for key, value in details.items():
-            formatted_key = key.replace('_', ' ').title()
+            formatted_key = key.replace("_", " ").title()
             message += f"**{formatted_key}:** {value}\n"
 
         message += f"\n**Time:** {datetime.now().strftime('%H:%M:%S')}"
 
         return self.send_alert(
-            title=title,
-            message=message,
-            priority=priority,
-            tags=["trading", symbol.lower()]
+            title=title, message=message, priority=priority, tags=["trading", symbol.lower()]
         )
 
-    def send_system_alert(self,
-                         component: str,
-                         status: str,
-                         details: str,
-                         priority: AlertPriority = AlertPriority.CRITICAL) -> bool:
+    def send_system_alert(
+        self,
+        component: str,
+        status: str,
+        details: str,
+        priority: AlertPriority = AlertPriority.CRITICAL,
+    ) -> bool:
         """Send system status alert"""
 
         status_emoji = {
-            'healthy': '✅',
-            'warning': '⚠️',
-            'error': '❌',
-            'critical': '🚨',
-            'recovering': '🔄'
-        }.get(status.lower(), '❓')
+            "healthy": "✅",
+            "warning": "⚠️",
+            "error": "❌",
+            "critical": "🚨",
+            "recovering": "🔄",
+        }.get(status.lower(), "❓")
 
         title = f"{status_emoji} System Alert: {component}"
 
@@ -193,17 +202,16 @@ class TelegramAlertsManager:
         message += f"\n**Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 
         return self.send_alert(
-            title=title,
-            message=message,
-            priority=priority,
-            tags=["system", component.lower()]
+            title=title, message=message, priority=priority, tags=["system", component.lower()]
         )
 
-    def send_pnl_alert(self,
-                       daily_pnl: float,
-                       total_pnl: float,
-                       drawdown: float,
-                       priority: AlertPriority = AlertPriority.HIGH) -> bool:
+    def send_pnl_alert(
+        self,
+        daily_pnl: float,
+        total_pnl: float,
+        drawdown: float,
+        priority: AlertPriority = AlertPriority.HIGH,
+    ) -> bool:
         """Send P&L performance alert"""
 
         pnl_emoji = "📈" if daily_pnl >= 0 else "📉"
@@ -226,18 +234,17 @@ class TelegramAlertsManager:
         message += f"\n\n**Time:** {datetime.now().strftime('%H:%M:%S')}"
 
         return self.send_alert(
-            title=title,
-            message=message,
-            priority=priority,
-            tags=["pnl", "performance"]
+            title=title, message=message, priority=priority, tags=["pnl", "performance"]
         )
 
-    def send_risk_alert(self,
-                       alert_type: str,
-                       current_value: float,
-                       threshold: float,
-                       action_taken: str,
-                       priority: AlertPriority = AlertPriority.CRITICAL) -> bool:
+    def send_risk_alert(
+        self,
+        alert_type: str,
+        current_value: float,
+        threshold: float,
+        action_taken: str,
+        priority: AlertPriority = AlertPriority.CRITICAL,
+    ) -> bool:
         """Send risk management alert"""
 
         title = f"⚠️ Risk Alert: {alert_type}"
@@ -250,17 +257,16 @@ class TelegramAlertsManager:
         message += f"\n**Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 
         return self.send_alert(
-            title=title,
-            message=message,
-            priority=priority,
-            tags=["risk", "threshold"]
+            title=title, message=message, priority=priority, tags=["risk", "threshold"]
         )
 
-    def send_chaos_test_alert(self,
-                             test_name: str,
-                             outcome: str,
-                             recovery_time: float,
-                             priority: AlertPriority = AlertPriority.MEDIUM) -> bool:
+    def send_chaos_test_alert(
+        self,
+        test_name: str,
+        outcome: str,
+        recovery_time: float,
+        priority: AlertPriority = AlertPriority.MEDIUM,
+    ) -> bool:
         """Send chaos test result alert"""
 
         outcome_emoji = "✅" if outcome == "passed" else "❌"
@@ -279,16 +285,15 @@ class TelegramAlertsManager:
         message += f"\n\n**Time:** {datetime.now().strftime('%H:%M:%S')}"
 
         return self.send_alert(
-            title=title,
-            message=message,
-            priority=priority,
-            tags=["chaos", "testing"]
+            title=title, message=message, priority=priority, tags=["chaos", "testing"]
         )
 
-    def send_kill_switch_alert(self,
-                              trigger_reason: str,
-                              positions_closed: int,
-                              priority: AlertPriority = AlertPriority.EMERGENCY) -> bool:
+    def send_kill_switch_alert(
+        self,
+        trigger_reason: str,
+        positions_closed: int,
+        priority: AlertPriority = AlertPriority.EMERGENCY,
+    ) -> bool:
         """Send emergency kill switch alert"""
 
         title = "🚨 EMERGENCY KILL SWITCH ACTIVATED 🚨"
@@ -305,21 +310,20 @@ class TelegramAlertsManager:
         success = False
         for _ in range(3):
             if self.send_alert(
-                title=title,
-                message=message,
-                priority=priority,
-                tags=["emergency", "kill_switch"]
+                title=title, message=message, priority=priority, tags=["emergency", "kill_switch"]
             ):
                 success = True
             time.sleep(1)  # 1 second between emergency messages
 
         return success
 
-    def send_execution_alert(self,
-                           symbol: str,
-                           slippage_bps: float,
-                           budget_remaining: float,
-                           priority: AlertPriority = AlertPriority.MEDIUM) -> bool:
+    def send_execution_alert(
+        self,
+        symbol: str,
+        slippage_bps: float,
+        budget_remaining: float,
+        priority: AlertPriority = AlertPriority.MEDIUM,
+    ) -> bool:
         """Send execution policy alert"""
 
         title = f"⚙️ Execution Alert: {symbol}"
@@ -338,10 +342,7 @@ class TelegramAlertsManager:
         message += f"\n\n**Time:** {datetime.now().strftime('%H:%M:%S')}"
 
         return self.send_alert(
-            title=title,
-            message=message,
-            priority=priority,
-            tags=["execution", "slippage"]
+            title=title, message=message, priority=priority, tags=["execution", "slippage"]
         )
 
     def _send_telegram_message(self, alert: TelegramAlert) -> bool:
@@ -359,7 +360,7 @@ class TelegramAlertsManager:
             if time_since_last < self.min_message_interval:
                 sleep_time = self.min_message_interval - time_since_last
                 time.sleep(sleep_time)
-                self.stats['rate_limited'] += 1
+                self.stats["rate_limited"] += 1
 
             self.last_message_time = time.time()
 
@@ -369,32 +370,30 @@ class TelegramAlertsManager:
         # Prepare request
         url = f"{self.api_base_url}/sendMessage"
         payload = {
-            'chat_id': self.chat_id,
-            'text': formatted_message,
-            'parse_mode': 'Markdown' if alert.message_type == TelegramMessageType.MARKDOWN else None,
-            'disable_notification': alert.disable_notification
+            "chat_id": self.chat_id,
+            "text": formatted_message,
+            "parse_mode": "Markdown"
+            if alert.message_type == TelegramMessageType.MARKDOWN
+            else None,
+            "disable_notification": alert.disable_notification,
         }
 
         # Send with retries
         for attempt in range(self.max_retries):
             try:
-                response = requests.post(
-                    url,
-                    json=payload,
-                    timeout=self.timeout_seconds
-                )
+                response = requests.post(url, json=payload, timeout=self.timeout_seconds)
 
                 if response.status_code == 200:
                     result = response.json()
-                    if result.get('ok'):
+                    if result.get("ok"):
                         alert.sent = True
-                        self.stats['successful_deliveries'] += 1
+                        self.stats["successful_deliveries"] += 1
                         self.alert_history.append(alert)
 
                         logger.info(f"Telegram alert sent: {alert.title}")
                         return True
                     else:
-                        error_msg = result.get('description', 'Unknown error')
+                        error_msg = result.get("description", "Unknown error")
                         logger.error(f"Telegram API error: {error_msg}")
                         alert.error_message = error_msg
                 else:
@@ -406,11 +405,11 @@ class TelegramAlertsManager:
                 alert.error_message = str(e)
 
                 if attempt < self.max_retries - 1:
-                    time.sleep(2 ** attempt)  # Exponential backoff
+                    time.sleep(2**attempt)  # Exponential backoff
 
         # All attempts failed
         alert.delivery_attempts = self.max_retries
-        self.stats['failed_deliveries'] += 1
+        self.stats["failed_deliveries"] += 1
         return False
 
     def _format_message(self, alert: TelegramAlert) -> str:
@@ -442,9 +441,9 @@ class TelegramAlertsManager:
         return self.send_alert(
             title="🧪 Test Alert",
             message="This is a test message from CryptoSmartTrader V2 alert system.\n\n"
-                   "If you receive this message, Telegram alerts are working correctly!",
+            "If you receive this message, Telegram alerts are working correctly!",
             priority=AlertPriority.LOW,
-            tags=["test", "system_check"]
+            tags=["test", "system_check"],
         )
 
     def send_startup_alert(self) -> bool:
@@ -454,7 +453,7 @@ class TelegramAlertsManager:
             component="CryptoSmartTrader V2",
             status="healthy",
             details="System successfully started and ready for trading operations.",
-            priority=AlertPriority.MEDIUM
+            priority=AlertPriority.MEDIUM,
         )
 
     def send_shutdown_alert(self) -> bool:
@@ -464,92 +463,75 @@ class TelegramAlertsManager:
             component="CryptoSmartTrader V2",
             status="offline",
             details="System shutdown initiated. All trading operations stopped.",
-            priority=AlertPriority.HIGH
+            priority=AlertPriority.HIGH,
         )
 
     def get_alert_statistics(self) -> Dict[str, Any]:
         """Get comprehensive alert statistics"""
 
-        uptime = datetime.now() - self.stats['uptime_start']
+        uptime = datetime.now() - self.stats["uptime_start"]
 
         return {
-            'telegram_config': {
-                'configured': bool(self.bot_token and self.chat_id),
-                'chat_id': self.chat_id,
-                'connection_tested': self.stats['successful_deliveries'] > 0
+            "telegram_config": {
+                "configured": bool(self.bot_token and self.chat_id),
+                "chat_id": self.chat_id,
+                "connection_tested": self.stats["successful_deliveries"] > 0,
             },
-
-            'delivery_stats': {
-                'total_alerts': self.stats['total_alerts'],
-                'successful_deliveries': self.stats['successful_deliveries'],
-                'failed_deliveries': self.stats['failed_deliveries'],
-                'success_rate': (
-                    self.stats['successful_deliveries'] /
-                    max(self.stats['total_alerts'], 1) * 100
+            "delivery_stats": {
+                "total_alerts": self.stats["total_alerts"],
+                "successful_deliveries": self.stats["successful_deliveries"],
+                "failed_deliveries": self.stats["failed_deliveries"],
+                "success_rate": (
+                    self.stats["successful_deliveries"] / max(self.stats["total_alerts"], 1) * 100
                 ),
-                'rate_limited_messages': self.stats['rate_limited']
+                "rate_limited_messages": self.stats["rate_limited"],
             },
-
-            'system_info': {
-                'uptime_hours': uptime.total_seconds() / 3600,
-                'alerts_per_hour': (
-                    self.stats['total_alerts'] /
-                    max(uptime.total_seconds() / 3600, 1)
+            "system_info": {
+                "uptime_hours": uptime.total_seconds() / 3600,
+                "alerts_per_hour": (
+                    self.stats["total_alerts"] / max(uptime.total_seconds() / 3600, 1)
                 ),
-                'last_alert_time': (
-                    self.alert_history[-1].timestamp.isoformat()
-                    if self.alert_history else None
-                )
+                "last_alert_time": (
+                    self.alert_history[-1].timestamp.isoformat() if self.alert_history else None
+                ),
             },
-
-            'recent_alerts': [
+            "recent_alerts": [
                 {
-                    'title': alert.title,
-                    'priority': alert.priority.value,
-                    'timestamp': alert.timestamp.isoformat(),
-                    'tags': alert.tags,
-                    'sent': alert.sent
+                    "title": alert.title,
+                    "priority": alert.priority.value,
+                    "timestamp": alert.timestamp.isoformat(),
+                    "tags": alert.tags,
+                    "sent": alert.sent,
                 }
                 for alert in self.alert_history[-10:]  # Last 10 alerts
-            ]
+            ],
         }
 
     def health_check(self) -> Dict[str, Any]:
         """Perform Telegram health check"""
 
         if not self.bot_token or not self.chat_id:
-            return {
-                'healthy': False,
-                'error': 'Telegram not configured',
-                'configured': False
-            }
+            return {"healthy": False, "error": "Telegram not configured", "configured": False}
 
         try:
             # Test API connectivity
-            response = requests.get(
-                f"{self.api_base_url}/getMe",
-                timeout=5
-            )
+            response = requests.get(f"{self.api_base_url}/getMe", timeout=5)
 
             if response.status_code == 200:
                 result = response.json()
-                if result.get('ok'):
+                if result.get("ok"):
                     return {
-                        'healthy': True,
-                        'configured': True,
-                        'bot_username': result['result'].get('username'),
-                        'connection_time_ms': response.elapsed.total_seconds() * 1000
+                        "healthy": True,
+                        "configured": True,
+                        "bot_username": result["result"].get("username"),
+                        "connection_time_ms": response.elapsed.total_seconds() * 1000,
                     }
 
             return {
-                'healthy': False,
-                'error': f"API error: {response.status_code}",
-                'configured': True
+                "healthy": False,
+                "error": f"API error: {response.status_code}",
+                "configured": True,
             }
 
         except Exception as e:
-            return {
-                'healthy': False,
-                'error': str(e),
-                'configured': True
-            }
+            return {"healthy": False, "error": str(e), "configured": True}

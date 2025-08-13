@@ -19,6 +19,7 @@ from ..monitoring.alert_rules import AlertManager, AlertSeverity
 
 class FailureScenario(Enum):
     """Types of failure scenarios to simulate."""
+
     DATA_GAP = "data_gap"
     HIGH_SLIPPAGE = "high_slippage"
     ORDER_FAILURES = "order_failures"
@@ -34,6 +35,7 @@ class FailureScenario(Enum):
 @dataclass
 class SimulationConfig:
     """Configuration for simulation testing."""
+
     scenario: FailureScenario
     duration_minutes: int = 5
     intensity: float = 1.0  # 0.0 to 1.0
@@ -46,6 +48,7 @@ class SimulationConfig:
 @dataclass
 class TestResult:
     """Result of a simulation test."""
+
     scenario: FailureScenario
     start_time: datetime
     end_time: datetime
@@ -62,8 +65,9 @@ class TestResult:
 class SimulationTester:
     """Comprehensive simulation testing for guardrails and observability."""
 
-    def __init__(self, risk_guard: RiskGuard, execution_policy: ExecutionPolicy,
-                 alert_manager: AlertManager):
+    def __init__(
+        self, risk_guard: RiskGuard, execution_policy: ExecutionPolicy, alert_manager: AlertManager
+    ):
         """Initialize simulation tester."""
         self.logger = get_logger("simulation_tester")
         self.risk_guard = risk_guard
@@ -95,9 +99,11 @@ class SimulationTester:
 
     async def run_simulation(self, config: SimulationConfig) -> TestResult:
         """Run a comprehensive simulation test."""
-        self.logger.info(f"Starting simulation: {config.scenario.value}",
-                        duration=config.duration_minutes,
-                        intensity=config.intensity)
+        self.logger.info(
+            f"Starting simulation: {config.scenario.value}",
+            duration=config.duration_minutes,
+            intensity=config.intensity,
+        )
 
         start_time = datetime.now()
         self.active_simulation = config.scenario
@@ -136,7 +142,7 @@ class SimulationTester:
                 risk_level_changes=[],
                 metrics_collected={},
                 success=False,
-                error_message=str(e)
+                error_message=str(e),
             )
         finally:
             self.active_simulation = None
@@ -145,10 +151,10 @@ class SimulationTester:
     def _store_original_values(self, config: SimulationConfig) -> None:
         """Store original system values for recovery."""
         self.original_values = {
-            'portfolio_value': config.portfolio_value,
-            'risk_level': self.risk_guard.current_risk_level.value,
-            'trading_mode': self.risk_guard.trading_mode.value,
-            'kill_switch_active': self.risk_guard.kill_switch_active
+            "portfolio_value": config.portfolio_value,
+            "risk_level": self.risk_guard.current_risk_level.value,
+            "trading_mode": self.risk_guard.trading_mode.value,
+            "kill_switch_active": self.risk_guard.kill_switch_active,
         }
 
     async def _execute_scenario(self, config: SimulationConfig) -> None:
@@ -163,7 +169,7 @@ class SimulationTester:
             FailureScenario.KILL_SWITCH_TEST: self._simulate_kill_switch_test,
             FailureScenario.MEMORY_LEAK: self._simulate_memory_leak,
             FailureScenario.CPU_SPIKE: self._simulate_cpu_spike,
-            FailureScenario.PREDICTION_DEGRADATION: self._simulate_prediction_degradation
+            FailureScenario.PREDICTION_DEGRADATION: self._simulate_prediction_degradation,
         }
 
         await scenario_map[config.scenario](config)
@@ -199,12 +205,11 @@ class SimulationTester:
             side="buy",
             order_type=OrderType.MARKET,
             quantity=config.position_size / 50000,  # Assume BTC price
-            confidence_score=0.8
+            confidence_score=0.8,
         )
 
         # Record high slippage metric
-        self.metrics.record_order("simulation", "BTC/USDT", "buy", "filled",
-                                 0.5, high_slippage)
+        self.metrics.record_order("simulation", "BTC/USDT", "buy", "filled", 0.5, high_slippage)
 
         # Check against alert thresholds
         self.alert_manager.check_metric("cst_average_slippage_percent", high_slippage)
@@ -217,8 +222,7 @@ class SimulationTester:
 
         # Simulate multiple failed orders
         for i in range(10):
-            self.metrics.record_order("simulation", "ETH/USDT", "sell", "rejected",
-                                     5.0, 0.0)
+            self.metrics.record_order("simulation", "ETH/USDT", "sell", "rejected", 5.0, 0.0)
             await asyncio.sleep(0.1)
 
         # Update error rate metrics
@@ -243,7 +247,7 @@ class SimulationTester:
         self.metrics.update_portfolio_metrics(
             current_value,
             -drawdown_percent,  # Daily PnL
-            drawdown_percent    # Max drawdown
+            drawdown_percent,  # Max drawdown
         )
 
         # Check alert thresholds
@@ -271,10 +275,13 @@ class SimulationTester:
         large_position_percent = config.intensity * 5.0  # Up to 5% position size
 
         # Add large position
-        self.risk_guard.update_position("BTC/USDT",
-                                       config.position_size,
-                                       config.position_size * large_position_percent / 100,
-                                       50000, 50000)
+        self.risk_guard.update_position(
+            "BTC/USDT",
+            config.position_size,
+            config.position_size * large_position_percent / 100,
+            50000,
+            50000,
+        )
 
         # Run risk check
         risk_status = self.risk_guard.run_risk_check(config.portfolio_value)
@@ -352,11 +359,11 @@ class SimulationTester:
 
         # Collect final metrics
         metrics_collected = {
-            'portfolio_value': self.original_values.get('portfolio_value', 0),
-            'final_risk_level': self.risk_guard.current_risk_level.value,
-            'kill_switch_activated': self.risk_guard.kill_switch_active,
-            'alerts_count': len(self.triggered_alerts),
-            'duration_minutes': (end_time - start_time).total_seconds() / 60
+            "portfolio_value": self.original_values.get("portfolio_value", 0),
+            "final_risk_level": self.risk_guard.current_risk_level.value,
+            "kill_switch_activated": self.risk_guard.kill_switch_active,
+            "alerts_count": len(self.triggered_alerts),
+            "duration_minutes": (end_time - start_time).total_seconds() / 60,
         }
 
         # Determine success criteria
@@ -372,7 +379,7 @@ class SimulationTester:
             max_slippage_observed=max_slippage,
             risk_level_changes=risk_changes,
             metrics_collected=metrics_collected,
-            success=success
+            success=success,
         )
 
         self.test_results.append(result)
@@ -389,11 +396,11 @@ class SimulationTester:
             FailureScenario.KILL_SWITCH_TEST: ["KillSwitchActivated"],
             FailureScenario.MEMORY_LEAK: ["HighMemoryUsage"],
             FailureScenario.CPU_SPIKE: ["HighCPUUsage"],
-            FailureScenario.PREDICTION_DEGRADATION: ["LowPredictionAccuracy"]
+            FailureScenario.PREDICTION_DEGRADATION: ["LowPredictionAccuracy"],
         }
 
         expected = expected_alerts.get(config.scenario, [])
-        triggered_rule_names = [alert.split(':')[0] for alert in self.triggered_alerts]
+        triggered_rule_names = [alert.split(":")[0] for alert in self.triggered_alerts]
 
         # Check if at least one expected alert was triggered
         return any(rule in triggered_rule_names for rule in expected)
@@ -415,8 +422,8 @@ class SimulationTester:
                     return False
 
             # Restore original portfolio value
-            if 'portfolio_value' in self.original_values:
-                self.risk_guard.update_portfolio_value(self.original_values['portfolio_value'])
+            if "portfolio_value" in self.original_values:
+                self.risk_guard.update_portfolio_value(self.original_values["portfolio_value"])
 
             # Reset metrics to normal values
             self.metrics.update_data_source("kraken", 1.0)  # Restore data quality
@@ -445,7 +452,7 @@ class SimulationTester:
             "success_rate": successful_tests / len(self.test_results) * 100,
             "scenarios_tested": list(set(r.scenario.value for r in self.test_results)),
             "kill_switch_activations": sum(1 for r in self.test_results if r.kill_switch_activated),
-            "total_alerts_triggered": sum(len(r.alerts_triggered) for r in self.test_results)
+            "total_alerts_triggered": sum(len(r.alerts_triggered) for r in self.test_results),
         }
 
     async def run_comprehensive_test_suite(self) -> Dict[str, Any]:
@@ -474,14 +481,17 @@ class SimulationTester:
 
         summary = self.get_test_summary()
 
-        self.logger.info("Comprehensive test suite completed",
-                        success_rate=summary['success_rate'],
-                        total_tests=summary['total_tests'])
+        self.logger.info(
+            "Comprehensive test suite completed",
+            success_rate=summary["success_rate"],
+            total_tests=summary["total_tests"],
+        )
 
         return summary
 
 
-def create_simulation_tester(risk_guard: RiskGuard, execution_policy: ExecutionPolicy,
-                           alert_manager: AlertManager) -> SimulationTester:
+def create_simulation_tester(
+    risk_guard: RiskGuard, execution_policy: ExecutionPolicy, alert_manager: AlertManager
+) -> SimulationTester:
     """Factory function to create SimulationTester instance."""
     return SimulationTester(risk_guard, execution_policy, alert_manager)

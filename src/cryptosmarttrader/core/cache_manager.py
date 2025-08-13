@@ -7,6 +7,7 @@ import pickle
 import pandas as pd
 import numpy as np
 
+
 class CacheManager:
     """Intelligent cache manager with memory calculation and TTL management"""
 
@@ -52,7 +53,7 @@ class CacheManager:
 
         with self._lock:
             for key, cache_item in self._cache.items():
-                if current_time > cache_item['expires']:
+                if current_time > cache_item["expires"]:
                     expired_keys.append(key)
 
             for key in expired_keys:
@@ -65,15 +66,12 @@ class CacheManager:
         if total_memory > self.max_memory_mb:
             # Sort by access time, remove oldest
             with self._lock:
-                sorted_items = sorted(
-                    self._cache.items(),
-                    key=lambda x: x[1]['last_accessed']
-                )
+                sorted_items = sorted(self._cache.items(), key=lambda x: x[1]["last_accessed"])
 
                 while total_memory > self.max_memory_mb * 0.8 and sorted_items:
                     key, _ = sorted_items.pop(0)
                     if key in self._cache:
-                        total_memory -= self._cache[key]['memory_mb']
+                        total_memory -= self._cache[key]["memory_mb"]
                         del self._cache[key]
 
     def set(self, key: str, value: Any, ttl_minutes: int = 60):
@@ -82,12 +80,12 @@ class CacheManager:
         expires = datetime.now() + timedelta(minutes=ttl_minutes)
 
         cache_item = {
-            'value': value,
-            'expires': expires,
-            'memory_mb': memory_usage,
-            'created': datetime.now(),
-            'last_accessed': datetime.now(),
-            'access_count': 0
+            "value": value,
+            "expires": expires,
+            "memory_mb": memory_usage,
+            "created": datetime.now(),
+            "last_accessed": datetime.now(),
+            "access_count": 0,
         }
 
         with self._lock:
@@ -100,15 +98,15 @@ class CacheManager:
                 cache_item = self._cache[key]
 
                 # Check if expired
-                if datetime.now() > cache_item['expires']:
+                if datetime.now() > cache_item["expires"]:
                     del self._cache[key]
                     return None
 
                 # Update access info
-                cache_item['last_accessed'] = datetime.now()
-                cache_item['access_count'] += 1
+                cache_item["last_accessed"] = datetime.now()
+                cache_item["access_count"] += 1
 
-                return cache_item['value']
+                return cache_item["value"]
 
             return None
 
@@ -128,7 +126,7 @@ class CacheManager:
     def get_total_memory_usage(self) -> float:
         """Get total memory usage in MB"""
         with self._lock:
-            return sum(item['memory_mb'] for item in self._cache.values())
+            return sum(item["memory_mb"] for item in self._cache.values())
 
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get cache statistics"""
@@ -138,19 +136,19 @@ class CacheManager:
 
             if total_items > 0:
                 avg_memory = total_memory / total_items
-                total_accesses = sum(item['access_count'] for item in self._cache.values())
+                total_accesses = sum(item["access_count"] for item in self._cache.values())
                 avg_accesses = total_accesses / total_items
             else:
                 avg_memory = 0
                 avg_accesses = 0
 
             return {
-                'total_items': total_items,
-                'total_memory_mb': total_memory,
-                'max_memory_mb': self.max_memory_mb,
-                'memory_usage_percent': (total_memory / self.max_memory_mb) * 100,
-                'avg_memory_per_item_mb': avg_memory,
-                'avg_accesses_per_item': avg_accesses
+                "total_items": total_items,
+                "total_memory_mb": total_memory,
+                "max_memory_mb": self.max_memory_mb,
+                "memory_usage_percent": (total_memory / self.max_memory_mb) * 100,
+                "avg_memory_per_item_mb": avg_memory,
+                "avg_accesses_per_item": avg_accesses,
             }
 
     def get_cache_info(self) -> Dict[str, Dict]:
@@ -159,12 +157,15 @@ class CacheManager:
             info = {}
             for key, cache_item in self.cache.items():
                 info[key] = {
-                    'memory_mb': cache_item['memory_mb'],
-                    'expires': cache_item['expires'].isoformat(),
-                    'created': cache_item['created'].isoformat(),
-                    'last_accessed': cache_item['last_accessed'].isoformat(),
-                    'access_count': cache_item['access_count'],
-                    'ttl_remaining_minutes': (cache_item['expires'] - datetime.now()).total_seconds() / 60
+                    "memory_mb": cache_item["memory_mb"],
+                    "expires": cache_item["expires"].isoformat(),
+                    "created": cache_item["created"].isoformat(),
+                    "last_accessed": cache_item["last_accessed"].isoformat(),
+                    "access_count": cache_item["access_count"],
+                    "ttl_remaining_minutes": (
+                        cache_item["expires"] - datetime.now()
+                    ).total_seconds()
+                    / 60,
                 }
             return info
 
@@ -172,7 +173,7 @@ class CacheManager:
         """Extend TTL for a cache entry"""
         with self._lock:
             if key in self.cache:
-                self.cache[key]['expires'] += timedelta(minutes=additional_minutes)
+                self.cache[key]["expires"] += timedelta(minutes=additional_minutes)
                 return True
             return False
 
@@ -180,6 +181,7 @@ class CacheManager:
         """Get cache keys matching a pattern"""
         with self._lock:
             import fnmatch
+
             return [key for key in self.cache.keys() if fnmatch.fnmatch(key, pattern)]
 
     def stop_cleanup(self):

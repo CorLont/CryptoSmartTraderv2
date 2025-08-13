@@ -34,6 +34,7 @@ def get_app() -> FastAPI:
     """PR3 Style App Factory"""
     app = FastAPI(title="CryptoSmartTrader API", version="0.1.0")
     from .routers.health import router as health_router
+
     app.include_router(health_router)
     return app
 
@@ -50,25 +51,27 @@ def create_app() -> FastAPI:
         docs_url="/api/docs",
         redoc_url="/api/redoc",
         openapi_url="/api/openapi.json",
-        lifespan=lifespan
+        lifespan=lifespan,
     )
 
     # Add security middleware
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=["localhost", "127.0.0.1", "0.0.0.0", "*.replit.app", "*.replit.dev"]
+        allowed_hosts=["localhost", "127.0.0.1", "0.0.0.0", "*.replit.app", "*.replit.dev"],
     )
 
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"] if settings.DEBUG_MODE else [
+        allow_origins=["*"]
+        if settings.DEBUG_MODE
+        else [
             f"http://localhost:{settings.DASHBOARD_PORT}",
-            f"https://localhost:{settings.DASHBOARD_PORT}"
+            f"https://localhost:{settings.DASHBOARD_PORT}",
         ],
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE"],
-        allow_headers=["*"]
+        allow_headers=["*"],
     )
 
     # Add request timing middleware
@@ -89,8 +92,8 @@ def create_app() -> FastAPI:
             tags={
                 "method": request.method,
                 "endpoint": str(request.url.path),
-                "status_code": str(response.status_code)
-            }
+                "status_code": str(response.status_code),
+            },
         )
 
         return response
@@ -104,8 +107,8 @@ def create_app() -> FastAPI:
             extra={
                 "method": request.method,
                 "url": str(request.url),
-                "client_ip": request.client.host if request.client else None
-            }
+                "client_ip": request.client.host if request.client else None,
+            },
         )
 
         return JSONResponse(
@@ -113,8 +116,8 @@ def create_app() -> FastAPI:
             content={
                 "error": "Internal server error",
                 "message": "An unexpected error occurred. Please try again later.",
-                "timestamp": time.time()
-            }
+                "timestamp": time.time(),
+            },
         )
 
     # Include API routers
@@ -135,7 +138,7 @@ def create_app() -> FastAPI:
             "docs_url": "/api/docs",
             "health_check": "/api/v1/health",
             "environment": "development" if settings.DEBUG_MODE else "production",
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
     # Health check endpoint (simple)

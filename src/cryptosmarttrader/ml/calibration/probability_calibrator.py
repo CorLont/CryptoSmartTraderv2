@@ -23,19 +23,24 @@ from enum import Enum
 import pickle
 import json
 from pathlib import Path
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 class CalibrationMethod(Enum):
     """Available calibration methods"""
+
     PLATT_SCALING = "platt_scaling"
     ISOTONIC_REGRESSION = "isotonic_regression"
     TEMPERATURE_SCALING = "temperature_scaling"
     BETA_CALIBRATION = "beta_calibration"
     HISTOGRAM_BINNING = "histogram_binning"
 
+
 @dataclass
 class CalibrationResult:
     """Result of probability calibration"""
+
     method: CalibrationMethod
     calibrated_probabilities: np.ndarray
     calibration_error: float
@@ -47,9 +52,11 @@ class CalibrationResult:
     calibration_curve_x: np.ndarray
     calibration_curve_y: np.ndarray
 
+
 @dataclass
 class CalibrationMetrics:
     """Comprehensive calibration quality metrics"""
+
     expected_calibration_error: float
     maximum_calibration_error: float
     average_calibration_error: float
@@ -57,6 +64,7 @@ class CalibrationMetrics:
     underconfidence_error: float
     sharpness: float
     reliability: float
+
 
 class TemperatureScaling(nn.Module):
     """Temperature scaling for neural network calibration"""
@@ -85,6 +93,7 @@ class TemperatureScaling(nn.Module):
         optimizer.step(eval)
 
         return self.temperature.item()
+
 
 class BetaCalibration:
     """Beta calibration for improved reliability"""
@@ -122,6 +131,7 @@ class BetaCalibration:
         # Transform probabilities using beta distribution
         calibrated = beta.cdf(probabilities, self.a, self.b)
         return calibrated
+
 
 class HistogramBinning:
     """Histogram binning calibration"""
@@ -175,6 +185,7 @@ class HistogramBinning:
 
         return calibrated
 
+
 class ProbabilityCalibrator:
     """Advanced probability calibration system"""
 
@@ -182,7 +193,7 @@ class ProbabilityCalibrator:
         self.methods = methods or [
             CalibrationMethod.PLATT_SCALING,
             CalibrationMethod.ISOTONIC_REGRESSION,
-            CalibrationMethod.TEMPERATURE_SCALING
+            CalibrationMethod.TEMPERATURE_SCALING,
         ]
 
         self.calibrators = {}
@@ -193,10 +204,7 @@ class ProbabilityCalibrator:
         self.logger = logging.getLogger(__name__)
 
     def fit(
-        self,
-        probabilities: np.ndarray,
-        true_labels: np.ndarray,
-        validation_split: float = 0.3
+        self, probabilities: np.ndarray, true_labels: np.ndarray, validation_split: float = 0.3
     ) -> Dict[CalibrationMethod, CalibrationResult]:
         """Fit multiple calibration methods and select best one"""
 
@@ -254,7 +262,7 @@ class ProbabilityCalibrator:
         train_probs: np.ndarray,
         train_labels: np.ndarray,
         val_probs: np.ndarray,
-        val_labels: np.ndarray
+        val_labels: np.ndarray,
     ) -> CalibrationResult:
         """Fit single calibration method"""
 
@@ -300,7 +308,7 @@ class ProbabilityCalibrator:
         try:
             log_loss_score = log_loss(val_labels, calibrated_probs)
         except Exception:
-            log_loss_score = float('inf')
+            log_loss_score = float("inf")
 
         try:
             auc_score = roc_auc_score(val_labels, calibrated_probs)
@@ -323,7 +331,7 @@ class ProbabilityCalibrator:
             auc_score=auc_score,
             is_well_calibrated=is_well_calibrated,
             calibration_curve_x=cal_x,
-            calibration_curve_y=cal_y
+            calibration_curve_y=cal_y,
         )
 
     def _fit_platt_scaling(self, probabilities: np.ndarray, labels: np.ndarray):
@@ -333,7 +341,7 @@ class ProbabilityCalibrator:
         scores = np.log(probabilities / (1 - probabilities + 1e-8))
 
         # Fit logistic regression
-        calibrator = LogisticRegression(solver='lbfgs', max_iter=1000)
+        calibrator = LogisticRegression(solver="lbfgs", max_iter=1000)
         calibrator.fit(scores.reshape(-1, 1), labels)
 
         return calibrator
@@ -341,7 +349,7 @@ class ProbabilityCalibrator:
     def _fit_isotonic_regression(self, probabilities: np.ndarray, labels: np.ndarray):
         """Fit isotonic regression"""
 
-        calibrator = IsotonicRegression(out_of_bounds='clip')
+        calibrator = IsotonicRegression(out_of_bounds="clip")
         calibrator.fit(probabilities, labels)
 
         return calibrator
@@ -357,7 +365,9 @@ class ProbabilityCalibrator:
 
         return calibrator
 
-    def predict(self, probabilities: np.ndarray, method: Optional[CalibrationMethod] = None) -> np.ndarray:
+    def predict(
+        self, probabilities: np.ndarray, method: Optional[CalibrationMethod] = None
+    ) -> np.ndarray:
         """Apply calibration to new probabilities"""
 
         if not self.fitted:
@@ -391,7 +401,9 @@ class ProbabilityCalibrator:
         else:
             raise ValueError(f"Unknown method: {method}")
 
-    def _calculate_calibration_error(self, probabilities: np.ndarray, labels: np.ndarray, n_bins: int = 10) -> float:
+    def _calculate_calibration_error(
+        self, probabilities: np.ndarray, labels: np.ndarray, n_bins: int = 10
+    ) -> float:
         """Calculate Expected Calibration Error (ECE)"""
 
         bin_boundaries = np.linspace(0, 1, n_bins + 1)
@@ -413,7 +425,9 @@ class ProbabilityCalibrator:
 
         return ece
 
-    def _calculate_reliability_diagram(self, probabilities: np.ndarray, labels: np.ndarray, n_bins: int = 10) -> Dict[str, np.ndarray]:
+    def _calculate_reliability_diagram(
+        self, probabilities: np.ndarray, labels: np.ndarray, n_bins: int = 10
+    ) -> Dict[str, np.ndarray]:
         """Calculate reliability diagram data"""
 
         bin_boundaries = np.linspace(0, 1, n_bins + 1)
@@ -440,13 +454,15 @@ class ProbabilityCalibrator:
                 bin_counts.append(0)
 
         return {
-            'bin_centers': np.array(bin_centers),
-            'bin_accuracies': np.array(bin_accuracies),
-            'bin_confidences': np.array(bin_confidences),
-            'bin_counts': np.array(bin_counts)
+            "bin_centers": np.array(bin_centers),
+            "bin_accuracies": np.array(bin_accuracies),
+            "bin_confidences": np.array(bin_confidences),
+            "bin_counts": np.array(bin_counts),
         }
 
-    def _calculate_calibration_curve(self, probabilities: np.ndarray, labels: np.ndarray, n_bins: int = 10) -> Tuple[np.ndarray, np.ndarray]:
+    def _calculate_calibration_curve(
+        self, probabilities: np.ndarray, labels: np.ndarray, n_bins: int = 10
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Calculate calibration curve for plotting"""
 
         # Sort by probabilities
@@ -472,7 +488,9 @@ class ProbabilityCalibrator:
 
         return np.array(bin_centers), np.array(bin_accuracies)
 
-    def get_calibration_metrics(self, probabilities: np.ndarray, labels: np.ndarray) -> CalibrationMetrics:
+    def get_calibration_metrics(
+        self, probabilities: np.ndarray, labels: np.ndarray
+    ) -> CalibrationMetrics:
         """Get comprehensive calibration metrics"""
 
         # Apply best calibration
@@ -529,17 +547,17 @@ class ProbabilityCalibrator:
             overconfidence_error=overconf,
             underconfidence_error=underconf,
             sharpness=sharpness,
-            reliability=reliability
+            reliability=reliability,
         )
 
     def save_calibrator(self, filepath: str):
         """Save calibrator to file"""
 
         save_data = {
-            'methods': [m.value for m in self.methods],
-            'best_method': self.best_method.value if self.best_method else None,
-            'fitted': self.fitted,
-            'calibrators': {}
+            "methods": [m.value for m in self.methods],
+            "best_method": self.best_method.value if self.best_method else None,
+            "fitted": self.fitted,
+            "calibrators": {},
         }
 
         # Save each calibrator
@@ -547,45 +565,47 @@ class ProbabilityCalibrator:
             if method in [CalibrationMethod.PLATT_SCALING, CalibrationMethod.ISOTONIC_REGRESSION]:
                 # Scikit-learn objects
                 calibrator_path = f"{filepath}_{method.value}_calibrator.pkl"
-                with open(calibrator_path, 'wb') as f:
+                with open(calibrator_path, "wb") as f:
                     pickle.dump(calibrator, f)
-                save_data['calibrators'][method.value] = calibrator_path
+                save_data["calibrators"][method.value] = calibrator_path
 
             elif method == CalibrationMethod.TEMPERATURE_SCALING:
                 # PyTorch model
                 calibrator_path = f"{filepath}_{method.value}_calibrator.pt"
                 torch.save(calibrator.state_dict(), calibrator_path)
-                save_data['calibrators'][method.value] = calibrator_path
+                save_data["calibrators"][method.value] = calibrator_path
 
             else:
                 # Custom calibrators
                 calibrator_path = f"{filepath}_{method.value}_calibrator.pkl"
-                with open(calibrator_path, 'wb') as f:
+                with open(calibrator_path, "wb") as f:
                     pickle.dump(calibrator, f)
-                save_data['calibrators'][method.value] = calibrator_path
+                save_data["calibrators"][method.value] = calibrator_path
 
         # Save main config
-        with open(f"{filepath}_config.json", 'w') as f:
+        with open(f"{filepath}_config.json", "w") as f:
             json.dump(save_data, f)
 
     def load_calibrator(self, filepath: str):
         """Load calibrator from file"""
 
         # Load main config
-        with open(f"{filepath}_config.json", 'r') as f:
+        with open(f"{filepath}_config.json", "r") as f:
             save_data = json.load(f)
 
-        self.methods = [CalibrationMethod(m) for m in save_data['methods']]
-        self.best_method = CalibrationMethod(save_data['best_method']) if save_data['best_method'] else None
-        self.fitted = save_data['fitted']
+        self.methods = [CalibrationMethod(m) for m in save_data["methods"]]
+        self.best_method = (
+            CalibrationMethod(save_data["best_method"]) if save_data["best_method"] else None
+        )
+        self.fitted = save_data["fitted"]
 
         # Load each calibrator
         self.calibrators = {}
-        for method_str, calibrator_path in save_data['calibrators'].items():
+        for method_str, calibrator_path in save_data["calibrators"].items():
             method = CalibrationMethod(method_str)
 
             if method in [CalibrationMethod.PLATT_SCALING, CalibrationMethod.ISOTONIC_REGRESSION]:
-                with open(calibrator_path, 'rb') as f:
+                with open(calibrator_path, "rb") as f:
                     self.calibrators[method] = pickle.load(f)
 
             elif method == CalibrationMethod.TEMPERATURE_SCALING:
@@ -594,8 +614,9 @@ class ProbabilityCalibrator:
                 self.calibrators[method] = calibrator
 
             else:
-                with open(calibrator_path, 'rb') as f:
+                with open(calibrator_path, "rb") as f:
                     self.calibrators[method] = pickle.load(f)
+
 
 def create_probability_calibrator(methods: List[str] = None) -> ProbabilityCalibrator:
     """Create probability calibrator with specified methods"""
@@ -606,10 +627,9 @@ def create_probability_calibrator(methods: List[str] = None) -> ProbabilityCalib
     calibration_methods = [CalibrationMethod(m) for m in methods]
     return ProbabilityCalibrator(methods=calibration_methods)
 
+
 def calibrate_predictions(
-    probabilities: np.ndarray,
-    true_labels: np.ndarray,
-    method: str = "auto"
+    probabilities: np.ndarray, true_labels: np.ndarray, method: str = "auto"
 ) -> Tuple[np.ndarray, Dict[str, Any]]:
     """High-level function to calibrate predictions"""
 
@@ -623,10 +643,10 @@ def calibrate_predictions(
         best_result = results[best_method]
 
         return calibrated, {
-            'best_method': best_method.value,
-            'calibration_error': best_result.calibration_error,
-            'is_well_calibrated': best_result.is_well_calibrated,
-            'brier_score': best_result.brier_score
+            "best_method": best_method.value,
+            "calibration_error": best_result.calibration_error,
+            "is_well_calibrated": best_result.is_well_calibrated,
+            "brier_score": best_result.brier_score,
         }
 
     else:
@@ -637,8 +657,8 @@ def calibrate_predictions(
         result = list(results.values())[0]
 
         return calibrated, {
-            'method': method,
-            'calibration_error': result.calibration_error,
-            'is_well_calibrated': result.is_well_calibrated,
-            'brier_score': result.brier_score
+            "method": method,
+            "calibration_error": result.calibration_error,
+            "is_well_calibrated": result.is_well_calibrated,
+            "brier_score": result.brier_score,
         }

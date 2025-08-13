@@ -9,13 +9,10 @@ Blockchain data analysis and on-chain metrics computation
 # from .metrics import OnChainMetrics
 # from .onchain_models import OnChainEnsemble
 
+
 class OnChainAnalysisAgent:
     def __init__(self):
         pass
 
-__all__ = [
-    'OnChainAnalysisAgent',
-    'BlockchainDataCollector',
-    'OnChainMetrics',
-    'OnChainEnsemble'
-]
+
+__all__ = ["OnChainAnalysisAgent", "BlockchainDataCollector", "OnChainMetrics", "OnChainEnsemble"]

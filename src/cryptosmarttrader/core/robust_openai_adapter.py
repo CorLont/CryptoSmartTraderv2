@@ -19,16 +19,20 @@ from pathlib import Path
 import openai
 from openai import OpenAI
 from pydantic import BaseModel, ValidationError
+
 try:
     import backoff
     from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
     TENACITY_AVAILABLE = True
 except ImportError:
     TENACITY_AVAILABLE = False
+
     # Define dummy decorators for when tenacity is not available
     def retry(**kwargs):
         def decorator(func):
             return func
+
         return decorator
 
     def stop_after_attempt(attempts):
@@ -40,19 +44,24 @@ except ImportError:
     def retry_if_exception_type(exception_types):
         return None
 
+
 from ..core.structured_logger import get_logger
+
 
 class LLMTaskType(Enum):
     """Types of LLM tasks with different requirements"""
+
     NEWS_ANALYSIS = "news_analysis"
     SENTIMENT_ANALYSIS = "sentiment_analysis"
     MARKET_ANALYSIS = "market_analysis"
     FEATURE_EXTRACTION = "feature_extraction"
     ANOMALY_DETECTION = "anomaly_detection"
 
+
 @dataclass
 class LLMConfig:
     """Configuration for LLM requests"""
+
     model: str = "gpt-4o"
     temperature: float = 0.1
     max_tokens: int = 1000
@@ -61,8 +70,10 @@ class LLMConfig:
     cache_ttl_hours: int = 24
     cost_limit_per_hour: float = 10.0  # USD
 
+
 class NewsImpactSchema(BaseModel):
     """Validated schema for news impact analysis"""
+
     sentiment: str  # "bullish", "bearish", "neutral"
     impact_magnitude: float  # 0.0 to 1.0
     confidence: float  # 0.0 to 1.0
@@ -72,16 +83,20 @@ class NewsImpactSchema(BaseModel):
     impact_timeline: str  # "immediate", "short_term", "medium_term", "long_term"
     reasoning: str  # Explanation of analysis
 
+
 class SentimentSchema(BaseModel):
     """Validated schema for sentiment analysis"""
+
     sentiment_score: float  # -1.0 to 1.0
     confidence: float  # 0.0 to 1.0
     emotions: List[str]  # ["fear", "greed", "optimism", etc.]
     key_phrases: List[str]  # Important phrases that drove sentiment
     market_relevance: float  # 0.0 to 1.0
 
+
 class MarketAnalysisSchema(BaseModel):
     """Validated schema for market analysis"""
+
     market_regime: str  # "bull", "bear", "sideways", "volatile"
     trend_strength: float  # 0.0 to 1.0
     volatility_assessment: str  # "low", "medium", "high"
@@ -89,6 +104,7 @@ class MarketAnalysisSchema(BaseModel):
     outlook: str  # "bullish", "bearish", "neutral"
     confidence: float  # 0.0 to 1.0
     reasoning: str
+
 
 class CircuitBreaker:
     """Circuit breaker for API failures"""
@@ -136,6 +152,7 @@ class CircuitBreaker:
         if self.failure_count >= self.failure_threshold:
             self.state = "OPEN"
 
+
 class RateLimiter:
     """Token bucket rate limiter for API calls"""
 
@@ -166,6 +183,7 @@ class RateLimiter:
             return 0.0
         return (1.0 - self.tokens) * (60.0 / self.requests_per_minute)
 
+
 class LLMCache:
     """Persistent cache for LLM responses"""
 
@@ -188,17 +206,17 @@ class LLMCache:
             if not cache_file.exists():
                 return None
 
-            with open(cache_file, 'rb') as f:
+            with open(cache_file, "rb") as f:
                 cached_data = pickle.load(f)
 
             # Check if cache is still fresh
-            cache_age = datetime.utcnow() - cached_data['timestamp']
+            cache_age = datetime.utcnow() - cached_data["timestamp"]
             if cache_age.total_seconds() > config.cache_ttl_hours * 3600:
                 cache_file.unlink()  # Delete stale cache
                 return None
 
             self.logger.info(f"Cache hit for request (age: {cache_age})")
-            return cached_data['response']
+            return cached_data["response"]
 
         except Exception as e:
             self.logger.error(f"Cache retrieval failed: {e}")
@@ -211,19 +229,20 @@ class LLMCache:
             cache_file = self.cache_dir / f"{cache_key}.pkl"
 
             cache_data = {
-                'timestamp': datetime.utcnow(),
-                'response': response,
-                'prompt_length': len(prompt),
-                'model': config.model
+                "timestamp": datetime.utcnow(),
+                "response": response,
+                "prompt_length": len(prompt),
+                "model": config.model,
             }
 
-            with open(cache_file, 'wb') as f:
+            with open(cache_file, "wb") as f:
                 pickle.dump(cache_data, f)
 
             self.logger.info(f"Cached response for {cache_key[:8]}...")
 
         except Exception as e:
             self.logger.error(f"Cache storage failed: {e}")
+
 
 class CostTracker:
     """Track and limit API costs"""
@@ -256,7 +275,7 @@ class CostTracker:
             # Load existing usage
             usage_data = {}
             if self.usage_file.exists():
-                with open(self.usage_file, 'r') as f:
+                with open(self.usage_file, "r") as f:
                     usage_data = json.load(f)
 
             hour_key = current_hour.isoformat()
@@ -264,10 +283,11 @@ class CostTracker:
 
             # Clean old data (keep only last 24 hours)
             cutoff_time = current_hour - timedelta(hours=24)
-            usage_data = {k: v for k, v in usage_data.items()
-                         if datetime.fromisoformat(k) >= cutoff_time}
+            usage_data = {
+                k: v for k, v in usage_data.items() if datetime.fromisoformat(k) >= cutoff_time
+            }
 
-            with open(self.usage_file, 'w') as f:
+            with open(self.usage_file, "w") as f:
                 json.dump(usage_data, f, indent=2)
 
         except Exception as e:
@@ -281,7 +301,7 @@ class CostTracker:
             if not self.usage_file.exists():
                 return True
 
-            with open(self.usage_file, 'r') as f:
+            with open(self.usage_file, "r") as f:
                 usage_data = json.load(f)
 
             hour_key = current_hour.isoformat()
@@ -292,6 +312,7 @@ class CostTracker:
         except Exception:
             return True  # Default to allowing if check fails
 
+
 class PurePythonFallback:
     """Pure Python fallback for basic analysis when OpenAI fails"""
 
@@ -300,12 +321,34 @@ class PurePythonFallback:
 
         # Simple sentiment keywords
         self.positive_words = {
-            'bullish', 'bull', 'moon', 'pump', 'surge', 'rally', 'breakout',
-            'breakthrough', 'adoption', 'partnership', 'upgrade', 'successful'
+            "bullish",
+            "bull",
+            "moon",
+            "pump",
+            "surge",
+            "rally",
+            "breakout",
+            "breakthrough",
+            "adoption",
+            "partnership",
+            "upgrade",
+            "successful",
         }
         self.negative_words = {
-            'bearish', 'bear', 'dump', 'crash', 'drop', 'fall', 'regulation',
-            'ban', 'hack', 'exploit', 'concern', 'worry', 'fear', 'volatile'
+            "bearish",
+            "bear",
+            "dump",
+            "crash",
+            "drop",
+            "fall",
+            "regulation",
+            "ban",
+            "hack",
+            "exploit",
+            "concern",
+            "worry",
+            "fear",
+            "volatile",
         }
 
     def analyze_news_sentiment(self, text: str) -> NewsImpactSchema:
@@ -337,7 +380,7 @@ class PurePythonFallback:
             affected_symbols=["BTC", "ETH"],  # Default assumption
             key_factors=["keyword_analysis"],
             impact_timeline="short_term",
-            reasoning="Fallback analysis based on keyword matching"
+            reasoning="Fallback analysis based on keyword matching",
         )
 
     def analyze_basic_sentiment(self, text: str) -> SentimentSchema:
@@ -360,8 +403,9 @@ class PurePythonFallback:
             confidence=0.3,
             emotions=["neutral"],
             key_phrases=[],
-            market_relevance=0.5
+            market_relevance=0.5,
         )
+
 
 class RobustOpenAIAdapter:
     """Enterprise-grade OpenAI adapter with all safety features"""
@@ -370,7 +414,7 @@ class RobustOpenAIAdapter:
         self.logger = get_logger("RobustOpenAIAdapter")
 
         # Initialize OpenAI client
-        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             self.logger.warning("No OpenAI API key found - only fallback will be available")
             self.client = None
@@ -397,37 +441,45 @@ class RobustOpenAIAdapter:
             LLMTaskType.NEWS_ANALYSIS: [
                 {
                     "input": "Bitcoin ETF approved by SEC, expected to drive institutional adoption",
-                    "output": json.dumps({
-                        "sentiment": "bullish",
-                        "impact_magnitude": 0.9,
-                        "confidence": 0.95,
-                        "half_life_hours": 72.0,
-                        "affected_symbols": ["BTC", "ETH"],
-                        "key_factors": ["institutional_adoption", "regulatory_approval"],
-                        "impact_timeline": "medium_term",
-                        "reasoning": "SEC approval removes major regulatory uncertainty and opens institutional access"
-                    })
+                    "output": json.dumps(
+                        {
+                            "sentiment": "bullish",
+                            "impact_magnitude": 0.9,
+                            "confidence": 0.95,
+                            "half_life_hours": 72.0,
+                            "affected_symbols": ["BTC", "ETH"],
+                            "key_factors": ["institutional_adoption", "regulatory_approval"],
+                            "impact_timeline": "medium_term",
+                            "reasoning": "SEC approval removes major regulatory uncertainty and opens institutional access",
+                        }
+                    ),
                 }
             ],
             LLMTaskType.SENTIMENT_ANALYSIS: [
                 {
                     "input": "The market is showing strong bullish momentum with widespread green candles",
-                    "output": json.dumps({
-                        "sentiment_score": 0.8,
-                        "confidence": 0.9,
-                        "emotions": ["optimism", "greed"],
-                        "key_phrases": ["strong bullish momentum", "widespread green"],
-                        "market_relevance": 0.95
-                    })
+                    "output": json.dumps(
+                        {
+                            "sentiment_score": 0.8,
+                            "confidence": 0.9,
+                            "emotions": ["optimism", "greed"],
+                            "key_phrases": ["strong bullish momentum", "widespread green"],
+                            "market_relevance": 0.95,
+                        }
+                    ),
                 }
-            ]
+            ],
         }
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=retry_if_exception_type((openai.RateLimitError, openai.APIConnectionError))
-    ) if TENACITY_AVAILABLE else lambda x: x
+    @(
+        retry(
+            stop=stop_after_attempt(3),
+            wait=wait_exponential(multiplier=1, min=4, max=10),
+            retry=retry_if_exception_type((openai.RateLimitError, openai.APIConnectionError)),
+        )
+        if TENACITY_AVAILABLE
+        else lambda x: x
+    )
     async def _make_openai_request(self, prompt: str, task_type: LLMTaskType) -> Dict[str, Any]:
         """Make OpenAI API request with retries and rate limiting"""
 
@@ -455,12 +507,12 @@ class RobustOpenAIAdapter:
             model=self.config.model,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
             response_format={"type": "json_object"},
             temperature=self.config.temperature,
             max_tokens=self.config.max_tokens,
-            timeout=self.config.timeout
+            timeout=self.config.timeout,
         )
 
         response_text = response.choices[0].message.content
@@ -472,7 +524,7 @@ class RobustOpenAIAdapter:
         return {
             "content": response_text,
             "usage": response.usage.dict() if response.usage else {},
-            "estimated_cost": estimated_cost
+            "estimated_cost": estimated_cost,
         }
 
     def _create_system_prompt(self, task_type: LLMTaskType) -> str:
@@ -510,7 +562,9 @@ Required JSON schema:
         examples = self.few_shot_examples.get(task_type, [])
         example_text = ""
         for i, example in enumerate(examples[:2]):  # Limit to 2 examples
-            example_text += f"\nExample {i+1}:\nInput: {example['input']}\nOutput: {example['output']}\n"
+            example_text += (
+                f"\nExample {i + 1}:\nInput: {example['input']}\nOutput: {example['output']}\n"
+            )
 
         return f"{base_prompt}\n\n{schema_example}\n{example_text}\nNow analyze the provided input:"
 
@@ -521,20 +575,18 @@ Required JSON schema:
             # Check cache first
             cached_response = self.cache.get(news_text, self.config)
             if cached_response:
-                return NewsImpactSchema(**json.loads(cached_response['content']))
+                return NewsImpactSchema(**json.loads(cached_response["content"]))
 
             # Make API request with circuit breaker
             response = self.circuit_breaker.call(
-                self._make_openai_request,
-                news_text,
-                LLMTaskType.NEWS_ANALYSIS
+                self._make_openai_request, news_text, LLMTaskType.NEWS_ANALYSIS
             )
 
             if asyncio.iscoroutine(response):
                 response = await response
 
             # Parse and validate response
-            parsed_response = json.loads(response['content'])
+            parsed_response = json.loads(response["content"])
             validated_result = NewsImpactSchema(**parsed_response)
 
             # Cache successful response
@@ -555,19 +607,17 @@ Required JSON schema:
             # Check cache
             cached_response = self.cache.get(text, self.config)
             if cached_response:
-                return SentimentSchema(**json.loads(cached_response['content']))
+                return SentimentSchema(**json.loads(cached_response["content"]))
 
             # API request
             response = self.circuit_breaker.call(
-                self._make_openai_request,
-                text,
-                LLMTaskType.SENTIMENT_ANALYSIS
+                self._make_openai_request, text, LLMTaskType.SENTIMENT_ANALYSIS
             )
 
             if asyncio.iscoroutine(response):
                 response = await response
 
-            parsed_response = json.loads(response['content'])
+            parsed_response = json.loads(response["content"])
             validated_result = SentimentSchema(**parsed_response)
 
             self.cache.set(text, self.config, response)
@@ -592,12 +642,14 @@ Required JSON schema:
                 "model": self.config.model,
                 "temperature": self.config.temperature,
                 "max_retries": self.config.max_retries,
-                "cost_limit": self.config.cost_limit_per_hour
-            }
+                "cost_limit": self.config.cost_limit_per_hour,
+            },
         }
+
 
 # Global adapter instance
 _global_adapter: Optional[RobustOpenAIAdapter] = None
+
 
 def get_openai_adapter() -> RobustOpenAIAdapter:
     """Get or create global OpenAI adapter instance"""
@@ -608,11 +660,13 @@ def get_openai_adapter() -> RobustOpenAIAdapter:
 
     return _global_adapter
 
+
 # Convenience functions for easy use
 async def analyze_news_impact(news_text: str) -> NewsImpactSchema:
     """Convenience function for news impact analysis"""
     adapter = get_openai_adapter()
     return await adapter.analyze_news_impact(news_text)
+
 
 async def analyze_sentiment(text: str) -> SentimentSchema:
     """Convenience function for sentiment analysis"""

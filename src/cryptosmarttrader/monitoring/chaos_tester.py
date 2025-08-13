@@ -22,8 +22,10 @@ import threading
 
 logger = logging.getLogger(__name__)
 
+
 class ChaosTestType(Enum):
     """Types of chaos tests"""
+
     KILL_PROCESS = "kill_process"
     NETWORK_DELAY = "network_delay"
     NETWORK_PARTITION = "network_partition"
@@ -34,17 +36,21 @@ class ChaosTestType(Enum):
     DATABASE_DISCONNECT = "database_disconnect"
     API_FAILURE = "api_failure"
 
+
 class TestOutcome(Enum):
     """Test outcome states"""
+
     PENDING = "pending"
     RUNNING = "running"
     PASSED = "passed"
     FAILED = "failed"
     TIMEOUT = "timeout"
 
+
 @dataclass
 class ChaosTestConfig:
     """Configuration for a chaos test"""
+
     name: str
     test_type: ChaosTestType
     description: str
@@ -69,9 +75,11 @@ class ChaosTestConfig:
     enabled: bool = True
     run_interval_hours: int = 24
 
+
 @dataclass
 class ChaosTestResult:
     """Result of a chaos test execution"""
+
     test_name: str
     start_time: datetime
     end_time: Optional[datetime] = None
@@ -96,15 +104,15 @@ class ChaosTestResult:
     performance_degradation_percent: float = 0.0
     downtime_seconds: float = 0.0
 
+
 class ChaosTestRunner:
     """
     Comprehensive chaos testing system for resilience validation
     """
 
-    def __init__(self,
-                 alert_manager: Optional[Any] = None,
-                 metrics_collector: Optional[Any] = None):
-
+    def __init__(
+        self, alert_manager: Optional[Any] = None, metrics_collector: Optional[Any] = None
+    ):
         self.alert_manager = alert_manager
         self.metrics_collector = metrics_collector
 
@@ -132,68 +140,78 @@ class ChaosTestRunner:
         """Setup default chaos tests"""
 
         # Kill switch test
-        self.add_test_config(ChaosTestConfig(
-            name="kill_switch_test",
-            test_type=ChaosTestType.KILL_PROCESS,
-            description="Test kill switch activation and recovery",
-            duration_seconds=0,  # Instantaneous
-            target_component="trading_engine",
-            max_recovery_time_seconds=30,
-            max_alert_time_seconds=15,
-            expected_restart_count=1,
-            run_interval_hours=12
-        ))
+        self.add_test_config(
+            ChaosTestConfig(
+                name="kill_switch_test",
+                test_type=ChaosTestType.KILL_PROCESS,
+                description="Test kill switch activation and recovery",
+                duration_seconds=0,  # Instantaneous
+                target_component="trading_engine",
+                max_recovery_time_seconds=30,
+                max_alert_time_seconds=15,
+                expected_restart_count=1,
+                run_interval_hours=12,
+            )
+        )
 
         # Service crash simulation
-        self.add_test_config(ChaosTestConfig(
-            name="service_crash_test",
-            test_type=ChaosTestType.SERVICE_CRASH,
-            description="Simulate unexpected service crash",
-            duration_seconds=5,
-            target_component="api_service",
-            max_recovery_time_seconds=45,
-            max_alert_time_seconds=30,
-            expected_restart_count=1,
-            run_interval_hours=24
-        ))
+        self.add_test_config(
+            ChaosTestConfig(
+                name="service_crash_test",
+                test_type=ChaosTestType.SERVICE_CRASH,
+                description="Simulate unexpected service crash",
+                duration_seconds=5,
+                target_component="api_service",
+                max_recovery_time_seconds=45,
+                max_alert_time_seconds=30,
+                expected_restart_count=1,
+                run_interval_hours=24,
+            )
+        )
 
         # Network latency test
-        self.add_test_config(ChaosTestConfig(
-            name="network_latency_test",
-            test_type=ChaosTestType.NETWORK_DELAY,
-            description="Inject network latency to external APIs",
-            duration_seconds=60,
-            intensity=0.7,  # 700ms delay
-            max_recovery_time_seconds=30,
-            max_alert_time_seconds=60,
-            expect_auto_restart=False,  # Should handle gracefully
-            run_interval_hours=48
-        ))
+        self.add_test_config(
+            ChaosTestConfig(
+                name="network_latency_test",
+                test_type=ChaosTestType.NETWORK_DELAY,
+                description="Inject network latency to external APIs",
+                duration_seconds=60,
+                intensity=0.7,  # 700ms delay
+                max_recovery_time_seconds=30,
+                max_alert_time_seconds=60,
+                expect_auto_restart=False,  # Should handle gracefully
+                run_interval_hours=48,
+            )
+        )
 
         # Memory pressure test
-        self.add_test_config(ChaosTestConfig(
-            name="memory_pressure_test",
-            test_type=ChaosTestType.MEMORY_PRESSURE,
-            description="Create memory pressure to test resource handling",
-            duration_seconds=45,
-            intensity=0.8,  # 80% memory usage
-            max_recovery_time_seconds=60,
-            max_alert_time_seconds=45,
-            run_interval_hours=72
-        ))
+        self.add_test_config(
+            ChaosTestConfig(
+                name="memory_pressure_test",
+                test_type=ChaosTestType.MEMORY_PRESSURE,
+                description="Create memory pressure to test resource handling",
+                duration_seconds=45,
+                intensity=0.8,  # 80% memory usage
+                max_recovery_time_seconds=60,
+                max_alert_time_seconds=45,
+                run_interval_hours=72,
+            )
+        )
 
         # API failure simulation
-        self.add_test_config(ChaosTestConfig(
-            name="api_failure_test",
-            test_type=ChaosTestType.API_FAILURE,
-            description="Simulate external API failures",
-            duration_seconds=120,
-            intensity=0.9,  # 90% failure rate
-            max_recovery_time_seconds=60,
-            max_alert_time_seconds=30,
-            expect_auto_restart=False,
-            run_interval_hours=24
-        ))
+        self.add_test_config(
+            ChaosTestConfig(
+                name="api_failure_test",
+                test_type=ChaosTestType.API_FAILURE,
+                description="Simulate external API failures",
+                duration_seconds=120,
+                intensity=0.9,  # 90% failure rate
+                max_recovery_time_seconds=60,
+                max_alert_time_seconds=30,
+                expect_auto_restart=False,
+                run_interval_hours=24,
+            )
+        )
 
     def add_test_config(self, config: ChaosTestConfig):
         """Add chaos test configuration"""
@@ -276,11 +294,7 @@ class ChaosTestRunner:
             return False
 
         # Start test in background thread
-        test_thread = threading.Thread(
-            target=self._run_test_sync,
-            args=(test_name,),
-            daemon=True
-        )
+        test_thread = threading.Thread(target=self._run_test_sync, args=(test_name,), daemon=True)
         test_thread.start()
 
         return True
@@ -294,9 +308,7 @@ class ChaosTestRunner:
 
         config = self.test_configs[test_name]
         result = ChaosTestResult(
-            test_name=test_name,
-            start_time=datetime.now(),
-            outcome=TestOutcome.RUNNING
+            test_name=test_name, start_time=datetime.now(), outcome=TestOutcome.RUNNING
         )
 
         self.running_tests[test_name] = result
@@ -445,10 +457,10 @@ class ChaosTestRunner:
             chunk_size = 1024 * 1024  # 1MB chunks
             chunks_to_allocate = pressure_bytes // chunk_size
 
-            result.logs.append(f"Allocating {pressure_bytes / (1024*1024):.1f} MB")
+            result.logs.append(f"Allocating {pressure_bytes / (1024 * 1024):.1f} MB")
 
             for _ in range(min(chunks_to_allocate, 1000)):  # Limit for safety
-                memory_hog.append(b'0' * chunk_size)
+                memory_hog.append(b"0" * chunk_size)
                 time.sleep(0.01)  # Small delay
 
             # Hold memory pressure
@@ -470,18 +482,20 @@ class ChaosTestRunner:
         # and returning failures based on intensity
         failure_rate = config.intensity
 
-        result.logs.append(f"Simulating {failure_rate*100:.0f}% API failure rate")
+        result.logs.append(f"Simulating {failure_rate * 100:.0f}% API failure rate")
 
         # For testing purposes, just wait for duration
         time.sleep(config.duration_seconds)
 
         result.logs.append("API failure simulation completed")
 
-    def _validate_recovery(self,
-                          config: ChaosTestConfig,
-                          result: ChaosTestResult,
-                          baseline_health: Dict[str, Any],
-                          baseline_alerts: int):
+    def _validate_recovery(
+        self,
+        config: ChaosTestConfig,
+        result: ChaosTestResult,
+        baseline_health: Dict[str, Any],
+        baseline_alerts: int,
+    ):
         """Validate system recovery after chaos test"""
 
         logger.info("Validating system recovery...")
@@ -501,13 +515,17 @@ class ChaosTestRunner:
             if current_alerts > baseline_alerts:
                 alert_triggered = True
                 if result.actual_alert_time_seconds is None:
-                    result.actual_alert_time_seconds = (datetime.now() - recovery_start).total_seconds()
+                    result.actual_alert_time_seconds = (
+                        datetime.now() - recovery_start
+                    ).total_seconds()
 
             # Check if system recovered
             current_health = self._get_system_health()
             if self._is_system_healthy(current_health):
                 recovered = True
-                result.actual_recovery_time_seconds = (datetime.now() - recovery_start).total_seconds()
+                result.actual_recovery_time_seconds = (
+                    datetime.now() - recovery_start
+                ).total_seconds()
                 break
 
         # Validate results
@@ -518,7 +536,9 @@ class ChaosTestRunner:
         if config.expect_auto_restart:
             # This would check actual restart count from process monitor
             result.actual_restart_count = 1  # Mock value
-            result.auto_restart_success = result.actual_restart_count >= config.expected_restart_count
+            result.auto_restart_success = (
+                result.actual_restart_count >= config.expected_restart_count
+            )
 
         # Data integrity check
         if config.expect_data_integrity:
@@ -536,17 +556,25 @@ class ChaosTestRunner:
         failure_reasons = []
 
         # Check recovery time
-        if (result.actual_recovery_time_seconds is not None and
-            result.actual_recovery_time_seconds > config.max_recovery_time_seconds):
+        if (
+            result.actual_recovery_time_seconds is not None
+            and result.actual_recovery_time_seconds > config.max_recovery_time_seconds
+        ):
             success = False
-            failure_reasons.append(f"Recovery time exceeded: {result.actual_recovery_time_seconds:.1f}s > {config.max_recovery_time_seconds}s")
+            failure_reasons.append(
+                f"Recovery time exceeded: {result.actual_recovery_time_seconds:.1f}s > {config.max_recovery_time_seconds}s"
+            )
 
         # Check alert time
-        if (config.expect_alerts and
-            result.actual_alert_time_seconds is not None and
-            result.actual_alert_time_seconds > config.max_alert_time_seconds):
+        if (
+            config.expect_alerts
+            and result.actual_alert_time_seconds is not None
+            and result.actual_alert_time_seconds > config.max_alert_time_seconds
+        ):
             success = False
-            failure_reasons.append(f"Alert time exceeded: {result.actual_alert_time_seconds:.1f}s > {config.max_alert_time_seconds}s")
+            failure_reasons.append(
+                f"Alert time exceeded: {result.actual_alert_time_seconds:.1f}s > {config.max_alert_time_seconds}s"
+            )
 
         # Check alerts were triggered
         if config.expect_alerts and not result.alerts_triggered:
@@ -583,14 +611,16 @@ class ChaosTestRunner:
             "overall_health": "healthy",
             "processes_running": len(psutil.pids()),
             "memory_percent": psutil.virtual_memory().percent,
-            "cpu_percent": psutil.cpu_percent()
+            "cpu_percent": psutil.cpu_percent(),
         }
 
     def _is_system_healthy(self, health: Dict[str, Any]) -> bool:
         """Check if system is in healthy state"""
-        return (health.get("overall_health") == "healthy" and
-                health.get("memory_percent", 0) < 90 and
-                health.get("cpu_percent", 0) < 90)
+        return (
+            health.get("overall_health") == "healthy"
+            and health.get("memory_percent", 0) < 90
+            and health.get("cpu_percent", 0) < 90
+        )
 
     def _get_active_alerts_count(self) -> int:
         """Get count of active alerts"""
@@ -615,6 +645,7 @@ class ChaosTestRunner:
             elif config.test_type == ChaosTestType.MEMORY_PRESSURE:
                 # Ensure memory is released
                 import gc
+
                 gc.collect()
 
         except Exception as e:
@@ -662,27 +693,35 @@ class ChaosTestRunner:
             "scheduler_active": self.scheduler_active,
             "total_test_configs": len(self.test_configs),
             "running_tests": len(self.running_tests),
-
             "recent_activity": {
                 "tests_24h": len(recent_24h),
                 "tests_7d": len(recent_7d),
                 "success_rate_24h": len(passed_24h) / max(len(recent_24h), 1) * 100,
-                "success_rate_7d": len(passed_7d) / max(len(recent_7d), 1) * 100
+                "success_rate_7d": len(passed_7d) / max(len(recent_7d), 1) * 100,
             },
-
             "performance": {
-                "avg_recovery_time": np.mean([
-                    r.actual_recovery_time_seconds for r in recent_7d
-                    if r.actual_recovery_time_seconds is not None
-                ]) if recent_7d else 0,
-                "avg_alert_time": np.mean([
-                    r.actual_alert_time_seconds for r in recent_7d
-                    if r.actual_alert_time_seconds is not None
-                ]) if recent_7d else 0
+                "avg_recovery_time": np.mean(
+                    [
+                        r.actual_recovery_time_seconds
+                        for r in recent_7d
+                        if r.actual_recovery_time_seconds is not None
+                    ]
+                )
+                if recent_7d
+                else 0,
+                "avg_alert_time": np.mean(
+                    [
+                        r.actual_alert_time_seconds
+                        for r in recent_7d
+                        if r.actual_alert_time_seconds is not None
+                    ]
+                )
+                if recent_7d
+                else 0,
             },
-
-            "total_results": len(self.test_results)
+            "total_results": len(self.test_results),
         }
+
 
 class ProcessMonitor:
     """Process monitoring utilities"""
@@ -692,20 +731,21 @@ class ProcessMonitor:
         matching_processes = []
 
         try:
-            for process in psutil.process_iter(['pid', 'name', 'cmdline']):
+            for process in psutil.process_iter(["pid", "name", "cmdline"]):
                 try:
-                    if name_pattern.lower() in process.info['name'].lower():
-                        matching_processes.append(psutil.Process(process.info['pid']))
-                    elif process.info['cmdline']:
-                        cmdline = ' '.join(process.info['cmdline']).lower()
+                    if name_pattern.lower() in process.info["name"].lower():
+                        matching_processes.append(psutil.Process(process.info["pid"]))
+                    elif process.info["cmdline"]:
+                        cmdline = " ".join(process.info["cmdline"]).lower()
                         if name_pattern.lower() in cmdline:
-                            matching_processes.append(psutil.Process(process.info['pid']))
+                            matching_processes.append(psutil.Process(process.info["pid"]))
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
         except Exception as e:
             logger.error(f"Process search failed: {e}")
 
         return matching_processes
+
 
 class NetworkMonitor:
     """Network monitoring utilities"""
@@ -716,14 +756,20 @@ class NetworkMonitor:
 
         try:
             for conn in psutil.net_connections():
-                connections.append({
-                    'pid': conn.pid,
-                    'family': conn.family.name,
-                    'type': conn.type.name,
-                    'local_address': f"{conn.laddr.ip}:{conn.laddr.port}" if conn.laddr else None,
-                    'remote_address': f"{conn.raddr.ip}:{conn.raddr.port}" if conn.raddr else None,
-                    'status': conn.status
-                })
+                connections.append(
+                    {
+                        "pid": conn.pid,
+                        "family": conn.family.name,
+                        "type": conn.type.name,
+                        "local_address": f"{conn.laddr.ip}:{conn.laddr.port}"
+                        if conn.laddr
+                        else None,
+                        "remote_address": f"{conn.raddr.ip}:{conn.raddr.port}"
+                        if conn.raddr
+                        else None,
+                        "status": conn.status,
+                    }
+                )
         except Exception as e:
             logger.error(f"Network connections query failed: {e}")
 
