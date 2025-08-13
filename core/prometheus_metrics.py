@@ -4,7 +4,7 @@ This file redirects to the single source of truth in src/cryptosmarttrader/obser
 """
 
 # Import from canonical source
-from src.cryptosmarttrader.observability.metrics import *
+from src.cryptosmarttrader.observability.metrics import *  # type: ignore
 
 # Maintain backward compatibility
 from src.cryptosmarttrader.observability.metrics import PrometheusMetrics as PrometheusMetricsSystem
