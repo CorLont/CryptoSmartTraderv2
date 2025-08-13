@@ -1,5 +1,5 @@
 # Overview
-CryptoSmartTrader V2 is an institutional-grade multi-agent cryptocurrency trading intelligence system designed to generate superior financial returns and achieve market leadership. It leverages advanced quantitative strategies, real-time market analysis, deep learning, sentiment analysis, technical analysis, robust backtesting, and automated trade execution across diverse cryptocurrencies. The system prioritizes high data integrity, advanced risk management, and aims for market leadership and superior financial returns.
+CryptoSmartTrader V2 is an institutional-grade multi-agent cryptocurrency trading intelligence system. Its primary purpose is to generate superior financial returns and achieve market leadership by leveraging advanced quantitative strategies, real-time market analysis, deep learning, sentiment analysis, technical analysis, robust backtesting, and automated trade execution across diverse cryptocurrencies. The system prioritizes high data integrity and advanced risk management.
 
 # User Preferences
 Preferred communication style: Simple, everyday language.
