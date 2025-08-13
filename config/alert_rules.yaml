@@ -1,0 +1,111 @@
+# CryptoSmartTrader Alert Rules Configuration
+# Enterprise alerting system with severity levels and escalation
+
+alert_rules:
+  - name: "HighOrderErrorRate"
+    description: "Order error rate exceeds acceptable threshold"
+    severity: "warning"
+    enabled: true
+    thresholds:
+      error_rate_percent: 10.0
+      min_orders_sample: 10
+      time_window_minutes: 15
+    cooldown_seconds: 300
+    escalation_after_minutes: 15
+    
+  - name: "DrawdownTooHigh" 
+    description: "Portfolio drawdown exceeds risk limits"
+    severity: "critical"
+    enabled: true
+    thresholds:
+      warning_percent: 5.0
+      critical_percent: 10.0
+      emergency_percent: 15.0
+    cooldown_seconds: 60
+    escalation_after_minutes: 5
+    
+  - name: "NoSignals"
+    description: "No trading signals received within time window"
+    severity: "warning"
+    enabled: true
+    thresholds:
+      max_minutes_without_signal: 30
+      critical_minutes_without_signal: 60
+    cooldown_seconds: 600
+    escalation_after_minutes: 30
+    
+  - name: "HighSlippage"
+    description: "Order slippage consistently exceeds budget"
+    severity: "warning" 
+    enabled: true
+    thresholds:
+      slippage_threshold_bps: 50
+      consecutive_orders: 3
+      time_window_minutes: 10
+    cooldown_seconds: 300
+    escalation_after_minutes: 20
+    
+  - name: "ExchangeConnectivityLost"
+    description: "Lost connectivity to critical exchange"
+    severity: "critical"
+    enabled: true
+    thresholds:
+      critical_exchanges: ["kraken", "binance"]
+      max_downtime_seconds: 30
+    cooldown_seconds: 60
+    escalation_after_minutes: 2
+    
+  - name: "HighAPIErrorRate"
+    description: "API error rate exceeds threshold"
+    severity: "warning"
+    enabled: true
+    thresholds:
+      error_rate_percent: 15.0
+      min_requests_sample: 20
+      time_window_minutes: 5
+    cooldown_seconds: 180
+    escalation_after_minutes: 10
+    
+  - name: "LowLiquidity"
+    description: "Market liquidity below safe trading levels"
+    severity: "warning"
+    enabled: true
+    thresholds:
+      min_depth_usd: 5000
+      min_volume_24h_usd: 100000
+      max_spread_bps: 100
+    cooldown_seconds: 300
+    escalation_after_minutes: 30
+    
+  - name: "HighResourceUsage"
+    description: "System resource usage exceeds safe limits"
+    severity: "warning"
+    enabled: true
+    thresholds:
+      max_memory_usage_percent: 85
+      max_cpu_usage_percent: 90
+      max_disk_usage_percent: 90
+    cooldown_seconds: 300
+    escalation_after_minutes: 20
+
+# Notification settings
+notifications:
+  webhook_url: null  # Configure webhook for external alerting
+  email_enabled: false
+  slack_enabled: false
+  telegram_enabled: false
+
+# Alert suppression rules
+suppression:
+  maintenance_mode: false
+  quiet_hours:
+    enabled: false
+    start_hour: 22  # 10 PM
+    end_hour: 6     # 6 AM
+    timezone: "UTC"
+    
+# Escalation policies
+escalation:
+  auto_escalate: true
+  max_escalation_level: "emergency"
+  escalation_intervals_minutes: [5, 15, 30, 60]
