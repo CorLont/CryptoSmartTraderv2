@@ -1,8 +1,9 @@
-"""
-Core Module - Core business logic and domain models
+"""Core module for CryptoSmartTrader V2."""
 
-Contains the fundamental business logic, domain models, and
-shared interfaces for the trading system.
-"""
+from .config_manager import ConfigManager
+from .structured_logger import StructuredLogger
 
-__all__ = []
+__all__ = [
+    "ConfigManager", 
+    "StructuredLogger",
+]

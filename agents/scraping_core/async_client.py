@@ -123,7 +123,7 @@ class AsyncScrapeClient:
         self.session = aiohttp.ClientSession(
             connector=connector,
             timeout=timeout,
-            headers={"User-Agent": # REMOVED: Mock data pattern not allowed in production(self.user_agents)}
+            headers={"User-Agent": "CryptoSmartTrader/2.0"}
         )
         
         self.logger.info("HTTP session created", 

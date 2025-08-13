@@ -265,7 +265,8 @@ class ArbitrageDetectorAgent:
                 'taker': trading_fees.get('taker', 0.001),
                 'withdrawal': 0.0  # Would need to fetch per-symbol
             }
-        except:
+        except (AttributeError, KeyError, TypeError) as e:
+            self.logger.warning(f"Failed to get exchange fees: {e}", extra={"error_type": type(e).__name__})
             return {'maker': 0.001, 'taker': 0.001, 'withdrawal': 0.0}
     
     def _get_exchange_limits(self, client) -> Dict[str, Any]:
@@ -276,7 +277,8 @@ class ArbitrageDetectorAgent:
                 'amount': limits.get('amount', {'min': 0.01, 'max': 1000000}),
                 'cost': limits.get('cost', {'min': 10, 'max': 10000000})
             }
-        except:
+        except (AttributeError, KeyError, TypeError) as e:
+            self.logger.warning(f"Failed to get exchange limits: {e}", extra={"error_type": type(e).__name__})
             return {
                 'amount': {'min': 0.01, 'max': 1000000},
                 'cost': {'min': 10, 'max': 10000000}

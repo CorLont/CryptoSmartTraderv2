@@ -217,9 +217,9 @@ class EnhancedSentimentAgent:
             import os
             self.openai_client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
             self.openai_available = True
-        except:
+        except (ImportError, ValueError, TypeError) as e:
             self.openai_available = False
-            self.logger.warning("OpenAI not available for advanced sentiment analysis")
+            self.logger.warning(f"OpenAI not available for advanced sentiment analysis: {e}", extra={"error_type": type(e).__name__})
     
     async def analyze_coin_sentiment(self, coin: str, timeframe_hours: int = 24) -> SentimentResult:
         """Complete sentiment analysis with all enhancements"""
