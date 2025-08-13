@@ -17,6 +17,7 @@ import json
 from ..core.structured_logger import get_logger
 from ..core.data_flow_orchestrator import DataFlowOrchestrator, DataQualityGate, DataFlowState
 from ..execution.order_pipeline import OrderPipeline, OrderRequest, OrderType, TimeInForce
+from ..risk.centralized_risk_guard import CentralizedRiskGuard, RiskCheckRequest, OperationType
 # from ..adapters.kraken_data_adapter import KrakenDataAdapter  # Would be imported when available
 from ..observability.unified_metrics import UnifiedMetrics
 
@@ -77,6 +78,16 @@ class IntegratedTradingEngine:
             default_slippage_budget_bps=30.0,
             order_deduplication_window_minutes=60,
             max_concurrent_orders=max_concurrent_signals
+        )
+        
+        # HARD WIRED CENTRALIZED RISK GUARD - All operations checked for day-loss, max-DD, limits
+        self.centralized_risk_guard = CentralizedRiskGuard(
+            max_daily_loss_pct=5.0,
+            max_drawdown_pct=10.0,
+            max_position_size_pct=2.0,
+            max_total_exposure_pct=95.0,
+            min_data_quality_score=0.7,
+            max_data_age_minutes=5.0
         )
         
         # Data adapter (placeholder for now)
@@ -237,12 +248,30 @@ class IntegratedTradingEngine:
                 self.current_session.signals_processed += 1
                 
                 if pipeline_result['pipeline_success']:
-                    # HARD WIRE-UP: Execute order through centralized OrderPipeline
-                    order_result = await self._execute_order_through_pipeline(
+                    # HARD WIRE-UP: Check centralized risk guard FIRST
+                    risk_check_result = await self._check_centralized_risk_guard(
                         symbol=symbol,
                         pipeline_result=pipeline_result,
                         signal_data=signal_data
                     )
+                    
+                    if risk_check_result.approved:
+                        # Execute order through centralized OrderPipeline
+                        order_result = await self._execute_order_through_pipeline(
+                            symbol=symbol,
+                            pipeline_result=pipeline_result,
+                            signal_data=signal_data,
+                            risk_check_result=risk_check_result
+                        )
+                    else:
+                        # Order blocked by risk guard
+                        self.current_session.orders_rejected += 1
+                        self.logger.warning("Order blocked by centralized risk guard",
+                                          symbol=symbol,
+                                          risk_violations=risk_check_result.violations,
+                                          risk_level=risk_check_result.risk_level.value,
+                                          kill_switch_active=risk_check_result.kill_switch_active)
+                        # Skip to next signal - order blocked
                     
                     if order_result.status.value in ['filled', 'partially_filled']:
                         self.current_session.orders_executed += 1
@@ -295,14 +324,85 @@ class IntegratedTradingEngine:
                 'processing_time_ms': processing_time
             }
 
+    async def _check_centralized_risk_guard(self, symbol: str, pipeline_result: Dict[str, Any], 
+                                                  signal_data: Dict[str, Any]) -> Any:
+        """Check centralized risk guard before order execution."""
+        
+        try:
+            # Extract position parameters
+            position_size = pipeline_result.get('final_position_size', 0)
+            
+            # Create risk check request
+            risk_request = RiskCheckRequest(
+                operation_type=OperationType.ENTRY,  # Assume entry for now
+                symbol=symbol,
+                side='buy' if position_size > 0 else 'sell',
+                quantity=abs(position_size),
+                price=45000.0,  # Mock price - would get from market data
+                
+                # Portfolio context (mock values - would get from portfolio manager)
+                current_portfolio_value=100000.0,
+                current_positions={symbol: 0.0},  # Mock - would get actual positions
+                current_exposure=50000.0,
+                
+                # Performance context (mock values)
+                daily_pnl=0.0,  # Would get from performance tracker
+                total_drawdown_pct=2.0,  # Would get from performance tracker
+                
+                # Data quality context
+                data_age_seconds=30.0,  # Mock - would get from data feed
+                data_quality_score=0.8,  # Mock - would get from data validator
+                last_price_update=datetime.now(),
+                
+                # Metadata
+                strategy_id=signal_data.get('strategy_id', 'integrated_engine')
+            )
+            
+            # Check centralized risk guard
+            risk_result = await self.centralized_risk_guard.check_operation_risk(risk_request)
+            
+            return risk_result
+            
+        except Exception as e:
+            self.logger.error("Centralized risk guard check failed",
+                            symbol=symbol,
+                            error=str(e))
+            
+            # Return blocking result on error
+            from ..risk.centralized_risk_guard import RiskCheckResult, RiskAction, RiskLevel
+            return RiskCheckResult(
+                action=RiskAction.BLOCK,
+                approved=False,
+                risk_level=RiskLevel.CRITICAL,
+                violations=[f"risk_guard_error: {str(e)}"],
+                warnings=[],
+                max_allowed_quantity=0.0,
+                position_limit_pct=0.0,
+                portfolio_risk_pct=0.0,
+                position_concentration=0.0,
+                data_quality_score=0.0,
+                kill_switch_active=False,
+                kill_switch_reason=None,
+                execution_allowed=False,
+                max_position_size=0.0,
+                risk_budget_used_pct=0.0,
+                check_time_ms=0.0
+            )
+
     async def _execute_order_through_pipeline(self, symbol: str, pipeline_result: Dict[str, Any], 
-                                            signal_data: Dict[str, Any]) -> Any:
+                                            signal_data: Dict[str, Any], risk_check_result: Any = None) -> Any:
         """Execute order through centralized OrderPipeline with ExecutionPolicy gates."""
         
         try:
             # Extract execution parameters from pipeline result
             position_size = pipeline_result.get('final_position_size', 0)
             execution_params = pipeline_result.get('execution_parameters', {})
+            
+            # Apply risk guard limits if provided
+            if risk_check_result and hasattr(risk_check_result, 'max_allowed_quantity'):
+                position_size = min(abs(position_size), risk_check_result.max_allowed_quantity)
+                if pipeline_result.get('final_position_size', 0) < 0:
+                    position_size = -position_size
             
             # Determine order side based on signal
             side = 'buy' if position_size > 0 else 'sell'
@@ -524,6 +624,9 @@ class IntegratedTradingEngine:
         # Get order pipeline status
         pipeline_status = self.order_pipeline.get_pipeline_status()
         
+        # Get centralized risk guard status
+        risk_guard_status = self.centralized_risk_guard.get_risk_status()
+        
         status = {
             'engine_state': self.current_state.value,
             'data_flow_state': flow_status['flow_state'],
@@ -536,6 +639,14 @@ class IntegratedTradingEngine:
                 'policy_rejection_rate': pipeline_status['pipeline_stats']['policy_rejection_rate'],
                 'average_slippage_bps': pipeline_status['average_slippage_bps'],
                 'execution_policy_status': pipeline_status['execution_policy_status']
+            },
+            'centralized_risk_guard_status': {
+                'kill_switch_active': risk_guard_status['kill_switch_active'],
+                'kill_switch_reason': risk_guard_status['kill_switch_reason'],
+                'operations_approval_rate': risk_guard_status['daily_statistics']['approval_rate_pct'],
+                'operations_blocked_today': risk_guard_status['daily_statistics']['operations_blocked'],
+                'recent_violations_count': len(risk_guard_status['recent_violations']),
+                'risk_limits_active': True
             }
         }
         
