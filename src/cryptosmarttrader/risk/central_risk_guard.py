@@ -5,7 +5,8 @@ Zero-bypass architecture met comprehensive risk validation
 
 import logging
 import time
-from typing import Dict, Any, Optional, Tuple, Union
+import threading
+from typing import Dict, Any, Optional, Tuple, Union, List
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timedelta
@@ -79,7 +80,21 @@ class CentralRiskGuard:
     Zero-bypass architecture with comprehensive risk validation
     """
     
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls, config_path: str = "config/risk_limits.json"):
+        """Singleton pattern for global risk enforcement"""
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+                cls._instance._initialized = False
+            return cls._instance
+    
     def __init__(self, config_path: str = "config/risk_limits.json"):
+        if hasattr(self, '_initialized') and self._initialized:
+            return
+            
         self.config_path = Path(config_path)
         self.limits = self._load_risk_limits()
         self.portfolio_state = PortfolioState()
@@ -90,6 +105,22 @@ class CentralRiskGuard:
         self.evaluation_count = 0
         self.total_evaluation_time = 0.0
         self.rejections_count = 0
+        
+        # Kill switch state tracking
+        self.kill_switch_triggered_at: Optional[datetime] = None
+        self.kill_switch_reason: Optional[str] = None
+        
+        # Data gap tracking  
+        self.last_data_update: float = time.time()
+        self.data_gap_warnings = 0
+        
+        # Emergency state file
+        self.emergency_state_file = Path("emergency_risk_state.json")
+        
+        # Breach history
+        self.breach_history: List[Dict[str, Any]] = []
+        
+        self._initialized = True
         
         logger.info("CentralRiskGuard initialized with zero-bypass architecture")
     
@@ -396,14 +427,34 @@ class CentralRiskGuard:
         self.portfolio_state.last_update = time.time()
         logger.debug(f"Portfolio state updated: value=${new_state.total_value_usd:,.0f}, positions={new_state.position_count}")
     
-    def activate_kill_switch(self, reason: str) -> None:
-        """Activate emergency kill switch"""
+    def trigger_kill_switch(self, reason: str) -> None:
+        """Trigger emergency kill switch with immediate effect"""
         self.limits.kill_switch_active = True
+        self.kill_switch_triggered_at = datetime.now()
+        self.kill_switch_reason = reason
         self._save_risk_limits(self.limits)
+        
+        # Save emergency state
+        emergency_state = {
+            'triggered_at': self.kill_switch_triggered_at.isoformat(),
+            'reason': reason,
+            'portfolio_state': {
+                'value_usd': self.portfolio_state.total_value_usd,
+                'daily_pnl': self.portfolio_state.daily_pnl_usd,
+                'position_count': self.portfolio_state.position_count,
+                'total_exposure': self.portfolio_state.total_exposure_usd
+            }
+        }
+        
+        try:
+            with open(self.emergency_state_file, 'w') as f:
+                json.dump(emergency_state, f, indent=2)
+        except Exception as e:
+            logger.error(f"Failed to save emergency state: {e}")
         
         logger.critical(f"KILL SWITCH ACTIVATED: {reason}")
         
-        # Log emergency stop
+        # Log emergency stop  
         emergency_log = {
             'timestamp': datetime.now().isoformat(),
             'event': 'KILL_SWITCH_ACTIVATED',
@@ -414,6 +465,10 @@ class CentralRiskGuard:
         
         with open(self.audit_log_path, 'a') as f:
             f.write(json.dumps(emergency_log) + '\n')
+    
+    def activate_kill_switch(self, reason: str) -> None:
+        """Alias for trigger_kill_switch for backward compatibility"""
+        self.trigger_kill_switch(reason)
     
     def deactivate_kill_switch(self, reason: str) -> None:
         """Deactivate kill switch (requires manual intervention)"""

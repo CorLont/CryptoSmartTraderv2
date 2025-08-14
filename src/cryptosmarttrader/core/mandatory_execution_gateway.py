@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from enum import Enum
 from decimal import Decimal
 
-from ..risk.central_risk_guard import CentralRiskGuard, TradingOperation, RiskDecision
+from ..risk.central_risk_guard import CentralRiskGuard, RiskDecision
 from ..execution.execution_discipline import ExecutionPolicy, OrderRequest as ExecOrderRequest, MarketConditions, ExecutionDecision, OrderSide
 
 logger = logging.getLogger(__name__)

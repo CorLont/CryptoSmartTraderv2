@@ -1,0 +1,10 @@
+{
+  "triggered_at": "2025-08-14T11:00:25.834149",
+  "reason": "Demo emergency scenario",
+  "portfolio_state": {
+    "value_usd": 100000.0,
+    "daily_pnl": 0.0,
+    "position_count": 0,
+    "total_exposure": 0.0
+  }
+}

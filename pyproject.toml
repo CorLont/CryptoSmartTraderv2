@@ -35,10 +35,8 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["src"]
-
-[tool.setuptools.package-dir]
-"" = "src"
+packages = ["cryptosmarttrader"]
+package-dir = {"" = "src"}
 
 # Ruff configuration
 [tool.ruff]
