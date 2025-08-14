@@ -13,14 +13,14 @@ def find_and_replace_metrics():
     
     replacements = {
         # Old patterns -> New centralized patterns
-        r'Counter\s*\(\s*["']orders_total["']': 'get_metrics().orders_sent',
-        r'Counter\s*\(\s*["']filled_orders["']': 'get_metrics().orders_filled',
-        r'Counter\s*\(\s*["']order_errors["']': 'get_metrics().order_errors',
-        r'Histogram\s*\(\s*["']latency["']': 'get_metrics().latency_ms',
-        r'Histogram\s*\(\s*["']slippage["']': 'get_metrics().slippage_bps',
-        r'Gauge\s*\(\s*["']equity["']': 'get_metrics().equity',
-        r'Gauge\s*\(\s*["']drawdown["']': 'get_metrics().drawdown_pct',
-        r'Counter\s*\(\s*["']signals["']': 'get_metrics().signals_received',
+        r'Counter\s*\(\s*["\']orders_total["\']': 'get_metrics().orders_sent',
+        r'Counter\s*\(\s*["\']filled_orders["\']': 'get_metrics().orders_filled',
+        r'Counter\s*\(\s*["\']order_errors["\']': 'get_metrics().order_errors',
+        r'Histogram\s*\(\s*["\']latency["\']': 'get_metrics().latency_ms',
+        r'Histogram\s*\(\s*["\']slippage["\']': 'get_metrics().slippage_bps',
+        r'Gauge\s*\(\s*["\']equity["\']': 'get_metrics().equity',
+        r'Gauge\s*\(\s*["\']drawdown["\']': 'get_metrics().drawdown_pct',
+        r'Counter\s*\(\s*["\']signals["\']': 'get_metrics().signals_received',
     }
     
     files_to_update = []
