@@ -18,19 +18,19 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "EnterpriseDashboard"
+args = "TradingAnalysis"
 
 [[workflows.workflow]]
-name = "EnterpriseDashboard"
+name = "TradingAnalysis"
 author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python app_enterprise_dashboard.py"
-waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run app_trading_analysis_dashboard.py --server.port 5000"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
