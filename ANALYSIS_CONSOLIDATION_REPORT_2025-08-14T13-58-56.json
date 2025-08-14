@@ -1,0 +1,2886 @@
+{
+  "migration_timestamp": "2025-08-14T13:58:56.724842",
+  "summary": {
+    "ta_files_processed": 167,
+    "ta_files_migrated": 78,
+    "sentiment_files_processed": 256,
+    "sentiment_files_migrated": 45
+  },
+  "ta_migrations": [
+    {
+      "file": "implement_regime_switching.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/comprehensive_market_scanner.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/multi_agent_cooperation_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/explainability_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/completeness_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/alpha_seeker.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/crypto_ai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/explainable_ai.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/gpu_accelerator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/ta_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values",
+        "Replaced function: calculate_bollinger\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"BollingerBands\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "core/batch_inference_engine.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "core/automated_feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "core/market_regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "dashboards/agent_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/ai_ml_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/automated_feature_engineering_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/market_regime_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/analysis_control_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "models/ml_models.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_core_functionality.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_regime_switching.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_regime_simple.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_technical_agent_implementation.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_ta_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values",
+        "Replaced function: calculate_bollinger\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"BollingerBands\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "tests/fixtures/data_generators.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/property_tests/test_indicators.py",
+      "changes": [
+        "Replaced import: from.*indicators.*import.* -> from src.cryptosmarttrader.analysis.enterprise_technical_analysis import get_technical_analyzer",
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "tests/moved_tests/test_technical_agent_implementation.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/moved_tests/test_regime_simple.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "scripts/remove_artificial_data.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "scripts/consolidate_analysis_frameworks.py",
+      "changes": [
+        "Replaced import: from.*test_indicators.*import.*calculate_rsi -> from src.cryptosmarttrader.analysis.enterprise_technical_analysis import get_technical_analyzer",
+        "Replaced import: from.*test_indicators.*import.*calculate_macd -> from src.cryptosmarttrader.analysis.enterprise_technical_analysis import get_technical_analyzer",
+        "Replaced import: from.*technical_analysis.*import.*RSI -> from src.cryptosmarttrader.analysis.enterprise_technical_analysis import get_technical_analyzer",
+        "Replaced import: from.*indicators.*import.* -> from src.cryptosmarttrader.analysis.enterprise_technical_analysis import get_technical_analyzer",
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values",
+        "Replaced function: calculate_bollinger\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"BollingerBands\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "ml/regime_router.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "ml/meta_labeling_system.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "ml/regime_features.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "ml/features/auto_features.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "ml/features/feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "ml/features/temporal_feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "ml/regime/market_regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "ml/intelligence/openai_enhanced_analysis.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/alpha_seeker.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/automated_feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/batch_inference_engine.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/causal_inference_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/completeness_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/comprehensive_market_scanner.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/crypto_ai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/explainability_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/explainable_ai.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/gpu_accelerator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/market_regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/multi_agent_cooperation_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/multimodal_processor.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ta_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values",
+        "Replaced function: calculate_bollinger\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"BollingerBands\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_ml_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_technical_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/ml_predictor_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/technical_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/meta_labeling_system.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_features.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_router.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_detection.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/temporal_feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/intelligence/openai_enhanced_analysis.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/base_models.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/batch_inference_engine.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/completeness_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/comprehensive_market_scanner.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/multi_agent_cooperation_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/strategy_switcher.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/alpha_seeker.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/automated_feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/causal_inference_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/crypto_ai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/explainable_ai.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/gpu_accelerator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/market_regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/multimodal_processor.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/ta_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values",
+        "Replaced function: calculate_bollinger\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"BollingerBands\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/enhanced_technical_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/technical_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/enhanced_ml_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/ml_predictor_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/enhanced_technical_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/technical_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/ensemble_voting_agent_clean.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/enhanced_ml_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/ensemble_voting_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/ml_predictor_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/regime_router.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/regime_detection.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/meta_labeling_system.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/regime_features.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/features/auto_features.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/features/feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/features/temporal_feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/intelligence/openai_enhanced_analysis.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/regime/market_regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/regime/regime_detection.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ensemble/base_models.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/analysis/enterprise_technical_analysis.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values",
+        "Replaced function: calculate_bollinger\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"BollingerBands\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/alpha/regime_detector.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/data/authentic_data_collector.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "experiments/quarantined_modules/cryptosmarttrader/core/explainability_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "demo_scripts/demo_ml_model_registry.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/implement_regime_switching.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/batch_inference_engine.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/completeness_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/comprehensive_market_scanner.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/multi_agent_cooperation_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/strategy_switcher.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/alpha_seeker.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/automated_feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/causal_inference_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/crypto_ai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/explainable_ai.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/gpu_accelerator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/market_regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/multimodal_processor.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/ta_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values",
+        "Replaced function: calculate_bollinger\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"BollingerBands\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/enhanced_technical_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/technical_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/enhanced_ml_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/ml_predictor_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/enhanced_technical_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/technical_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/ensemble_voting_agent_clean.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/enhanced_ml_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/ensemble_voting_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/ml_predictor_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/regime_router.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/regime_detection.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/meta_labeling_system.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/regime_features.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/features/auto_features.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/features/feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/features/temporal_feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/intelligence/openai_enhanced_analysis.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/regime/market_regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/regime/regime_detection.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ensemble/base_models.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/alpha/regime_detector.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/data/authentic_data_collector.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/ml/regime_router.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/ml/meta_labeling_system.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/ml/regime_features.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/ml/features/auto_features.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/ml/features/feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/ml/features/temporal_feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/ml/regime/market_regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/ml/intelligence/openai_enhanced_analysis.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/core/comprehensive_market_scanner.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/multi_agent_cooperation_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/explainability_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/completeness_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/alpha_seeker.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/crypto_ai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/explainable_ai.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/gpu_accelerator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/ta_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values",
+        "Replaced function: calculate_bollinger\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"BollingerBands\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/core/batch_inference_engine.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/core/automated_feature_engineering.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/core/market_regime_detector.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/tests/test_regime_simple.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/tests/test_ta_agent.py",
+      "changes": [
+        "Replaced function: calculate_rsi\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"RSI\", \\1).values",
+        "Replaced function: calculate_macd\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"MACD\", \\1).values",
+        "Replaced function: calculate_bollinger\\(([^)]+)\\) -> get_technical_analyzer().calculate_indicator(\"BollingerBands\", \\1).values"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/tests/test_technical_agent_implementation.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    }
+  ],
+  "sentiment_migrations": [
+    {
+      "file": "create_test_predictions.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "generate_final_predictions_old.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "generate_final_predictions.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "ai_governance_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "simple_ai_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/openai_enhanced_analyzer.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "core/comprehensive_analyzer.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "core/zero_fallback_validator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/multi_agent_cooperation_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/explainability_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/completeness_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/openai_integration_manager.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "core/ai_news_event_mining.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/ai_portfolio_optimizer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/alpha_seeker.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/async_data_manager.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/cross_coin_fusion.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/crypto_ai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/explainable_ai.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/hard_data_filter.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/real_time_pipeline.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/self_healing_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/unified_confidence_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/robust_openai_adapter.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "core/multi_horizon_ml.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "core/daily_analysis_scheduler.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "utils/log_viewer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/agent_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/advanced_analytics_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/alpha_opportunities_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/causal_inference_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/crypto_ai_system_dashboard.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "dashboards/human_in_loop_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/ml_ai_differentiators_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/rl_portfolio_dashboard.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "dashboards/analysis_control_dashboard.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "tests/test_agents.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "tests/test_production_systems.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_enhanced_agents.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_observability_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_drift_fine_tune_auto_disable.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_ensemble_meta_learner.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_feature_pipeline.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_integrated_openai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/test_logging_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/fixtures/data_generators.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/moved_tests/test_integrated_openai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/moved_tests/test_ensemble_meta_learner.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/moved_tests/test_logging_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/moved_tests/test_drift_fine_tune_auto_disable.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "tests/moved_tests/test_feature_pipeline.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "scripts/ml_background_service.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "scripts/social_scraper_service.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "scripts/comprehensive_self_audit.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "scripts/remove_artificial_data.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "scripts/production_readiness_audit.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "scripts/consolidate_analysis_frameworks.py",
+      "changes": [
+        "Replaced import: from.*sentiment.*model.*import.*analyze_sentiment -> from src.cryptosmarttrader.analysis.enterprise_sentiment_analysis import get_sentiment_analyzer",
+        "Replaced import: from.*robust_openai_adapter.*import.*analyze_sentiment -> from src.cryptosmarttrader.analysis.enterprise_sentiment_analysis import get_sentiment_analyzer",
+        "Replaced import: from.*sentiment.*import.*SentimentModel -> from src.cryptosmarttrader.analysis.enterprise_sentiment_analysis import get_sentiment_analyzer",
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "ml/event_impact_scoring.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "ml/temporal_validation_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "ml/train_ensemble.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "ml/features/build_features.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "ml/features/feature_engineering.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "ml/intelligence/openai_simple_analyzer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "ml/intelligence/openai_enhanced_analysis.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "ml/news_impact/llm_impact_scorer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/agents/sentiment/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/data_provider_port.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ai_news_event_mining.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ai_portfolio_optimizer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/alpha_seeker.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/async_data_manager.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/causal_inference_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/completeness_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/comprehensive_analyzer.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/cross_coin_fusion.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/crypto_ai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/daily_analysis_scheduler.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/explainability_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/explainable_ai.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/hard_data_filter.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/human_in_the_loop.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/multi_agent_cooperation_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/multi_horizon_ml.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/openai_enhanced_analyzer.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/openai_integration_manager.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/real_time_pipeline.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/robust_openai_adapter.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/self_healing_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/unified_confidence_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/core/zero_fallback_validator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_sentiment_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/trade_executor_agent.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/sentiment_processor.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/sentiment_models.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/model.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/event_impact_scoring.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/temporal_validation_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/train_ensemble.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/feature_engineering.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/build_features.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/intelligence/openai_enhanced_analysis.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/intelligence/openai_simple_analyzer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/models/model_factory.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/news_impact/llm_impact_scorer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/base_models.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "exports/unified_technical_review/source_code/integrations/openai_enhanced_intelligence.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "integrations/openai_enhanced_intelligence.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/interfaces/data_provider_port.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/completeness_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/comprehensive_analyzer.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/human_in_the_loop.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/multi_agent_cooperation_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/openai_enhanced_analyzer.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/openai_integration_manager.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/robust_openai_adapter.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/core/zero_fallback_validator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/ai_news_event_mining.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/ai_portfolio_optimizer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/alpha_seeker.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/async_data_manager.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/causal_inference_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/cross_coin_fusion.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/crypto_ai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/daily_analysis_scheduler.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/explainable_ai.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/hard_data_filter.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/multi_horizon_ml.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/real_time_pipeline.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/self_healing_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/core/unified_confidence_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/enhanced_sentiment_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/trade_executor_agent.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/sentiment/sentiment_processor.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/sentiment/sentiment_models.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/sentiment/model.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/sentiment/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/whale_detector_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/early_mover_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/news_speed_agent.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/sentiment_agent.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/trade_executor_agent.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/sentiment/sentiment_processor.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/sentiment/sentiment_models.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/sentiment/model.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/agents/agents/sentiment/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/train_ensemble.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/event_impact_scoring.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/temporal_validation_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/features/feature_engineering.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/features/build_features.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/intelligence/openai_simple_analyzer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/intelligence/openai_enhanced_analysis.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ml/news_impact/llm_impact_scorer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ensemble/base_models.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ensemble/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/analysis/enterprise_sentiment_analysis.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/ai/enterprise_ai_governance.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/ai/modernized_openai_adapter.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "src/cryptosmarttrader/ai/enterprise_ai_evaluator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "src/cryptosmarttrader/ai/ai_feature_flags.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "experiments/technical_review/src/cryptosmarttrader/agents/sentiment/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "experiments/technical_review/src/cryptosmarttrader/ensemble/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "experiments/technical_review/agents/sentiment/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "experiments/quarantined_modules/cryptosmarttrader/core/explainability_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "experiments/quarantined_modules/cryptosmarttrader/agents/scraping_core/data_sources.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "experiments/quarantined_modules/cryptosmarttrader/agents/agents/enhanced_sentiment_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "experiments/quarantined_modules/cryptosmarttrader/agents/agents/scraping_core/data_sources.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "demo_scripts/demo_ml_model_registry.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "demo_scripts/demo_observability_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/create_test_predictions.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/generate_final_predictions_old.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/generate_final_predictions.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/interfaces/data_provider_port.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/completeness_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/comprehensive_analyzer.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/human_in_the_loop.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/multi_agent_cooperation_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/openai_enhanced_analyzer.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/openai_integration_manager.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/robust_openai_adapter.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/zero_fallback_validator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/ai_news_event_mining.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/ai_portfolio_optimizer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/alpha_seeker.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/async_data_manager.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/causal_inference_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/cross_coin_fusion.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/crypto_ai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/daily_analysis_scheduler.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/explainable_ai.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/hard_data_filter.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/multi_horizon_ml.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/real_time_pipeline.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/self_healing_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/core/unified_confidence_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/enhanced_sentiment_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/trade_executor_agent.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/sentiment/sentiment_processor.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/sentiment/sentiment_models.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/sentiment/model.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/sentiment/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/whale_detector_agent.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/early_mover_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/news_speed_agent.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/sentiment_agent.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/trade_executor_agent.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/sentiment/sentiment_processor.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/sentiment/sentiment_models.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/sentiment/model.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/agents/agents/sentiment/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/train_ensemble.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/event_impact_scoring.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/temporal_validation_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/features/feature_engineering.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/features/build_features.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/intelligence/openai_simple_analyzer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/intelligence/openai_enhanced_analysis.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ml/news_impact/llm_impact_scorer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ensemble/base_models.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/src/cryptosmarttrader/ensemble/__init__.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/ml/train_ensemble.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/ml/event_impact_scoring.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/ml/temporal_validation_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/ml/features/build_features.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/ml/features/feature_engineering.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/ml/intelligence/openai_simple_analyzer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/ml/intelligence/openai_enhanced_analysis.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/ml/news_impact/llm_impact_scorer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/openai_enhanced_analyzer.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/core/comprehensive_analyzer.py",
+      "changes": [
+        "Replaced function: sentiment_analysis\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)",
+        "Made functions async for sentiment analysis"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/core/zero_fallback_validator.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/multi_agent_cooperation_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/explainability_engine.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/completeness_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/openai_integration_manager.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/core/ai_news_event_mining.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/ai_portfolio_optimizer.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/alpha_seeker.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/async_data_manager.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/cross_coin_fusion.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/crypto_ai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/explainable_ai.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/hard_data_filter.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/multi_horizon_ml.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/real_time_pipeline.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/self_healing_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/unified_confidence_gate.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/core/robust_openai_adapter.py",
+      "changes": [
+        "Replaced function: analyze_sentiment\\(([^)]+)\\) -> await get_sentiment_analyzer().analyze_text(\\1)"
+      ],
+      "errors": [],
+      "success": true
+    },
+    {
+      "file": "technical_review_package/core/daily_analysis_scheduler.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/tests/test_drift_fine_tune_auto_disable.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/tests/test_ensemble_meta_learner.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/tests/test_feature_pipeline.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/tests/test_integrated_openai_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    },
+    {
+      "file": "technical_review_package/tests/test_logging_system.py",
+      "changes": [],
+      "errors": [],
+      "success": false
+    }
+  ],
+  "frameworks_created": [
+    "src/cryptosmarttrader/analysis/enterprise_technical_analysis.py",
+    "src/cryptosmarttrader/analysis/enterprise_sentiment_analysis.py"
+  ],
+  "aliases_created": [
+    "src/cryptosmarttrader/legacy/technical_analysis_legacy.py",
+    "src/cryptosmarttrader/legacy/sentiment_analysis_legacy.py"
+  ]
+}

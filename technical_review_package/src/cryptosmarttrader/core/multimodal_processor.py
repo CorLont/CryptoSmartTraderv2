@@ -461,12 +461,12 @@ class TimeSeriesProcessor:
 
         # RSI
         if "rsi" in self.config.technical_indicators:
-            rsi = self._calculate_rsi(prices)
+            rsi = self._get_technical_analyzer().calculate_indicator("RSI", prices).values
             features["rsi"] = rsi.astype(np.float32)
 
         # MACD
         if "macd" in self.config.technical_indicators:
-            macd_line, macd_signal, macd_histogram = self._calculate_macd(prices)
+            macd_line, macd_signal, macd_histogram = self._get_technical_analyzer().calculate_indicator("MACD", prices).values
             features["macd_line"] = macd_line.astype(np.float32)
             features["macd_signal"] = macd_signal.astype(np.float32)
             features["macd_histogram"] = macd_histogram.astype(np.float32)
@@ -483,7 +483,7 @@ class TimeSeriesProcessor:
 
         return features
 
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> np.ndarray:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, period: int = 14).values -> np.ndarray:
         """Calculate RSI indicator"""
         try:
             delta = prices.diff()
@@ -495,9 +495,9 @@ class TimeSeriesProcessor:
         except Exception:
             return np.full(len(prices), 50.0)
 
-    def _calculate_macd(
+    def _get_technical_analyzer().calculate_indicator("MACD", 
         self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ).values -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Calculate MACD indicator"""
         try:
             ema_fast = prices.ewm(span=fast).mean()

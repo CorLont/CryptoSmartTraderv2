@@ -436,7 +436,7 @@ class NewsSpeedAgent:
             processing_start = time.perf_counter()
 
             # Fast sentiment analysis
-            sentiment_score, sentiment_confidence = self._fast_sentiment_analysis(
+            sentiment_score, sentiment_confidence = self._fast_await get_sentiment_analyzer().analyze_text(
                 title + " " + content
             )
 
@@ -535,7 +535,7 @@ class NewsSpeedAgent:
             except Exception as e:
                 self.logger.error(f"News queue processing error: {e}")
 
-    def _fast_sentiment_analysis(self, text: str) -> Tuple[float, float]:
+    def _fast_await get_sentiment_analyzer().analyze_text(self, text: str) -> Tuple[float, float]:
         """Ultra-fast sentiment analysis"""
 
         if not text:

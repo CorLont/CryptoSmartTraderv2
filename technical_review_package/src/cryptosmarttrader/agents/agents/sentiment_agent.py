@@ -120,7 +120,7 @@ class SentimentAgent:
     Advanced Sentiment Analysis Agent for Crypto Market Intelligence
     """
 
-    def __init__(self, config_manager=None):
+    async def __init__(
         self.config_manager = config_manager
         self.logger = logging.getLogger(__name__)
 
@@ -264,7 +264,7 @@ class SentimentAgent:
 
         logger.info("Sentiment Agent initialized")
 
-    def start(self):
+    async def start(
         """Start the sentiment analysis agent"""
         if not self.active and HAS_SENTIMENT_LIBS:
             self.active = True
@@ -274,12 +274,12 @@ class SentimentAgent:
         else:
             self.logger.warning("Sentiment Agent not started - missing dependencies")
 
-    def stop(self):
+    async def stop(
         """Stop the sentiment analysis agent"""
         self.active = False
         self.logger.info("Sentiment Agent stopped")
 
-    def _sentiment_loop(self):
+    async def _sentiment_loop(
         """Main sentiment analysis loop"""
         while self.active:
             try:
@@ -306,7 +306,7 @@ class SentimentAgent:
                 self.logger.error(f"Sentiment analysis error: {e}")
                 time.sleep(60)  # Sleep 1 minute on error
 
-    def _collect_sentiment_data(self):
+    async def _collect_sentiment_data(
         """Collect sentiment data from various sources"""
 
         # Collect news sentiment
@@ -437,7 +437,7 @@ class SentimentAgent:
                 combined_content = " ".join(contents[:5])  # Limit to 5 items
 
                 # Get AI sentiment analysis
-                ai_sentiment = self._get_ai_sentiment_analysis(symbol, combined_content)
+                ai_sentiment = self._get_ai_await get_sentiment_analyzer().analyze_text(symbol, combined_content)
 
                 if ai_sentiment:
                     enhanced_sentiment.append(ai_sentiment)
@@ -448,7 +448,7 @@ class SentimentAgent:
 
         return enhanced_sentiment
 
-    def _get_ai_sentiment_analysis(self, symbol: str, content: str) -> Optional[SentimentData]:
+    def _get_ai_await get_sentiment_analyzer().analyze_text(self, symbol: str, content: str) -> Optional[SentimentData]:
         """Get advanced sentiment analysis from OpenAI"""
 
         try:
@@ -704,7 +704,7 @@ class SentimentAgent:
         # Return top 5 most relevant
         return meaningful_words[:5]
 
-    def _update_sentiment_summaries(self):
+    async def _update_sentiment_summaries(
         """Update aggregated sentiment summaries for each symbol"""
 
         with self._lock:
@@ -733,7 +733,7 @@ class SentimentAgent:
         now = datetime.now()
 
         # Time-weighted sentiment calculation
-        def time_weight(timestamp):
+        async def time_weight(
             hours_ago = (now - timestamp).total_seconds() / 3600
             return max(0.1, 1.0 - (hours_ago / 24))  # Linear decay over 24h
 
@@ -874,7 +874,7 @@ class SentimentAgent:
             momentum_shift_detected=False,
         )
 
-    def _detect_sentiment_shifts(self):
+    async def _detect_sentiment_shifts(
         """Detect significant sentiment shifts that could indicate trading opportunities"""
 
         for symbol, summary in self.sentiment_summaries.items():
@@ -964,7 +964,7 @@ class SentimentAgent:
         signals.sort(key=lambda x: x["strength"] * x["confidence"], reverse=True)
         return signals
 
-    def _save_sentiment_data(self):
+    async def _save_sentiment_data(
         """Save sentiment data to disk"""
         try:
             # Save recent summaries
@@ -987,7 +987,7 @@ class SentimentAgent:
         except Exception as e:
             self.logger.error(f"Error saving sentiment data: {e}")
 
-    def _load_historical_data(self):
+    async def _load_historical_data(
         """Load historical sentiment data"""
         try:
             summaries_file = self.data_path / "sentiment_summaries.json"

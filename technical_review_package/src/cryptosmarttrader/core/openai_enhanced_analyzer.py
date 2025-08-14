@@ -120,10 +120,10 @@ Provide comprehensive market analysis including:
 Deliver professional-grade insights suitable for institutional investment decisions.
 Structure output in actionable format with clear recommendations and risk parameters."""
 
-    async def enhance_sentiment_analysis(self, sentiment_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def enhance_await get_sentiment_analyzer().analyze_text(self, sentiment_data: Dict[str, Any]) -> Dict[str, Any]:
         """Enhance sentiment analysis with OpenAI insights"""
         if not self.client:
-            return self._fallback_sentiment_analysis(sentiment_data)
+            return self._fallback_await get_sentiment_analyzer().analyze_text(sentiment_data)
 
         try:
             # Prepare sentiment data for analysis
@@ -142,7 +142,7 @@ Structure output in actionable format with clear recommendations and risk parame
 
         except Exception as e:
             self.logger.error(f"OpenAI sentiment enhancement failed: {e}")
-            return self._fallback_sentiment_analysis(sentiment_data)
+            return self._fallback_await get_sentiment_analyzer().analyze_text(sentiment_data)
 
     async def enhance_technical_analysis(self, technical_data: Dict[str, Any]) -> Dict[str, Any]:
         """Enhance technical analysis with AI pattern recognition"""
@@ -381,7 +381,7 @@ Format response as JSON with executive summary and detailed recommendations.
             return {"error": "Failed to parse OpenAI response", "raw_response": response}
 
     # Fallback methods for when OpenAI is not available
-    def _fallback_sentiment_analysis(self, sentiment_data: Dict) -> Dict[str, Any]:
+    def _fallback_await get_sentiment_analyzer().analyze_text(self, sentiment_data: Dict) -> Dict[str, Any]:
         """Fallback sentiment analysis without OpenAI"""
         return {
             "original_data": sentiment_data,
@@ -435,7 +435,7 @@ Format response as JSON with executive summary and detailed recommendations.
 
             # Process each analysis type
             if "sentiment" in batch_data:
-                results["enhanced_sentiment"] = await self.enhance_sentiment_analysis(
+                results["enhanced_sentiment"] = await self.enhance_await get_sentiment_analyzer().analyze_text(
                     batch_data["sentiment"]
                 )
 

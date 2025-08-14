@@ -213,7 +213,7 @@ class RegimeDetector:
             adx_strength = self._calculate_adx(df)
 
             # RSI divergence
-            rsi = self._calculate_rsi(df["close"])
+            rsi = self._get_technical_analyzer().calculate_indicator("RSI", df["close"]).values
             price_change = df["close"].iloc[-1] / df["close"].iloc[-21] - 1
             rsi_change = (rsi.iloc[-1] - rsi.iloc[-21]) / 100
             rsi_divergence = abs(price_change - rsi_change)
@@ -322,7 +322,7 @@ class RegimeDetector:
         except Exception:
             return 0.0
 
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, period: int = 14).values -> pd.Series:
         """Calculate Relative Strength Index."""
         try:
             delta = prices.diff()

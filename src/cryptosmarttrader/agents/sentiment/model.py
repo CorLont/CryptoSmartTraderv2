@@ -12,7 +12,7 @@ class SentimentOutput:
 
 
 class SentimentModel:
-    def __init__(self, use_llm: bool = False):
+    async def __init__(
         self.use_llm = use_llm  # hook voor OpenAI later
 
         # Enhanced keyword lists for better accuracy
@@ -202,7 +202,7 @@ class SentimentModel:
         return results
 
 
-def get_sentiment_model():
+async def get_sentiment_model(
     """Factory function to get sentiment model"""
     return SentimentModel()
 
@@ -219,7 +219,7 @@ def get_sentiment_model():
 
 
 # Convenience functions
-def analyze_sentiment(text: str, use_llm: bool = False) -> SentimentOutput:
+def await get_sentiment_analyzer().analyze_text(text: str, use_llm: bool = False) -> SentimentOutput:
     """Convenience function for single sentiment analysis"""
     model = SentimentModel(use_llm=use_llm)
     return model.predict_single(text)

@@ -58,7 +58,7 @@ class TestSentimentAgent:
         with patch.object(sentiment_agent, "_analyze_text_sentiment") as mock_analyze:
             mock_analyze.return_value = {"score": 0.8, "confidence": 0.9}
 
-            result = await sentiment_agent.analyze_sentiment("Bitcoin is looking bullish!")
+            result = await sentiment_agent.await get_sentiment_analyzer().analyze_text("Bitcoin is looking bullish!")
 
             assert result["score"] == 0.8
             assert result["confidence"] == 0.9

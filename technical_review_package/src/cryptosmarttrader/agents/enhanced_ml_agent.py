@@ -135,10 +135,10 @@ class FeatureEngineer:
 
         # RSI
         for period in [14, 21]:
-            df[f"rsi_{period}"] = self._calculate_rsi(df["close"], period)
+            df[f"rsi_{period}"] = self._get_technical_analyzer().calculate_indicator("RSI", df["close"], period).values
 
         # MACD
-        df["macd"], df["macd_signal"] = self._calculate_macd(df["close"])
+        df["macd"], df["macd_signal"] = self._get_technical_analyzer().calculate_indicator("MACD", df["close"]).values
         df["macd_histogram"] = df["macd"] - df["macd_signal"]
 
         # Bollinger Bands
@@ -212,7 +212,7 @@ class FeatureEngineer:
 
         return df
 
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, period: int = 14).values -> pd.Series:
         """Calculate RSI"""
         delta = prices.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
@@ -221,7 +221,7 @@ class FeatureEngineer:
         rsi = 100 - (100 / (1 + rs))
         return rsi
 
-    def _calculate_macd(self, prices: pd.Series) -> Tuple[pd.Series, pd.Series]:
+    def _get_technical_analyzer().calculate_indicator("MACD", self, prices: pd.Series).values -> Tuple[pd.Series, pd.Series]:
         """Calculate MACD"""
         ema12 = prices.ewm(span=12).mean()
         ema26 = prices.ewm(span=26).mean()

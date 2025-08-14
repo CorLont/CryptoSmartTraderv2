@@ -182,7 +182,7 @@ class MetaLabelingClassifier:
         features["price_momentum"] = market_data["price"].pct_change(5)
 
         # Technical features
-        features["rsi_14"] = self._calculate_rsi(market_data["price"], 14)
+        features["rsi_14"] = self._get_technical_analyzer().calculate_indicator("RSI", market_data["price"], 14).values
         features["macd_signal"] = self._calculate_macd_signal(market_data["price"])
         features["bollinger_position"] = self._calculate_bollinger_position(market_data["price"])
 
@@ -283,7 +283,7 @@ class MetaLabelingClassifier:
 
         return meta_labels
 
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, period: int = 14).values -> pd.Series:
         """Calculate RSI indicator"""
         delta = prices.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()

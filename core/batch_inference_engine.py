@@ -250,7 +250,7 @@ class FeatureEngineering:
                     )
 
                     # RSI
-                    rsi = self._calculate_rsi(df["close"], 14)
+                    rsi = self._get_technical_analyzer().calculate_indicator("RSI", df["close"], 14).values
                     features[f"rsi_{horizon}"] = rsi
 
                     # Moving averages
@@ -339,7 +339,7 @@ class FeatureEngineering:
 
         return features
 
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> float:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, period: int = 14).values -> float:
         """Calculate RSI indicator"""
 
         try:

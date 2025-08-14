@@ -303,19 +303,19 @@ class TechnicalAnalysisAgent:
 
         try:
             if self.config["indicators"]["rsi"]["enabled"]:
-                indicators.update(self._calculate_rsi(data))
+                indicators.update(self._get_technical_analyzer().calculate_indicator("RSI", data).values)
         except Exception as e:
             self.logger.warning(f"RSI calculation failed: {e}")
 
         try:
             if self.config["indicators"]["macd"]["enabled"]:
-                indicators.update(self._calculate_macd(data))
+                indicators.update(self._get_technical_analyzer().calculate_indicator("MACD", data).values)
         except Exception as e:
             self.logger.warning(f"MACD calculation failed: {e}")
 
         try:
             if self.config["indicators"]["bollinger"]["enabled"]:
-                indicators.update(self._calculate_bollinger(data))
+                indicators.update(self._get_technical_analyzer().calculate_indicator("BollingerBands", data).values)
         except Exception as e:
             self.logger.warning(f"Bollinger Bands calculation failed: {e}")
 
@@ -358,7 +358,7 @@ class TechnicalAnalysisAgent:
         """Calculate RSI asynchronously"""
         return await asyncio.to_thread(self._calculate_rsi, data)
 
-    def _calculate_rsi(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, data: pd.DataFrame).values -> Dict[str, Any]:
         """Calculate RSI with WILDER SMOOTHING (authentic implementation)"""
 
         close_prices = data["close"]
@@ -415,7 +415,7 @@ class TechnicalAnalysisAgent:
         """Calculate MACD asynchronously"""
         return await asyncio.to_thread(self._calculate_macd, data)
 
-    def _calculate_macd(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def _get_technical_analyzer().calculate_indicator("MACD", self, data: pd.DataFrame).values -> Dict[str, Any]:
         """Calculate MACD with AUTHENTIC EMA IMPLEMENTATION"""
 
         close_prices = data["close"]
@@ -492,7 +492,7 @@ class TechnicalAnalysisAgent:
         """Calculate Bollinger Bands asynchronously"""
         return await asyncio.to_thread(self._calculate_bollinger, data)
 
-    def _calculate_bollinger(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def _get_technical_analyzer().calculate_indicator("BollingerBands", self, data: pd.DataFrame).values -> Dict[str, Any]:
         """Calculate Bollinger Bands with AUTHENTIC CALCULATION (no fallback dummy data)"""
 
         close_prices = data["close"]

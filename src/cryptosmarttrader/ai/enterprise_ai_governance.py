@@ -254,7 +254,7 @@ class AIOutputValidator:
             if task_type == AITaskType.NEWS_ANALYSIS:
                 return self._validate_news_analysis(parsed_response)
             elif task_type == AITaskType.SENTIMENT_ANALYSIS:
-                return self._validate_sentiment_analysis(parsed_response)
+                return self._validate_await get_sentiment_analyzer().analyze_text(parsed_response)
             elif task_type == AITaskType.MARKET_PREDICTION:
                 return self._validate_market_prediction(parsed_response)
             else:
@@ -284,7 +284,7 @@ class AIOutputValidator:
         
         return {"validated": True, "data": data}
     
-    def _validate_sentiment_analysis(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_await get_sentiment_analyzer().analyze_text(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Validate sentiment analysis response"""
         required_fields = ["sentiment_score", "confidence"]
         

@@ -207,7 +207,7 @@ Focus on actionable trading insights and be conservative in impact estimates."""
             self.logger.error(f"OpenAI API call failed: {e}")
             raise e
     
-    async def analyze_sentiment(self, text: str) -> SentimentAnalysisResult:
+    async def await get_sentiment_analyzer().analyze_text(self, text: str) -> SentimentAnalysisResult:
         """Analyze sentiment with governance"""
         
         start_time = time.time()
@@ -253,7 +253,7 @@ Focus on actionable trading insights and be conservative in impact estimates."""
                 source="fallback"
             )
     
-    async def _execute_sentiment_analysis(self, text: str) -> Dict[str, Any]:
+    async def _execute_await get_sentiment_analyzer().analyze_text(self, text: str) -> Dict[str, Any]:
         """Execute sentiment analysis API call"""
         
         prompt = f"""Analyze the sentiment of this cryptocurrency-related text:
@@ -340,7 +340,7 @@ if __name__ == "__main__":
         print(f"News Analysis: {news_result}")
         
         # Test sentiment analysis
-        sentiment_result = await adapter.analyze_sentiment(
+        sentiment_result = await adapter.await get_sentiment_analyzer().analyze_text(
             "Crypto market looking very bullish with strong institutional adoption"
         )
         print(f"Sentiment Analysis: {sentiment_result}")

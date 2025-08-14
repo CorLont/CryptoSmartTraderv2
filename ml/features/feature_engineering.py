@@ -119,8 +119,8 @@ class FeatureEngineering:
                 )
 
             # Technical indicators
-            symbol_features["rsi_14"] = self._calculate_rsi(symbol_data["close"], 14)
-            symbol_features["macd"] = self._calculate_macd(symbol_data["close"])
+            symbol_features["rsi_14"] = self._get_technical_analyzer().calculate_indicator("RSI", symbol_data["close"], 14).values
+            symbol_features["macd"] = self._get_technical_analyzer().calculate_indicator("MACD", symbol_data["close"]).values
             symbol_features["bb_position"] = self._calculate_bollinger_position(
                 symbol_data["close"]
             )
@@ -385,7 +385,7 @@ class FeatureEngineering:
                     metadata.leakage_risk = "low"
 
     # Technical indicator calculation methods
-    def _calculate_rsi(self, prices: pd.Series, window: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, window: int = 14).values -> pd.Series:
         """Calculate Relative Strength Index"""
         delta = prices.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
@@ -394,7 +394,7 @@ class FeatureEngineering:
         rsi = 100 - (100 / (1 + rs))
         return rsi
 
-    def _calculate_macd(self, prices: pd.Series, fast: int = 12, slow: int = 26) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("MACD", self, prices: pd.Series, fast: int = 12, slow: int = 26).values -> pd.Series:
         """Calculate MACD"""
         ema_fast = prices.ewm(span=fast).mean()
         ema_slow = prices.ewm(span=slow).mean()

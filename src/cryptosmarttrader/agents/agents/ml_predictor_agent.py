@@ -229,7 +229,7 @@ class MLPredictorAgent:
         df["volume_ratio"] = df["volume"] / df["volume_ma_5"]
 
         # Technical indicators
-        df["rsi"] = self._calculate_rsi(df["price"], 14)
+        df["rsi"] = self._get_technical_analyzer().calculate_indicator("RSI", df["price"], 14).values
         df["bb_position"] = self._calculate_bollinger_position(df["price"], 20)
 
         # Lagged features
@@ -244,7 +244,7 @@ class MLPredictorAgent:
 
         return df
 
-    def _calculate_rsi(self, prices: pd.Series, window: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, window: int = 14).values -> pd.Series:
         """Calculate RSI"""
         delta = prices.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()

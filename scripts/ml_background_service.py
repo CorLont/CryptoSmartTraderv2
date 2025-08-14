@@ -270,7 +270,7 @@ class MLBackgroundService:
             self.logger.error(f"Technical analysis failed: {e}")
             return {}
 
-    def _run_sentiment_analysis(self):
+    def _run_await get_sentiment_analyzer().analyze_text(self):
         """Run sentiment analysis on market data"""
         try:
             sentiment_agent = self.container.sentiment_agent()
@@ -281,7 +281,7 @@ class MLBackgroundService:
 
             for coin in coins:
                 try:
-                    sentiment = sentiment_agent.analyze_sentiment(coin)
+                    sentiment = sentiment_agent.await get_sentiment_analyzer().analyze_text(coin)
                     if sentiment:
                         results[coin] = sentiment
                 except Exception as e:

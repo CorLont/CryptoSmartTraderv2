@@ -224,11 +224,11 @@ class TemporalFeatureEngineer:
 
         # RSI (Relative Strength Index)
         for period in [14, 21]:
-            rsi = self._calculate_rsi(df[col], period)
+            rsi = self._get_technical_analyzer().calculate_indicator("RSI", df[col], period).values
             df[f"{col}_rsi_{period}"] = rsi
 
         # MACD (Moving Average Convergence Divergence)
-        macd, macd_signal, macd_histogram = self._calculate_macd(df[col])
+        macd, macd_signal, macd_histogram = self._get_technical_analyzer().calculate_indicator("MACD", df[col]).values
         df[f"{col}_macd"] = macd
         df[f"{col}_macd_signal"] = macd_signal
         df[f"{col}_macd_histogram"] = macd_histogram
@@ -249,7 +249,7 @@ class TemporalFeatureEngineer:
 
         return df
 
-    def _calculate_rsi(self, series: pd.Series, period: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, series: pd.Series, period: int = 14).values -> pd.Series:
         """Calculate RSI indicator"""
 
         delta = series.diff()
@@ -261,13 +261,13 @@ class TemporalFeatureEngineer:
 
         return rsi
 
-    def _calculate_macd(
+    def _get_technical_analyzer().calculate_indicator("MACD", 
         self,
         series: pd.Series,
         fast_period: int = 12,
         slow_period: int = 26,
         signal_period: int = 9,
-    ) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    ).values -> Tuple[pd.Series, pd.Series, pd.Series]:
         """Calculate MACD indicator"""
 
         ema_fast = series.ewm(span=fast_period, min_periods=1).mean()

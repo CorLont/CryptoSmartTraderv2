@@ -170,11 +170,11 @@ class TechnicalAnalysisModel:
             volume = price_df["volume"].values
 
             # RSI (14-period)
-            rsi = self._calculate_rsi(close, 14)
+            rsi = self._get_technical_analyzer().calculate_indicator("RSI", close, 14).values
             indicators["rsi"] = (rsi - 50) / 50  # Normalize to [-1, 1]
 
             # MACD
-            macd_line, signal_line = self._calculate_macd(close)
+            macd_line, signal_line = self._get_technical_analyzer().calculate_indicator("MACD", close).values
             indicators["macd"] = np.tanh((macd_line - signal_line) * 1000)  # Normalize
 
             # Bollinger Bands position
@@ -205,7 +205,7 @@ class TechnicalAnalysisModel:
             logger.error(f"Indicator calculation failed: {e}")
             return {}
 
-    def _calculate_rsi(self, prices: np.ndarray, period: int = 14) -> float:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: np.ndarray, period: int = 14).values -> float:
         """Calculate RSI indicator"""
         try:
             if len(prices) < period + 1:
@@ -229,9 +229,9 @@ class TechnicalAnalysisModel:
         except Exception:
             return 50.0
 
-    def _calculate_macd(
+    def _get_technical_analyzer().calculate_indicator("MACD", 
         self, prices: np.ndarray, fast: int = 12, slow: int = 26, signal: int = 9
-    ) -> tuple:
+    ).values -> tuple:
         """Calculate MACD indicator"""
         try:
             if len(prices) < slow + signal:

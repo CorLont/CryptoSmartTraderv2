@@ -26,7 +26,7 @@ from core.daily_analysis_scheduler import DailyAnalysisScheduler
 class AnalysisControlDashboard:
     """Dashboard for controlling analysis services"""
 
-    def __init__(self, container: ApplicationContainer):
+    async def __init__(
         self.container = container
         self.logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class AnalysisControlDashboard:
                 "sentiment_analysis": {"status": "stopped", "last_run": None, "results": None},
             }
 
-    def render(self):
+    async def render(
         """Render the analysis control dashboard"""
         st.title("🎛️ Analysis Control Center")
         st.markdown("---")
@@ -68,7 +68,7 @@ class AnalysisControlDashboard:
         if hasattr(self, "daily_scheduler"):
             self._render_daily_analysis_overview()
 
-    def _render_daily_analysis_overview(self):
+    async def _render_daily_analysis_overview(
         """Render daily analysis overview"""
         st.subheader("📈 Daily Analysis Overview")
 
@@ -118,7 +118,7 @@ class AnalysisControlDashboard:
 
         st.markdown("---")
 
-    def _render_daily_progress(self, daily_data: Dict):
+    async def _render_daily_progress(
         """Render daily analysis progress"""
         st.subheader("📊 Today's Progress")
 
@@ -244,12 +244,12 @@ class AnalysisControlDashboard:
             if ai_insights:
                 self._render_ai_insights(ai_insights)
 
-    def _show_detailed_daily_report(self, daily_data: Dict):
+    async def _show_detailed_daily_report(
         """Show detailed daily report in expandable section"""
         with st.expander("📊 Detailed Daily Report", expanded=True):
             st.json(daily_data)
 
-    def _export_daily_report(self, daily_data: Dict):
+    async def _export_daily_report(
         """Export daily report as JSON"""
         import json
 
@@ -262,7 +262,7 @@ class AnalysisControlDashboard:
             label="💾 Download Report", data=json_data, file_name=filename, mime="application/json"
         )
 
-    def _render_ai_insights(self, ai_insights: Dict):
+    async def _render_ai_insights(
         """Render AI-powered market insights"""
         st.subheader("🧠 AI Market Insights")
 
@@ -318,7 +318,7 @@ class AnalysisControlDashboard:
         st.markdown("---")
         self._render_background_services()
 
-    def _render_service_status(self):
+    async def _render_service_status(
         """Render service status overview"""
         st.subheader("📊 Service Status Overview")
 
@@ -359,7 +359,7 @@ class AnalysisControlDashboard:
             )
             st.metric("Sentiment Analysis", f"{status_color} {sentiment_status.title()}")
 
-    def _render_ml_analysis_controls(self):
+    async def _render_ml_analysis_controls(
         """Render ML analysis control panel"""
         st.subheader("🤖 ML Analysis")
 
@@ -402,7 +402,7 @@ class AnalysisControlDashboard:
             if last_run:
                 st.info(f"Last run: {last_run}")
 
-    def _render_social_scraping_controls(self):
+    async def _render_social_scraping_controls(
         """Render social media scraping control panel"""
         st.subheader("📱 Social Media Scraping")
 
@@ -444,7 +444,7 @@ class AnalysisControlDashboard:
             if last_run:
                 st.info(f"Last run: {last_run}")
 
-    def _render_technical_analysis_controls(self):
+    async def _render_technical_analysis_controls(
         """Render technical analysis control panel"""
         st.subheader("📈 Technical Analysis")
 
@@ -482,7 +482,7 @@ class AnalysisControlDashboard:
             if last_run:
                 st.info(f"Last run: {last_run}")
 
-    def _render_sentiment_analysis_controls(self):
+    async def _render_sentiment_analysis_controls(
         """Render sentiment analysis control panel"""
         st.subheader("💭 Sentiment Analysis")
 
@@ -509,7 +509,7 @@ class AnalysisControlDashboard:
 
             with col1:
                 if st.button("🚀 Start Sentiment Analysis", key="start_sentiment"):
-                    self._start_sentiment_analysis(sources, analysis_depth)
+                    self._start_await get_sentiment_analyzer().analyze_text(sources, analysis_depth)
 
             with col2:
                 if st.button("⏹️ Stop Sentiment Analysis", key="stop_sentiment"):
@@ -520,7 +520,7 @@ class AnalysisControlDashboard:
             if last_run:
                 st.info(f"Last run: {last_run}")
 
-    def _render_analysis_results(self):
+    async def _render_analysis_results(
         """Render analysis results section"""
         st.subheader("📋 Recent Analysis Results")
 
@@ -541,7 +541,7 @@ class AnalysisControlDashboard:
         with tab4:
             self._show_sentiment_results()
 
-    def _render_background_services(self):
+    async def _render_background_services(
         """Render background services management"""
         st.subheader("⚙️ Background Services")
 
@@ -571,7 +571,7 @@ class AnalysisControlDashboard:
             if st.button("🔄 Refresh Status", key="refresh_status"):
                 self._refresh_service_status()
 
-    def _start_ml_analysis(self, horizons, num_coins):
+    async def _start_ml_analysis(
         """Start ML analysis with specified parameters"""
         try:
             # Update status
@@ -583,7 +583,7 @@ class AnalysisControlDashboard:
                 ml_agent = self.container.ml_predictor_agent()
 
                 # Run analysis in background thread
-                def run_ml_analysis():
+                async def run_ml_analysis(
                     try:
                         # Run ML analysis simulation
                         results = {
@@ -629,7 +629,7 @@ class AnalysisControlDashboard:
             st.error(f"Failed to start ML analysis: {e}")
             self.logger.error(f"ML analysis start failed: {e}")
 
-    def _start_social_scraping(self, platforms, interval):
+    async def _start_social_scraping(
         """Start social media scraping"""
         try:
             st.session_state.analysis_services["social_scraper"]["status"] = "starting"
@@ -643,7 +643,7 @@ class AnalysisControlDashboard:
                     "1 hour": 3600,
                 }.get(interval, 300)
 
-                def run_social_scraping():
+                async def run_social_scraping(
                     try:
                         sentiment_agent = self.container.sentiment_agent()
 
@@ -685,7 +685,7 @@ class AnalysisControlDashboard:
             st.error(f"Failed to start social scraping: {e}")
             self.logger.error(f"Social scraping start failed: {e}")
 
-    def _run_quick_ml_analysis(self, horizons, num_coins):
+    async def _run_quick_ml_analysis(
         """Run a quick ML analysis"""
         try:
             with st.spinner(f"Running quick analysis for {num_coins} coins..."):
@@ -720,7 +720,7 @@ class AnalysisControlDashboard:
             st.error(f"Quick analysis failed: {e}")
             self.logger.error(f"Quick ML analysis failed: {e}")
 
-    def _run_onetime_scraping(self, platforms):
+    async def _run_onetime_scraping(
         """Run one-time social media scraping"""
         try:
             with st.spinner(f"Scraping {', '.join(platforms)}..."):
@@ -756,23 +756,23 @@ class AnalysisControlDashboard:
             st.error(f"One-time scraping failed: {e}")
             self.logger.error(f"One-time scraping failed: {e}")
 
-    def _stop_ml_analysis(self):
+    async def _stop_ml_analysis(
         """Stop ML analysis"""
         st.session_state.analysis_services["ml_analysis"]["status"] = "stopped"
         st.info("ML analysis stopped")
 
-    def _stop_social_scraping(self):
+    async def _stop_social_scraping(
         """Stop social media scraping"""
         st.session_state.analysis_services["social_scraper"]["status"] = "stopped"
         st.info("Social media scraping stopped")
 
-    def _start_technical_analysis(self, indicators, timeframes):
+    async def _start_technical_analysis(
         """Start technical analysis"""
         try:
             with st.spinner("Starting technical analysis..."):
                 technical_agent = self.container.technical_agent()
 
-                def run_technical():
+                async def run_technical(
                     try:
                         # Run technical analysis simulation
                         results = {
@@ -807,18 +807,18 @@ class AnalysisControlDashboard:
         except Exception as e:
             st.error(f"Failed to start technical analysis: {e}")
 
-    def _stop_technical_analysis(self):
+    async def _stop_technical_analysis(
         """Stop technical analysis"""
         st.session_state.analysis_services["technical_analysis"]["status"] = "stopped"
         st.info("Technical analysis stopped")
 
-    def _start_sentiment_analysis(self, sources, depth):
+    def _start_await get_sentiment_analyzer().analyze_text(self, sources, depth):
         """Start sentiment analysis"""
         try:
             with st.spinner("Starting sentiment analysis..."):
                 sentiment_agent = self.container.sentiment_agent()
 
-                def run_sentiment():
+                async def run_sentiment(
                     try:
                         # Run sentiment analysis simulation
                         results = {
@@ -856,12 +856,12 @@ class AnalysisControlDashboard:
         except Exception as e:
             st.error(f"Failed to start sentiment analysis: {e}")
 
-    def _stop_sentiment_analysis(self):
+    def _stop_await get_sentiment_analyzer().analyze_text(self):
         """Stop sentiment analysis"""
         st.session_state.analysis_services["sentiment_analysis"]["status"] = "stopped"
         st.info("Sentiment analysis stopped")
 
-    def _show_ml_results(self):
+    async def _show_ml_results(
         """Show ML analysis results"""
         results = st.session_state.analysis_services["ml_analysis"].get("results")
 
@@ -870,7 +870,7 @@ class AnalysisControlDashboard:
         else:
             st.info("No ML analysis results available. Run an analysis to see results here.")
 
-    def _show_social_results(self):
+    async def _show_social_results(
         """Show social media scraping results"""
         results = st.session_state.analysis_services["social_scraper"].get("results")
 
@@ -879,7 +879,7 @@ class AnalysisControlDashboard:
         else:
             st.info("No social media data available. Run scraping to see results here.")
 
-    def _show_technical_results(self):
+    async def _show_technical_results(
         """Show technical analysis results"""
         results = st.session_state.analysis_services["technical_analysis"].get("results")
 
@@ -888,7 +888,7 @@ class AnalysisControlDashboard:
         else:
             st.info("No technical analysis results available. Run analysis to see results here.")
 
-    def _show_sentiment_results(self):
+    async def _show_sentiment_results(
         """Show sentiment analysis results"""
         results = st.session_state.analysis_services["sentiment_analysis"].get("results")
 
@@ -897,7 +897,7 @@ class AnalysisControlDashboard:
         else:
             st.info("No sentiment analysis results available. Run analysis to see results here.")
 
-    def _start_all_background_services(self):
+    async def _start_all_background_services(
         """Start all background services"""
         try:
             # Start Windows batch files if on Windows
@@ -928,7 +928,7 @@ class AnalysisControlDashboard:
         except Exception as e:
             st.error(f"Failed to start background services: {e}")
 
-    def _stop_all_background_services(self):
+    async def _stop_all_background_services(
         """Stop all background services"""
         try:
             if os.name == "nt":
@@ -958,7 +958,7 @@ class AnalysisControlDashboard:
         except Exception as e:
             st.error(f"Failed to stop services: {e}")
 
-    def _show_system_status(self):
+    async def _show_system_status(
         """Show system status information"""
         try:
             health_status = self.health_monitor.get_system_health()
@@ -966,7 +966,7 @@ class AnalysisControlDashboard:
         except Exception as e:
             st.error(f"Failed to get system status: {e}")
 
-    def _open_data_folder(self):
+    async def _open_data_folder(
         """Open data folder in file explorer"""
         try:
             data_path = Path("data").resolve()
@@ -986,7 +986,7 @@ class AnalysisControlDashboard:
         except Exception as e:
             st.error(f"Failed to open data folder: {e}")
 
-    def _show_logs(self):
+    async def _show_logs(
         """Show recent log entries"""
         try:
             logs_dir = Path("logs")
@@ -1014,6 +1014,6 @@ class AnalysisControlDashboard:
         except Exception as e:
             st.error(f"Failed to show logs: {e}")
 
-    def _refresh_service_status(self):
+    async def _refresh_service_status(
         """Refresh service status"""
         st.rerun()

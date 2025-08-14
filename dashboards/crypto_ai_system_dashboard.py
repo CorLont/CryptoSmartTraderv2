@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 class CryptoAISystemDashboard:
     """Complete Crypto AI System Dashboard voor checklist management"""
 
-    def __init__(self, container):
+    async def __init__(
         self.container = container
 
         # Initialize AI system
@@ -34,7 +34,7 @@ class CryptoAISystemDashboard:
             st.error(f"Failed to initialize AI system: {e}")
             self.ai_system = None
 
-    def render(self):
+    async def render(
         """Render complete AI system dashboard"""
         st.set_page_config(
             page_title="Crypto AI System - CryptoSmartTrader V2", page_icon="🧠", layout="wide"
@@ -73,7 +73,7 @@ class CryptoAISystemDashboard:
         with tab5:
             self._render_system_monitor()
 
-    def _render_checklist_status(self):
+    async def _render_checklist_status(
         """Render checklist implementation status"""
         st.header("📋 Implementation Checklist Status")
         st.markdown("**Volledige blauwdruk implementatie voor crypto AI systeem**")
@@ -169,7 +169,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Failed to load checklist status: {e}")
 
-    def _render_system_control(self):
+    async def _render_system_control(
         """Render system control panel"""
         st.header("🚀 System Control Panel")
         st.markdown("**Start en beheer het complete AI systeem**")
@@ -268,7 +268,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Performance metrics error: {e}")
 
-    def _render_pipeline_results(self):
+    async def _render_pipeline_results(
         """Render pipeline execution results"""
         st.header("📊 Pipeline Execution Results")
         st.markdown("**Resultaten van de complete AI pipeline**")
@@ -354,7 +354,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Failed to load pipeline results: {e}")
 
-    def _render_alpha_opportunities(self):
+    async def _render_alpha_opportunities(
         """Render filtered alpha opportunities"""
         st.header("🎯 Alpha Opportunities")
         st.markdown("**Gefilterde kansen met ≥80% confidence en ≥100% verwacht rendement**")
@@ -448,7 +448,7 @@ class CryptoAISystemDashboard:
                 ]
 
                 # Color coding based on returns
-                def highlight_returns(row):
+                async def highlight_returns(
                     colors = []
                     for col in row.index:
                         if "Return" in col:
@@ -506,7 +506,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Failed to load alpha opportunities: {e}")
 
-    def _render_system_monitor(self):
+    async def _render_system_monitor(
         """Render system monitoring dashboard"""
         st.header("🔍 System Monitor")
         st.markdown("**Real-time system monitoring en health checks**")
@@ -624,7 +624,7 @@ class CryptoAISystemDashboard:
             st.error(f"System monitoring failed: {e}")
 
     # Control functions
-    def _start_complete_pipeline(self):
+    async def _start_complete_pipeline(
         """Start complete AI pipeline"""
         try:
             with st.spinner("Starting complete AI pipeline..."):
@@ -636,7 +636,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Failed to start pipeline: {e}")
 
-    def _start_background_tasks(self):
+    async def _start_background_tasks(
         """Start background tasks"""
         try:
             with st.spinner("Starting background tasks..."):
@@ -645,7 +645,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Failed to start background tasks: {e}")
 
-    def _stop_system(self):
+    async def _stop_system(
         """Stop system"""
         try:
             self.ai_system.stop_system()
@@ -653,7 +653,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Failed to stop system: {e}")
 
-    def _run_coin_discovery(self):
+    async def _run_coin_discovery(
         """Run coin discovery module"""
         try:
             with st.spinner("Running coin discovery..."):
@@ -661,7 +661,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Coin discovery failed: {e}")
 
-    def _run_price_volume_collection(self):
+    async def _run_price_volume_collection(
         """Run price/volume collection"""
         try:
             with st.spinner("Collecting price/volume data..."):
@@ -669,7 +669,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Price/volume collection failed: {e}")
 
-    def _run_whale_tracking(self):
+    async def _run_whale_tracking(
         """Run whale tracking"""
         try:
             with st.spinner("Running whale tracking..."):
@@ -677,7 +677,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Whale tracking failed: {e}")
 
-    def _run_sentiment_analysis(self):
+    def _run_await get_sentiment_analyzer().analyze_text(self):
         """Run sentiment analysis"""
         try:
             with st.spinner("Analyzing sentiment..."):
@@ -685,7 +685,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Sentiment analysis failed: {e}")
 
-    def _run_technical_analysis(self):
+    async def _run_technical_analysis(
         """Run technical analysis"""
         try:
             with st.spinner("Running technical analysis..."):
@@ -693,7 +693,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Technical analysis failed: {e}")
 
-    def _run_news_scraping(self):
+    async def _run_news_scraping(
         """Run news scraping"""
         try:
             with st.spinner("Scraping news..."):
@@ -701,7 +701,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"News scraping failed: {e}")
 
-    def _run_ml_training(self):
+    async def _run_ml_training(
         """Run ML training"""
         try:
             with st.spinner("Training ML models..."):
@@ -709,7 +709,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"ML training failed: {e}")
 
-    def _run_batch_inference(self):
+    async def _run_batch_inference(
         """Run batch inference"""
         try:
             with st.spinner("Running batch inference..."):
@@ -717,7 +717,7 @@ class CryptoAISystemDashboard:
         except Exception as e:
             st.error(f"Batch inference failed: {e}")
 
-    def _run_opportunity_filtering(self):
+    async def _run_opportunity_filtering(
         """Run opportunity filtering"""
         try:
             with st.spinner("Filtering opportunities..."):
@@ -727,7 +727,7 @@ class CryptoAISystemDashboard:
 
 
 # Main function for standalone usage
-def main():
+async def main(
     """Main dashboard function"""
     try:
         # Import container

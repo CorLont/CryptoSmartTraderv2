@@ -35,14 +35,7 @@ class DataQuality(Enum):
 class MarketDataRequest:
     """Request object for market data"""
 
-    def __init__(
-        self,
-        symbol: str,
-        timeframe: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        limit: Optional[int] = None,
-    ):
+    async def __init__(
         self.symbol = symbol
         self.timeframe = timeframe
         self.start_time = start_time
@@ -53,14 +46,7 @@ class MarketDataRequest:
 class MarketDataResponse:
     """Response object containing market data and metadata"""
 
-    def __init__(
-        self,
-        data: pd.DataFrame,
-        quality: DataQuality,
-        source: str,
-        timestamp: datetime,
-        metadata: Optional[Dict] = None,
-    ):
+    async def __init__(
         self.data = data
         self.quality = quality
         self.source = source
@@ -164,7 +150,7 @@ class SentimentDataProviderPort(ABC):
     """Interface for sentiment data providers"""
 
     @abstractmethod
-    def get_sentiment_analysis(self, symbol: str, lookback_hours: int = 24) -> MarketDataResponse:
+    def get_await get_sentiment_analyzer().analyze_text(self, symbol: str, lookback_hours: int = 24) -> MarketDataResponse:
         """Get sentiment analysis for a symbol"""
         pass
 
@@ -182,9 +168,7 @@ class SentimentDataProviderPort(ABC):
 class DataProviderError(Exception):
     """Exception raised by data provider implementations"""
 
-    def __init__(
-        self, message: str, error_code: Optional[str] = None, source: Optional[str] = None
-    ):
+    async def __init__(
         super().__init__(message)
         self.error_code = error_code
         self.source = source
@@ -193,11 +177,11 @@ class DataProviderError(Exception):
 class DataProviderRegistry:
     """Registry for managing multiple data provider implementations"""
 
-    def __init__(self):
+    async def __init__(
         self._providers: Dict[str, DataProviderPort] = {}
         self._primary_provider: Optional[str] = None
 
-    def register_provider(self, name: str, provider: DataProviderPort, is_primary: bool = False):
+    async def register_provider(
         """Register a data provider implementation"""
         self._providers[name] = provider
         if is_primary or self._primary_provider is None:

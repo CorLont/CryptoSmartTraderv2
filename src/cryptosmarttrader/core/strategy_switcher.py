@@ -436,7 +436,7 @@ class StrategySwitcher:
             distance = (current_price - ma_50) / ma_50
 
             # RSI for oversold/overbought
-            rsi = self._calculate_rsi(df["close"]).iloc[-1]
+            rsi = self._get_technical_analyzer().calculate_indicator("RSI", df["close"]).values.iloc[-1]
 
             # Mean reversion signal
             if distance < -0.1 and rsi < 30:  # Oversold
@@ -506,7 +506,7 @@ class StrategySwitcher:
 
         return positions
 
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, period: int = 14).values -> pd.Series:
         """Calculate RSI indicator."""
         delta = prices.diff()
         gain = (delta.where(delta > 0, 0)).rolling(period).mean()

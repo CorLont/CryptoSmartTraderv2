@@ -600,7 +600,7 @@ Required JSON schema:
             self.logger.info("Falling back to pure Python analysis")
             return self.fallback.analyze_news_sentiment(news_text)
 
-    async def analyze_sentiment(self, text: str) -> SentimentSchema:
+    async def await get_sentiment_analyzer().analyze_text(self, text: str) -> SentimentSchema:
         """Analyze sentiment with fallback"""
 
         try:
@@ -668,7 +668,7 @@ async def analyze_news_impact(news_text: str) -> NewsImpactSchema:
     return await adapter.analyze_news_impact(news_text)
 
 
-async def analyze_sentiment(text: str) -> SentimentSchema:
+async def await get_sentiment_analyzer().analyze_text(text: str) -> SentimentSchema:
     """Convenience function for sentiment analysis"""
     adapter = get_openai_adapter()
-    return await adapter.analyze_sentiment(text)
+    return await adapter.await get_sentiment_analyzer().analyze_text(text)

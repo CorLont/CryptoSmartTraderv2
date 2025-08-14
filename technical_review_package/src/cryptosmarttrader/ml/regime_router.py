@@ -62,7 +62,7 @@ class MarketRegimeRouter:
             price_data["volume_ratio"] = 1.0
 
         # Momentum indicators
-        price_data["rsi"] = self._calculate_rsi(price_data["close"])
+        price_data["rsi"] = self._get_technical_analyzer().calculate_indicator("RSI", price_data["close"]).values
         price_data["momentum"] = price_data["return_20d"]
 
         # Select regime features
@@ -80,7 +80,7 @@ class MarketRegimeRouter:
 
         return price_data[regime_features].dropna()
 
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, period: int = 14).values -> pd.Series:
         """Calculate RSI indicator"""
         delta = prices.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()

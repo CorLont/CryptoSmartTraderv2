@@ -388,8 +388,8 @@ class MarketRegimeDetector:
                 features["volatility_short"] = returns.rolling(5).std()
 
                 # Momentum indicators
-                features["rsi"] = self._calculate_rsi(price)
-                features["macd"], features["macd_signal"] = self._calculate_macd(price)
+                features["rsi"] = self._get_technical_analyzer().calculate_indicator("RSI", price).values
+                features["macd"], features["macd_signal"] = self._get_technical_analyzer().calculate_indicator("MACD", price).values
                 features["macd_histogram"] = features["macd"] - features["macd_signal"]
 
                 # Bollinger bands
@@ -1048,7 +1048,7 @@ class MarketRegimeDetector:
             return {}
 
     # Technical indicator calculation methods
-    def _calculate_rsi(self, prices: pd.Series, window: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, window: int = 14).values -> pd.Series:
         """Calculate RSI"""
         try:
             delta = prices.diff()
@@ -1059,9 +1059,9 @@ class MarketRegimeDetector:
         except Exception:
             return pd.Series(50, index=prices.index)
 
-    def _calculate_macd(
+    def _get_technical_analyzer().calculate_indicator("MACD", 
         self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9
-    ) -> Tuple[pd.Series, pd.Series]:
+    ).values -> Tuple[pd.Series, pd.Series]:
         """Calculate MACD"""
         try:
             ema_fast = prices.ewm(span=fast).mean()

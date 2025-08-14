@@ -36,7 +36,7 @@ class AutoFeatures:
         result["volatility_24h"] = result["returns_1h"].rolling(24, min_periods=24).std()
 
         # RSI
-        result["rsi_14"] = self._calculate_rsi(result[price_col], 14)
+        result["rsi_14"] = self._get_technical_analyzer().calculate_indicator("RSI", result[price_col], 14).values
 
         # Bollinger Bands
         bb_upper, bb_lower = self._calculate_bollinger_bands(result[price_col], 20)
@@ -44,7 +44,7 @@ class AutoFeatures:
 
         return result
 
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, period: int = 14).values -> pd.Series:
         """Calculate RSI with temporal safety"""
 
         delta = prices.diff()

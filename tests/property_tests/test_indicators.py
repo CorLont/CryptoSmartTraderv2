@@ -10,7 +10,7 @@ from hypothesis import given, strategies as st, assume, settings
 from hypothesis.extra.pandas import data_frames, columns
 
 # Import technical indicator functions (assuming they exist)
-# from trading.indicators import calculate_rsi, calculate_macd, calculate_bollinger_bands
+# from src.cryptosmarttrader.analysis.enterprise_technical_analysis import get_technical_analyzer
 
 
 @pytest.mark.property
@@ -32,7 +32,7 @@ class TestTechnicalIndicators:
         assume(len(prices) >= 14)
         assume(all(p > 0 for p in prices))
 
-        rsi = self.calculate_rsi(prices, period=14)
+        rsi = self.get_technical_analyzer().calculate_indicator("RSI", prices, period=14).values
 
         # Property 1: RSI should be between 0 and 100
         valid_rsi = [r for r in rsi if not np.isnan(r)]
@@ -62,7 +62,7 @@ class TestTechnicalIndicators:
         assume(len(prices) >= 26)
         assume(all(p > 0 for p in prices))
 
-        macd_line, signal_line, histogram = self.calculate_macd(prices)
+        macd_line, signal_line, histogram = self.get_technical_analyzer().calculate_indicator("MACD", prices).values
 
         # Property 1: MACD line should be EMA(12) - EMA(26)
         ema12 = self.calculate_ema(prices, 12)
@@ -170,7 +170,7 @@ class TestTechnicalIndicators:
                 if not np.isnan(ma[-1]):
                     assert ma[-1] <= max(recent_trend), "MA should lag in uptrend"
 
-    def calculate_rsi(self, prices: list, period: int = 14) -> list:
+    def get_technical_analyzer().calculate_indicator("RSI", self, prices: list, period: int = 14).values -> list:
         """Calculate RSI indicator"""
         if len(prices) < period + 1:
             return [np.nan] * len(prices)
@@ -229,7 +229,7 @@ class TestTechnicalIndicators:
 
         return sma
 
-    def calculate_macd(self, prices: list, fast=12, slow=26, signal=9):
+    def get_technical_analyzer().calculate_indicator("MACD", self, prices: list, fast=12, slow=26, signal=9).values:
         """Calculate MACD indicator"""
         ema_fast = self.calculate_ema(prices, fast)
         ema_slow = self.calculate_ema(prices, slow)

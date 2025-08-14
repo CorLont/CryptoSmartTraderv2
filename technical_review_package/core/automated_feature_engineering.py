@@ -279,7 +279,7 @@ class DeepFeatureSynthesizer:
 
                         # Technical indicators
                         if "price" in col.lower() or "close" in col.lower():
-                            features_df[f"{col}_rsi_{window}"] = self._calculate_rsi(series, window)
+                            features_df[f"{col}_rsi_{window}"] = self._get_technical_analyzer().calculate_indicator("RSI", series, window).values
                             bb_upper, bb_lower = self._calculate_bollinger_bands(series, window)
                             features_df[f"{col}_bollinger_upper_{window}"] = bb_upper
                             features_df[f"{col}_bollinger_lower_{window}"] = bb_lower
@@ -487,7 +487,7 @@ class DeepFeatureSynthesizer:
             self.logger.error(f"Polynomial feature generation failed: {e}")
             return data
 
-    def _calculate_rsi(self, series: pd.Series, window: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, series: pd.Series, window: int = 14).values -> pd.Series:
         """Calculate Relative Strength Index"""
         try:
             delta = series.diff()

@@ -94,8 +94,8 @@ class HMMRegimeDetector:
             features["sma_slope"] = features["sma_20"].pct_change(5)
 
             # Momentum features
-            features["rsi"] = self._calculate_rsi(data["close"], 14)
-            features["macd"], features["macd_signal"], _ = self._calculate_macd(data["close"])
+            features["rsi"] = self._get_technical_analyzer().calculate_indicator("RSI", data["close"], 14).values
+            features["macd"], features["macd_signal"], _ = self._get_technical_analyzer().calculate_indicator("MACD", data["close"]).values
             features["macd_histogram"] = features["macd"] - features["macd_signal"]
 
             # Volatility regime features
@@ -255,7 +255,7 @@ class HMMRegimeDetector:
 
         return regime_mapping
 
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, period: int = 14).values -> pd.Series:
         """Calculate RSI indicator"""
 
         delta = prices.diff()
@@ -266,9 +266,9 @@ class HMMRegimeDetector:
 
         return rsi
 
-    def _calculate_macd(
+    def _get_technical_analyzer().calculate_indicator("MACD", 
         self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9
-    ) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    ).values -> Tuple[pd.Series, pd.Series, pd.Series]:
         """Calculate MACD indicator"""
 
         ema_fast = prices.ewm(span=fast).mean()
@@ -329,7 +329,7 @@ class RuleBasedRegimeDetector:
         trend_strength = (sma_short.iloc[-1] - sma_long.iloc[-1]) / sma_long.iloc[-1]
 
         # Momentum (RSI)
-        rsi = self._calculate_rsi(recent_data["close"])
+        rsi = self._get_technical_analyzer().calculate_indicator("RSI", recent_data["close"]).values
         current_rsi = rsi.iloc[-1]
         momentum = (current_rsi - 50) / 50  # Normalize to [-1, 1]
 
@@ -471,7 +471,7 @@ class RuleBasedRegimeDetector:
         else:
             return 0.1  # Base transition probability
 
-    def _calculate_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
+    def _get_technical_analyzer().calculate_indicator("RSI", self, prices: pd.Series, period: int = 14).values -> pd.Series:
         """Calculate RSI indicator"""
 
         delta = prices.diff()

@@ -12,7 +12,7 @@ from pathlib import Path
 class TradeExecutorAgent:
     """Trade Executor Agent for signal generation and risk management"""
 
-    def __init__(self, config_manager, data_manager, cache_manager):
+    async def __init__(
         self.config_manager = config_manager
         self.data_manager = data_manager
         self.cache_manager = cache_manager
@@ -45,7 +45,7 @@ class TradeExecutorAgent:
         if self.config_manager.get("agents", {}).get("trade_executor", {}).get("enabled", True):
             self.start()
 
-    def start(self):
+    async def start(
         """Start the trade executor agent"""
         if not self.active:
             self.active = True
@@ -53,12 +53,12 @@ class TradeExecutorAgent:
             self.agent_thread.start()
             self.logger.info("Trade Executor Agent started")
 
-    def stop(self):
+    async def stop(
         """Stop the trade executor agent"""
         self.active = False
         self.logger.info("Trade Executor Agent stopped")
 
-    def _execution_loop(self):
+    async def _execution_loop(
         """Main execution loop"""
         while self.active:
             try:
@@ -89,7 +89,7 @@ class TradeExecutorAgent:
                 self.logger.error(f"Trade execution error: {str(e)}")
                 time.sleep(60)  # Sleep 1 minute on error
 
-    def _generate_trading_signals(self):
+    async def _generate_trading_signals(
         """Generate trading signals based on all available analysis"""
         try:
             symbols = self.data_manager.get_supported_symbols()
@@ -113,7 +113,7 @@ class TradeExecutorAgent:
         try:
             # Get various analysis results
             technical_analysis = self._get_technical_analysis(symbol)
-            sentiment_analysis = self._get_sentiment_analysis(symbol)
+            sentiment_analysis = self._get_await get_sentiment_analyzer().analyze_text(symbol)
             ml_prediction = self._get_ml_prediction(symbol)
             backtest_results = self._get_backtest_results(symbol)
 
@@ -138,7 +138,7 @@ class TradeExecutorAgent:
 
         return {"signal": "hold", "confidence": 0.1, "strength": 0.5}
 
-    def _get_sentiment_analysis(self, symbol: str) -> Dict[str, Any]:
+    def _get_await get_sentiment_analyzer().analyze_text(self, symbol: str) -> Dict[str, Any]:
         """Get sentiment analysis from cache or default"""
         base_currency = symbol.split("/")[0] if "/" in symbol else symbol
         cache_key = f"sentiment_{base_currency.lower()}"
@@ -247,7 +247,7 @@ class TradeExecutorAgent:
             "backtest_metrics": backtest,
         }
 
-    def _process_trading_signal(self, symbol: str, signal: Dict[str, Any]):
+    async def _process_trading_signal(
         """Process and store trading signal"""
         with self._lock:
             if symbol not in self.trading_signals:
@@ -263,7 +263,7 @@ class TradeExecutorAgent:
                 if datetime.fromisoformat(s["timestamp"]) > cutoff_time
             ]
 
-    def _evaluate_portfolio_risk(self):
+    async def _evaluate_portfolio_risk(
         """Evaluate current portfolio risk metrics"""
         try:
             with self._lock:
@@ -361,7 +361,7 @@ class TradeExecutorAgent:
         except Exception:
             return 0.4  # Default moderate concentration risk
 
-    def _execute_risk_management(self):
+    async def _execute_risk_management(
         """Execute risk management rules"""
         try:
             with self._lock:
@@ -377,7 +377,7 @@ class TradeExecutorAgent:
         except Exception as e:
             self.logger.error(f"Risk management error: {str(e)}")
 
-    def _check_position_sizes(self):
+    async def _check_position_sizes(
         """Check and adjust position sizes"""
         for symbol, position in list(self.portfolio_positions.items()):
             try:
@@ -400,7 +400,7 @@ class TradeExecutorAgent:
             except Exception as e:
                 self.logger.error(f"Position size check error for {symbol}: {str(e)}")
 
-    def _check_stop_loss_take_profit(self):
+    async def _check_stop_loss_take_profit(
         """Check stop loss and take profit levels"""
         for symbol, position in list(self.portfolio_positions.items()):
             try:
@@ -428,7 +428,7 @@ class TradeExecutorAgent:
             except Exception as e:
                 self.logger.error(f"Stop loss/take profit check error for {symbol}: {str(e)}")
 
-    def _check_portfolio_risk_limits(self):
+    async def _check_portfolio_risk_limits(
         """Check overall portfolio risk limits"""
         try:
             risk_score = self.risk_metrics.get("risk_score", 0)
@@ -443,7 +443,7 @@ class TradeExecutorAgent:
         except Exception as e:
             self.logger.error(f"Portfolio risk check error: {str(e)}")
 
-    def _generate_risk_management_signal(self, symbol: str, action: str, reason: str):
+    async def _generate_risk_management_signal(
         """Generate risk management signal"""
         risk_signal = {
             "timestamp": datetime.now().isoformat(),
@@ -459,7 +459,7 @@ class TradeExecutorAgent:
         # Log the signal
         self.logger.warning(f"Risk management signal: {action} for {symbol} - {reason}")
 
-    def _generate_portfolio_risk_signal(self, action: str, reason: str):
+    async def _generate_portfolio_risk_signal(
         """Generate portfolio-level risk management signal"""
         risk_signal = {
             "timestamp": datetime.now().isoformat(),

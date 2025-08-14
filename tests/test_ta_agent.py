@@ -68,7 +68,7 @@ def test_ta_agent():
             test_data = create_test_data(100)
 
             # Test MACD calculation
-            macd_result = agent._calculate_macd(test_data)
+            macd_result = agent._get_technical_analyzer().calculate_indicator("MACD", test_data).values
 
             if macd_result.get("macd") and macd_result["macd"]["uses_ema"]:
                 print("   ✅ PASSED: MACD uses EMA (authentic implementation)")
@@ -87,7 +87,7 @@ def test_ta_agent():
                 agent_sma = TechnicalAnalysisAgent(
                     config={"indicators": {"macd": {"use_ema": False}}}
                 )
-                macd_sma_result = agent_sma._calculate_macd(test_data)
+                macd_sma_result = agent_sma._get_technical_analyzer().calculate_indicator("MACD", test_data).values
 
                 if macd_sma_result.get("macd"):
                     sma_macd = macd_sma_result["macd"]["current_macd"]
@@ -105,7 +105,7 @@ def test_ta_agent():
 
             # Test with insufficient data - should return None
             insufficient_data = create_test_data(10)  # Less than minimum required
-            bb_insufficient = agent._calculate_bollinger(insufficient_data)
+            bb_insufficient = agent._get_technical_analyzer().calculate_indicator("BollingerBands", insufficient_data).values
 
             if bb_insufficient.get("bollinger") is None:
                 print("   ✅ PASSED: Returns None for insufficient data (no dummy fallback)")
@@ -115,7 +115,7 @@ def test_ta_agent():
 
             # Test with sufficient data
             sufficient_data = create_test_data(50)
-            bb_result = agent._calculate_bollinger(sufficient_data)
+            bb_result = agent._get_technical_analyzer().calculate_indicator("BollingerBands", sufficient_data).values
 
             if bb_result.get("bollinger"):
                 bb_data = bb_result["bollinger"]
@@ -142,7 +142,7 @@ def test_ta_agent():
             print("\n3. Testing Wilder-smoothing RSI...")
 
             # Test RSI with Wilder smoothing enabled
-            rsi_result = agent._calculate_rsi(test_data)
+            rsi_result = agent._get_technical_analyzer().calculate_indicator("RSI", test_data).values
 
             if rsi_result.get("rsi"):
                 rsi_data = rsi_result["rsi"]
@@ -164,7 +164,7 @@ def test_ta_agent():
                 agent_simple = TechnicalAnalysisAgent(
                     config={"indicators": {"rsi": {"use_wilder_smoothing": False}}}
                 )
-                rsi_simple_result = agent_simple._calculate_rsi(test_data)
+                rsi_simple_result = agent_simple._get_technical_analyzer().calculate_indicator("RSI", test_data).values
 
                 if rsi_simple_result.get("rsi"):
                     simple_rsi = rsi_simple_result["rsi"]["current"]

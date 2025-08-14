@@ -173,7 +173,7 @@ class OpenAIIntegrationManager:
 
             # Process all texts
             sentiment_tasks = [
-                self.adapter.analyze_sentiment(text) for text in market_texts if text.strip()
+                self.adapter.await get_sentiment_analyzer().analyze_text(text) for text in market_texts if text.strip()
             ]
 
             if not sentiment_tasks:

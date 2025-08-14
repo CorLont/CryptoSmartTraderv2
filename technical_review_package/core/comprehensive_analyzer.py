@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 class ComprehensiveAnalyzer:
     """Comprehensive analyzer integrating all analysis components"""
 
-    def __init__(self, container):
+    async def __init__(
         self.container = container
         self.logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class ComprehensiveAnalyzer:
 
         self.logger.info("Comprehensive Analyzer initialized")
 
-    def start_continuous_analysis(self):
+    async def start_continuous_analysis(
         """Start continuous background analysis"""
         if self.analysis_active:
             self.logger.warning("Analysis already active")
@@ -60,7 +60,7 @@ class ComprehensiveAnalyzer:
 
         self.logger.info("Continuous analysis started")
 
-    def stop_continuous_analysis(self):
+    async def stop_continuous_analysis(
         """Stop continuous analysis"""
         self.analysis_active = False
         if self.analysis_thread:
@@ -68,7 +68,7 @@ class ComprehensiveAnalyzer:
 
         self.logger.info("Continuous analysis stopped")
 
-    def _analysis_loop(self):
+    async def _analysis_loop(
         """Main analysis coordination loop"""
         last_runs = {key: 0 for key in self.intervals.keys()}
 
@@ -89,7 +89,7 @@ class ComprehensiveAnalyzer:
                 self.logger.error(f"Analysis loop error: {e}")
                 time.sleep(60)  # Wait longer on error
 
-    def _run_analysis_type(self, analysis_type: str):
+    async def _run_analysis_type(
         """Run specific type of analysis"""
         try:
             if analysis_type == "market_scan":
@@ -106,7 +106,7 @@ class ComprehensiveAnalyzer:
         except Exception as e:
             self.logger.error(f"Analysis type {analysis_type} failed: {e}")
 
-    def _run_market_scan(self):
+    async def _run_market_scan(
         """Run market scanning and technical analysis"""
         try:
             # Get discovered coins
@@ -137,7 +137,7 @@ class ComprehensiveAnalyzer:
         except Exception as e:
             self.logger.error(f"Market scan failed: {e}")
 
-    def _run_sentiment_analysis(self):
+    def _run_await get_sentiment_analyzer().analyze_text(self):
         """Run sentiment analysis on discovered coins"""
         try:
             # Get coins with recent technical analysis
@@ -167,7 +167,7 @@ class ComprehensiveAnalyzer:
         except Exception as e:
             self.logger.error(f"Sentiment analysis failed: {e}")
 
-    def _run_whale_detection(self):
+    async def _run_whale_detection(
         """Run whale activity detection"""
         try:
             # Get priority coins for whale analysis
@@ -196,7 +196,7 @@ class ComprehensiveAnalyzer:
         except Exception as e:
             self.logger.error(f"Whale detection failed: {e}")
 
-    def _run_ml_prediction(self):
+    async def _run_ml_prediction(
         """Run ML predictions on analyzed coins"""
         try:
             # Get coins with comprehensive data
@@ -225,7 +225,7 @@ class ComprehensiveAnalyzer:
         except Exception as e:
             self.logger.error(f"ML prediction failed: {e}")
 
-    def _run_openai_batch_analysis(self):
+    async def _run_openai_batch_analysis(
         """Run OpenAI batch analysis for comprehensive insights"""
         try:
             # Get coins with all analysis types completed

@@ -584,7 +584,7 @@ def analyze_market_with_ai(
             # Prepare technical indicators for anomaly detection
             technical_indicators = {
                 "sma_20": price_data["close"].rolling(20).mean(),
-                "rsi": _calculate_rsi(price_data["close"]),
+                "rsi": _get_technical_analyzer().calculate_indicator("RSI", price_data["close"]).values,
                 "volatility": price_data["close"].pct_change().rolling(10).std(),
             }
 
@@ -607,7 +607,7 @@ def analyze_market_with_ai(
         return {"error": f"AI analysis failed: {e}"}
 
 
-def _calculate_rsi(prices: pd.Series, period: int = 14) -> pd.Series:
+def _get_technical_analyzer().calculate_indicator("RSI", prices: pd.Series, period: int = 14).values -> pd.Series:
     """Calculate RSI indicator"""
 
     delta = prices.diff()
