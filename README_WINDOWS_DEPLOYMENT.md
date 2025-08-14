@@ -1,185 +1,208 @@
-# CryptoSmartTrader V2 - Windows Deployment Guide
+# CryptoSmartTrader V2 - Windows Workstation Deployment
 
-## ✅ **COMPLETE WINDOWS WORKSTATION DEPLOYMENT**
+## Snelle Start voor Windows
 
-**Jouw CryptoSmartTrader V2 systeem is nu volledig geoptimaliseerd voor foutloze Windows deployment met alle theoretische verdiepingen geïmplementeerd.**
+### 1. Eenmalige Setup
 
----
+```batch
+# Download/clone het project
+git clone <repository-url>
+cd cryptosmarttrader-v2
 
-## 🚀 **QUICK START (Nieuw Systeem)**
-
-Voor een volkomen nieuw systeem:
-
-1. **Download** alle bestanden naar je Windows workstation
-2. **Rechtsklik** op `quick_start.bat` → **"Als administrator uitvoeren"**
-3. Het systeem detecteert automatisch of dit de eerste keer is en installeert alles
-4. **Open browser** naar: `http://localhost:5000`
-
----
-
-## 📋 **ALLE WINDOWS .BAT BESTANDEN**
-
-### **🎯 HOOFDBESTANDEN**
-
-**1. `quick_start.bat`** - **[AANBEVOLEN - START HIER]**
-- Automatische eerste setup detectie
-- Installeert alles als het nodig is
-- Start het systeem direct op
-- **Gebruik dit voor een nieuwe installatie**
-
-**2. `start_cryptotrader.bat`** - **[DAGELIJKS GEBRUIK]**
-- Start het hoofdsysteem
-- Automatische health checks
-- Enhanced error handling
-- Kleurgecodeerde output
-
-### **⚙️ SETUP & INSTALLATIE**
-
-**3. `setup_windows_environment.bat`** - **[EERSTE INSTALLATIE]**
-- Volledige Python environment setup
-- Installeert alle dependencies
-- Creëert directory structuur
-- Valideert installatie
-
-**4. `install_dependencies.bat`** - **[REPARATIE]**
-- Installeert/update alle packages
-- Comprehensive dependency management
-- Automatische fout detectie
-
-### **🔧 ONDERHOUD & MONITORING**
-
-**5. `run_tests.bat`** - **[SYSTEM CHECK]**
-- 10 uitgebreide systeem tests
-- Valideert alle components
-- Production readiness check
-
-**6. `stop_cryptotrader.bat`** - **[SHUTDOWN]**
-- Veilig systeem stoppen
-- Port 5000 vrijmaken
-- Process cleanup
-
-### **📊 HEALTH MONITORING**
-
-**7. `system_health_check.py`** - **[DETAILANALYSE]**
-- Comprehensive Python health checker
-- Alle modules en engines testen
-- Production readiness validatie
-
----
-
-## 🔧 **GEDETAILLEERDE INSTRUCTIES**
-
-### **Voor een NIEUWE Windows installatie:**
-
-```cmd
-1. Download alle bestanden
-2. Rechtsklik quick_start.bat → "Als administrator uitvoeren"
-3. Volg de instructies op het scherm
-4. Browser opent automatisch naar http://localhost:5000
+# Run eenmalige setup
+setup_env.bat
 ```
 
-### **Voor DAGELIJKS gebruik:**
+### 2. Configuratie
 
-```cmd
-1. Dubbelklik start_cryptotrader.bat
-2. Wacht tot "Launching application..." verschijnt
-3. Open browser naar http://localhost:5000
-4. Voor stoppen: Ctrl+C in het cmd venster
+Bewerk `.env` bestand met je API keys:
+
+```env
+# Exchange APIs
+KRAKEN_API_KEY=your_kraken_api_key
+KRAKEN_SECRET=your_kraken_secret
+
+# AI Services  
+OPENAI_API_KEY=your_openai_api_key
+
+# Social Media (optioneel)
+REDDIT_CLIENT_ID=your_reddit_client_id
+REDDIT_CLIENT_SECRET=your_reddit_client_secret
+TWITTER_BEARER_TOKEN=your_twitter_bearer_token
+
+# Database (gebruik defaults voor development)
+DATABASE_URL=postgresql://user:pass@localhost:5432/cryptotrader
+REDIS_URL=redis://localhost:6379
 ```
 
-### **Voor PROBLEMEN oplossen:**
+### 3. Start het Complete Systeem
 
-```cmd
-1. Run run_tests.bat voor diagnose
-2. Run install_dependencies.bat voor reparatie
-3. Run setup_windows_environment.bat voor complete reset
+```batch
+# Start alle services in losse vensters
+start_all.bat
 ```
 
----
+**Of start services individueel:**
 
-## 🎯 **ADVANCED FEATURES GEÏMPLEMENTEERD**
+```batch
+# API Backend (port 8001)
+start_api.bat
 
-✅ **Alle 10 Theoretical Advances Operationeel:**
+# UI Dashboard (port 5000)  
+start_ui.bat
 
-1. **Advanced Feature Engineering** - Automated polynomial interactions
-2. **Meta-Learning** - Regime-based model selection  
-3. **Causal Inference** - True cause-effect beyond correlation
-4. **Adversarial ML** - Protection against manipulation
-5. **Market Impact Modeling** - Smart execution optimization
-6. **Multi-Agent Cooperation** - Voting & argumentation systems
-7. **Black Swan Simulation** - Extreme scenario stress testing
-8. **Ethics & Transparency** - Full model explainability
-9. **Automated Monitoring** - Auto-healing with drift detection
-10. **Live Shadow Testing** - Out-of-sample validation
-
----
-
-## 💻 **WINDOWS SPECIFIEKE FEATURES**
-
-### **Intelligent Startup Sequence:**
-- Automatic Python version detection (requires 3.10+)
-- Smart dependency checking and auto-installation
-- Enhanced error handling with troubleshooting tips
-- Colorized console output for clear status indication
-
-### **Production Ready Setup:**
-- Automatic logs directory creation with date structure
-- Environment variable configuration
-- Port conflict detection and resolution
-- Graceful shutdown procedures
-
-### **Comprehensive Testing:**
-- 10-stage system validation
-- Critical vs optional package distinction
-- Advanced AI engines verification
-- Streamlit app structure validation
-
----
-
-## 🔍 **TROUBLESHOOTING GUIDE**
-
-### **Probleem: Python niet gevonden**
-```cmd
-Oplossing: Run setup_windows_environment.bat als administrator
+# Background Workers
+start_workers.bat
 ```
 
-### **Probleem: Dependencies missing**
-```cmd
-Oplossing: Run install_dependencies.bat
+## Service Overzicht
+
+| Service | Port | Beschrijving |
+|---------|------|--------------|
+| **API Server** | 8001 | FastAPI backend met metrics |
+| **UI Dashboard** | 5000 | Streamlit Alpha Motor dashboard |
+| **Workers** | - | Data ingestion, agents, execution |
+| **Observability** | 8002 | Centralized metrics & alerts |
+
+## URLs na Opstarten
+
+- **Main Dashboard**: http://localhost:5000
+- **API Docs**: http://localhost:8001/docs
+- **Health Check**: http://localhost:8001/health
+- **Metrics**: http://localhost:8002/metrics
+- **Alerts**: http://localhost:8002/alerts
+
+## Troubleshooting
+
+### Python Niet Gevonden
+```batch
+# Installeer Python 3.11+ van python.org
+# Zorg dat Python in PATH staat
+python --version
 ```
 
-### **Probleem: Port 5000 in gebruik**
-```cmd
-Oplossing: Run stop_cryptotrader.bat en probeer opnieuw
+### Virtual Environment Errors
+```batch
+# Remove oude venv en herstart
+rmdir /s .venv
+setup_env.bat
 ```
 
-### **Probleem: Permission errors**
-```cmd
-Oplossing: Rechtsklik → "Als administrator uitvoeren"
+### Port Already in Use
+```batch
+# Stop alle Python processen
+taskkill /f /im python.exe
+taskkill /f /im streamlit.exe
+
+# Of wijzig poorten in de .bat bestanden
 ```
 
----
+### API Keys Errors
+- Check `.env` bestand voor correcte formatting
+- Geen spaties rond = tekens
+- Gebruik quotes voor keys met speciale characters
 
-## 📈 **LIVE SYSTEM STATUS**
+### Memory/Performance Issues
+```batch
+# Verhoog virtual memory
+# Task Manager -> Performance -> Memory
+# Recommended: 8GB+ RAM voor optimal performance
+```
 
-**✅ Operational Features:**
-- Multi-Agent Cooperation: 1.00 confidence recommendations
-- Model Monitoring: 0.88 health score, auto-healing active
-- Black Swan Testing: -11.07% worst case, 27.8% max drawdown
-- Daily Logging: 585+ entries, 206.4 KB comprehensive monitoring
+## Monitoring
 
-**🎯 Ready for institutional-grade alpha-seeking performance!**
+### System Health
+- **API Health**: GET http://localhost:8001/health
+- **Workers Status**: Check "CryptoSmartTrader Workers" window
+- **UI Status**: Check "CryptoSmartTrader UI" window
 
----
+### Logs Locaties
+- **API Logs**: API Server window console
+- **UI Logs**: UI Dashboard window console  
+- **Worker Logs**: Workers window console
+- **System Logs**: `logs/` directory
 
-## 🎉 **KLAAR VOOR PRODUCTIE**
+### Performance Metrics
+- **CPU Usage**: Task Manager -> Performance
+- **Memory Usage**: Task Manager -> Performance  
+- **Network**: Task Manager -> Performance -> Ethernet
+- **Trading Metrics**: http://localhost:8002/metrics
 
-Je CryptoSmartTrader V2 systeem bevat nu:
+## Production Deployment
 
-- **Foutloze Windows deployment** met .bat bestanden
-- **Alle 10 theoretische verdiepingen** volledig geïmplementeerd
-- **Enterprise-grade AI capabilities** voor alpha-seeking trading
-- **Complete monitoring en logging** systemen
-- **Automated health checks** en self-healing
+Voor production deployment op Windows Server:
 
-**Start met `quick_start.bat` en je bent klaar om 500%+ returns na te streven!**
+### 1. Service Installation
+```batch
+# Install als Windows Service met NSSM
+nssm install CryptoSmartTraderAPI "C:\path\to\python.exe" "-m uvicorn src.cryptosmarttrader.api.main:app --host 0.0.0.0 --port 8001"
+nssm install CryptoSmartTraderUI "C:\path\to\streamlit.exe" "run enhanced_alpha_motor_dashboard.py --server.port 5000"
+```
+
+### 2. Auto-start Configuration
+```batch
+# Set services to auto-start
+nssm set CryptoSmartTraderAPI Start SERVICE_AUTO_START
+nssm set CryptoSmartTraderUI Start SERVICE_AUTO_START
+```
+
+### 3. Monitoring Setup
+- Configure Windows Event Log forwarding
+- Setup Prometheus/Grafana voor metrics
+- Configure alert notifications (email/SMS)
+
+## Security Considerations
+
+### API Keys Management
+- Store production keys in Azure Key Vault
+- Use environment-specific .env files
+- Rotate keys monthly
+- Monitor API usage limits
+
+### Network Security
+- Configure Windows Firewall rules
+- Use HTTPS in production (reverse proxy)
+- VPN access voor remote management
+- Regular security updates
+
+### Data Protection
+- Encrypt sensitive data at rest
+- Secure database connections (SSL)
+- Regular backups (automated)
+- GDPR compliance voor EU users
+
+## Backup & Recovery
+
+### Automated Backups
+```batch
+# Database backup script
+backup_database.bat
+
+# Configuration backup
+backup_config.bat
+
+# Complete system backup
+backup_all.bat
+```
+
+### Recovery Procedures
+1. Stop alle services
+2. Restore database from backup
+3. Restore configuration files
+4. Restart services
+5. Verify system health
+
+## Support & Maintenance
+
+### Regular Maintenance
+- **Daily**: Check system health, review alerts
+- **Weekly**: Review performance metrics, update dependencies
+- **Monthly**: Rotate API keys, backup configurations
+- **Quarterly**: Security audit, performance optimization
+
+### Emergency Procedures
+- **System Down**: Check service status, restart if needed
+- **Data Issues**: Activate backup systems, investigate root cause
+- **Security Breach**: Isolate system, rotate all keys, audit logs
+
+Voor technische support: Raadpleeg project documentatie of contact development team.
