@@ -1,5 +1,6 @@
 """Risk management module for CryptoSmartTrader."""
 
-from .risk_guard import RiskGuard, RiskLevel
+# Avoid circular import - import specific components as needed
+# from .risk_guard import RiskGuard, RiskLevel
 
 __all__ = ["RiskGuard", "RiskLevel"]

@@ -141,6 +141,9 @@ class SimulatedOrder:
     queue_position: int = 0
     submit_latency_ms: float = 0.0
     
+    # Risk rejection tracking
+    rejection_reason: Optional[str] = None
+    
     def __post_init__(self):
         self.remaining_size = self.size
     
@@ -341,6 +344,52 @@ class ExecutionSimulator:
         market_conditions: Optional[MarketConditions] = None
     ) -> SimulatedOrder:
         """Submit order for simulation"""
+        
+        # MANDATORY RISK ENFORCEMENT: All orders must pass CentralRiskGuard
+        try:
+            from ..core.mandatory_risk_enforcement import enforce_order_risk_check
+            
+            risk_check_result = enforce_order_risk_check(
+                order_size=size,
+                symbol=symbol,
+                side=side,
+                strategy_id="execution_simulator"
+            )
+            
+            if not risk_check_result["approved"]:
+                # Return rejected simulated order
+                rejected_order = SimulatedOrder(
+                    order_id=order_id,
+                    symbol=symbol,
+                    side=side,
+                    order_type=order_type,
+                    size=0.0,  # Zero size for rejected orders
+                    limit_price=limit_price,
+                    stop_price=stop_price
+                )
+                rejected_order.status = OrderStatus.REJECTED
+                rejected_order.rejection_reason = f"Risk Guard: {risk_check_result['reason']}"
+                return rejected_order
+            
+            # Use approved size from risk check
+            if risk_check_result["approved_size"] != size:
+                size = risk_check_result["approved_size"]
+                logger.info(f"Order size adjusted by risk check: {order_id} {symbol} {size}")
+                
+        except Exception as e:
+            # Return rejected order on risk enforcement error
+            error_order = SimulatedOrder(
+                order_id=order_id,
+                symbol=symbol, 
+                side=side,
+                order_type=order_type,
+                size=0.0,
+                limit_price=limit_price,
+                stop_price=stop_price
+            )
+            error_order.status = OrderStatus.REJECTED
+            error_order.rejection_reason = f"Risk enforcement error: {str(e)}"
+            return error_order
         
         with self._lock:
             # Create simulated order

@@ -364,6 +364,27 @@ class OrderExecutor:
             (success, message) tuple
         """
         
+        # MANDATORY RISK ENFORCEMENT: All orders must pass CentralRiskGuard first
+        try:
+            from ..core.mandatory_risk_enforcement import enforce_order_risk_check
+            
+            risk_check_result = enforce_order_risk_check(
+                order_size=order_request.size,
+                symbol=order_request.symbol,
+                side=order_request.side.value,
+                strategy_id=order_request.strategy_id or "execution_discipline"
+            )
+            
+            if not risk_check_result["approved"]:
+                return False, f"Risk Guard rejection: {risk_check_result['reason']}"
+            
+            # Use approved size from risk check
+            if risk_check_result["approved_size"] != order_request.size:
+                order_request.size = risk_check_result["approved_size"]
+                
+        except Exception as e:
+            return False, f"Risk enforcement error: {str(e)}"
+        
         # MANDATORY: All orders must go through policy.decide()
         result = self.policy.decide(order_request, market_conditions)
         client_order_id = order_request.client_order_id or "unknown"
