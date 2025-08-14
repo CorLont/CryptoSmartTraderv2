@@ -1,0 +1,81 @@
+{
+  "timestamp": "2025-08-14T18:55:06.566486",
+  "samples": 100,
+  "basic_metrics": {
+    "total_trades": 100,
+    "hit_rate": 0.39,
+    "avg_pnl_bps": -42.40517031015652,
+    "total_pnl_bps": -4240.517031015652,
+    "best_trade_bps": 806.2512593247665,
+    "worst_trade_bps": -893.8877773667997,
+    "volatility_bps": 305.5207137384437,
+    "avg_holding_hours": 24.40793245458888
+  },
+  "precision_metrics": {
+    "precision_at_5": 0.8,
+    "avg_return_top_5_bps": 143.19971501080926,
+    "precision_at_10": 0.6,
+    "avg_return_top_10_bps": 69.31343532862712,
+    "precision_at_20": 0.55,
+    "avg_return_top_20_bps": 29.11747228421776
+  },
+  "risk_metrics": {
+    "sharpe_ratio": -0.13879638402016692,
+    "sortino_ratio": -0.2217058985581496,
+    "max_drawdown_bps": -6018.115732542635,
+    "information_ratio": -0.13879638402016692
+  },
+  "signal_attribution": {
+    "momentum_score_correlation": 0.1024849621310954,
+    "sentiment_score_correlation": 0.07752046956483848,
+    "whale_score_correlation": 0.07584338919277984,
+    "combined_score_correlation": 0.14042719628509231
+  },
+  "calibration": {
+    "brier_score": 0.3183245411569945,
+    "avg_confidence": 0.5805849232148813,
+    "confidence_std": 0.21836754516370455
+  },
+  "forward_labels_sample": [
+    {
+      "recommendation_id": "SIM_000",
+      "horizon_hours": 24,
+      "forward_return_bps": 131.49529044330143,
+      "max_favorable_return_bps": 157.7943485319617,
+      "label_binary": 1,
+      "target_return_bps": 50
+    },
+    {
+      "recommendation_id": "SIM_001",
+      "horizon_hours": 24,
+      "forward_return_bps": 175.6702649852414,
+      "max_favorable_return_bps": 210.8043179822897,
+      "label_binary": 1,
+      "target_return_bps": 50
+    },
+    {
+      "recommendation_id": "SIM_002",
+      "horizon_hours": 24,
+      "forward_return_bps": -13.34682358584424,
+      "max_favorable_return_bps": 16.016188303013088,
+      "label_binary": 0,
+      "target_return_bps": 50
+    },
+    {
+      "recommendation_id": "SIM_003",
+      "horizon_hours": 24,
+      "forward_return_bps": -247.72282053955965,
+      "max_favorable_return_bps": 297.26738464747154,
+      "label_binary": 1,
+      "target_return_bps": 50
+    },
+    {
+      "recommendation_id": "SIM_004",
+      "horizon_hours": 24,
+      "forward_return_bps": 25.76900689383399,
+      "max_favorable_return_bps": 30.922808272600786,
+      "label_binary": 0,
+      "target_return_bps": 50
+    }
+  ]
+}
