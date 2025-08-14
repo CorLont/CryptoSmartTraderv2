@@ -5,55 +5,33 @@ Enterprise ML infrastructure with model registry, walk-forward training, and dri
 
 from .model_registry import (
     ModelRegistry,
-    ModelVersion,
-    ModelMetrics,
-    ModelType,
+    ModelMetadata,
+    DatasetVersion,
     ModelStatus,
-    DatasetInfo,
-    TrainingConfig,
-    create_model_registry,
+    DriftStatus,
+    get_model_registry,
 )
 
-from .walk_forward_trainer import (
-    WalkForwardTrainer,
-    WalkForwardResult,
-    RetrainingConfig,
-    RetrainingTrigger,
-    ValidationMethod,
-    create_walk_forward_trainer,
-)
-
-from .drift_detector import (
-    DriftDetector,
-    DriftAlert,
-    DriftType,
-    DriftSeverity,
-    DriftConfig,
-    create_drift_detector,
+from .canary_deployment import (
+    CanaryDeploymentOrchestrator,
+    CanaryConfig,
+    CanaryMetrics,
+    CanaryPhase,
+    get_canary_orchestrator,
 )
 
 __all__ = [
     # Model Registry
     "ModelRegistry",
-    "ModelVersion",
-    "ModelMetrics",
-    "ModelType",
+    "ModelMetadata",
+    "DatasetVersion",
     "ModelStatus",
-    "DatasetInfo",
-    "TrainingConfig",
-    "create_model_registry",
-    # Walk-Forward Training
-    "WalkForwardTrainer",
-    "WalkForwardResult",
-    "RetrainingConfig",
-    "RetrainingTrigger",
-    "ValidationMethod",
-    "create_walk_forward_trainer",
-    # Drift Detection
-    "DriftDetector",
-    "DriftAlert",
-    "DriftType",
-    "DriftSeverity",
-    "DriftConfig",
-    "create_drift_detector",
+    "DriftStatus",
+    "get_model_registry",
+    # Canary Deployment
+    "CanaryDeploymentOrchestrator",
+    "CanaryConfig",
+    "CanaryMetrics",
+    "CanaryPhase",
+    "get_canary_orchestrator",
 ]

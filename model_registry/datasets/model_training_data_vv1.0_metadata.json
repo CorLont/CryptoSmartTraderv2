@@ -1,0 +1,40 @@
+{
+  "dataset_id": "model_training_data",
+  "version": "v1.0",
+  "hash": "8b1ef82060ebb02da802b341993e7b6e731ab412f085b70016b5cbf2dc2d3f13",
+  "created_at": "2025-08-14T16:00:11.265696",
+  "size_rows": 1000,
+  "size_bytes": 88132,
+  "completeness_score": 1.0,
+  "consistency_score": 0.05535483438113105,
+  "validity_score": 1.0,
+  "feature_count": 11,
+  "feature_names": [
+    "feature_0",
+    "feature_1",
+    "feature_2",
+    "feature_3",
+    "feature_4",
+    "feature_5",
+    "feature_6",
+    "feature_7",
+    "feature_8",
+    "feature_9",
+    "target"
+  ],
+  "feature_types": {
+    "feature_0": "float64",
+    "feature_1": "float64",
+    "feature_2": "float64",
+    "feature_3": "float64",
+    "feature_4": "float64",
+    "feature_5": "float64",
+    "feature_6": "float64",
+    "feature_7": "float64",
+    "feature_8": "float64",
+    "feature_9": "float64",
+    "target": "int64"
+  },
+  "source_datasets": [],
+  "transformations": []
+}

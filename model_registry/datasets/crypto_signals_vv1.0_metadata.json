@@ -1,0 +1,43 @@
+{
+  "dataset_id": "crypto_signals",
+  "version": "v1.0",
+  "hash": "1a3e535a69eaffe871a20af0790dcfb1a8f1ef562af4729f4147c8b9676fffc0",
+  "created_at": "2025-08-14T16:00:10.909837",
+  "size_rows": 1000,
+  "size_bytes": 88132,
+  "completeness_score": 1.0,
+  "consistency_score": 0.059126146704292365,
+  "validity_score": 1.0,
+  "feature_count": 11,
+  "feature_names": [
+    "feature_0",
+    "feature_1",
+    "feature_2",
+    "feature_3",
+    "feature_4",
+    "feature_5",
+    "feature_6",
+    "feature_7",
+    "feature_8",
+    "feature_9",
+    "target"
+  ],
+  "feature_types": {
+    "feature_0": "float64",
+    "feature_1": "float64",
+    "feature_2": "float64",
+    "feature_3": "float64",
+    "feature_4": "float64",
+    "feature_5": "float64",
+    "feature_6": "float64",
+    "feature_7": "float64",
+    "feature_8": "float64",
+    "feature_9": "float64",
+    "target": "int64"
+  },
+  "source_datasets": [],
+  "transformations": [
+    "normalize",
+    "feature_engineering"
+  ]
+}

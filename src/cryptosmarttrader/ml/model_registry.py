@@ -1,888 +1,594 @@
+#!/usr/bin/env python3
 """
-Model Registry for CryptoSmartTrader
-Enterprise model versioning, tracking, and deployment management.
+Enterprise Model Registry - Versioning, tracking en lifecycle management
+
+Implementeert:
+- Model versioning met metadata tracking
+- Dataset hashing en versioning
+- Evaluation metrics per model
+- Drift detection en monitoring
+- Canary deployment pipeline
+- Rollback capabilities
 """
 
 import hashlib
 import json
-import json  # SECURITY: Replaced pickle with json
-import shutil
-import uuid
+import pickle
+import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple, Union
+from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass, asdict
 from enum import Enum
-import logging
-import numpy as np
 import pandas as pd
+import numpy as np
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 
 class ModelStatus(Enum):
-    """Model deployment status."""
-
-    TRAINING = "training"
-    STAGED = "staged"
-    PRODUCTION = "production"
-    ARCHIVED = "archived"
-    FAILED = "failed"
+    """Model deployment status"""
+    DEVELOPMENT = "development"
+    TESTING = "testing"
     CANARY = "canary"
+    PRODUCTION = "production"
+    DEPRECATED = "deprecated"
+    FAILED = "failed"
 
 
-class ModelType(Enum):
-    """Supported model types."""
-
-    RANDOM_FOREST = "random_forest"
-    XGBOOST = "xgboost"
-    LIGHTGBM = "lightgbm"
-    NEURAL_NETWORK = "neural_network"
-    LSTM = "lstm"
-    TRANSFORMER = "transformer"
-    ENSEMBLE = "ensemble"
-    CUSTOM = "custom"
-
-
-@dataclass
-class ModelMetrics:
-    """Comprehensive model performance metrics."""
-
-    accuracy: float
-    precision: float
-    recall: float
-    f1_score: float
-    auc_roc: float
-    log_loss: float
-
-    # Trading-specific metrics
-    sharpe_ratio: Optional[float] = None
-    max_drawdown: Optional[float] = None
-    win_rate: Optional[float] = None
-    profit_factor: Optional[float] = None
-
-    # Out-of-sample validation
-    oos_accuracy: Optional[float] = None
-    oos_sharpe: Optional[float] = None
-
-    # Statistical metrics
-    information_ratio: Optional[float] = None
-    calmar_ratio: Optional[float] = None
-
-    # Stability metrics
-    prediction_stability: Optional[float] = None
-    feature_importance_stability: Optional[float] = None
+class DriftStatus(Enum):
+    """Data drift severity levels"""
+    NONE = "none"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 
 @dataclass
-class DatasetInfo:
-    """Dataset metadata and validation."""
-
-    dataset_hash: str
-    feature_count: int
-    sample_count: int
-    start_date: datetime
-    end_date: datetime
-    features: List[str]
-    target_column: str
-    preprocessing_steps: List[str]
-    validation_split: float
-    test_split: float
-
-    # Data quality metrics
-    missing_value_ratio: float
-    outlier_ratio: float
-    correlation_matrix_hash: str
-    feature_distributions_hash: str
-
-
-@dataclass
-class TrainingConfig:
-    """Training configuration and hyperparameters."""
-
-    model_type: ModelType
-    hyperparameters: Dict[str, Any]
-    training_script: str
-    training_environment: Dict[str, str]
-    random_seed: int
-    training_duration_seconds: float
-    cross_validation_folds: int
-    early_stopping_patience: Optional[int] = None
-
-    # Training metadata
-    git_commit: Optional[str] = None
-    python_version: str = "3.11"
-    dependencies: Dict[str, str] = None
-
-
-@dataclass
-class ModelVersion:
-    """Complete model version with all metadata."""
-
+class ModelMetadata:
+    """Complete model metadata"""
     model_id: str
     version: str
-    model_type: ModelType
+    name: str
+    algorithm: str
     status: ModelStatus
     created_at: datetime
     updated_at: datetime
-
-    # Core components
-    metrics: ModelMetrics
-    dataset_info: DatasetInfo
-    training_config: TrainingConfig
-
-    # Model artifacts
-    model_path: str
-    artifacts_path: str
-
+    
+    # Training info
+    training_dataset_hash: str
+    feature_set_version: str
+    hyperparameters: Dict[str, Any]
+    training_duration_seconds: float
+    
+    # Performance metrics
+    validation_metrics: Dict[str, float]
+    test_metrics: Dict[str, float]
+    production_metrics: Dict[str, float]
+    
     # Deployment info
-    deployment_info: Optional[Dict[str, Any]] = None
-    rollback_info: Optional[Dict[str, Any]] = None
-
-    # Risk management
-    risk_budget_pct: float = 1.0
-    canary_duration_hours: int = 72
-
-    # Performance tracking
-    live_metrics: Optional[Dict[str, float]] = None
-    drift_metrics: Optional[Dict[str, float]] = None
-
+    deployment_date: Optional[datetime] = None
+    canary_percentage: float = 0.0
+    risk_budget_used: float = 0.0
+    
+    # Monitoring
+    drift_score: float = 0.0
+    drift_status: DriftStatus = DriftStatus.NONE
+    last_drift_check: Optional[datetime] = None
+    
     # Metadata
+    description: str = ""
     tags: List[str] = None
-    notes: str = ""
-    creator: str = "system"
+    author: str = ""
+    
+    def __post_init__(self):
+        if self.tags is None:
+            self.tags = []
+
+
+@dataclass
+class DatasetVersion:
+    """Dataset versioning metadata"""
+    dataset_id: str
+    version: str
+    hash: str
+    created_at: datetime
+    size_rows: int
+    size_bytes: int
+    
+    # Data quality metrics
+    completeness_score: float
+    consistency_score: float
+    validity_score: float
+    
+    # Schema info
+    feature_count: int
+    feature_names: List[str]
+    feature_types: Dict[str, str]
+    
+    # Lineage
+    source_datasets: List[str] = None
+    transformations: List[str] = None
+    
+    def __post_init__(self):
+        if self.source_datasets is None:
+            self.source_datasets = []
+        if self.transformations is None:
+            self.transformations = []
 
 
 class ModelRegistry:
     """
-    Enterprise model registry with versioning, deployment tracking, and drift detection.
-
+    Enterprise Model Registry voor ML/AI governance
+    
     Features:
-    - Complete model lifecycle management
-    - Dataset versioning with hash validation
-    - Training configuration tracking
-    - Comprehensive metrics collection
-    - Canary deployment support
-    - Automatic rollback capabilities
-    - Drift detection and monitoring
-    - Performance comparison across versions
+    - Model versioning en metadata tracking
+    - Dataset hashing en lineage tracking  
+    - Performance metrics monitoring
+    - Drift detection en alerting
+    - Canary deployment orchestration
+    - Automated rollback capabilities
     """
-
-    def __init__(self, registry_path: str = "models/registry"):
+    
+    def __init__(self, registry_path: str = "model_registry"):
         self.registry_path = Path(registry_path)
-        self.registry_path.mkdir(parents=True, exist_ok=True)
-
-        # Registry structure
+        self.registry_path.mkdir(exist_ok=True)
+        
+        # Registry storage
         self.models_path = self.registry_path / "models"
-        self.artifacts_path = self.registry_path / "artifacts"
-        self.metadata_path = self.registry_path / "metadata"
         self.datasets_path = self.registry_path / "datasets"
-
-        for path in [self.models_path, self.artifacts_path, self.metadata_path, self.datasets_path]:
+        self.metrics_path = self.registry_path / "metrics"
+        self.artifacts_path = self.registry_path / "artifacts"
+        
+        for path in [self.models_path, self.datasets_path, self.metrics_path, self.artifacts_path]:
             path.mkdir(exist_ok=True)
-
-        # Registry database (JSON-based for simplicity)
-        self.registry_db_path = self.registry_path / "registry.json"
-
+            
         self.logger = logging.getLogger(__name__)
+        self.logger.info("🏛️ Model Registry geïnitialiseerd")
 
-        # Load existing registry
-        self.registry: Dict[str, Dict[str, ModelVersion]] = self._load_registry()
-
-        # Current deployments
-        self.deployments_path = self.registry_path / "deployments.json"
-        self.deployments: Dict[str, Dict[str, Any]] = self._load_deployments()
-
-        self.logger.info(f"ModelRegistry initialized at {self.registry_path}")
-
-    def register_model(
-        self,
-        model: Any,
-        model_type: ModelType,
-        dataset: pd.DataFrame,
-        target_column: str,
-        metrics: ModelMetrics,
-        training_config: TrainingConfig,
-        model_id: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        notes: str = "",
-    ) -> ModelVersion:
-        """
-        Register a new model version in the registry.
-
-        Args:
-            model: Trained model object
-            model_type: Type of model
-            dataset: Training dataset for hash calculation
-            target_column: Target column name
-            metrics: Model performance metrics
-            training_config: Training configuration
-            model_id: Optional model ID (auto-generated if None)
-            tags: Optional tags for organization
-            notes: Optional notes
-
-        Returns:
-            ModelVersion with complete metadata
-        """
-
-        # Generate model ID and version
-        if model_id is None:
-            model_id = f"{model_type.value}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-
-        # Calculate version number
-        existing_versions = self.registry.get(model_id, {})
-        version_num = len(existing_versions) + 1
-        version = f"v{version_num:03d}"
-
-        # Generate dataset information
-        dataset_info = self._create_dataset_info(dataset, target_column, training_config)
-
-        # Save model artifacts
-        model_artifacts_path = self.artifacts_path / model_id / version
-        model_artifacts_path.mkdir(parents=True, exist_ok=True)
-
-        model_file_path = model_artifacts_path / "model.pkl"
-
-        # Save model
-        try:
-            with open(model_file_path, "wb") as f:
-                json.dump(model, f)
-        except Exception as e:
-            self.logger.error(f"Failed to save model: {e}")
-            raise
-
-        # Save additional artifacts
-        self._save_artifacts(
-            model_artifacts_path,
-            {
-                "training_config": asdict(training_config),
-                "dataset_info": asdict(dataset_info),
-                "metrics": asdict(metrics),
-                "feature_names": dataset.columns.tolist(),
-            },
+    def register_dataset(self, data: pd.DataFrame, dataset_id: str, 
+                        version: str = None, transformations: List[str] = None) -> DatasetVersion:
+        """Register een nieuwe dataset versie"""
+        
+        if version is None:
+            version = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+        # Generate content hash
+        data_hash = self._hash_dataframe(data)
+        
+        # Data quality assessment
+        completeness = self._assess_completeness(data)
+        consistency = self._assess_consistency(data)
+        validity = self._assess_validity(data)
+        
+        # Create dataset version
+        dataset_version = DatasetVersion(
+            dataset_id=dataset_id,
+            version=version,
+            hash=data_hash,
+            created_at=datetime.now(),
+            size_rows=len(data),
+            size_bytes=data.memory_usage(deep=True).sum(),
+            completeness_score=completeness,
+            consistency_score=consistency,
+            validity_score=validity,
+            feature_count=len(data.columns),
+            feature_names=list(data.columns),
+            feature_types={col: str(data[col].dtype) for col in data.columns},
+            transformations=transformations or []
         )
+        
+        # Save dataset metadata
+        self._save_dataset_metadata(dataset_version)
+        
+        # Save dataset artifact
+        dataset_file = self.datasets_path / f"{dataset_id}_v{version}.parquet"
+        data.to_parquet(dataset_file)
+        
+        self.logger.info(f"📊 Dataset {dataset_id} v{version} geregistreerd (hash: {data_hash[:8]})")
+        return dataset_version
 
-        # Create model version
-        model_version = ModelVersion(
+    def register_model(self, model: Any, model_id: str, name: str, algorithm: str,
+                      training_data_hash: str, hyperparameters: Dict[str, Any],
+                      validation_metrics: Dict[str, float], test_metrics: Dict[str, float],
+                      version: str = None, description: str = "", tags: List[str] = None) -> ModelMetadata:
+        """Register een nieuw model"""
+        
+        if version is None:
+            version = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+        metadata = ModelMetadata(
             model_id=model_id,
             version=version,
-            model_type=model_type,
-            status=ModelStatus.STAGED,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            metrics=metrics,
-            dataset_info=dataset_info,
-            training_config=training_config,
-            model_path=str(model_file_path),
-            artifacts_path=str(model_artifacts_path),
+            name=name,
+            algorithm=algorithm,
+            status=ModelStatus.DEVELOPMENT,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            training_dataset_hash=training_data_hash,
+            feature_set_version="1.0",
+            hyperparameters=hyperparameters,
+            training_duration_seconds=0.0,
+            validation_metrics=validation_metrics,
+            test_metrics=test_metrics,
+            production_metrics={},
+            description=description,
             tags=tags or [],
-            notes=notes,
+            author="system"
         )
+        
+        # Save model metadata
+        self._save_model_metadata(metadata)
+        
+        # Save model artifact
+        model_file = self.artifacts_path / f"{model_id}_v{version}.pkl"
+        with open(model_file, 'wb') as f:
+            pickle.dump(model, f)
+            
+        self.logger.info(f"🤖 Model {model_id} v{version} geregistreerd")
+        return metadata
 
-        # Register in database
-        if model_id not in self.registry:
-            self.registry[model_id] = {}
-
-        self.registry[model_id][version] = model_version
-        self._save_registry()
-
-        self.logger.info(f"Model registered: {model_id} {version}")
-        return model_version
-
-    def deploy_to_production(
-        self,
-        model_id: str,
-        version: str,
-        risk_budget_pct: float = 1.0,
-        canary_duration_hours: int = 72,
-    ) -> bool:
-        """
-        Deploy model version to production with canary deployment.
-
-        Args:
-            model_id: Model identifier
-            version: Version to deploy
-            risk_budget_pct: Risk budget percentage for canary
-            canary_duration_hours: Canary deployment duration
-
-        Returns:
-            True if deployment successful
-        """
-
-        if model_id not in self.registry or version not in self.registry[model_id]:
-            raise ValueError(f"Model {model_id} {version} not found in registry")
-
-        model_version = self.registry[model_id][version]
-
-        # Check if model is eligible for production
-        if model_version.status not in [ModelStatus.STAGED, ModelStatus.CANARY]:
-            raise ValueError(
-                f"Model {model_id} {version} not eligible for production (status: {model_version.status})"
-            )
-
-        # Start canary deployment
-        if model_version.status == ModelStatus.STAGED:
-            self.logger.info(f"Starting canary deployment: {model_id} {version}")
-
-            # Update model status
-            model_version.status = ModelStatus.CANARY
-            model_version.risk_budget_pct = min(risk_budget_pct, 1.0)  # Cap at 1%
-            model_version.canary_duration_hours = canary_duration_hours
-            model_version.updated_at = datetime.utcnow()
-
-            # Set deployment info
-            model_version.deployment_info = {
-                "canary_start": datetime.utcnow().isoformat(),
-                "canary_end": (
-                    datetime.utcnow() + timedelta(hours=canary_duration_hours)
-                ).isoformat(),
-                "risk_budget_pct": risk_budget_pct,
-                "deployment_type": "canary",
-            }
-
-        # Check if canary period is complete
-        elif model_version.status == ModelStatus.CANARY:
-            canary_start = datetime.fromisoformat(model_version.deployment_info["canary_start"])
-            canary_duration = timedelta(hours=model_version.canary_duration_hours)
-
-            if datetime.utcnow() >= canary_start + canary_duration:
-                # Canary period complete, promote to production
-                self.logger.info(f"Promoting canary to production: {model_id} {version}")
-
-                # Archive current production model
-                current_production = self._get_production_model()
-                if current_production:
-                    self._archive_model(
-                        current_production["model_id"], current_production["version"]
-                    )
-
-                # Promote to production
-                model_version.status = ModelStatus.PRODUCTION
-                model_version.risk_budget_pct = 100.0  # Full production traffic
-                model_version.deployment_info.update(
-                    {
-                        "production_start": datetime.utcnow().isoformat(),
-                        "deployment_type": "production",
-                        "promoted_from_canary": True,
-                    }
-                )
-            else:
-                self.logger.info(f"Canary deployment in progress: {model_id} {version}")
-                return True
-
-        # Update deployments
-        self.deployments["current_production"] = {
-            "model_id": model_id,
-            "version": version,
-            "deployed_at": datetime.utcnow().isoformat(),
-            "status": model_version.status.value,
-            "risk_budget_pct": model_version.risk_budget_pct,
-        }
-
-        # Save changes
-        self.registry[model_id][version] = model_version
-        self._save_registry()
-        self._save_deployments()
-
+    def promote_to_canary(self, model_id: str, version: str, 
+                         canary_percentage: float = 1.0) -> bool:
+        """Promote model to canary deployment"""
+        
+        if canary_percentage > 1.0:
+            self.logger.error("❌ Canary percentage cannot exceed 1.0% risk budget")
+            return False
+            
+        metadata = self.get_model_metadata(model_id, version)
+        if not metadata:
+            self.logger.error(f"❌ Model {model_id} v{version} not found")
+            return False
+            
+        # Update metadata
+        metadata.status = ModelStatus.CANARY
+        metadata.deployment_date = datetime.now()
+        metadata.canary_percentage = canary_percentage
+        metadata.updated_at = datetime.now()
+        
+        self._save_model_metadata(metadata)
+        
+        self.logger.info(f"🚀 Model {model_id} v{version} promoted to canary ({canary_percentage}%)")
         return True
 
-    def rollback_model(self, reason: str = "Performance degradation") -> bool:
-        """
-        Rollback current production model to previous stable version.
-
-        Args:
-            reason: Reason for rollback
-
-        Returns:
-            True if rollback successful
-        """
-
-        current_production = self._get_production_model()
-        if not current_production:
-            self.logger.warning("No production model to rollback")
+    def promote_to_production(self, model_id: str, version: str) -> bool:
+        """Promote canary model to full production"""
+        
+        metadata = self.get_model_metadata(model_id, version)
+        if not metadata or metadata.status != ModelStatus.CANARY:
+            self.logger.error(f"❌ Model {model_id} v{version} is not in canary status")
             return False
-
-        # Find previous production model
-        rollback_target = self._find_rollback_target()
-        if not rollback_target:
-            self.logger.error("No suitable rollback target found")
+            
+        # Check canary performance
+        if not self._validate_canary_performance(metadata):
+            self.logger.error(f"❌ Canary performance validation failed")
             return False
-
-        # Perform rollback
-        current_model_version = self.registry[current_production["model_id"]][
-            current_production["version"]
-        ]
-        rollback_model_version = self.registry[rollback_target["model_id"]][
-            rollback_target["version"]
-        ]
-
-        # Archive current model
-        current_model_version.status = ModelStatus.ARCHIVED
-        current_model_version.rollback_info = {
-            "rollback_time": datetime.utcnow().isoformat(),
-            "rollback_reason": reason,
-            "rolled_back_to": f"{rollback_target['model_id']} {rollback_target['version']}",
-        }
-
-        # Restore previous model
-        rollback_model_version.status = ModelStatus.PRODUCTION
-        rollback_model_version.updated_at = datetime.utcnow()
-        rollback_model_version.deployment_info = rollback_model_version.deployment_info or {}
-        rollback_model_version.deployment_info.update(
-            {
-                "rollback_deployment": datetime.utcnow().isoformat(),
-                "rollback_from": f"{current_production['model_id']} {current_production['version']}",
-                "rollback_reason": reason,
-            }
-        )
-
-        # Update deployments
-        self.deployments["current_production"] = {
-            "model_id": rollback_target["model_id"],
-            "version": rollback_target["version"],
-            "deployed_at": datetime.utcnow().isoformat(),
-            "status": "production",
-            "risk_budget_pct": 100.0,
-            "rollback_info": {
-                "rollback_from": f"{current_production['model_id']} {current_production['version']}",
-                "rollback_reason": reason,
-            },
-        }
-
-        # Save changes
-        self._save_registry()
-        self._save_deployments()
-
-        self.logger.info(
-            f"Model rollback completed: {rollback_target['model_id']} {rollback_target['version']}"
-        )
+            
+        # Promote to production
+        metadata.status = ModelStatus.PRODUCTION
+        metadata.canary_percentage = 100.0
+        metadata.updated_at = datetime.now()
+        
+        self._save_model_metadata(metadata)
+        
+        self.logger.info(f"🎯 Model {model_id} v{version} promoted to production")
         return True
 
-    def update_live_metrics(self, model_id: str, version: str, live_metrics: Dict[str, float]):
-        """Update live performance metrics for deployed model."""
-
-        if model_id not in self.registry or version not in self.registry[model_id]:
-            self.logger.warning(f"Model {model_id} {version} not found for metrics update")
-            return
-
-        model_version = self.registry[model_id][version]
-        model_version.live_metrics = live_metrics
-        model_version.updated_at = datetime.utcnow()
-
-        self._save_registry()
-
-    def detect_drift(
-        self, model_id: str, version: str, current_data: pd.DataFrame
-    ) -> Dict[str, float]:
-        """
-        Detect data/statistical drift for deployed model.
-
-        Args:
-            model_id: Model identifier
-            version: Model version
-            current_data: Current data for drift comparison
-
-        Returns:
-            Drift metrics dictionary
-        """
-
-        if model_id not in self.registry or version not in self.registry[model_id]:
-            raise ValueError(f"Model {model_id} {version} not found")
-
-        model_version = self.registry[model_id][version]
-
-        # Load original dataset hash and features for comparison
-        original_features = model_version.dataset_info.features
-
-        # Calculate drift metrics
-        drift_metrics = {}
-
-        # Feature drift (simple statistical tests)
-        if all(col in current_data.columns for col in original_features):
-            for feature in original_features:
-                if feature in current_data.columns:
-                    # Kolmogorov-Smirnov test simulation (simplified)
-                    current_values = current_data[feature].dropna()
-                    if len(current_values) > 0:
-                        # Simple statistical drift detection
-                        drift_score = self._calculate_drift_score(current_values)
-                        drift_metrics[f"{feature}_drift"] = drift_score
-
-        # Data quality drift
-        current_missing_ratio = current_data.isnull().sum().sum() / (
-            len(current_data) * len(current_data.columns)
+    def rollback_model(self, model_id: str, target_version: str = None) -> bool:
+        """Rollback to previous stable version"""
+        
+        if target_version is None:
+            # Find last stable production version
+            versions = self.list_model_versions(model_id)
+            production_versions = [v for v in versions if v.status == ModelStatus.PRODUCTION]
+            
+            if not production_versions:
+                self.logger.error(f"❌ No stable production version found for {model_id}")
+                return False
+                
+            target_version = max(production_versions, key=lambda x: x.created_at).version
+            
+        target_metadata = self.get_model_metadata(model_id, target_version)
+        if not target_metadata:
+            self.logger.error(f"❌ Target version {target_version} not found")
+            return False
+            
+        # Create rollback entry
+        rollback_metadata = ModelMetadata(
+            model_id=model_id,
+            version=f"rollback_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            name=f"{target_metadata.name}_rollback",
+            algorithm=target_metadata.algorithm,
+            status=ModelStatus.PRODUCTION,
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            training_dataset_hash=target_metadata.training_dataset_hash,
+            feature_set_version=target_metadata.feature_set_version,
+            hyperparameters=target_metadata.hyperparameters,
+            training_duration_seconds=0.0,
+            validation_metrics=target_metadata.validation_metrics,
+            test_metrics=target_metadata.test_metrics,
+            production_metrics=target_metadata.production_metrics,
+            description=f"Rollback to {target_version}",
+            tags=target_metadata.tags + ["rollback"],
+            author="system"
         )
-        original_missing_ratio = model_version.dataset_info.missing_value_ratio
+        
+        self._save_model_metadata(rollback_metadata)
+        
+        self.logger.warning(f"🔄 Model {model_id} rolled back to {target_version}")
+        return True
 
-        drift_metrics["missing_value_drift"] = abs(current_missing_ratio - original_missing_ratio)
-
-        # Feature count drift
-        feature_count_drift = (
-            abs(len(current_data.columns) - model_version.dataset_info.feature_count)
-            / model_version.dataset_info.feature_count
-        )
-        drift_metrics["feature_count_drift"] = feature_count_drift
-
-        # Overall drift score
-        drift_metrics["overall_drift"] = np.mean(list(drift_metrics.values()))
-
-        # Update model with drift metrics
-        model_version.drift_metrics = drift_metrics
-        model_version.updated_at = datetime.utcnow()
-        self._save_registry()
-
-        return drift_metrics
-
-    def get_model_comparison(
-        self, model_id: str, versions: Optional[List[str]] = None
-    ) -> pd.DataFrame:
-        """Get comparison table of model versions."""
-
-        if model_id not in self.registry:
-            raise ValueError(f"Model {model_id} not found")
-
-        model_versions = self.registry[model_id]
-        if versions:
-            model_versions = {v: model_versions[v] for v in versions if v in model_versions}
-
-        comparison_data = []
-
-        for version, model_version in model_versions.items():
-            row = {
-                "version": version,
-                "status": model_version.status.value,
-                "created_at": model_version.created_at,
-                "accuracy": model_version.metrics.accuracy,
-                "precision": model_version.metrics.precision,
-                "recall": model_version.metrics.recall,
-                "f1_score": model_version.metrics.f1_score,
-                "auc_roc": model_version.metrics.auc_roc,
-                "sharpe_ratio": model_version.metrics.sharpe_ratio,
-                "max_drawdown": model_version.metrics.max_drawdown,
-                "oos_accuracy": model_version.metrics.oos_accuracy,
-                "dataset_samples": model_version.dataset_info.sample_count,
-                "feature_count": model_version.dataset_info.feature_count,
-                "risk_budget_pct": model_version.risk_budget_pct,
-            }
-
-            # Add live metrics if available
-            if model_version.live_metrics:
-                for metric, value in model_version.live_metrics.items():
-                    row[f"live_{metric}"] = value
-
-            # Add drift metrics if available
-            if model_version.drift_metrics:
-                row["overall_drift"] = model_version.drift_metrics.get("overall_drift", 0.0)
-
-            comparison_data.append(row)
-
-        return pd.DataFrame(comparison_data).sort_values("created_at", ascending=False)
-
-    def list_models(self, status_filter: Optional[ModelStatus] = None) -> List[Dict[str, Any]]:
-        """List all models with optional status filtering."""
-
-        models = []
-
-        for model_id, versions in self.registry.items():
-            for version, model_version in versions.items():
-                if status_filter is None or model_version.status == status_filter:
-                    models.append(
-                        {
-                            "model_id": model_id,
-                            "version": version,
-                            "status": model_version.status.value,
-                            "created_at": model_version.created_at,
-                            "model_type": model_version.model_type.value,
-                            "accuracy": model_version.metrics.accuracy,
-                            "sharpe_ratio": model_version.metrics.sharpe_ratio,
-                            "tags": model_version.tags,
-                        }
-                    )
-
-        return sorted(models, key=lambda x: x["created_at"], reverse=True)
-
-    def load_model(self, model_id: str, version: str) -> Any:
-        """Load model object from registry."""
-
-        if model_id not in self.registry or version not in self.registry[model_id]:
-            raise ValueError(f"Model {model_id} {version} not found")
-
-        model_version = self.registry[model_id][version]
-
-        try:
-            with open(model_version.model_path, "rb") as f:
-                model = json.load(f)
-            return model
-        except Exception as e:
-            self.logger.error(f"Failed to load model {model_id} {version}: {e}")
-            raise
-
-    def get_production_model(self) -> Optional[Tuple[Any, ModelVersion]]:
-        """Get current production model and its metadata."""
-
-        current_production = self._get_production_model()
-        if not current_production:
-            return None
-
-        model_id = current_production["model_id"]
-        version = current_production["version"]
-
-        model = self.load_model(model_id, version)
-        model_version = self.registry[model_id][version]
-
-        return model, model_version
-
-    def cleanup_old_models(self, keep_versions: int = 10, archive_after_days: int = 30):
-        """Cleanup old model versions and artifacts."""
-
-        cleanup_count = 0
-
-        for model_id, versions in self.registry.items():
-            # Sort versions by creation date
-            sorted_versions = sorted(versions.items(), key=lambda x: x[1].created_at, reverse=True)
-
-            # Keep recent versions and production models
-            for i, (version, model_version) in enumerate(sorted_versions):
-                should_archive = (
-                    i >= keep_versions
-                    and model_version.status not in [ModelStatus.PRODUCTION, ModelStatus.CANARY]
-                    and (datetime.utcnow() - model_version.created_at).days > archive_after_days
-                )
-
-                if should_archive:
-                    self._archive_model(model_id, version)
-                    cleanup_count += 1
-
-        self.logger.info(f"Cleaned up {cleanup_count} old model versions")
-        return cleanup_count
-
-    # Private methods
-
-    def _load_registry(self) -> Dict[str, Dict[str, ModelVersion]]:
-        """Load registry from disk."""
-
-        if not self.registry_db_path.exists():
-            return {}
-
-        try:
-            with open(self.registry_db_path, "r") as f:
-                data = json.load(f)
-
-            # Convert JSON back to ModelVersion objects
-            registry = {}
-            for model_id, versions in data.items():
-                registry[model_id] = {}
-                for version, version_data in versions.items():
-                    # Convert datetime strings back to datetime objects
-                    version_data["created_at"] = datetime.fromisoformat(version_data["created_at"])
-                    version_data["updated_at"] = datetime.fromisoformat(version_data["updated_at"])
-                    version_data["dataset_info"]["start_date"] = datetime.fromisoformat(
-                        version_data["dataset_info"]["start_date"]
-                    )
-                    version_data["dataset_info"]["end_date"] = datetime.fromisoformat(
-                        version_data["dataset_info"]["end_date"]
-                    )
-
-                    # Convert enums
-                    version_data["model_type"] = ModelType(version_data["model_type"])
-                    version_data["status"] = ModelStatus(version_data["status"])
-
-                    # Convert nested enum references
-                    if (
-                        "training_config" in version_data
-                        and "model_type" in version_data["training_config"]
-                    ):
-                        version_data["training_config"]["model_type"] = ModelType(
-                            version_data["training_config"]["model_type"]
-                        )
-
-                    # Create objects
-                    version_data["metrics"] = ModelMetrics(**version_data["metrics"])
-                    version_data["dataset_info"] = DatasetInfo(**version_data["dataset_info"])
-                    version_data["training_config"] = TrainingConfig(
-                        **version_data["training_config"]
-                    )
-
-                    registry[model_id][version] = ModelVersion(**version_data)
-
-            return registry
-
-        except Exception as e:
-            self.logger.error(f"Failed to load registry: {e}")
-            return {}
-
-    def _save_registry(self):
-        """Save registry to disk."""
-
-        try:
-            # Convert ModelVersion objects to JSON-serializable format
-            data = {}
-            for model_id, versions in self.registry.items():
-                data[model_id] = {}
-                for version, model_version in versions.items():
-                    version_dict = asdict(model_version)
-
-                    # Convert datetime objects to ISO strings
-                    version_dict["created_at"] = model_version.created_at.isoformat()
-                    version_dict["updated_at"] = model_version.updated_at.isoformat()
-                    version_dict["dataset_info"]["start_date"] = (
-                        model_version.dataset_info.start_date.isoformat()
-                    )
-                    version_dict["dataset_info"]["end_date"] = (
-                        model_version.dataset_info.end_date.isoformat()
-                    )
-
-                    # Convert enums to strings
-                    version_dict["model_type"] = model_version.model_type.value
-                    version_dict["status"] = model_version.status.value
-
-                    # Convert nested enum references
-                    version_dict["training_config"]["model_type"] = (
-                        model_version.training_config.model_type.value
-                    )
-
-                    data[model_id][version] = version_dict
-
-            with open(self.registry_db_path, "w") as f:
-                json.dump(data, f, indent=2)
-
-        except Exception as e:
-            self.logger.error(f"Failed to save registry: {e}")
-
-    def _load_deployments(self) -> Dict[str, Dict[str, Any]]:
-        """Load deployment information."""
-
-        if not self.deployments_path.exists():
-            return {}
-
-        try:
-            with open(self.deployments_path, "r") as f:
-                return json.load(f)
-        except Exception as e:
-            self.logger.error(f"Failed to load deployments: {e}")
-            return {}
-
-    def _save_deployments(self):
-        """Save deployment information."""
-
-        try:
-            with open(self.deployments_path, "w") as f:
-                json.dump(self.deployments, f, indent=2)
-        except Exception as e:
-            self.logger.error(f"Failed to save deployments: {e}")
-
-    def _create_dataset_info(
-        self, dataset: pd.DataFrame, target_column: str, training_config: TrainingConfig
-    ) -> DatasetInfo:
-        """Create dataset information with hash validation."""
-
-        # Calculate dataset hash
-        dataset_str = dataset.to_string()
-        dataset_hash = hashlib.sha256(dataset_str.encode()).hexdigest()
-
-        # Feature analysis
-        features = [col for col in dataset.columns if col != target_column]
-        missing_ratio = dataset.isnull().sum().sum() / (len(dataset) * len(dataset.columns))
-
-        # Calculate correlation matrix hash
-        numeric_cols = dataset.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) > 1:
-            corr_matrix = dataset[numeric_cols].corr()
-            corr_hash = hashlib.sha256(str(corr_matrix.values).encode()).hexdigest()
+    def check_data_drift(self, model_id: str, version: str, 
+                        new_data: pd.DataFrame, reference_data: pd.DataFrame = None) -> DriftStatus:
+        """Check for data drift tussen datasets"""
+        
+        metadata = self.get_model_metadata(model_id, version)
+        if not metadata:
+            return DriftStatus.CRITICAL
+            
+        if reference_data is None:
+            # Load reference dataset
+            reference_data = self._load_reference_dataset(metadata.training_dataset_hash)
+            
+        if reference_data is None:
+            self.logger.warning("⚠️ No reference dataset found")
+            return DriftStatus.MEDIUM
+            
+        # Calculate drift scores
+        drift_scores = self._calculate_drift_scores(reference_data, new_data)
+        max_drift = max(drift_scores.values()) if drift_scores else 0.0
+        
+        # Determine drift status
+        if max_drift < 0.1:
+            drift_status = DriftStatus.NONE
+        elif max_drift < 0.3:
+            drift_status = DriftStatus.LOW
+        elif max_drift < 0.5:
+            drift_status = DriftStatus.MEDIUM
+        elif max_drift < 0.8:
+            drift_status = DriftStatus.HIGH
         else:
-            corr_hash = "no_numeric_features"
+            drift_status = DriftStatus.CRITICAL
+            
+        # Update metadata
+        metadata.drift_score = max_drift
+        metadata.drift_status = drift_status
+        metadata.last_drift_check = datetime.now()
+        metadata.updated_at = datetime.now()
+        
+        self._save_model_metadata(metadata)
+        
+        self.logger.info(f"🔍 Drift check: {drift_status.value} (score: {max_drift:.3f})")
+        return drift_status
 
-        # Feature distributions hash (simplified)
-        feature_stats = dataset.describe().to_string()
-        distributions_hash = hashlib.sha256(feature_stats.encode()).hexdigest()
+    def update_production_metrics(self, model_id: str, version: str, 
+                                 metrics: Dict[str, float]) -> bool:
+        """Update production performance metrics"""
+        
+        metadata = self.get_model_metadata(model_id, version)
+        if not metadata:
+            return False
+            
+        metadata.production_metrics.update(metrics)
+        metadata.updated_at = datetime.now()
+        
+        # Check if performance degradation triggers rollback
+        if self._should_trigger_rollback(metadata):
+            self.logger.warning(f"⚠️ Performance degradation detected - triggering rollback")
+            self.rollback_model(model_id)
+            
+        self._save_model_metadata(metadata)
+        return True
 
-        return DatasetInfo(
-            dataset_hash=dataset_hash,
-            feature_count=len(features),
-            sample_count=len(dataset),
-            start_date=datetime.utcnow() - timedelta(days=30),  # Placeholder
-            end_date=datetime.utcnow(),
-            features=features,
-            target_column=target_column,
-            preprocessing_steps=training_config.hyperparameters.get("preprocessing", []),
-            validation_split=0.2,  # Default
-            test_split=0.1,  # Default
-            missing_value_ratio=missing_ratio,
-            outlier_ratio=0.05,  # Placeholder
-            correlation_matrix_hash=corr_hash,
-            feature_distributions_hash=distributions_hash,
-        )
+    def get_model_metadata(self, model_id: str, version: str) -> Optional[ModelMetadata]:
+        """Get model metadata"""
+        
+        metadata_file = self.models_path / f"{model_id}_v{version}.json"
+        if not metadata_file.exists():
+            return None
+            
+        with open(metadata_file, 'r') as f:
+            data = json.load(f)
+            
+        # Convert datetime strings back to datetime objects
+        data['created_at'] = datetime.fromisoformat(data['created_at'])
+        data['updated_at'] = datetime.fromisoformat(data['updated_at'])
+        if data.get('deployment_date'):
+            data['deployment_date'] = datetime.fromisoformat(data['deployment_date'])
+        if data.get('last_drift_check'):
+            data['last_drift_check'] = datetime.fromisoformat(data['last_drift_check'])
+            
+        # Convert enums
+        data['status'] = ModelStatus(data['status'])
+        data['drift_status'] = DriftStatus(data['drift_status'])
+        
+        return ModelMetadata(**data)
 
-    def _save_artifacts(self, artifacts_path: Path, artifacts: Dict[str, Any]):
-        """Save additional model artifacts."""
+    def list_model_versions(self, model_id: str) -> List[ModelMetadata]:
+        """List all versions for a model"""
+        
+        versions = []
+        for file_path in self.models_path.glob(f"{model_id}_v*.json"):
+            version = file_path.stem.split('_v')[-1]
+            metadata = self.get_model_metadata(model_id, version)
+            if metadata:
+                versions.append(metadata)
+                
+        return sorted(versions, key=lambda x: x.created_at, reverse=True)
 
-        for name, artifact in artifacts.items():
-            artifact_path = artifacts_path / f"{name}.json"
+    def get_registry_summary(self) -> Dict[str, Any]:
+        """Get registry overview"""
+        
+        models = list(self.models_path.glob("*.json"))
+        datasets = list(self.datasets_path.glob("*.parquet"))
+        
+        status_counts = {}
+        for model_file in models:
+            model_id, version = model_file.stem.split('_v')
+            metadata = self.get_model_metadata(model_id, version)
+            if metadata:
+                status = metadata.status.value
+                status_counts[status] = status_counts.get(status, 0) + 1
+                
+        return {
+            'total_models': len(models),
+            'total_datasets': len(datasets),
+            'models_by_status': status_counts,
+            'registry_size_mb': sum(f.stat().st_size for f in self.registry_path.rglob('*') if f.is_file()) / 1024 / 1024
+        }
 
+    # Helper methods
+    def _hash_dataframe(self, df: pd.DataFrame) -> str:
+        """Generate content hash for dataframe"""
+        content = df.to_string().encode('utf-8')
+        return hashlib.sha256(content).hexdigest()
+
+    def _assess_completeness(self, df: pd.DataFrame) -> float:
+        """Assess data completeness (% non-null values)"""
+        return (1 - df.isnull().sum().sum() / (len(df) * len(df.columns)))
+
+    def _assess_consistency(self, df: pd.DataFrame) -> float:
+        """Assess data consistency (simplified)"""
+        # Simple heuristic: variance in data types and value ranges
+        consistency_scores = []
+        for col in df.select_dtypes(include=[np.number]).columns:
+            cv = df[col].std() / df[col].mean() if df[col].mean() != 0 else 0
+            consistency_scores.append(1 / (1 + cv))  # Lower CV = higher consistency
+        return np.mean(consistency_scores) if consistency_scores else 1.0
+
+    def _assess_validity(self, df: pd.DataFrame) -> float:
+        """Assess data validity (simplified)"""
+        # Simple heuristic: check for obvious invalid values
+        invalid_count = 0
+        total_values = len(df) * len(df.columns)
+        
+        for col in df.columns:
+            if df[col].dtype in ['object', 'string']:
+                # Check for empty strings
+                invalid_count += (df[col] == '').sum()
+            else:
+                # Check for infinite values
+                invalid_count += np.isinf(df[col]).sum()
+                
+        return 1 - (invalid_count / total_values)
+
+    def _calculate_drift_scores(self, reference: pd.DataFrame, new_data: pd.DataFrame) -> Dict[str, float]:
+        """Calculate drift scores per feature"""
+        
+        drift_scores = {}
+        common_cols = set(reference.columns) & set(new_data.columns)
+        
+        for col in common_cols:
+            if reference[col].dtype in ['int64', 'float64']:
+                # Numerical drift: KL divergence approximation
+                ref_mean, ref_std = reference[col].mean(), reference[col].std()
+                new_mean, new_std = new_data[col].mean(), new_data[col].std()
+                
+                if ref_std > 0 and new_std > 0:
+                    # Simplified drift score based on mean/std changes
+                    mean_diff = abs(new_mean - ref_mean) / ref_std
+                    std_ratio = max(new_std/ref_std, ref_std/new_std) - 1
+                    drift_scores[col] = min(1.0, (mean_diff + std_ratio) / 2)
+                else:
+                    drift_scores[col] = 0.0
+            else:
+                # Categorical drift: distribution comparison
+                ref_dist = reference[col].value_counts(normalize=True)
+                new_dist = new_data[col].value_counts(normalize=True)
+                
+                # Calculate total variation distance
+                all_categories = set(ref_dist.index) | set(new_dist.index)
+                tv_distance = 0.5 * sum(abs(ref_dist.get(cat, 0) - new_dist.get(cat, 0)) 
+                                      for cat in all_categories)
+                drift_scores[col] = tv_distance
+                
+        return drift_scores
+
+    def _validate_canary_performance(self, metadata: ModelMetadata) -> bool:
+        """Validate canary performance before production promotion"""
+        
+        if not metadata.production_metrics:
+            return False
+            
+        # Check if production metrics are better than or equal to test metrics
+        test_accuracy = metadata.test_metrics.get('accuracy', 0)
+        prod_accuracy = metadata.production_metrics.get('accuracy', 0)
+        
+        return prod_accuracy >= test_accuracy * 0.95  # Allow 5% degradation
+
+    def _should_trigger_rollback(self, metadata: ModelMetadata) -> bool:
+        """Check if performance degradation should trigger rollback"""
+        
+        if not metadata.production_metrics or not metadata.test_metrics:
+            return False
+            
+        # Check significant performance drop
+        test_accuracy = metadata.test_metrics.get('accuracy', 0)
+        prod_accuracy = metadata.production_metrics.get('accuracy', 0)
+        
+        return prod_accuracy < test_accuracy * 0.8  # 20% degradation triggers rollback
+
+    def _load_reference_dataset(self, dataset_hash: str) -> Optional[pd.DataFrame]:
+        """Load reference dataset by hash"""
+        
+        for dataset_file in self.datasets_path.glob("*.parquet"):
             try:
-                with open(artifact_path, "w") as f:
-                    json.dump(artifact, f, indent=2, default=str)
-            except Exception as e:
-                self.logger.warning(f"Failed to save artifact {name}: {e}")
-
-    def _get_production_model(self) -> Optional[Dict[str, str]]:
-        """Get current production model info."""
-
-        return self.deployments.get("current_production")
-
-    def _find_rollback_target(self) -> Optional[Dict[str, str]]:
-        """Find suitable model for rollback."""
-
-        # Look for most recent archived production model
-        for model_id, versions in self.registry.items():
-            for version, model_version in versions.items():
-                if (
-                    model_version.status == ModelStatus.ARCHIVED
-                    and model_version.deployment_info
-                    and model_version.deployment_info.get("deployment_type") == "production"
-                ):
-                    return {"model_id": model_id, "version": version}
-
-        # Fallback: find any stable model
-        for model_id, versions in self.registry.items():
-            for version, model_version in versions.items():
-                if (
-                    model_version.status == ModelStatus.STAGED
-                    and model_version.metrics.accuracy > 0.7
-                ):  # Minimum quality threshold
-                    return {"model_id": model_id, "version": version}
-
+                df = pd.read_parquet(dataset_file)
+                if self._hash_dataframe(df) == dataset_hash:
+                    return df
+            except Exception:
+                continue
+                
         return None
 
-    def _archive_model(self, model_id: str, version: str):
-        """Archive a model version."""
+    def _save_model_metadata(self, metadata: ModelMetadata):
+        """Save model metadata to JSON"""
+        
+        metadata_dict = asdict(metadata)
+        
+        # Convert datetime objects to ISO strings
+        metadata_dict['created_at'] = metadata.created_at.isoformat()
+        metadata_dict['updated_at'] = metadata.updated_at.isoformat()
+        if metadata.deployment_date:
+            metadata_dict['deployment_date'] = metadata.deployment_date.isoformat()
+        if metadata.last_drift_check:
+            metadata_dict['last_drift_check'] = metadata.last_drift_check.isoformat()
+            
+        # Convert enums to strings
+        metadata_dict['status'] = metadata.status.value
+        metadata_dict['drift_status'] = metadata.drift_status.value
+        
+        metadata_file = self.models_path / f"{metadata.model_id}_v{metadata.version}.json"
+        with open(metadata_file, 'w') as f:
+            json.dump(metadata_dict, f, indent=2)
 
-        if model_id in self.registry and version in self.registry[model_id]:
-            model_version = self.registry[model_id][version]
-            model_version.status = ModelStatus.ARCHIVED
-            model_version.updated_at = datetime.utcnow()
-
-            self.logger.info(f"Archived model: {model_id} {version}")
-
-    def _calculate_drift_score(self, current_values: pd.Series) -> float:
-        """Calculate simple drift score for feature values."""
-
-        # Simplified drift calculation using statistical properties
-        try:
-            mean_val = float(current_values.mean())
-            std_val = float(current_values.std())
-
-            # Simple drift score based on coefficient of variation
-            if std_val > 0:
-                cv = std_val / abs(mean_val) if mean_val != 0 else std_val
-                drift_score = min(1.0, cv / 2.0)  # Normalize to 0-1
-            else:
-                drift_score = 0.0
-
-            return drift_score
-
-        except Exception:
-            return 0.0
+    def _save_dataset_metadata(self, dataset_version: DatasetVersion):
+        """Save dataset metadata to JSON"""
+        
+        metadata_dict = asdict(dataset_version)
+        metadata_dict['created_at'] = dataset_version.created_at.isoformat()
+        
+        # Convert numpy integers to Python integers for JSON serialization
+        if isinstance(metadata_dict.get('size_rows'), np.integer):
+            metadata_dict['size_rows'] = int(metadata_dict['size_rows'])
+        if isinstance(metadata_dict.get('size_bytes'), np.integer):
+            metadata_dict['size_bytes'] = int(metadata_dict['size_bytes'])
+        if isinstance(metadata_dict.get('feature_count'), np.integer):
+            metadata_dict['feature_count'] = int(metadata_dict['feature_count'])
+            
+        metadata_file = self.datasets_path / f"{dataset_version.dataset_id}_v{dataset_version.version}_metadata.json"
+        with open(metadata_file, 'w') as f:
+            json.dump(metadata_dict, f, indent=2)
 
 
-def create_model_registry(registry_path: str = "models/registry") -> ModelRegistry:
-    """Create model registry instance."""
-    return ModelRegistry(registry_path)
+# Singleton instance
+_model_registry_instance = None
+
+def get_model_registry() -> ModelRegistry:
+    """Get shared model registry instance"""
+    global _model_registry_instance
+    if _model_registry_instance is None:
+        _model_registry_instance = ModelRegistry()
+    return _model_registry_instance
