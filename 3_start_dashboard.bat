@@ -15,13 +15,18 @@ if errorlevel 1 (
 REM Check if main app exists
 echo.
 echo [2/5] Checking application files...
-if not exist app_fixed_all_issues.py (
-    echo ❌ ERROR: app_fixed_all_issues.py not found
+if exist app_trading_analysis_dashboard.py (
+    set MAIN_APP=app_trading_analysis_dashboard.py
+    echo ✓ Main trading analysis dashboard found
+) else if exist app_fixed_all_issues.py (
+    set MAIN_APP=app_fixed_all_issues.py
+    echo ✓ Fixed application found
+) else (
+    echo ❌ ERROR: No main application found
     echo Make sure you're in the correct directory
     pause
     exit /b 1
 )
-echo ✓ Main application found
 
 REM Configure system for optimal performance
 echo.
@@ -79,7 +84,8 @@ set LOG_FILE=logs\dashboard\dashboard_%RUN_ID%.log
 echo Dashboard starting at %DATE% %TIME% > %LOG_FILE%
 
 REM Start the main dashboard
-streamlit run app_fixed_all_issues.py --server.port 5000 --server.address 0.0.0.0 --server.headless true
+echo Starting %MAIN_APP%...
+streamlit run %MAIN_APP% --server.port 5000 --server.address 0.0.0.0 --server.headless true
 
 echo.
 echo ===================================================

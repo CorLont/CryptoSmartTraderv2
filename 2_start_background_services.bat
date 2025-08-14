@@ -35,12 +35,22 @@ start "Metrics Server" /MIN python -c "from prometheus_client import start_http_
 REM Start health monitoring system
 echo.
 echo [5/6] Starting health monitoring system...
-start "Health Monitor" /MIN python core/system_health_monitor.py
+if exist src/cryptosmarttrader/core/system_health_monitor.py (
+    start "Health Monitor" /MIN python -m src.cryptosmarttrader.core.system_health_monitor
+) else if exist core/system_health_monitor.py (
+    start "Health Monitor" /MIN python core/system_health_monitor.py
+) else (
+    echo ⚠️ Health monitor not found, skipping
+)
 
-REM Start production orchestrator in background
+REM Start centralized monitoring
 echo.
-echo [6/6] Starting production orchestrator...
-start "Production Orchestrator" /MIN python core/production_orchestrator.py
+echo [6/6] Starting centralized monitoring...
+if exist src/cryptosmarttrader/observability/centralized_prometheus.py (
+    start "Centralized Monitoring" /MIN python -c "from src.cryptosmarttrader.observability.centralized_prometheus import PrometheusMetrics; p = PrometheusMetrics(); p.start_server(8091); import time; time.sleep(86400)"
+) else (
+    echo ⚠️ Centralized monitoring not found, skipping
+)
 
 REM Verify services
 echo.

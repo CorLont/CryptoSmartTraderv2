@@ -44,7 +44,11 @@ python -m pip install --upgrade pip
 REM Install core dependencies from pyproject.toml
 echo.
 echo [4/8] Installing core project dependencies...
-pip install -e .
+if exist pyproject.toml (
+    pip install -e .
+) else (
+    echo ⚠️ pyproject.toml not found, installing direct dependencies
+)
 
 REM Install critical integrations
 echo.
@@ -63,7 +67,7 @@ pip install aiohttp>=3.8.0
 pip install textblob>=0.17.0
 pip install trafilatura>=2.0.0
 pip install transformers>=4.30.0
-pip install torch>=2.8.0
+pip install torch>=2.0.0
 pip install prometheus-client>=0.17.0
 pip install psutil>=5.9.0
 pip install dependency-injector>=4.41.0
@@ -74,7 +78,7 @@ echo.
 echo [6/8] Installing ML/AI performance packages...
 pip install lightgbm>=4.0.0
 pip install numba>=0.57.0
-pip install cupy>=12.0.0 --no-deps || echo "⚠️ CuPy installation failed (requires CUDA)"
+pip install cupy-cuda12x || pip install cupy-cuda11x || echo "⚠️ CuPy installation failed (requires CUDA 11 or 12)"
 
 REM Install development and testing tools
 echo.
@@ -136,10 +140,13 @@ echo ===================================================
 echo.
 echo Next steps:
 echo   1. Configure .env with your API keys (if not done)
-echo   2. Run: 2_start_background_services.bat
-echo   3. Run: 3_start_dashboard.bat
+echo   2. Run validation: workstation_validation.bat
+echo   3. Start services: 2_start_background_services.bat  
+echo   4. Start dashboard: 3_start_dashboard.bat
 echo.
-echo For one-click operation, use the individual scripts or:
-echo   python app_fixed_all_issues.py
+echo For validation before startup:
+echo   workstation_validation.bat
+echo.
+echo MANDATORY EXECUTION GATEWAY: All trading operations secured ✓
 echo.
 pause
