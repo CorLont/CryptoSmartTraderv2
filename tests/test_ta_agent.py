@@ -180,13 +180,16 @@ def test_ta_agent():
             # Test 4: Complete analysis with authentic indicators
             print("\n4. Testing Complete Analysis...")
 
-            # Test synchronous version since we're not in async context
+            # Test complete analysis
             try:
-                result = agent.analyze_symbol_sync("TEST/USD", test_data)
-            except AttributeError:
-                # If sync method doesn't exist, skip this test
-                print("   ⚠️ SKIPPED: Async analysis not available in test context")
+                result = await agent.analyze_symbol("TEST/USD", test_data)
+            except AttributeError as e:
+                # If method doesn't exist, skip this test
+                print(f"   ⚠️ SKIPPED: Analysis method not available: {e}")
                 return True
+            except Exception as e:
+                print(f"   ❌ FAILED: Analysis error: {e}")
+                return False
 
             if result.symbol == "TEST/USD" and result.indicators:
                 print("   ✅ PASSED: Complete analysis successful")
