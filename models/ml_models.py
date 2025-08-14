@@ -627,8 +627,9 @@ class MLModelManager:
                         trained_at = datetime.fromisoformat(metadata['trained_at'])
                         if trained_at < cutoff_time:
                             models_to_delete.append(model_key)
-                    except:
+                    except (ValueError, TypeError, KeyError) as e:
                         # If can't parse date, consider for deletion
+                        self.logger.warning(f"Could not parse date for model {model_key}: {e}")
                         models_to_delete.append(model_key)
             
             # Delete old models

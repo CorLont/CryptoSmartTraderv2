@@ -313,14 +313,18 @@ class CryptoSmartTraderMetrics:
         """Safely get counter value"""
         try:
             return sum(sample.value for sample in counter.collect()[0].samples)
-        except:
+        except (AttributeError, IndexError, TypeError) as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to get counter value: {e}")
             return 0.0
     
     def _get_gauge_value(self, gauge) -> float:
         """Safely get gauge value"""
         try:
             return gauge._value._value
-        except:
+        except (AttributeError, TypeError) as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to get gauge value: {e}")
             return 0.0
     
     def export_metrics(self) -> str:

@@ -50,8 +50,10 @@ def install_dev_tools():
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             print(f"✅ {name}: {result.stdout.strip().split()[1] if len(result.stdout.split()) > 1 else 'installed'}")
-        except:
-            print(f"❌ {name}: failed")
+        except (subprocess.CalledProcessError, FileNotFoundError, OSError) as e:
+            print(f"❌ {name}: failed - {e}")
+        except Exception as e:
+            print(f"❌ {name}: unexpected error - {e}")
     
     print("\n✅ Development tools installation complete!")
     return True
