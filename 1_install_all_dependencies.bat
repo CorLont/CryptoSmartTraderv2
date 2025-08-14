@@ -53,25 +53,25 @@ if exist pyproject.toml (
 REM Install critical integrations
 echo.
 echo [5/8] Installing critical integrations...
-pip install openai>=1.0.0
-pip install streamlit>=1.28.0
-pip install ccxt>=4.0.0
-pip install plotly>=5.15.0
-pip install pandas>=2.0.0
-pip install numpy>=1.24.0
-pip install scikit-learn>=1.3.0
-pip install xgboost>=1.7.0
-pip install pydantic>=2.0.0
-pip install tenacity>=8.2.0
-pip install aiohttp>=3.8.0
-pip install textblob>=0.17.0
-pip install trafilatura>=2.0.0
-pip install transformers>=4.30.0
-pip install torch>=2.0.0
-pip install prometheus-client>=0.17.0
-pip install psutil>=5.9.0
-pip install dependency-injector>=4.41.0
-pip install python-json-logger>=2.0.0
+pip install openai>=1.0.0 || echo "⚠️ OpenAI installation failed"
+pip install streamlit>=1.28.0 || echo "⚠️ Streamlit installation failed"
+pip install ccxt>=4.0.0 || echo "⚠️ CCXT installation failed"
+pip install plotly>=5.15.0 || echo "⚠️ Plotly installation failed"
+pip install pandas>=2.0.0 || echo "⚠️ Pandas installation failed"
+pip install numpy>=1.24.0 || echo "⚠️ NumPy installation failed"
+pip install scikit-learn>=1.3.0 || echo "⚠️ Scikit-learn installation failed"
+pip install xgboost>=1.7.0 || echo "⚠️ XGBoost installation failed"
+pip install pydantic>=2.0.0 || echo "⚠️ Pydantic installation failed"
+pip install tenacity>=8.2.0 || echo "⚠️ Tenacity installation failed"
+pip install aiohttp>=3.8.0 || echo "⚠️ aiohttp installation failed"
+pip install textblob>=0.17.0 || echo "⚠️ TextBlob installation failed"
+pip install trafilatura>=2.0.0 || echo "⚠️ Trafilatura installation failed"
+pip install transformers>=4.30.0 || echo "⚠️ Transformers installation failed"
+pip install torch>=2.0.0 --index-url https://download.pytorch.org/whl/cpu || echo "⚠️ PyTorch installation failed"
+pip install prometheus-client>=0.17.0 || echo "⚠️ Prometheus client installation failed"
+pip install psutil>=5.9.0 || echo "⚠️ psutil installation failed"
+pip install dependency-injector>=4.41.0 || echo "⚠️ dependency-injector installation failed"
+pip install python-json-logger>=2.0.0 || echo "⚠️ python-json-logger installation failed"
 
 REM Install ML/AI performance packages
 echo.
