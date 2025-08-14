@@ -50,3 +50,4 @@ mypy
 rich
 ruff
 safety
+apscheduler
