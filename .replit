@@ -40,6 +40,10 @@ args = "WhaleDetectionDashboard"
 task = "workflow.run"
 args = "EnterpriseSystemDashboard"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "ObservabilityDashboard"
+
 [[workflows.workflow]]
 name = "SecretsManagement"
 author = "agent"
@@ -112,6 +116,18 @@ waitForPort = 5005
 [workflows.workflow.metadata]
 outputType = "webview"
 
+[[workflows.workflow]]
+name = "ObservabilityDashboard"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run observability_dashboard_clean.py --server.port 5006"
+waitForPort = 5006
+
 [[ports]]
 localPort = 5000
 externalPort = 80
@@ -135,6 +151,10 @@ externalPort = 5000
 [[ports]]
 localPort = 5005
 externalPort = 5173
+
+[[ports]]
+localPort = 5006
+externalPort = 6000
 
 [[ports]]
 localPort = 8000
