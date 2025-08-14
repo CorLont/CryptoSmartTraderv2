@@ -44,6 +44,10 @@ args = "EnterpriseSystemDashboard"
 task = "workflow.run"
 args = "ObservabilityDashboard"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "CentralizedObservabilityAPI"
+
 [[workflows.workflow]]
 name = "SecretsManagement"
 author = "agent"
@@ -128,6 +132,18 @@ task = "shell.exec"
 args = "streamlit run observability_dashboard_clean.py --server.port 5006"
 waitForPort = 5006
 
+[[workflows.workflow]]
+name = "CentralizedObservabilityAPI"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python -m src.cryptosmarttrader.observability.centralized_observability_api"
+waitForPort = 8002
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
@@ -163,6 +179,10 @@ externalPort = 8000
 [[ports]]
 localPort = 8001
 externalPort = 3003
+
+[[ports]]
+localPort = 8002
+externalPort = 6800
 
 [[ports]]
 localPort = 8899
