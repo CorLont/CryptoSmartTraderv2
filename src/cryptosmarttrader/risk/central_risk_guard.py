@@ -1,432 +1,460 @@
 """
-Central RiskGuard: Poortwachter voor alle trading operaties
-Verplichte risk checks vóór elke entry/resize/hedge broker-call
+Central RiskGuard - Mandatory risk gates voor ALL order execution
+Zero-bypass architecture met comprehensive risk validation
 """
 
-import time
 import logging
-import threading
-from typing import Dict, Optional, List, Tuple, Any
+import time
+from typing import Dict, Any, Optional, Tuple, Union
 from dataclasses import dataclass, field
 from enum import Enum
-from decimal import Decimal
-import json
 from datetime import datetime, timedelta
+import json
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 
 class RiskDecision(Enum):
+    """Risk decision outcomes"""
     APPROVE = "approve"
-    REJECT = "reject"
+    REJECT = "reject"  
     REDUCE_SIZE = "reduce_size"
-    KILL_SWITCH_ACTIVATED = "kill_switch"
-
-
-class RiskViolationType(Enum):
-    DAY_LOSS = "day_loss"
-    MAX_DRAWDOWN = "max_drawdown"
-    MAX_EXPOSURE = "max_exposure"
-    MAX_POSITIONS = "max_positions"
-    DATA_GAP = "data_gap"
-    KILL_SWITCH = "kill_switch"
-    POSITION_SIZE = "position_size"
-    CORRELATION_LIMIT = "correlation_limit"
+    EMERGENCY_STOP = "emergency_stop"
 
 
 @dataclass
-class RiskLimits:
-    """Centrale risk limits configuratie"""
-    max_day_loss_pct: float = 2.0  # Max 2% daily loss
-    max_drawdown_pct: float = 10.0  # Max 10% drawdown from peak
-    max_total_exposure_pct: float = 50.0  # Max 50% total exposure
-    max_positions: int = 10  # Max 10 open positions
-    max_position_size_pct: float = 10.0  # Max 10% per position
-    max_correlation_exposure: float = 20.0  # Max 20% in correlated assets
-    max_data_gap_minutes: int = 5  # Max 5 minute data gap
-    kill_switch_active: bool = False
-    kill_switch_reason: Optional[str] = None
-    emergency_only_mode: bool = False
-
-
-@dataclass
-class PortfolioState:
-    """Huidige portfolio state voor risk evaluatie"""
-    total_equity: float
-    daily_pnl: float
-    peak_equity: float
-    current_drawdown_pct: float
-    open_positions: int
-    total_exposure_usd: float
-    total_exposure_pct: float
-    position_sizes: Dict[str, float] = field(default_factory=dict)
-    correlations: Dict[str, float] = field(default_factory=dict)
-    last_data_update: float = 0.0
-
-
-@dataclass
-class TradingOperation:
-    """Trading operatie voor risk evaluatie"""
-    operation_type: str  # "entry", "resize", "hedge", "exit"
+class OrderRequest:
+    """Standardized order request structure"""
     symbol: str
-    side: str  # "buy", "sell"
-    size_usd: float
-    current_price: float
-    strategy_id: str
+    side: str  # buy/sell
+    size: float
+    price: Optional[float] = None
+    order_type: str = "market"
+    client_order_id: Optional[str] = None
     timestamp: float = field(default_factory=time.time)
 
 
 @dataclass
-class RiskEvaluation:
-    """Resultaat van risk evaluatie"""
-    decision: RiskDecision
-    approved_size_usd: float
-    violations: List[RiskViolationType]
-    reasons: List[str]
-    risk_score: float  # 0-100, higher = more risky
-    recommendations: List[str]
-    gate_results: Dict[str, bool] = field(default_factory=dict)
+class RiskLimits:
+    """Configurable risk limits"""
+    # Kill-switch
+    kill_switch_active: bool = False
+    
+    # Daily limits
+    max_daily_loss_usd: float = 5000.0
+    max_daily_loss_percent: float = 5.0
+    
+    # Drawdown limits
+    max_drawdown_percent: float = 10.0
+    
+    # Position limits
+    max_position_count: int = 10
+    max_single_position_usd: float = 50000.0
+    max_total_exposure_usd: float = 100000.0
+    
+    # Correlation limits
+    max_correlation_exposure: float = 0.7
+    
+    # Data quality gates
+    min_data_completeness: float = 0.95
+    max_data_age_minutes: int = 5
+
+
+@dataclass
+class PortfolioState:
+    """Current portfolio state for risk calculations"""
+    total_value_usd: float = 100000.0
+    daily_pnl_usd: float = 0.0
+    max_drawdown_from_peak: float = 0.0
+    position_count: int = 0
+    total_exposure_usd: float = 0.0
+    positions: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    last_update: float = field(default_factory=time.time)
 
 
 class CentralRiskGuard:
     """
-    Centrale RiskGuard als poortwachter voor alle trading operaties
-    VERPLICHT voor elke entry/resize/hedge vóór broker-calls
+    Mandatory central risk guard - ALL orders must pass through here
+    Zero-bypass architecture with comprehensive risk validation
     """
     
-    def __init__(self, risk_limits: Optional[RiskLimits] = None):
-        self.risk_limits = risk_limits or RiskLimits()
-        self.portfolio_state = PortfolioState(
-            total_equity=100000.0,  # Default starting equity
-            daily_pnl=0.0,
-            peak_equity=100000.0,
-            current_drawdown_pct=0.0,
-            open_positions=0,
-            total_exposure_usd=0.0,
-            total_exposure_pct=0.0
-        )
-        self.logger = logging.getLogger(__name__)
-        self._lock = threading.Lock()
+    def __init__(self, config_path: str = "config/risk_limits.json"):
+        self.config_path = Path(config_path)
+        self.limits = self._load_risk_limits()
+        self.portfolio_state = PortfolioState()
+        self.audit_log_path = Path("logs/risk_audit.log")
+        self.audit_log_path.parent.mkdir(exist_ok=True)
         
-        # Risk monitoring
-        self.violation_count = 0
-        self.total_evaluations = 0
-        self.kill_switch_history: List[Dict] = []
+        # Performance tracking
+        self.evaluation_count = 0
+        self.total_evaluation_time = 0.0
+        self.rejections_count = 0
         
-        # Data gap monitoring
-        self.last_market_data_update = time.time()
-        self.data_gap_violations = 0
+        logger.info("CentralRiskGuard initialized with zero-bypass architecture")
     
-    def update_portfolio_state(
-        self,
-        total_equity: float,
-        daily_pnl: float,
-        open_positions: int,
-        total_exposure_usd: float,
-        position_sizes: Dict[str, float],
-        correlations: Dict[str, float] = None
-    ):
-        """Update portfolio state voor risk evaluatie"""
-        with self._lock:
-            self.portfolio_state.total_equity = total_equity
-            self.portfolio_state.daily_pnl = daily_pnl
-            self.portfolio_state.open_positions = open_positions
-            self.portfolio_state.total_exposure_usd = total_exposure_usd
-            self.portfolio_state.total_exposure_pct = (total_exposure_usd / total_equity) * 100
-            self.portfolio_state.position_sizes = position_sizes.copy()
-            self.portfolio_state.correlations = correlations.copy() if correlations else {}
-            
-            # Update peak equity and drawdown
-            if total_equity > self.portfolio_state.peak_equity:
-                self.portfolio_state.peak_equity = total_equity
-            
-            drawdown = ((self.portfolio_state.peak_equity - total_equity) / self.portfolio_state.peak_equity) * 100
-            self.portfolio_state.current_drawdown_pct = max(0, drawdown)
-            
-            self.portfolio_state.last_data_update = time.time()
-            self.last_market_data_update = time.time()
-    
-    def evaluate_operation(self, operation: TradingOperation) -> RiskEvaluation:
-        """
-        🛡️  CENTRALE RISK EVALUATIE - Verplichte poortwachter
-        Evalueert alle trading operaties vóór broker execution
-        """
-        with self._lock:
-            self.total_evaluations += 1
-            
-            violations = []
-            reasons = []
-            gate_results = {}
-            risk_score = 0.0
-            approved_size = operation.size_usd
-            
-            self.logger.info(f"🛡️  RiskGuard evaluating {operation.operation_type}: {operation.symbol} {operation.size_usd:,.0f} USD")
-            
-            # Gate 1: Kill Switch Check (CRITICAL)
-            kill_switch_ok = not self.risk_limits.kill_switch_active
-            gate_results["kill_switch"] = kill_switch_ok
-            
-            if not kill_switch_ok:
-                violations.append(RiskViolationType.KILL_SWITCH)
-                reasons.append(f"Kill switch activated: {self.risk_limits.kill_switch_reason}")
-                return RiskEvaluation(
-                    decision=RiskDecision.KILL_SWITCH_ACTIVATED,
-                    approved_size_usd=0.0,
-                    violations=violations,
-                    reasons=reasons,
-                    risk_score=100.0,
-                    recommendations=["Wait for kill switch deactivation"],
-                    gate_results=gate_results
-                )
-            
-            # Gate 2: Data Gap Check
-            data_gap_minutes = (time.time() - self.last_market_data_update) / 60
-            data_gap_ok = data_gap_minutes <= self.risk_limits.max_data_gap_minutes
-            gate_results["data_gap"] = data_gap_ok
-            
-            if not data_gap_ok:
-                violations.append(RiskViolationType.DATA_GAP)
-                reasons.append(f"Data gap too large: {data_gap_minutes:.1f} minutes > {self.risk_limits.max_data_gap_minutes}")
-                risk_score += 30
-                self.data_gap_violations += 1
-            
-            # Gate 3: Daily Loss Check
-            daily_loss_pct = (self.portfolio_state.daily_pnl / self.portfolio_state.total_equity) * 100
-            day_loss_ok = daily_loss_pct >= -self.risk_limits.max_day_loss_pct
-            gate_results["day_loss"] = day_loss_ok
-            
-            if not day_loss_ok:
-                violations.append(RiskViolationType.DAY_LOSS)
-                reasons.append(f"Daily loss limit exceeded: {daily_loss_pct:.2f}% > {self.risk_limits.max_day_loss_pct}%")
-                risk_score += 40
-            
-            # Gate 4: Max Drawdown Check
-            drawdown_ok = self.portfolio_state.current_drawdown_pct <= self.risk_limits.max_drawdown_pct
-            gate_results["drawdown"] = drawdown_ok
-            
-            if not drawdown_ok:
-                violations.append(RiskViolationType.MAX_DRAWDOWN)
-                reasons.append(f"Max drawdown exceeded: {self.portfolio_state.current_drawdown_pct:.2f}% > {self.risk_limits.max_drawdown_pct}%")
-                risk_score += 50
-            
-            # Gate 5: Position Count Check
-            new_position_count = self.portfolio_state.open_positions
-            if operation.operation_type == "entry":
-                new_position_count += 1
-            
-            position_count_ok = new_position_count <= self.risk_limits.max_positions
-            gate_results["position_count"] = position_count_ok
-            
-            if not position_count_ok:
-                violations.append(RiskViolationType.MAX_POSITIONS)
-                reasons.append(f"Max positions exceeded: {new_position_count} > {self.risk_limits.max_positions}")
-                risk_score += 25
-            
-            # Gate 6: Total Exposure Check
-            new_exposure_usd = self.portfolio_state.total_exposure_usd + operation.size_usd
-            new_exposure_pct = (new_exposure_usd / self.portfolio_state.total_equity) * 100
-            exposure_ok = new_exposure_pct <= self.risk_limits.max_total_exposure_pct
-            gate_results["total_exposure"] = exposure_ok
-            
-            if not exposure_ok:
-                violations.append(RiskViolationType.MAX_EXPOSURE)
-                reasons.append(f"Total exposure limit exceeded: {new_exposure_pct:.1f}% > {self.risk_limits.max_total_exposure_pct}%")
-                risk_score += 35
-                
-                # Calculate reduced size to stay within limits
-                max_allowed_exposure = (self.risk_limits.max_total_exposure_pct / 100) * self.portfolio_state.total_equity
-                available_exposure = max_allowed_exposure - self.portfolio_state.total_exposure_usd
-                approved_size = max(0, available_exposure)
-            
-            # Gate 7: Position Size Check
-            position_size_pct = (operation.size_usd / self.portfolio_state.total_equity) * 100
-            position_size_ok = position_size_pct <= self.risk_limits.max_position_size_pct
-            gate_results["position_size"] = position_size_ok
-            
-            if not position_size_ok:
-                violations.append(RiskViolationType.POSITION_SIZE)
-                reasons.append(f"Position size too large: {position_size_pct:.2f}% > {self.risk_limits.max_position_size_pct}%")
-                risk_score += 20
-                
-                # Calculate max allowed position size
-                max_position_size = (self.risk_limits.max_position_size_pct / 100) * self.portfolio_state.total_equity
-                approved_size = min(approved_size, max_position_size)
-            
-            # Gate 8: Correlation Check
-            if operation.symbol in self.portfolio_state.correlations:
-                correlation_exposure = sum(
-                    size for symbol, size in self.portfolio_state.position_sizes.items()
-                    if self.portfolio_state.correlations.get(symbol, 0) > 0.7  # High correlation
-                )
-                correlation_exposure_pct = (correlation_exposure / self.portfolio_state.total_equity) * 100
-                correlation_ok = correlation_exposure_pct <= self.risk_limits.max_correlation_exposure
-                gate_results["correlation"] = correlation_ok
-                
-                if not correlation_ok:
-                    violations.append(RiskViolationType.CORRELATION_LIMIT)
-                    reasons.append(f"Correlation exposure too high: {correlation_exposure_pct:.1f}% > {self.risk_limits.max_correlation_exposure}%")
-                    risk_score += 15
+    def _load_risk_limits(self) -> RiskLimits:
+        """Load risk limits from config file"""
+        try:
+            if self.config_path.exists():
+                with open(self.config_path, 'r') as f:
+                    config_data = json.load(f)
+                return RiskLimits(**config_data)
             else:
-                gate_results["correlation"] = True
-            
-            # Determine final decision
-            critical_violations = [
-                RiskViolationType.KILL_SWITCH,
-                RiskViolationType.MAX_DRAWDOWN,
-                RiskViolationType.DAY_LOSS
-            ]
-            
-            has_critical_violation = any(v in violations for v in critical_violations)
-            
-            if has_critical_violation or not data_gap_ok:
-                decision = RiskDecision.REJECT
-                approved_size = 0.0
-                self.violation_count += 1
-            elif approved_size < operation.size_usd * 0.1:  # Less than 10% of requested size
-                decision = RiskDecision.REJECT
-                approved_size = 0.0
-                reasons.append("Approved size too small to be meaningful")
-            elif approved_size < operation.size_usd:
-                decision = RiskDecision.REDUCE_SIZE
-            else:
-                decision = RiskDecision.APPROVE
-            
-            # Generate recommendations
-            recommendations = self._generate_recommendations(violations, risk_score)
-            
-            result = RiskEvaluation(
-                decision=decision,
-                approved_size_usd=approved_size,
-                violations=violations,
-                reasons=reasons,
-                risk_score=risk_score,
-                recommendations=recommendations,
-                gate_results=gate_results
-            )
-            
-            self.logger.info(
-                f"🛡️  RiskGuard decision: {decision.value} "
-                f"(approved: ${approved_size:,.0f}, risk: {risk_score:.1f})"
-            )
-            
-            return result
+                # Create default config
+                default_limits = RiskLimits()
+                self._save_risk_limits(default_limits)
+                return default_limits
+        except Exception as e:
+            logger.error(f"Failed to load risk limits: {e}")
+            return RiskLimits()
     
-    def _generate_recommendations(self, violations: List[RiskViolationType], risk_score: float) -> List[str]:
-        """Generate actionable recommendations based on violations"""
-        recommendations = []
-        
-        if RiskViolationType.DAY_LOSS in violations:
-            recommendations.append("Consider stopping trading for today to limit losses")
-        
-        if RiskViolationType.MAX_DRAWDOWN in violations:
-            recommendations.append("Reduce position sizes and implement stricter stop-losses")
-        
-        if RiskViolationType.MAX_EXPOSURE in violations:
-            recommendations.append("Close some positions to reduce total exposure")
-        
-        if RiskViolationType.MAX_POSITIONS in violations:
-            recommendations.append("Close least profitable positions before opening new ones")
-        
-        if RiskViolationType.DATA_GAP in violations:
-            recommendations.append("Wait for fresh market data before trading")
-        
-        if RiskViolationType.POSITION_SIZE in violations:
-            recommendations.append("Reduce position size to stay within risk limits")
-        
-        if RiskViolationType.CORRELATION_LIMIT in violations:
-            recommendations.append("Diversify into uncorrelated assets")
-        
-        if risk_score > 70:
-            recommendations.append("Overall risk too high - consider defensive positioning")
-        elif risk_score > 50:
-            recommendations.append("Moderate risk detected - proceed with caution")
-        
-        return recommendations
-    
-    def activate_kill_switch(self, reason: str):
-        """Activate emergency kill switch"""
-        with self._lock:
-            self.risk_limits.kill_switch_active = True
-            self.risk_limits.kill_switch_reason = reason
-            
-            self.kill_switch_history.append({
-                "timestamp": time.time(),
-                "reason": reason,
-                "action": "activated",
-                "portfolio_equity": self.portfolio_state.total_equity,
-                "daily_pnl": self.portfolio_state.daily_pnl,
-                "drawdown": self.portfolio_state.current_drawdown_pct
-            })
-            
-            self.logger.critical(f"🚨 KILL SWITCH ACTIVATED: {reason}")
-    
-    def deactivate_kill_switch(self, reason: str):
-        """Deactivate kill switch"""
-        with self._lock:
-            self.risk_limits.kill_switch_active = False
-            self.risk_limits.kill_switch_reason = None
-            
-            self.kill_switch_history.append({
-                "timestamp": time.time(),
-                "reason": reason,
-                "action": "deactivated",
-                "portfolio_equity": self.portfolio_state.total_equity,
-                "daily_pnl": self.portfolio_state.daily_pnl,
-                "drawdown": self.portfolio_state.current_drawdown_pct
-            })
-            
-            self.logger.info(f"✅ Kill switch deactivated: {reason}")
-    
-    def get_risk_status(self) -> Dict[str, Any]:
-        """Get comprehensive risk status"""
-        with self._lock:
-            return {
-                "risk_limits": {
-                    "max_day_loss_pct": self.risk_limits.max_day_loss_pct,
-                    "max_drawdown_pct": self.risk_limits.max_drawdown_pct,
-                    "max_total_exposure_pct": self.risk_limits.max_total_exposure_pct,
-                    "max_positions": self.risk_limits.max_positions,
-                    "kill_switch_active": self.risk_limits.kill_switch_active,
-                    "kill_switch_reason": self.risk_limits.kill_switch_reason
-                },
-                "portfolio_state": {
-                    "total_equity": self.portfolio_state.total_equity,
-                    "daily_pnl": self.portfolio_state.daily_pnl,
-                    "daily_pnl_pct": (self.portfolio_state.daily_pnl / self.portfolio_state.total_equity) * 100,
-                    "current_drawdown_pct": self.portfolio_state.current_drawdown_pct,
-                    "open_positions": self.portfolio_state.open_positions,
-                    "total_exposure_pct": self.portfolio_state.total_exposure_pct,
-                    "data_age_minutes": (time.time() - self.last_market_data_update) / 60
-                },
-                "statistics": {
-                    "total_evaluations": self.total_evaluations,
-                    "violation_count": self.violation_count,
-                    "violation_rate": self.violation_count / max(1, self.total_evaluations),
-                    "data_gap_violations": self.data_gap_violations,
-                    "kill_switch_activations": len(self.kill_switch_history)
-                },
-                "utilization": {
-                    "exposure_utilization": min(100, self.portfolio_state.total_exposure_pct / self.risk_limits.max_total_exposure_pct * 100),
-                    "position_utilization": min(100, self.portfolio_state.open_positions / self.risk_limits.max_positions * 100),
-                    "drawdown_utilization": min(100, self.portfolio_state.current_drawdown_pct / self.risk_limits.max_drawdown_pct * 100)
+    def _save_risk_limits(self, limits: RiskLimits) -> None:
+        """Save risk limits to config file"""
+        try:
+            self.config_path.parent.mkdir(exist_ok=True)
+            with open(self.config_path, 'w') as f:
+                # Convert dataclass to dict
+                config_data = {
+                    'kill_switch_active': limits.kill_switch_active,
+                    'max_daily_loss_usd': limits.max_daily_loss_usd,
+                    'max_daily_loss_percent': limits.max_daily_loss_percent,
+                    'max_drawdown_percent': limits.max_drawdown_percent,
+                    'max_position_count': limits.max_position_count,
+                    'max_single_position_usd': limits.max_single_position_usd,
+                    'max_total_exposure_usd': limits.max_total_exposure_usd,
+                    'max_correlation_exposure': limits.max_correlation_exposure,
+                    'min_data_completeness': limits.min_data_completeness,
+                    'max_data_age_minutes': limits.max_data_age_minutes
                 }
+                json.dump(config_data, f, indent=2)
+        except Exception as e:
+            logger.error(f"Failed to save risk limits: {e}")
+    
+    def evaluate_order(self, order: OrderRequest, market_data: Optional[Dict] = None) -> Tuple[RiskDecision, str, Optional[float]]:
+        """
+        MANDATORY risk evaluation - ALL orders must pass through here
+        Returns: (decision, reason, adjusted_size)
+        """
+        start_time = time.time()
+        self.evaluation_count += 1
+        
+        try:
+            # Gate 1: Kill-switch check
+            if self.limits.kill_switch_active:
+                decision = RiskDecision.EMERGENCY_STOP
+                reason = "KILL_SWITCH_ACTIVE: Trading halted by emergency stop"
+                self._log_risk_decision(order, decision, reason)
+                return decision, reason, None
+            
+            # Gate 2: Data gap check
+            data_quality_result = self._check_data_quality(market_data)
+            if not data_quality_result[0]:
+                decision = RiskDecision.REJECT
+                reason = f"DATA_QUALITY_FAIL: {data_quality_result[1]}"
+                self._log_risk_decision(order, decision, reason)
+                return decision, reason, None
+            
+            # Gate 3: Daily loss limits
+            daily_loss_result = self._check_daily_loss_limits(order)
+            if not daily_loss_result[0]:
+                decision = RiskDecision.REJECT
+                reason = f"DAILY_LOSS_LIMIT: {daily_loss_result[1]}"
+                self._log_risk_decision(order, decision, reason)
+                return decision, reason, None
+            
+            # Gate 4: Drawdown limits
+            drawdown_result = self._check_drawdown_limits(order)
+            if not drawdown_result[0]:
+                decision = RiskDecision.REJECT
+                reason = f"DRAWDOWN_LIMIT: {drawdown_result[1]}"
+                self._log_risk_decision(order, decision, reason)
+                return decision, reason, None
+            
+            # Gate 5: Position count limits
+            position_count_result = self._check_position_limits(order)
+            if not position_count_result[0]:
+                decision = RiskDecision.REJECT
+                reason = f"POSITION_LIMIT: {position_count_result[1]}"
+                self._log_risk_decision(order, decision, reason)
+                return decision, reason, None
+            
+            # Gate 6: Total exposure limits
+            exposure_result = self._check_exposure_limits(order)
+            if not exposure_result[0]:
+                if exposure_result[2]:  # Has suggested size reduction
+                    decision = RiskDecision.REDUCE_SIZE
+                    reason = f"EXPOSURE_LIMIT: {exposure_result[1]}"
+                    adjusted_size = exposure_result[2]
+                    self._log_risk_decision(order, decision, reason, adjusted_size)
+                    return decision, reason, adjusted_size
+                else:
+                    decision = RiskDecision.REJECT
+                    reason = f"EXPOSURE_LIMIT: {exposure_result[1]}"
+                    self._log_risk_decision(order, decision, reason)
+                    return decision, reason, None
+            
+            # Gate 7: Single position size limits
+            position_size_result = self._check_single_position_size(order)
+            if not position_size_result[0]:
+                if position_size_result[2]:  # Has suggested size reduction
+                    decision = RiskDecision.REDUCE_SIZE
+                    reason = f"POSITION_SIZE_LIMIT: {position_size_result[1]}"
+                    adjusted_size = position_size_result[2]
+                    self._log_risk_decision(order, decision, reason, adjusted_size)
+                    return decision, reason, adjusted_size
+                else:
+                    decision = RiskDecision.REJECT
+                    reason = f"POSITION_SIZE_LIMIT: {position_size_result[1]}"
+                    self._log_risk_decision(order, decision, reason)
+                    return decision, reason, None
+            
+            # Gate 8: Correlation limits
+            correlation_result = self._check_correlation_limits(order)
+            if not correlation_result[0]:
+                decision = RiskDecision.REJECT
+                reason = f"CORRELATION_LIMIT: {correlation_result[1]}"
+                self._log_risk_decision(order, decision, reason)
+                return decision, reason, None
+            
+            # All gates passed - APPROVE
+            decision = RiskDecision.APPROVE
+            reason = "ALL_RISK_GATES_PASSED"
+            self._log_risk_decision(order, decision, reason)
+            
+            return decision, reason, None
+            
+        except Exception as e:
+            # Fail-safe: reject on any error
+            decision = RiskDecision.REJECT
+            reason = f"RISK_EVALUATION_ERROR: {str(e)}"
+            logger.error(f"Risk evaluation error: {e}")
+            self._log_risk_decision(order, decision, reason)
+            return decision, reason, None
+            
+        finally:
+            # Performance tracking
+            evaluation_time = time.time() - start_time
+            self.total_evaluation_time += evaluation_time
+            
+            if evaluation_time > 0.010:  # > 10ms
+                logger.warning(f"Slow risk evaluation: {evaluation_time:.3f}s for {order.symbol}")
+    
+    def _check_data_quality(self, market_data: Optional[Dict]) -> Tuple[bool, str]:
+        """Check data quality and freshness"""
+        if not market_data:
+            return False, "No market data provided"
+        
+        # Check data age
+        data_timestamp = market_data.get('timestamp', 0)
+        if data_timestamp:
+            data_age_minutes = (time.time() - data_timestamp) / 60
+            if data_age_minutes > self.limits.max_data_age_minutes:
+                return False, f"Data too old: {data_age_minutes:.1f}min > {self.limits.max_data_age_minutes}min"
+        
+        # Check data completeness
+        required_fields = ['price', 'volume', 'spread']
+        missing_fields = [field for field in required_fields if field not in market_data or market_data[field] is None]
+        
+        completeness = (len(required_fields) - len(missing_fields)) / len(required_fields)
+        if completeness < self.limits.min_data_completeness:
+            return False, f"Data incomplete: {completeness:.2%} < {self.limits.min_data_completeness:.2%}"
+        
+        return True, "Data quality OK"
+    
+    def _check_daily_loss_limits(self, order: OrderRequest) -> Tuple[bool, str]:
+        """Check daily loss limits"""
+        # Check absolute daily loss
+        if abs(self.portfolio_state.daily_pnl_usd) > self.limits.max_daily_loss_usd:
+            return False, f"Daily loss ${abs(self.portfolio_state.daily_pnl_usd):,.0f} > ${self.limits.max_daily_loss_usd:,.0f}"
+        
+        # Check percentage daily loss
+        daily_loss_percent = abs(self.portfolio_state.daily_pnl_usd) / self.portfolio_state.total_value_usd * 100
+        if daily_loss_percent > self.limits.max_daily_loss_percent:
+            return False, f"Daily loss {daily_loss_percent:.1f}% > {self.limits.max_daily_loss_percent:.1f}%"
+        
+        return True, "Daily loss within limits"
+    
+    def _check_drawdown_limits(self, order: OrderRequest) -> Tuple[bool, str]:
+        """Check maximum drawdown limits"""
+        if self.portfolio_state.max_drawdown_from_peak > self.limits.max_drawdown_percent:
+            return False, f"Max drawdown {self.portfolio_state.max_drawdown_from_peak:.1f}% > {self.limits.max_drawdown_percent:.1f}%"
+        
+        return True, "Drawdown within limits"
+    
+    def _check_position_limits(self, order: OrderRequest) -> Tuple[bool, str]:
+        """Check position count limits"""
+        current_count = self.portfolio_state.position_count
+        
+        # If opening new position
+        if order.symbol not in self.portfolio_state.positions:
+            if current_count >= self.limits.max_position_count:
+                return False, f"Position count {current_count} >= {self.limits.max_position_count}"
+        
+        return True, "Position count within limits"
+    
+    def _check_exposure_limits(self, order: OrderRequest) -> Tuple[bool, str, Optional[float]]:
+        """Check total exposure limits with size reduction option"""
+        estimated_order_value = self._estimate_order_value(order)
+        new_total_exposure = self.portfolio_state.total_exposure_usd + estimated_order_value
+        
+        if new_total_exposure > self.limits.max_total_exposure_usd:
+            # Calculate maximum allowed size
+            available_exposure = self.limits.max_total_exposure_usd - self.portfolio_state.total_exposure_usd
+            
+            if available_exposure <= 0:
+                return False, f"No exposure capacity remaining", None
+            
+            # Suggest reduced size
+            size_reduction_factor = available_exposure / estimated_order_value
+            if size_reduction_factor > 0.1:  # Only suggest if reduction is reasonable
+                adjusted_size = order.size * size_reduction_factor
+                return False, f"Exposure ${new_total_exposure:,.0f} > ${self.limits.max_total_exposure_usd:,.0f}", adjusted_size
+            else:
+                return False, f"Insufficient exposure capacity", None
+        
+        return True, "Exposure within limits", None
+    
+    def _check_single_position_size(self, order: OrderRequest) -> Tuple[bool, str, Optional[float]]:
+        """Check single position size limits with size reduction option"""
+        estimated_order_value = self._estimate_order_value(order)
+        
+        if estimated_order_value > self.limits.max_single_position_usd:
+            # Calculate maximum allowed size
+            size_reduction_factor = self.limits.max_single_position_usd / estimated_order_value
+            
+            if size_reduction_factor > 0.1:  # Only suggest if reduction is reasonable
+                adjusted_size = order.size * size_reduction_factor
+                return False, f"Position size ${estimated_order_value:,.0f} > ${self.limits.max_single_position_usd:,.0f}", adjusted_size
+            else:
+                return False, f"Position size too large", None
+        
+        return True, "Position size within limits", None
+    
+    def _check_correlation_limits(self, order: OrderRequest) -> Tuple[bool, str]:
+        """Check correlation exposure limits"""
+        # Simplified correlation check - in production would use actual correlation matrix
+        symbol_base = order.symbol.split('/')[0] if '/' in order.symbol else order.symbol[:3]
+        
+        # Count exposure to same base currency
+        base_exposure = 0.0
+        for symbol, position in self.portfolio_state.positions.items():
+            if symbol.startswith(symbol_base):
+                base_exposure += position.get('value_usd', 0)
+        
+        total_base_exposure_percent = base_exposure / self.portfolio_state.total_value_usd
+        
+        if total_base_exposure_percent > self.limits.max_correlation_exposure:
+            return False, f"Base currency exposure {total_base_exposure_percent:.1%} > {self.limits.max_correlation_exposure:.1%}"
+        
+        return True, "Correlation within limits"
+    
+    def _estimate_order_value(self, order: OrderRequest) -> float:
+        """Estimate order value in USD"""
+        # Simplified estimation - in production would use real market data
+        if order.price:
+            return order.size * order.price
+        else:
+            # Use last known price or reasonable estimate
+            return order.size * 50000  # Conservative BTC estimate
+    
+    def _log_risk_decision(self, order: OrderRequest, decision: RiskDecision, reason: str, adjusted_size: Optional[float] = None) -> None:
+        """Log risk decision for audit trail"""
+        try:
+            log_entry = {
+                'timestamp': datetime.now().isoformat(),
+                'client_order_id': order.client_order_id,
+                'symbol': order.symbol,
+                'side': order.side,
+                'size': order.size,
+                'adjusted_size': adjusted_size,
+                'decision': decision.value,
+                'reason': reason,
+                'portfolio_value': self.portfolio_state.total_value_usd,
+                'daily_pnl': self.portfolio_state.daily_pnl_usd,
+                'position_count': self.portfolio_state.position_count,
+                'total_exposure': self.portfolio_state.total_exposure_usd
             }
+            
+            with open(self.audit_log_path, 'a') as f:
+                f.write(json.dumps(log_entry) + '\n')
+            
+            # Also log to main logger
+            log_level = logging.WARNING if decision == RiskDecision.REJECT else logging.INFO
+            logger.log(log_level, f"Risk decision {decision.value}: {reason} for {order.symbol}")
+            
+            # Track rejections
+            if decision in [RiskDecision.REJECT, RiskDecision.EMERGENCY_STOP]:
+                self.rejections_count += 1
+                
+        except Exception as e:
+            logger.error(f"Failed to log risk decision: {e}")
+    
+    def update_portfolio_state(self, new_state: PortfolioState) -> None:
+        """Update portfolio state for risk calculations"""
+        self.portfolio_state = new_state
+        self.portfolio_state.last_update = time.time()
+        logger.debug(f"Portfolio state updated: value=${new_state.total_value_usd:,.0f}, positions={new_state.position_count}")
+    
+    def activate_kill_switch(self, reason: str) -> None:
+        """Activate emergency kill switch"""
+        self.limits.kill_switch_active = True
+        self._save_risk_limits(self.limits)
+        
+        logger.critical(f"KILL SWITCH ACTIVATED: {reason}")
+        
+        # Log emergency stop
+        emergency_log = {
+            'timestamp': datetime.now().isoformat(),
+            'event': 'KILL_SWITCH_ACTIVATED',
+            'reason': reason,
+            'portfolio_value': self.portfolio_state.total_value_usd,
+            'daily_pnl': self.portfolio_state.daily_pnl_usd
+        }
+        
+        with open(self.audit_log_path, 'a') as f:
+            f.write(json.dumps(emergency_log) + '\n')
+    
+    def deactivate_kill_switch(self, reason: str) -> None:
+        """Deactivate kill switch (requires manual intervention)"""
+        self.limits.kill_switch_active = False
+        self._save_risk_limits(self.limits)
+        
+        logger.warning(f"KILL SWITCH DEACTIVATED: {reason}")
+        
+        # Log reactivation
+        reactivation_log = {
+            'timestamp': datetime.now().isoformat(),
+            'event': 'KILL_SWITCH_DEACTIVATED',
+            'reason': reason
+        }
+        
+        with open(self.audit_log_path, 'a') as f:
+            f.write(json.dumps(reactivation_log) + '\n')
+    
+    def get_risk_metrics(self) -> Dict[str, Any]:
+        """Get risk guard performance metrics"""
+        avg_evaluation_time = self.total_evaluation_time / max(self.evaluation_count, 1)
+        rejection_rate = self.rejections_count / max(self.evaluation_count, 1)
+        
+        return {
+            'evaluation_count': self.evaluation_count,
+            'rejection_count': self.rejections_count,
+            'rejection_rate': rejection_rate,
+            'avg_evaluation_time_ms': avg_evaluation_time * 1000,
+            'kill_switch_active': self.limits.kill_switch_active,
+            'portfolio_value': self.portfolio_state.total_value_usd,
+            'daily_pnl': self.portfolio_state.daily_pnl_usd,
+            'position_count': self.portfolio_state.position_count,
+            'total_exposure': self.portfolio_state.total_exposure_usd,
+            'last_update': self.portfolio_state.last_update
+        }
 
 
-# Global RiskGuard instance
-_global_risk_guard: Optional[CentralRiskGuard] = None
+# Global risk guard instance
+central_risk_guard = CentralRiskGuard()
 
 
-def get_global_risk_guard() -> CentralRiskGuard:
-    """Get or create global RiskGuard instance"""
-    global _global_risk_guard
-    if _global_risk_guard is None:
-        _global_risk_guard = CentralRiskGuard()
-        logger.info("✅ Global CentralRiskGuard initialized")
-    return _global_risk_guard
-
-
-def reset_global_risk_guard():
-    """Reset global RiskGuard (for testing)"""
-    global _global_risk_guard
-    _global_risk_guard = None
+def get_central_risk_guard() -> CentralRiskGuard:
+    """Get global central risk guard instance"""
+    return central_risk_guard

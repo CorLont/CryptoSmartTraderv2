@@ -1,492 +1,302 @@
-#!/usr/bin/env python3
 """
-Test Central RiskGuard Poortwachter
-Comprehensive tests for risk gates and kill switch functionality
+Test suite voor CentralRiskGuard - comprehensive risk validation testing
 """
 
 import pytest
-import time
-import threading
-from unittest.mock import Mock
+import tempfile
+import json
+from pathlib import Path
+from unittest.mock import patch, MagicMock
+
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.abspath('.'))
 
-try:
-    from src.cryptosmarttrader.risk.central_risk_guard import (
-        CentralRiskGuard, RiskLimits, TradingOperation, RiskDecision, 
-        RiskViolationType, PortfolioState
-    )
-    from src.cryptosmarttrader.execution.risk_enforced_execution import (
-        RiskEnforcedExecutionManager
-    )
-except ImportError:
-    pytest.skip("RiskGuard modules not available", allow_module_level=True)
+from src.cryptosmarttrader.risk.central_risk_guard import (
+    CentralRiskGuard, 
+    OrderRequest, 
+    RiskLimits, 
+    PortfolioState, 
+    RiskDecision
+)
 
 
 class TestCentralRiskGuard:
-    """Test Central RiskGuard poortwachter functionality"""
+    """Test central risk guard functionality"""
     
     def setup_method(self):
         """Setup for each test"""
-        self.risk_limits = RiskLimits(
-            max_day_loss_pct=2.0,
-            max_drawdown_pct=10.0,
-            max_total_exposure_pct=50.0,
-            max_positions=5,
-            max_position_size_pct=10.0,
-            max_data_gap_minutes=5,
-            kill_switch_active=False
-        )
+        # Create temporary config file
+        self.temp_dir = tempfile.mkdtemp()
+        self.config_path = Path(self.temp_dir) / "test_risk_limits.json"
         
-        self.risk_guard = CentralRiskGuard(self.risk_limits)
+        # Initialize risk guard with test config
+        self.risk_guard = CentralRiskGuard(str(self.config_path))
         
-        # Setup good portfolio state
-        self.risk_guard.update_portfolio_state(
-            total_equity=100000.0,
-            daily_pnl=500.0,  # Small profit
-            open_positions=3,
-            total_exposure_usd=25000.0,  # 25% exposure
-            position_sizes={"BTC/USD": 10000, "ETH/USD": 8000, "SOL/USD": 7000},
-            correlations={"BTC/USD": 0.8, "ETH/USD": 0.7, "SOL/USD": 0.5}
-        )
-    
-    def test_healthy_operation_approval(self):
-        """Test that healthy operations are approved"""
-        
-        operation = TradingOperation(
-            operation_type="entry",
+        # Test order
+        self.test_order = OrderRequest(
             symbol="BTC/USD",
-            side="buy",
-            size_usd=8000.0,  # Within 10% position size limit
-            current_price=50000.0,
-            strategy_id="test_strategy"
+            side="buy", 
+            size=1.0,
+            price=50000.0,
+            client_order_id="test_order_123"
         )
         
-        result = self.risk_guard.evaluate_operation(operation)
-        
-        assert result.decision == RiskDecision.APPROVE
-        assert result.approved_size_usd == 8000.0
-        assert len(result.violations) == 0
-        assert result.gate_results["kill_switch"] is True
-        assert result.gate_results["data_gap"] is True
-        assert result.gate_results["day_loss"] is True
+        # Test market data
+        self.test_market_data = {
+            'timestamp': 1234567890,
+            'price': 50000.0,
+            'volume': 1000.0,
+            'spread': 0.5
+        }
     
-    def test_kill_switch_rejection(self):
-        """Test that kill switch blocks all operations"""
-        
+    def test_risk_guard_initialization(self):
+        """Test risk guard initializes correctly"""
+        assert self.risk_guard is not None
+        assert isinstance(self.risk_guard.limits, RiskLimits)
+        assert isinstance(self.risk_guard.portfolio_state, PortfolioState)
+        assert self.risk_guard.evaluation_count == 0
+    
+    def test_kill_switch_blocks_all_orders(self):
+        """Test kill switch blocks all orders"""
         # Activate kill switch
-        self.risk_guard.activate_kill_switch("Emergency stop for testing")
+        self.risk_guard.activate_kill_switch("Test activation")
         
-        operation = TradingOperation(
-            operation_type="entry",
-            symbol="BTC/USD",
-            side="buy",
-            size_usd=1000.0,  # Small size
-            current_price=50000.0,
-            strategy_id="test_strategy"
+        # Try to place order
+        decision, reason, adjusted_size = self.risk_guard.evaluate_order(
+            self.test_order, self.test_market_data
         )
         
-        result = self.risk_guard.evaluate_operation(operation)
-        
-        assert result.decision == RiskDecision.KILL_SWITCH_ACTIVATED
-        assert result.approved_size_usd == 0.0
-        assert RiskViolationType.KILL_SWITCH in result.violations
-        assert result.gate_results["kill_switch"] is False
-        assert "Emergency stop for testing" in result.reasons[0]
+        assert decision == RiskDecision.EMERGENCY_STOP
+        assert "KILL_SWITCH_ACTIVE" in reason
+        assert adjusted_size is None
     
-    def test_daily_loss_limit(self):
-        """Test daily loss limit enforcement"""
+    def test_data_quality_rejection(self):
+        """Test rejection due to poor data quality"""
+        # Test with missing data
+        bad_market_data = {'price': 50000.0}  # Missing volume and spread
         
+        decision, reason, adjusted_size = self.risk_guard.evaluate_order(
+            self.test_order, bad_market_data
+        )
+        
+        assert decision == RiskDecision.REJECT
+        assert "DATA_QUALITY_FAIL" in reason
+    
+    def test_daily_loss_limit_rejection(self):
+        """Test rejection due to daily loss limits"""
         # Set portfolio with large daily loss
-        self.risk_guard.update_portfolio_state(
-            total_equity=100000.0,
-            daily_pnl=-3000.0,  # -3% daily loss (exceeds 2% limit)
-            open_positions=2,
-            total_exposure_usd=20000.0,
-            position_sizes={"BTC/USD": 10000, "ETH/USD": 10000}
+        portfolio_state = PortfolioState(
+            total_value_usd=100000.0,
+            daily_pnl_usd=-6000.0  # Exceeds $5000 limit
+        )
+        self.risk_guard.update_portfolio_state(portfolio_state)
+        
+        decision, reason, adjusted_size = self.risk_guard.evaluate_order(
+            self.test_order, self.test_market_data
         )
         
-        operation = TradingOperation(
-            operation_type="entry",
-            symbol="SOL/USD",
-            side="buy",
-            size_usd=5000.0,
-            current_price=100.0,
-            strategy_id="test_strategy"
-        )
-        
-        result = self.risk_guard.evaluate_operation(operation)
-        
-        assert result.decision == RiskDecision.REJECT
-        assert RiskViolationType.DAY_LOSS in result.violations
-        assert result.gate_results["day_loss"] is False
-        assert "-3.00%" in result.reasons[0]
+        assert decision == RiskDecision.REJECT
+        assert "DAILY_LOSS_LIMIT" in reason
     
-    def test_max_drawdown_limit(self):
-        """Test maximum drawdown enforcement"""
-        
-        # Set portfolio with large drawdown
-        self.risk_guard.portfolio_state.peak_equity = 120000.0
-        self.risk_guard.portfolio_state.total_equity = 100000.0  # 16.7% drawdown
-        self.risk_guard.portfolio_state.current_drawdown_pct = 16.7
-        
-        operation = TradingOperation(
-            operation_type="entry",
-            symbol="BTC/USD",
-            side="buy",
-            size_usd=5000.0,
-            current_price=50000.0,
-            strategy_id="test_strategy"
+    def test_position_count_limit_rejection(self):
+        """Test rejection due to position count limits"""
+        # Set portfolio with max positions
+        positions = {f"COIN{i}/USD": {"value_usd": 1000} for i in range(10)}
+        portfolio_state = PortfolioState(
+            position_count=10,
+            positions=positions
         )
-        
-        result = self.risk_guard.evaluate_operation(operation)
-        
-        assert result.decision == RiskDecision.REJECT
-        assert RiskViolationType.MAX_DRAWDOWN in result.violations
-        assert result.gate_results["drawdown"] is False
-    
-    def test_max_positions_limit(self):
-        """Test maximum positions enforcement"""
-        
-        # Portfolio already at position limit
-        self.risk_guard.update_portfolio_state(
-            total_equity=100000.0,
-            daily_pnl=0.0,
-            open_positions=5,  # At max limit
-            total_exposure_usd=30000.0,
-            position_sizes={"BTC/USD": 6000, "ETH/USD": 6000, "SOL/USD": 6000, "ADA/USD": 6000, "DOT/USD": 6000}
-        )
+        self.risk_guard.update_portfolio_state(portfolio_state)
         
         # Try to open new position
-        operation = TradingOperation(
-            operation_type="entry",  # New position
-            symbol="LINK/USD",
+        new_order = OrderRequest(
+            symbol="NEW/USD",
             side="buy",
-            size_usd=5000.0,
-            current_price=20.0,
-            strategy_id="test_strategy"
+            size=1.0,
+            price=1000.0
         )
         
-        result = self.risk_guard.evaluate_operation(operation)
+        decision, reason, adjusted_size = self.risk_guard.evaluate_order(
+            new_order, self.test_market_data
+        )
         
-        assert result.decision == RiskDecision.REJECT
-        assert RiskViolationType.MAX_POSITIONS in result.violations
-        assert result.gate_results["position_count"] is False
+        assert decision == RiskDecision.REJECT
+        assert "POSITION_LIMIT" in reason
     
-    def test_total_exposure_limit(self):
-        """Test total exposure limit with size reduction"""
-        
-        # Portfolio near exposure limit
-        self.risk_guard.update_portfolio_state(
-            total_equity=100000.0,
-            daily_pnl=0.0,
-            open_positions=3,
-            total_exposure_usd=45000.0,  # 45% exposure (near 50% limit)
-            position_sizes={"BTC/USD": 15000, "ETH/USD": 15000, "SOL/USD": 15000}
+    def test_exposure_limit_size_reduction(self):
+        """Test size reduction due to exposure limits"""
+        # Set portfolio near exposure limit
+        portfolio_state = PortfolioState(
+            total_exposure_usd=80000.0  # Close to $100k limit
         )
+        self.risk_guard.update_portfolio_state(portfolio_state)
         
-        # Try to open large position that would exceed limit
-        operation = TradingOperation(
-            operation_type="entry",
-            symbol="ADA/USD",
-            side="buy",
-            size_usd=10000.0,  # Would bring total to 55%
-            current_price=1.0,
-            strategy_id="test_strategy"
-        )
-        
-        result = self.risk_guard.evaluate_operation(operation)
-        
-        # Should reduce size to stay within limits
-        assert result.decision == RiskDecision.REDUCE_SIZE
-        assert result.approved_size_usd < 10000.0
-        assert result.approved_size_usd <= 5000.0  # Max 5k to stay at 50%
-        assert RiskViolationType.MAX_EXPOSURE in result.violations
-    
-    def test_position_size_limit(self):
-        """Test individual position size limit"""
-        
-        operation = TradingOperation(
-            operation_type="entry",
+        # Large order that would exceed limit
+        large_order = OrderRequest(
             symbol="BTC/USD",
             side="buy",
-            size_usd=15000.0,  # 15% of 100k equity (exceeds 10% limit)
-            current_price=50000.0,
-            strategy_id="test_strategy"
+            size=1.0,
+            price=50000.0  # Would add $50k exposure, exceeding limit
         )
         
-        result = self.risk_guard.evaluate_operation(operation)
+        decision, reason, adjusted_size = self.risk_guard.evaluate_order(
+            large_order, self.test_market_data
+        )
         
-        assert result.decision == RiskDecision.REDUCE_SIZE
-        assert result.approved_size_usd <= 10000.0  # Reduced to 10% limit
-        assert RiskViolationType.POSITION_SIZE in result.violations
-        assert result.gate_results["position_size"] is False
+        assert decision == RiskDecision.REDUCE_SIZE
+        assert "EXPOSURE_LIMIT" in reason
+        assert adjusted_size is not None
+        assert adjusted_size < large_order.size
     
-    def test_data_gap_detection(self):
-        """Test data gap detection and rejection"""
-        
-        # Simulate old data by setting last update time in the past
-        self.risk_guard.last_market_data_update = time.time() - 7 * 60  # 7 minutes ago
-        
-        operation = TradingOperation(
-            operation_type="entry",
+    def test_single_position_size_reduction(self):
+        """Test size reduction due to single position limits"""
+        # Large order exceeding single position limit
+        large_order = OrderRequest(
             symbol="BTC/USD",
             side="buy",
-            size_usd=5000.0,
-            current_price=50000.0,
-            strategy_id="test_strategy"
+            size=2.0,
+            price=50000.0  # $100k position > $50k limit
         )
         
-        result = self.risk_guard.evaluate_operation(operation)
+        decision, reason, adjusted_size = self.risk_guard.evaluate_order(
+            large_order, self.test_market_data
+        )
         
-        assert result.decision == RiskDecision.REJECT
-        assert RiskViolationType.DATA_GAP in result.violations
-        assert result.gate_results["data_gap"] is False
-        assert "7.0 minutes" in result.reasons[0]
+        assert decision == RiskDecision.REDUCE_SIZE
+        assert "POSITION_SIZE_LIMIT" in reason
+        assert adjusted_size is not None
+        assert adjusted_size < large_order.size
     
-    def test_correlation_limit(self):
-        """Test correlation exposure limit"""
-        
-        # Portfolio with high correlation exposure
-        self.risk_guard.update_portfolio_state(
-            total_equity=100000.0,
-            daily_pnl=0.0,
-            open_positions=3,
-            total_exposure_usd=30000.0,
-            position_sizes={"BTC/USD": 12000, "ETH/USD": 10000, "LTC/USD": 8000},
-            correlations={"BTC/USD": 0.9, "ETH/USD": 0.8, "LTC/USD": 0.85}  # All highly correlated
+    def test_correlation_limit_rejection(self):
+        """Test rejection due to correlation limits"""
+        # Set portfolio with high BTC exposure
+        positions = {
+            "BTC/USD": {"value_usd": 60000},
+            "BTC/EUR": {"value_usd": 20000}
+        }
+        portfolio_state = PortfolioState(
+            total_value_usd=100000.0,
+            positions=positions
         )
+        self.risk_guard.update_portfolio_state(portfolio_state)
         
-        # Try to add another correlated asset
-        operation = TradingOperation(
-            operation_type="entry",
-            symbol="BCH/USD",  # Another Bitcoin-like asset
+        # Try to add more BTC exposure
+        btc_order = OrderRequest(
+            symbol="BTC/GBP",
             side="buy",
-            size_usd=5000.0,
-            current_price=300.0,
-            strategy_id="test_strategy"
+            size=0.2,
+            price=50000.0
         )
         
-        # Manually set correlation for test
-        self.risk_guard.portfolio_state.correlations["BCH/USD"] = 0.85
+        decision, reason, adjusted_size = self.risk_guard.evaluate_order(
+            btc_order, self.test_market_data
+        )
         
-        result = self.risk_guard.evaluate_operation(operation)
-        
-        # Should have correlation violation if exposure too high
-        if RiskViolationType.CORRELATION_LIMIT in result.violations:
-            assert result.gate_results["correlation"] is False
+        assert decision == RiskDecision.REJECT
+        assert "CORRELATION_LIMIT" in reason
     
-    def test_thread_safety(self):
-        """Test thread-safe operation of RiskGuard"""
+    def test_successful_order_approval(self):
+        """Test successful order approval when all gates pass"""
+        # Clean portfolio state
+        portfolio_state = PortfolioState(
+            total_value_usd=100000.0,
+            daily_pnl_usd=0.0,
+            position_count=2,
+            total_exposure_usd=10000.0
+        )
+        self.risk_guard.update_portfolio_state(portfolio_state)
         
-        results = []
+        # Small reasonable order
+        small_order = OrderRequest(
+            symbol="ETH/USD",
+            side="buy",
+            size=10.0,
+            price=2000.0  # $20k position
+        )
         
-        def evaluate_operation(thread_id):
-            operation = TradingOperation(
-                operation_type="entry",
-                symbol=f"TEST{thread_id}/USD",
-                side="buy",
-                size_usd=1000.0,
-                current_price=100.0,
-                strategy_id=f"thread_{thread_id}"
+        decision, reason, adjusted_size = self.risk_guard.evaluate_order(
+            small_order, self.test_market_data
+        )
+        
+        assert decision == RiskDecision.APPROVE
+        assert "ALL_RISK_GATES_PASSED" in reason
+        assert adjusted_size is None
+    
+    def test_risk_metrics_tracking(self):
+        """Test risk metrics are tracked correctly"""
+        initial_metrics = self.risk_guard.get_risk_metrics()
+        assert initial_metrics['evaluation_count'] == 0
+        
+        # Process some orders
+        self.risk_guard.evaluate_order(self.test_order, self.test_market_data)
+        
+        # Activate kill switch to force rejection
+        self.risk_guard.activate_kill_switch("Test")
+        self.risk_guard.evaluate_order(self.test_order, self.test_market_data)
+        
+        final_metrics = self.risk_guard.get_risk_metrics()
+        assert final_metrics['evaluation_count'] == 2
+        assert final_metrics['rejection_count'] == 1
+        assert final_metrics['rejection_rate'] == 0.5
+        assert final_metrics['kill_switch_active'] is True
+    
+    def test_config_persistence(self):
+        """Test risk limits config persistence"""
+        # Modify limits
+        original_daily_limit = self.risk_guard.limits.max_daily_loss_usd
+        self.risk_guard.limits.max_daily_loss_usd = 10000.0
+        self.risk_guard._save_risk_limits(self.risk_guard.limits)
+        
+        # Create new instance - should load saved config
+        new_risk_guard = CentralRiskGuard(str(self.config_path))
+        assert new_risk_guard.limits.max_daily_loss_usd == 10000.0
+        assert new_risk_guard.limits.max_daily_loss_usd != original_daily_limit
+    
+    def test_audit_log_creation(self):
+        """Test audit log is created and populated"""
+        # Process order to generate log entry
+        self.risk_guard.evaluate_order(self.test_order, self.test_market_data)
+        
+        # Check audit log exists and has content
+        assert self.risk_guard.audit_log_path.exists()
+        
+        with open(self.risk_guard.audit_log_path, 'r') as f:
+            log_content = f.read().strip()
+            assert log_content != ""
+            
+            # Parse last log entry
+            last_entry = json.loads(log_content.split('\n')[-1])
+            assert last_entry['symbol'] == self.test_order.symbol
+            assert last_entry['decision'] in [d.value for d in RiskDecision]
+    
+    def test_performance_requirements(self):
+        """Test risk evaluation performance < 10ms"""
+        import time
+        
+        # Warm up
+        for _ in range(5):
+            self.risk_guard.evaluate_order(self.test_order, self.test_market_data)
+        
+        # Measure performance
+        start_time = time.time()
+        for _ in range(100):
+            self.risk_guard.evaluate_order(self.test_order, self.test_market_data)
+        end_time = time.time()
+        
+        avg_time_ms = (end_time - start_time) / 100 * 1000
+        assert avg_time_ms < 10.0, f"Risk evaluation too slow: {avg_time_ms:.1f}ms > 10ms"
+    
+    def test_error_handling_fails_safe(self):
+        """Test error handling fails safe (rejects on error)"""
+        # Mock a method to raise exception
+        with patch.object(self.risk_guard, '_check_data_quality', side_effect=Exception("Test error")):
+            decision, reason, adjusted_size = self.risk_guard.evaluate_order(
+                self.test_order, self.test_market_data
             )
             
-            result = self.risk_guard.evaluate_operation(operation)
-            results.append((thread_id, result.decision))
-        
-        # Create multiple threads
-        threads = []
-        for i in range(5):
-            thread = threading.Thread(target=evaluate_operation, args=(i,))
-            threads.append(thread)
-            thread.start()
-        
-        # Wait for all threads
-        for thread in threads:
-            thread.join()
-        
-        # All operations should complete
-        assert len(results) == 5
-        
-        # Most should be approved (small sizes)
-        approved_count = sum(1 for _, decision in results if decision == RiskDecision.APPROVE)
-        assert approved_count >= 3
-    
-    def test_kill_switch_history(self):
-        """Test kill switch activation history"""
-        
-        # Activate and deactivate kill switch multiple times
-        self.risk_guard.activate_kill_switch("Test reason 1")
-        self.risk_guard.deactivate_kill_switch("Issue resolved")
-        self.risk_guard.activate_kill_switch("Test reason 2")
-        self.risk_guard.deactivate_kill_switch("Issue resolved again")
-        
-        assert len(self.risk_guard.kill_switch_history) == 4
-        assert self.risk_guard.kill_switch_history[0]["action"] == "activated"
-        assert self.risk_guard.kill_switch_history[1]["action"] == "deactivated"
-        assert self.risk_guard.kill_switch_history[2]["action"] == "activated"
-        assert self.risk_guard.kill_switch_history[3]["action"] == "deactivated"
-    
-    def test_risk_status_comprehensive(self):
-        """Test comprehensive risk status reporting"""
-        
-        status = self.risk_guard.get_risk_status()
-        
-        # Check all required sections
-        assert "risk_limits" in status
-        assert "portfolio_state" in status
-        assert "statistics" in status
-        assert "utilization" in status
-        
-        # Check risk limits
-        limits = status["risk_limits"]
-        assert limits["max_day_loss_pct"] == 2.0
-        assert limits["max_drawdown_pct"] == 10.0
-        assert limits["kill_switch_active"] is False
-        
-        # Check portfolio state
-        portfolio = status["portfolio_state"]
-        assert portfolio["total_equity"] == 100000.0
-        assert portfolio["open_positions"] == 3
-        assert "daily_pnl_pct" in portfolio
-        assert "data_age_minutes" in portfolio
-        
-        # Check statistics
-        stats = status["statistics"]
-        assert "total_evaluations" in stats
-        assert "violation_count" in stats
-        assert "violation_rate" in stats
-        
-        # Check utilization
-        util = status["utilization"]
-        assert "exposure_utilization" in util
-        assert "position_utilization" in util
-        assert "drawdown_utilization" in util
-
-
-class TestRiskEnforcedExecution:
-    """Test complete risk-enforced execution pipeline"""
-    
-    def setup_method(self):
-        """Setup for each test"""
-        # Mock exchange manager
-        self.mock_exchange_manager = Mock()
-        self.mock_exchange_manager.create_market_conditions.return_value = Mock(
-            spread_bps=25.0,
-            bid_depth_usd=50000.0,
-            ask_depth_usd=50000.0,
-            volume_1m_usd=200000.0,
-            last_price=50000.0,
-            bid_price=49950.0,
-            ask_price=50050.0,
-            timestamp=time.time()
-        )
-        
-        self.mock_exchange_manager.execute_disciplined_order.return_value = {
-            "success": True,
-            "order_id": "test_order_123",
-            "client_order_id": "CST_test123"
-        }
-        
-        self.risk_execution_manager = RiskEnforcedExecutionManager(self.mock_exchange_manager)
-        
-        # Setup healthy portfolio
-        self.risk_execution_manager.update_portfolio_state(
-            total_equity=100000.0,
-            daily_pnl=500.0,
-            open_positions=2,
-            total_exposure_usd=20000.0,
-            position_sizes={"BTC/USD": 10000, "ETH/USD": 10000}
-        )
-    
-    def test_complete_execution_pipeline_success(self):
-        """Test successful execution through complete pipeline"""
-        
-        result = self.risk_execution_manager.execute_trading_operation(
-            operation_type="entry",
-            symbol="BTC/USD",
-            side="buy",
-            size_usd=8000.0,
-            limit_price=50000.0,
-            strategy_id="test_strategy"
-        )
-        
-        assert result["success"] is True
-        assert result["stage"] == "exchange_execution"
-        assert "risk_evaluation" in result
-        assert "execution_result" in result
-        assert result["approved_size_usd"] == 8000.0
-        assert result["order_id"] == "test_order_123"
-    
-    def test_risk_guard_rejection(self):
-        """Test rejection by RiskGuard"""
-        
-        # Set portfolio with excessive exposure
-        self.risk_execution_manager.update_portfolio_state(
-            total_equity=100000.0,
-            daily_pnl=0.0,
-            open_positions=3,
-            total_exposure_usd=48000.0,  # Near limit
-            position_sizes={"BTC/USD": 20000, "ETH/USD": 15000, "SOL/USD": 13000}
-        )
-        
-        # Try large order that would exceed limits
-        result = self.risk_execution_manager.execute_trading_operation(
-            operation_type="entry",
-            symbol="ADA/USD",
-            side="buy",
-            size_usd=15000.0,  # Would exceed total exposure
-            limit_price=1.0,
-            strategy_id="test_strategy"
-        )
-        
-        assert result["success"] is False
-        assert result["stage"] == "risk_guard"
-        assert "RiskGuard rejected" in result["error"]
-        assert "risk_evaluation" in result
-    
-    def test_emergency_kill_switch(self):
-        """Test emergency kill switch activation"""
-        
-        # Activate kill switch
-        self.risk_execution_manager.activate_emergency_stop("Market crash detected")
-        
-        # Try to execute operation
-        result = self.risk_execution_manager.execute_trading_operation(
-            operation_type="entry",
-            symbol="BTC/USD",
-            side="buy",
-            size_usd=1000.0,
-            limit_price=50000.0,
-            strategy_id="test_strategy"
-        )
-        
-        assert result["success"] is False
-        assert result["stage"] == "risk_guard"
-        assert "KILL SWITCH ACTIVATED" in result["error"]
-        assert result.get("kill_switch") is True
-    
-    def test_execution_stats_tracking(self):
-        """Test execution statistics tracking"""
-        
-        # Execute several operations
-        for i in range(3):
-            self.risk_execution_manager.execute_trading_operation(
-                operation_type="entry",
-                symbol=f"TEST{i}/USD",
-                side="buy",
-                size_usd=5000.0,
-                limit_price=100.0,
-                strategy_id=f"test_{i}"
-            )
-        
-        stats = self.risk_execution_manager.get_execution_stats()
-        
-        assert stats["total_requests"] == 3
-        assert stats["successful_executions"] == 3
-        assert stats["success_rate"] == 100.0
-        assert stats["risk_rejection_rate"] == 0.0
+            assert decision == RiskDecision.REJECT
+            assert "RISK_EVALUATION_ERROR" in reason
 
 
 if __name__ == "__main__":
