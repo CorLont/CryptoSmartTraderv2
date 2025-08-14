@@ -536,10 +536,13 @@ class FunctionalityAuditor:
         try:
             import subprocess
 
+            # SECURITY: Secure subprocess with timeout and controlled arguments
             result = subprocess.run(
-                ["grep", "-r", "-i", "api_key\|token\|secret\|password", "."],
+                ["grep", "-r", "-i", "api_key\\|token\\|secret\\|password", "."],
                 capture_output=True,
                 text=True,
+                timeout=30,  # 30 second timeout
+                check=False,  # Don't raise on non-zero exit
             )
             if result.returncode == 0 and len(result.stdout) > 100:
                 secrets_in_repo = True

@@ -904,11 +904,13 @@ class AnalysisControlDashboard:
             if os.name == "nt":
                 scripts_dir = Path("scripts")
 
-                # Start ML analysis service
-                subprocess.Popen([str(scripts_dir / "start_ml_analysis.bat")], shell=True)
-
-                # Start social scraper service
-                subprocess.Popen([str(scripts_dir / "start_social_scraper.bat")], shell=True)
+                # SECURITY: Secure subprocess calls without shell=True
+                try:
+                    subprocess.Popen([str(scripts_dir / "start_ml_analysis.bat")])
+                    subprocess.Popen([str(scripts_dir / "start_social_scraper.bat")])
+                except Exception as e:
+                    st.error(f"Failed to start services: {e}")
+                    return
 
                 st.success("Background services started! Check the console windows.")
             else:
@@ -923,11 +925,23 @@ class AnalysisControlDashboard:
         """Stop all background services"""
         try:
             if os.name == "nt":
-                # Kill processes by window title (Windows specific)
-                subprocess.run(["taskkill", "/FI", "WINDOWTITLE eq ML Analysis*", "/F"], shell=True)
-                subprocess.run(
-                    ["taskkill", "/FI", "WINDOWTITLE eq Social Scraper*", "/F"], shell=True
-                )
+                # SECURITY: Secure subprocess calls with timeout and no shell=True
+                try:
+                    subprocess.run(
+                        ["taskkill", "/FI", "WINDOWTITLE eq ML Analysis*", "/F"], 
+                        timeout=10, 
+                        check=False
+                    )
+                    subprocess.run(
+                        ["taskkill", "/FI", "WINDOWTITLE eq Social Scraper*", "/F"], 
+                        timeout=10, 
+                        check=False
+                    )
+                except subprocess.TimeoutExpired:
+                    st.warning("Service termination timed out")
+                except Exception as e:
+                    st.error(f"Failed to stop services: {e}")
+                    return
 
                 st.success("Background services stopped")
             else:
@@ -951,9 +965,9 @@ class AnalysisControlDashboard:
             if os.name == "nt":
                 os.startfile(data_path)
             else:
-                subprocess.run(
-                    ["open", data_path] if sys.platform == "darwin" else ["xdg-open", data_path]
-                )
+                # SECURITY: Secure subprocess with timeout
+                cmd = ["open", str(data_path)] if sys.platform == "darwin" else ["xdg-open", str(data_path)]
+                subprocess.run(cmd, timeout=10, check=False)
 
             st.success("Data folder opened in file explorer")
         except Exception as e:

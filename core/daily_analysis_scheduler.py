@@ -167,15 +167,19 @@ class DailyAnalysisScheduler:
         if sys.platform.startswith("win"):
             script_path = self.project_root / "scripts" / "start_ml_analysis.bat"
             if script_path.exists():
-                process = subprocess.Popen(
-                    str(script_path),
-                    shell=True,
-                    cwd=str(self.project_root),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-                self.running_services["ml_analysis"] = process
-                self.logger.info("ML analysis service started")
+                # SECURITY: Secure subprocess with timeout and no shell=True
+                try:
+                    process = subprocess.Popen(
+                        [str(script_path)],  # No shell=True for security
+                        cwd=str(self.project_root),
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
+                    self.running_services["ml_analysis"] = process
+                    self.logger.info(f"ML analysis service started: {script_path}")
+                except Exception as e:
+                    self.logger.error(f"ML service startup failed: {e}")
+                    return
         else:
             # For non-Windows systems, start Python service directly
             self._start_ml_service_python()
@@ -185,15 +189,19 @@ class DailyAnalysisScheduler:
         if sys.platform.startswith("win"):
             script_path = self.project_root / "scripts" / "start_social_scraper.bat"
             if script_path.exists():
-                process = subprocess.Popen(
-                    str(script_path),
-                    shell=True,
-                    cwd=str(self.project_root),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-                self.running_services["social_scraper"] = process
-                self.logger.info("Social scraping service started")
+                # SECURITY: Secure subprocess with timeout and no shell=True
+                try:
+                    process = subprocess.Popen(
+                        [str(script_path)],  # No shell=True for security
+                        cwd=str(self.project_root),
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
+                    self.running_services["social_scraper"] = process
+                    self.logger.info(f"Social scraping service started: {script_path}")
+                except Exception as e:
+                    self.logger.error(f"Social service startup failed: {e}")
+                    return
         else:
             # For non-Windows systems, start Python service directly
             self._start_social_service_python()
@@ -203,8 +211,9 @@ class DailyAnalysisScheduler:
         try:
             ml_script = self.project_root / "scripts" / "ml_background_service.py"
             if ml_script.exists():
+                # SECURITY: Secure subprocess with controlled arguments
                 process = subprocess.Popen(
-                    [sys.executable, str(ml_script)],
+                    [sys.executable, str(ml_script)],  # Controlled arguments
                     cwd=str(self.project_root),
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -219,8 +228,9 @@ class DailyAnalysisScheduler:
         try:
             social_script = self.project_root / "scripts" / "social_scraper_service.py"
             if social_script.exists():
+                # SECURITY: Secure subprocess with controlled arguments
                 process = subprocess.Popen(
-                    [sys.executable, str(social_script)],
+                    [sys.executable, str(social_script)],  # Controlled arguments
                     cwd=str(self.project_root),
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,

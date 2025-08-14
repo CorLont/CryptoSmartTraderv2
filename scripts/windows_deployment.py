@@ -136,7 +136,8 @@ def configure_firewall_rules() -> bool:
 
             # Remove existing rule if exists
             remove_command = f'netsh advfirewall firewall delete rule name="{rule["name"]}"'
-            subprocess.run(remove_command, shell=True, capture_output=True)
+            # SECURITY: Secure subprocess without shell=True
+            subprocess.run(remove_command.split(), capture_output=True, timeout=30, check=False)
 
             # Add new rule
             add_command = (
@@ -149,7 +150,8 @@ def configure_firewall_rules() -> bool:
                 f'description="{rule["description"]}"'
             )
 
-            result = subprocess.run(add_command, shell=True, capture_output=True, text=True)
+            # SECURITY: Secure subprocess without shell=True
+            result = subprocess.run(add_command.split(), capture_output=True, text=True, timeout=30, check=False)
 
             if result.returncode == 0:
                 print(f"   ✅ Rule added successfully")
