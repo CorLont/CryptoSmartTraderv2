@@ -5,6 +5,19 @@ from typing import Dict, List, Any, Optional
 import logging
 from datetime import datetime, timedelta
 
+# MANDATORY EXECUTION DISCIPLINE IMPORTS
+try:
+    from src.cryptosmarttrader.execution.execution_discipline import (
+        ExecutionPolicy, OrderRequest, MarketConditions, OrderSide, TimeInForce
+    )
+    from src.cryptosmarttrader.execution.mandatory_enforcement import (
+        DisciplinedExchangeManager, get_global_execution_policy
+    )
+    EXECUTION_DISCIPLINE_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"⚠️  ExecutionDiscipline not available: {e}")
+    EXECUTION_DISCIPLINE_AVAILABLE = False
+
 
 class ExchangeManager:
     """Enhanced exchange manager for multi-exchange connectivity"""
@@ -407,3 +420,199 @@ class ExchangeManager:
     def stop_monitoring(self):
         """Stop exchange monitoring"""
         self.monitoring_active = False
+
+    # MANDATORY EXECUTION DISCIPLINE METHODS
+    def create_market_conditions(self, symbol: str, exchange_name: str = "kraken") -> Optional[MarketConditions]:
+        """Create MarketConditions from real market data"""
+        if not EXECUTION_DISCIPLINE_AVAILABLE:
+            self.logger.warning("⚠️  ExecutionDiscipline not available - cannot create market conditions")
+            return None
+            
+        try:
+            # Get ticker and order book
+            ticker = self.fetch_ticker(symbol, exchange_name)
+            order_book = self.fetch_order_book(symbol, 100, exchange_name)
+            
+            if not ticker or not order_book:
+                self.logger.error(f"❌ Could not fetch market data for {symbol}")
+                return None
+            
+            # Calculate market conditions
+            bid_price = ticker.get('bid', 0)
+            ask_price = ticker.get('ask', 0)
+            last_price = ticker.get('last', 0)
+            
+            if bid_price <= 0 or ask_price <= 0 or last_price <= 0:
+                self.logger.error(f"❌ Invalid price data for {symbol}")
+                return None
+            
+            # Calculate spread in bps
+            spread_bps = ((ask_price - bid_price) / last_price) * 10000
+            
+            # Calculate depth (sum of top 10 levels)
+            bids = order_book.get('bids', [])[:10]
+            asks = order_book.get('asks', [])[:10]
+            
+            bid_depth_usd = sum(bid[0] * bid[1] for bid in bids) if bids else 0
+            ask_depth_usd = sum(ask[0] * ask[1] for ask in asks) if asks else 0
+            
+            # Estimate 1-minute volume (use 24h volume / 1440)
+            volume_24h = ticker.get('quoteVolume', 0) or ticker.get('baseVolume', 0) * last_price
+            volume_1m_usd = volume_24h / 1440 if volume_24h > 0 else 0
+            
+            return MarketConditions(
+                spread_bps=spread_bps,
+                bid_depth_usd=bid_depth_usd,
+                ask_depth_usd=ask_depth_usd,
+                volume_1m_usd=volume_1m_usd,
+                last_price=last_price,
+                bid_price=bid_price,
+                ask_price=ask_price,
+                timestamp=time.time()
+            )
+            
+        except Exception as e:
+            self.logger.error(f"❌ Error creating market conditions: {e}")
+            return None
+
+    def execute_disciplined_order(
+        self,
+        symbol: str,
+        side: str,
+        size: float,
+        order_type: str = "limit",
+        limit_price: Optional[float] = None,
+        strategy_id: str = "default",
+        exchange_name: str = "kraken"
+    ) -> Dict[str, Any]:
+        """
+        🛡️  MANDATORY ExecutionDiscipline.decide() for ALL orders
+        
+        This is the ONLY way to place orders through ExchangeManager
+        All order flows MUST go through ExecutionDiscipline gates
+        """
+        
+        if not EXECUTION_DISCIPLINE_AVAILABLE:
+            return {
+                "success": False,
+                "error": "ExecutionDiscipline not available - cannot place orders safely",
+                "order_id": None
+            }
+        
+        try:
+            # Create OrderRequest
+            order_request = OrderRequest(
+                symbol=symbol,
+                side=OrderSide.BUY if side.lower() == "buy" else OrderSide.SELL,
+                size=size,
+                order_type=order_type,
+                limit_price=limit_price,
+                time_in_force=TimeInForce.POST_ONLY,  # Enforce post-only
+                strategy_id=strategy_id
+            )
+            
+            # Get current market conditions
+            market_conditions = self.create_market_conditions(symbol, exchange_name)
+            if not market_conditions:
+                return {
+                    "success": False,
+                    "error": f"Could not get market conditions for {symbol}",
+                    "order_id": None
+                }
+            
+            # MANDATORY ExecutionDiscipline.decide() gate
+            execution_policy = get_global_execution_policy()
+            result = execution_policy.decide(order_request, market_conditions)
+            
+            # Check discipline decision
+            if result.decision.value == "reject":
+                self.logger.warning(f"🚫 ExecutionDiscipline REJECTED: {result.reason}")
+                return {
+                    "success": False,
+                    "error": f"ExecutionDiscipline rejected: {result.reason}",
+                    "gate_results": result.gate_results,
+                    "order_id": None,
+                    "client_order_id": order_request.client_order_id
+                }
+            
+            if result.decision.value == "defer":
+                self.logger.info(f"⏳ ExecutionDiscipline DEFERRED: {result.reason}")
+                return {
+                    "success": False,
+                    "error": f"ExecutionDiscipline deferred: {result.reason}",
+                    "gate_results": result.gate_results,
+                    "order_id": None,
+                    "client_order_id": order_request.client_order_id
+                }
+            
+            # Order APPROVED - execute through exchange
+            self.logger.info(f"✅ ExecutionDiscipline APPROVED: {order_request.client_order_id}")
+            
+            exchange = self.exchanges.get(exchange_name)
+            if not exchange:
+                return {
+                    "success": False,
+                    "error": f"Exchange {exchange_name} not available",
+                    "gate_results": result.gate_results,
+                    "order_id": None
+                }
+            
+            # Prepare order parameters with discipline requirements
+            order_params = {
+                "timeInForce": order_request.time_in_force.value,
+                "clientOrderId": order_request.client_order_id,
+                "postOnly": True  # Enforce post-only
+            }
+            
+            # Execute order based on type
+            if order_type == "limit" and limit_price:
+                exchange_result = exchange.create_limit_order(
+                    symbol, side, size, limit_price, order_params
+                )
+            else:
+                # Market orders are generally NOT recommended due to slippage
+                self.logger.warning(f"⚠️  Market order requested - consider using limit orders")
+                exchange_result = exchange.create_market_order(
+                    symbol, side, size, order_params
+                )
+            
+            self.logger.info(f"✅ Order executed successfully: {exchange_result.get('id')}")
+            
+            return {
+                "success": True,
+                "exchange_result": exchange_result,
+                "gate_results": result.gate_results,
+                "order_id": exchange_result.get("id"),
+                "client_order_id": order_request.client_order_id,
+                "market_conditions": {
+                    "spread_bps": market_conditions.spread_bps,
+                    "bid_depth_usd": market_conditions.bid_depth_usd,
+                    "ask_depth_usd": market_conditions.ask_depth_usd,
+                    "volume_1m_usd": market_conditions.volume_1m_usd
+                }
+            }
+            
+        except Exception as e:
+            self.logger.error(f"❌ Disciplined order execution failed: {e}")
+            return {
+                "success": False,
+                "error": f"Order execution failed: {str(e)}",
+                "order_id": None
+            }
+
+    def get_exchange(self, exchange_name: str):
+        """Get exchange instance - for use by DisciplinedExchangeManager only"""
+        return self.exchanges.get(exchange_name)
+
+# BLOCK ALL DIRECT ORDER METHODS - FORCE THROUGH DISCIPLINE
+class OrderExecutionBlocked(Exception):
+    """Raised when trying to use blocked order methods"""
+    pass
+
+def _block_direct_orders(*args, **kwargs):
+    """Block direct order execution - force through ExecutionDiscipline"""
+    raise OrderExecutionBlocked(
+        "🚫 DIRECT ORDER EXECUTION BLOCKED!\n"
+        "Use ExchangeManager.execute_disciplined_order() instead.\n"
+        "ALL orders must go through ExecutionDiscipline.decide() gates!"
+    )
