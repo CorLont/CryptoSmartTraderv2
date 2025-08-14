@@ -44,7 +44,8 @@ def test_workstation_deployment():
 
     for dep in core_deps:
         try:
-            __import__(dep)
+            import importlib
+            importlib.import_module(dep)
             print(f"   {dep:.<25} ✅")
         except ImportError as e:
             print(f"   {dep:.<25} ❌ {e}")

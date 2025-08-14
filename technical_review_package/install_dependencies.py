@@ -54,7 +54,8 @@ def install_dependencies():
     
     for module in test_imports:
         try:
-            __import__(module)
+            import importlib
+            importlib.import_module(module)
             print(f"✅ {module}")
         except ImportError as e:
             print(f"❌ {module}: {e}")

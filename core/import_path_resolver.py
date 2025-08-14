@@ -35,7 +35,8 @@ class ImportPathResolver:
         # Try primary import path
         try:
             parts = module_path.split(".")
-            module = __import__(module_path, fromlist=[parts[-1]])
+            import importlib
+            module = importlib.import_module(module_path)
             return module
         except ImportError:
             pass
@@ -45,7 +46,7 @@ class ImportPathResolver:
             for fallback in fallback_paths:
                 try:
                     parts = fallback.split(".")
-                    module = __import__(fallback, fromlist=[parts[-1]])
+                    module = importlib.import_module(fallback)
                     return module
                 except ImportError:
                     continue

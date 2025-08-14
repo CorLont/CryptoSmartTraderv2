@@ -136,7 +136,8 @@ class CICDPipeline:
         missing_packages = []
         for package in required_packages:
             try:
-                __import__(package)
+                import importlib
+                importlib.import_module(package)
                 result["details"][f"package_{package}"] = "available"
             except ImportError:
                 missing_packages.append(package)

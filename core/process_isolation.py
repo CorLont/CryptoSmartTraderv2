@@ -245,13 +245,19 @@ class AgentProcess:
 
             self.logger.info(f"Agent {self.config.name} process started")
 
-            # Import and run the target function
+            # Import and run the target function using importlib for security
+            import importlib
             module_parts = self.config.module_path.split(".")
             module_name = ".".join(module_parts[:-1])
             function_name = module_parts[-1]
 
-            module = __import__(module_name, fromlist=[function_name])
-            target_func = getattr(module, function_name)
+            # Use importlib for safe module importing
+            try:
+                module = importlib.import_module(module_name)
+                target_func = getattr(module, function_name)
+            except (ImportError, AttributeError) as e:
+                self.logger.error(f"Failed to import {module_name}.{function_name}: {e}")
+                raise
 
             # Run the agent function
             if asyncio.iscoroutinefunction(target_func):

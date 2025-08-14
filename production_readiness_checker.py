@@ -532,7 +532,8 @@ class ProductionReadinessChecker:
 
         for module in critical_imports:
             try:
-                __import__(module)
+                import importlib
+                importlib.import_module(module)
                 imports_ok += 1
                 score += 5
             except ImportError:

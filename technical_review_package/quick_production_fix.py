@@ -124,7 +124,8 @@ def validate_core_imports():
     
     for module in core_modules:
         try:
-            __import__(module)
+            import importlib
+            importlib.import_module(module)
             print(f"  ✅ {module}")
         except Exception as e:
             print(f"  ❌ {module}: {e}")
