@@ -3,7 +3,9 @@ import pandas as pd
 from typing import Dict, List, Any, Optional, Tuple, Union
 import logging
 from datetime import datetime, timedelta
-import pickle
+import joblib  # Secure replacement for pickle
+import hashlib
+import hmac
 import json
 from pathlib import Path
 import threading
@@ -512,9 +514,12 @@ class MLModelManager:
                     'training_samples': model_info['training_samples']
                 }
                 
-                # Save model
-                with open(file_path, 'wb') as f:
-                    pickle.dump(save_data, f)
+                # Save model using secure joblib
+                joblib_path = str(file_path).replace('.pkl', '.joblib')
+                joblib.dump(save_data, joblib_path, compress=3)
+                
+                # Generate integrity signature
+                self._create_model_signature(joblib_path)
                 
                 self.logger.info(f"Model {model_key} saved to {file_path}")
                 return True
@@ -531,9 +536,15 @@ class MLModelManager:
                 self.logger.error(f"Model file {file_path} not found")
                 return None
             
-            # Load model data
-            with open(file_path, 'rb') as f:
-                model_data = pickle.load(f)
+            # Load model data using secure joblib
+            joblib_path = str(file_path).replace('.pkl', '.joblib')
+            
+            # Validate model integrity first
+            if not self._validate_model_integrity(joblib_path):
+                self.logger.error(f"Model integrity validation failed for {joblib_path}")
+                return None
+                
+            model_data = joblib.load(joblib_path)
             
             # Generate model key if not provided
             if model_key is None:
@@ -555,6 +566,70 @@ class MLModelManager:
         except Exception as e:
             self.logger.error(f"Error loading model: {str(e)}")
             return None
+    
+    def _create_model_signature(self, model_path: str):
+        """Create HMAC signature for model integrity"""
+        try:
+            secret_key = os.environ.get("MODEL_INTEGRITY_KEY", "cryptosmarttrader_models_2025")
+            
+            with open(model_path, "rb") as f:
+                model_data = f.read()
+            
+            signature = hmac.new(
+                secret_key.encode('utf-8'),
+                model_data,
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Save signature file
+            sig_path = model_path.replace('.joblib', '.sig')
+            with open(sig_path, "w") as f:
+                json.dump({
+                    "signature": signature,
+                    "created_at": datetime.utcnow().isoformat(),
+                    "model_path": model_path
+                }, f)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to create model signature: {e}")
+    
+    def _validate_model_integrity(self, model_path: str) -> bool:
+        """Validate model integrity using HMAC signature"""
+        try:
+            sig_path = model_path.replace('.joblib', '.sig')
+            
+            if not Path(sig_path).exists():
+                self.logger.warning(f"No signature file found for {model_path}")
+                return False
+            
+            # Load stored signature
+            with open(sig_path, "r") as f:
+                sig_data = json.load(f)
+            stored_signature = sig_data["signature"]
+            
+            # Generate current signature
+            secret_key = os.environ.get("MODEL_INTEGRITY_KEY", "cryptosmarttrader_models_2025")
+            
+            with open(model_path, "rb") as f:
+                model_data = f.read()
+            
+            current_signature = hmac.new(
+                secret_key.encode('utf-8'),
+                model_data,
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Validate signature
+            is_valid = hmac.compare_digest(stored_signature, current_signature)
+            
+            if not is_valid:
+                self.logger.error(f"Model integrity validation failed for {model_path}")
+            
+            return is_valid
+            
+        except Exception as e:
+            self.logger.error(f"Model integrity validation error: {e}")
+            return False
     
     def get_model_info(self, model_key: str) -> Optional[Dict[str, Any]]:
         """Get information about a specific model"""

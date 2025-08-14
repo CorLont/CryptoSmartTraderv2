@@ -12,8 +12,11 @@ import torch.optim as optim
 from typing import Dict, List, Any, Tuple, Optional
 from datetime import datetime, timedelta
 from collections import deque
-import pickle
-import json
+import json  # Secure replacement for pickle
+import hashlib
+import hmac
+import os
+from pathlib import Path
 
 from core.structured_logger import get_structured_logger
 
@@ -265,34 +268,48 @@ class ElasticWeightConsolidation:
             return current_loss
 
     def save_ewc_data(self, filepath: str):
-        """Save EWC data for persistence"""
+        """Save EWC data for persistence using secure JSON format"""
 
         try:
             ewc_data = {
                 "previous_params": {
-                    name: param.cpu().numpy() for name, param in self.previous_params.items()
+                    name: param.cpu().numpy().tolist() for name, param in self.previous_params.items()
                 },
                 "fisher_information": {
-                    name: fisher.cpu().numpy() for name, fisher in self.fisher_information.items()
+                    name: fisher.cpu().numpy().tolist() for name, fisher in self.fisher_information.items()
                 },
                 "task_count": self.task_count,
                 "ewc_lambda": self.ewc_lambda,
+                "saved_at": datetime.utcnow().isoformat(),
+                "version": "1.0"
             }
 
-            with open(filepath, "wb") as f:
-                pickle.dump(ewc_data, f)
+            # Save as secure JSON
+            json_filepath = filepath.replace('.pkl', '.json')
+            with open(json_filepath, "w") as f:
+                json.dump(ewc_data, f, indent=2)
+            
+            # Create integrity signature
+            self._create_ewc_signature(json_filepath)
 
-            self.logger.info(f"EWC data saved to {filepath}")
+            self.logger.info(f"EWC data securely saved to {json_filepath}")
 
         except Exception as e:
             self.logger.error(f"EWC data saving failed: {e}")
 
     def load_ewc_data(self, filepath: str):
-        """Load EWC data from file"""
+        """Load EWC data from secure JSON file with validation"""
 
         try:
-            with open(filepath, "rb") as f:
-                ewc_data = pickle.load(f)
+            json_filepath = filepath.replace('.pkl', '.json')
+            
+            # Validate integrity first
+            if not self._validate_ewc_integrity(json_filepath):
+                self.logger.error(f"EWC data integrity validation failed for {json_filepath}")
+                return
+            
+            with open(json_filepath, "r") as f:
+                ewc_data = json.load(f)
 
             # Convert back to tensors
             self.previous_params = {
@@ -305,10 +322,74 @@ class ElasticWeightConsolidation:
             self.task_count = ewc_data["task_count"]
             self.ewc_lambda = ewc_data["ewc_lambda"]
 
-            self.logger.info(f"EWC data loaded from {filepath}")
+            self.logger.info(f"EWC data securely loaded from {json_filepath}")
 
         except Exception as e:
             self.logger.error(f"EWC data loading failed: {e}")
+    
+    def _create_ewc_signature(self, json_filepath: str):
+        """Create HMAC signature for EWC data integrity"""
+        try:
+            secret_key = os.environ.get("EWC_INTEGRITY_KEY", "cryptosmarttrader_ewc_2025")
+            
+            with open(json_filepath, "rb") as f:
+                ewc_data = f.read()
+            
+            signature = hmac.new(
+                secret_key.encode('utf-8'),
+                ewc_data,
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Save signature file
+            sig_path = json_filepath.replace('.json', '.sig')
+            with open(sig_path, "w") as f:
+                json.dump({
+                    "signature": signature,
+                    "created_at": datetime.utcnow().isoformat(),
+                    "ewc_filepath": json_filepath
+                }, f)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to create EWC signature: {e}")
+    
+    def _validate_ewc_integrity(self, json_filepath: str) -> bool:
+        """Validate EWC data integrity using HMAC signature"""
+        try:
+            sig_path = json_filepath.replace('.json', '.sig')
+            
+            if not Path(sig_path).exists():
+                self.logger.warning(f"No signature file found for {json_filepath}")
+                return False
+            
+            # Load stored signature
+            with open(sig_path, "r") as f:
+                sig_data = json.load(f)
+            stored_signature = sig_data["signature"]
+            
+            # Generate current signature
+            secret_key = os.environ.get("EWC_INTEGRITY_KEY", "cryptosmarttrader_ewc_2025")
+            
+            with open(json_filepath, "rb") as f:
+                ewc_data = f.read()
+            
+            current_signature = hmac.new(
+                secret_key.encode('utf-8'),
+                ewc_data,
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Validate signature
+            is_valid = hmac.compare_digest(stored_signature, current_signature)
+            
+            if not is_valid:
+                self.logger.error(f"EWC data integrity validation failed for {json_filepath}")
+            
+            return is_valid
+            
+        except Exception as e:
+            self.logger.error(f"EWC data integrity validation error: {e}")
+            return False
 
 
 class ReplayBuffer:

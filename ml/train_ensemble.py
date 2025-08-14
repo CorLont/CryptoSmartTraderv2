@@ -5,7 +5,7 @@ Enhanced Multi-Model Training with XGBoost + Random Forest Ensemble
 
 import pandas as pd
 import numpy as np
-import pickle
+import joblib  # Secure replacement for pickle
 import logging
 from pathlib import Path
 from sklearn.ensemble import RandomForestRegressor
@@ -93,7 +93,7 @@ class EnsembleTrainer:
             # Save RF model (backward compatibility)
             rf_path = self.model_path / f"rf_{horizon}.pkl"
             with open(rf_path, "wb") as f:
-                pickle.dump(rf_model, f)
+                joblib.dump(rf_model, f, compress=3)
 
             models_trained = {"rf": rf_model}
 
@@ -107,7 +107,7 @@ class EnsembleTrainer:
                 # Save XGBoost model
                 xgb_path = self.model_path / f"xgb_{horizon}.pkl"
                 with open(xgb_path, "wb") as f:
-                    pickle.dump(xgb_model, f)
+                    joblib.dump(xgb_model, f, compress=3)
 
                 models_trained["xgb"] = xgb_model
 

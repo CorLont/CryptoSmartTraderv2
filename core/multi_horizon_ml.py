@@ -9,7 +9,10 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Tuple
 import json
-import pickle
+import joblib  # Secure replacement for pickle
+import hashlib
+import hmac
+import os
 from pathlib import Path
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -743,23 +746,74 @@ class MultiHorizonMLSystem:
             self.logger.error(f"Prediction logging failed: {e}")
 
     def _save_model(self, horizon_name: str, model, feature_columns: List[str]):
-        """Save trained model to disk"""
+        """Save trained model to disk with security validation"""
         try:
-            model_path = self.model_dir / f"model_{horizon_name}.pkl"
-            features_path = self.model_dir / f"features_{horizon_name}.json"
+            model_path = self.model_dir / f"model_{horizon_name}.joblib"
+            features_path = self.model_dir / f"features_{horizon_name}.json" 
+            signature_path = self.model_dir / f"model_{horizon_name}.sig"
 
-            # Save model
-            with open(model_path, "wb") as f:
-                pickle.dump(model, f)
+            # Save model using secure joblib
+            joblib.dump(model, model_path, compress=3)
+            
+            # Generate security signature for model integrity
+            model_signature = self._generate_model_signature(model_path)
+            with open(signature_path, "w") as f:
+                json.dump({
+                    "signature": model_signature,
+                    "saved_at": datetime.utcnow().isoformat(),
+                    "model_type": type(model).__name__
+                }, f)
 
             # Save feature columns
             with open(features_path, "w") as f:
                 json.dump(feature_columns, f)
 
-            self.logger.info(f"Model saved for {horizon_name}: {model_path}")
+            self.logger.info(f"Secure model saved for {horizon_name}: {model_path}")
 
         except Exception as e:
             self.logger.error(f"Model saving failed for {horizon_name}: {e}")
+    
+    def _generate_model_signature(self, model_path: Path) -> str:
+        """Generate HMAC signature for model integrity validation"""
+        secret_key = os.environ.get("MODEL_INTEGRITY_KEY", "cryptosmarttrader_default_key_2025")
+        
+        with open(model_path, "rb") as f:
+            model_data = f.read()
+        
+        signature = hmac.new(
+            secret_key.encode('utf-8'),
+            model_data,
+            hashlib.sha256
+        ).hexdigest()
+        
+        return signature
+    
+    def _validate_model_signature(self, model_path: Path, signature_path: Path) -> bool:
+        """Validate model integrity using HMAC signature"""
+        try:
+            if not signature_path.exists():
+                self.logger.warning(f"No signature file found for {model_path}")
+                return False
+            
+            # Load stored signature
+            with open(signature_path, "r") as f:
+                sig_data = json.load(f)
+            stored_signature = sig_data["signature"]
+            
+            # Generate current signature
+            current_signature = self._generate_model_signature(model_path)
+            
+            # Validate signature
+            is_valid = hmac.compare_digest(stored_signature, current_signature)
+            
+            if not is_valid:
+                self.logger.error(f"Model signature validation failed for {model_path}")
+            
+            return is_valid
+            
+        except Exception as e:
+            self.logger.error(f"Signature validation error for {model_path}: {e}")
+            return False
 
     def load_models(self):
         """Load previously trained models"""
@@ -767,22 +821,32 @@ class MultiHorizonMLSystem:
             loaded_count = 0
 
             for horizon_name in self.horizons.keys():
-                model_path = self.model_dir / f"model_{horizon_name}.pkl"
+                model_path = self.model_dir / f"model_{horizon_name}.joblib"
                 features_path = self.model_dir / f"features_{horizon_name}.json"
+                signature_path = self.model_dir / f"model_{horizon_name}.sig"
 
                 if model_path.exists() and features_path.exists():
-                    # Load model
-                    with open(model_path, "rb") as f:
-                        model = pickle.load(f)
+                    # Validate model integrity first
+                    if not self._validate_model_signature(model_path, signature_path):
+                        self.logger.error(f"Model integrity validation failed for {horizon_name}")
+                        continue
+                    
+                    # Load model using secure joblib
+                    try:
+                        model = joblib.load(model_path)
+                        
+                        # Load feature columns
+                        with open(features_path, "r") as f:
+                            feature_columns = json.load(f)
 
-                    # Load feature columns
-                    with open(features_path, "r") as f:
-                        feature_columns = json.load(f)
+                        self.models[horizon_name] = model
+                        loaded_count += 1
 
-                    self.models[horizon_name] = model
-                    loaded_count += 1
-
-                    self.logger.info(f"Loaded model for {horizon_name}")
+                        self.logger.info(f"Securely loaded model for {horizon_name}")
+                        
+                    except Exception as e:
+                        self.logger.error(f"Failed to load model {horizon_name}: {e}")
+                        continue
 
             self.logger.info(f"Loaded {loaded_count}/{len(self.horizons)} models")
             return loaded_count > 0

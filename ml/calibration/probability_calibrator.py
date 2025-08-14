@@ -20,7 +20,10 @@ import matplotlib.pyplot as plt
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-import pickle
+import joblib  # Secure replacement for pickle
+import hashlib
+import hmac
+import os
 import json
 from pathlib import Path
 
@@ -565,10 +568,10 @@ class ProbabilityCalibrator:
         # Save each calibrator
         for method, calibrator in self.calibrators.items():
             if method in [CalibrationMethod.PLATT_SCALING, CalibrationMethod.ISOTONIC_REGRESSION]:
-                # Scikit-learn objects
-                calibrator_path = f"{filepath}_{method.value}_calibrator.pkl"
-                with open(calibrator_path, "wb") as f:
-                    pickle.dump(calibrator, f)
+                # Scikit-learn objects - use secure joblib
+                calibrator_path = f"{filepath}_{method.value}_calibrator.joblib"
+                joblib.dump(calibrator, calibrator_path, compress=3)
+                self._create_calibrator_signature(calibrator_path)
                 save_data["calibrators"][method.value] = calibrator_path
 
             elif method == CalibrationMethod.TEMPERATURE_SCALING:
@@ -578,10 +581,12 @@ class ProbabilityCalibrator:
                 save_data["calibrators"][method.value] = calibrator_path
 
             else:
-                # Custom calibrators
-                calibrator_path = f"{filepath}_{method.value}_calibrator.pkl"
-                with open(calibrator_path, "wb") as f:
-                    pickle.dump(calibrator, f)
+                # Custom calibrators - use secure joblib
+                calibrator_path = f"{filepath}_{method.value}_calibrator.joblib"
+                joblib.dump(calibrator, calibrator_path, compress=3)
+                
+                # Create integrity signature
+                self._create_calibrator_signature(calibrator_path)
                 save_data["calibrators"][method.value] = calibrator_path
 
         # Save main config
@@ -607,8 +612,11 @@ class ProbabilityCalibrator:
             method = CalibrationMethod(method_str)
 
             if method in [CalibrationMethod.PLATT_SCALING, CalibrationMethod.ISOTONIC_REGRESSION]:
-                with open(calibrator_path, "rb") as f:
-                    self.calibrators[method] = pickle.load(f)
+                # Validate integrity first
+                if not self._validate_calibrator_integrity(calibrator_path):
+                    self.logger.error(f"Calibrator integrity validation failed for {method}")
+                    continue
+                self.calibrators[method] = joblib.load(calibrator_path)
 
             elif method == CalibrationMethod.TEMPERATURE_SCALING:
                 calibrator = TemperatureScaling()
@@ -616,8 +624,75 @@ class ProbabilityCalibrator:
                 self.calibrators[method] = calibrator
 
             else:
-                with open(calibrator_path, "rb") as f:
-                    self.calibrators[method] = pickle.load(f)
+                # Validate integrity first
+                if not self._validate_calibrator_integrity(calibrator_path):
+                    self.logger.error(f"Calibrator integrity validation failed for {method}")
+                    continue
+                self.calibrators[method] = joblib.load(calibrator_path)
+    
+    def _create_calibrator_signature(self, calibrator_path: str):
+        """Create HMAC signature for calibrator integrity"""
+        try:
+            secret_key = os.environ.get("CALIBRATOR_INTEGRITY_KEY", "cryptosmarttrader_calibrators_2025")
+            
+            with open(calibrator_path, "rb") as f:
+                calibrator_data = f.read()
+            
+            signature = hmac.new(
+                secret_key.encode('utf-8'),
+                calibrator_data,
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Save signature file
+            sig_path = calibrator_path.replace('.joblib', '.sig')
+            with open(sig_path, "w") as f:
+                json.dump({
+                    "signature": signature,
+                    "created_at": datetime.utcnow().isoformat(),
+                    "calibrator_path": calibrator_path
+                }, f)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to create calibrator signature: {e}")
+    
+    def _validate_calibrator_integrity(self, calibrator_path: str) -> bool:
+        """Validate calibrator integrity using HMAC signature"""
+        try:
+            sig_path = calibrator_path.replace('.joblib', '.sig')
+            
+            if not Path(sig_path).exists():
+                self.logger.warning(f"No signature file found for {calibrator_path}")
+                return False
+            
+            # Load stored signature
+            with open(sig_path, "r") as f:
+                sig_data = json.load(f)
+            stored_signature = sig_data["signature"]
+            
+            # Generate current signature
+            secret_key = os.environ.get("CALIBRATOR_INTEGRITY_KEY", "cryptosmarttrader_calibrators_2025")
+            
+            with open(calibrator_path, "rb") as f:
+                calibrator_data = f.read()
+            
+            current_signature = hmac.new(
+                secret_key.encode('utf-8'),
+                calibrator_data,
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Validate signature
+            is_valid = hmac.compare_digest(stored_signature, current_signature)
+            
+            if not is_valid:
+                self.logger.error(f"Calibrator integrity validation failed for {calibrator_path}")
+            
+            return is_valid
+            
+        except Exception as e:
+            self.logger.error(f"Calibrator integrity validation error: {e}")
+            return False
 
 
 def create_probability_calibrator(methods: List[str] = None) -> ProbabilityCalibrator:

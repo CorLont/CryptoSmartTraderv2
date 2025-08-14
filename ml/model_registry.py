@@ -5,8 +5,11 @@ Model Registry - Version control for ML models and metadata
 
 import os
 import json
-import pickle
+import joblib  # Secure replacement for pickle
 import hashlib
+import hmac
+import os
+from pathlib import Path
 import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
@@ -157,10 +160,12 @@ class ModelRegistry:
 
         # Save model to disk
         try:
-            with open(model_file_path, "wb") as f:
-                pickle.dump(model, f)
+            # Save with secure joblib and create signature
+            joblib_path = str(model_file_path).replace('.pkl', '.joblib')
+            joblib.dump(model, joblib_path, compress=3)
+            self._create_registry_signature(joblib_path)
 
-            model_size = model_file_path.stat().st_size
+            model_size = Path(joblib_path).stat().st_size
 
         except Exception as e:
             self.logger.error(f"Failed to save model: {e}")
@@ -224,15 +229,85 @@ class ModelRegistry:
         metadata = self.models[registry_key]
 
         try:
-            with open(metadata.model_file_path, "rb") as f:
-                model = pickle.load(f)
+            # Convert to secure joblib path
+            joblib_path = str(metadata.model_file_path).replace('.pkl', '.joblib')
+            
+            # Validate model integrity first
+            if not self._validate_registry_model_integrity(joblib_path):
+                raise ValueError(f"Model integrity validation failed for {joblib_path}")
+            
+            model = joblib.load(joblib_path)
 
-            self.logger.info(f"Loaded model {registry_key}")
+            self.logger.info(f"Securely loaded model {registry_key}")
             return model
 
         except Exception as e:
             self.logger.error(f"Failed to load model {registry_key}: {e}")
             raise
+    
+    def _validate_registry_model_integrity(self, joblib_path: str) -> bool:
+        """Validate model registry integrity using HMAC signature"""
+        try:
+            sig_path = joblib_path.replace('.joblib', '.sig')
+            
+            if not Path(sig_path).exists():
+                self.logger.warning(f"No signature file found for {joblib_path}")
+                return False
+            
+            # Load stored signature
+            with open(sig_path, "r") as f:
+                sig_data = json.load(f)
+            stored_signature = sig_data["signature"]
+            
+            # Generate current signature
+            secret_key = os.environ.get("MODEL_REGISTRY_KEY", "cryptosmarttrader_registry_2025")
+            
+            with open(joblib_path, "rb") as f:
+                model_data = f.read()
+            
+            current_signature = hmac.new(
+                secret_key.encode('utf-8'),
+                model_data,
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Validate signature
+            is_valid = hmac.compare_digest(stored_signature, current_signature)
+            
+            if not is_valid:
+                self.logger.error(f"Model registry integrity validation failed for {joblib_path}")
+            
+            return is_valid
+            
+        except Exception as e:
+            self.logger.error(f"Model registry integrity validation error: {e}")
+            return False
+    
+    def _create_registry_signature(self, joblib_path: str):
+        """Create HMAC signature for model registry integrity"""
+        try:
+            secret_key = os.environ.get("MODEL_REGISTRY_KEY", "cryptosmarttrader_registry_2025")
+            
+            with open(joblib_path, "rb") as f:
+                model_data = f.read()
+            
+            signature = hmac.new(
+                secret_key.encode('utf-8'),
+                model_data,
+                hashlib.sha256
+            ).hexdigest()
+            
+            # Save signature file
+            sig_path = joblib_path.replace('.joblib', '.sig')
+            with open(sig_path, "w") as f:
+                json.dump({
+                    "signature": signature,
+                    "created_at": datetime.utcnow().isoformat(),
+                    "registry_path": joblib_path
+                }, f)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to create registry signature: {e}")
 
     def get_model_metadata(self, model_id: str, version: Optional[str] = None) -> ModelMetadata:
         """Get model metadata"""
