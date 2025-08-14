@@ -17,6 +17,9 @@ from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
+# SECURITY: Import secure subprocess framework
+from core.secure_subprocess import secure_subprocess, SecureSubprocessError
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -166,12 +169,17 @@ class ProductionDeployment:
                 
                 # Build images
                 task = progress.add_task("Building Docker images...", total=None)
-                result = subprocess.run(
-                    ["docker-compose", "build", "--no-cache"],
-                    capture_output=True,
-                    text=True,
-                    timeout=600  # 10 minutes
-                )
+                try:
+                    result = secure_subprocess.run_secure(
+                        ["docker-compose", "build", "--no-cache"],
+                        timeout=600,  # 10 minutes
+                        check=False,
+                        capture_output=True,
+                        text=True
+                    )
+                except SecureSubprocessError as e:
+                    console.print(f"❌ Secure build failed: {e}")
+                    return False
                 
                 if result.returncode != 0:
                     console.print(f"❌ Build failed: {result.stderr}")
@@ -181,12 +189,17 @@ class ProductionDeployment:
                 
                 # Deploy services
                 task = progress.add_task("Deploying services...", total=None)
-                result = subprocess.run(
-                    ["docker-compose", "up", "-d", "--remove-orphans"],
-                    capture_output=True,
-                    text=True,
-                    timeout=300  # 5 minutes
-                )
+                try:
+                    result = secure_subprocess.run_secure(
+                        ["docker-compose", "up", "-d", "--remove-orphans"],
+                        timeout=300,  # 5 minutes
+                        check=False,
+                        capture_output=True,
+                        text=True
+                    )
+                except SecureSubprocessError as e:
+                    console.print(f"❌ Secure deployment failed: {e}")
+                    return False
                 
                 if result.returncode != 0:
                     console.print(f"❌ Deployment failed: {result.stderr}")
@@ -308,10 +321,15 @@ class ProductionDeployment:
     def _check_docker_compose(self) -> bool:
         """Check Docker Compose availability"""
         try:
-            result = subprocess.run(["docker-compose", "--version"], 
-                                 capture_output=True, text=True)
+            result = secure_subprocess.run_secure(
+                ["docker-compose", "--version"],
+                timeout=10,
+                check=False,
+                capture_output=True,
+                text=True
+            )
             return result.returncode == 0
-        except Exception:
+        except (SecureSubprocessError, Exception):
             return False
     
     def _check_required_files(self) -> bool:
@@ -387,9 +405,12 @@ class ProductionDeployment:
     def _run_bandit_scan(self) -> bool:
         """Run Bandit security scan"""
         try:
-            result = subprocess.run(
+            result = secure_subprocess.run_secure(
                 ["bandit", "-r", "src/", "-f", "json", "-o", "bandit-report.json"],
-                capture_output=True, text=True, timeout=120
+                timeout=120,
+                check=False,
+                capture_output=True,
+                text=True
             )
             
             if result.returncode == 0:
@@ -405,7 +426,7 @@ class ProductionDeployment:
             
             return False
             
-        except Exception as e:
+        except (SecureSubprocessError, Exception) as e:
             console.print(f"⚠️ Bandit scan failed: {e}")
             return True  # Continue deployment
     
@@ -431,9 +452,12 @@ class ProductionDeployment:
     def _check_dependencies(self) -> bool:
         """Check dependency vulnerabilities"""
         try:
-            result = subprocess.run(
+            result = secure_subprocess.run_secure(
                 ["pip-audit", "--format=json"],
-                capture_output=True, text=True, timeout=120
+                timeout=120,
+                check=False,
+                capture_output=True,
+                text=True
             )
             
             if result.returncode == 0:
@@ -442,51 +466,63 @@ class ProductionDeployment:
             # Parse results for critical vulnerabilities
             return True  # Simplified for demo
             
-        except Exception:
+        except (SecureSubprocessError, Exception):
             return True  # Continue if tool not available
     
     def _run_unit_tests(self) -> bool:
         """Run unit tests"""
         try:
-            result = subprocess.run(
+            result = secure_subprocess.run_secure(
                 ["python", "-m", "pytest", "tests/", "-m", "unit", "--maxfail=3"],
-                capture_output=True, text=True, timeout=300
+                timeout=300,
+                check=False,
+                capture_output=True,
+                text=True
             )
             return result.returncode == 0
-        except Exception:
+        except (SecureSubprocessError, Exception):
             return False
     
     def _run_integration_tests(self) -> bool:
         """Run integration tests"""
         try:
-            result = subprocess.run(
+            result = secure_subprocess.run_secure(
                 ["python", "-m", "pytest", "tests/", "-m", "integration", "--maxfail=2"],
-                capture_output=True, text=True, timeout=600
+                timeout=600,
+                check=False,
+                capture_output=True,
+                text=True
             )
             return result.returncode == 0
-        except Exception:
+        except (SecureSubprocessError, Exception):
             return False
     
     def _run_risk_guard_tests(self) -> bool:
         """Run risk guard specific tests"""
         try:
-            result = subprocess.run(
+            result = secure_subprocess.run_secure(
                 ["python", "-m", "pytest", "tests/test_central_risk_guard.py", "-v"],
-                capture_output=True, text=True, timeout=120
+                timeout=120,
+                check=False,
+                capture_output=True,
+                text=True
             )
             return result.returncode == 0
-        except Exception:
+        except (SecureSubprocessError, Exception):
             return False
     
     def _run_performance_tests(self) -> bool:
         """Run performance tests"""
         try:
-            result = subprocess.run(
+            result = secure_subprocess.run_secure(
                 ["python", "-m", "pytest", "tests/", "-m", "performance"],
-                capture_output=True, text=True, timeout=300
+                timeout=300,
+                check=False,
+                capture_output=True,
+                text=True
             )
             return result.returncode == 0
-        except Exception:
+        except (SecureSubprocessError, Exception):
             return True  # Performance tests are optional
     
     def _test_api_responsiveness(self) -> bool:

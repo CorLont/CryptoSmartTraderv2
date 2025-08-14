@@ -10,6 +10,10 @@ from pathlib import Path
 import tempfile
 import shutil
 
+# SECURITY: Import secure subprocess framework
+sys.path.append(str(Path(__file__).parent.parent))
+from core.secure_subprocess import secure_subprocess, SecureSubprocessError
+
 
 def test_installation():
     """Test Windows installation script"""
@@ -17,21 +21,31 @@ def test_installation():
 
     # Test Python availability
     try:
-        result = subprocess.run([sys.executable, "--version"], capture_output=True, text=True)
+        result = secure_subprocess.run_secure(
+            [sys.executable, "--version"], 
+            timeout=10,
+            check=False,
+            capture_output=True, 
+            text=True
+        )
         print(f"✓ Python version: {result.stdout.strip()}")
-    except Exception as e:
+    except (SecureSubprocessError, Exception) as e:
         print(f"✗ Python not available: {e}")
         return False
 
     # Test virtual environment creation
     test_venv = Path("test_venv")
     try:
-        subprocess.run([sys.executable, "-m", "venv", str(test_venv)], check=True)
+        secure_subprocess.run_secure(
+            [sys.executable, "-m", "venv", str(test_venv)], 
+            timeout=60,
+            check=True
+        )
         print("✓ Virtual environment creation works")
 
         # Cleanup
         shutil.rmtree(test_venv)
-    except Exception as e:
+    except (SecureSubprocessError, Exception) as e:
         print(f"✗ Virtual environment creation failed: {e}")
         return False
 
@@ -66,8 +80,10 @@ def test_pipeline_scripts():
 
     # Test scraping script syntax
     try:
-        result = subprocess.run(
+        result = secure_subprocess.run_secure(
             [sys.executable, "-m", "py_compile", "scripts/scrape_all.py"],
+            timeout=30,
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -75,13 +91,15 @@ def test_pipeline_scripts():
             print("✓ scripts/scrape_all.py syntax OK")
         else:
             print(f"✗ scripts/scrape_all.py syntax error: {result.stderr}")
-    except Exception as e:
+    except (SecureSubprocessError, Exception) as e:
         print(f"✗ Could not test scrape_all.py: {e}")
 
     # Test training script syntax
     try:
-        result = subprocess.run(
+        result = secure_subprocess.run_secure(
             [sys.executable, "-m", "py_compile", "ml/train_baseline.py"],
+            timeout=30,
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -89,13 +107,15 @@ def test_pipeline_scripts():
             print("✓ ml/train_baseline.py syntax OK")
         else:
             print(f"✗ ml/train_baseline.py syntax error: {result.stderr}")
-    except Exception as e:
+    except (SecureSubprocessError, Exception) as e:
         print(f"✗ Could not test train_baseline.py: {e}")
 
     # Test prediction script syntax
     try:
-        result = subprocess.run(
+        result = secure_subprocess.run_secure(
             [sys.executable, "-m", "py_compile", "scripts/predict_all.py"],
+            timeout=30,
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -108,8 +128,10 @@ def test_pipeline_scripts():
 
     # Test evaluation script syntax
     try:
-        result = subprocess.run(
+        result = secure_subprocess.run_secure(
             [sys.executable, "-m", "py_compile", "scripts/evaluate.py"],
+            timeout=30,
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -117,13 +139,15 @@ def test_pipeline_scripts():
             print("✓ scripts/evaluate.py syntax OK")
         else:
             print(f"✗ scripts/evaluate.py syntax error: {result.stderr}")
-    except Exception as e:
+    except (SecureSubprocessError, Exception) as e:
         print(f"✗ Could not test evaluate.py: {e}")
 
     # Test orchestrator syntax
     try:
-        result = subprocess.run(
+        result = secure_subprocess.run_secure(
             [sys.executable, "-m", "py_compile", "scripts/orchestrator.py"],
+            timeout=30,
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -131,7 +155,7 @@ def test_pipeline_scripts():
             print("✓ scripts/orchestrator.py syntax OK")
         else:
             print(f"✗ scripts/orchestrator.py syntax error: {result.stderr}")
-    except Exception as e:
+    except (SecureSubprocessError, Exception) as e:
         print(f"✗ Could not test orchestrator.py: {e}")
 
 
@@ -140,7 +164,7 @@ def test_backend_enforcement():
     print("\n=== Testing Backend Enforcement ===")
 
     try:
-        result = subprocess.run(
+        result = secure_subprocess.run_secure(
             [
                 sys.executable,
                 "-c",
@@ -167,6 +191,8 @@ assert len(filtered_df) == 2, "Expected 2 predictions to pass 80% threshold"
 print("✓ Backend enforcement test passed")
 """,
             ],
+            timeout=60,
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -175,7 +201,7 @@ print("✓ Backend enforcement test passed")
             print(result.stdout)
         else:
             print(f"✗ Backend enforcement test failed: {result.stderr}")
-    except Exception as e:
+    except (SecureSubprocessError, Exception) as e:
         print(f"✗ Could not test backend enforcement: {e}")
 
 
