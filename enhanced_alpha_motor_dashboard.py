@@ -31,6 +31,9 @@ from src.cryptosmarttrader.alpha.enhanced_signal_generators import (
     get_enhanced_signal_generator, generate_sample_market_data,
     TechnicalIndicators, FundingData, SentimentData
 )
+from src.cryptosmarttrader.alpha.practical_coin_pipeline import (
+    PracticalCoinPipeline, UniverseFilters, Regime
+)
 
 # Configure page
 st.set_page_config(
@@ -112,20 +115,110 @@ async def run_alpha_generation():
     
     return positions, attribution, market_data
 
+async def run_practical_pipeline():
+    """Run the practical 'Welke coins kopen?' pipeline"""
+    
+    # Initialize pipeline with realistic filters
+    filters = UniverseFilters(
+        min_volume_24h_usd=15_000_000,  # 15M USD
+        max_spread_bps=40,              # 40 bps
+        min_depth_usd=750_000           # 750K USD
+    )
+    
+    pipeline = PracticalCoinPipeline(
+        universe_filters=filters,
+        max_positions=10,
+        target_leverage=0.85
+    )
+    
+    # Generate realistic market data for pipeline
+    market_data = generate_realistic_universe(25)
+    
+    # Run complete pipeline
+    tickets = await pipeline.run_pipeline(market_data)
+    
+    return tickets, market_data, pipeline
+
+def generate_realistic_universe(num_coins=25):
+    """Generate realistic crypto universe for practical pipeline"""
+    
+    symbols = [
+        'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'XRP/USDT', 'ADA/USDT',
+        'SOL/USDT', 'DOGE/USDT', 'DOT/USDT', 'AVAX/USDT', 'SHIB/USDT',
+        'MATIC/USDT', 'LINK/USDT', 'UNI/USDT', 'LTC/USDT', 'ATOM/USDT',
+        'FTM/USDT', 'ALGO/USDT', 'ICP/USDT', 'VET/USDT', 'ETC/USDT',
+        'HBAR/USDT', 'FIL/USDT', 'TRON/USDT', 'XLM/USDT', 'MANA/USDT'
+    ]
+    
+    # Generate base market data
+    market_data = generate_sample_market_data(symbols[:num_coins])
+    
+    # Enhance with realistic market conditions
+    enhanced_data = {}
+    
+    for symbol, data in market_data.items():
+        base_volume = data['volume_24h_usd']
+        
+        # Realistic spread/depth based on tier
+        if base_volume > 100_000_000:  # Top tier
+            spread_range = (5, 20)
+            depth_multiplier = (0.05, 0.15)
+        elif base_volume > 50_000_000:  # Mid tier
+            spread_range = (15, 35)
+            depth_multiplier = (0.03, 0.08)
+        else:  # Lower tier
+            spread_range = (25, 60)
+            depth_multiplier = (0.02, 0.05)
+        
+        spread_bps = np.random.uniform(*spread_range)
+        depth_usd = base_volume * np.random.uniform(*depth_multiplier)
+        
+        enhanced_data[symbol] = {
+            **data,
+            'spread_bps': spread_bps,
+            'depth_1pct_usd': depth_usd,
+            'market_cap_usd': base_volume * np.random.uniform(20, 200)
+        }
+    
+    return enhanced_data
+
 def display_header():
     """Display dashboard header"""
     st.title("🎯 Enhanced Alpha Motor Dashboard")
     st.markdown("**Real-time Coin Selection & Portfolio Construction**")
     
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("🔍 Universe Filter", "Active", "Top 25 by Volume")
-    with col2:
-        st.metric("📊 Signal Buckets", "4", "Multi-Factor")
-    with col3:
-        st.metric("⚖️ Kelly Sizing", "Enabled", "Vol-Targeting")
-    with col4:
-        st.metric("🛡️ Risk Controls", "Active", "Execution Gates")
+    # Mode selection
+    mode = st.radio(
+        "📈 Select Analysis Mode:",
+        ["🎯 Enhanced Alpha Motor", "💡 Practical Pipeline", "📊 Comparison View"],
+        horizontal=True
+    )
+    
+    st.session_state['analysis_mode'] = mode
+    
+    if mode == "🎯 Enhanced Alpha Motor":
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("🔍 Universe Filter", "Active", "Top 25 by Volume")
+        with col2:
+            st.metric("📊 Signal Buckets", "4", "Multi-Factor")
+        with col3:
+            st.metric("⚖️ Kelly Sizing", "Enabled", "Vol-Targeting")
+        with col4:
+            st.metric("🛡️ Risk Controls", "Active", "Execution Gates")
+    
+    elif mode == "💡 Practical Pipeline":
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("🌍 Universe", "25 Coins", "Vol ≥ 15M")
+        with col2:
+            st.metric("🔍 Regime Detection", "4 Types", "Trend/MR/Chop/Vol")
+        with col3:
+            st.metric("⚖️ Risk Gates", "Active", "RiskGuard + ExecPolicy")
+        with col4:
+            st.metric("🎫 Order Tickets", "Ready", "COID + TIF")
+    
+    return mode
 
 def display_alpha_cycle_results(positions, attribution):
     """Display alpha generation results"""
@@ -388,69 +481,196 @@ def display_performance_simulation():
     with col4:
         st.metric("Max Drawdown", f"{max_dd:.1f}%")
 
+def display_practical_pipeline_results(tickets, market_data, pipeline):
+    """Display practical pipeline results"""
+    
+    if not tickets:
+        st.warning("🚫 No order tickets generated - check filters and market conditions")
+        return
+    
+    st.header("💡 Practical Pipeline Results - 'Welke coins kopen?'")
+    
+    # Pipeline summary metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    total_weight = sum(t.final_weight for t in tickets)
+    avg_score = sum(t.final_score for t in tickets) / len(tickets)
+    regime_counts = {}
+    for t in tickets:
+        regime_counts[t.regime.value] = regime_counts.get(t.regime.value, 0) + 1
+    
+    with col1:
+        st.metric("🎫 Order Tickets", len(tickets))
+    with col2:
+        st.metric("💰 Total Weight", f"{total_weight:.1%}")
+    with col3:
+        st.metric("🎯 Average Score", f"{avg_score:.3f}")
+    with col4:
+        st.metric("🔍 Dominant Regime", max(regime_counts, key=regime_counts.get))
+    
+    # Order tickets table
+    st.subheader("🎫 Generated Order Tickets")
+    
+    tickets_data = []
+    for i, ticket in enumerate(tickets):
+        tickets_data.append({
+            'Rank': i + 1,
+            'Symbol': ticket.symbol,
+            'Weight': f"{ticket.final_weight:.1%}",
+            'Score': f"{ticket.final_score:.3f}",
+            'Regime': ticket.regime.value,
+            'Spread (bps)': f"{ticket.spread_bps:.1f}",
+            'Depth ($)': f"{ticket.depth_usd:,.0f}",
+            'Client Order ID': ticket.client_order_id[-12:],  # Show last 12 chars
+            'TIF': ticket.time_in_force,
+            'Post Only': ticket.post_only
+        })
+    
+    df = pd.DataFrame(tickets_data)
+    st.dataframe(df, use_container_width=True)
+    
+    # Pipeline stages visualization
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Regime distribution
+        regime_data = pd.DataFrame([
+            {'Regime': regime, 'Count': count}
+            for regime, count in regime_counts.items()
+        ])
+        
+        fig = px.pie(
+            regime_data,
+            values='Count',
+            names='Regime',
+            title="Regime Distribution",
+            color_discrete_sequence=px.colors.qualitative.Set3
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        # Score vs Weight scatter
+        fig = px.scatter(
+            x=[t.final_score for t in tickets],
+            y=[t.final_weight for t in tickets],
+            hover_name=[t.symbol for t in tickets],
+            title="Score vs Portfolio Weight",
+            labels={'x': 'Final Score', 'y': 'Portfolio Weight'},
+            color=[t.regime.value for t in tickets]
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
 def main():
     """Main dashboard function"""
     
-    # Display header
-    display_header()
+    # Display header and get mode
+    mode = display_header()
     
     # Sidebar controls
     st.sidebar.title("🎛️ Alpha Motor Controls")
     
-    # Run controls
-    auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh (30s)", False)
-    run_alpha = st.sidebar.button("🚀 Generate Alpha Positions", type="primary")
-    
-    # Configuration
-    st.sidebar.subheader("⚙️ Configuration")
-    universe_size = st.sidebar.slider("Universe Size", 10, 50, 25)
-    max_positions = st.sidebar.slider("Max Positions", 5, 20, 15)
-    
-    # Run alpha generation
-    if run_alpha or auto_refresh:
-        with st.spinner("🔄 Running alpha generation cycle..."):
-            try:
-                positions, attribution, market_data = asyncio.run(run_alpha_generation())
-                
-                # Store results in session state
-                st.session_state['positions'] = positions
-                st.session_state['attribution'] = attribution  
-                st.session_state['market_data'] = market_data
-                st.session_state['last_update'] = datetime.now()
-                
-                st.success(f"✅ Alpha cycle completed - {len(positions)} positions generated")
-                
-            except Exception as e:
-                st.error(f"❌ Alpha generation failed: {e}")
-                return
-    
-    # Display results if available
-    if 'positions' in st.session_state:
-        positions = st.session_state['positions']
-        attribution = st.session_state['attribution']
-        market_data = st.session_state['market_data']
-        last_update = st.session_state['last_update']
+    if mode == "🎯 Enhanced Alpha Motor":
+        # Original Alpha Motor controls
+        auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh (30s)", False)
+        run_alpha = st.sidebar.button("🚀 Generate Alpha Positions", type="primary")
         
-        st.info(f"📊 Last update: {last_update.strftime('%H:%M:%S')}")
+        # Configuration
+        st.sidebar.subheader("⚙️ Configuration")
+        universe_size = st.sidebar.slider("Universe Size", 10, 50, 25)
+        max_positions = st.sidebar.slider("Max Positions", 5, 20, 15)
         
-        # Main dashboard sections
-        display_alpha_cycle_results(positions, attribution)
-        display_signal_attribution(attribution, positions)
-        display_portfolio_construction(positions)
-        display_universe_analysis(market_data)
-        display_performance_simulation()
+        # Run alpha generation
+        if run_alpha or auto_refresh:
+            with st.spinner("🔄 Running alpha generation cycle..."):
+                try:
+                    positions, attribution, market_data = asyncio.run(run_alpha_generation())
+                    
+                    # Store results in session state
+                    st.session_state['positions'] = positions
+                    st.session_state['attribution'] = attribution  
+                    st.session_state['market_data'] = market_data
+                    st.session_state['last_update'] = datetime.now()
+                    
+                    st.success(f"✅ Alpha cycle completed - {len(positions)} positions generated")
+                    
+                except Exception as e:
+                    st.error(f"❌ Alpha generation failed: {e}")
+                    return
         
-    else:
-        st.info("👆 Click 'Generate Alpha Positions' to start alpha motor analysis")
+        # Display results if available
+        if 'positions' in st.session_state:
+            positions = st.session_state['positions']
+            attribution = st.session_state['attribution']
+            market_data = st.session_state['market_data']
+            last_update = st.session_state['last_update']
+            
+            st.info(f"📊 Last update: {last_update.strftime('%H:%M:%S')}")
+            
+            # Main dashboard sections
+            display_alpha_cycle_results(positions, attribution)
+            display_signal_attribution(attribution, positions)
+            display_portfolio_construction(positions)
+            display_universe_analysis(market_data)
+            display_performance_simulation()
+            
+        else:
+            st.info("👆 Click 'Generate Alpha Positions' to start alpha motor analysis")
+            
+            # Show sample universe analysis
+            sample_data = generate_crypto_universe(15)
+            display_universe_analysis(sample_data)
         
-        # Show sample universe analysis
-        sample_data = generate_crypto_universe(15)
-        display_universe_analysis(sample_data)
+        # Auto refresh
+        if auto_refresh:
+            time.sleep(30)
+            st.rerun()
     
-    # Auto refresh
-    if auto_refresh:
-        time.sleep(30)
-        st.rerun()
+    elif mode == "💡 Practical Pipeline":
+        # Practical Pipeline controls
+        run_pipeline = st.sidebar.button("🚀 Run Practical Pipeline", type="primary")
+        
+        # Pipeline configuration
+        st.sidebar.subheader("⚙️ Pipeline Filters")
+        min_volume = st.sidebar.slider("Min Volume (M USD)", 5, 50, 15)
+        max_spread = st.sidebar.slider("Max Spread (bps)", 20, 100, 40)
+        min_depth = st.sidebar.slider("Min Depth (K USD)", 250, 2000, 750)
+        max_positions = st.sidebar.slider("Max Positions", 5, 15, 10)
+        
+        if run_pipeline:
+            with st.spinner("🔄 Running practical pipeline..."):
+                try:
+                    tickets, market_data, pipeline = asyncio.run(run_practical_pipeline())
+                    
+                    # Store results
+                    st.session_state['tickets'] = tickets
+                    st.session_state['pipeline_data'] = market_data
+                    st.session_state['pipeline'] = pipeline
+                    st.session_state['pipeline_update'] = datetime.now()
+                    
+                    st.success(f"✅ Pipeline completed - {len(tickets)} order tickets generated")
+                    
+                except Exception as e:
+                    st.error(f"❌ Pipeline failed: {e}")
+                    return
+        
+        # Display pipeline results
+        if 'tickets' in st.session_state:
+            tickets = st.session_state['tickets']
+            market_data = st.session_state['pipeline_data']
+            pipeline = st.session_state['pipeline']
+            last_update = st.session_state['pipeline_update']
+            
+            st.info(f"📊 Last update: {last_update.strftime('%H:%M:%S')}")
+            
+            display_practical_pipeline_results(tickets, market_data, pipeline)
+            display_universe_analysis(market_data)
+            
+        else:
+            st.info("👆 Click 'Run Practical Pipeline' to generate order tickets")
+            
+            # Show sample universe
+            sample_data = generate_realistic_universe(15)
+            display_universe_analysis(sample_data)
     
     # Footer
     st.markdown("---")
