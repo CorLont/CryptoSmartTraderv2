@@ -40,3 +40,7 @@ pytest
 pytest-cov
 ruff
 ccxt
+ccxt
+openai
+torch
+transformers

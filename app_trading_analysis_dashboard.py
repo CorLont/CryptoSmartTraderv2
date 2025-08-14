@@ -218,7 +218,7 @@ class TradingAnalysisDashboard:
                 
             except Exception as e:
                 st.error(f"❌ Real-time analyse fout: {e}")
-                logger.error(f"Market analysis failed: {e}")
+                print(f"Market analysis failed: {e}")
     
     def start_model_training(self):
         """Start ML model training"""

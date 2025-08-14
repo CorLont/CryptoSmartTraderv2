@@ -140,7 +140,18 @@ def test_gateway_functionality():
     
     try:
         sys.path.insert(0, '.')
-        from src.cryptosmarttrader.core.mandatory_execution_gateway import MANDATORY_GATEWAY, UniversalOrderRequest
+        sys.path.insert(0, 'src')
+        
+        # Try multiple import paths
+        try:
+            from src.cryptosmarttrader.core.mandatory_execution_gateway import MANDATORY_GATEWAY, UniversalOrderRequest
+        except ImportError:
+            # Fallback path
+            try:
+                from cryptosmarttrader.core.mandatory_execution_gateway import MANDATORY_GATEWAY, UniversalOrderRequest
+            except ImportError:
+                print("⚠️ Gateway import failed - this is expected in some environments")
+                raise ImportError("Gateway module not accessible")
         
         print("✓ Gateway import successful")
         
