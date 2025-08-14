@@ -153,8 +153,12 @@ def fix_syntax_errors():
                         content = f.read()
                     ast.parse(content)
                     valid_files += 1
-                except:
-                    pass
+                except SyntaxError as e:
+                    print(f"⚠️ Syntax error in {filepath}: {e}")
+                except (FileNotFoundError, PermissionError, UnicodeDecodeError) as e:
+                    print(f"⚠️ File access error in {filepath}: {e}")
+                except Exception as e:
+                    print(f"⚠️ Unexpected error in {filepath}: {e}")
     
     print(f"📊 Validation: {valid_files}/{total_files} files have valid syntax")
     return fixes_applied

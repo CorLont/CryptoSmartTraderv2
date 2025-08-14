@@ -26,8 +26,10 @@ def quarantine_broken_files():
                     ast.parse(content)
                 except SyntaxError:
                     broken_files.append(filepath)
-                except Exception:
-                    pass
+                except (FileNotFoundError, PermissionError, UnicodeDecodeError) as e:
+                    print(f"⚠️ File access error in {filepath}: {e}")
+                except Exception as e:
+                    print(f"⚠️ Unexpected error parsing {filepath}: {e}")
     
     quarantined = 0
     for filepath in broken_files:
@@ -94,8 +96,13 @@ def main():
                     with open(filepath, 'r') as f:
                         ast.parse(f.read())
                     valid_before += 1
-                except:
+                except SyntaxError:
+                    # Expected for files we're going to quarantine
                     pass
+                except (FileNotFoundError, PermissionError, UnicodeDecodeError) as e:
+                    print(f"⚠️ File access error in {filepath}: {e}")
+                except Exception as e:
+                    print(f"⚠️ Unexpected error validating {filepath}: {e}")
     
     print(f"Before: {valid_before}/{total_before} valid files")
     
@@ -114,8 +121,12 @@ def main():
                     with open(filepath, 'r') as f:
                         ast.parse(f.read())
                     valid_after += 1
-                except:
-                    pass
+                except SyntaxError as e:
+                    print(f"⚠️ Remaining syntax error in {filepath}: {e}")
+                except (FileNotFoundError, PermissionError, UnicodeDecodeError) as e:
+                    print(f"⚠️ File access error in {filepath}: {e}")
+                except Exception as e:
+                    print(f"⚠️ Unexpected error validating {filepath}: {e}")
     
     print(f"After: {valid_after}/{total_after} valid files")
     print(f"Quarantined: {quarantined} files")

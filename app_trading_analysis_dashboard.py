@@ -177,7 +177,11 @@ class TradingAnalysisDashboard:
             
             return bool(api_key and api_secret)
             
-        except Exception:
+        except (requests.RequestException, requests.Timeout, ConnectionError) as e:
+            print(f"⚠️ API connection error: {e}")
+            return False
+        except Exception as e:
+            print(f"⚠️ Unexpected API check error: {e}")
             return False
     
     # Removed load_ml_components and load_data_sources - Only authentic data collector used
