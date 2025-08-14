@@ -25,6 +25,12 @@ from .enhanced_signal_generators import (
     TechnicalIndicators, FundingData, SentimentData,
     generate_sample_market_data
 )
+from ..data.whale_detector import (
+    WhaleDetector, WhaleDetectionConfig, WhaleSignal
+)
+from ..data.sentiment_monitor import (
+    SentimentMonitor, SentimentConfig, SentimentSignal
+)
 
 logger = logging.getLogger(__name__)
 
@@ -112,12 +118,34 @@ class PracticalCoinPipeline:
     def __init__(self, 
                  universe_filters: Optional[UniverseFilters] = None,
                  max_positions: int = 15,
-                 target_leverage: float = 0.95):
+                 target_leverage: float = 0.95,
+                 enable_whale_detection: bool = True,
+                 enable_sentiment_monitoring: bool = True):
         
         self.logger = logging.getLogger(self.__class__.__name__)
         self.universe_filters = universe_filters or UniverseFilters()
         self.max_positions = max_positions
         self.target_leverage = target_leverage
+        self.enable_whale_detection = enable_whale_detection
+        self.enable_sentiment_monitoring = enable_sentiment_monitoring
+        
+        # Initialize whale detector and sentiment monitor
+        self.whale_detector = None
+        self.sentiment_monitor = None
+        
+        # Whale/sentiment signal storage
+        self.whale_signals: Dict[str, WhaleSignal] = {}
+        self.sentiment_signals: Dict[str, SentimentSignal] = {}
+        
+        if self.enable_whale_detection:
+            whale_config = WhaleDetectionConfig()
+            whale_config.MIN_TRANSFER_USD = 1_000_000  # $1M threshold
+            self.whale_detector = WhaleDetector(whale_config)
+        
+        if self.enable_sentiment_monitoring:
+            sentiment_config = SentimentConfig()
+            # Note: MIN_MENTIONS_FOR_SIGNAL is a class variable, use default
+            self.sentiment_monitor = SentimentMonitor(sentiment_config)
         
         # Signal weights per regime
         self.regime_weights = {
@@ -147,6 +175,10 @@ class PracticalCoinPipeline:
         await self._detect_regimes(universe)
         self.logger.info("🔍 Regime detection completed")
         
+        # Step 2.5: Collect whale/sentiment data (if enabled)
+        await self._collect_external_signals(market_data)
+        self.logger.info("🐋 External signals collected")
+        
         # Step 3: Signal generation per regime
         await self._generate_regime_signals(universe)
         self.logger.info("📈 Regime signals generated")
@@ -168,6 +200,27 @@ class PracticalCoinPipeline:
         self.logger.info(f"🎫 Order tickets: {len(final_tickets)} generated")
         
         return final_tickets
+    
+    async def _collect_external_signals(self, market_data: Dict):
+        """Collect whale detection and sentiment signals"""
+        
+        try:
+            # Collect whale signals
+            if self.enable_whale_detection and self.whale_detector:
+                async with self.whale_detector:
+                    self.whale_signals = await self.whale_detector.process_whale_events(market_data)
+                    self.logger.info(f"🐋 Collected {len(self.whale_signals)} whale signals")
+            
+            # Collect sentiment signals
+            if self.enable_sentiment_monitoring and self.sentiment_monitor:
+                symbols = list(market_data.keys())
+                async with self.sentiment_monitor:
+                    self.sentiment_signals = await self.sentiment_monitor.process_sentiment_data(symbols)
+                    self.logger.info(f"💭 Collected {len(self.sentiment_signals)} sentiment signals")
+        
+        except Exception as e:
+            self.logger.warning(f"External signal collection failed: {e}")
+            # Continue without external signals if collection fails
     
     async def _filter_universe(self, market_data: Dict) -> List[CoinCandidate]:
         """
@@ -322,26 +375,45 @@ class PracticalCoinPipeline:
         return min(1.0, score)
     
     def _calculate_sentiment_score(self, candidate: CoinCandidate) -> float:
-        """Calculate event/sentiment signal score"""
+        """Calculate event/sentiment signal score with whale/sentiment integration"""
         score = 0.0
         
-        # Sentiment strength
+        # Base sentiment strength from technical data
         if candidate.sentiment_score > 0.6:
-            sent_score = min(0.5, (candidate.sentiment_score - 0.6) / 0.4)
+            sent_score = min(0.3, (candidate.sentiment_score - 0.6) / 0.4)
             score += sent_score
+        
+        # Whale signal integration (if available)
+        whale_signal = self.whale_signals.get(candidate.symbol)
+        if whale_signal and whale_signal.signal_strength != 0:
+            # Whale signal can contribute up to 0.4 points
+            whale_contribution = min(0.4, abs(whale_signal.signal_strength) * 0.4)
+            if whale_signal.signal_strength > 0:  # Bullish whale activity
+                score += whale_contribution
+            else:  # Bearish whale activity - penalize
+                score -= whale_contribution * 0.5  # Smaller penalty
+            
+            self.logger.debug(f"{candidate.symbol} whale signal: {whale_signal.signal_strength:.3f}")
+        
+        # Sentiment signal integration (if available)
+        sentiment_signal = self.sentiment_signals.get(candidate.symbol)
+        if sentiment_signal and sentiment_signal.signal_strength != 0:
+            # Social sentiment can contribute up to 0.3 points
+            sentiment_contribution = min(0.3, abs(sentiment_signal.signal_strength) * 0.3)
+            if sentiment_signal.signal_strength > 0:  # Bullish sentiment
+                score += sentiment_contribution
+            else:  # Bearish sentiment - penalize
+                score -= sentiment_contribution * 0.5
+            
+            self.logger.debug(f"{candidate.symbol} sentiment signal: {sentiment_signal.signal_strength:.3f}")
         
         # OI increase (momentum)
         if candidate.oi_change_24h_pct > 10:
-            oi_score = min(0.3, candidate.oi_change_24h_pct / 50.0)
+            oi_score = min(0.2, candidate.oi_change_24h_pct / 50.0)
             score += oi_score
         
-        # Volume surge (from relative volume would be better)
-        # Using depth as proxy for liquidity quality
-        if candidate.depth_usd > 1_000_000:
-            liquidity_score = min(0.2, candidate.depth_usd / 5_000_000)
-            score += liquidity_score
-        
-        return min(1.0, score)
+        # Ensure score stays within bounds
+        return max(0.0, min(1.0, score))
     
     async def _rank_candidates(self, candidates: List[CoinCandidate]) -> None:
         """
