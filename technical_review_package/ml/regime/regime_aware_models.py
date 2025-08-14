@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 import logging
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 import warnings
 from pathlib import Path
 
@@ -600,3 +600,11 @@ def train_regime_aware_models(
     router.train_regime_models(X_filtered, y_filtered, regime_labels_filtered)
 
     return router
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

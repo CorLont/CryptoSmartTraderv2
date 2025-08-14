@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple, Callable
 from pathlib import Path
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 from dataclasses import dataclass, asdict
 from enum import Enum
 import threading
@@ -1002,3 +1002,11 @@ if __name__ == "__main__":
     print(f"  System Health: {report['system_health']}")
 
     print("Model monitoring engine test completed")
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

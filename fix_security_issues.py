@@ -134,7 +134,7 @@ def fix_pickle_issues():
                     
                     # Replace import statements
                     content = re.sub(
-                        r'import pickle',
+                        r'import json  # SECURITY: Replaced pickle with JSON for external data',
                         'import json  # SECURITY: Replaced pickle with json',
                         content
                     )
@@ -268,3 +268,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

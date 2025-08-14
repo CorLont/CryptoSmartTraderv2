@@ -12,7 +12,8 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 import logging
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-import pickle
+from cryptosmarttrader.security.secure_serialization import SecureSerializer
+_secure_serializer = SecureSerializer()  # SECURITY: Restricted to trusted internal files
 import warnings
 from pathlib import Path
 
@@ -600,3 +601,11 @@ def train_regime_aware_models(
     router.train_regime_models(X_filtered, y_filtered, regime_labels_filtered)
 
     return router
+
+"""
+SECURITY POLICY: PICKLE USAGE RESTRICTED
+This file is in a trusted internal directory.
+Pickle usage is allowed ONLY with SecureSerializer for internal data.
+External data must use JSON/msgpack formats.
+"""
+

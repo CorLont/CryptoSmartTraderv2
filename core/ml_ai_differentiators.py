@@ -11,7 +11,7 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 from pathlib import Path
 import asyncio
 import aiohttp
@@ -938,3 +938,11 @@ def test_ml_differentiators():
 
 if __name__ == "__main__":
     test_ml_differentiators()
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

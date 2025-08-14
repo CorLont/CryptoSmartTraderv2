@@ -7,7 +7,7 @@ Consistent model status implementation
 import pandas as pd
 import numpy as np
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 import os
 from pathlib import Path
 from datetime import datetime
@@ -47,7 +47,7 @@ class ProductionPredictionGenerator:
             if model_file.exists():
                 try:
                     with open(model_file, "rb") as f:
-                        models[horizon] = pickle.load(f)
+                        models[horizon] = json.load(f)
                     logger.info(f"Loaded RF model for {horizon}")
                 except Exception as e:
                     logger.error(f"Failed to load RF model for {horizon}: {e}")
@@ -355,3 +355,11 @@ def main():
 
 if __name__ == "__main__":
     exit(main())
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 from pathlib import Path
 import warnings
 
@@ -571,3 +571,11 @@ def get_regime_router() -> MLRegimeRouter:
     if _regime_router is None:
         _regime_router = MLRegimeRouter()
     return _regime_router
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

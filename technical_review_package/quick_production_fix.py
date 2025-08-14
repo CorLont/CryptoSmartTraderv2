@@ -67,12 +67,12 @@ def remove_pickle_usage():
             original = content
             
             # Replace pickle imports and usage
-            if 'import pickle' in content:
-                content = content.replace('import pickle', 'import json  # SECURITY: Replaced pickle')
-                content = content.replace('pickle.load(', 'json.load(')
-                content = content.replace('pickle.dump(', 'json.dump(')
-                content = content.replace('pickle.loads(', 'json.loads(')
-                content = content.replace('pickle.dumps(', 'json.dumps(')
+            if 'import json  # SECURITY: Replaced pickle with JSON for external data' in content:
+                content = content.replace('import json  # SECURITY: Replaced pickle with JSON for external data', 'import json  # SECURITY: Replaced pickle')
+                content = content.replace('json.load(', 'json.load(')
+                content = content.replace('json.dump(', 'json.dump(')
+                content = content.replace('json.loads(', 'json.loads(')
+                content = content.replace('json.dumps(', 'json.dumps(')
                 
             if content != original:
                 with open(py_file, 'w') as f:
@@ -100,6 +100,14 @@ def create_stub_aliases():
         os.makedirs(path.parent, exist_ok=True)
         
         content = f'''"""
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+
+
 Alias import for backward compatibility
 """
 

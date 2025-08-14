@@ -1,0 +1,12 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-14T11:49:01.085104",
+    "format_type": "json",
+    "data_type": "dict",
+    "checksum": "c3af3afc55aace68b386da72a97727d491e5eb36fc4e036ea77f4a28a8333baa",
+    "source": "external"
+  },
+  "data": {
+    "model": "test"
+  }
+}

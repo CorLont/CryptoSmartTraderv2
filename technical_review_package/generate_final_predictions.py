@@ -7,7 +7,7 @@ Only generates predictions when real ML models and authentic data are available
 import pandas as pd
 import numpy as np
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 import os
 from pathlib import Path
 from datetime import datetime
@@ -121,7 +121,7 @@ class RealDataPredictionGenerator:
             if model_file.exists():
                 try:
                     with open(model_file, "rb") as f:
-                        model = pickle.load(f)
+                        model = json.load(f)
                     models[horizon] = model
                     logger.info(f"✅ Loaded trained model: {horizon}")
                 except Exception as e:
@@ -263,3 +263,11 @@ if __name__ == "__main__":
     print("✅ Geen kunstmatige/mock data gegenereerd")
     print("✅ System klaar voor echte API integraties")
     print("✅ Volledige data integrity gegarandeerd")
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

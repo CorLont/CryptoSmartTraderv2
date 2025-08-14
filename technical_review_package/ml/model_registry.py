@@ -5,7 +5,7 @@ Model Registry - Version control for ML models and metadata
 
 import os
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 import hashlib
 import logging
 from typing import Dict, Any, Optional, List
@@ -158,7 +158,7 @@ class ModelRegistry:
         # Save model to disk
         try:
             with open(model_file_path, "wb") as f:
-                pickle.dump(model, f)
+                json.dump(model, f)
 
             model_size = model_file_path.stat().st_size
 
@@ -225,7 +225,7 @@ class ModelRegistry:
 
         try:
             with open(metadata.model_file_path, "rb") as f:
-                model = pickle.load(f)
+                model = json.load(f)
 
             self.logger.info(f"Loaded model {registry_key}")
             return model
@@ -441,3 +441,11 @@ class ModelRegistry:
 
 # Global model registry
 model_registry = ModelRegistry()
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

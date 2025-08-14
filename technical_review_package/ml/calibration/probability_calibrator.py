@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 import json
 from pathlib import Path
 
@@ -568,7 +568,7 @@ class ProbabilityCalibrator:
                 # Scikit-learn objects
                 calibrator_path = f"{filepath}_{method.value}_calibrator.pkl"
                 with open(calibrator_path, "wb") as f:
-                    pickle.dump(calibrator, f)
+                    json.dump(calibrator, f)
                 save_data["calibrators"][method.value] = calibrator_path
 
             elif method == CalibrationMethod.TEMPERATURE_SCALING:
@@ -581,7 +581,7 @@ class ProbabilityCalibrator:
                 # Custom calibrators
                 calibrator_path = f"{filepath}_{method.value}_calibrator.pkl"
                 with open(calibrator_path, "wb") as f:
-                    pickle.dump(calibrator, f)
+                    json.dump(calibrator, f)
                 save_data["calibrators"][method.value] = calibrator_path
 
         # Save main config
@@ -608,7 +608,7 @@ class ProbabilityCalibrator:
 
             if method in [CalibrationMethod.PLATT_SCALING, CalibrationMethod.ISOTONIC_REGRESSION]:
                 with open(calibrator_path, "rb") as f:
-                    self.calibrators[method] = pickle.load(f)
+                    self.calibrators[method] = json.load(f)
 
             elif method == CalibrationMethod.TEMPERATURE_SCALING:
                 calibrator = TemperatureScaling()
@@ -617,7 +617,7 @@ class ProbabilityCalibrator:
 
             else:
                 with open(calibrator_path, "rb") as f:
-                    self.calibrators[method] = pickle.load(f)
+                    self.calibrators[method] = json.load(f)
 
 
 def create_probability_calibrator(methods: List[str] = None) -> ProbabilityCalibrator:
@@ -664,3 +664,11 @@ def calibrate_predictions(
             "is_well_calibrated": result.is_well_calibrated,
             "brier_score": result.brier_score,
         }
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

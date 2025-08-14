@@ -15,7 +15,7 @@ import threading
 import asyncio
 import json
 from pathlib import Path
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -829,3 +829,11 @@ def start_model_shadow_test(model_id: str, model_instance: Any, metadata: Dict[s
     """Convenient function to start model shadow testing"""
     engine = get_shadow_testing_engine()
     return engine.start_shadow_test(model_id, model_instance, metadata)
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

@@ -186,12 +186,12 @@ def remove_risky_patterns():
             original_content = content
             
             # Replace pickle with json where possible
-            if 'import pickle' in content:
-                content = content.replace('import pickle', 'import json')
-                content = content.replace('pickle.load(', 'json.load(')
-                content = content.replace('pickle.dump(', 'json.dump(')
-                content = content.replace('pickle.loads(', 'json.loads(')
-                content = content.replace('pickle.dumps(', 'json.dumps(')
+            if 'import json  # SECURITY: Replaced pickle with JSON for external data' in content:
+                content = content.replace('import json  # SECURITY: Replaced pickle with JSON for external data', 'import json')
+                content = content.replace('json.load(', 'json.load(')
+                content = content.replace('json.dump(', 'json.dump(')
+                content = content.replace('json.loads(', 'json.loads(')
+                content = content.replace('json.dumps(', 'json.dumps(')
             
             # Replace subprocess shell=True with safer alternatives
             content = re.sub(
@@ -247,6 +247,14 @@ def consolidate_duplicate_classes():
                 # Create alias import
                 module_path = canonical_path.replace('src/', '').replace('.py', '').replace('/', '.')
                 alias_content = f'''"""
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+
+
 Alias for {class_name} - imports from canonical location
 """
 

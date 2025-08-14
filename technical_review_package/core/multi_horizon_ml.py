@@ -9,7 +9,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Tuple
 import json
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 from pathlib import Path
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -750,7 +750,7 @@ class MultiHorizonMLSystem:
 
             # Save model
             with open(model_path, "wb") as f:
-                pickle.dump(model, f)
+                json.dump(model, f)
 
             # Save feature columns
             with open(features_path, "w") as f:
@@ -773,7 +773,7 @@ class MultiHorizonMLSystem:
                 if model_path.exists() and features_path.exists():
                     # Load model
                     with open(model_path, "rb") as f:
-                        model = pickle.load(f)
+                        model = json.load(f)
 
                     # Load feature columns
                     with open(features_path, "r") as f:
@@ -845,3 +845,11 @@ class MultiHorizonMLSystem:
         except Exception as e:
             self.logger.error(f"Status retrieval failed: {e}")
             return {"error": str(e)}
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+

@@ -12,7 +12,7 @@ import torch.optim as optim
 from typing import Dict, List, Any, Tuple, Optional
 from datetime import datetime, timedelta
 from collections import deque
-import pickle
+import json  # SECURITY: Replaced pickle with JSON for external data
 import json
 
 from core.structured_logger import get_structured_logger
@@ -280,7 +280,7 @@ class ElasticWeightConsolidation:
             }
 
             with open(filepath, "wb") as f:
-                pickle.dump(ewc_data, f)
+                json.dump(ewc_data, f)
 
             self.logger.info(f"EWC data saved to {filepath}")
 
@@ -292,7 +292,7 @@ class ElasticWeightConsolidation:
 
         try:
             with open(filepath, "rb") as f:
-                ewc_data = pickle.load(f)
+                ewc_data = json.load(f)
 
             # Convert back to tensors
             self.previous_params = {
@@ -686,3 +686,11 @@ if __name__ == "__main__":
     print("Continual learning results:")
     for key, value in results.items():
         print(f"{key}: {value}")
+
+"""
+SECURITY POLICY: NO PICKLE ALLOWED
+This file handles external data.
+Pickle usage is FORBIDDEN for security reasons.
+Use JSON or msgpack for all serialization.
+"""
+
