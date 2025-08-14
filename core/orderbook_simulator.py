@@ -260,7 +260,35 @@ class OrderBookSimulator:
         price: Optional[float] = None,
         time_in_force: TimeInForce = TimeInForce.GTC,
     ) -> str:
-        """Submit trading order to simulator"""
+        """Submit trading order to simulator - HARD WIRED TO GATEWAY"""
+        
+        # MANDATORY GATEWAY ENFORCEMENT
+        try:
+            from src.cryptosmarttrader.core.mandatory_execution_gateway import enforce_mandatory_gateway, UniversalOrderRequest
+            
+            gateway_order = UniversalOrderRequest(
+                symbol=self.symbol,
+                side=side.value,
+                size=quantity,
+                order_type=order_type.value,
+                limit_price=price,
+                strategy_id="orderbook_simulator",
+                source_module="core.orderbook_simulator",
+                source_function="submit_order"
+            )
+            
+            gateway_result = enforce_mandatory_gateway(gateway_order)
+            
+            if not gateway_result.approved:
+                self.logger.warning(f"Order rejected by gateway: {gateway_result.reason}")
+                return "REJECTED_BY_GATEWAY"
+            
+            # Use approved size
+            quantity = gateway_result.approved_size
+            
+        except Exception as e:
+            self.logger.error(f"Gateway error: {str(e)}")
+            return "GATEWAY_ERROR"
 
         self.order_counter += 1
         order_id = f"order_{self.symbol}_{self.order_counter}_{int(datetime.now().timestamp())}"

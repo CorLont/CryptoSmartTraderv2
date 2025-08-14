@@ -37,7 +37,57 @@ class RealisticExecutionSimulator:
         market_data: Dict[str, Any],
         orderbook_data: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Execute single order with realistic constraints"""
+        """Execute single order with realistic constraints - HARD WIRED TO GATEWAY"""
+
+        # MANDATORY GATEWAY ENFORCEMENT
+        try:
+            from src.cryptosmarttrader.core.mandatory_execution_gateway import enforce_mandatory_gateway, UniversalOrderRequest
+            
+            gateway_order = UniversalOrderRequest(
+                symbol=order.get("symbol", "BTC/USD"),
+                side=order.get("side", "buy"),
+                size=order.get("size", 0.0),
+                order_type=order.get("type", "market"),
+                limit_price=order.get("target_price"),
+                strategy_id=order.get("strategy_id", "realistic_execution"),
+                source_module="trading.realistic_execution",
+                source_function="execute_order"
+            )
+            
+            gateway_result = enforce_mandatory_gateway(gateway_order, market_data)
+            
+            if not gateway_result.approved:
+                return {
+                    "order_id": order.get("id", "unknown"),
+                    "timestamp": datetime.now(),
+                    "symbol": order.get("symbol", "unknown"),
+                    "side": order.get("side", "unknown"),
+                    "order_type": order.get("type", "market"),
+                    "requested_size": order.get("size", 0.0),
+                    "executed_size": 0.0,
+                    "fill_ratio": 0.0,
+                    "target_price": order.get("target_price", 0.0),
+                    "execution_price": 0.0,
+                    "slippage_bps": 0.0,
+                    "latency_ms": 0.0,
+                    "fees": 0.0,
+                    "total_cost": 0.0,
+                    "execution_quality": 0.0,
+                    "market_impact": 0.0,
+                    "liquidity_consumed": 0.0,
+                    "rejected": True,
+                    "rejection_reason": gateway_result.reason
+                }
+            
+            # Use approved size
+            order["size"] = gateway_result.approved_size
+            
+        except Exception as e:
+            return {
+                "order_id": order.get("id", "unknown"),
+                "rejected": True,
+                "rejection_reason": f"Gateway error: {str(e)}"
+            }
 
         self.execution_stats["total_orders"] += 1
 

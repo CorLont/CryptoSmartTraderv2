@@ -264,7 +264,7 @@ class BacktestingEngine:
         exchange: str = "kraken",
     ) -> Optional[Trade]:
         """
-        Execute order with realistic slippage and fees
+        Execute order with realistic slippage and fees - HARD WIRED TO GATEWAY
 
         Args:
             timestamp: Execution timestamp
@@ -278,6 +278,35 @@ class BacktestingEngine:
         Returns:
             Trade object if executed, None if rejected
         """
+
+        # MANDATORY GATEWAY ENFORCEMENT
+        try:
+            from src.cryptosmarttrader.core.mandatory_execution_gateway import enforce_mandatory_gateway, UniversalOrderRequest
+            
+            gateway_order = UniversalOrderRequest(
+                symbol=symbol,
+                side=side.value,
+                size=quantity,
+                order_type=order_type.value,
+                limit_price=price,
+                strategy_id="backtesting_engine",
+                source_module="ml.backtesting_engine",
+                source_function="execute_order"
+            )
+            
+            market_data = {"symbol": symbol, "price": price, "timestamp": timestamp.timestamp()}
+            gateway_result = enforce_mandatory_gateway(gateway_order, market_data)
+            
+            if not gateway_result.approved:
+                self.logger.warning(f"Order rejected by gateway: {gateway_result.reason}")
+                return None
+            
+            # Use approved size
+            quantity = gateway_result.approved_size
+            
+        except Exception as e:
+            self.logger.error(f"Gateway error: {str(e)}")
+            return None
 
         # Check if trading is enabled
         if not self.is_trading_enabled:

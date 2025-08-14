@@ -35,8 +35,60 @@ class RealisticExecutionEngine:
         volatility: float = 0.02,
         volume_24h: float = 1000000,
         spread_bps: float = 5,
+        symbol: str = "BTC/USD",
+        side: str = "buy"
     ) -> OrderExecutionResult:
-        """Execute order with realistic slippage and latency"""
+        """Execute order with realistic slippage and latency - HARD WIRED TO GATEWAY"""
+        
+        # MANDATORY GATEWAY ENFORCEMENT
+        try:
+            from src.cryptosmarttrader.core.mandatory_execution_gateway import enforce_mandatory_gateway, UniversalOrderRequest
+            
+            gateway_order = UniversalOrderRequest(
+                symbol=symbol,
+                side=side,
+                size=order_size,
+                order_type="market",
+                limit_price=market_price,
+                strategy_id="realistic_execution_engine",
+                source_module="trading.realistic_execution_engine",
+                source_function="execute_order"
+            )
+            
+            market_data = {
+                "symbol": symbol,
+                "price": market_price,
+                "volatility": volatility,
+                "volume_24h": volume_24h,
+                "spread_bps": spread_bps
+            }
+            
+            gateway_result = enforce_mandatory_gateway(gateway_order, market_data)
+            
+            if not gateway_result.approved:
+                # Return rejected execution result
+                return OrderExecutionResult(
+                    executed_size=0,
+                    executed_price=market_price,
+                    slippage_bps=0,
+                    latency_ms=0,
+                    success=False,
+                    partial_fill=False
+                )
+            
+            # Use approved size
+            order_size = gateway_result.approved_size
+            
+        except Exception as e:
+            # Return error execution result
+            return OrderExecutionResult(
+                executed_size=0,
+                executed_price=market_price,
+                slippage_bps=0,
+                latency_ms=0,
+                success=False,
+                partial_fill=False
+            )
 
         # Calculate base slippage (in basis points)
         base_slippage = spread_bps / 2  # Half spread

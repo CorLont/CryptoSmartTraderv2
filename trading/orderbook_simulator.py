@@ -347,7 +347,66 @@ class OrderBookSimulator:
         price: Optional[float] = None,
         stop_price: Optional[float] = None,
     ) -> Order:
-        """Submit order to simulator"""
+        """Submit order to simulator - HARD WIRED TO GATEWAY"""
+        
+        # MANDATORY GATEWAY ENFORCEMENT
+        try:
+            from src.cryptosmarttrader.core.mandatory_execution_gateway import enforce_mandatory_gateway, UniversalOrderRequest
+            
+            gateway_order = UniversalOrderRequest(
+                symbol=symbol,
+                side=side.value,
+                size=quantity,
+                order_type=order_type.value,
+                limit_price=price,
+                stop_price=stop_price,
+                strategy_id="orderbook_simulator_trading",
+                source_module="trading.orderbook_simulator",
+                source_function="submit_order"
+            )
+            
+            gateway_result = enforce_mandatory_gateway(gateway_order)
+            
+            if not gateway_result.approved:
+                # Return rejected order
+                order_id = f"rejected_{self.next_order_id}"
+                self.next_order_id += 1
+                
+                rejected_order = Order(
+                    order_id=order_id,
+                    symbol=symbol,
+                    side=side,
+                    order_type=order_type,
+                    quantity=quantity,
+                    price=price,
+                    stop_price=stop_price,
+                    latency_ms=0.0
+                )
+                rejected_order.status = OrderStatus.REJECTED
+                self.logger.warning(f"Order {order_id} rejected by gateway: {gateway_result.reason}")
+                return rejected_order
+            
+            # Use approved size
+            quantity = gateway_result.approved_size
+            
+        except Exception as e:
+            # Return error order
+            order_id = f"error_{self.next_order_id}"
+            self.next_order_id += 1
+            
+            error_order = Order(
+                order_id=order_id,
+                symbol=symbol,
+                side=side,
+                order_type=order_type,
+                quantity=quantity,
+                price=price,
+                stop_price=stop_price,
+                latency_ms=0.0
+            )
+            error_order.status = OrderStatus.REJECTED
+            self.logger.error(f"Gateway error for order {order_id}: {str(e)}")
+            return error_order
 
         # Generate order ID
         order_id = f"order_{self.next_order_id}"
