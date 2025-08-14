@@ -36,6 +36,10 @@ args = "SocialMediaDashboard"
 task = "workflow.run"
 args = "WhaleDetectionDashboard"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "EnterpriseSystemDashboard"
+
 [[workflows.workflow]]
 name = "SecretsManagement"
 author = "agent"
@@ -96,6 +100,18 @@ waitForPort = 5004
 [workflows.workflow.metadata]
 outputType = "webview"
 
+[[workflows.workflow]]
+name = "EnterpriseSystemDashboard"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run enterprise_system_dashboard.py --server.port 5005"
+waitForPort = 5005
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
@@ -115,6 +131,10 @@ externalPort = 3002
 [[ports]]
 localPort = 5004
 externalPort = 5000
+
+[[ports]]
+localPort = 5005
+externalPort = 5173
 
 [[ports]]
 localPort = 8000
