@@ -15,7 +15,7 @@ import functools
 import inspect
 import traceback
 
-from ..risk.central_risk_guard import CentralRiskGuard, TradingOperation, RiskDecision
+from ..risk.central_risk_guard import CentralRiskGuard, RiskDecision
 from .mandatory_execution_gateway import MandatoryExecutionGateway, UniversalOrderRequest, GatewayResult
 
 logger = logging.getLogger(__name__)

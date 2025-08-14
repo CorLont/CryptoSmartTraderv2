@@ -7,8 +7,11 @@ from prometheus_client import Counter, Gauge, Histogram, Summary, CollectorRegis
 from typing import Dict, Optional, Any
 import time
 import threading
+import logging
 from dataclasses import dataclass
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 
 class MetricType(Enum):
@@ -42,7 +45,21 @@ class CryptoSmartTraderMetrics:
     def __init__(self, registry: Optional[CollectorRegistry] = None):
         self.registry = registry or CollectorRegistry()
         self._lock = threading.Lock()
+        self._last_signal_time = time.time()  # Track last signal for NoSignals alert
         self._initialize_metrics()
+        self._initialize_fase_d_alerts()
+        
+    def _initialize_fase_d_alerts(self):
+        """Initialize FASE D alert conditions and thresholds"""
+        # Alert thresholds for FASE D requirements
+        self.alert_thresholds = {
+            'high_order_error_rate': 0.05,  # 5% error rate threshold
+            'drawdown_too_high': 0.10,      # 10% drawdown threshold  
+            'no_signals_timeout': 1800,     # 30 minutes = 1800 seconds
+        }
+        # Initialize last signal timestamp
+        self.last_signal_timestamp.set(time.time())
+        logger.info("FASE D alert thresholds initialized")
     
     def _initialize_metrics(self):
         """Initialize all standard metrics with consistent naming"""
@@ -291,6 +308,31 @@ class CryptoSmartTraderMetrics:
         import time
         self.signals_received.labels(agent=agent, signal_type=signal_type, symbol=symbol).inc()
         self.last_signal_timestamp.set(time.time())
+        self._last_signal_time = time.time()
+        # Reset no signals alert when signal received
+        self.no_signals_timeout.set(0)
+        
+    def record_order_error(self, exchange: str, symbol: str, error_type: str, error_code: str):
+        """Record order error and update error rate tracking"""
+        self.order_errors.labels(exchange=exchange, symbol=symbol, error_type=error_type, error_code=error_code).inc()
+        self._update_order_error_rate()
+        
+    def _update_order_error_rate(self):
+        """Update order error rate alert based on recent activity"""
+        # Calculate error rate from counters
+        total_orders = self._get_counter_value(self.orders_sent)
+        total_errors = self._get_counter_value(self.order_errors)
+        
+        if total_orders > 0:
+            error_rate = total_errors / total_orders
+            self.high_order_error_rate.set(1 if error_rate > self.alert_thresholds['high_order_error_rate'] else 0)
+        else:
+            self.high_order_error_rate.set(0)
+            
+    def update_drawdown(self, drawdown_pct: float):
+        """Update portfolio drawdown and check alert threshold"""
+        self.portfolio_drawdown_pct.set(drawdown_pct)
+        self.drawdown_too_high.set(1 if drawdown_pct > self.alert_thresholds['drawdown_too_high'] * 100 else 0)
     
     def get_metrics_summary(self) -> Dict[str, Any]:
         """Get summary of key metrics for monitoring"""
