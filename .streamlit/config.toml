@@ -1,7 +1,13 @@
 [server]
 headless = true
 address = "0.0.0.0"
-port = 5000
+port = 5001
+
+[browser]
+gatherUsageStats = false
 
 [theme]
-base = "dark"
+primaryColor = "#1e3a5f"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"
