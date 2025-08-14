@@ -1,23 +1,17 @@
-# CryptoSmartTrader V2 Code Ownership
-
-# Global ownership - all changes require @clont1 approval
+# Global ownership
 * @clont1
 
-# Core system components - require additional review
-/src/cryptosmarttrader/core/ @clont1
+# Critical paths requiring extra review
 /src/cryptosmarttrader/risk/ @clont1
 /src/cryptosmarttrader/execution/ @clont1
-
-# Production deployment files
+/src/cryptosmarttrader/core/ @clont1
+/.github/workflows/ @clont1
 /pyproject.toml @clont1
 /Dockerfile @clont1
-/docker-compose.yml @clont1
-/.github/ @clont1
 
 # Configuration and secrets
 /config/ @clont1
-/.env.example @clont1
-/SECURITY.md @clont1
+/.env* @clont1
 
 # Documentation
 /README*.md @clont1

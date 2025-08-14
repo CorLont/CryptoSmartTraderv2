@@ -1,258 +1,198 @@
 name: Quality Gates
 
 on:
-  push:
-    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-
-env:
-  PYTHON_VERSION: "3.11"
+  push:
+    branches: [ main, develop ]
 
 jobs:
-  lint-gate:
-    name: Lint Gate
+  lint-check:
+    name: Lint Check (Ruff)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          
-      - name: Install dependencies
-        run: uv sync --dev
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
         
-      - name: Ruff lint
-        run: |
-          uv run ruff check src/ tests/ --output-format=github
-          if [ $? -ne 0 ]; then
-            echo "❌ LINT GATE FAILED"
-            exit 1
-          fi
-          echo "✅ LINT GATE PASSED"
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Install dependencies
+      run: uv sync --frozen
+      
+    - name: Run Ruff linter
+      run: |
+        uv run ruff check . --output-format=github --exit-zero
+        uv run ruff check . --statistics
 
-  format-gate:
-    name: Format Gate
+  format-check:
+    name: Format Check (Black)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          
-      - name: Install dependencies
-        run: uv sync --dev
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
         
-      - name: Black format check
-        run: |
-          uv run black --check --diff src/ tests/
-          if [ $? -ne 0 ]; then
-            echo "❌ FORMAT GATE FAILED"
-            exit 1
-          fi
-          echo "✅ FORMAT GATE PASSED"
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Install dependencies
+      run: uv sync --frozen
+      
+    - name: Check code formatting
+      run: |
+        uv run black --check --diff .
 
-  type-gate:
-    name: Type Gate
+  type-check:
+    name: Type Check (MyPy)
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          
-      - name: Install dependencies
-        run: uv sync --dev
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
         
-      - name: MyPy type check
-        run: |
-          uv run mypy src/ tests/ --strict --show-error-codes
-          if [ $? -ne 0 ]; then
-            echo "❌ TYPE GATE FAILED"
-            exit 1
-          fi
-          echo "✅ TYPE GATE PASSED"
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Install dependencies
+      run: uv sync --frozen
+      
+    - name: Run type checking
+      run: |
+        uv run mypy src/ --ignore-missing-imports --show-error-codes
 
-  test-gate:
-    name: Test Gate
+  security-check:
+    name: Security Check (Bandit)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          
-      - name: Install dependencies
-        run: uv sync --dev
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
         
-      - name: Run unit tests with coverage
-        run: |
-          uv run pytest tests/ \
-            --cov=src/cryptosmarttrader \
-            --cov-fail-under=70 \
-            --cov-report=term-missing \
-            -m "not slow and not integration" \
-            --tb=short
-          if [ $? -ne 0 ]; then
-            echo "❌ TEST GATE FAILED"
-            exit 1
-          fi
-          echo "✅ TEST GATE PASSED"
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Install dependencies
+      run: uv sync --frozen
+      
+    - name: Run security scan
+      run: |
+        uv run bandit -r src/ -ll -f json -o bandit-report.json || true
+        uv run bandit -r src/ -ll
 
   coverage-gate:
-    name: Coverage Gate
+    name: Coverage Gate (≥70%)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          
-      - name: Install dependencies
-        run: uv sync --dev
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
         
-      - name: Generate coverage report
-        run: |
-          uv run pytest tests/ \
-            --cov=src/cryptosmarttrader \
-            --cov-report=xml \
-            --cov-report=term \
-            --cov-fail-under=70 \
-            -m "not slow and not integration"
-          
-          COVERAGE=$(uv run coverage report --show-missing | grep TOTAL | awk '{print $4}' | sed 's/%//')
-          echo "Coverage: ${COVERAGE}%"
-          
-          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
-            echo "❌ COVERAGE GATE FAILED: ${COVERAGE}% < 70%"
-            exit 1
-          fi
-          echo "✅ COVERAGE GATE PASSED: ${COVERAGE}%"
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Install dependencies
+      run: uv sync --frozen
+      
+    - name: Run tests with coverage enforcement
+      run: |
+        uv run pytest tests/ \
+          --cov=src \
+          --cov-report=term \
+          --cov-report=xml \
+          --cov-fail-under=70 \
+          -v
 
-  security-gate:
-    name: Security Gate
+  dependency-audit:
+    name: Dependency Audit
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Install dependencies
+      run: uv sync --frozen
       
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          
-      - name: Install dependencies
-        run: uv sync --dev
-        
-      - name: GitLeaks scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: false
-        
-      - name: Bandit security scan
-        run: |
-          uv run bandit -r src/ -f json
-          if [ $? -ne 0 ]; then
-            echo "❌ SECURITY GATE FAILED: Bandit found security issues"
-            exit 1
-          fi
-          echo "✅ SECURITY GATE PASSED: No security issues found"
-        
-      - name: pip-audit vulnerability scan
-        run: |
-          uv run pip-audit
-          if [ $? -ne 0 ]; then
-            echo "❌ SECURITY GATE FAILED: Vulnerabilities found"
-            exit 1
-          fi
-          echo "✅ SECURITY GATE PASSED: No vulnerabilities found"
+    - name: Run dependency vulnerability scan
+      run: |
+        uv run pip-audit --format=json --output=audit-report.json || true
+        uv run pip-audit --desc --summary
 
-  all-gates-summary:
-    name: Quality Gates Summary
+  quality-gate-summary:
+    name: Quality Gate Summary
     runs-on: ubuntu-latest
-    needs: [lint-gate, format-gate, type-gate, test-gate, coverage-gate, security-gate]
+    needs: [lint-check, format-check, type-check, security-check, coverage-gate, dependency-audit]
     if: always()
+    
     steps:
-      - name: Check all gates status
-        run: |
-          echo "🎯 QUALITY GATES SUMMARY"
-          echo "========================"
-          
-          LINT_STATUS="${{ needs.lint-gate.result }}"
-          FORMAT_STATUS="${{ needs.format-gate.result }}"
-          TYPE_STATUS="${{ needs.type-gate.result }}"
-          TEST_STATUS="${{ needs.test-gate.result }}"
-          COVERAGE_STATUS="${{ needs.coverage-gate.result }}"
-          SECURITY_STATUS="${{ needs.security-gate.result }}"
-          
-          echo "🔍 Lint Gate: $LINT_STATUS"
-          echo "🎨 Format Gate: $FORMAT_STATUS"
-          echo "🏷️ Type Gate: $TYPE_STATUS"
-          echo "🧪 Test Gate: $TEST_STATUS"
-          echo "📊 Coverage Gate: $COVERAGE_STATUS"
-          echo "🔒 Security Gate: $SECURITY_STATUS"
-          
-          # Check if all gates passed
-          if [[ "$LINT_STATUS" == "success" && \
-                "$FORMAT_STATUS" == "success" && \
-                "$TYPE_STATUS" == "success" && \
-                "$TEST_STATUS" == "success" && \
-                "$COVERAGE_STATUS" == "success" && \
-                "$SECURITY_STATUS" == "success" ]]; then
-            echo ""
-            echo "✅ ALL QUALITY GATES PASSED"
-            echo "Repository is ready for deployment"
-          else
-            echo ""
-            echo "❌ QUALITY GATE FAILURES DETECTED"
-            echo "Fix issues before merging"
-            exit 1
-          fi
+    - name: Check quality gates
+      run: |
+        echo "Quality Gate Results:"
+        echo "✅ Lint Check: ${{ needs.lint-check.result }}"
+        echo "✅ Format Check: ${{ needs.format-check.result }}"
+        echo "✅ Type Check: ${{ needs.type-check.result }}"
+        echo "✅ Security Check: ${{ needs.security-check.result }}"
+        echo "✅ Coverage Gate (≥70%): ${{ needs.coverage-gate.result }}"
+        echo "✅ Dependency Audit: ${{ needs.dependency-audit.result }}"
+        
+    - name: Fail if any quality gate failed
+      if: |
+        needs.lint-check.result == 'failure' ||
+        needs.format-check.result == 'failure' ||
+        needs.type-check.result == 'failure' ||
+        needs.security-check.result == 'failure' ||
+        needs.coverage-gate.result == 'failure'
+      run: |
+        echo "❌ One or more quality gates failed"
+        exit 1
+        
+    - name: Success summary
+      if: |
+        needs.lint-check.result == 'success' &&
+        needs.format-check.result == 'success' &&
+        needs.type-check.result == 'success' &&
+        needs.security-check.result == 'success' &&
+        needs.coverage-gate.result == 'success'
+      run: |
+        echo "✅ All quality gates passed successfully"

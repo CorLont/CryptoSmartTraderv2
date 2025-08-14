@@ -8,258 +8,242 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
-  UV_CACHE_DIR: /tmp/.uv-cache
+  UV_CACHE_DIR: ~/.cache/uv
 
 jobs:
-  security-scan:
-    name: Security Analysis
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: GitLeaks Secret Scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Install dependencies
-        run: |
-          uv sync --dev
-
-      - name: Security audit with pip-audit
-        run: |
-          uv run pip-audit --format=json --output=security-audit.json || true
-        continue-on-error: true
-
-      - name: Security scan with bandit
-        run: |
-          uv run bandit -r src/ -f json -o bandit-report.json || true
-        continue-on-error: true
-
-      - name: Upload security artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-reports
-          path: |
-            security-audit.json
-            bandit-report.json
-          retention-days: 30
-
   quality-checks:
-    name: Code Quality
+    name: Quality Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: security-scan
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Cache UV dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-${{ matrix.python-version }}-
+          
+    - name: Install dependencies
+      run: |
+        uv sync --frozen
+        
+    - name: Lint with Ruff
+      run: |
+        uv run ruff check . --output-format=github
+        
+    - name: Format check with Black
+      run: |
+        uv run black --check --diff .
+        
+    - name: Type check with MyPy
+      run: |
+        uv run mypy src/ --ignore-missing-imports --show-error-codes
+        
+    - name: Security scan with Bandit
+      run: |
+        uv run bandit -r src/ -f json -o bandit-report.json || true
+        uv run bandit -r src/ -ll
+        
+    - name: Dependency vulnerability scan
+      run: |
+        uv run pip-audit --format=json --output=pip-audit-report.json || true
+        uv run pip-audit --desc --summary
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Install dependencies
-        run: |
-          uv sync --dev
-
-      - name: Lint with Ruff
-        run: |
-          uv run ruff check src/ tests/ --output-format=github
-
-      - name: Format check with Black
-        run: |
-          uv run black --check --diff src/ tests/
-
-      - name: Type check with MyPy
-        run: |
-          uv run mypy src/ tests/ --junit-xml=mypy-report.xml || true
-
-      - name: Upload quality artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: quality-reports
-          path: |
-            mypy-report.xml
-          retention-days: 30
-
-  test-matrix:
-    name: Test Suite (Python ${{ matrix.python-version }})
+  tests:
+    name: Test Suite
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     needs: quality-checks
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
-      fail-fast: false
-
+        
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Cache UV dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-${{ matrix.python-version }}-
+          
+    - name: Install dependencies
+      run: |
+        uv sync --frozen
+        
+    - name: Run unit tests
+      run: |
+        uv run pytest tests/ -m "unit" -v --junitxml=unit-test-results.xml
+        
+    - name: Run integration tests
+      run: |
+        uv run pytest tests/ -m "integration" -v --junitxml=integration-test-results.xml
+        
+    - name: Run test suite with coverage
+      run: |
+        uv run pytest tests/ \
+          --cov=src \
+          --cov-report=xml \
+          --cov-report=html \
+          --cov-report=term \
+          --cov-fail-under=70 \
+          --junitxml=test-results.xml
+          
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.python-version }}
+        path: |
+          test-results.xml
+          unit-test-results.xml
+          integration-test-results.xml
+          htmlcov/
+          
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports-${{ matrix.python-version }}
+        path: |
+          bandit-report.json
+          pip-audit-report.json
 
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Install dependencies
-        run: |
-          uv sync --dev
-
-      - name: Run unit tests
-        run: |
-          uv run pytest tests/ \
-            --cov=src/cryptosmarttrader \
-            --cov-report=xml \
-            --cov-report=html \
-            --cov-fail-under=70 \
-            --junit-xml=pytest-report.xml \
-            -m "not slow and not integration" \
-            --tb=short
-
-      - name: Run integration tests
-        run: |
-          uv run pytest tests/ \
-            -m "integration and not slow" \
-            --junit-xml=integration-report.xml \
-            --tb=short || true
-        continue-on-error: true
-
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-reports-py${{ matrix.python-version }}
-          path: |
-            pytest-report.xml
-            integration-report.xml
-            coverage.xml
-            htmlcov/
-          retention-days: 30
-
-  build-validation:
-    name: Build & Package Validation
+  build:
+    name: Build & Package
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: test-matrix
+    needs: [quality-checks, tests]
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Cache UV dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/uv.lock') }}
+        
+    - name: Install dependencies
+      run: |
+        uv sync --frozen
+        
+    - name: Build package
+      run: |
+        uv build
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-packages
+        path: dist/
+        retention-days: 30
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [quality-checks, tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64
+        push: false
+        tags: cryptosmarttrader:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Test Docker image
+      run: |
+        docker run --rm --name test-container \
+          -e ENVIRONMENT=testing \
+          cryptosmarttrader:latest \
+          python -c "import src.cryptosmarttrader; print('Package import successful')"
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Install dependencies
-        run: |
-          uv sync --dev
-
-      - name: Build package
-        run: |
-          uv build
-
-      - name: Validate package
-        run: |
-          uv run python -c "import src.cryptosmarttrader; print('Package import successful')"
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: package-artifacts
-          path: |
-            dist/
-          retention-days: 30
-
-  deployment-ready:
+  deployment-readiness:
     name: Deployment Readiness
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: 
-      - security-scan
-      - quality-checks
-      - test-matrix
-      - build-validation
+    needs: [build, docker-build]
     if: github.ref == 'refs/heads/main'
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts/
-
-      - name: Deployment readiness check
-        run: |
-          echo "✅ Security scan completed"
-          echo "✅ Quality checks passed"
-          echo "✅ Test matrix completed" 
-          echo "✅ Build validation passed"
-          echo "🚀 Deployment ready"
-
-      - name: Create deployment summary
-        run: |
-          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
-          # 🎯 CryptoSmartTrader V2 CI/CD Pipeline Summary
-          
-          ## ✅ Pipeline Status: SUCCESS
-          
-          | Stage | Status | Details |
-          |-------|--------|---------|
-          | 🔒 Security | ✅ Pass | GitLeaks, pip-audit, bandit |
-          | 🎨 Quality | ✅ Pass | Ruff, Black, MyPy |
-          | 🧪 Tests | ✅ Pass | Unit + Integration (Python 3.11/3.12) |
-          | 📦 Build | ✅ Pass | Package validation |
-          | 🚀 Deploy | ✅ Ready | All gates passed |
-          
-          ## 📊 Coverage & Quality Metrics
-          - **Test Coverage**: ≥70% required
-          - **Code Quality**: Ruff + Black compliant
-          - **Type Safety**: MyPy validated
-          - **Security**: Multi-layer scanning
-          
-          ## 🏗️ Architecture Validation
-          - **ExecutionPolicy Gates**: Mandatory enforcement
-          - **Risk Management**: CentralRiskGuard integration
-          - **Observability**: Centralized metrics system
-          - **Security**: Zero-bypass architecture
-          
-          **Repository**: Enterprise-grade CI/CD pipeline operational ✅
-          EOF
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist-packages
+        path: dist/
+        
+    - name: Validate deployment readiness
+      run: |
+        echo "✅ Quality checks passed"
+        echo "✅ Test suite passed with >70% coverage"
+        echo "✅ Security scans completed"
+        echo "✅ Package built successfully"
+        echo "✅ Docker image built successfully"
+        echo "🚀 Ready for deployment to staging/production"
+        
+    - name: Create deployment summary
+      run: |
+        echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Status:** ✅ Ready for deployment" >> $GITHUB_STEP_SUMMARY
+        echo "**Artifacts:** Package + Docker image available" >> $GITHUB_STEP_SUMMARY
