@@ -18,28 +18,18 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "SimpleDashboard"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "ExecutionPolicyDashboard"
+args = "SecretsManagement"
 
 [[workflows.workflow]]
-name = "SimpleDashboard"
+name = "SecretsManagement"
 author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "streamlit run simple_dashboard_test.py --server.port 5000"
-waitForPort = 5000
-
-[[workflows.workflow]]
-name = "ExecutionPolicyDashboard"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "streamlit run simple_dashboard_test.py --server.port 5000"
+args = "streamlit run secrets_dashboard.py --server.port 5000"
 waitForPort = 5000
 
 [[ports]]
