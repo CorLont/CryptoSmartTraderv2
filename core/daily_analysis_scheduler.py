@@ -7,7 +7,7 @@ import asyncio
 import logging
 import threading
 import time
-import subprocess
+from core.secure_subprocess import secure_subprocess, SecureSubprocessError
 import sys
 import os
 from datetime import datetime, timedelta
@@ -167,17 +167,19 @@ class DailyAnalysisScheduler:
         if sys.platform.startswith("win"):
             script_path = self.project_root / "scripts" / "start_ml_analysis.bat"
             if script_path.exists():
-                # SECURITY: Secure subprocess with timeout and no shell=True
+                # SECURITY: Enterprise secure subprocess with comprehensive controls
                 try:
-                    process = subprocess.Popen(
-                        [str(script_path)],  # No shell=True for security
-                        cwd=str(self.project_root),
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
+                    process, monitoring_data = secure_subprocess.popen_secure(
+                        [str(script_path)],
+                        timeout=300,  # 5 minute timeout for startup
+                        cwd=self.project_root
                     )
-                    self.running_services["ml_analysis"] = process
-                    self.logger.info(f"ML analysis service started: {script_path}")
-                except Exception as e:
+                    self.running_services["ml_analysis"] = {
+                        "process": process,
+                        "monitoring": monitoring_data
+                    }
+                    self.logger.info(f"ML analysis service started securely: {script_path}")
+                except SecureSubprocessError as e:
                     self.logger.error(f"ML service startup failed: {e}")
                     return
         else:
@@ -189,17 +191,19 @@ class DailyAnalysisScheduler:
         if sys.platform.startswith("win"):
             script_path = self.project_root / "scripts" / "start_social_scraper.bat"
             if script_path.exists():
-                # SECURITY: Secure subprocess with timeout and no shell=True
+                # SECURITY: Enterprise secure subprocess with comprehensive controls
                 try:
-                    process = subprocess.Popen(
-                        [str(script_path)],  # No shell=True for security
-                        cwd=str(self.project_root),
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
+                    process, monitoring_data = secure_subprocess.popen_secure(
+                        [str(script_path)],
+                        timeout=300,  # 5 minute timeout for startup
+                        cwd=self.project_root
                     )
-                    self.running_services["social_scraper"] = process
-                    self.logger.info(f"Social scraping service started: {script_path}")
-                except Exception as e:
+                    self.running_services["social_scraper"] = {
+                        "process": process,
+                        "monitoring": monitoring_data
+                    }
+                    self.logger.info(f"Social scraping service started securely: {script_path}")
+                except SecureSubprocessError as e:
                     self.logger.error(f"Social service startup failed: {e}")
                     return
         else:
@@ -211,14 +215,16 @@ class DailyAnalysisScheduler:
         try:
             ml_script = self.project_root / "scripts" / "ml_background_service.py"
             if ml_script.exists():
-                # SECURITY: Secure subprocess with controlled arguments
-                process = subprocess.Popen(
-                    [sys.executable, str(ml_script)],  # Controlled arguments
-                    cwd=str(self.project_root),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                # SECURITY: Enterprise secure subprocess with comprehensive controls
+                process, monitoring_data = secure_subprocess.popen_secure(
+                    [sys.executable, str(ml_script)],
+                    timeout=300,  # 5 minute timeout
+                    cwd=self.project_root
                 )
-                self.running_services["ml_analysis"] = process
+                self.running_services["ml_analysis"] = {
+                    "process": process,
+                    "monitoring": monitoring_data
+                }
                 self.logger.info("ML analysis Python service started")
         except Exception as e:
             self.logger.error(f"Failed to start ML Python service: {e}")
@@ -228,26 +234,40 @@ class DailyAnalysisScheduler:
         try:
             social_script = self.project_root / "scripts" / "social_scraper_service.py"
             if social_script.exists():
-                # SECURITY: Secure subprocess with controlled arguments
-                process = subprocess.Popen(
-                    [sys.executable, str(social_script)],  # Controlled arguments
-                    cwd=str(self.project_root),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                # SECURITY: Enterprise secure subprocess with comprehensive controls
+                process, monitoring_data = secure_subprocess.popen_secure(
+                    [sys.executable, str(social_script)],
+                    timeout=300,  # 5 minute timeout
+                    cwd=self.project_root
                 )
-                self.running_services["social_scraper"] = process
+                self.running_services["social_scraper"] = {
+                    "process": process,
+                    "monitoring": monitoring_data
+                }
                 self.logger.info("Social scraping Python service started")
         except Exception as e:
             self.logger.error(f"Failed to start social Python service: {e}")
 
     def _stop_background_services(self):
         """Stop all background services"""
-        for service_name, process in self.running_services.items():
+        for service_name, service_data in self.running_services.items():
             try:
+                # Handle both old format (direct process) and new format (dict with process)
+                if isinstance(service_data, dict):
+                    process = service_data["process"]
+                    monitoring = service_data.get("monitoring", {})
+                else:
+                    process = service_data  # Legacy format
+                    monitoring = {}
+                
                 if process and process.poll() is None:
                     process.terminate()
                     process.wait(timeout=10)
-                    self.logger.info(f"Stopped {service_name} service")
+                    self.logger.info(f"Stopped {service_name} service", extra={
+                        "service": service_name,
+                        "pid": getattr(process, 'pid', 'unknown'),
+                        "monitoring": monitoring
+                    })
             except Exception as e:
                 self.logger.error(f"Error stopping {service_name}: {e}")
 

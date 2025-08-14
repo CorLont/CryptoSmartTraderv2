@@ -534,15 +534,14 @@ class FunctionalityAuditor:
         # Check for secrets in repo (should be clean)
         secrets_in_repo = False
         try:
-            import subprocess
+            from core.secure_subprocess import secure_subprocess, SecureSubprocessError
 
-            # SECURITY: Secure subprocess with timeout and controlled arguments
-            result = subprocess.run(
+            # SECURITY: Enterprise secure subprocess with comprehensive controls
+            result = secure_subprocess.run_secure(
                 ["grep", "-r", "-i", "api_key\\|token\\|secret\\|password", "."],
-                capture_output=True,
-                text=True,
-                timeout=30,  # 30 second timeout
-                check=False,  # Don't raise on non-zero exit
+                timeout=30,
+                check=False,  # Don't raise on non-zero exit for grep
+                allowed_return_codes=[0, 1]  # grep returns 1 when no matches found
             )
             if result.returncode == 0 and len(result.stdout) > 100:
                 secrets_in_repo = True

@@ -4,16 +4,16 @@ Validates that all CI/CD tools work correctly
 """
 
 import pytest
-import subprocess
+from core.secure_subprocess import secure_subprocess, SecureSubprocessError
 import sys
 from pathlib import Path
 
 
 def test_ruff_check():
     """Test ruff linting passes"""
-    result = subprocess.run([
+    result = secure_subprocess.run_secure([
         "ruff", "check", "src/", "--output-format=github"
-    ], capture_output=True, text=True)
+    ], timeout=60, check=False, allowed_return_codes=[0, 1])
     
     # Ruff should not find critical errors
     assert result.returncode in [0, 1], f"Ruff failed: {result.stderr}"
@@ -21,9 +21,9 @@ def test_ruff_check():
 
 def test_black_check():
     """Test black formatting check"""
-    result = subprocess.run([
+    result = secure_subprocess.run_secure([
         "black", "--check", "src/", "--quiet"
-    ], capture_output=True, text=True)
+    ], timeout=60, check=False, allowed_return_codes=[0, 1])
     
     # Note: black may find files that need formatting (returncode 1)
     # but it shouldn't crash (returncode > 1)
@@ -39,9 +39,9 @@ def test_mypy_core_modules():
     
     for module in core_modules:
         if Path(module).exists():
-            result = subprocess.run([
+            result = secure_subprocess.run_secure([
                 "mypy", module, "--ignore-missing-imports"
-            ], capture_output=True, text=True)
+            ], timeout=120, check=False, allowed_return_codes=[0, 1])
             
             # MyPy should not find critical type errors  
             assert result.returncode <= 1, f"MyPy failed on {module}: {result.stdout}"
@@ -49,9 +49,9 @@ def test_mypy_core_modules():
 
 def test_pytest_runs():
     """Test that pytest can run successfully"""
-    result = subprocess.run([
+    result = secure_subprocess.run_secure([
         "pytest", "--version"
-    ], capture_output=True, text=True)
+    ], timeout=30, check=False)
     
     assert result.returncode == 0, f"Pytest not working: {result.stderr}"
     assert "pytest" in result.stdout
@@ -59,10 +59,10 @@ def test_pytest_runs():
 
 def test_coverage_configuration():
     """Test that coverage configuration is valid"""
-    result = subprocess.run([
+    result = secure_subprocess.run_secure([
         "python", "-c", 
         "import coverage; cov = coverage.Coverage(); print('Coverage config valid')"
-    ], capture_output=True, text=True)
+    ], timeout=30, check=False)
     
     assert result.returncode == 0, f"Coverage config invalid: {result.stderr}"
 

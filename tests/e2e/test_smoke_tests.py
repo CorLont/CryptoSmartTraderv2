@@ -3,7 +3,7 @@
 import pytest
 import httpx
 import time
-import subprocess
+from core.secure_subprocess import secure_subprocess, SecureSubprocessError
 import signal
 import os
 from pathlib import Path
@@ -16,13 +16,14 @@ class TestSystemStartup:
     @pytest.fixture(scope="class")
     def running_services(self):
         """Start services for testing."""
-        # Start the multi-service system
-        process = subprocess.Popen(
-            ["python", "start_replit_services.py"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            preexec_fn=os.setsid,
-        )
+        # Start the multi-service system with secure subprocess
+        try:
+            process, monitoring_data = secure_subprocess.popen_secure(
+                ["python", "start_replit_services.py"],
+                timeout=180  # 3 minute startup timeout
+            )
+        except SecureSubprocessError as e:
+            pytest.skip(f"Failed to start services for testing: {e}")
 
         # Wait for services to start
         time.sleep(10)

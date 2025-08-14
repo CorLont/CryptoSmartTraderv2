@@ -5,7 +5,7 @@ Dashboard for controlling ML analysis and social media scraping
 
 import streamlit as st
 import asyncio
-import subprocess
+from core.secure_subprocess import secure_subprocess, SecureSubprocessError
 import sys
 import os
 import json
@@ -904,11 +904,18 @@ class AnalysisControlDashboard:
             if os.name == "nt":
                 scripts_dir = Path("scripts")
 
-                # SECURITY: Secure subprocess calls without shell=True
+                # SECURITY: Enterprise secure subprocess with comprehensive controls
                 try:
-                    subprocess.Popen([str(scripts_dir / "start_ml_analysis.bat")])
-                    subprocess.Popen([str(scripts_dir / "start_social_scraper.bat")])
-                except Exception as e:
+                    ml_process, ml_monitoring = secure_subprocess.popen_secure(
+                        [str(scripts_dir / "start_ml_analysis.bat")],
+                        timeout=300  # 5 minute startup timeout
+                    )
+                    scraper_process, scraper_monitoring = secure_subprocess.popen_secure(
+                        [str(scripts_dir / "start_social_scraper.bat")],
+                        timeout=300  # 5 minute startup timeout
+                    )
+                    st.success(f"Services started - ML PID: {ml_process.pid}, Scraper PID: {scraper_process.pid}")
+                except SecureSubprocessError as e:
                     st.error(f"Failed to start services: {e}")
                     return
 
@@ -925,22 +932,23 @@ class AnalysisControlDashboard:
         """Stop all background services"""
         try:
             if os.name == "nt":
-                # SECURITY: Secure subprocess calls with timeout and no shell=True
+                # SECURITY: Enterprise secure subprocess with comprehensive controls
                 try:
-                    subprocess.run(
+                    ml_result = secure_subprocess.run_secure(
                         ["taskkill", "/FI", "WINDOWTITLE eq ML Analysis*", "/F"], 
                         timeout=10, 
-                        check=False
+                        check=False,
+                        allowed_return_codes=[0, 128]  # 0=success, 128=no processes found
                     )
-                    subprocess.run(
+                    scraper_result = secure_subprocess.run_secure(
                         ["taskkill", "/FI", "WINDOWTITLE eq Social Scraper*", "/F"], 
                         timeout=10, 
-                        check=False
+                        check=False,
+                        allowed_return_codes=[0, 128]
                     )
-                except subprocess.TimeoutExpired:
-                    st.warning("Service termination timed out")
-                except Exception as e:
-                    st.error(f"Failed to stop services: {e}")
+                    st.success("Service termination commands executed")
+                except SecureSubprocessError as e:
+                    st.warning(f"Service termination issue: {e}")
                     return
 
                 st.success("Background services stopped")
@@ -965,9 +973,14 @@ class AnalysisControlDashboard:
             if os.name == "nt":
                 os.startfile(data_path)
             else:
-                # SECURITY: Secure subprocess with timeout
+                # SECURITY: Enterprise secure subprocess with comprehensive controls
                 cmd = ["open", str(data_path)] if sys.platform == "darwin" else ["xdg-open", str(data_path)]
-                subprocess.run(cmd, timeout=10, check=False)
+                secure_subprocess.run_secure(
+                    cmd, 
+                    timeout=10, 
+                    check=False,
+                    allowed_return_codes=[0, 1, 2]  # Various success/warning codes for file managers
+                )
 
             st.success("Data folder opened in file explorer")
         except Exception as e:
