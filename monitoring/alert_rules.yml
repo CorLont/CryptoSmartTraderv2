@@ -1,0 +1,111 @@
+# FASE D Alert Rules for CryptoSmartTrader V2
+# Prometheus AlertManager rules configuration
+
+groups:
+- name: cryptosmarttrader_fase_d_alerts
+  rules:
+  # FASE D Core Alerts
+  - alert: HighOrderErrorRate
+    expr: alert_high_order_error_rate >= 1
+    for: 1m
+    labels:
+      severity: critical
+      component: cryptosmarttrader
+      team: trading
+    annotations:
+      summary: "CryptoSmartTrader order error rate too high"
+      description: "Order error rate exceeds 5% threshold (current: {{ $value }})"
+      runbook_url: "https://wiki.company.com/runbooks/cryptosmarttrader/high-error-rate"
+
+  - alert: DrawdownTooHigh
+    expr: alert_drawdown_too_high >= 1
+    for: 1m
+    labels:
+      severity: high
+      component: cryptosmarttrader
+      team: trading
+    annotations:
+      summary: "CryptoSmartTrader portfolio drawdown too high"
+      description: "Portfolio drawdown exceeds 10% threshold (current: {{ $value }}%)"
+      runbook_url: "https://wiki.company.com/runbooks/cryptosmarttrader/high-drawdown"
+
+  - alert: NoSignals30m
+    expr: alert_no_signals_timeout >= 1
+    for: 2m
+    labels:
+      severity: medium
+      component: cryptosmarttrader
+      team: trading
+    annotations:
+      summary: "CryptoSmartTrader no signals for 30 minutes"
+      description: "No trading signals received for 30 minutes"
+      runbook_url: "https://wiki.company.com/runbooks/cryptosmarttrader/no-signals"
+
+- name: cryptosmarttrader_system_alerts
+  rules:
+  # System health alerts
+  - alert: ServiceDown
+    expr: up{job="cryptosmarttrader"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      component: cryptosmarttrader
+    annotations:
+      summary: "CryptoSmartTrader service is down"
+      description: "CryptoSmartTrader service has been down for more than 1 minute"
+
+  - alert: HighLatency
+    expr: histogram_quantile(0.95, rate(latency_ms_bucket[5m])) > 1000
+    for: 2m
+    labels:
+      severity: warning
+      component: cryptosmarttrader
+    annotations:
+      summary: "High latency detected"
+      description: "95th percentile latency is {{ $value }}ms"
+
+  - alert: MemoryUsageHigh
+    expr: memory_usage_bytes / 1024 / 1024 / 1024 > 2
+    for: 5m
+    labels:
+      severity: warning
+      component: cryptosmarttrader
+    annotations:
+      summary: "High memory usage"
+      description: "Memory usage is {{ $value }}GB"
+
+- name: cryptosmarttrader_trading_alerts
+  rules:
+  # Trading specific alerts
+  - alert: KillSwitchActivated
+    expr: increase(kill_switch_triggers_total[5m]) > 0
+    for: 0s
+    labels:
+      severity: critical
+      component: cryptosmarttrader
+      team: trading
+    annotations:
+      summary: "Kill switch activated"
+      description: "Emergency kill switch has been triggered"
+
+  - alert: HighRiskViolations
+    expr: rate(risk_violations_total[5m]) > 0.1
+    for: 2m
+    labels:
+      severity: high
+      component: cryptosmarttrader
+      team: trading
+    annotations:
+      summary: "High rate of risk violations"
+      description: "Risk violations rate is {{ $value }}/second"
+
+  - alert: ExecutionGateFailures
+    expr: rate(execution_gates_total{result="reject"}[5m]) > 0.2
+    for: 3m
+    labels:
+      severity: medium
+      component: cryptosmarttrader
+      team: trading
+    annotations:
+      summary: "High execution gate failures"
+      description: "Execution gate rejection rate is {{ $value }}/second"

@@ -1,0 +1,102 @@
+# AlertManager configuration for CryptoSmartTrader V2
+# FASE E - Production alerting setup
+
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@cryptosmarttrader.com'
+  smtp_auth_username: 'alerts@cryptosmarttrader.com'
+  smtp_auth_password: 'your_smtp_password'
+
+# Routing rules
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'default'
+  routes:
+  # Critical alerts - immediate notification
+  - match:
+      severity: critical
+    receiver: 'critical-alerts'
+    group_wait: 5s
+    repeat_interval: 5m
+  
+  # High severity alerts
+  - match:
+      severity: high
+    receiver: 'high-alerts'
+    group_wait: 30s
+    repeat_interval: 15m
+  
+  # Medium severity alerts
+  - match:
+      severity: medium
+    receiver: 'medium-alerts'
+    group_wait: 2m
+    repeat_interval: 1h
+
+# Alert inhibition rules
+inhibit_rules:
+- source_match:
+    severity: 'critical'
+  target_match:
+    severity: 'warning'
+  equal: ['alertname', 'cluster', 'service']
+
+# Notification receivers
+receivers:
+- name: 'default'
+  webhook_configs:
+  - url: 'http://cryptosmarttrader:8001/alerts/webhook'
+    send_resolved: true
+
+- name: 'critical-alerts'
+  email_configs:
+  - to: 'trading-team@company.com'
+    subject: '🚨 CRITICAL: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    body: |
+      {{ range .Alerts }}
+      Alert: {{ .Annotations.summary }}
+      Description: {{ .Annotations.description }}
+      Severity: {{ .Labels.severity }}
+      Component: {{ .Labels.component }}
+      Time: {{ .StartsAt }}
+      {{ if .Annotations.runbook_url }}
+      Runbook: {{ .Annotations.runbook_url }}
+      {{ end }}
+      {{ end }}
+  
+  webhook_configs:
+  - url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    send_resolved: true
+    title: '🚨 Critical Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    text: |
+      {{ range .Alerts }}
+      *Alert:* {{ .Annotations.summary }}
+      *Description:* {{ .Annotations.description }}
+      *Component:* {{ .Labels.component }}
+      *Severity:* {{ .Labels.severity }}
+      *Time:* {{ .StartsAt }}
+      {{ end }}
+
+- name: 'high-alerts'
+  email_configs:
+  - to: 'trading-team@company.com'
+    subject: '⚠️ HIGH: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    body: |
+      {{ range .Alerts }}
+      Alert: {{ .Annotations.summary }}
+      Description: {{ .Annotations.description }}
+      Component: {{ .Labels.component }}
+      Time: {{ .StartsAt }}
+      {{ end }}
+
+- name: 'medium-alerts'
+  webhook_configs:
+  - url: 'http://cryptosmarttrader:8001/alerts/webhook'
+    send_resolved: true
+
+# Alert templates
+templates:
+- '/etc/alertmanager/templates/*.tmpl'

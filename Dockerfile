@@ -1,30 +1,22 @@
-# Multi-stage production Dockerfile voor CryptoSmartTrader V2
-# Enterprise-grade container met security hardening en health checks
+# Multi-stage production Dockerfile for CryptoSmartTrader V2
+# FASE E - Enterprise deployment with security hardening
 
-# Stage 1: Builder
+# Build stage
 FROM python:3.11.10-slim-bookworm AS builder
 
-# Metadata
-LABEL org.opencontainers.image.title="CryptoSmartTrader V2"
-LABEL org.opencontainers.image.description="Enterprise cryptocurrency trading intelligence system"
-LABEL org.opencontainers.image.version="2.0.0"
-LABEL org.opencontainers.image.vendor="CryptoSmartTrader"
+# Security: Create non-root user for build
+RUN groupadd --gid 1000 builder && \
+    useradd --uid 1000 --gid builder --shell /bin/bash --create-home builder
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install UV
-RUN pip install uv
+# Install UV package manager
+RUN pip install --no-cache-dir uv==0.1.6
 
 # Set working directory
 WORKDIR /app
@@ -35,28 +27,29 @@ COPY pyproject.toml uv.lock ./
 # Install dependencies
 RUN uv sync --frozen --no-dev
 
-# Stage 2: Runtime
-FROM python:3.11.10-slim-bookworm AS runtime
+# Production stage
+FROM python:3.11.10-slim-bookworm AS production
 
-# Security: Create non-root user
+# Security labels
+LABEL maintainer="CryptoSmartTrader V2 Team"
+LABEL version="2.0.0"
+LABEL description="Enterprise cryptocurrency trading intelligence system"
+LABEL security.scan="required"
+
+# Create non-root user for production
 RUN groupadd --gid 1000 trader && \
     useradd --uid 1000 --gid trader --shell /bin/bash --create-home trader
 
 # Install runtime dependencies only
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    tini \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get autoremove -y \
-    && apt-get autoclean
+    && apt-get clean
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/app/.venv/bin:$PATH" \
-    ENVIRONMENT=production \
-    LOG_LEVEL=INFO \
-    TRADING_MODE=paper
+# Create application directories with proper permissions
+RUN mkdir -p /app /app/logs /app/data /app/models /app/exports \
+    && chown -R trader:trader /app
 
 # Set working directory
 WORKDIR /app
@@ -67,22 +60,30 @@ COPY --from=builder --chown=trader:trader /app/.venv /app/.venv
 # Copy application code
 COPY --chown=trader:trader . .
 
-# Create necessary directories
-RUN mkdir -p logs cache reports config && \
-    chown -R trader:trader logs cache reports config
+# Set Python path to use virtual environment
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
 
-# Security: Drop capabilities and set limits
+# Security: Drop capabilities and run as non-root
 USER trader
 
-# Expose ports
-EXPOSE 5000 8000 8001
+# Environment configuration
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV CRYPTOSMARTTRADER_ENV=production
+ENV CRYPTOSMARTTRADER_LOG_LEVEL=INFO
 
-# Health check
+# Expose ports
+EXPOSE 5000 8001 8000
+
+# Health check endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8001/health || exit 1
 
-# Use tini for signal handling
-ENTRYPOINT ["tini", "--"]
+# Create entrypoint script
+COPY --chown=trader:trader docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Default command
-CMD ["python", "-m", "uvicorn", "src.cryptosmarttrader.api.main:app", "--host", "0.0.0.0", "--port", "5000"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["dashboard"]
