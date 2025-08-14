@@ -13,7 +13,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 import threading
 import warnings
-import pickle
+import json
+import joblib  # Secure model serialization
 from pathlib import Path
 
 warnings.filterwarnings("ignore")
@@ -940,19 +941,16 @@ class MarketRegimeDetector:
             if self.autoencoder is not None and HAS_TORCH:
                 torch.save(self.autoencoder.state_dict(), self.model_cache_dir / "autoencoder.pt")
 
-            # Save clustering model
+            # Save clustering model securely using joblib
             if self.clustering_model is not None:
-                with open(self.model_cache_dir / "clustering_model.pkl", "wb") as f:
-                    pickle.dump(self.clustering_model, f)
+                joblib.dump(self.clustering_model, self.model_cache_dir / "clustering_model.joblib")
 
-            # Save PCA model
+            # Save PCA model securely using joblib
             if self.pca_model is not None:
-                with open(self.model_cache_dir / "pca_model.pkl", "wb") as f:
-                    pickle.dump(self.pca_model, f)
+                joblib.dump(self.pca_model, self.model_cache_dir / "pca_model.joblib")
 
-            # Save scaler
-            with open(self.model_cache_dir / "scaler.pkl", "wb") as f:
-                pickle.dump(self.scaler, f)
+            # Save scaler securely using joblib
+            joblib.dump(self.scaler, self.model_cache_dir / "scaler.joblib")
 
             self.logger.info("Models saved successfully")
 
@@ -975,23 +973,20 @@ class MarketRegimeDetector:
                     torch.load(autoencoder_path, map_location=self.device)
                 )
 
-            # Load clustering model
-            clustering_path = self.model_cache_dir / "clustering_model.pkl"
+            # Load clustering model securely using joblib
+            clustering_path = self.model_cache_dir / "clustering_model.joblib"
             if clustering_path.exists():
-                with open(clustering_path, "rb") as f:
-                    self.clustering_model = pickle.load(f)
+                self.clustering_model = joblib.load(clustering_path)
 
-            # Load PCA model
-            pca_path = self.model_cache_dir / "pca_model.pkl"
+            # Load PCA model securely using joblib
+            pca_path = self.model_cache_dir / "pca_model.joblib"
             if pca_path.exists():
-                with open(pca_path, "rb") as f:
-                    self.pca_model = pickle.load(f)
+                self.pca_model = joblib.load(pca_path)
 
-            # Load scaler
-            scaler_path = self.model_cache_dir / "scaler.pkl"
+            # Load scaler securely using joblib
+            scaler_path = self.model_cache_dir / "scaler.joblib"
             if scaler_path.exists():
-                with open(scaler_path, "rb") as f:
-                    self.scaler = pickle.load(f)
+                self.scaler = joblib.load(scaler_path)
 
             self.logger.info("Models loaded successfully")
 

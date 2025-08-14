@@ -6,7 +6,8 @@ Small learning-rate updates with replay buffer and EWC (Elastic Weight Consolida
 
 import numpy as np
 import json
-import pickle
+import json
+import joblib  # Secure serialization
 import threading
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple, Callable

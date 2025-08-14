@@ -103,29 +103,27 @@ def test_workstation_deployment():
     # Test 5: App functionality test
     print("\n5. APP FUNCTIONALITY TEST:")
     try:
-        # Test that app can load core functions
-        exec("""
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-from pathlib import Path
+        # Test that app can load core functions - SECURE IMPLEMENTATION
+        import streamlit as st
+        import pandas as pd
+        import plotly.express as px
+        from pathlib import Path
 
-# Test app core functionality
-def test_app_core():
-    # Health check simulation
-    models_present = all(Path(f"models/saved/rf_{h}.pkl").exists() for h in ["1h","24h","168h","720h"])
-    features_exist = Path("exports/features.parquet").exists()
-    predictions_exist = Path("exports/production/predictions.csv").exists()
-    
-    checks = [models_present, features_exist, predictions_exist]
-    readiness_score = sum(checks) / len(checks) * 100
-    
-    return readiness_score >= 90
+        # Test app core functionality - NO EXEC NEEDED
+        def test_app_core():
+            # Health check simulation
+            models_present = all(Path(f"models/saved/rf_{h}.pkl").exists() for h in ["1h","24h","168h","720h"])
+            features_exist = Path("exports/features.parquet").exists()
+            predictions_exist = Path("exports/production/predictions.csv").exists()
+            
+            checks = [models_present, features_exist, predictions_exist]
+            readiness_score = sum(checks) / len(checks) * 100
+            
+            return readiness_score >= 90
 
-app_ready = test_app_core()
-""")
+        app_ready = test_app_core()
 
-        if locals().get("app_ready", False):
+        if app_ready:
             print("   app core functionality.... ✅")
         else:
             print("   app core functionality.... ❌")

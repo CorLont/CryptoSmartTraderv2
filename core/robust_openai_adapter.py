@@ -13,7 +13,8 @@ from typing import Dict, List, Any, Optional, Union, Callable
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from enum import Enum
-import pickle
+import json
+from typing import Any
 from pathlib import Path
 
 import openai
@@ -201,13 +202,16 @@ class LLMCache:
         """Get cached response if available and fresh"""
         try:
             cache_key = self._hash_request(prompt, config)
-            cache_file = self.cache_dir / f"{cache_key}.pkl"
+            cache_file = self.cache_dir / f"{cache_key}.json"
 
             if not cache_file.exists():
                 return None
 
-            with open(cache_file, "rb") as f:
-                cached_data = pickle.load(f)
+            with open(cache_file, "r") as f:
+                cached_data = json.load(f)
+                
+            # Parse timestamp back to datetime
+            cached_data["timestamp"] = datetime.fromisoformat(cached_data["timestamp"])
 
             # Check if cache is still fresh
             cache_age = datetime.utcnow() - cached_data["timestamp"]
@@ -226,17 +230,17 @@ class LLMCache:
         """Cache response"""
         try:
             cache_key = self._hash_request(prompt, config)
-            cache_file = self.cache_dir / f"{cache_key}.pkl"
+            cache_file = self.cache_dir / f"{cache_key}.json"
 
             cache_data = {
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.utcnow().isoformat(),
                 "response": response,
                 "prompt_length": len(prompt),
                 "model": config.model,
             }
 
-            with open(cache_file, "wb") as f:
-                pickle.dump(cache_data, f)
+            with open(cache_file, "w") as f:
+                json.dump(cache_data, f)
 
             self.logger.info(f"Cached response for {cache_key[:8]}...")
 

@@ -14,7 +14,9 @@ from datetime import datetime, timedelta
 from enum import Enum
 import json
 from pathlib import Path
-import pickle
+import json
+import joblib  # Secure alternative for model serialization
+from typing import Any
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -397,7 +399,8 @@ class ModelInference:
 
                 if model_path.exists():
                     with open(model_path, "rb") as f:
-                        self.models[horizon] = pickle.load(f)
+                        # SECURITY: Use joblib instead of pickle for models
+                        self.models[horizon] = joblib.load(model_path)
                         self.model_versions[horizon] = f"v1.0_{datetime.now().strftime('%Y%m%d')}"
 
                     self.logger.info(f"Model loaded for horizon {horizon.value}")

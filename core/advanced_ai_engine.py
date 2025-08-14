@@ -12,7 +12,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple, Union
 from pathlib import Path
 import json
-import pickle
+import json
+from typing import Any
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum

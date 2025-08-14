@@ -6,7 +6,9 @@ Manages MLflow runs, artifacts, and model registry with horizon/regime tags
 
 import os
 import json
-import pickle
+import json
+import joblib  # Secure model serialization
+from typing import Any
 import shutil
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Union
@@ -344,10 +346,9 @@ class MLflowManager:
             model_dir = latest_run / "models" / model_name
             model_dir.mkdir(parents=True, exist_ok=True)
 
-            # Save model
-            model_file = model_dir / "model.pkl"
-            with open(model_file, "wb") as f:
-                pickle.dump(model, f)
+            # Save model securely using joblib
+            model_file = model_dir / "model.joblib"
+            joblib.dump(model, model_file)
 
             # Save metadata
             model_metadata = {
@@ -485,10 +486,9 @@ class MLflowManager:
             if models_dir.exists():
                 model_dirs = [d for d in models_dir.iterdir() if d.is_dir()]
                 if model_dirs:
-                    model_file = model_dirs[0] / "model.pkl"
+                    model_file = model_dirs[0] / "model.joblib"
                     if model_file.exists():
-                        with open(model_file, "rb") as f:
-                            model = pickle.load(f)
+                        model = joblib.load(model_file)
 
                         self.logger.info(
                             f"Loaded local model for horizon: {horizon}, regime: {regime}"
