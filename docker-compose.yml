@@ -1,190 +1,153 @@
-# Docker Compose for CryptoSmartTrader V2
-# FASE E - Complete production stack
-
 version: '3.8'
 
 services:
-  # Main application
+  # Main CryptoSmartTrader V2 Application
   cryptosmarttrader:
     build:
       context: .
       dockerfile: Dockerfile
       target: production
-    container_name: cryptosmarttrader-app
+    container_name: cryptosmarttrader-v2
     restart: unless-stopped
     ports:
-      - "5000:5000"   # Streamlit dashboard
-      - "8001:8001"   # Health API
-      - "8000:8000"   # Prometheus metrics
+      - "5000:5000"  # Main dashboard
+      - "8001:8001"  # API server
+      - "8000:8000"  # Metrics server
     environment:
-      - CRYPTOSMARTTRADER_ENVIRONMENT=production
-      - CRYPTOSMARTTRADER_DB_POSTGRES_HOST=postgres
-      - CRYPTOSMARTTRADER_DB_REDIS_HOST=redis
-      - CRYPTOSMARTTRADER_MONITORING_LOG_LEVEL=INFO
+      - CRYPTOSMARTTRADER_ENV=production
+      - CRYPTOSMARTTRADER_LOG_LEVEL=INFO
+      - DATABASE_URL=postgresql://cryptosmarttrader:${POSTGRES_PASSWORD:-secure_password}@postgres:5432/cryptosmarttrader
+      - REDIS_URL=redis://redis:6379/0
+      - PROMETHEUS_URL=http://prometheus:9090
     env_file:
       - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data
       - ./models:/app/models
       - ./exports:/app/exports
+    depends_on:
+      - postgres
+      - redis
     networks:
-      - cryptosmarttrader
+      - cryptosmarttrader-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
-    command: ["full"]
 
-  # PostgreSQL database
+  # PostgreSQL Database
   postgres:
-    image: postgres:15.5-alpine
+    image: postgres:15-alpine
     container_name: cryptosmarttrader-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: cryptosmarttrader
-      POSTGRES_USER: cryptotrader
-      POSTGRES_PASSWORD: ${CRYPTOSMARTTRADER_DB_POSTGRES_PASSWORD:-secure_password}
-      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
-    ports:
-      - "5432:5432"
+      - POSTGRES_DB=cryptosmarttrader
+      - POSTGRES_USER=cryptosmarttrader
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password}
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./sql/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
     networks:
-      - cryptosmarttrader
+      - cryptosmarttrader-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cryptotrader -d cryptosmarttrader"]
+      test: ["CMD-SHELL", "pg_isready -U cryptosmarttrader -d cryptosmarttrader"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Redis cache
+  # Redis Cache
   redis:
-    image: redis:7.2.3-alpine
+    image: redis:7-alpine
     container_name: cryptosmarttrader-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
-    command: >
-      redis-server 
-      --requirepass ${CRYPTOSMARTTRADER_DB_REDIS_PASSWORD:-secure_redis_password}
-      --appendonly yes
-      --appendfsync everysec
-      --maxmemory 512mb
-      --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-secure_redis_password}
     volumes:
       - redis_data:/data
+    ports:
+      - "6379:6379"
     networks:
-      - cryptosmarttrader
+      - cryptosmarttrader-network
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
 
-  # Prometheus monitoring
+  # Prometheus Monitoring
   prometheus:
-    image: prom/prometheus:v2.47.2
+    image: prom/prometheus:latest
     container_name: cryptosmarttrader-prometheus
     restart: unless-stopped
     ports:
       - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=15d'
+      - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
-      - prometheus_data:/prometheus
+      - '--web.enable-admin-api'
     networks:
-      - cryptosmarttrader
-    depends_on:
-      - cryptosmarttrader
+      - cryptosmarttrader-network
 
-  # Grafana dashboards
+  # Grafana Dashboard
   grafana:
-    image: grafana/grafana:10.2.0
+    image: grafana/grafana:latest
     container_name: cryptosmarttrader-grafana
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin_password}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     networks:
-      - cryptosmarttrader
-    depends_on:
-      - prometheus
+      - cryptosmarttrader-network
 
   # AlertManager
   alertmanager:
-    image: prom/alertmanager:v0.26.0
+    image: prom/alertmanager:latest
     container_name: cryptosmarttrader-alertmanager
     restart: unless-stopped
     ports:
       - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
       - '--web.external-url=http://localhost:9093'
-    volumes:
-      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager_data:/alertmanager
     networks:
-      - cryptosmarttrader
-    depends_on:
-      - prometheus
+      - cryptosmarttrader-network
 
-  # Nginx reverse proxy (optional)
-  nginx:
-    image: nginx:1.25.3-alpine
-    container_name: cryptosmarttrader-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    networks:
-      - cryptosmarttrader
-    depends_on:
-      - cryptosmarttrader
-    profiles:
-      - production
+networks:
+  cryptosmarttrader-network:
+    driver: bridge
+    name: cryptosmarttrader-network
 
 volumes:
   postgres_data:
-    driver: local
+    name: cryptosmarttrader-postgres-data
   redis_data:
-    driver: local
+    name: cryptosmarttrader-redis-data
   prometheus_data:
-    driver: local
+    name: cryptosmarttrader-prometheus-data
   grafana_data:
-    driver: local
+    name: cryptosmarttrader-grafana-data
   alertmanager_data:
-    driver: local
-
-networks:
-  cryptosmarttrader:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+    name: cryptosmarttrader-alertmanager-data

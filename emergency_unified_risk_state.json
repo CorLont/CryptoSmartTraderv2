@@ -1,7 +1,7 @@
 {
   "kill_switch_active": true,
-  "triggered_at": "2025-08-14T14:42:56.430632",
-  "reason": "Test emergency",
+  "triggered_at": "2025-08-14T14:59:45.553113",
+  "reason": "Test emergency persistence",
   "portfolio_state": {
     "total_value_usd": 100000.0,
     "daily_pnl_usd": 0.0,

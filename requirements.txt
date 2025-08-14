@@ -44,3 +44,9 @@ ccxt
 openai
 torch
 transformers
+bandit
+docker
+mypy
+rich
+ruff
+safety
