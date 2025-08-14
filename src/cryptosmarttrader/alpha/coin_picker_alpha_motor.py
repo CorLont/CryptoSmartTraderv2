@@ -422,12 +422,16 @@ class CoinPickerAlphaMotor:
                 if len(final_positions) >= self.max_positions:
                     break
                     
-            # Final normalization to ensure weights sum to ~1.0
+            # Final normalization to ensure weights sum to ~1.0 AND respect single position caps
             total_weight = sum(c.final_weight for c in final_positions)
             if total_weight > 0:
                 target_leverage = min(1.0, 0.95)  # Conservative leverage
+                scale_factor = target_leverage / total_weight
+                
                 for candidate in final_positions:
-                    candidate.final_weight = (candidate.final_weight / total_weight) * target_leverage
+                    scaled_weight = candidate.final_weight * scale_factor
+                    # Ensure no position exceeds single position cap after scaling
+                    candidate.final_weight = min(scaled_weight, self.max_single_weight)
                     
             return final_positions
             
@@ -443,11 +447,19 @@ class CoinPickerAlphaMotor:
             # Simplified risk check - skip complex risk guard for demo
             validated = []
             for candidate in positions:
+                self.logger.debug(f"Validating {candidate.symbol}: spread={candidate.spread_bps}bps, "
+                                f"depth=${candidate.depth_1pct_usd:,.0f}, weight={candidate.final_weight:.3f}")
+                
                 # Check basic execution gates
-                if candidate.spread_bps <= self.max_spread_bps and candidate.depth_1pct_usd >= self.min_depth_1pct:
-                    # Additional risk checks
-                    if candidate.final_weight <= self.max_single_weight:
-                        validated.append(candidate)
+                spread_ok = candidate.spread_bps <= self.max_spread_bps
+                depth_ok = candidate.depth_1pct_usd >= self.min_depth_1pct
+                weight_ok = candidate.final_weight <= self.max_single_weight
+                
+                if spread_ok and depth_ok and weight_ok:
+                    validated.append(candidate)
+                    self.logger.debug(f"✅ {candidate.symbol} validated")
+                else:
+                    self.logger.debug(f"❌ {candidate.symbol} rejected - spread:{spread_ok}, depth:{depth_ok}, weight:{weight_ok}")
                         
             self.logger.info(f"Risk validation: {len(validated)}/{len(positions)} positions approved")
             return validated

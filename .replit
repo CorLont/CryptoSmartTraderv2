@@ -50,11 +50,11 @@ args = "CentralizedObservabilityAPI"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "AlphaMotorDashboard"
+args = "MLDisciplineDashboard"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "MLDisciplineDashboard"
+args = "EnhancedAlphaMotorDashboard"
 
 [[workflows.workflow]]
 name = "SecretsManagement"
@@ -153,18 +153,6 @@ waitForPort = 8002
 outputType = "console"
 
 [[workflows.workflow]]
-name = "AlphaMotorDashboard"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "streamlit run alpha_motor_dashboard.py --server.port 5007"
-waitForPort = 5007
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow]]
 name = "MLDisciplineDashboard"
 author = "agent"
 
@@ -172,6 +160,18 @@ author = "agent"
 task = "shell.exec"
 args = "streamlit run ml_discipline_dashboard.py --server.port 5009"
 waitForPort = 5009
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow]]
+name = "EnhancedAlphaMotorDashboard"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run enhanced_alpha_motor_dashboard.py --server.port 5007"
+waitForPort = 5007
 
 [workflows.workflow.metadata]
 outputType = "webview"
