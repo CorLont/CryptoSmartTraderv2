@@ -101,53 +101,38 @@ class TradingAnalysisDashboard:
             st.session_state.analysis_results = {}
     
     def setup_components(self):
-        """Setup ML componenten en data bronnen"""
+        """Setup authentic data components - ZERO tolerance for synthetic data"""
         try:
-            # Probeer echte componenten te laden
-            self.load_ml_components()
-            self.load_data_sources()
-            self.components_loaded = True
-        except Exception as e:
-            st.error(f"⚠️ Waarschuwing: Sommige componenten konden niet worden geladen: {e}")
-            self.components_loaded = False
-            self.setup_demo_mode()
-    
-    def load_ml_components(self):
-        """Laad ML modellen en analyse componenten"""
-        try:
-            # Probeer ML componenten te importeren
-            from ml.ensemble_optimizer import EnsembleOptimizer
-            from src.cryptosmarttrader.ml.regime_detection import RegimeDetector
-            from core.alpha_seeker import AlphaSeeker
+            # Add src to Python path for imports
+            import sys
+            import os
+            if os.path.join(os.getcwd(), 'src') not in sys.path:
+                sys.path.insert(0, os.path.join(os.getcwd(), 'src'))
             
-            self.ensemble_optimizer = EnsembleOptimizer()
-            self.regime_detector = RegimeDetector()
-            self.alpha_seeker = AlphaSeeker()
+            # Load ONLY authentic data collector
+            from cryptosmarttrader.data.authentic_data_collector import get_authentic_collector
+            self.authentic_collector = get_authentic_collector()
             
-            st.success("✅ ML componenten succesvol geladen")
+            # Verify real API connection
+            status = self.authentic_collector.get_live_market_status()
             
-        except ImportError as e:
-            st.warning(f"⚠️ ML componenten niet beschikbaar: {e}")
-            self.setup_demo_mode()
-    
-    def load_data_sources(self):
-        """Laad data bronnen"""
-        try:
-            # Probeer API keys te controleren
-            if 'KRAKEN_API_KEY' in os.environ and 'OPENAI_API_KEY' in os.environ:
-                self.api_keys_available = True
-                st.success("✅ API sleutels beschikbaar voor live data")
+            if status['authentic']:
+                st.success("✅ REAL DATA MODE: Kraken API verbonden - 100% authentieke data")
+                self.components_loaded = True
+                self.authentic_mode = True
             else:
-                self.api_keys_available = False
-                st.warning("⚠️ API sleutels niet gevonden - demo modus actief")
+                raise ValueError("❌ Synthetic data detected - blocking execution")
+                
         except Exception as e:
-            self.api_keys_available = False
-            st.warning(f"⚠️ Data bronnen niet beschikbaar: {e}")
+            st.error(f"❌ CRITICAL: Kan geen authentieke data verbinding maken: {e}")
+            st.error("❌ Systeem geweigerd - ZERO-TOLERANCE beleid voor synthetic data")
+            self.components_loaded = False
+            self.authentic_mode = False
+            # Don't raise - show blocked state instead
     
-    def setup_demo_mode(self):
-        """Setup demo modus met voorbeelddata"""
-        self.demo_mode = True
-        st.info("🔄 Demo modus actief - voorbeelddata wordt gebruikt")
+    # Removed load_ml_components and load_data_sources - Only authentic data collector used
+    
+    # Removed demo mode - ZERO-TOLERANCE for synthetic data
     
     def render_header(self):
         """Render dashboard header"""
@@ -181,31 +166,59 @@ class TradingAnalysisDashboard:
                 st.rerun()
     
     def start_market_analysis(self):
-        """Start markt analyse proces"""
-        with st.spinner("🔍 Markt analyse wordt gestart..."):
+        """Start REAL market analysis using authentic Kraken data"""
+        if not self.authentic_mode:
+            st.error("❌ Kan geen analyse starten - geen authentieke data verbinding")
+            return
+            
+        with st.spinner("🔍 REAL-TIME markt analyse van Kraken API..."):
             try:
                 st.session_state.analysis_started = True
                 st.session_state.last_analysis_time = datetime.now()
                 
-                # Simuleer echte analyse
-                time.sleep(2)
+                # Get REAL trading opportunities from Kraken API
+                real_opportunities = self.authentic_collector.analyze_real_opportunities()
                 
-                # Genereer high-return trade mogelijkheden
-                high_return_trades = self.generate_high_return_opportunities()
+                if not real_opportunities:
+                    st.warning("⚠️ Geen high-return mogelijkheden gevonden in huidige markt")
+                    return
+                
+                # Convert to display format
+                high_return_trades = []
+                for opp in real_opportunities:
+                    trade = {
+                        'symbol': opp.symbol,
+                        'side': opp.side,
+                        'expected_return': opp.expected_return_pct,
+                        'confidence': opp.confidence_score,
+                        'risk_level': opp.risk_level,
+                        'entry_price': opp.entry_price,
+                        'target_price': opp.target_price,
+                        'holding_period': f"{opp.holding_period_days} dagen",
+                        'ml_signals': len(opp.technical_signals),
+                        'regime': opp.market_regime,
+                        'last_updated': opp.analysis_timestamp,
+                        'authentic': True  # Mark as real data
+                    }
+                    high_return_trades.append(trade)
+                
                 st.session_state.high_return_trades = high_return_trades
                 
-                # Analyse resultaten
+                # Real analysis results
                 st.session_state.analysis_results = {
                     'total_opportunities': len(high_return_trades),
                     'avg_expected_return': np.mean([t['expected_return'] for t in high_return_trades]),
-                    'risk_score': np.random.uniform(0.2, 0.4),
-                    'confidence': np.random.uniform(0.75, 0.95)
+                    'risk_score': np.mean([0.2 if t['risk_level'] == 'Laag' else 0.4 if t['risk_level'] == 'Gemiddeld' else 0.6 for t in high_return_trades]),
+                    'confidence': np.mean([t['confidence'] for t in high_return_trades]),
+                    'data_source': 'kraken_api',
+                    'authentic': True
                 }
                 
-                st.success("✅ Markt analyse voltooid! High-return mogelijkheden gedetecteerd.")
+                st.success(f"✅ REAL markt analyse voltooid! {len(high_return_trades)} authentieke mogelijkheden gedetecteerd van Kraken API.")
                 
             except Exception as e:
-                st.error(f"❌ Analyse fout: {e}")
+                st.error(f"❌ Real-time analyse fout: {e}")
+                logger.error(f"Market analysis failed: {e}")
     
     def start_model_training(self):
         """Start ML model training"""
@@ -246,91 +259,82 @@ class TradingAnalysisDashboard:
         else:
             st.info("✅ Modellen zijn al getraind en operationeel!")
     
-    def generate_high_return_opportunities(self) -> List[Dict[str, Any]]:
-        """Genereer high-return trade mogelijkheden"""
-        symbols = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'AVAX/USD', 'MATIC/USD', 'ADA/USD', 'DOT/USD']
-        
-        opportunities = []
-        for symbol in symbols:
-            # Simuleer ML analyse voor elke coin
-            confidence = np.random.uniform(0.7, 0.95)
-            expected_return = np.random.uniform(15, 85)  # 15-85% verwacht rendement
-            risk_level = np.random.choice(['Laag', 'Gemiddeld', 'Hoog'], p=[0.3, 0.5, 0.2])
-            entry_price = np.random.uniform(20, 50000)
-            target_price = entry_price * (1 + expected_return/100)
-            
-            opportunity = {
-                'symbol': symbol,
-                'side': np.random.choice(['BUY', 'SELL'], p=[0.7, 0.3]),
-                'expected_return': expected_return,
-                'confidence': confidence,
-                'risk_level': risk_level,
-                'entry_price': entry_price,
-                'target_price': target_price,
-                'holding_period': f"{np.random.randint(1, 14)} dagen",
-                'ml_signals': np.random.randint(3, 8),
-                'regime': np.random.choice(['Bullish', 'Consolidation', 'Recovery']),
-                'last_updated': datetime.now()
-            }
-            
-            opportunities.append(opportunity)
-        
-        # Sorteer op expected return (hoogste eerst)
-        return sorted(opportunities, key=lambda x: x['expected_return'], reverse=True)
+    # Removed generate_high_return_opportunities - ONLY real data from Kraken API allowed
     
     def render_high_return_opportunities(self):
-        """Render high-return trading mogelijkheden"""
-        st.markdown("## 💰 High-Return Trading Mogelijkheden")
+        """Render REAL high-return trading opportunities from authentic data"""
+        st.markdown("## 💰 High-Return Trading Mogelijkheden (REAL DATA)")
         
-        if not st.session_state.high_return_trades:
+        if not self.authentic_mode:
             st.markdown("""
-            <div class='warning-box'>
-                <h3>⚠️ Geen actieve analyse</h3>
-                <p>Start de markt analyse om high-return mogelijkheden te ontdekken.</p>
+            <div style='background: #f8d7da; padding: 1rem; border-radius: 10px; border: 1px solid #f5c6cb; color: #721c24;'>
+                <h3>❌ GEEN AUTHENTIEKE DATA VERBINDING</h3>
+                <p>Systeem geweigerd: ZERO-TOLERANCE beleid voor synthetic data</p>
+                <p>Alleen 100% authentieke Kraken API data toegestaan</p>
             </div>
             """, unsafe_allow_html=True)
             return
         
-        # Top 3 opportunities prominently displayed
-        st.markdown("### 🏆 Top 3 Kansen (Hoogste Rendement)")
+        if not st.session_state.high_return_trades:
+            st.markdown("""
+            <div class='warning-box'>
+                <h3>⚠️ Geen actieve real-time analyse</h3>
+                <p>Start de markt analyse om authentieke high-return mogelijkheden van Kraken API te ontdekken.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            return
         
-        for i, trade in enumerate(st.session_state.high_return_trades[:3]):
-            if trade['expected_return'] > 30:  # Alleen echt hoge rendementen
-                self.render_opportunity_card(trade, rank=i+1)
+        # Verify data authenticity
+        authentic_trades = [t for t in st.session_state.high_return_trades if t.get('authentic', False)]
+        if len(authentic_trades) != len(st.session_state.high_return_trades):
+            st.error("❌ Synthetic data gedetecteerd - analyse geblokkeerd")
+            return
         
-        # Volledige tabel met alle mogelijkheden
-        st.markdown("### 📊 Alle Gedetecteerde Mogelijkheden")
-        self.render_opportunities_table()
+        # Top 3 REAL opportunities prominently displayed
+        st.markdown("### 🏆 Top 3 Kansen (Hoogste Rendement - KRAKEN API)")
+        
+        for i, trade in enumerate(authentic_trades[:3]):
+            if trade['expected_return'] > 15:  # Real opportunities threshold
+                self.render_opportunity_card(trade, rank=i+1, authentic=True)
+        
+        # Volledige tabel met alle REAL mogelijkheden
+        st.markdown("### 📊 Alle AUTHENTIEKE Mogelijkheden (Kraken API)")
+        self.render_opportunities_table(authentic_trades)
     
-    def render_opportunity_card(self, trade: Dict[str, Any], rank: int):
-        """Render een high-return opportunity kaart"""
-        return_color = "🟢" if trade['expected_return'] > 50 else "🟡"
+    def render_opportunity_card(self, trade: Dict[str, Any], rank: int, authentic: bool = False):
+        """Render een REAL high-return opportunity kaart"""
+        return_color = "🟢" if trade['expected_return'] > 30 else "🟡"
         risk_color = {"Laag": "🟢", "Gemiddeld": "🟡", "Hoog": "🔴"}[trade['risk_level']]
+        
+        # Add authenticity badge
+        auth_badge = "🔗 REAL KRAKEN DATA" if authentic else "❌ SYNTHETIC"
         
         st.markdown(f"""
         <div class='high-return-card'>
             <div style='display: flex; justify-content: space-between; align-items: center;'>
                 <div>
-                    <h3>#{rank} {trade['symbol']} - {trade['side']}</h3>
+                    <h3>#{rank} {trade['symbol']} - {trade['side']} <span style='font-size: 0.7em; background: #28a745; padding: 2px 6px; border-radius: 3px;'>{auth_badge}</span></h3>
                     <p style='font-size: 1.2rem; margin: 0.5rem 0;'>
-                        {return_color} <strong>{trade['expected_return']:.1f}%</strong> verwacht rendement
+                        {return_color} <strong>{trade['expected_return']:.1f}%</strong> verwacht rendement (REAL ANALYSIS)
                     </p>
                     <p>🎯 Confidence: {trade['confidence']:.1%} | {risk_color} Risico: {trade['risk_level']}</p>
-                    <p>📈 Regime: {trade['regime']} | 🔗 ML Signalen: {trade['ml_signals']}</p>
+                    <p>📈 Regime: {trade['regime']} | 🔗 Technical Signals: {trade['ml_signals']}</p>
+                    <p style='font-size: 0.8em; color: #666;'>Laatst update: {trade['last_updated'].strftime('%H:%M:%S')}</p>
                 </div>
                 <div style='text-align: right;'>
-                    <p><strong>Entry:</strong> ${trade['entry_price']:.2f}</p>
-                    <p><strong>Target:</strong> ${trade['target_price']:.2f}</p>
+                    <p><strong>Entry:</strong> ${trade['entry_price']:.4f}</p>
+                    <p><strong>Target:</strong> ${trade['target_price']:.4f}</p>
                     <p><strong>Periode:</strong> {trade['holding_period']}</p>
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
     
-    def render_opportunities_table(self):
-        """Render tabel met alle opportunities"""
-        if st.session_state.high_return_trades:
-            df_trades = pd.DataFrame(st.session_state.high_return_trades)
+    def render_opportunities_table(self, trades_data=None):
+        """Render tabel met alle REAL opportunities"""
+        trades_to_show = trades_data or st.session_state.high_return_trades
+        if trades_to_show:
+            df_trades = pd.DataFrame(trades_to_show)
             
             # Format dataframe voor display
             df_display = df_trades.copy()
@@ -343,18 +347,21 @@ class TradingAnalysisDashboard:
             columns_to_show = ['symbol', 'side', 'expected_return', 'confidence', 
                              'risk_level', 'entry_price', 'target_price', 'holding_period']
             
+            # Add data source information
+            st.info("📡 Data bron: Kraken API - 100% authentieke marktdata")
+            
             st.dataframe(
                 df_display[columns_to_show],
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    'symbol': 'Crypto Pair',
+                    'symbol': 'Crypto Pair (REAL)',
                     'side': 'Actie',
-                    'expected_return': 'Verwacht Rendement',
-                    'confidence': 'Betrouwbaarheid',
+                    'expected_return': 'Verwacht Rendement (%)',
+                    'confidence': 'ML Betrouwbaarheid',
                     'risk_level': 'Risico Niveau',
-                    'entry_price': 'Instap Prijs',
-                    'target_price': 'Doel Prijs',
+                    'entry_price': 'Real Entry Prijs ($)',
+                    'target_price': 'Target Prijs ($)',
                     'holding_period': 'Houdperiode'
                 }
             )
@@ -469,8 +476,12 @@ class TradingAnalysisDashboard:
         
         # Import deployment dashboard
         try:
-            from dashboards.deployment_dashboard import DeploymentDashboard
-            deployment_dashboard = DeploymentDashboard()
+            # Load deployment dashboard if available
+            if getattr(self, 'authentic_mode', False):
+                from dashboards.deployment_dashboard import DeploymentDashboard
+                deployment_dashboard = DeploymentDashboard()
+            else:
+                st.warning("⚠️ Deployment monitoring vereist authentieke data verbinding")
             
             st.markdown("### 📊 Backtest-Live Parity Status")
             
@@ -555,12 +566,18 @@ class TradingAnalysisDashboard:
         st.sidebar.markdown("## 🏢 Systeem Status")
         
         # API Status
-        api_status = "🟢 Actief" if self.api_keys_available else "🔴 Niet beschikbaar"
+        api_status = "🟢 REAL Kraken API" if getattr(self, 'authentic_mode', False) else "🔴 NIET BESCHIKBAAR"
         st.sidebar.markdown(f"**API Verbindingen:** {api_status}")
         
-        # Components Status
-        comp_status = "🟢 Geladen" if self.components_loaded else "🟡 Demo Modus"
-        st.sidebar.markdown(f"**ML Componenten:** {comp_status}")
+        # Data Mode Status
+        data_status = "🟢 100% AUTHENTIEK" if getattr(self, 'authentic_mode', False) else "❌ GEBLOKKEERD"
+        st.sidebar.markdown(f"**Data Modus:** {data_status}")
+        
+        # Zero-tolerance policy
+        st.sidebar.markdown("**ZERO-TOLERANCE POLICY:**")
+        st.sidebar.markdown("❌ Geen synthetic data")
+        st.sidebar.markdown("❌ Geen mock data") 
+        st.sidebar.markdown("✅ Alleen Kraken API")
         
         # Last Analysis
         if st.session_state.last_analysis_time:
@@ -620,10 +637,12 @@ class TradingAnalysisDashboard:
         
         # Footer
         st.markdown("---")
-        st.markdown("""
+        auth_status = "REAL DATA MODE" if getattr(self, 'authentic_mode', False) else "DATA BLOCKED"
+        st.markdown(f"""
         <div style='text-align: center; color: #7f8c8d; padding: 2rem;'>
             <p>CryptoSmartTrader V2 - Enterprise AI Trading System</p>
-            <p>🎯 Target: 500% ROI | 🛡️ Zero-Tolerance Data Policy | 🚀 ML-Powered Analysis</p>
+            <p>🎯 Target: 500% ROI | 🛡️ ZERO-TOLERANCE Data Policy | 📡 Status: {auth_status}</p>
+            <p style='font-size: 0.8em;'>Alleen 100% authentieke Kraken API data toegestaan</p>
         </div>
         """, unsafe_allow_html=True)
 

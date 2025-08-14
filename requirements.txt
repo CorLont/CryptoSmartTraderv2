@@ -39,3 +39,4 @@ pip-audit
 pytest
 pytest-cov
 ruff
+ccxt
