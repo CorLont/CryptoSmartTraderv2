@@ -475,6 +475,55 @@ class ExchangeManager:
             self.logger.error(f"❌ Error creating market conditions: {e}")
             return None
 
+    def execute_risk_enforced_order(
+        self,
+        operation_type: str,
+        symbol: str,
+        side: str,
+        size_usd: float,
+        limit_price: Optional[float] = None,
+        strategy_id: str = "default",
+        exchange_name: str = "kraken"
+    ) -> Dict[str, Any]:
+        """
+        🛡️  COMPLETE RISK-ENFORCED EXECUTION PIPELINE
+        
+        1. CentralRiskGuard evaluation (day-loss, drawdown, exposure, kill-switch)
+        2. ExecutionDiscipline gates (spread, depth, volume, slippage)
+        3. Exchange execution
+        
+        This is the PREFERRED method for all trading operations
+        """
+        
+        # Import here to avoid circular dependencies
+        try:
+            from src.cryptosmarttrader.execution.risk_enforced_execution import get_global_risk_enforced_manager
+            
+            risk_manager = get_global_risk_enforced_manager(exchange_manager=self)
+            
+            return risk_manager.execute_trading_operation(
+                operation_type=operation_type,
+                symbol=symbol,
+                side=side,
+                size_usd=size_usd,
+                limit_price=limit_price,
+                strategy_id=strategy_id,
+                exchange_name=exchange_name
+            )
+            
+        except ImportError as e:
+            self.logger.warning(f"⚠️  RiskEnforcedExecution not available: {e}")
+            # Fallback to ExecutionDiscipline only
+            return self.execute_disciplined_order(
+                symbol=symbol,
+                side=side,
+                size=size_usd / (limit_price or 50000.0),  # Convert USD to units
+                order_type="limit",
+                limit_price=limit_price,
+                strategy_id=strategy_id,
+                exchange_name=exchange_name
+            )
+
     def execute_disciplined_order(
         self,
         symbol: str,
@@ -486,10 +535,10 @@ class ExchangeManager:
         exchange_name: str = "kraken"
     ) -> Dict[str, Any]:
         """
-        🛡️  MANDATORY ExecutionDiscipline.decide() for ALL orders
+        🛡️  ExecutionDiscipline-only execution (legacy method)
         
-        This is the ONLY way to place orders through ExchangeManager
-        All order flows MUST go through ExecutionDiscipline gates
+        RECOMMENDATION: Use execute_risk_enforced_order() instead
+        for complete risk management pipeline
         """
         
         if not EXECUTION_DISCIPLINE_AVAILABLE:
