@@ -385,7 +385,45 @@ class OrderExecutor:
         except Exception as e:
             return False, f"Risk enforcement error: {str(e)}"
         
-        # MANDATORY: All orders must go through policy.decide()
+        # MANDATORY EXECUTION POLICY ENFORCEMENT: All orders must go through ExecutionPolicy gateway
+        try:
+            from ..core.mandatory_execution_policy_gateway import enforce_execution_policy_check
+            
+            # Convert market conditions to dict
+            market_dict = {
+                "spread_bps": market_conditions.spread_bps,
+                "bid_depth_usd": market_conditions.bid_depth_usd,
+                "ask_depth_usd": market_conditions.ask_depth_usd,
+                "volume_1m_usd": market_conditions.volume_1m_usd,
+                "last_price": market_conditions.last_price,
+                "bid_price": market_conditions.bid_price,
+                "ask_price": market_conditions.ask_price,
+                "timestamp": getattr(market_conditions, 'timestamp', time.time())
+            }
+            
+            policy_result = enforce_execution_policy_check(
+                symbol=order_request.symbol,
+                side=order_request.side.value,
+                size=order_request.size,
+                order_type=order_request.order_type,
+                limit_price=order_request.limit_price,
+                client_order_id=order_request.client_order_id,
+                max_slippage_bps=order_request.max_slippage_bps,
+                time_in_force=order_request.time_in_force.value,
+                strategy_id=order_request.strategy_id,
+                market_conditions=market_dict
+            )
+            
+            if not policy_result.approved:
+                return False, f"ExecutionPolicy rejection: {policy_result.reason}"
+            
+            # Log successful policy approval
+            logger.info(f"✅ ExecutionPolicy approved: {order_request.client_order_id} - Gates: {policy_result.gate_results}")
+                
+        except Exception as e:
+            return False, f"ExecutionPolicy enforcement error: {str(e)}"
+        
+        # LEGACY: Keep original policy.decide() call for compatibility
         result = self.policy.decide(order_request, market_conditions)
         client_order_id = order_request.client_order_id or "unknown"
         

@@ -391,6 +391,67 @@ class ExecutionSimulator:
             error_order.rejection_reason = f"Risk enforcement error: {str(e)}"
             return error_order
         
+        # MANDATORY EXECUTION POLICY ENFORCEMENT: All orders must go through ExecutionPolicy
+        try:
+            from ..core.mandatory_execution_policy_gateway import enforce_execution_policy_check
+            
+            # Create market conditions for execution policy
+            market_conditions = {
+                "spread_bps": 15.0,  # Default spread
+                "bid_depth_usd": 10000.0,
+                "ask_depth_usd": 10000.0, 
+                "volume_1m_usd": 100000.0,
+                "last_price": limit_price or 100.0,
+                "bid_price": (limit_price or 100.0) * 0.999,
+                "ask_price": (limit_price or 100.0) * 1.001,
+                "timestamp": time.time()
+            }
+            
+            policy_result = enforce_execution_policy_check(
+                symbol=symbol,
+                side=side,
+                size=size,
+                order_type=order_type.value if hasattr(order_type, 'value') else str(order_type),
+                limit_price=limit_price,
+                client_order_id=order_id,
+                max_slippage_bps=20.0,  # Default slippage budget
+                time_in_force="post_only",  # Default TIF
+                strategy_id="execution_simulator",
+                market_conditions=market_conditions
+            )
+            
+            if not policy_result.approved:
+                # Return ExecutionPolicy rejected order
+                policy_rejected_order = SimulatedOrder(
+                    order_id=order_id,
+                    symbol=symbol,
+                    side=side,
+                    order_type=order_type,
+                    size=0.0,
+                    limit_price=limit_price,
+                    stop_price=stop_price
+                )
+                policy_rejected_order.status = OrderStatus.REJECTED
+                policy_rejected_order.rejection_reason = f"ExecutionPolicy: {policy_result.reason}"
+                return policy_rejected_order
+            
+            logger.info(f"✅ ExecutionPolicy approved simulation order: {order_id} - COID: {policy_result.client_order_id}")
+            
+        except Exception as e:
+            # Return ExecutionPolicy error order
+            policy_error_order = SimulatedOrder(
+                order_id=order_id,
+                symbol=symbol,
+                side=side,
+                order_type=order_type,
+                size=0.0,
+                limit_price=limit_price,
+                stop_price=stop_price
+            )
+            policy_error_order.status = OrderStatus.REJECTED
+            policy_error_order.rejection_reason = f"ExecutionPolicy error: {str(e)}"
+            return policy_error_order
+        
         with self._lock:
             # Create simulated order
             order = SimulatedOrder(

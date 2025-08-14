@@ -19,7 +19,7 @@ from pathlib import Path
 
 from ..core.structured_logger import get_logger
 from ..observability.metrics import PrometheusMetrics
-from ..risk.central_risk_guard import CentralRiskGuard, RiskCheckResult
+from ..risk.central_risk_guard import CentralRiskGuard, RiskEvaluation
 
 logger = get_logger(__name__)
 
