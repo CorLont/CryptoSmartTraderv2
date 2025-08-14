@@ -53,4 +53,3 @@ The system employs a Distributed Multi-Process Architecture with isolated agent 
 *   **In-memory Data Store:** Redis
 *   **Visualization:** Grafana
 *   **Alerting:** AlertManager
-```
