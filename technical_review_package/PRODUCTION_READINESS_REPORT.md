@@ -1,0 +1,2404 @@
+# PRODUCTION READINESS ANALYSIS REPORT
+Generated: /home/runner/workspace
+
+## SUMMARY
+Total Python files analyzed: 2110
+Syntax errors found: 155
+Bare except statements: 323
+Duplicate modules: 1421
+Import issues: 629
+
+## SYNTAX ERRORS
+- attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/config.py:6 - unexpected character after line continuation character (<unknown>, line 6)
+- attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/logging.py:6 - unexpected character after line continuation character (<unknown>, line 6)
+- core/data_manager.py:352 - expected an indented block after 'except' statement on line 349 (<unknown>, line 352)
+- dashboards/system_health_dashboard.py:387 - invalid syntax (<unknown>, line 387)
+- dashboards/synthetic_data_dashboard.py:359 - unindent does not match any outer indentation level (<unknown>, line 359)
+- scripts/social_scraper_service.py:312 - closing parenthesis ')' does not match opening parenthesis '{' on line 307 (<unknown>, line 312)
+- scripts/signal_quality_validation.py:141 - expected '(' (<unknown>, line 141)
+- scripts/execution_validation.py:82 - unmatched ')' (<unknown>, line 82)
+- scripts/shadow_to_live_validator.py:186 - closing parenthesis '}' does not match opening parenthesis '(' on line 176 (<unknown>, line 186)
+- scripts/daily_metrics_logger.py:450 - closing parenthesis '}' does not match opening parenthesis '(' on line 446 (<unknown>, line 450)
+- scripts/comprehensive_self_audit.py:83 - expected '(' (<unknown>, line 83)
+- scripts/remove_artificial_data.py:24 - expected '(' (<unknown>, line 24)
+- scripts/check_data_integrity.py:9 - expected '(' (<unknown>, line 9)
+- scripts/remove_all_mock_data.py:28 - unterminated string literal (detected at line 28) (<unknown>, line 28)
+- scripts/production_readiness_audit.py:218 - unterminated string literal (detected at line 218) (<unknown>, line 218)
+- exports/unified_technical_review/source_code/agents/enhanced_whale_agent.py:252 - '(' was never closed (<unknown>, line 252)
+- exports/unified_technical_review/source_code/agents/risk_manager_agent.py:65 - invalid syntax (<unknown>, line 65)
+- exports/unified_technical_review/source_code/agents/whale_detector.py:40 - invalid syntax. Perhaps you forgot a comma? (<unknown>, line 40)
+- exports/unified_technical_review/source_code/agents/funding_rate_monitor.py:276 - expected '(' (<unknown>, line 276)
+- exports/unified_technical_review/source_code/agents/portfolio_optimizer_agent.py:347 - invalid syntax (<unknown>, line 347)
+- exports/unified_technical_review/source_code/agents/ensemble_voting_agent.py:717 - invalid syntax (<unknown>, line 717)
+- exports/unified_technical_review/source_code/agents/enhanced_sentiment_agent.py:309 - '(' was never closed (<unknown>, line 309)
+- exports/unified_technical_review/source_code/agents/scraping_core/async_client.py:127 - closing parenthesis ')' does not match opening parenthesis '{' on line 126 (<unknown>, line 127)
+- exports/unified_technical_review/source_code/agents/scraping_core/data_sources.py:101 - illegal target for annotation (<unknown>, line 101)
+- exports/unified_technical_review/source_code/core/improved_logging_manager.py:30 - closing parenthesis ']' does not match opening parenthesis '(' (<unknown>, line 30)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/advanced_ai_engine.py:566 - invalid syntax (<unknown>, line 566)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ai_portfolio_optimizer.py:353 - invalid syntax (<unknown>, line 353)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/async_scraping_framework.py:280 - invalid syntax (<unknown>, line 280)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/batch_inference_engine.py:368 - f-string: single '}' is not allowed (<unknown>, line 368)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/black_swan_simulation_engine.py:197 - closing parenthesis '}' does not match opening parenthesis '(' on line 196 (<unknown>, line 197)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/code_audit_system.py:371 - invalid syntax (<unknown>, line 371)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/continual_learning_engine.py:682 - unmatched ')' (<unknown>, line 682)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/coverage_audit_system.py:401 - invalid syntax (<unknown>, line 401)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/crypto_ai_system.py:222 - invalid syntax (<unknown>, line 222)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/deep_ml_engine.py:428 - invalid syntax (<unknown>, line 428)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/drift_fine_tune_integration.py:467 - invalid syntax (<unknown>, line 467)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/enterprise_integrator.py:209 - invalid syntax (<unknown>, line 209)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/execution_simulator.py:263 - unmatched ')' (<unknown>, line 263)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/explainability_engine.py:84 - invalid syntax (<unknown>, line 84)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/explainable_ai.py:196 - invalid syntax (<unknown>, line 196)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/feature_discovery_engine.py:227 - closing parenthesis ']' does not match opening parenthesis '(' on line 225 (<unknown>, line 227)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/fine_tune_scheduler.py:121 - unmatched ')' (<unknown>, line 121)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/functionality_auditor.py:122 - expected '(' (<unknown>, line 122)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/gpu_accelerator.py:491 - invalid syntax (<unknown>, line 491)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/human_in_the_loop.py:248 - f-string expression part cannot include '#' (<unknown>, line 248)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/improved_logging_manager.py:30 - closing parenthesis ']' does not match opening parenthesis '(' (<unknown>, line 30)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/market_impact_engine.py:560 - unmatched ')' (<unknown>, line 560)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ml_feature_monitor.py:386 - unmatched ')' (<unknown>, line 386)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/multi_horizon_ml.py:508 - invalid syntax (<unknown>, line 508)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/orderbook_simulator.py:400 - unmatched ')' (<unknown>, line 400)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/probability_calibrator.py:336 - invalid syntax (<unknown>, line 336)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/process_isolation.py:452 - invalid syntax (<unknown>, line 452)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/risk_management.py:462 - unmatched ')' (<unknown>, line 462)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/secrets_manager.py:350 - '(' was never closed (<unknown>, line 350)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/shadow_trading_engine.py:620 - closing parenthesis '}' does not match opening parenthesis '[' on line 619 (<unknown>, line 620)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/shap_regime_analyzer.py:234 - invalid syntax (<unknown>, line 234)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/slippage_estimator.py:442 - invalid syntax (<unknown>, line 442)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/synthetic_data_augmentation.py:581 - closing parenthesis '}' does not match opening parenthesis '(' on line 580 (<unknown>, line 581)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/http_client.py:354 - '(' was never closed (<unknown>, line 354)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/pydantic_settings.py:258 - unexpected indent (<unknown>, line 258)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ta_agent.py:818 - closing parenthesis '}' does not match opening parenthesis '(' on line 815 (<unknown>, line 818)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_sentiment_agent.py:52 - invalid syntax (<unknown>, line 52)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_whale_agent.py:252 - '(' was never closed (<unknown>, line 252)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/ml_predictor_agent.py:164 - expected '(' (<unknown>, line 164)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/risk_manager_agent.py:65 - invalid syntax (<unknown>, line 65)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/whale_detector.py:40 - invalid syntax. Perhaps you forgot a comma? (<unknown>, line 40)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/scraping_core/async_client.py:127 - closing parenthesis ')' does not match opening parenthesis '{' on line 126 (<unknown>, line 127)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/scraping_core/data_sources.py:101 - illegal target for annotation (<unknown>, line 101)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/futures_data_features.py:374 - invalid syntax (<unknown>, line 374)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/probability_calibration_enhanced.py:309 - invalid syntax (<unknown>, line 309)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_features.py:343 - expression cannot contain assignment, perhaps you meant "=="? (<unknown>, line 343)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_hmm.py:262 - invalid syntax (<unknown>, line 262)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/synthetic_targets.py:62 - invalid syntax (<unknown>, line 62)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/train_ensemble.py:157 - invalid syntax (<unknown>, line 157)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/continual_learning/drift_detection_ewc.py:337 - unmatched ')' (<unknown>, line 337)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/ensemble/meta_learner.py:914 - invalid syntax (<unknown>, line 914)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/feature_engineering.py:220 - invalid syntax (<unknown>, line 220)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/regime_detector.py:603 - expected '(' (<unknown>, line 603)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/regime_router.py:225 - '(' was never closed (<unknown>, line 225)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/uncertainty/monte_carlo_dropout.py:228 - invalid syntax (<unknown>, line 228)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/regime_detector.py:401 - unmatched '}' (<unknown>, line 401)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/twap_executor.py:392 - invalid syntax (<unknown>, line 392)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_simulator.py:297 - unmatched ')' (<unknown>, line 297)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_policy.py:506 - invalid syntax (<unknown>, line 506)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/idempotent_executor.py:113 - invalid syntax (<unknown>, line 113)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/risk_limits.py:673 - invalid syntax (<unknown>, line 673)
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/monitoring/chaos_tester.py:399 - invalid syntax (<unknown>, line 399)
+- src/cryptosmarttrader/core/batch_inference_engine.py:368 - f-string: single '}' is not allowed (<unknown>, line 368)
+- src/cryptosmarttrader/core/black_swan_simulation_engine.py:350 - unmatched ')' (<unknown>, line 350)
+- src/cryptosmarttrader/core/continual_learning_engine.py:679 - unexpected indent (<unknown>, line 679)
+- src/cryptosmarttrader/core/execution_simulator.py:263 - unmatched ')' (<unknown>, line 263)
+- src/cryptosmarttrader/core/explainability_engine.py:322 - unmatched ')' (<unknown>, line 322)
+- src/cryptosmarttrader/core/feature_discovery_engine.py:180 - unmatched ')' (<unknown>, line 180)
+- src/cryptosmarttrader/core/fine_tune_scheduler.py:120 - unexpected indent (<unknown>, line 120)
+- src/cryptosmarttrader/core/functionality_auditor.py:122 - unmatched ')' (<unknown>, line 122)
+- src/cryptosmarttrader/core/improved_logging_manager.py:30 - closing parenthesis ']' does not match opening parenthesis '(' (<unknown>, line 30)
+- src/cryptosmarttrader/core/market_impact_engine.py:560 - unmatched ')' (<unknown>, line 560)
+- src/cryptosmarttrader/core/ml_feature_monitor.py:385 - unmatched ')' (<unknown>, line 385)
+- src/cryptosmarttrader/core/orderbook_simulator.py:392 - unmatched ')' (<unknown>, line 392)
+- src/cryptosmarttrader/core/process_isolation.py:452 - invalid syntax (<unknown>, line 452)
+- src/cryptosmarttrader/core/risk_management.py:462 - unmatched ')' (<unknown>, line 462)
+- src/cryptosmarttrader/core/shap_regime_analyzer.py:234 - unmatched ')' (<unknown>, line 234)
+- src/cryptosmarttrader/core/synthetic_data_augmentation.py:204 - unmatched ')' (<unknown>, line 204)
+- src/cryptosmarttrader/core/pydantic_settings.py:258 - unexpected indent (<unknown>, line 258)
+- src/cryptosmarttrader/agents/enhanced_whale_agent.py:256 - f-string expression part cannot include '#' (<unknown>, line 256)
+- src/cryptosmarttrader/agents/scraping_core/data_sources.py:101 - illegal target for annotation (<unknown>, line 101)
+- src/cryptosmarttrader/agents/agents/enhanced_whale_agent.py:252 - '(' was never closed (<unknown>, line 252)
+- src/cryptosmarttrader/agents/agents/risk_manager_agent.py:65 - invalid syntax (<unknown>, line 65)
+- src/cryptosmarttrader/agents/agents/whale_detector.py:40 - invalid syntax. Perhaps you forgot a comma? (<unknown>, line 40)
+- src/cryptosmarttrader/agents/agents/funding_rate_monitor.py:745 - expected an indented block after 'try' statement on line 742 (<unknown>, line 745)
+- src/cryptosmarttrader/agents/agents/arbitrage_detector_agent.py:793 - expected an indented block after 'try' statement on line 790 (<unknown>, line 793)
+- src/cryptosmarttrader/agents/agents/enhanced_sentiment_agent.py:309 - '(' was never closed (<unknown>, line 309)
+- src/cryptosmarttrader/agents/agents/scraping_core/data_sources.py:101 - illegal target for annotation (<unknown>, line 101)
+- src/cryptosmarttrader/agents/agents/scraping_core/async_client.py:305 - invalid syntax (<unknown>, line 305)
+- src/cryptosmarttrader/ml/synthetic_targets.py:62 - unmatched ')' (<unknown>, line 62)
+- src/cryptosmarttrader/ml/train_ensemble.py:157 - unmatched ')' (<unknown>, line 157)
+- src/cryptosmarttrader/ml/continual_learning/drift_detection_ewc.py:326 - unmatched ')' (<unknown>, line 326)
+- src/cryptosmarttrader/ml/features/feature_engineering.py:220 - unmatched ')' (<unknown>, line 220)
+- src/cryptosmarttrader/ml/regime/regime_detector.py:603 - expected '(' (<unknown>, line 603)
+- src/cryptosmarttrader/ml/regime/regime_router.py:225 - unmatched ')' (<unknown>, line 225)
+- src/cryptosmarttrader/regime/regime_detector.py:395 - unexpected indent (<unknown>, line 395)
+- experiments/technical_review/src/cryptosmarttrader/core/batch_inference_engine.py:368 - f-string: single '}' is not allowed (<unknown>, line 368)
+- experiments/technical_review/src/cryptosmarttrader/core/black_swan_simulation_engine.py:350 - unmatched ')' (<unknown>, line 350)
+- experiments/technical_review/src/cryptosmarttrader/core/continual_learning_engine.py:679 - unexpected indent (<unknown>, line 679)
+- experiments/technical_review/src/cryptosmarttrader/core/execution_simulator.py:263 - unmatched ')' (<unknown>, line 263)
+- experiments/technical_review/src/cryptosmarttrader/core/explainability_engine.py:322 - unmatched ')' (<unknown>, line 322)
+- experiments/technical_review/src/cryptosmarttrader/core/feature_discovery_engine.py:180 - unmatched ')' (<unknown>, line 180)
+- experiments/technical_review/src/cryptosmarttrader/core/fine_tune_scheduler.py:120 - unexpected indent (<unknown>, line 120)
+- experiments/technical_review/src/cryptosmarttrader/core/functionality_auditor.py:122 - unmatched ')' (<unknown>, line 122)
+- experiments/technical_review/src/cryptosmarttrader/core/improved_logging_manager.py:30 - closing parenthesis ']' does not match opening parenthesis '(' (<unknown>, line 30)
+- experiments/technical_review/src/cryptosmarttrader/core/market_impact_engine.py:560 - unmatched ')' (<unknown>, line 560)
+- experiments/technical_review/src/cryptosmarttrader/core/ml_feature_monitor.py:385 - unmatched ')' (<unknown>, line 385)
+- experiments/technical_review/src/cryptosmarttrader/core/orderbook_simulator.py:392 - unmatched ')' (<unknown>, line 392)
+- experiments/technical_review/src/cryptosmarttrader/core/process_isolation.py:452 - invalid syntax (<unknown>, line 452)
+- experiments/technical_review/src/cryptosmarttrader/core/risk_management.py:462 - unmatched ')' (<unknown>, line 462)
+- experiments/technical_review/src/cryptosmarttrader/core/shap_regime_analyzer.py:234 - unmatched ')' (<unknown>, line 234)
+- experiments/technical_review/src/cryptosmarttrader/core/synthetic_data_augmentation.py:204 - unmatched ')' (<unknown>, line 204)
+- experiments/technical_review/src/cryptosmarttrader/core/pydantic_settings.py:258 - unexpected indent (<unknown>, line 258)
+- experiments/technical_review/src/cryptosmarttrader/agents/enhanced_whale_agent.py:256 - f-string expression part cannot include '#' (<unknown>, line 256)
+- experiments/technical_review/src/cryptosmarttrader/agents/scraping_core/data_sources.py:101 - illegal target for annotation (<unknown>, line 101)
+- experiments/technical_review/src/cryptosmarttrader/ml/synthetic_targets.py:62 - unmatched ')' (<unknown>, line 62)
+- experiments/technical_review/src/cryptosmarttrader/ml/train_ensemble.py:157 - unmatched ')' (<unknown>, line 157)
+- experiments/technical_review/src/cryptosmarttrader/ml/continual_learning/drift_detection_ewc.py:326 - unmatched ')' (<unknown>, line 326)
+- experiments/technical_review/src/cryptosmarttrader/ml/features/feature_engineering.py:220 - unmatched ')' (<unknown>, line 220)
+- experiments/technical_review/src/cryptosmarttrader/ml/regime/regime_detector.py:603 - expected '(' (<unknown>, line 603)
+- experiments/technical_review/src/cryptosmarttrader/ml/regime/regime_router.py:225 - unmatched ')' (<unknown>, line 225)
+- experiments/technical_review/src/cryptosmarttrader/regime/regime_detector.py:395 - unexpected indent (<unknown>, line 395)
+- experiments/technical_review/src/cryptosmarttrader/execution/execution_simulator.py:297 - unmatched ')' (<unknown>, line 297)
+- experiments/technical_review/src/cryptosmarttrader/execution/idempotent_executor.py:563 - unmatched ')' (<unknown>, line 563)
+- experiments/technical_review/agents/enhanced_whale_agent.py:252 - '(' was never closed (<unknown>, line 252)
+- experiments/technical_review/agents/risk_manager_agent.py:65 - invalid syntax (<unknown>, line 65)
+- experiments/technical_review/agents/whale_detector.py:40 - invalid syntax. Perhaps you forgot a comma? (<unknown>, line 40)
+- experiments/technical_review/agents/enhanced_sentiment_agent.py:309 - '(' was never closed (<unknown>, line 309)
+- experiments/technical_review/agents/scraping_core/data_sources.py:101 - illegal target for annotation (<unknown>, line 101)
+- experiments/technical_review/agents/scraping_core/async_client.py:305 - invalid syntax (<unknown>, line 305)
+
+## BARE EXCEPT STATEMENTS
+- tests/e2e/test_smoke_tests.py: 9 bare excepts
+- experiments/technical_review/tests/e2e/test_smoke_tests.py: 9 bare excepts
+- exports/unified_technical_review/source_code/core/comprehensive_system_manager.py: 8 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/comprehensive_system_manager.py: 8 bare excepts
+- src/cryptosmarttrader/core/comprehensive_system_manager.py: 8 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/comprehensive_system_manager.py: 8 bare excepts
+- exports/unified_technical_review/source_code/core/performance_optimizer.py: 6 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/performance_optimizer.py: 6 bare excepts
+- src/cryptosmarttrader/core/performance_optimizer.py: 6 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/performance_optimizer.py: 6 bare excepts
+- src/cryptosmarttrader/ml/drift_detector.py: 5 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/ml/drift_detector.py: 5 bare excepts
+- test_replit_services.py: 4 bare excepts
+- exports/unified_technical_review/source_code/core/multimodal_processor.py: 4 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/multimodal_processor.py: 4 bare excepts
+- exports/unified_technical_review/tests/test_replit_services.py: 4 bare excepts
+- src/cryptosmarttrader/core/multimodal_processor.py: 4 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/multimodal_processor.py: 4 bare excepts
+- exports/unified_technical_review/source_code/ml/features/temporal_feature_engineering.py: 3 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/temporal_feature_engineering.py: 3 bare excepts
+- src/cryptosmarttrader/ml/walk_forward_trainer.py: 3 bare excepts
+- src/cryptosmarttrader/ml/features/temporal_feature_engineering.py: 3 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/ml/walk_forward_trainer.py: 3 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/ml/features/temporal_feature_engineering.py: 3 bare excepts
+- experiments/technical_review/ml/features/temporal_feature_engineering.py: 3 bare excepts
+- test_deployment_recovery.py: 2 bare excepts
+- dashboards/alpha_opportunities_dashboard.py: 2 bare excepts
+- data/coin_registry.py: 2 bare excepts
+- scripts/comprehensive_self_audit.py: 2 bare excepts
+- scripts/release_manager.py: 2 bare excepts
+- exports/unified_technical_review/source_code/start_multi_service.py: 2 bare excepts
+- exports/unified_technical_review/source_code/agents/arbitrage_detector_agent.py: 2 bare excepts
+- exports/unified_technical_review/source_code/api/health_endpoint.py: 2 bare excepts
+- exports/unified_technical_review/source_code/ml/calibration/probability_calibrator.py: 2 bare excepts
+- exports/unified_technical_review/source_code/utils/alerts.py: 2 bare excepts
+- exports/unified_technical_review/source_code/core/ai_news_event_mining.py: 2 bare excepts
+- exports/unified_technical_review/source_code/core/causal_inference_engine.py: 2 bare excepts
+- exports/unified_technical_review/source_code/core/ml_feature_monitor.py: 2 bare excepts
+- exports/unified_technical_review/source_code/core/workstation_optimizer.py: 2 bare excepts
+- exports/unified_technical_review/source_code/core/openai_adapter.py: 2 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ai_news_event_mining.py: 2 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/causal_inference_engine.py: 2 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ml_feature_monitor.py: 2 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/openai_adapter.py: 2 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/workstation_optimizer.py: 2 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/calibration/probability_calibrator.py: 2 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/alerts.py: 2 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/health_endpoint.py: 2 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/kill_switch.py: 2 bare excepts
+- exports/unified_technical_review/tests/test_deployment_recovery.py: 2 bare excepts
+- src/cryptosmarttrader/core/ai_news_event_mining.py: 2 bare excepts
+- src/cryptosmarttrader/core/causal_inference_engine.py: 2 bare excepts
+- src/cryptosmarttrader/core/ml_feature_monitor.py: 2 bare excepts
+- src/cryptosmarttrader/core/openai_adapter.py: 2 bare excepts
+- src/cryptosmarttrader/core/workstation_optimizer.py: 2 bare excepts
+- src/cryptosmarttrader/ml/calibration/probability_calibrator.py: 2 bare excepts
+- src/cryptosmarttrader/utils/alerts.py: 2 bare excepts
+- src/cryptosmarttrader/api/health_endpoint.py: 2 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/ai_news_event_mining.py: 2 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/causal_inference_engine.py: 2 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/ml_feature_monitor.py: 2 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/openai_adapter.py: 2 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/workstation_optimizer.py: 2 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/ml/calibration/probability_calibrator.py: 2 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/utils/alerts.py: 2 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/api/health_endpoint.py: 2 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/risk/kill_switch.py: 2 bare excepts
+- experiments/technical_review/api/health_endpoint.py: 2 bare excepts
+- experiments/technical_review/ml/calibration/probability_calibrator.py: 2 bare excepts
+- experiments/technical_review/utils/alerts.py: 2 bare excepts
+- start_multi_service.py: 1 bare excepts
+- start_replit_services.py: 1 bare excepts
+- test_enterprise_safety_system.py: 1 bare excepts
+- go_live_deployment.py: 1 bare excepts
+- dashboards/agent_dashboard.py: 1 bare excepts
+- dashboards/production_monitoring_dashboard.py: 1 bare excepts
+- data/kraken_coverage_auditor.py: 1 bare excepts
+- config/security.py: 1 bare excepts
+- scripts/production_health_check.py: 1 bare excepts
+- scripts/cleanup_repo.py: 1 bare excepts
+- scripts/operations/daily_health_check.py: 1 bare excepts
+- exports/unified_technical_review/source_code/app_fixed_all_issues.py: 1 bare excepts
+- exports/unified_technical_review/source_code/start_agents.py: 1 bare excepts
+- exports/unified_technical_review/source_code/agents/enhanced_sentiment_agent.py: 1 bare excepts
+- exports/unified_technical_review/source_code/ml/futures_signals.py: 1 bare excepts
+- exports/unified_technical_review/source_code/ml/regime_router.py: 1 bare excepts
+- exports/unified_technical_review/source_code/utils/metrics.py: 1 bare excepts
+- exports/unified_technical_review/source_code/utils/system_optimizer.py: 1 bare excepts
+- exports/unified_technical_review/source_code/utils/timestamp_synchronizer.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/data_manager.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/cache_manager.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/bayesian_uncertainty.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/automl_engine.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/ai_portfolio_optimizer.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/fallback_data_eliminator.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/market_regime_detector.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/batch_inference_engine.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/coverage_audit_system.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/daily_health_dashboard.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/strict_data_integrity.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/authentic_data_collector.py: 1 bare excepts
+- exports/unified_technical_review/source_code/core/readiness_check.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ai_portfolio_optimizer.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/authentic_data_collector.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/automl_engine.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/batch_inference_engine.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/bayesian_uncertainty.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/cache_manager.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/coverage_audit_system.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/daily_health_dashboard.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/data_manager.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/fallback_data_eliminator.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/market_regime_detector.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/readiness_check.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/strict_data_integrity.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_sentiment_agent.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/futures_signals.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_router.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/metrics.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/system_optimizer.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/timestamp_synchronizer.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/health_checker.py: 1 bare excepts
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/observability/prometheus_metrics.py: 1 bare excepts
+- exports/unified_technical_review/tests/test_enterprise_safety_system.py: 1 bare excepts
+- exports/unified_technical_review/deployment/start_replit_services.py: 1 bare excepts
+- src/cryptosmarttrader/core/ai_portfolio_optimizer.py: 1 bare excepts
+- src/cryptosmarttrader/core/authentic_data_collector.py: 1 bare excepts
+- src/cryptosmarttrader/core/automl_engine.py: 1 bare excepts
+- src/cryptosmarttrader/core/batch_inference_engine.py: 1 bare excepts
+- src/cryptosmarttrader/core/bayesian_uncertainty.py: 1 bare excepts
+- src/cryptosmarttrader/core/cache_manager.py: 1 bare excepts
+- src/cryptosmarttrader/core/coverage_audit_system.py: 1 bare excepts
+- src/cryptosmarttrader/core/daily_health_dashboard.py: 1 bare excepts
+- src/cryptosmarttrader/core/data_manager.py: 1 bare excepts
+- src/cryptosmarttrader/core/fallback_data_eliminator.py: 1 bare excepts
+- src/cryptosmarttrader/core/market_regime_detector.py: 1 bare excepts
+- src/cryptosmarttrader/core/readiness_check.py: 1 bare excepts
+- src/cryptosmarttrader/core/strict_data_integrity.py: 1 bare excepts
+- src/cryptosmarttrader/agents/enhanced_sentiment_agent.py: 1 bare excepts
+- src/cryptosmarttrader/ml/futures_signals.py: 1 bare excepts
+- src/cryptosmarttrader/ml/regime_router.py: 1 bare excepts
+- src/cryptosmarttrader/utils/metrics.py: 1 bare excepts
+- src/cryptosmarttrader/utils/system_optimizer.py: 1 bare excepts
+- src/cryptosmarttrader/utils/timestamp_synchronizer.py: 1 bare excepts
+- src/cryptosmarttrader/deployment/health_checker.py: 1 bare excepts
+- src/cryptosmarttrader/observability/metrics_collector.py: 1 bare excepts
+- src/cryptosmarttrader/execution/order_pipeline.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/ai_portfolio_optimizer.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/authentic_data_collector.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/automl_engine.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/batch_inference_engine.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/bayesian_uncertainty.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/cache_manager.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/coverage_audit_system.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/daily_health_dashboard.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/data_manager.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/fallback_data_eliminator.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/market_regime_detector.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/readiness_check.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/core/strict_data_integrity.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/agents/enhanced_sentiment_agent.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/ml/futures_signals.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/ml/regime_router.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/utils/metrics.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/utils/system_optimizer.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/utils/timestamp_synchronizer.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/deployment/health_checker.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/observability/prometheus_metrics.py: 1 bare excepts
+- experiments/technical_review/src/cryptosmarttrader/observability/metrics_collector.py: 1 bare excepts
+- experiments/technical_review/ml/futures_signals.py: 1 bare excepts
+- experiments/technical_review/ml/regime_router.py: 1 bare excepts
+- experiments/technical_review/utils/metrics.py: 1 bare excepts
+- experiments/technical_review/utils/system_optimizer.py: 1 bare excepts
+- experiments/technical_review/utils/timestamp_synchronizer.py: 1 bare excepts
+
+## DUPLICATE MODULES
+- performance_optimizer: core/performance_optimizer.py, utils/performance_optimizer.py
+- error_handler: core/error_handler.py, utils/error_handler.py
+- system_optimizer: core/system_optimizer.py, utils/system_optimizer.py
+- daily_logger: core/daily_logger.py, utils/daily_logger.py
+- cache_manager: core/cache_manager.py, dashboards/utils/cache_manager.py
+- test_risk_management: test_risk_management.py, tests/test_risk_management.py
+- test_execution_policy: tests/test_execution_policy.py, tests/unit/test_execution_policy.py
+- test_api_health: tests/test_api_health.py, tests/integration/test_api_health.py
+- conftest: tests/conftest.py, tests/api/conftest.py
+- test_health: attached_assets/extracted_cst/PR3-api-contract/tests/api/test_health.py, tests/api/test_health.py
+- system_monitor: core/system_monitor.py, scripts/system_monitor.py
+- backup_system: scripts/backup_system.py, scripts/operations/backup_system.py
+- temporal_integrity_validator: core/temporal_integrity_validator.py, ml/temporal_integrity_validator.py
+- temporal_safe_splits: core/temporal_safe_splits.py, ml/temporal_safe_splits.py
+- auto_features: ml/auto_features.py, ml/features/auto_features.py
+- regime_router: ml/regime_router.py, ml/regime/regime_router.py
+- market_regime_detector: core/market_regime_detector.py, ml/regime/market_regime_detector.py
+- probability_calibrator: core/probability_calibrator.py, ml/calibration/probability_calibrator.py
+- bayesian_uncertainty: core/bayesian_uncertainty.py, ml/uncertainty/bayesian_uncertainty.py
+- conformal_prediction: ml/conformal_prediction.py, ml/uncertainty/conformal_prediction.py
+- evaluator: scripts/evaluator.py, eval/evaluator.py
+- coverage_audit: scripts/coverage_audit.py, eval/coverage_audit.py
+- daily_metrics_logger: scripts/daily_metrics_logger.py, eval/daily_metrics_logger.py
+- system_health_check: scripts/system_health_check.py, eval/system_health_check.py
+- app_fixed_all_issues: app_fixed_all_issues.py, exports/unified_technical_review/source_code/app_fixed_all_issues.py
+- generate_final_predictions: generate_final_predictions.py, exports/unified_technical_review/source_code/generate_final_predictions.py
+- start_multi_service: start_multi_service.py, exports/unified_technical_review/source_code/start_multi_service.py
+- run_demo_pipeline: run_demo_pipeline.py, exports/unified_technical_review/source_code/run_demo_pipeline.py
+- start_agents: start_agents.py, exports/unified_technical_review/source_code/start_agents.py
+- create_test_predictions: create_test_predictions.py, exports/unified_technical_review/source_code/create_test_predictions.py
+- async_client: utils/async_client.py, exports/unified_technical_review/source_code/agents/scraping_core/async_client.py
+- data_sources: core/data_sources.py, exports/unified_technical_review/source_code/agents/scraping_core/data_sources.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, exports/unified_technical_review/source_code/api/schemas/health.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, exports/unified_technical_review/source_code/api/routers/health.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, exports/unified_technical_review/source_code/api/routers/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, exports/unified_technical_review/source_code/api/routers/signals.py
+- mc_dropout_inference: ml/mc_dropout_inference.py, exports/unified_technical_review/source_code/ml/mc_dropout_inference.py
+- regime_hmm: ml/regime_hmm.py, exports/unified_technical_review/source_code/ml/regime_hmm.py
+- time_series_validation: ml/time_series_validation.py, exports/unified_technical_review/source_code/ml/time_series_validation.py
+- probability_calibration: ml/probability_calibration.py, exports/unified_technical_review/source_code/ml/probability_calibration.py
+- futures_data_features: ml/futures_data_features.py, exports/unified_technical_review/source_code/ml/futures_data_features.py
+- advanced_transformers: ml/advanced_transformers.py, exports/unified_technical_review/source_code/ml/advanced_transformers.py
+- probability_calibration_enhanced: ml/probability_calibration_enhanced.py, exports/unified_technical_review/source_code/ml/probability_calibration_enhanced.py
+- regime_features: ml/regime_features.py, exports/unified_technical_review/source_code/ml/regime_features.py
+- enhanced_calibration: ml/enhanced_calibration.py, exports/unified_technical_review/source_code/ml/enhanced_calibration.py
+- regime_adaptive_modeling: ml/regime_adaptive_modeling.py, exports/unified_technical_review/source_code/ml/regime_adaptive_modeling.py
+- meta_labeling_system: ml/meta_labeling_system.py, exports/unified_technical_review/source_code/ml/meta_labeling_system.py
+- futures_signals: ml/futures_signals.py, exports/unified_technical_review/source_code/ml/futures_signals.py
+- orderbook_imbalance: ml/orderbook_imbalance.py, exports/unified_technical_review/source_code/ml/orderbook_imbalance.py
+- event_impact_scoring: ml/event_impact_scoring.py, exports/unified_technical_review/source_code/ml/event_impact_scoring.py
+- auto_features: ml/auto_features.py, exports/unified_technical_review/source_code/ml/auto_features.py
+- conformal_prediction: ml/conformal_prediction.py, exports/unified_technical_review/source_code/ml/conformal_prediction.py
+- uncertainty_aware_sizing: ml/uncertainty_aware_sizing.py, exports/unified_technical_review/source_code/ml/uncertainty_aware_sizing.py
+- temporal_validation_system: ml/temporal_validation_system.py, exports/unified_technical_review/source_code/ml/temporal_validation_system.py
+- temporal_integrity_validator: core/temporal_integrity_validator.py, exports/unified_technical_review/source_code/ml/temporal_integrity_validator.py
+- temporal_safe_splits: core/temporal_safe_splits.py, exports/unified_technical_review/source_code/ml/temporal_safe_splits.py
+- meta_labeling: ml/meta_labeling.py, exports/unified_technical_review/source_code/ml/meta_labeling.py
+- regime_router: ml/regime_router.py, exports/unified_technical_review/source_code/ml/regime_router.py
+- uncertainty_quantification: ml/uncertainty_quantification.py, exports/unified_technical_review/source_code/ml/uncertainty_quantification.py
+- continual_learning: ml/continual_learning.py, exports/unified_technical_review/source_code/ml/continual_learning.py
+- train_baseline: ml/train_baseline.py, exports/unified_technical_review/source_code/ml/train_baseline.py
+- meta_labeling_active: ml/meta_labeling_active.py, exports/unified_technical_review/source_code/ml/meta_labeling_active.py
+- uncertainty_active: ml/uncertainty_active.py, exports/unified_technical_review/source_code/ml/uncertainty_active.py
+- regime_detection_active: ml/regime_detection_active.py, exports/unified_technical_review/source_code/ml/regime_detection_active.py
+- train_ensemble: ml/train_ensemble.py, exports/unified_technical_review/source_code/ml/train_ensemble.py
+- synthetic_targets: ml/synthetic_targets.py, exports/unified_technical_review/source_code/ml/synthetic_targets.py
+- temporal_validator: ml/temporal_validator.py, exports/unified_technical_review/source_code/ml/temporal_validator.py
+- model_registry: ml/model_registry.py, exports/unified_technical_review/source_code/ml/model_registry.py
+- backtesting_engine: ml/backtesting_engine.py, exports/unified_technical_review/source_code/ml/backtesting_engine.py
+- feature_engineering: ml/features/feature_engineering.py, exports/unified_technical_review/source_code/ml/features/feature_engineering.py
+- auto_features: ml/auto_features.py, exports/unified_technical_review/source_code/ml/features/auto_features.py
+- feature_monitor: ml/features/feature_monitor.py, exports/unified_technical_review/source_code/ml/features/feature_monitor.py
+- leakage_detector: ml/features/leakage_detector.py, exports/unified_technical_review/source_code/ml/features/leakage_detector.py
+- temporal_feature_engineering: ml/features/temporal_feature_engineering.py, exports/unified_technical_review/source_code/ml/features/temporal_feature_engineering.py
+- model_factory: ml/models/model_factory.py, exports/unified_technical_review/source_code/ml/models/model_factory.py
+- predict: ml/models/predict.py, exports/unified_technical_review/source_code/ml/models/predict.py
+- regime_detector: ml/regime/regime_detector.py, exports/unified_technical_review/source_code/ml/regime/regime_detector.py
+- regime_router: ml/regime_router.py, exports/unified_technical_review/source_code/ml/regime/regime_router.py
+- market_regime_detector: core/market_regime_detector.py, exports/unified_technical_review/source_code/ml/regime/market_regime_detector.py
+- meta_learner: ml/ensemble/meta_learner.py, exports/unified_technical_review/source_code/ml/ensemble/meta_learner.py
+- probability_calibrator: core/probability_calibrator.py, exports/unified_technical_review/source_code/ml/calibration/probability_calibrator.py
+- confidence_gate_calibrated: ml/calibration/confidence_gate_calibrated.py, exports/unified_technical_review/source_code/ml/calibration/confidence_gate_calibrated.py
+- bayesian_uncertainty: core/bayesian_uncertainty.py, exports/unified_technical_review/source_code/ml/uncertainty/bayesian_uncertainty.py
+- monte_carlo_dropout: ml/uncertainty/monte_carlo_dropout.py, exports/unified_technical_review/source_code/ml/uncertainty/monte_carlo_dropout.py
+- conformal_prediction: ml/conformal_prediction.py, exports/unified_technical_review/source_code/ml/uncertainty/conformal_prediction.py
+- regime_aware_confidence_system: ml/integrated/regime_aware_confidence_system.py, exports/unified_technical_review/source_code/ml/integrated/regime_aware_confidence_system.py
+- openai_enhanced_analysis: ml/intelligence/openai_enhanced_analysis.py, exports/unified_technical_review/source_code/ml/intelligence/openai_enhanced_analysis.py
+- openai_simple_analyzer: ml/intelligence/openai_simple_analyzer.py, exports/unified_technical_review/source_code/ml/intelligence/openai_simple_analyzer.py
+- triple_barrier: ml/meta_labeling/triple_barrier.py, exports/unified_technical_review/source_code/ml/meta_labeling/triple_barrier.py
+- mixture_of_experts: ml/regime_detection/mixture_of_experts.py, exports/unified_technical_review/source_code/ml/regime_detection/mixture_of_experts.py
+- futures_orderbook: ml/advanced_features/futures_orderbook.py, exports/unified_technical_review/source_code/ml/advanced_features/futures_orderbook.py
+- llm_impact_scorer: ml/news_impact/llm_impact_scorer.py, exports/unified_technical_review/source_code/ml/news_impact/llm_impact_scorer.py
+- kelly_lite_sizing: ml/portfolio_optimization/kelly_lite_sizing.py, exports/unified_technical_review/source_code/ml/portfolio_optimization/kelly_lite_sizing.py
+- drift_detection_ewc: ml/continual_learning/drift_detection_ewc.py, exports/unified_technical_review/source_code/ml/continual_learning/drift_detection_ewc.py
+- strict_gate: orchestration/strict_gate.py, exports/unified_technical_review/source_code/orchestration/strict_gate.py
+- strict_gate_standalone: orchestration/strict_gate_standalone.py, exports/unified_technical_review/source_code/orchestration/strict_gate_standalone.py
+- exchange_manager: utils/exchange_manager.py, exports/unified_technical_review/source_code/utils/exchange_manager.py
+- gpu_optimizer: utils/gpu_optimizer.py, exports/unified_technical_review/source_code/utils/gpu_optimizer.py
+- logger: utils/logger.py, exports/unified_technical_review/source_code/utils/logger.py
+- alerts: utils/alerts.py, exports/unified_technical_review/source_code/utils/alerts.py
+- secrets: utils/secrets.py, exports/unified_technical_review/source_code/utils/secrets.py
+- metrics: utils/metrics.py, exports/unified_technical_review/source_code/utils/metrics.py
+- async_client: utils/async_client.py, exports/unified_technical_review/source_code/utils/async_client.py
+- performance_optimizer: core/performance_optimizer.py, exports/unified_technical_review/source_code/utils/performance_optimizer.py
+- error_handler: core/error_handler.py, exports/unified_technical_review/source_code/utils/error_handler.py
+- rate_limiter: utils/rate_limiter.py, exports/unified_technical_review/source_code/utils/rate_limiter.py
+- system_optimizer: core/system_optimizer.py, exports/unified_technical_review/source_code/utils/system_optimizer.py
+- daily_logger: core/daily_logger.py, exports/unified_technical_review/source_code/utils/daily_logger.py
+- timestamp_validation: utils/timestamp_validation.py, exports/unified_technical_review/source_code/utils/timestamp_validation.py
+- atomic_io: utils/atomic_io.py, exports/unified_technical_review/source_code/utils/atomic_io.py
+- timestamp_synchronizer: utils/timestamp_synchronizer.py, exports/unified_technical_review/source_code/utils/timestamp_synchronizer.py
+- timestamp_validator: utils/timestamp_validator.py, exports/unified_technical_review/source_code/utils/timestamp_validator.py
+- authentic_opportunities: utils/authentic_opportunities.py, exports/unified_technical_review/source_code/utils/authentic_opportunities.py
+- logging_manager: utils/logging_manager.py, exports/unified_technical_review/source_code/utils/logging_manager.py
+- log_viewer: utils/log_viewer.py, exports/unified_technical_review/source_code/utils/log_viewer.py
+- data_manager: core/data_manager.py, exports/unified_technical_review/source_code/core/data_manager.py
+- config_manager: core/config_manager.py, exports/unified_technical_review/source_code/core/config_manager.py
+- openai_enhanced_analyzer: core/openai_enhanced_analyzer.py, exports/unified_technical_review/source_code/core/openai_enhanced_analyzer.py
+- daily_analysis_scheduler: core/daily_analysis_scheduler.py, exports/unified_technical_review/source_code/core/daily_analysis_scheduler.py
+- error_handler: core/error_handler.py, exports/unified_technical_review/source_code/core/error_handler.py
+- alpha_seeker: core/alpha_seeker.py, exports/unified_technical_review/source_code/core/alpha_seeker.py
+- comprehensive_analyzer: core/comprehensive_analyzer.py, exports/unified_technical_review/source_code/core/comprehensive_analyzer.py
+- multi_horizon_ml: core/multi_horizon_ml.py, exports/unified_technical_review/source_code/core/multi_horizon_ml.py
+- cache_manager: core/cache_manager.py, exports/unified_technical_review/source_code/core/cache_manager.py
+- explainable_ai: core/explainable_ai.py, exports/unified_technical_review/source_code/core/explainable_ai.py
+- performance_optimizer: core/performance_optimizer.py, exports/unified_technical_review/source_code/core/performance_optimizer.py
+- gpu_accelerator: core/gpu_accelerator.py, exports/unified_technical_review/source_code/core/gpu_accelerator.py
+- crypto_ai_system: core/crypto_ai_system.py, exports/unified_technical_review/source_code/core/crypto_ai_system.py
+- real_time_pipeline: core/real_time_pipeline.py, exports/unified_technical_review/source_code/core/real_time_pipeline.py
+- zero_fallback_validator: core/zero_fallback_validator.py, exports/unified_technical_review/source_code/core/zero_fallback_validator.py
+- cross_coin_fusion: core/cross_coin_fusion.py, exports/unified_technical_review/source_code/core/cross_coin_fusion.py
+- bayesian_uncertainty: core/bayesian_uncertainty.py, exports/unified_technical_review/source_code/core/bayesian_uncertainty.py
+- risk_management: core/risk_management.py, exports/unified_technical_review/source_code/core/risk_management.py
+- deep_ml_engine: core/deep_ml_engine.py, exports/unified_technical_review/source_code/core/deep_ml_engine.py
+- automl_engine: core/automl_engine.py, exports/unified_technical_review/source_code/core/automl_engine.py
+- order_book_analyzer: core/order_book_analyzer.py, exports/unified_technical_review/source_code/core/order_book_analyzer.py
+- comprehensive_market_scanner: core/comprehensive_market_scanner.py, exports/unified_technical_review/source_code/core/comprehensive_market_scanner.py
+- advanced_ai_engine: core/advanced_ai_engine.py, exports/unified_technical_review/source_code/core/advanced_ai_engine.py
+- market_impact_engine: core/market_impact_engine.py, exports/unified_technical_review/source_code/core/market_impact_engine.py
+- multi_agent_cooperation_engine: core/multi_agent_cooperation_engine.py, exports/unified_technical_review/source_code/core/multi_agent_cooperation_engine.py
+- model_monitoring_engine: core/model_monitoring_engine.py, exports/unified_technical_review/source_code/core/model_monitoring_engine.py
+- black_swan_simulation_engine: core/black_swan_simulation_engine.py, exports/unified_technical_review/source_code/core/black_swan_simulation_engine.py
+- ai_news_event_mining: core/ai_news_event_mining.py, exports/unified_technical_review/source_code/core/ai_news_event_mining.py
+- ai_portfolio_optimizer: core/ai_portfolio_optimizer.py, exports/unified_technical_review/source_code/core/ai_portfolio_optimizer.py
+- ml_ai_differentiators: core/ml_ai_differentiators.py, exports/unified_technical_review/source_code/core/ml_ai_differentiators.py
+- security_manager: core/security_manager.py, exports/unified_technical_review/source_code/core/security_manager.py
+- async_coordinator: core/async_coordinator.py, exports/unified_technical_review/source_code/core/async_coordinator.py
+- exception_handler: core/exception_handler.py, exports/unified_technical_review/source_code/core/exception_handler.py
+- fallback_data_eliminator: core/fallback_data_eliminator.py, exports/unified_technical_review/source_code/core/fallback_data_eliminator.py
+- feature_fusion_engine: core/feature_fusion_engine.py, exports/unified_technical_review/source_code/core/feature_fusion_engine.py
+- shadow_testing_engine: core/shadow_testing_engine.py, exports/unified_technical_review/source_code/core/shadow_testing_engine.py
+- deep_learning_engine: core/deep_learning_engine.py, exports/unified_technical_review/source_code/core/deep_learning_engine.py
+- uncertainty_engine: core/uncertainty_engine.py, exports/unified_technical_review/source_code/core/uncertainty_engine.py
+- probabilistic_trader: core/probabilistic_trader.py, exports/unified_technical_review/source_code/core/probabilistic_trader.py
+- continual_learning_engine: core/continual_learning_engine.py, exports/unified_technical_review/source_code/core/continual_learning_engine.py
+- meta_learning_coordinator: core/meta_learning_coordinator.py, exports/unified_technical_review/source_code/core/meta_learning_coordinator.py
+- feature_discovery_engine: core/feature_discovery_engine.py, exports/unified_technical_review/source_code/core/feature_discovery_engine.py
+- live_feature_adaptation: core/live_feature_adaptation.py, exports/unified_technical_review/source_code/core/live_feature_adaptation.py
+- shap_regime_analyzer: core/shap_regime_analyzer.py, exports/unified_technical_review/source_code/core/shap_regime_analyzer.py
+- automated_feature_engineering: core/automated_feature_engineering.py, exports/unified_technical_review/source_code/core/automated_feature_engineering.py
+- adaptive_model_switcher: core/adaptive_model_switcher.py, exports/unified_technical_review/source_code/core/adaptive_model_switcher.py
+- market_regime_detector: core/market_regime_detector.py, exports/unified_technical_review/source_code/core/market_regime_detector.py
+- self_healing_system: core/self_healing_system.py, exports/unified_technical_review/source_code/core/self_healing_system.py
+- secrets_manager: core/secrets_manager.py, exports/unified_technical_review/source_code/core/secrets_manager.py
+- dependency_container: core/dependency_container.py, exports/unified_technical_review/source_code/core/dependency_container.py
+- data_integrity_validator: core/data_integrity_validator.py, exports/unified_technical_review/source_code/core/data_integrity_validator.py
+- ml_uncertainty_engine: core/ml_uncertainty_engine.py, exports/unified_technical_review/source_code/core/ml_uncertainty_engine.py
+- ml_regime_router: core/ml_regime_router.py, exports/unified_technical_review/source_code/core/ml_regime_router.py
+- ml_feature_monitor: core/ml_feature_monitor.py, exports/unified_technical_review/source_code/core/ml_feature_monitor.py
+- ml_slo_monitor: core/ml_slo_monitor.py, exports/unified_technical_review/source_code/core/ml_slo_monitor.py
+- portfolio_risk_manager: core/portfolio_risk_manager.py, exports/unified_technical_review/source_code/core/portfolio_risk_manager.py
+- position_manager: core/position_manager.py, exports/unified_technical_review/source_code/core/position_manager.py
+- async_data_manager: core/async_data_manager.py, exports/unified_technical_review/source_code/core/async_data_manager.py
+- hard_data_filter: core/hard_data_filter.py, exports/unified_technical_review/source_code/core/hard_data_filter.py
+- batch_inference_engine: core/batch_inference_engine.py, exports/unified_technical_review/source_code/core/batch_inference_engine.py
+- confidence_gate_manager: core/confidence_gate_manager.py, exports/unified_technical_review/source_code/core/confidence_gate_manager.py
+- shadow_trading_engine: core/shadow_trading_engine.py, exports/unified_technical_review/source_code/core/shadow_trading_engine.py
+- coverage_audit_system: core/coverage_audit_system.py, exports/unified_technical_review/source_code/core/coverage_audit_system.py
+- signal_quality_validator: core/signal_quality_validator.py, exports/unified_technical_review/source_code/core/signal_quality_validator.py
+- explainability_engine: core/explainability_engine.py, exports/unified_technical_review/source_code/core/explainability_engine.py
+- process_isolation: core/process_isolation.py, exports/unified_technical_review/source_code/core/process_isolation.py
+- prometheus_metrics: core/prometheus_metrics.py, exports/unified_technical_review/source_code/core/prometheus_metrics.py
+- drift_detection: core/drift_detection.py, exports/unified_technical_review/source_code/core/drift_detection.py
+- fine_tune_scheduler: core/fine_tune_scheduler.py, exports/unified_technical_review/source_code/core/fine_tune_scheduler.py
+- drift_fine_tune_integration: core/drift_fine_tune_integration.py, exports/unified_technical_review/source_code/core/drift_fine_tune_integration.py
+- auto_disable_system: core/auto_disable_system.py, exports/unified_technical_review/source_code/core/auto_disable_system.py
+- orderbook_simulator: core/orderbook_simulator.py, exports/unified_technical_review/source_code/core/orderbook_simulator.py
+- slippage_estimator: core/slippage_estimator.py, exports/unified_technical_review/source_code/core/slippage_estimator.py
+- paper_trading_engine: core/paper_trading_engine.py, exports/unified_technical_review/source_code/core/paper_trading_engine.py
+- mlflow_manager: core/mlflow_manager.py, exports/unified_technical_review/source_code/core/mlflow_manager.py
+- daily_logging_bundler: core/daily_logging_bundler.py, exports/unified_technical_review/source_code/core/daily_logging_bundler.py
+- completeness_gate: core/completeness_gate.py, exports/unified_technical_review/source_code/core/completeness_gate.py
+- daily_health_dashboard: core/daily_health_dashboard.py, exports/unified_technical_review/source_code/core/daily_health_dashboard.py
+- workstation_optimizer: core/workstation_optimizer.py, exports/unified_technical_review/source_code/core/workstation_optimizer.py
+- risk_mitigation: core/risk_mitigation.py, exports/unified_technical_review/source_code/core/risk_mitigation.py
+- improved_logging_manager: core/improved_logging_manager.py, exports/unified_technical_review/source_code/core/improved_logging_manager.py
+- final_system_integrator: core/final_system_integrator.py, exports/unified_technical_review/source_code/core/final_system_integrator.py
+- production_optimizer: core/production_optimizer.py, exports/unified_technical_review/source_code/core/production_optimizer.py
+- advanced_analytics: core/advanced_analytics.py, exports/unified_technical_review/source_code/core/advanced_analytics.py
+- comprehensive_system_manager: core/comprehensive_system_manager.py, exports/unified_technical_review/source_code/core/comprehensive_system_manager.py
+- enterprise_risk_mitigation: core/enterprise_risk_mitigation.py, exports/unified_technical_review/source_code/core/enterprise_risk_mitigation.py
+- ultra_performance_optimizer: core/ultra_performance_optimizer.py, exports/unified_technical_review/source_code/core/ultra_performance_optimizer.py
+- functionality_auditor: core/functionality_auditor.py, exports/unified_technical_review/source_code/core/functionality_auditor.py
+- code_audit_system: core/code_audit_system.py, exports/unified_technical_review/source_code/core/code_audit_system.py
+- critical_fixes_applier: core/critical_fixes_applier.py, exports/unified_technical_review/source_code/core/critical_fixes_applier.py
+- enterprise_integrator: core/enterprise_integrator.py, exports/unified_technical_review/source_code/core/enterprise_integrator.py
+- secure_logging: core/secure_logging.py, exports/unified_technical_review/source_code/core/secure_logging.py
+- strict_data_integrity: core/strict_data_integrity.py, exports/unified_technical_review/source_code/core/strict_data_integrity.py
+- authentic_data_collector: core/authentic_data_collector.py, exports/unified_technical_review/source_code/core/authentic_data_collector.py
+- async_scraping_framework: core/async_scraping_framework.py, exports/unified_technical_review/source_code/core/async_scraping_framework.py
+- openai_integration_manager: core/openai_integration_manager.py, exports/unified_technical_review/source_code/core/openai_integration_manager.py
+- robust_openai_adapter: core/robust_openai_adapter.py, exports/unified_technical_review/source_code/core/robust_openai_adapter.py
+- production_orchestrator: core/production_orchestrator.py, exports/unified_technical_review/source_code/core/production_orchestrator.py
+- daily_logger: core/daily_logger.py, exports/unified_technical_review/source_code/core/daily_logger.py
+- probability_calibrator: core/probability_calibrator.py, exports/unified_technical_review/source_code/core/probability_calibrator.py
+- data_completeness_gate: core/data_completeness_gate.py, exports/unified_technical_review/source_code/core/data_completeness_gate.py
+- readiness_check: core/readiness_check.py, exports/unified_technical_review/source_code/core/readiness_check.py
+- openai_adapter: core/openai_adapter.py, exports/unified_technical_review/source_code/core/openai_adapter.py
+- backend_enforcement: core/backend_enforcement.py, exports/unified_technical_review/source_code/core/backend_enforcement.py
+- structured_logger: core/structured_logger.py, exports/unified_technical_review/source_code/core/structured_logger.py
+- unified_structured_logger: core/unified_structured_logger.py, exports/unified_technical_review/source_code/core/unified_structured_logger.py
+- unified_confidence_gate: core/unified_confidence_gate.py, exports/unified_technical_review/source_code/core/unified_confidence_gate.py
+- consolidated_logging_manager: core/consolidated_logging_manager.py, exports/unified_technical_review/source_code/core/consolidated_logging_manager.py
+- import_path_resolver: core/import_path_resolver.py, exports/unified_technical_review/source_code/core/import_path_resolver.py
+- strict_confidence_gate: core/strict_confidence_gate.py, exports/unified_technical_review/source_code/core/strict_confidence_gate.py
+- temporal_integrity_validator: core/temporal_integrity_validator.py, exports/unified_technical_review/source_code/core/temporal_integrity_validator.py
+- temporal_safe_splits: core/temporal_safe_splits.py, exports/unified_technical_review/source_code/core/temporal_safe_splits.py
+- system_health_monitor: core/system_health_monitor.py, exports/unified_technical_review/source_code/core/system_health_monitor.py
+- system_monitor: core/system_monitor.py, exports/unified_technical_review/source_code/core/system_monitor.py
+- system_optimizer: core/system_optimizer.py, exports/unified_technical_review/source_code/core/system_optimizer.py
+- system_readiness_checker: core/system_readiness_checker.py, exports/unified_technical_review/source_code/core/system_readiness_checker.py
+- system_settings: core/system_settings.py, exports/unified_technical_review/source_code/core/system_settings.py
+- system_validator: core/system_validator.py, exports/unified_technical_review/source_code/core/system_validator.py
+- ta_agent: core/ta_agent.py, exports/unified_technical_review/source_code/core/ta_agent.py
+- pydantic_settings: core/pydantic_settings.py, exports/unified_technical_review/source_code/core/pydantic_settings.py
+- simple_settings: core/simple_settings.py, exports/unified_technical_review/source_code/core/simple_settings.py
+- http_client: core/http_client.py, exports/unified_technical_review/source_code/core/http_client.py
+- data_sources: core/data_sources.py, exports/unified_technical_review/source_code/core/data_sources.py
+- logging_config: core/logging_config.py, exports/unified_technical_review/source_code/core/logging_config.py
+- metrics_collector: core/metrics_collector.py, exports/unified_technical_review/source_code/core/metrics_collector.py
+- health_grading: core/health_grading.py, exports/unified_technical_review/source_code/core/health_grading.py
+- config: attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/config.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/config.py
+- logging: attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/logging.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/logging.py
+- __main__: attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/__main__.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/__main__.py
+- adaptive_model_switcher: core/adaptive_model_switcher.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/adaptive_model_switcher.py
+- advanced_ai_engine: core/advanced_ai_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/advanced_ai_engine.py
+- advanced_analytics: core/advanced_analytics.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/advanced_analytics.py
+- ai_news_event_mining: core/ai_news_event_mining.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ai_news_event_mining.py
+- ai_portfolio_optimizer: core/ai_portfolio_optimizer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ai_portfolio_optimizer.py
+- alpha_seeker: core/alpha_seeker.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/alpha_seeker.py
+- async_coordinator: core/async_coordinator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/async_coordinator.py
+- async_data_manager: core/async_data_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/async_data_manager.py
+- async_queue_system: exports/unified_technical_review/source_code/core/async_queue_system.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/async_queue_system.py
+- async_scraping_framework: core/async_scraping_framework.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/async_scraping_framework.py
+- authentic_data_collector: core/authentic_data_collector.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/authentic_data_collector.py
+- auto_disable_system: core/auto_disable_system.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/auto_disable_system.py
+- automated_feature_engineering: core/automated_feature_engineering.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/automated_feature_engineering.py
+- automl_engine: core/automl_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/automl_engine.py
+- backend_enforcement: core/backend_enforcement.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/backend_enforcement.py
+- backtest_engine: exports/unified_technical_review/source_code/core/backtest_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/backtest_engine.py
+- batch_inference_engine: core/batch_inference_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/batch_inference_engine.py
+- bayesian_uncertainty: core/bayesian_uncertainty.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/bayesian_uncertainty.py
+- black_swan_simulation_engine: core/black_swan_simulation_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/black_swan_simulation_engine.py
+- cache_manager: core/cache_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/cache_manager.py
+- causal_inference_engine: exports/unified_technical_review/source_code/core/causal_inference_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/causal_inference_engine.py
+- code_audit_system: core/code_audit_system.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/code_audit_system.py
+- completeness_gate: core/completeness_gate.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/completeness_gate.py
+- comprehensive_analyzer: core/comprehensive_analyzer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/comprehensive_analyzer.py
+- comprehensive_market_scanner: core/comprehensive_market_scanner.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/comprehensive_market_scanner.py
+- comprehensive_system_manager: core/comprehensive_system_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/comprehensive_system_manager.py
+- confidence_gate_manager: core/confidence_gate_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/confidence_gate_manager.py
+- config_manager: core/config_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/config_manager.py
+- consolidated_logging_manager: core/consolidated_logging_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/consolidated_logging_manager.py
+- continual_learning_engine: core/continual_learning_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/continual_learning_engine.py
+- coverage_audit_system: core/coverage_audit_system.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/coverage_audit_system.py
+- critical_fixes_applier: core/critical_fixes_applier.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/critical_fixes_applier.py
+- cross_coin_fusion: core/cross_coin_fusion.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/cross_coin_fusion.py
+- crypto_ai_system: core/crypto_ai_system.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/crypto_ai_system.py
+- daily_analysis_scheduler: core/daily_analysis_scheduler.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/daily_analysis_scheduler.py
+- daily_health_dashboard: core/daily_health_dashboard.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/daily_health_dashboard.py
+- daily_logger: core/daily_logger.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/daily_logger.py
+- daily_logging_bundler: core/daily_logging_bundler.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/daily_logging_bundler.py
+- data_completeness_gate: core/data_completeness_gate.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/data_completeness_gate.py
+- data_integrity_enforcer: exports/unified_technical_review/source_code/core/data_integrity_enforcer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/data_integrity_enforcer.py
+- data_integrity_validator: core/data_integrity_validator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/data_integrity_validator.py
+- data_manager: core/data_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/data_manager.py
+- deep_learning_engine: core/deep_learning_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/deep_learning_engine.py
+- deep_ml_engine: core/deep_ml_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/deep_ml_engine.py
+- dependency_container: core/dependency_container.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/dependency_container.py
+- drift_detection: core/drift_detection.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/drift_detection.py
+- drift_fine_tune_integration: core/drift_fine_tune_integration.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/drift_fine_tune_integration.py
+- enterprise_integrator: core/enterprise_integrator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/enterprise_integrator.py
+- enterprise_risk_mitigation: core/enterprise_risk_mitigation.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/enterprise_risk_mitigation.py
+- error_handler: core/error_handler.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/error_handler.py
+- exception_handler: core/exception_handler.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/exception_handler.py
+- execution_simulator: exports/unified_technical_review/source_code/core/execution_simulator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/execution_simulator.py
+- explainability_engine: core/explainability_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/explainability_engine.py
+- explainable_ai: core/explainable_ai.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/explainable_ai.py
+- fallback_data_eliminator: core/fallback_data_eliminator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/fallback_data_eliminator.py
+- feature_discovery_engine: core/feature_discovery_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/feature_discovery_engine.py
+- feature_fusion_engine: core/feature_fusion_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/feature_fusion_engine.py
+- final_system_integrator: core/final_system_integrator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/final_system_integrator.py
+- fine_tune_scheduler: core/fine_tune_scheduler.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/fine_tune_scheduler.py
+- functionality_auditor: core/functionality_auditor.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/functionality_auditor.py
+- gpu_accelerator: core/gpu_accelerator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/gpu_accelerator.py
+- hard_data_filter: core/hard_data_filter.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/hard_data_filter.py
+- human_in_the_loop: exports/unified_technical_review/source_code/core/human_in_the_loop.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/human_in_the_loop.py
+- import_path_resolver: core/import_path_resolver.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/import_path_resolver.py
+- improved_logging_manager: core/improved_logging_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/improved_logging_manager.py
+- live_feature_adaptation: core/live_feature_adaptation.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/live_feature_adaptation.py
+- market_impact_engine: core/market_impact_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/market_impact_engine.py
+- market_regime_detector: core/market_regime_detector.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/market_regime_detector.py
+- meta_learning_coordinator: core/meta_learning_coordinator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/meta_learning_coordinator.py
+- ml_ai_differentiators: core/ml_ai_differentiators.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ml_ai_differentiators.py
+- ml_feature_monitor: core/ml_feature_monitor.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ml_feature_monitor.py
+- mlflow_manager: core/mlflow_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/mlflow_manager.py
+- ml_regime_router: core/ml_regime_router.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ml_regime_router.py
+- ml_slo_monitor: core/ml_slo_monitor.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ml_slo_monitor.py
+- ml_uncertainty_engine: core/ml_uncertainty_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ml_uncertainty_engine.py
+- model_monitoring_engine: core/model_monitoring_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/model_monitoring_engine.py
+- multi_agent_cooperation_engine: core/multi_agent_cooperation_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/multi_agent_cooperation_engine.py
+- multi_horizon_ml: core/multi_horizon_ml.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/multi_horizon_ml.py
+- multimodal_processor: exports/unified_technical_review/source_code/core/multimodal_processor.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/multimodal_processor.py
+- openai_adapter: core/openai_adapter.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/openai_adapter.py
+- openai_enhanced_analyzer: core/openai_enhanced_analyzer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/openai_enhanced_analyzer.py
+- openai_integration_manager: core/openai_integration_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/openai_integration_manager.py
+- order_book_analyzer: core/order_book_analyzer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/order_book_analyzer.py
+- orderbook_simulator: core/orderbook_simulator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/orderbook_simulator.py
+- paper_trading_engine: core/paper_trading_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/paper_trading_engine.py
+- performance_optimizer: core/performance_optimizer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/performance_optimizer.py
+- portfolio_risk_manager: core/portfolio_risk_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/portfolio_risk_manager.py
+- position_manager: core/position_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/position_manager.py
+- probabilistic_trader: core/probabilistic_trader.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/probabilistic_trader.py
+- probability_calibrator: core/probability_calibrator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/probability_calibrator.py
+- process_isolation: core/process_isolation.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/process_isolation.py
+- production_optimizer: core/production_optimizer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/production_optimizer.py
+- production_orchestrator: core/production_orchestrator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/production_orchestrator.py
+- prometheus_metrics: core/prometheus_metrics.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/prometheus_metrics.py
+- readiness_check: core/readiness_check.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/readiness_check.py
+- real_time_pipeline: core/real_time_pipeline.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/real_time_pipeline.py
+- reinforcement_portfolio_allocator: exports/unified_technical_review/source_code/core/reinforcement_portfolio_allocator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/reinforcement_portfolio_allocator.py
+- risk_management: core/risk_management.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/risk_management.py
+- risk_mitigation: core/risk_mitigation.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/risk_mitigation.py
+- robust_openai_adapter: core/robust_openai_adapter.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/robust_openai_adapter.py
+- secrets_manager: core/secrets_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/secrets_manager.py
+- secure_logging: core/secure_logging.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/secure_logging.py
+- security_manager: core/security_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/security_manager.py
+- self_healing_system: core/self_healing_system.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/self_healing_system.py
+- shadow_testing_engine: core/shadow_testing_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/shadow_testing_engine.py
+- shadow_trading_engine: core/shadow_trading_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/shadow_trading_engine.py
+- shap_regime_analyzer: core/shap_regime_analyzer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/shap_regime_analyzer.py
+- signal_quality_validator: core/signal_quality_validator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/signal_quality_validator.py
+- slippage_estimator: core/slippage_estimator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/slippage_estimator.py
+- strict_confidence_gate: core/strict_confidence_gate.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/strict_confidence_gate.py
+- strict_data_integrity: core/strict_data_integrity.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/strict_data_integrity.py
+- structured_logger: core/structured_logger.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/structured_logger.py
+- synthetic_data_augmentation: exports/unified_technical_review/source_code/core/synthetic_data_augmentation.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/synthetic_data_augmentation.py
+- system_health_monitor: core/system_health_monitor.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/system_health_monitor.py
+- system_readiness_checker: core/system_readiness_checker.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/system_readiness_checker.py
+- system_validator: core/system_validator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/system_validator.py
+- temporal_integrity_validator: core/temporal_integrity_validator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/temporal_integrity_validator.py
+- ultra_performance_optimizer: core/ultra_performance_optimizer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ultra_performance_optimizer.py
+- uncertainty_engine: core/uncertainty_engine.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/uncertainty_engine.py
+- unified_confidence_gate: core/unified_confidence_gate.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/unified_confidence_gate.py
+- unified_structured_logger: core/unified_structured_logger.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/unified_structured_logger.py
+- workstation_optimizer: core/workstation_optimizer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/workstation_optimizer.py
+- zero_fallback_validator: core/zero_fallback_validator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/zero_fallback_validator.py
+- data_sources: core/data_sources.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/data_sources.py
+- health_grading: core/health_grading.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/health_grading.py
+- http_client: core/http_client.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/http_client.py
+- logging_config: core/logging_config.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/logging_config.py
+- metrics_collector: core/metrics_collector.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/metrics_collector.py
+- pydantic_settings: core/pydantic_settings.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/pydantic_settings.py
+- simple_settings: core/simple_settings.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/simple_settings.py
+- system_monitor: core/system_monitor.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/system_monitor.py
+- system_optimizer: core/system_optimizer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/system_optimizer.py
+- system_settings: core/system_settings.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/system_settings.py
+- ta_agent: core/ta_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/ta_agent.py
+- temporal_safe_splits: core/temporal_safe_splits.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/core/temporal_safe_splits.py
+- base_agent: exports/unified_technical_review/source_code/agents/base_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/base_agent.py
+- enhanced_backtest_agent: exports/unified_technical_review/source_code/agents/enhanced_backtest_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_backtest_agent.py
+- enhanced_ml_agent: exports/unified_technical_review/source_code/agents/enhanced_ml_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_ml_agent.py
+- enhanced_sentiment_agent: exports/unified_technical_review/source_code/agents/enhanced_sentiment_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_sentiment_agent.py
+- enhanced_technical_agent: exports/unified_technical_review/source_code/agents/enhanced_technical_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_technical_agent.py
+- enhanced_whale_agent: exports/unified_technical_review/source_code/agents/enhanced_whale_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/enhanced_whale_agent.py
+- ml_predictor_agent: exports/unified_technical_review/source_code/agents/ml_predictor_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/ml_predictor_agent.py
+- ml_predictor: exports/unified_technical_review/source_code/agents/ml_predictor.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/ml_predictor.py
+- portfolio_optimizer_agent: exports/unified_technical_review/source_code/agents/portfolio_optimizer_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/portfolio_optimizer_agent.py
+- risk_manager_agent: exports/unified_technical_review/source_code/agents/risk_manager_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/risk_manager_agent.py
+- technical_agent: exports/unified_technical_review/source_code/agents/technical_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/technical_agent.py
+- trade_executor_agent: exports/unified_technical_review/source_code/agents/trade_executor_agent.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/trade_executor_agent.py
+- whale_detector: exports/unified_technical_review/source_code/agents/whale_detector.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/whale_detector.py
+- async_client: utils/async_client.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/scraping_core/async_client.py
+- data_sources: core/data_sources.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/scraping_core/data_sources.py
+- sentiment_processor: exports/unified_technical_review/source_code/agents/sentiment/sentiment_processor.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/sentiment_processor.py
+- model: exports/unified_technical_review/source_code/agents/sentiment/model.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/model.py
+- advanced_transformers: ml/advanced_transformers.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/advanced_transformers.py
+- auto_features: ml/auto_features.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/auto_features.py
+- conformal_prediction: ml/conformal_prediction.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/conformal_prediction.py
+- continual_learning: ml/continual_learning.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/continual_learning.py
+- enhanced_calibration: ml/enhanced_calibration.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/enhanced_calibration.py
+- event_impact_scoring: ml/event_impact_scoring.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/event_impact_scoring.py
+- futures_data_features: ml/futures_data_features.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/futures_data_features.py
+- futures_signals: ml/futures_signals.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/futures_signals.py
+- mc_dropout_inference: ml/mc_dropout_inference.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/mc_dropout_inference.py
+- meta_labeling_active: ml/meta_labeling_active.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/meta_labeling_active.py
+- meta_labeling: ml/meta_labeling.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/meta_labeling.py
+- meta_labeling_system: ml/meta_labeling_system.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/meta_labeling_system.py
+- orderbook_imbalance: ml/orderbook_imbalance.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/orderbook_imbalance.py
+- probability_calibration_enhanced: ml/probability_calibration_enhanced.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/probability_calibration_enhanced.py
+- probability_calibration: ml/probability_calibration.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/probability_calibration.py
+- regime_adaptive_modeling: ml/regime_adaptive_modeling.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_adaptive_modeling.py
+- regime_detection_active: ml/regime_detection_active.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_detection_active.py
+- regime_features: ml/regime_features.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_features.py
+- regime_hmm: ml/regime_hmm.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_hmm.py
+- regime_router: ml/regime_router.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_router.py
+- synthetic_targets: ml/synthetic_targets.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/synthetic_targets.py
+- temporal_integrity_validator: core/temporal_integrity_validator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/temporal_integrity_validator.py
+- temporal_safe_splits: core/temporal_safe_splits.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/temporal_safe_splits.py
+- temporal_validation_system: ml/temporal_validation_system.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/temporal_validation_system.py
+- time_series_validation: ml/time_series_validation.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/time_series_validation.py
+- train_baseline: ml/train_baseline.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/train_baseline.py
+- train_ensemble: ml/train_ensemble.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/train_ensemble.py
+- uncertainty_active: ml/uncertainty_active.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/uncertainty_active.py
+- uncertainty_aware_sizing: ml/uncertainty_aware_sizing.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/uncertainty_aware_sizing.py
+- uncertainty_quantification: ml/uncertainty_quantification.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/uncertainty_quantification.py
+- futures_orderbook: ml/advanced_features/futures_orderbook.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/advanced_features/futures_orderbook.py
+- probability_calibrator: core/probability_calibrator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/calibration/probability_calibrator.py
+- confidence_gate_calibrated: ml/calibration/confidence_gate_calibrated.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/calibration/confidence_gate_calibrated.py
+- drift_detection_ewc: ml/continual_learning/drift_detection_ewc.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/continual_learning/drift_detection_ewc.py
+- meta_learner: ml/ensemble/meta_learner.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/ensemble/meta_learner.py
+- feature_engineering: ml/features/feature_engineering.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/feature_engineering.py
+- auto_features: ml/auto_features.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/auto_features.py
+- feature_monitor: ml/features/feature_monitor.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/feature_monitor.py
+- leakage_detector: ml/features/leakage_detector.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/leakage_detector.py
+- temporal_feature_engineering: ml/features/temporal_feature_engineering.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/temporal_feature_engineering.py
+- regime_aware_confidence_system: ml/integrated/regime_aware_confidence_system.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/integrated/regime_aware_confidence_system.py
+- openai_enhanced_analysis: ml/intelligence/openai_enhanced_analysis.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/intelligence/openai_enhanced_analysis.py
+- openai_simple_analyzer: ml/intelligence/openai_simple_analyzer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/intelligence/openai_simple_analyzer.py
+- triple_barrier: ml/meta_labeling/triple_barrier.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/meta_labeling/triple_barrier.py
+- model_factory: ml/models/model_factory.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/models/model_factory.py
+- predict: ml/models/predict.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/models/predict.py
+- llm_impact_scorer: ml/news_impact/llm_impact_scorer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/news_impact/llm_impact_scorer.py
+- kelly_lite_sizing: ml/portfolio_optimization/kelly_lite_sizing.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/portfolio_optimization/kelly_lite_sizing.py
+- regime_detector: ml/regime/regime_detector.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/regime_detector.py
+- regime_router: ml/regime_router.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/regime_router.py
+- market_regime_detector: core/market_regime_detector.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/market_regime_detector.py
+- mixture_of_experts: ml/regime_detection/mixture_of_experts.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_detection/mixture_of_experts.py
+- bayesian_uncertainty: core/bayesian_uncertainty.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/uncertainty/bayesian_uncertainty.py
+- monte_carlo_dropout: ml/uncertainty/monte_carlo_dropout.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/uncertainty/monte_carlo_dropout.py
+- conformal_prediction: ml/conformal_prediction.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/uncertainty/conformal_prediction.py
+- strict_gate: orchestration/strict_gate.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/orchestration/strict_gate.py
+- strict_gate_standalone: orchestration/strict_gate_standalone.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/orchestration/strict_gate_standalone.py
+- alerts: utils/alerts.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/alerts.py
+- async_client: utils/async_client.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/async_client.py
+- atomic_io: utils/atomic_io.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/atomic_io.py
+- authentic_opportunities: utils/authentic_opportunities.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/authentic_opportunities.py
+- daily_logger: core/daily_logger.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/daily_logger.py
+- error_handler: core/error_handler.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/error_handler.py
+- exchange_manager: utils/exchange_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/exchange_manager.py
+- gpu_optimizer: utils/gpu_optimizer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/gpu_optimizer.py
+- logger: utils/logger.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/logger.py
+- metrics: utils/metrics.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/metrics.py
+- performance_optimizer: core/performance_optimizer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/performance_optimizer.py
+- rate_limiter: utils/rate_limiter.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/rate_limiter.py
+- secrets: utils/secrets.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/secrets.py
+- system_optimizer: core/system_optimizer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/system_optimizer.py
+- timestamp_synchronizer: utils/timestamp_synchronizer.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/timestamp_synchronizer.py
+- timestamp_validation: utils/timestamp_validation.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/timestamp_validation.py
+- timestamp_validator: utils/timestamp_validator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/utils/timestamp_validator.py
+- app: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/app.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/app.py
+- health_endpoint: exports/unified_technical_review/source_code/api/health_endpoint.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/health_endpoint.py
+- main: exports/unified_technical_review/source_code/api/main.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/main.py
+- middleware: exports/unified_technical_review/source_code/api/middleware.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/middleware.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/health.py
+- market: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/market.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/market.py
+- trading: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/trading.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/trading.py
+- agents: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/agents.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/agents.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/health.py
+- data: exports/unified_technical_review/source_code/api/routers/data.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/data.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/signals.py
+- common: exports/unified_technical_review/source_code/api/schemas/common.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/common.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/health.py
+- market_data: exports/unified_technical_review/source_code/api/schemas/market_data.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/market_data.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/signals.py
+- regime_features: ml/regime_features.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/regime_features.py
+- regime_detector: ml/regime/regime_detector.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/regime_detector.py
+- probability_calibration: ml/probability_calibration.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/probability_calibration.py
+- execution_simulator: exports/unified_technical_review/source_code/core/execution_simulator.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_simulator.py
+- meta_learner: ml/ensemble/meta_learner.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/meta_learner.py
+- order_deduplication: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/order_deduplication.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/order_deduplication.py
+- prometheus_metrics: core/prometheus_metrics.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/observability/prometheus_metrics.py
+- security_manager: core/security_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/security/security_manager.py
+- kelly_sizing: exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/kelly_sizing.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/portfolio/kelly_sizing.py
+- prometheus_metrics: core/prometheus_metrics.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/monitoring/prometheus_metrics.py
+- environment_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/environment_manager.py, exports/unified_technical_review/source_code/src/cryptosmarttrader/environments/environment_manager.py
+- orderbook_simulator: core/orderbook_simulator.py, exports/unified_technical_review/source_code/trading/orderbook_simulator.py
+- test_scraping_framework: test_scraping_framework.py, exports/unified_technical_review/tests/test_scraping_framework.py
+- test_scraping_simple: test_scraping_simple.py, exports/unified_technical_review/tests/test_scraping_simple.py
+- test_sentiment_model: test_sentiment_model.py, exports/unified_technical_review/tests/test_sentiment_model.py
+- test_evaluator_system: test_evaluator_system.py, exports/unified_technical_review/tests/test_evaluator_system.py
+- test_drift_fine_tune_auto_disable: test_drift_fine_tune_auto_disable.py, exports/unified_technical_review/tests/test_drift_fine_tune_auto_disable.py
+- test_orderbook_slippage_paper: test_orderbook_slippage_paper.py, exports/unified_technical_review/tests/test_orderbook_slippage_paper.py
+- test_integrated_regime_system: test_integrated_regime_system.py, exports/unified_technical_review/tests/test_integrated_regime_system.py
+- test_integrated_openai_system: test_integrated_openai_system.py, exports/unified_technical_review/tests/test_integrated_openai_system.py
+- test_workstation_final: test_workstation_final.py, exports/unified_technical_review/tests/test_workstation_final.py
+- test_production_pipeline: test_production_pipeline.py, exports/unified_technical_review/tests/test_production_pipeline.py
+- test_feature_pipeline: test_feature_pipeline.py, exports/unified_technical_review/tests/test_feature_pipeline.py
+- test_technical_agent_implementation: test_technical_agent_implementation.py, exports/unified_technical_review/tests/test_technical_agent_implementation.py
+- test_temporal_integrity_validator: test_temporal_integrity_validator.py, exports/unified_technical_review/tests/test_temporal_integrity_validator.py
+- test_clean_architecture: test_clean_architecture.py, exports/unified_technical_review/tests/test_clean_architecture.py
+- test_temporal_safe_splits: test_temporal_safe_splits.py, exports/unified_technical_review/tests/test_temporal_safe_splits.py
+- test_system_health_monitor: test_system_health_monitor.py, exports/unified_technical_review/tests/test_system_health_monitor.py
+- test_system_monitor: test_system_monitor.py, exports/unified_technical_review/tests/test_system_monitor.py
+- test_system_optimizer: test_system_optimizer.py, exports/unified_technical_review/tests/test_system_optimizer.py
+- test_system_readiness_checker: test_system_readiness_checker.py, exports/unified_technical_review/tests/test_system_readiness_checker.py
+- test_system_settings: test_system_settings.py, exports/unified_technical_review/tests/test_system_settings.py
+- test_system_validator: test_system_validator.py, exports/unified_technical_review/tests/test_system_validator.py
+- test_ta_agent: test_ta_agent.py, exports/unified_technical_review/tests/test_ta_agent.py
+- test_replit_services: test_replit_services.py, exports/unified_technical_review/tests/test_replit_services.py
+- test_regime_detection_system: test_regime_detection_system.py, exports/unified_technical_review/tests/test_regime_detection_system.py
+- test_confidence_kelly_sizing: test_confidence_kelly_sizing.py, exports/unified_technical_review/tests/test_confidence_kelly_sizing.py
+- test_execution_gating_system: test_execution_gating_system.py, exports/unified_technical_review/tests/test_execution_gating_system.py
+- test_ensemble_meta_learner: test_ensemble_meta_learner.py, exports/unified_technical_review/tests/test_ensemble_meta_learner.py
+- test_enterprise_safety_system: test_enterprise_safety_system.py, exports/unified_technical_review/tests/test_enterprise_safety_system.py
+- test_regime_strategy_system: test_regime_strategy_system.py, exports/unified_technical_review/tests/test_regime_strategy_system.py
+- test_portfolio_management_system: test_portfolio_management_system.py, exports/unified_technical_review/tests/test_portfolio_management_system.py
+- test_deployment_recovery: test_deployment_recovery.py, exports/unified_technical_review/tests/test_deployment_recovery.py
+- test_backtest_live_parity: test_backtest_live_parity.py, exports/unified_technical_review/tests/test_backtest_live_parity.py
+- test_order_idempotency: test_order_idempotency.py, exports/unified_technical_review/tests/test_order_idempotency.py
+- test_risk_management_system: test_risk_management_system.py, exports/unified_technical_review/tests/test_risk_management_system.py
+- test_logging_system: test_logging_system.py, exports/unified_technical_review/tests/test_logging_system.py
+- test_agents: tests/test_agents.py, exports/unified_technical_review/tests/tests/test_agents.py
+- test_core_functionality: tests/test_core_functionality.py, exports/unified_technical_review/tests/tests/test_core_functionality.py
+- test_production_systems: tests/test_production_systems.py, exports/unified_technical_review/tests/tests/test_production_systems.py
+- test_enhanced_agents: tests/test_enhanced_agents.py, exports/unified_technical_review/tests/tests/test_enhanced_agents.py
+- test_comprehensive_system: tests/test_comprehensive_system.py, exports/unified_technical_review/tests/tests/test_comprehensive_system.py
+- test_automated_feature_engineering: tests/test_automated_feature_engineering.py, exports/unified_technical_review/tests/tests/test_automated_feature_engineering.py
+- test_market_regime_detection: tests/test_market_regime_detection.py, exports/unified_technical_review/tests/tests/test_market_regime_detection.py
+- test_api_health: tests/test_api_health.py, exports/unified_technical_review/tests/tests/test_api_health.py
+- test_http_client: tests/test_http_client.py, exports/unified_technical_review/tests/tests/test_http_client.py
+- test_temporal_validator: tests/test_temporal_validator.py, exports/unified_technical_review/tests/tests/test_temporal_validator.py
+- test_health_grading: tests/test_health_grading.py, exports/unified_technical_review/tests/tests/test_health_grading.py
+- conftest: tests/conftest.py, exports/unified_technical_review/tests/tests/conftest.py
+- test_secrets_manager: tests/unit/test_secrets_manager.py, exports/unified_technical_review/tests/tests/unit/test_secrets_manager.py
+- test_async_data_manager: tests/unit/test_async_data_manager.py, exports/unified_technical_review/tests/tests/unit/test_async_data_manager.py
+- test_logging_manager: tests/unit/test_logging_manager.py, exports/unified_technical_review/tests/tests/unit/test_logging_manager.py
+- test_basic_functionality: tests/unit/test_basic_functionality.py, exports/unified_technical_review/tests/tests/unit/test_basic_functionality.py
+- test_data_collection_integration: tests/integration/test_data_collection_integration.py, exports/unified_technical_review/tests/tests/integration/test_data_collection_integration.py
+- test_api_integration: tests/integration/test_api_integration.py, exports/unified_technical_review/tests/tests/integration/test_api_integration.py
+- test_exchange_contracts: tests/contract/test_exchange_contracts.py, exports/unified_technical_review/tests/tests/contract/test_exchange_contracts.py
+- test_dashboard_smoke: tests/smoke/test_dashboard_smoke.py, exports/unified_technical_review/tests/tests/smoke/test_dashboard_smoke.py
+- data_generators: tests/fixtures/data_generators.py, exports/unified_technical_review/tests/tests/fixtures/data_generators.py
+- time_helpers: tests/fixtures/time_helpers.py, exports/unified_technical_review/tests/tests/fixtures/time_helpers.py
+- api_fixtures: tests/fixtures/api_fixtures.py, exports/unified_technical_review/tests/tests/fixtures/api_fixtures.py
+- test_indicators: tests/property_tests/test_indicators.py, exports/unified_technical_review/tests/tests/property_tests/test_indicators.py
+- conftest: tests/conftest.py, exports/unified_technical_review/tests/tests/api/conftest.py
+- test_health: attached_assets/extracted_cst/PR3-api-contract/tests/api/test_health.py, exports/unified_technical_review/tests/tests/api/test_health.py
+- start_replit_services: start_replit_services.py, exports/unified_technical_review/deployment/start_replit_services.py
+- slippage_modeling: exports/unified_technical_review/source_code/trading/slippage_modeling.py, trading/slippage_modeling.py
+- portfolio_optimization: exports/unified_technical_review/source_code/trading/portfolio_optimization.py, trading/portfolio_optimization.py
+- realistic_execution: exports/unified_technical_review/source_code/trading/realistic_execution.py, trading/realistic_execution.py
+- realistic_execution_engine: exports/unified_technical_review/source_code/trading/realistic_execution_engine.py, trading/realistic_execution_engine.py
+- orderbook_simulator: core/orderbook_simulator.py, trading/orderbook_simulator.py
+- realistic_backtester: exports/unified_technical_review/source_code/trading/realistic_backtester.py, trading/realistic_backtester.py
+- openai_enhanced_intelligence: exports/unified_technical_review/source_code/integrations/openai_enhanced_intelligence.py, integrations/openai_enhanced_intelligence.py
+- config: attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/config.py, src/cryptosmarttrader/config.py
+- logging: attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/logging.py, src/cryptosmarttrader/logging.py
+- __main__: attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/__main__.py, src/cryptosmarttrader/__main__.py
+- data_provider_port: exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/data_provider_port.py, src/cryptosmarttrader/interfaces/data_provider_port.py
+- storage_port: exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/storage_port.py, src/cryptosmarttrader/interfaces/storage_port.py
+- model_inference_port: exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/model_inference_port.py, src/cryptosmarttrader/interfaces/model_inference_port.py
+- risk_management_port: exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/risk_management_port.py, src/cryptosmarttrader/interfaces/risk_management_port.py
+- notification_port: exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/notification_port.py, src/cryptosmarttrader/interfaces/notification_port.py
+- kraken_data_adapter: exports/unified_technical_review/source_code/src/cryptosmarttrader/adapters/kraken_data_adapter.py, src/cryptosmarttrader/adapters/kraken_data_adapter.py
+- file_storage_adapter: exports/unified_technical_review/source_code/src/cryptosmarttrader/adapters/file_storage_adapter.py, src/cryptosmarttrader/adapters/file_storage_adapter.py
+- adaptive_model_switcher: core/adaptive_model_switcher.py, src/cryptosmarttrader/core/adaptive_model_switcher.py
+- advanced_ai_engine: core/advanced_ai_engine.py, src/cryptosmarttrader/core/advanced_ai_engine.py
+- advanced_analytics: core/advanced_analytics.py, src/cryptosmarttrader/core/advanced_analytics.py
+- ai_news_event_mining: core/ai_news_event_mining.py, src/cryptosmarttrader/core/ai_news_event_mining.py
+- ai_portfolio_optimizer: core/ai_portfolio_optimizer.py, src/cryptosmarttrader/core/ai_portfolio_optimizer.py
+- alpha_seeker: core/alpha_seeker.py, src/cryptosmarttrader/core/alpha_seeker.py
+- async_coordinator: core/async_coordinator.py, src/cryptosmarttrader/core/async_coordinator.py
+- async_data_manager: core/async_data_manager.py, src/cryptosmarttrader/core/async_data_manager.py
+- async_queue_system: exports/unified_technical_review/source_code/core/async_queue_system.py, src/cryptosmarttrader/core/async_queue_system.py
+- async_scraping_framework: core/async_scraping_framework.py, src/cryptosmarttrader/core/async_scraping_framework.py
+- authentic_data_collector: core/authentic_data_collector.py, src/cryptosmarttrader/core/authentic_data_collector.py
+- auto_disable_system: core/auto_disable_system.py, src/cryptosmarttrader/core/auto_disable_system.py
+- automated_feature_engineering: core/automated_feature_engineering.py, src/cryptosmarttrader/core/automated_feature_engineering.py
+- automl_engine: core/automl_engine.py, src/cryptosmarttrader/core/automl_engine.py
+- backend_enforcement: core/backend_enforcement.py, src/cryptosmarttrader/core/backend_enforcement.py
+- backtest_engine: exports/unified_technical_review/source_code/core/backtest_engine.py, src/cryptosmarttrader/core/backtest_engine.py
+- batch_inference_engine: core/batch_inference_engine.py, src/cryptosmarttrader/core/batch_inference_engine.py
+- bayesian_uncertainty: core/bayesian_uncertainty.py, src/cryptosmarttrader/core/bayesian_uncertainty.py
+- black_swan_simulation_engine: core/black_swan_simulation_engine.py, src/cryptosmarttrader/core/black_swan_simulation_engine.py
+- cache_manager: core/cache_manager.py, src/cryptosmarttrader/core/cache_manager.py
+- causal_inference_engine: exports/unified_technical_review/source_code/core/causal_inference_engine.py, src/cryptosmarttrader/core/causal_inference_engine.py
+- code_audit_system: core/code_audit_system.py, src/cryptosmarttrader/core/code_audit_system.py
+- completeness_gate: core/completeness_gate.py, src/cryptosmarttrader/core/completeness_gate.py
+- comprehensive_analyzer: core/comprehensive_analyzer.py, src/cryptosmarttrader/core/comprehensive_analyzer.py
+- comprehensive_market_scanner: core/comprehensive_market_scanner.py, src/cryptosmarttrader/core/comprehensive_market_scanner.py
+- comprehensive_system_manager: core/comprehensive_system_manager.py, src/cryptosmarttrader/core/comprehensive_system_manager.py
+- confidence_gate_manager: core/confidence_gate_manager.py, src/cryptosmarttrader/core/confidence_gate_manager.py
+- consolidated_logging_manager: core/consolidated_logging_manager.py, src/cryptosmarttrader/core/consolidated_logging_manager.py
+- continual_learning_engine: core/continual_learning_engine.py, src/cryptosmarttrader/core/continual_learning_engine.py
+- coverage_audit_system: core/coverage_audit_system.py, src/cryptosmarttrader/core/coverage_audit_system.py
+- critical_fixes_applier: core/critical_fixes_applier.py, src/cryptosmarttrader/core/critical_fixes_applier.py
+- cross_coin_fusion: core/cross_coin_fusion.py, src/cryptosmarttrader/core/cross_coin_fusion.py
+- crypto_ai_system: core/crypto_ai_system.py, src/cryptosmarttrader/core/crypto_ai_system.py
+- daily_analysis_scheduler: core/daily_analysis_scheduler.py, src/cryptosmarttrader/core/daily_analysis_scheduler.py
+- daily_health_dashboard: core/daily_health_dashboard.py, src/cryptosmarttrader/core/daily_health_dashboard.py
+- daily_logger: core/daily_logger.py, src/cryptosmarttrader/core/daily_logger.py
+- daily_logging_bundler: core/daily_logging_bundler.py, src/cryptosmarttrader/core/daily_logging_bundler.py
+- data_completeness_gate: core/data_completeness_gate.py, src/cryptosmarttrader/core/data_completeness_gate.py
+- data_integrity_enforcer: exports/unified_technical_review/source_code/core/data_integrity_enforcer.py, src/cryptosmarttrader/core/data_integrity_enforcer.py
+- data_integrity_validator: core/data_integrity_validator.py, src/cryptosmarttrader/core/data_integrity_validator.py
+- data_manager: core/data_manager.py, src/cryptosmarttrader/core/data_manager.py
+- deep_learning_engine: core/deep_learning_engine.py, src/cryptosmarttrader/core/deep_learning_engine.py
+- deep_ml_engine: core/deep_ml_engine.py, src/cryptosmarttrader/core/deep_ml_engine.py
+- dependency_container: core/dependency_container.py, src/cryptosmarttrader/core/dependency_container.py
+- drift_detection: core/drift_detection.py, src/cryptosmarttrader/core/drift_detection.py
+- drift_fine_tune_integration: core/drift_fine_tune_integration.py, src/cryptosmarttrader/core/drift_fine_tune_integration.py
+- enterprise_integrator: core/enterprise_integrator.py, src/cryptosmarttrader/core/enterprise_integrator.py
+- enterprise_risk_mitigation: core/enterprise_risk_mitigation.py, src/cryptosmarttrader/core/enterprise_risk_mitigation.py
+- error_handler: core/error_handler.py, src/cryptosmarttrader/core/error_handler.py
+- exception_handler: core/exception_handler.py, src/cryptosmarttrader/core/exception_handler.py
+- execution_simulator: exports/unified_technical_review/source_code/core/execution_simulator.py, src/cryptosmarttrader/core/execution_simulator.py
+- explainability_engine: core/explainability_engine.py, src/cryptosmarttrader/core/explainability_engine.py
+- explainable_ai: core/explainable_ai.py, src/cryptosmarttrader/core/explainable_ai.py
+- fallback_data_eliminator: core/fallback_data_eliminator.py, src/cryptosmarttrader/core/fallback_data_eliminator.py
+- feature_discovery_engine: core/feature_discovery_engine.py, src/cryptosmarttrader/core/feature_discovery_engine.py
+- feature_fusion_engine: core/feature_fusion_engine.py, src/cryptosmarttrader/core/feature_fusion_engine.py
+- final_system_integrator: core/final_system_integrator.py, src/cryptosmarttrader/core/final_system_integrator.py
+- fine_tune_scheduler: core/fine_tune_scheduler.py, src/cryptosmarttrader/core/fine_tune_scheduler.py
+- functionality_auditor: core/functionality_auditor.py, src/cryptosmarttrader/core/functionality_auditor.py
+- gpu_accelerator: core/gpu_accelerator.py, src/cryptosmarttrader/core/gpu_accelerator.py
+- hard_data_filter: core/hard_data_filter.py, src/cryptosmarttrader/core/hard_data_filter.py
+- human_in_the_loop: exports/unified_technical_review/source_code/core/human_in_the_loop.py, src/cryptosmarttrader/core/human_in_the_loop.py
+- import_path_resolver: core/import_path_resolver.py, src/cryptosmarttrader/core/import_path_resolver.py
+- improved_logging_manager: core/improved_logging_manager.py, src/cryptosmarttrader/core/improved_logging_manager.py
+- live_feature_adaptation: core/live_feature_adaptation.py, src/cryptosmarttrader/core/live_feature_adaptation.py
+- market_impact_engine: core/market_impact_engine.py, src/cryptosmarttrader/core/market_impact_engine.py
+- market_regime_detector: core/market_regime_detector.py, src/cryptosmarttrader/core/market_regime_detector.py
+- meta_learning_coordinator: core/meta_learning_coordinator.py, src/cryptosmarttrader/core/meta_learning_coordinator.py
+- ml_ai_differentiators: core/ml_ai_differentiators.py, src/cryptosmarttrader/core/ml_ai_differentiators.py
+- ml_feature_monitor: core/ml_feature_monitor.py, src/cryptosmarttrader/core/ml_feature_monitor.py
+- mlflow_manager: core/mlflow_manager.py, src/cryptosmarttrader/core/mlflow_manager.py
+- ml_regime_router: core/ml_regime_router.py, src/cryptosmarttrader/core/ml_regime_router.py
+- ml_slo_monitor: core/ml_slo_monitor.py, src/cryptosmarttrader/core/ml_slo_monitor.py
+- ml_uncertainty_engine: core/ml_uncertainty_engine.py, src/cryptosmarttrader/core/ml_uncertainty_engine.py
+- model_monitoring_engine: core/model_monitoring_engine.py, src/cryptosmarttrader/core/model_monitoring_engine.py
+- multi_agent_cooperation_engine: core/multi_agent_cooperation_engine.py, src/cryptosmarttrader/core/multi_agent_cooperation_engine.py
+- multi_horizon_ml: core/multi_horizon_ml.py, src/cryptosmarttrader/core/multi_horizon_ml.py
+- multimodal_processor: exports/unified_technical_review/source_code/core/multimodal_processor.py, src/cryptosmarttrader/core/multimodal_processor.py
+- openai_adapter: core/openai_adapter.py, src/cryptosmarttrader/core/openai_adapter.py
+- openai_enhanced_analyzer: core/openai_enhanced_analyzer.py, src/cryptosmarttrader/core/openai_enhanced_analyzer.py
+- openai_integration_manager: core/openai_integration_manager.py, src/cryptosmarttrader/core/openai_integration_manager.py
+- order_book_analyzer: core/order_book_analyzer.py, src/cryptosmarttrader/core/order_book_analyzer.py
+- orderbook_simulator: core/orderbook_simulator.py, src/cryptosmarttrader/core/orderbook_simulator.py
+- paper_trading_engine: core/paper_trading_engine.py, src/cryptosmarttrader/core/paper_trading_engine.py
+- performance_optimizer: core/performance_optimizer.py, src/cryptosmarttrader/core/performance_optimizer.py
+- portfolio_risk_manager: core/portfolio_risk_manager.py, src/cryptosmarttrader/core/portfolio_risk_manager.py
+- position_manager: core/position_manager.py, src/cryptosmarttrader/core/position_manager.py
+- probabilistic_trader: core/probabilistic_trader.py, src/cryptosmarttrader/core/probabilistic_trader.py
+- probability_calibrator: core/probability_calibrator.py, src/cryptosmarttrader/core/probability_calibrator.py
+- process_isolation: core/process_isolation.py, src/cryptosmarttrader/core/process_isolation.py
+- production_optimizer: core/production_optimizer.py, src/cryptosmarttrader/core/production_optimizer.py
+- production_orchestrator: core/production_orchestrator.py, src/cryptosmarttrader/core/production_orchestrator.py
+- readiness_check: core/readiness_check.py, src/cryptosmarttrader/core/readiness_check.py
+- real_time_pipeline: core/real_time_pipeline.py, src/cryptosmarttrader/core/real_time_pipeline.py
+- reinforcement_portfolio_allocator: exports/unified_technical_review/source_code/core/reinforcement_portfolio_allocator.py, src/cryptosmarttrader/core/reinforcement_portfolio_allocator.py
+- risk_management: core/risk_management.py, src/cryptosmarttrader/core/risk_management.py
+- risk_mitigation: core/risk_mitigation.py, src/cryptosmarttrader/core/risk_mitigation.py
+- robust_openai_adapter: core/robust_openai_adapter.py, src/cryptosmarttrader/core/robust_openai_adapter.py
+- secure_logging: core/secure_logging.py, src/cryptosmarttrader/core/secure_logging.py
+- security_manager: core/security_manager.py, src/cryptosmarttrader/core/security_manager.py
+- self_healing_system: core/self_healing_system.py, src/cryptosmarttrader/core/self_healing_system.py
+- shadow_testing_engine: core/shadow_testing_engine.py, src/cryptosmarttrader/core/shadow_testing_engine.py
+- shadow_trading_engine: core/shadow_trading_engine.py, src/cryptosmarttrader/core/shadow_trading_engine.py
+- shap_regime_analyzer: core/shap_regime_analyzer.py, src/cryptosmarttrader/core/shap_regime_analyzer.py
+- signal_quality_validator: core/signal_quality_validator.py, src/cryptosmarttrader/core/signal_quality_validator.py
+- slippage_estimator: core/slippage_estimator.py, src/cryptosmarttrader/core/slippage_estimator.py
+- strict_confidence_gate: core/strict_confidence_gate.py, src/cryptosmarttrader/core/strict_confidence_gate.py
+- strict_data_integrity: core/strict_data_integrity.py, src/cryptosmarttrader/core/strict_data_integrity.py
+- synthetic_data_augmentation: exports/unified_technical_review/source_code/core/synthetic_data_augmentation.py, src/cryptosmarttrader/core/synthetic_data_augmentation.py
+- system_health_monitor: core/system_health_monitor.py, src/cryptosmarttrader/core/system_health_monitor.py
+- system_readiness_checker: core/system_readiness_checker.py, src/cryptosmarttrader/core/system_readiness_checker.py
+- system_validator: core/system_validator.py, src/cryptosmarttrader/core/system_validator.py
+- temporal_integrity_validator: core/temporal_integrity_validator.py, src/cryptosmarttrader/core/temporal_integrity_validator.py
+- ultra_performance_optimizer: core/ultra_performance_optimizer.py, src/cryptosmarttrader/core/ultra_performance_optimizer.py
+- uncertainty_engine: core/uncertainty_engine.py, src/cryptosmarttrader/core/uncertainty_engine.py
+- unified_confidence_gate: core/unified_confidence_gate.py, src/cryptosmarttrader/core/unified_confidence_gate.py
+- unified_structured_logger: core/unified_structured_logger.py, src/cryptosmarttrader/core/unified_structured_logger.py
+- workstation_optimizer: core/workstation_optimizer.py, src/cryptosmarttrader/core/workstation_optimizer.py
+- zero_fallback_validator: core/zero_fallback_validator.py, src/cryptosmarttrader/core/zero_fallback_validator.py
+- data_sources: core/data_sources.py, src/cryptosmarttrader/core/data_sources.py
+- health_grading: core/health_grading.py, src/cryptosmarttrader/core/health_grading.py
+- http_client: core/http_client.py, src/cryptosmarttrader/core/http_client.py
+- logging_config: core/logging_config.py, src/cryptosmarttrader/core/logging_config.py
+- metrics_collector: core/metrics_collector.py, src/cryptosmarttrader/core/metrics_collector.py
+- pydantic_settings: core/pydantic_settings.py, src/cryptosmarttrader/core/pydantic_settings.py
+- simple_settings: core/simple_settings.py, src/cryptosmarttrader/core/simple_settings.py
+- system_monitor: core/system_monitor.py, src/cryptosmarttrader/core/system_monitor.py
+- system_optimizer: core/system_optimizer.py, src/cryptosmarttrader/core/system_optimizer.py
+- system_settings: core/system_settings.py, src/cryptosmarttrader/core/system_settings.py
+- ta_agent: core/ta_agent.py, src/cryptosmarttrader/core/ta_agent.py
+- temporal_safe_splits: core/temporal_safe_splits.py, src/cryptosmarttrader/core/temporal_safe_splits.py
+- structured_logger: core/structured_logger.py, src/cryptosmarttrader/core/structured_logger.py
+- config_manager: core/config_manager.py, src/cryptosmarttrader/core/config_manager.py
+- regime_detector: ml/regime/regime_detector.py, src/cryptosmarttrader/core/regime_detector.py
+- strategy_switcher: exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/strategy_switcher.py, src/cryptosmarttrader/core/strategy_switcher.py
+- secrets_manager: core/secrets_manager.py, src/cryptosmarttrader/core/secrets_manager.py
+- execution_policy: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_policy.py, src/cryptosmarttrader/core/execution_policy.py
+- risk_guard_original: core/risk_guard_original.py, src/cryptosmarttrader/core/risk_guard_original.py
+- risk_guard: core/risk_guard.py, src/cryptosmarttrader/core/risk_guard.py
+- prometheus_metrics_original: core/prometheus_metrics_original.py, src/cryptosmarttrader/core/prometheus_metrics_original.py
+- prometheus_metrics: core/prometheus_metrics.py, src/cryptosmarttrader/core/prometheus_metrics.py
+- base_agent: exports/unified_technical_review/source_code/agents/base_agent.py, src/cryptosmarttrader/agents/base_agent.py
+- enhanced_backtest_agent: exports/unified_technical_review/source_code/agents/enhanced_backtest_agent.py, src/cryptosmarttrader/agents/enhanced_backtest_agent.py
+- enhanced_ml_agent: exports/unified_technical_review/source_code/agents/enhanced_ml_agent.py, src/cryptosmarttrader/agents/enhanced_ml_agent.py
+- enhanced_sentiment_agent: exports/unified_technical_review/source_code/agents/enhanced_sentiment_agent.py, src/cryptosmarttrader/agents/enhanced_sentiment_agent.py
+- enhanced_technical_agent: exports/unified_technical_review/source_code/agents/enhanced_technical_agent.py, src/cryptosmarttrader/agents/enhanced_technical_agent.py
+- enhanced_whale_agent: exports/unified_technical_review/source_code/agents/enhanced_whale_agent.py, src/cryptosmarttrader/agents/enhanced_whale_agent.py
+- ml_predictor_agent: exports/unified_technical_review/source_code/agents/ml_predictor_agent.py, src/cryptosmarttrader/agents/ml_predictor_agent.py
+- ml_predictor: exports/unified_technical_review/source_code/agents/ml_predictor.py, src/cryptosmarttrader/agents/ml_predictor.py
+- portfolio_optimizer_agent: exports/unified_technical_review/source_code/agents/portfolio_optimizer_agent.py, src/cryptosmarttrader/agents/portfolio_optimizer_agent.py
+- risk_manager_agent: exports/unified_technical_review/source_code/agents/risk_manager_agent.py, src/cryptosmarttrader/agents/risk_manager_agent.py
+- technical_agent: exports/unified_technical_review/source_code/agents/technical_agent.py, src/cryptosmarttrader/agents/technical_agent.py
+- trade_executor_agent: exports/unified_technical_review/source_code/agents/trade_executor_agent.py, src/cryptosmarttrader/agents/trade_executor_agent.py
+- whale_detector: exports/unified_technical_review/source_code/agents/whale_detector.py, src/cryptosmarttrader/agents/whale_detector.py
+- async_client: utils/async_client.py, src/cryptosmarttrader/agents/scraping_core/async_client.py
+- data_sources: core/data_sources.py, src/cryptosmarttrader/agents/scraping_core/data_sources.py
+- sentiment_processor: exports/unified_technical_review/source_code/agents/sentiment/sentiment_processor.py, src/cryptosmarttrader/agents/sentiment/sentiment_processor.py
+- model: exports/unified_technical_review/source_code/agents/sentiment/model.py, src/cryptosmarttrader/agents/sentiment/model.py
+- trade_executor_agent: exports/unified_technical_review/source_code/agents/trade_executor_agent.py, src/cryptosmarttrader/agents/agents/trade_executor_agent.py
+- enhanced_technical_agent: exports/unified_technical_review/source_code/agents/enhanced_technical_agent.py, src/cryptosmarttrader/agents/agents/enhanced_technical_agent.py
+- enhanced_whale_agent: exports/unified_technical_review/source_code/agents/enhanced_whale_agent.py, src/cryptosmarttrader/agents/agents/enhanced_whale_agent.py
+- enhanced_ml_agent: exports/unified_technical_review/source_code/agents/enhanced_ml_agent.py, src/cryptosmarttrader/agents/agents/enhanced_ml_agent.py
+- enhanced_backtest_agent: exports/unified_technical_review/source_code/agents/enhanced_backtest_agent.py, src/cryptosmarttrader/agents/agents/enhanced_backtest_agent.py
+- base_agent: exports/unified_technical_review/source_code/agents/base_agent.py, src/cryptosmarttrader/agents/agents/base_agent.py
+- risk_manager_agent: exports/unified_technical_review/source_code/agents/risk_manager_agent.py, src/cryptosmarttrader/agents/agents/risk_manager_agent.py
+- whale_detector: exports/unified_technical_review/source_code/agents/whale_detector.py, src/cryptosmarttrader/agents/agents/whale_detector.py
+- ml_predictor: exports/unified_technical_review/source_code/agents/ml_predictor.py, src/cryptosmarttrader/agents/agents/ml_predictor.py
+- technical_agent: exports/unified_technical_review/source_code/agents/technical_agent.py, src/cryptosmarttrader/agents/agents/technical_agent.py
+- sentiment_agent: exports/unified_technical_review/source_code/agents/sentiment_agent.py, src/cryptosmarttrader/agents/agents/sentiment_agent.py
+- whale_detector_agent: exports/unified_technical_review/source_code/agents/whale_detector_agent.py, src/cryptosmarttrader/agents/agents/whale_detector_agent.py
+- listing_detection_agent: exports/unified_technical_review/source_code/agents/listing_detection_agent.py, src/cryptosmarttrader/agents/agents/listing_detection_agent.py
+- early_mover_system: exports/unified_technical_review/source_code/agents/early_mover_system.py, src/cryptosmarttrader/agents/agents/early_mover_system.py
+- news_speed_agent: exports/unified_technical_review/source_code/agents/news_speed_agent.py, src/cryptosmarttrader/agents/agents/news_speed_agent.py
+- ensemble_voting_agent_clean: exports/unified_technical_review/source_code/agents/ensemble_voting_agent_clean.py, src/cryptosmarttrader/agents/agents/ensemble_voting_agent_clean.py
+- ml_predictor_agent: exports/unified_technical_review/source_code/agents/ml_predictor_agent.py, src/cryptosmarttrader/agents/agents/ml_predictor_agent.py
+- portfolio_optimizer_agent: exports/unified_technical_review/source_code/agents/portfolio_optimizer_agent.py, src/cryptosmarttrader/agents/agents/portfolio_optimizer_agent.py
+- funding_rate_monitor: exports/unified_technical_review/source_code/agents/funding_rate_monitor.py, src/cryptosmarttrader/agents/agents/funding_rate_monitor.py
+- arbitrage_detector_agent: exports/unified_technical_review/source_code/agents/arbitrage_detector_agent.py, src/cryptosmarttrader/agents/agents/arbitrage_detector_agent.py
+- enhanced_sentiment_agent: exports/unified_technical_review/source_code/agents/enhanced_sentiment_agent.py, src/cryptosmarttrader/agents/agents/enhanced_sentiment_agent.py
+- ensemble_voting_agent: exports/unified_technical_review/source_code/agents/ensemble_voting_agent.py, src/cryptosmarttrader/agents/agents/ensemble_voting_agent.py
+- sentiment_processor: exports/unified_technical_review/source_code/agents/sentiment/sentiment_processor.py, src/cryptosmarttrader/agents/agents/sentiment/sentiment_processor.py
+- model: exports/unified_technical_review/source_code/agents/sentiment/model.py, src/cryptosmarttrader/agents/agents/sentiment/model.py
+- data_sources: core/data_sources.py, src/cryptosmarttrader/agents/agents/scraping_core/data_sources.py
+- async_client: utils/async_client.py, src/cryptosmarttrader/agents/agents/scraping_core/async_client.py
+- advanced_transformers: ml/advanced_transformers.py, src/cryptosmarttrader/ml/advanced_transformers.py
+- auto_features: ml/auto_features.py, src/cryptosmarttrader/ml/auto_features.py
+- conformal_prediction: ml/conformal_prediction.py, src/cryptosmarttrader/ml/conformal_prediction.py
+- continual_learning: ml/continual_learning.py, src/cryptosmarttrader/ml/continual_learning.py
+- enhanced_calibration: ml/enhanced_calibration.py, src/cryptosmarttrader/ml/enhanced_calibration.py
+- event_impact_scoring: ml/event_impact_scoring.py, src/cryptosmarttrader/ml/event_impact_scoring.py
+- futures_data_features: ml/futures_data_features.py, src/cryptosmarttrader/ml/futures_data_features.py
+- futures_signals: ml/futures_signals.py, src/cryptosmarttrader/ml/futures_signals.py
+- mc_dropout_inference: ml/mc_dropout_inference.py, src/cryptosmarttrader/ml/mc_dropout_inference.py
+- meta_labeling_active: ml/meta_labeling_active.py, src/cryptosmarttrader/ml/meta_labeling_active.py
+- meta_labeling: ml/meta_labeling.py, src/cryptosmarttrader/ml/meta_labeling.py
+- meta_labeling_system: ml/meta_labeling_system.py, src/cryptosmarttrader/ml/meta_labeling_system.py
+- orderbook_imbalance: ml/orderbook_imbalance.py, src/cryptosmarttrader/ml/orderbook_imbalance.py
+- probability_calibration_enhanced: ml/probability_calibration_enhanced.py, src/cryptosmarttrader/ml/probability_calibration_enhanced.py
+- probability_calibration: ml/probability_calibration.py, src/cryptosmarttrader/ml/probability_calibration.py
+- regime_adaptive_modeling: ml/regime_adaptive_modeling.py, src/cryptosmarttrader/ml/regime_adaptive_modeling.py
+- regime_detection_active: ml/regime_detection_active.py, src/cryptosmarttrader/ml/regime_detection_active.py
+- regime_features: ml/regime_features.py, src/cryptosmarttrader/ml/regime_features.py
+- regime_hmm: ml/regime_hmm.py, src/cryptosmarttrader/ml/regime_hmm.py
+- regime_router: ml/regime_router.py, src/cryptosmarttrader/ml/regime_router.py
+- synthetic_targets: ml/synthetic_targets.py, src/cryptosmarttrader/ml/synthetic_targets.py
+- temporal_integrity_validator: core/temporal_integrity_validator.py, src/cryptosmarttrader/ml/temporal_integrity_validator.py
+- temporal_safe_splits: core/temporal_safe_splits.py, src/cryptosmarttrader/ml/temporal_safe_splits.py
+- temporal_validation_system: ml/temporal_validation_system.py, src/cryptosmarttrader/ml/temporal_validation_system.py
+- time_series_validation: ml/time_series_validation.py, src/cryptosmarttrader/ml/time_series_validation.py
+- train_baseline: ml/train_baseline.py, src/cryptosmarttrader/ml/train_baseline.py
+- train_ensemble: ml/train_ensemble.py, src/cryptosmarttrader/ml/train_ensemble.py
+- uncertainty_active: ml/uncertainty_active.py, src/cryptosmarttrader/ml/uncertainty_active.py
+- uncertainty_aware_sizing: ml/uncertainty_aware_sizing.py, src/cryptosmarttrader/ml/uncertainty_aware_sizing.py
+- uncertainty_quantification: ml/uncertainty_quantification.py, src/cryptosmarttrader/ml/uncertainty_quantification.py
+- strategy_switcher: exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/strategy_switcher.py, src/cryptosmarttrader/ml/strategy_switcher.py
+- regime_detection: exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_detection.py, src/cryptosmarttrader/ml/regime_detection.py
+- model_registry: ml/model_registry.py, src/cryptosmarttrader/ml/model_registry.py
+- futures_orderbook: ml/advanced_features/futures_orderbook.py, src/cryptosmarttrader/ml/advanced_features/futures_orderbook.py
+- probability_calibrator: core/probability_calibrator.py, src/cryptosmarttrader/ml/calibration/probability_calibrator.py
+- confidence_gate_calibrated: ml/calibration/confidence_gate_calibrated.py, src/cryptosmarttrader/ml/calibration/confidence_gate_calibrated.py
+- drift_detection_ewc: ml/continual_learning/drift_detection_ewc.py, src/cryptosmarttrader/ml/continual_learning/drift_detection_ewc.py
+- meta_learner: ml/ensemble/meta_learner.py, src/cryptosmarttrader/ml/ensemble/meta_learner.py
+- feature_engineering: ml/features/feature_engineering.py, src/cryptosmarttrader/ml/features/feature_engineering.py
+- auto_features: ml/auto_features.py, src/cryptosmarttrader/ml/features/auto_features.py
+- feature_monitor: ml/features/feature_monitor.py, src/cryptosmarttrader/ml/features/feature_monitor.py
+- leakage_detector: ml/features/leakage_detector.py, src/cryptosmarttrader/ml/features/leakage_detector.py
+- temporal_feature_engineering: ml/features/temporal_feature_engineering.py, src/cryptosmarttrader/ml/features/temporal_feature_engineering.py
+- regime_aware_confidence_system: ml/integrated/regime_aware_confidence_system.py, src/cryptosmarttrader/ml/integrated/regime_aware_confidence_system.py
+- openai_enhanced_analysis: ml/intelligence/openai_enhanced_analysis.py, src/cryptosmarttrader/ml/intelligence/openai_enhanced_analysis.py
+- openai_simple_analyzer: ml/intelligence/openai_simple_analyzer.py, src/cryptosmarttrader/ml/intelligence/openai_simple_analyzer.py
+- triple_barrier: ml/meta_labeling/triple_barrier.py, src/cryptosmarttrader/ml/meta_labeling/triple_barrier.py
+- model_factory: ml/models/model_factory.py, src/cryptosmarttrader/ml/models/model_factory.py
+- predict: ml/models/predict.py, src/cryptosmarttrader/ml/models/predict.py
+- llm_impact_scorer: ml/news_impact/llm_impact_scorer.py, src/cryptosmarttrader/ml/news_impact/llm_impact_scorer.py
+- kelly_lite_sizing: ml/portfolio_optimization/kelly_lite_sizing.py, src/cryptosmarttrader/ml/portfolio_optimization/kelly_lite_sizing.py
+- regime_detector: ml/regime/regime_detector.py, src/cryptosmarttrader/ml/regime/regime_detector.py
+- regime_router: ml/regime_router.py, src/cryptosmarttrader/ml/regime/regime_router.py
+- market_regime_detector: core/market_regime_detector.py, src/cryptosmarttrader/ml/regime/market_regime_detector.py
+- mixture_of_experts: ml/regime_detection/mixture_of_experts.py, src/cryptosmarttrader/ml/regime_detection/mixture_of_experts.py
+- bayesian_uncertainty: core/bayesian_uncertainty.py, src/cryptosmarttrader/ml/uncertainty/bayesian_uncertainty.py
+- monte_carlo_dropout: ml/uncertainty/monte_carlo_dropout.py, src/cryptosmarttrader/ml/uncertainty/monte_carlo_dropout.py
+- conformal_prediction: ml/conformal_prediction.py, src/cryptosmarttrader/ml/uncertainty/conformal_prediction.py
+- strict_gate: orchestration/strict_gate.py, src/cryptosmarttrader/orchestration/strict_gate.py
+- strict_gate_standalone: orchestration/strict_gate_standalone.py, src/cryptosmarttrader/orchestration/strict_gate_standalone.py
+- alerts: utils/alerts.py, src/cryptosmarttrader/utils/alerts.py
+- async_client: utils/async_client.py, src/cryptosmarttrader/utils/async_client.py
+- atomic_io: utils/atomic_io.py, src/cryptosmarttrader/utils/atomic_io.py
+- authentic_opportunities: utils/authentic_opportunities.py, src/cryptosmarttrader/utils/authentic_opportunities.py
+- daily_logger: core/daily_logger.py, src/cryptosmarttrader/utils/daily_logger.py
+- error_handler: core/error_handler.py, src/cryptosmarttrader/utils/error_handler.py
+- exchange_manager: utils/exchange_manager.py, src/cryptosmarttrader/utils/exchange_manager.py
+- gpu_optimizer: utils/gpu_optimizer.py, src/cryptosmarttrader/utils/gpu_optimizer.py
+- logger: utils/logger.py, src/cryptosmarttrader/utils/logger.py
+- metrics: utils/metrics.py, src/cryptosmarttrader/utils/metrics.py
+- performance_optimizer: core/performance_optimizer.py, src/cryptosmarttrader/utils/performance_optimizer.py
+- rate_limiter: utils/rate_limiter.py, src/cryptosmarttrader/utils/rate_limiter.py
+- secrets: utils/secrets.py, src/cryptosmarttrader/utils/secrets.py
+- system_optimizer: core/system_optimizer.py, src/cryptosmarttrader/utils/system_optimizer.py
+- timestamp_synchronizer: utils/timestamp_synchronizer.py, src/cryptosmarttrader/utils/timestamp_synchronizer.py
+- timestamp_validation: utils/timestamp_validation.py, src/cryptosmarttrader/utils/timestamp_validation.py
+- timestamp_validator: utils/timestamp_validator.py, src/cryptosmarttrader/utils/timestamp_validator.py
+- dependencies: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/dependencies.py, src/cryptosmarttrader/api/dependencies.py
+- app: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/app.py, src/cryptosmarttrader/api/app.py
+- middleware: exports/unified_technical_review/source_code/api/middleware.py, src/cryptosmarttrader/api/middleware.py
+- main: exports/unified_technical_review/source_code/api/main.py, src/cryptosmarttrader/api/main.py
+- health_endpoint: exports/unified_technical_review/source_code/api/health_endpoint.py, src/cryptosmarttrader/api/health_endpoint.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, src/cryptosmarttrader/api/models/health.py
+- market: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/market.py, src/cryptosmarttrader/api/models/market.py
+- trading: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/trading.py, src/cryptosmarttrader/api/models/trading.py
+- agents: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/agents.py, src/cryptosmarttrader/api/models/agents.py
+- trading: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/trading.py, src/cryptosmarttrader/api/routers/trading.py
+- agents: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/agents.py, src/cryptosmarttrader/api/routers/agents.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, src/cryptosmarttrader/api/routers/health.py
+- data: exports/unified_technical_review/source_code/api/routers/data.py, src/cryptosmarttrader/api/routers/data.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, src/cryptosmarttrader/api/routers/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, src/cryptosmarttrader/api/routers/signals.py
+- market: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/market.py, src/cryptosmarttrader/api/routers/market.py
+- common: exports/unified_technical_review/source_code/api/schemas/common.py, src/cryptosmarttrader/api/schemas/common.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, src/cryptosmarttrader/api/schemas/health.py
+- market_data: exports/unified_technical_review/source_code/api/schemas/market_data.py, src/cryptosmarttrader/api/schemas/market_data.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, src/cryptosmarttrader/api/schemas/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, src/cryptosmarttrader/api/schemas/signals.py
+- main: exports/unified_technical_review/source_code/api/main.py, src/cryptosmarttrader/api/api/main.py
+- middleware: exports/unified_technical_review/source_code/api/middleware.py, src/cryptosmarttrader/api/api/middleware.py
+- health_endpoint: exports/unified_technical_review/source_code/api/health_endpoint.py, src/cryptosmarttrader/api/api/health_endpoint.py
+- common: exports/unified_technical_review/source_code/api/schemas/common.py, src/cryptosmarttrader/api/api/schemas/common.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, src/cryptosmarttrader/api/api/schemas/health.py
+- market_data: exports/unified_technical_review/source_code/api/schemas/market_data.py, src/cryptosmarttrader/api/api/schemas/market_data.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, src/cryptosmarttrader/api/api/schemas/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, src/cryptosmarttrader/api/api/schemas/signals.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, src/cryptosmarttrader/api/api/routers/health.py
+- data: exports/unified_technical_review/source_code/api/routers/data.py, src/cryptosmarttrader/api/api/routers/data.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, src/cryptosmarttrader/api/api/routers/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, src/cryptosmarttrader/api/api/routers/signals.py
+- regime_strategies: exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/regime_strategies.py, src/cryptosmarttrader/regime/regime_strategies.py
+- regime_features: ml/regime_features.py, src/cryptosmarttrader/regime/regime_features.py
+- regime_detector: ml/regime/regime_detector.py, src/cryptosmarttrader/regime/regime_detector.py
+- probability_calibration: ml/probability_calibration.py, src/cryptosmarttrader/sizing/probability_calibration.py
+- kelly_sizing: exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/kelly_sizing.py, src/cryptosmarttrader/sizing/kelly_sizing.py
+- confidence_weigher: exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/confidence_weigher.py, src/cryptosmarttrader/sizing/confidence_weigher.py
+- alpha_blender: exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/alpha_blender.py, src/cryptosmarttrader/ensemble/alpha_blender.py
+- signal_decay: exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/signal_decay.py, src/cryptosmarttrader/ensemble/signal_decay.py
+- meta_learner: ml/ensemble/meta_learner.py, src/cryptosmarttrader/ensemble/meta_learner.py
+- funding_analyzer: exports/unified_technical_review/source_code/src/cryptosmarttrader/events/funding_analyzer.py, src/cryptosmarttrader/events/funding_analyzer.py
+- open_interest_tracker: exports/unified_technical_review/source_code/src/cryptosmarttrader/events/open_interest_tracker.py, src/cryptosmarttrader/events/open_interest_tracker.py
+- basis_analyzer: exports/unified_technical_review/source_code/src/cryptosmarttrader/events/basis_analyzer.py, src/cryptosmarttrader/events/basis_analyzer.py
+- event_detector: exports/unified_technical_review/source_code/src/cryptosmarttrader/events/event_detector.py, src/cryptosmarttrader/events/event_detector.py
+- hyperparameter_optimizer: exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/hyperparameter_optimizer.py, src/cryptosmarttrader/optimization/hyperparameter_optimizer.py
+- walk_forward_validator: exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/walk_forward_validator.py, src/cryptosmarttrader/optimization/walk_forward_validator.py
+- regime_aware_cv: exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/regime_aware_cv.py, src/cryptosmarttrader/optimization/regime_aware_cv.py
+- return_attribution: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/return_attribution.py, src/cryptosmarttrader/analytics/return_attribution.py
+- performance_monitor: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/performance_monitor.py, src/cryptosmarttrader/analytics/performance_monitor.py
+- degradation_detector: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/degradation_detector.py, src/cryptosmarttrader/analytics/degradation_detector.py
+- dashboard_analytics: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/dashboard_analytics.py, src/cryptosmarttrader/analytics/dashboard_analytics.py
+- environment_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/environment_manager.py, src/cryptosmarttrader/deployment/environment_manager.py
+- process_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/process_manager.py, src/cryptosmarttrader/deployment/process_manager.py
+- health_checker: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/health_checker.py, src/cryptosmarttrader/deployment/health_checker.py
+- deployment_config: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/deployment_config.py, src/cryptosmarttrader/deployment/deployment_config.py
+- recovery_coordinator: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/recovery_coordinator.py, src/cryptosmarttrader/deployment/recovery_coordinator.py
+- metrics_collector: core/metrics_collector.py, src/cryptosmarttrader/observability/metrics_collector.py
+- metrics: utils/metrics.py, src/cryptosmarttrader/observability/metrics.py
+- security_manager: core/security_manager.py, src/cryptosmarttrader/security/security_manager.py
+- kelly_sizing: exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/kelly_sizing.py, src/cryptosmarttrader/portfolio/kelly_sizing.py
+- correlation_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/portfolio/correlation_manager.py, src/cryptosmarttrader/portfolio/correlation_manager.py
+- chaos_tester: exports/unified_technical_review/source_code/src/cryptosmarttrader/monitoring/chaos_tester.py, src/cryptosmarttrader/monitoring/chaos_tester.py
+- alert_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/monitoring/alert_manager.py, src/cryptosmarttrader/monitoring/alert_manager.py
+- telegram_alerts: exports/unified_technical_review/source_code/src/cryptosmarttrader/monitoring/telegram_alerts.py, src/cryptosmarttrader/monitoring/telegram_alerts.py
+- alert_rules: src/cryptosmarttrader/observability/alert_rules.py, src/cryptosmarttrader/monitoring/alert_rules.py
+- prometheus_metrics: core/prometheus_metrics.py, src/cryptosmarttrader/monitoring/prometheus_metrics.py
+- environment_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/environment_manager.py, src/cryptosmarttrader/environments/environment_manager.py
+- regime_detector: ml/regime/regime_detector.py, src/cryptosmarttrader/alpha/regime_detector.py
+- kelly_sizing: exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/kelly_sizing.py, src/cryptosmarttrader/alpha/kelly_sizing.py
+- return_attribution: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/return_attribution.py, src/cryptosmarttrader/alpha/return_attribution.py
+- execution_simulator: exports/unified_technical_review/source_code/core/execution_simulator.py, src/cryptosmarttrader/parity/execution_simulator.py
+- execution_policy: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_policy.py, src/cryptosmarttrader/execution/execution_policy.py
+- risk_guard: core/risk_guard.py, src/cryptosmarttrader/risk/risk_guard.py
+- return_attribution: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/return_attribution.py, src/cryptosmarttrader/attribution/return_attribution.py
+- metrics_server: exports/unified_technical_review/source_code/metrics/metrics_server.py, metrics/metrics_server.py
+- backtest_engine: exports/unified_technical_review/source_code/core/backtest_engine.py, experiments/backtest_engine.py
+- async_queue_system: exports/unified_technical_review/source_code/core/async_queue_system.py, experiments/async_queue_system.py
+- data_integrity_enforcer: exports/unified_technical_review/source_code/core/data_integrity_enforcer.py, experiments/data_integrity_enforcer.py
+- causal_inference_engine: exports/unified_technical_review/source_code/core/causal_inference_engine.py, experiments/causal_inference_engine.py
+- multimodal_processor: exports/unified_technical_review/source_code/core/multimodal_processor.py, experiments/multimodal_processor.py
+- reinforcement_portfolio_allocator: exports/unified_technical_review/source_code/core/reinforcement_portfolio_allocator.py, experiments/reinforcement_portfolio_allocator.py
+- human_in_the_loop: exports/unified_technical_review/source_code/core/human_in_the_loop.py, experiments/human_in_the_loop.py
+- synthetic_data_augmentation: exports/unified_technical_review/source_code/core/synthetic_data_augmentation.py, experiments/synthetic_data_augmentation.py
+- config: attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/config.py, experiments/technical_review/src/cryptosmarttrader/config.py
+- logging: attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/logging.py, experiments/technical_review/src/cryptosmarttrader/logging.py
+- __main__: attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/__main__.py, experiments/technical_review/src/cryptosmarttrader/__main__.py
+- data_provider_port: exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/data_provider_port.py, experiments/technical_review/src/cryptosmarttrader/interfaces/data_provider_port.py
+- storage_port: exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/storage_port.py, experiments/technical_review/src/cryptosmarttrader/interfaces/storage_port.py
+- model_inference_port: exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/model_inference_port.py, experiments/technical_review/src/cryptosmarttrader/interfaces/model_inference_port.py
+- risk_management_port: exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/risk_management_port.py, experiments/technical_review/src/cryptosmarttrader/interfaces/risk_management_port.py
+- notification_port: exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/notification_port.py, experiments/technical_review/src/cryptosmarttrader/interfaces/notification_port.py
+- kraken_data_adapter: exports/unified_technical_review/source_code/src/cryptosmarttrader/adapters/kraken_data_adapter.py, experiments/technical_review/src/cryptosmarttrader/adapters/kraken_data_adapter.py
+- file_storage_adapter: exports/unified_technical_review/source_code/src/cryptosmarttrader/adapters/file_storage_adapter.py, experiments/technical_review/src/cryptosmarttrader/adapters/file_storage_adapter.py
+- adaptive_model_switcher: core/adaptive_model_switcher.py, experiments/technical_review/src/cryptosmarttrader/core/adaptive_model_switcher.py
+- advanced_ai_engine: core/advanced_ai_engine.py, experiments/technical_review/src/cryptosmarttrader/core/advanced_ai_engine.py
+- advanced_analytics: core/advanced_analytics.py, experiments/technical_review/src/cryptosmarttrader/core/advanced_analytics.py
+- ai_news_event_mining: core/ai_news_event_mining.py, experiments/technical_review/src/cryptosmarttrader/core/ai_news_event_mining.py
+- ai_portfolio_optimizer: core/ai_portfolio_optimizer.py, experiments/technical_review/src/cryptosmarttrader/core/ai_portfolio_optimizer.py
+- alpha_seeker: core/alpha_seeker.py, experiments/technical_review/src/cryptosmarttrader/core/alpha_seeker.py
+- async_coordinator: core/async_coordinator.py, experiments/technical_review/src/cryptosmarttrader/core/async_coordinator.py
+- async_data_manager: core/async_data_manager.py, experiments/technical_review/src/cryptosmarttrader/core/async_data_manager.py
+- async_queue_system: exports/unified_technical_review/source_code/core/async_queue_system.py, experiments/technical_review/src/cryptosmarttrader/core/async_queue_system.py
+- async_scraping_framework: core/async_scraping_framework.py, experiments/technical_review/src/cryptosmarttrader/core/async_scraping_framework.py
+- authentic_data_collector: core/authentic_data_collector.py, experiments/technical_review/src/cryptosmarttrader/core/authentic_data_collector.py
+- auto_disable_system: core/auto_disable_system.py, experiments/technical_review/src/cryptosmarttrader/core/auto_disable_system.py
+- automated_feature_engineering: core/automated_feature_engineering.py, experiments/technical_review/src/cryptosmarttrader/core/automated_feature_engineering.py
+- automl_engine: core/automl_engine.py, experiments/technical_review/src/cryptosmarttrader/core/automl_engine.py
+- backend_enforcement: core/backend_enforcement.py, experiments/technical_review/src/cryptosmarttrader/core/backend_enforcement.py
+- backtest_engine: exports/unified_technical_review/source_code/core/backtest_engine.py, experiments/technical_review/src/cryptosmarttrader/core/backtest_engine.py
+- batch_inference_engine: core/batch_inference_engine.py, experiments/technical_review/src/cryptosmarttrader/core/batch_inference_engine.py
+- bayesian_uncertainty: core/bayesian_uncertainty.py, experiments/technical_review/src/cryptosmarttrader/core/bayesian_uncertainty.py
+- black_swan_simulation_engine: core/black_swan_simulation_engine.py, experiments/technical_review/src/cryptosmarttrader/core/black_swan_simulation_engine.py
+- cache_manager: core/cache_manager.py, experiments/technical_review/src/cryptosmarttrader/core/cache_manager.py
+- causal_inference_engine: exports/unified_technical_review/source_code/core/causal_inference_engine.py, experiments/technical_review/src/cryptosmarttrader/core/causal_inference_engine.py
+- code_audit_system: core/code_audit_system.py, experiments/technical_review/src/cryptosmarttrader/core/code_audit_system.py
+- completeness_gate: core/completeness_gate.py, experiments/technical_review/src/cryptosmarttrader/core/completeness_gate.py
+- comprehensive_analyzer: core/comprehensive_analyzer.py, experiments/technical_review/src/cryptosmarttrader/core/comprehensive_analyzer.py
+- comprehensive_market_scanner: core/comprehensive_market_scanner.py, experiments/technical_review/src/cryptosmarttrader/core/comprehensive_market_scanner.py
+- comprehensive_system_manager: core/comprehensive_system_manager.py, experiments/technical_review/src/cryptosmarttrader/core/comprehensive_system_manager.py
+- confidence_gate_manager: core/confidence_gate_manager.py, experiments/technical_review/src/cryptosmarttrader/core/confidence_gate_manager.py
+- consolidated_logging_manager: core/consolidated_logging_manager.py, experiments/technical_review/src/cryptosmarttrader/core/consolidated_logging_manager.py
+- continual_learning_engine: core/continual_learning_engine.py, experiments/technical_review/src/cryptosmarttrader/core/continual_learning_engine.py
+- coverage_audit_system: core/coverage_audit_system.py, experiments/technical_review/src/cryptosmarttrader/core/coverage_audit_system.py
+- critical_fixes_applier: core/critical_fixes_applier.py, experiments/technical_review/src/cryptosmarttrader/core/critical_fixes_applier.py
+- cross_coin_fusion: core/cross_coin_fusion.py, experiments/technical_review/src/cryptosmarttrader/core/cross_coin_fusion.py
+- crypto_ai_system: core/crypto_ai_system.py, experiments/technical_review/src/cryptosmarttrader/core/crypto_ai_system.py
+- daily_analysis_scheduler: core/daily_analysis_scheduler.py, experiments/technical_review/src/cryptosmarttrader/core/daily_analysis_scheduler.py
+- daily_health_dashboard: core/daily_health_dashboard.py, experiments/technical_review/src/cryptosmarttrader/core/daily_health_dashboard.py
+- daily_logger: core/daily_logger.py, experiments/technical_review/src/cryptosmarttrader/core/daily_logger.py
+- daily_logging_bundler: core/daily_logging_bundler.py, experiments/technical_review/src/cryptosmarttrader/core/daily_logging_bundler.py
+- data_completeness_gate: core/data_completeness_gate.py, experiments/technical_review/src/cryptosmarttrader/core/data_completeness_gate.py
+- data_integrity_enforcer: exports/unified_technical_review/source_code/core/data_integrity_enforcer.py, experiments/technical_review/src/cryptosmarttrader/core/data_integrity_enforcer.py
+- data_integrity_validator: core/data_integrity_validator.py, experiments/technical_review/src/cryptosmarttrader/core/data_integrity_validator.py
+- data_manager: core/data_manager.py, experiments/technical_review/src/cryptosmarttrader/core/data_manager.py
+- deep_learning_engine: core/deep_learning_engine.py, experiments/technical_review/src/cryptosmarttrader/core/deep_learning_engine.py
+- deep_ml_engine: core/deep_ml_engine.py, experiments/technical_review/src/cryptosmarttrader/core/deep_ml_engine.py
+- dependency_container: core/dependency_container.py, experiments/technical_review/src/cryptosmarttrader/core/dependency_container.py
+- drift_detection: core/drift_detection.py, experiments/technical_review/src/cryptosmarttrader/core/drift_detection.py
+- drift_fine_tune_integration: core/drift_fine_tune_integration.py, experiments/technical_review/src/cryptosmarttrader/core/drift_fine_tune_integration.py
+- enterprise_integrator: core/enterprise_integrator.py, experiments/technical_review/src/cryptosmarttrader/core/enterprise_integrator.py
+- enterprise_risk_mitigation: core/enterprise_risk_mitigation.py, experiments/technical_review/src/cryptosmarttrader/core/enterprise_risk_mitigation.py
+- error_handler: core/error_handler.py, experiments/technical_review/src/cryptosmarttrader/core/error_handler.py
+- exception_handler: core/exception_handler.py, experiments/technical_review/src/cryptosmarttrader/core/exception_handler.py
+- execution_simulator: exports/unified_technical_review/source_code/core/execution_simulator.py, experiments/technical_review/src/cryptosmarttrader/core/execution_simulator.py
+- explainability_engine: core/explainability_engine.py, experiments/technical_review/src/cryptosmarttrader/core/explainability_engine.py
+- explainable_ai: core/explainable_ai.py, experiments/technical_review/src/cryptosmarttrader/core/explainable_ai.py
+- fallback_data_eliminator: core/fallback_data_eliminator.py, experiments/technical_review/src/cryptosmarttrader/core/fallback_data_eliminator.py
+- feature_discovery_engine: core/feature_discovery_engine.py, experiments/technical_review/src/cryptosmarttrader/core/feature_discovery_engine.py
+- feature_fusion_engine: core/feature_fusion_engine.py, experiments/technical_review/src/cryptosmarttrader/core/feature_fusion_engine.py
+- final_system_integrator: core/final_system_integrator.py, experiments/technical_review/src/cryptosmarttrader/core/final_system_integrator.py
+- fine_tune_scheduler: core/fine_tune_scheduler.py, experiments/technical_review/src/cryptosmarttrader/core/fine_tune_scheduler.py
+- functionality_auditor: core/functionality_auditor.py, experiments/technical_review/src/cryptosmarttrader/core/functionality_auditor.py
+- gpu_accelerator: core/gpu_accelerator.py, experiments/technical_review/src/cryptosmarttrader/core/gpu_accelerator.py
+- hard_data_filter: core/hard_data_filter.py, experiments/technical_review/src/cryptosmarttrader/core/hard_data_filter.py
+- human_in_the_loop: exports/unified_technical_review/source_code/core/human_in_the_loop.py, experiments/technical_review/src/cryptosmarttrader/core/human_in_the_loop.py
+- import_path_resolver: core/import_path_resolver.py, experiments/technical_review/src/cryptosmarttrader/core/import_path_resolver.py
+- improved_logging_manager: core/improved_logging_manager.py, experiments/technical_review/src/cryptosmarttrader/core/improved_logging_manager.py
+- live_feature_adaptation: core/live_feature_adaptation.py, experiments/technical_review/src/cryptosmarttrader/core/live_feature_adaptation.py
+- market_impact_engine: core/market_impact_engine.py, experiments/technical_review/src/cryptosmarttrader/core/market_impact_engine.py
+- market_regime_detector: core/market_regime_detector.py, experiments/technical_review/src/cryptosmarttrader/core/market_regime_detector.py
+- meta_learning_coordinator: core/meta_learning_coordinator.py, experiments/technical_review/src/cryptosmarttrader/core/meta_learning_coordinator.py
+- ml_ai_differentiators: core/ml_ai_differentiators.py, experiments/technical_review/src/cryptosmarttrader/core/ml_ai_differentiators.py
+- ml_feature_monitor: core/ml_feature_monitor.py, experiments/technical_review/src/cryptosmarttrader/core/ml_feature_monitor.py
+- mlflow_manager: core/mlflow_manager.py, experiments/technical_review/src/cryptosmarttrader/core/mlflow_manager.py
+- ml_regime_router: core/ml_regime_router.py, experiments/technical_review/src/cryptosmarttrader/core/ml_regime_router.py
+- ml_slo_monitor: core/ml_slo_monitor.py, experiments/technical_review/src/cryptosmarttrader/core/ml_slo_monitor.py
+- ml_uncertainty_engine: core/ml_uncertainty_engine.py, experiments/technical_review/src/cryptosmarttrader/core/ml_uncertainty_engine.py
+- model_monitoring_engine: core/model_monitoring_engine.py, experiments/technical_review/src/cryptosmarttrader/core/model_monitoring_engine.py
+- multi_agent_cooperation_engine: core/multi_agent_cooperation_engine.py, experiments/technical_review/src/cryptosmarttrader/core/multi_agent_cooperation_engine.py
+- multi_horizon_ml: core/multi_horizon_ml.py, experiments/technical_review/src/cryptosmarttrader/core/multi_horizon_ml.py
+- multimodal_processor: exports/unified_technical_review/source_code/core/multimodal_processor.py, experiments/technical_review/src/cryptosmarttrader/core/multimodal_processor.py
+- openai_adapter: core/openai_adapter.py, experiments/technical_review/src/cryptosmarttrader/core/openai_adapter.py
+- openai_enhanced_analyzer: core/openai_enhanced_analyzer.py, experiments/technical_review/src/cryptosmarttrader/core/openai_enhanced_analyzer.py
+- openai_integration_manager: core/openai_integration_manager.py, experiments/technical_review/src/cryptosmarttrader/core/openai_integration_manager.py
+- order_book_analyzer: core/order_book_analyzer.py, experiments/technical_review/src/cryptosmarttrader/core/order_book_analyzer.py
+- orderbook_simulator: core/orderbook_simulator.py, experiments/technical_review/src/cryptosmarttrader/core/orderbook_simulator.py
+- paper_trading_engine: core/paper_trading_engine.py, experiments/technical_review/src/cryptosmarttrader/core/paper_trading_engine.py
+- performance_optimizer: core/performance_optimizer.py, experiments/technical_review/src/cryptosmarttrader/core/performance_optimizer.py
+- portfolio_risk_manager: core/portfolio_risk_manager.py, experiments/technical_review/src/cryptosmarttrader/core/portfolio_risk_manager.py
+- position_manager: core/position_manager.py, experiments/technical_review/src/cryptosmarttrader/core/position_manager.py
+- probabilistic_trader: core/probabilistic_trader.py, experiments/technical_review/src/cryptosmarttrader/core/probabilistic_trader.py
+- probability_calibrator: core/probability_calibrator.py, experiments/technical_review/src/cryptosmarttrader/core/probability_calibrator.py
+- process_isolation: core/process_isolation.py, experiments/technical_review/src/cryptosmarttrader/core/process_isolation.py
+- production_optimizer: core/production_optimizer.py, experiments/technical_review/src/cryptosmarttrader/core/production_optimizer.py
+- production_orchestrator: core/production_orchestrator.py, experiments/technical_review/src/cryptosmarttrader/core/production_orchestrator.py
+- prometheus_metrics: core/prometheus_metrics.py, experiments/technical_review/src/cryptosmarttrader/core/prometheus_metrics.py
+- readiness_check: core/readiness_check.py, experiments/technical_review/src/cryptosmarttrader/core/readiness_check.py
+- real_time_pipeline: core/real_time_pipeline.py, experiments/technical_review/src/cryptosmarttrader/core/real_time_pipeline.py
+- reinforcement_portfolio_allocator: exports/unified_technical_review/source_code/core/reinforcement_portfolio_allocator.py, experiments/technical_review/src/cryptosmarttrader/core/reinforcement_portfolio_allocator.py
+- risk_management: core/risk_management.py, experiments/technical_review/src/cryptosmarttrader/core/risk_management.py
+- risk_mitigation: core/risk_mitigation.py, experiments/technical_review/src/cryptosmarttrader/core/risk_mitigation.py
+- robust_openai_adapter: core/robust_openai_adapter.py, experiments/technical_review/src/cryptosmarttrader/core/robust_openai_adapter.py
+- secure_logging: core/secure_logging.py, experiments/technical_review/src/cryptosmarttrader/core/secure_logging.py
+- security_manager: core/security_manager.py, experiments/technical_review/src/cryptosmarttrader/core/security_manager.py
+- self_healing_system: core/self_healing_system.py, experiments/technical_review/src/cryptosmarttrader/core/self_healing_system.py
+- shadow_testing_engine: core/shadow_testing_engine.py, experiments/technical_review/src/cryptosmarttrader/core/shadow_testing_engine.py
+- shadow_trading_engine: core/shadow_trading_engine.py, experiments/technical_review/src/cryptosmarttrader/core/shadow_trading_engine.py
+- shap_regime_analyzer: core/shap_regime_analyzer.py, experiments/technical_review/src/cryptosmarttrader/core/shap_regime_analyzer.py
+- signal_quality_validator: core/signal_quality_validator.py, experiments/technical_review/src/cryptosmarttrader/core/signal_quality_validator.py
+- slippage_estimator: core/slippage_estimator.py, experiments/technical_review/src/cryptosmarttrader/core/slippage_estimator.py
+- strict_confidence_gate: core/strict_confidence_gate.py, experiments/technical_review/src/cryptosmarttrader/core/strict_confidence_gate.py
+- strict_data_integrity: core/strict_data_integrity.py, experiments/technical_review/src/cryptosmarttrader/core/strict_data_integrity.py
+- synthetic_data_augmentation: exports/unified_technical_review/source_code/core/synthetic_data_augmentation.py, experiments/technical_review/src/cryptosmarttrader/core/synthetic_data_augmentation.py
+- system_health_monitor: core/system_health_monitor.py, experiments/technical_review/src/cryptosmarttrader/core/system_health_monitor.py
+- system_readiness_checker: core/system_readiness_checker.py, experiments/technical_review/src/cryptosmarttrader/core/system_readiness_checker.py
+- system_validator: core/system_validator.py, experiments/technical_review/src/cryptosmarttrader/core/system_validator.py
+- temporal_integrity_validator: core/temporal_integrity_validator.py, experiments/technical_review/src/cryptosmarttrader/core/temporal_integrity_validator.py
+- ultra_performance_optimizer: core/ultra_performance_optimizer.py, experiments/technical_review/src/cryptosmarttrader/core/ultra_performance_optimizer.py
+- uncertainty_engine: core/uncertainty_engine.py, experiments/technical_review/src/cryptosmarttrader/core/uncertainty_engine.py
+- unified_confidence_gate: core/unified_confidence_gate.py, experiments/technical_review/src/cryptosmarttrader/core/unified_confidence_gate.py
+- unified_structured_logger: core/unified_structured_logger.py, experiments/technical_review/src/cryptosmarttrader/core/unified_structured_logger.py
+- workstation_optimizer: core/workstation_optimizer.py, experiments/technical_review/src/cryptosmarttrader/core/workstation_optimizer.py
+- zero_fallback_validator: core/zero_fallback_validator.py, experiments/technical_review/src/cryptosmarttrader/core/zero_fallback_validator.py
+- data_sources: core/data_sources.py, experiments/technical_review/src/cryptosmarttrader/core/data_sources.py
+- health_grading: core/health_grading.py, experiments/technical_review/src/cryptosmarttrader/core/health_grading.py
+- http_client: core/http_client.py, experiments/technical_review/src/cryptosmarttrader/core/http_client.py
+- logging_config: core/logging_config.py, experiments/technical_review/src/cryptosmarttrader/core/logging_config.py
+- metrics_collector: core/metrics_collector.py, experiments/technical_review/src/cryptosmarttrader/core/metrics_collector.py
+- pydantic_settings: core/pydantic_settings.py, experiments/technical_review/src/cryptosmarttrader/core/pydantic_settings.py
+- simple_settings: core/simple_settings.py, experiments/technical_review/src/cryptosmarttrader/core/simple_settings.py
+- system_monitor: core/system_monitor.py, experiments/technical_review/src/cryptosmarttrader/core/system_monitor.py
+- system_optimizer: core/system_optimizer.py, experiments/technical_review/src/cryptosmarttrader/core/system_optimizer.py
+- system_settings: core/system_settings.py, experiments/technical_review/src/cryptosmarttrader/core/system_settings.py
+- ta_agent: core/ta_agent.py, experiments/technical_review/src/cryptosmarttrader/core/ta_agent.py
+- temporal_safe_splits: core/temporal_safe_splits.py, experiments/technical_review/src/cryptosmarttrader/core/temporal_safe_splits.py
+- structured_logger: core/structured_logger.py, experiments/technical_review/src/cryptosmarttrader/core/structured_logger.py
+- config_manager: core/config_manager.py, experiments/technical_review/src/cryptosmarttrader/core/config_manager.py
+- risk_guard: core/risk_guard.py, experiments/technical_review/src/cryptosmarttrader/core/risk_guard.py
+- execution_policy: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_policy.py, experiments/technical_review/src/cryptosmarttrader/core/execution_policy.py
+- regime_detector: ml/regime/regime_detector.py, experiments/technical_review/src/cryptosmarttrader/core/regime_detector.py
+- strategy_switcher: exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/strategy_switcher.py, experiments/technical_review/src/cryptosmarttrader/core/strategy_switcher.py
+- secrets_manager: core/secrets_manager.py, experiments/technical_review/src/cryptosmarttrader/core/secrets_manager.py
+- log_sanitizer: src/cryptosmarttrader/core/log_sanitizer.py, experiments/technical_review/src/cryptosmarttrader/core/log_sanitizer.py
+- base_agent: exports/unified_technical_review/source_code/agents/base_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/base_agent.py
+- enhanced_backtest_agent: exports/unified_technical_review/source_code/agents/enhanced_backtest_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/enhanced_backtest_agent.py
+- enhanced_ml_agent: exports/unified_technical_review/source_code/agents/enhanced_ml_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/enhanced_ml_agent.py
+- enhanced_sentiment_agent: exports/unified_technical_review/source_code/agents/enhanced_sentiment_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/enhanced_sentiment_agent.py
+- enhanced_technical_agent: exports/unified_technical_review/source_code/agents/enhanced_technical_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/enhanced_technical_agent.py
+- enhanced_whale_agent: exports/unified_technical_review/source_code/agents/enhanced_whale_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/enhanced_whale_agent.py
+- ml_predictor_agent: exports/unified_technical_review/source_code/agents/ml_predictor_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/ml_predictor_agent.py
+- ml_predictor: exports/unified_technical_review/source_code/agents/ml_predictor.py, experiments/technical_review/src/cryptosmarttrader/agents/ml_predictor.py
+- portfolio_optimizer_agent: exports/unified_technical_review/source_code/agents/portfolio_optimizer_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/portfolio_optimizer_agent.py
+- risk_manager_agent: exports/unified_technical_review/source_code/agents/risk_manager_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/risk_manager_agent.py
+- technical_agent: exports/unified_technical_review/source_code/agents/technical_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/technical_agent.py
+- trade_executor_agent: exports/unified_technical_review/source_code/agents/trade_executor_agent.py, experiments/technical_review/src/cryptosmarttrader/agents/trade_executor_agent.py
+- whale_detector: exports/unified_technical_review/source_code/agents/whale_detector.py, experiments/technical_review/src/cryptosmarttrader/agents/whale_detector.py
+- async_client: utils/async_client.py, experiments/technical_review/src/cryptosmarttrader/agents/scraping_core/async_client.py
+- data_sources: core/data_sources.py, experiments/technical_review/src/cryptosmarttrader/agents/scraping_core/data_sources.py
+- sentiment_processor: exports/unified_technical_review/source_code/agents/sentiment/sentiment_processor.py, experiments/technical_review/src/cryptosmarttrader/agents/sentiment/sentiment_processor.py
+- model: exports/unified_technical_review/source_code/agents/sentiment/model.py, experiments/technical_review/src/cryptosmarttrader/agents/sentiment/model.py
+- advanced_transformers: ml/advanced_transformers.py, experiments/technical_review/src/cryptosmarttrader/ml/advanced_transformers.py
+- auto_features: ml/auto_features.py, experiments/technical_review/src/cryptosmarttrader/ml/auto_features.py
+- conformal_prediction: ml/conformal_prediction.py, experiments/technical_review/src/cryptosmarttrader/ml/conformal_prediction.py
+- continual_learning: ml/continual_learning.py, experiments/technical_review/src/cryptosmarttrader/ml/continual_learning.py
+- enhanced_calibration: ml/enhanced_calibration.py, experiments/technical_review/src/cryptosmarttrader/ml/enhanced_calibration.py
+- event_impact_scoring: ml/event_impact_scoring.py, experiments/technical_review/src/cryptosmarttrader/ml/event_impact_scoring.py
+- futures_data_features: ml/futures_data_features.py, experiments/technical_review/src/cryptosmarttrader/ml/futures_data_features.py
+- futures_signals: ml/futures_signals.py, experiments/technical_review/src/cryptosmarttrader/ml/futures_signals.py
+- mc_dropout_inference: ml/mc_dropout_inference.py, experiments/technical_review/src/cryptosmarttrader/ml/mc_dropout_inference.py
+- meta_labeling_active: ml/meta_labeling_active.py, experiments/technical_review/src/cryptosmarttrader/ml/meta_labeling_active.py
+- meta_labeling: ml/meta_labeling.py, experiments/technical_review/src/cryptosmarttrader/ml/meta_labeling.py
+- meta_labeling_system: ml/meta_labeling_system.py, experiments/technical_review/src/cryptosmarttrader/ml/meta_labeling_system.py
+- orderbook_imbalance: ml/orderbook_imbalance.py, experiments/technical_review/src/cryptosmarttrader/ml/orderbook_imbalance.py
+- probability_calibration_enhanced: ml/probability_calibration_enhanced.py, experiments/technical_review/src/cryptosmarttrader/ml/probability_calibration_enhanced.py
+- probability_calibration: ml/probability_calibration.py, experiments/technical_review/src/cryptosmarttrader/ml/probability_calibration.py
+- regime_adaptive_modeling: ml/regime_adaptive_modeling.py, experiments/technical_review/src/cryptosmarttrader/ml/regime_adaptive_modeling.py
+- regime_detection_active: ml/regime_detection_active.py, experiments/technical_review/src/cryptosmarttrader/ml/regime_detection_active.py
+- regime_features: ml/regime_features.py, experiments/technical_review/src/cryptosmarttrader/ml/regime_features.py
+- regime_hmm: ml/regime_hmm.py, experiments/technical_review/src/cryptosmarttrader/ml/regime_hmm.py
+- regime_router: ml/regime_router.py, experiments/technical_review/src/cryptosmarttrader/ml/regime_router.py
+- synthetic_targets: ml/synthetic_targets.py, experiments/technical_review/src/cryptosmarttrader/ml/synthetic_targets.py
+- temporal_integrity_validator: core/temporal_integrity_validator.py, experiments/technical_review/src/cryptosmarttrader/ml/temporal_integrity_validator.py
+- temporal_safe_splits: core/temporal_safe_splits.py, experiments/technical_review/src/cryptosmarttrader/ml/temporal_safe_splits.py
+- temporal_validation_system: ml/temporal_validation_system.py, experiments/technical_review/src/cryptosmarttrader/ml/temporal_validation_system.py
+- time_series_validation: ml/time_series_validation.py, experiments/technical_review/src/cryptosmarttrader/ml/time_series_validation.py
+- train_baseline: ml/train_baseline.py, experiments/technical_review/src/cryptosmarttrader/ml/train_baseline.py
+- train_ensemble: ml/train_ensemble.py, experiments/technical_review/src/cryptosmarttrader/ml/train_ensemble.py
+- uncertainty_active: ml/uncertainty_active.py, experiments/technical_review/src/cryptosmarttrader/ml/uncertainty_active.py
+- uncertainty_aware_sizing: ml/uncertainty_aware_sizing.py, experiments/technical_review/src/cryptosmarttrader/ml/uncertainty_aware_sizing.py
+- uncertainty_quantification: ml/uncertainty_quantification.py, experiments/technical_review/src/cryptosmarttrader/ml/uncertainty_quantification.py
+- strategy_switcher: exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/strategy_switcher.py, experiments/technical_review/src/cryptosmarttrader/ml/strategy_switcher.py
+- regime_detection: exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime_detection.py, experiments/technical_review/src/cryptosmarttrader/ml/regime_detection.py
+- walk_forward_trainer: src/cryptosmarttrader/ml/walk_forward_trainer.py, experiments/technical_review/src/cryptosmarttrader/ml/walk_forward_trainer.py
+- drift_detector: src/cryptosmarttrader/ml/drift_detector.py, experiments/technical_review/src/cryptosmarttrader/ml/drift_detector.py
+- model_registry: ml/model_registry.py, experiments/technical_review/src/cryptosmarttrader/ml/model_registry.py
+- futures_orderbook: ml/advanced_features/futures_orderbook.py, experiments/technical_review/src/cryptosmarttrader/ml/advanced_features/futures_orderbook.py
+- probability_calibrator: core/probability_calibrator.py, experiments/technical_review/src/cryptosmarttrader/ml/calibration/probability_calibrator.py
+- confidence_gate_calibrated: ml/calibration/confidence_gate_calibrated.py, experiments/technical_review/src/cryptosmarttrader/ml/calibration/confidence_gate_calibrated.py
+- drift_detection_ewc: ml/continual_learning/drift_detection_ewc.py, experiments/technical_review/src/cryptosmarttrader/ml/continual_learning/drift_detection_ewc.py
+- meta_learner: ml/ensemble/meta_learner.py, experiments/technical_review/src/cryptosmarttrader/ml/ensemble/meta_learner.py
+- feature_engineering: ml/features/feature_engineering.py, experiments/technical_review/src/cryptosmarttrader/ml/features/feature_engineering.py
+- auto_features: ml/auto_features.py, experiments/technical_review/src/cryptosmarttrader/ml/features/auto_features.py
+- feature_monitor: ml/features/feature_monitor.py, experiments/technical_review/src/cryptosmarttrader/ml/features/feature_monitor.py
+- leakage_detector: ml/features/leakage_detector.py, experiments/technical_review/src/cryptosmarttrader/ml/features/leakage_detector.py
+- temporal_feature_engineering: ml/features/temporal_feature_engineering.py, experiments/technical_review/src/cryptosmarttrader/ml/features/temporal_feature_engineering.py
+- regime_aware_confidence_system: ml/integrated/regime_aware_confidence_system.py, experiments/technical_review/src/cryptosmarttrader/ml/integrated/regime_aware_confidence_system.py
+- openai_enhanced_analysis: ml/intelligence/openai_enhanced_analysis.py, experiments/technical_review/src/cryptosmarttrader/ml/intelligence/openai_enhanced_analysis.py
+- openai_simple_analyzer: ml/intelligence/openai_simple_analyzer.py, experiments/technical_review/src/cryptosmarttrader/ml/intelligence/openai_simple_analyzer.py
+- triple_barrier: ml/meta_labeling/triple_barrier.py, experiments/technical_review/src/cryptosmarttrader/ml/meta_labeling/triple_barrier.py
+- model_factory: ml/models/model_factory.py, experiments/technical_review/src/cryptosmarttrader/ml/models/model_factory.py
+- predict: ml/models/predict.py, experiments/technical_review/src/cryptosmarttrader/ml/models/predict.py
+- llm_impact_scorer: ml/news_impact/llm_impact_scorer.py, experiments/technical_review/src/cryptosmarttrader/ml/news_impact/llm_impact_scorer.py
+- kelly_lite_sizing: ml/portfolio_optimization/kelly_lite_sizing.py, experiments/technical_review/src/cryptosmarttrader/ml/portfolio_optimization/kelly_lite_sizing.py
+- regime_detector: ml/regime/regime_detector.py, experiments/technical_review/src/cryptosmarttrader/ml/regime/regime_detector.py
+- regime_router: ml/regime_router.py, experiments/technical_review/src/cryptosmarttrader/ml/regime/regime_router.py
+- market_regime_detector: core/market_regime_detector.py, experiments/technical_review/src/cryptosmarttrader/ml/regime/market_regime_detector.py
+- mixture_of_experts: ml/regime_detection/mixture_of_experts.py, experiments/technical_review/src/cryptosmarttrader/ml/regime_detection/mixture_of_experts.py
+- bayesian_uncertainty: core/bayesian_uncertainty.py, experiments/technical_review/src/cryptosmarttrader/ml/uncertainty/bayesian_uncertainty.py
+- monte_carlo_dropout: ml/uncertainty/monte_carlo_dropout.py, experiments/technical_review/src/cryptosmarttrader/ml/uncertainty/monte_carlo_dropout.py
+- conformal_prediction: ml/conformal_prediction.py, experiments/technical_review/src/cryptosmarttrader/ml/uncertainty/conformal_prediction.py
+- strict_gate: orchestration/strict_gate.py, experiments/technical_review/src/cryptosmarttrader/orchestration/strict_gate.py
+- strict_gate_standalone: orchestration/strict_gate_standalone.py, experiments/technical_review/src/cryptosmarttrader/orchestration/strict_gate_standalone.py
+- alerts: utils/alerts.py, experiments/technical_review/src/cryptosmarttrader/utils/alerts.py
+- async_client: utils/async_client.py, experiments/technical_review/src/cryptosmarttrader/utils/async_client.py
+- atomic_io: utils/atomic_io.py, experiments/technical_review/src/cryptosmarttrader/utils/atomic_io.py
+- authentic_opportunities: utils/authentic_opportunities.py, experiments/technical_review/src/cryptosmarttrader/utils/authentic_opportunities.py
+- daily_logger: core/daily_logger.py, experiments/technical_review/src/cryptosmarttrader/utils/daily_logger.py
+- error_handler: core/error_handler.py, experiments/technical_review/src/cryptosmarttrader/utils/error_handler.py
+- exchange_manager: utils/exchange_manager.py, experiments/technical_review/src/cryptosmarttrader/utils/exchange_manager.py
+- gpu_optimizer: utils/gpu_optimizer.py, experiments/technical_review/src/cryptosmarttrader/utils/gpu_optimizer.py
+- logger: utils/logger.py, experiments/technical_review/src/cryptosmarttrader/utils/logger.py
+- metrics: utils/metrics.py, experiments/technical_review/src/cryptosmarttrader/utils/metrics.py
+- performance_optimizer: core/performance_optimizer.py, experiments/technical_review/src/cryptosmarttrader/utils/performance_optimizer.py
+- rate_limiter: utils/rate_limiter.py, experiments/technical_review/src/cryptosmarttrader/utils/rate_limiter.py
+- secrets: utils/secrets.py, experiments/technical_review/src/cryptosmarttrader/utils/secrets.py
+- system_optimizer: core/system_optimizer.py, experiments/technical_review/src/cryptosmarttrader/utils/system_optimizer.py
+- timestamp_synchronizer: utils/timestamp_synchronizer.py, experiments/technical_review/src/cryptosmarttrader/utils/timestamp_synchronizer.py
+- timestamp_validation: utils/timestamp_validation.py, experiments/technical_review/src/cryptosmarttrader/utils/timestamp_validation.py
+- timestamp_validator: utils/timestamp_validator.py, experiments/technical_review/src/cryptosmarttrader/utils/timestamp_validator.py
+- dependencies: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/dependencies.py, experiments/technical_review/src/cryptosmarttrader/api/dependencies.py
+- app: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/app.py, experiments/technical_review/src/cryptosmarttrader/api/app.py
+- health_endpoint: exports/unified_technical_review/source_code/api/health_endpoint.py, experiments/technical_review/src/cryptosmarttrader/api/health_endpoint.py
+- middleware: exports/unified_technical_review/source_code/api/middleware.py, experiments/technical_review/src/cryptosmarttrader/api/middleware.py
+- main: exports/unified_technical_review/source_code/api/main.py, experiments/technical_review/src/cryptosmarttrader/api/main.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, experiments/technical_review/src/cryptosmarttrader/api/models/health.py
+- market: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/market.py, experiments/technical_review/src/cryptosmarttrader/api/models/market.py
+- trading: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/trading.py, experiments/technical_review/src/cryptosmarttrader/api/models/trading.py
+- agents: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/agents.py, experiments/technical_review/src/cryptosmarttrader/api/models/agents.py
+- trading: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/trading.py, experiments/technical_review/src/cryptosmarttrader/api/routers/trading.py
+- agents: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/agents.py, experiments/technical_review/src/cryptosmarttrader/api/routers/agents.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, experiments/technical_review/src/cryptosmarttrader/api/routers/health.py
+- data: exports/unified_technical_review/source_code/api/routers/data.py, experiments/technical_review/src/cryptosmarttrader/api/routers/data.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, experiments/technical_review/src/cryptosmarttrader/api/routers/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, experiments/technical_review/src/cryptosmarttrader/api/routers/signals.py
+- deployment: src/cryptosmarttrader/api/routers/deployment.py, experiments/technical_review/src/cryptosmarttrader/api/routers/deployment.py
+- market: exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/market.py, experiments/technical_review/src/cryptosmarttrader/api/routers/market.py
+- common: exports/unified_technical_review/source_code/api/schemas/common.py, experiments/technical_review/src/cryptosmarttrader/api/schemas/common.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, experiments/technical_review/src/cryptosmarttrader/api/schemas/health.py
+- market_data: exports/unified_technical_review/source_code/api/schemas/market_data.py, experiments/technical_review/src/cryptosmarttrader/api/schemas/market_data.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, experiments/technical_review/src/cryptosmarttrader/api/schemas/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, experiments/technical_review/src/cryptosmarttrader/api/schemas/signals.py
+- regime_strategies: exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/regime_strategies.py, experiments/technical_review/src/cryptosmarttrader/regime/regime_strategies.py
+- regime_features: ml/regime_features.py, experiments/technical_review/src/cryptosmarttrader/regime/regime_features.py
+- regime_detector: ml/regime/regime_detector.py, experiments/technical_review/src/cryptosmarttrader/regime/regime_detector.py
+- probability_calibration: ml/probability_calibration.py, experiments/technical_review/src/cryptosmarttrader/sizing/probability_calibration.py
+- kelly_sizing: exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/kelly_sizing.py, experiments/technical_review/src/cryptosmarttrader/sizing/kelly_sizing.py
+- confidence_weigher: exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/confidence_weigher.py, experiments/technical_review/src/cryptosmarttrader/sizing/confidence_weigher.py
+- liquidity_gate: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/liquidity_gate.py, experiments/technical_review/src/cryptosmarttrader/execution/liquidity_gate.py
+- spread_monitor: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/spread_monitor.py, experiments/technical_review/src/cryptosmarttrader/execution/spread_monitor.py
+- slippage_tracker: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/slippage_tracker.py, experiments/technical_review/src/cryptosmarttrader/execution/slippage_tracker.py
+- execution_filter: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_filter.py, experiments/technical_review/src/cryptosmarttrader/execution/execution_filter.py
+- fee_optimizer: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/fee_optimizer.py, experiments/technical_review/src/cryptosmarttrader/execution/fee_optimizer.py
+- twap_executor: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/twap_executor.py, experiments/technical_review/src/cryptosmarttrader/execution/twap_executor.py
+- partial_fill_handler: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/partial_fill_handler.py, experiments/technical_review/src/cryptosmarttrader/execution/partial_fill_handler.py
+- price_improvement: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/price_improvement.py, experiments/technical_review/src/cryptosmarttrader/execution/price_improvement.py
+- execution_analytics: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_analytics.py, experiments/technical_review/src/cryptosmarttrader/execution/execution_analytics.py
+- slippage_analyzer: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/slippage_analyzer.py, experiments/technical_review/src/cryptosmarttrader/execution/slippage_analyzer.py
+- live_backtest_comparator: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/live_backtest_comparator.py, experiments/technical_review/src/cryptosmarttrader/execution/live_backtest_comparator.py
+- backtest_live_parity: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/backtest_live_parity.py, experiments/technical_review/src/cryptosmarttrader/execution/backtest_live_parity.py
+- execution_simulator: exports/unified_technical_review/source_code/core/execution_simulator.py, experiments/technical_review/src/cryptosmarttrader/execution/execution_simulator.py
+- tracking_error_monitor: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/tracking_error_monitor.py, experiments/technical_review/src/cryptosmarttrader/execution/tracking_error_monitor.py
+- order_deduplication: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/order_deduplication.py, experiments/technical_review/src/cryptosmarttrader/execution/order_deduplication.py
+- idempotent_executor: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/idempotent_executor.py, experiments/technical_review/src/cryptosmarttrader/execution/idempotent_executor.py
+- execution_policy: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_policy.py, experiments/technical_review/src/cryptosmarttrader/execution/execution_policy.py
+- alpha_blender: exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/alpha_blender.py, experiments/technical_review/src/cryptosmarttrader/ensemble/alpha_blender.py
+- signal_decay: exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/signal_decay.py, experiments/technical_review/src/cryptosmarttrader/ensemble/signal_decay.py
+- meta_learner: ml/ensemble/meta_learner.py, experiments/technical_review/src/cryptosmarttrader/ensemble/meta_learner.py
+- funding_analyzer: exports/unified_technical_review/source_code/src/cryptosmarttrader/events/funding_analyzer.py, experiments/technical_review/src/cryptosmarttrader/events/funding_analyzer.py
+- open_interest_tracker: exports/unified_technical_review/source_code/src/cryptosmarttrader/events/open_interest_tracker.py, experiments/technical_review/src/cryptosmarttrader/events/open_interest_tracker.py
+- basis_analyzer: exports/unified_technical_review/source_code/src/cryptosmarttrader/events/basis_analyzer.py, experiments/technical_review/src/cryptosmarttrader/events/basis_analyzer.py
+- event_detector: exports/unified_technical_review/source_code/src/cryptosmarttrader/events/event_detector.py, experiments/technical_review/src/cryptosmarttrader/events/event_detector.py
+- drawdown_monitor: exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/drawdown_monitor.py, experiments/technical_review/src/cryptosmarttrader/risk/drawdown_monitor.py
+- data_health_monitor: exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/data_health_monitor.py, experiments/technical_review/src/cryptosmarttrader/risk/data_health_monitor.py
+- adaptive_risk_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/adaptive_risk_manager.py, experiments/technical_review/src/cryptosmarttrader/risk/adaptive_risk_manager.py
+- order_deduplication: exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/order_deduplication.py, experiments/technical_review/src/cryptosmarttrader/risk/order_deduplication.py
+- circuit_breaker: exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/circuit_breaker.py, experiments/technical_review/src/cryptosmarttrader/risk/circuit_breaker.py
+- kill_switch: exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/kill_switch.py, experiments/technical_review/src/cryptosmarttrader/risk/kill_switch.py
+- risk_guard: core/risk_guard.py, experiments/technical_review/src/cryptosmarttrader/risk/risk_guard.py
+- risk_limits: exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/risk_limits.py, experiments/technical_review/src/cryptosmarttrader/risk/risk_limits.py
+- hyperparameter_optimizer: exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/hyperparameter_optimizer.py, experiments/technical_review/src/cryptosmarttrader/optimization/hyperparameter_optimizer.py
+- walk_forward_validator: exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/walk_forward_validator.py, experiments/technical_review/src/cryptosmarttrader/optimization/walk_forward_validator.py
+- regime_aware_cv: exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/regime_aware_cv.py, experiments/technical_review/src/cryptosmarttrader/optimization/regime_aware_cv.py
+- return_attribution: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/return_attribution.py, experiments/technical_review/src/cryptosmarttrader/analytics/return_attribution.py
+- performance_monitor: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/performance_monitor.py, experiments/technical_review/src/cryptosmarttrader/analytics/performance_monitor.py
+- degradation_detector: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/degradation_detector.py, experiments/technical_review/src/cryptosmarttrader/analytics/degradation_detector.py
+- dashboard_analytics: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/dashboard_analytics.py, experiments/technical_review/src/cryptosmarttrader/analytics/dashboard_analytics.py
+- environment_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/environment_manager.py, experiments/technical_review/src/cryptosmarttrader/deployment/environment_manager.py
+- process_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/process_manager.py, experiments/technical_review/src/cryptosmarttrader/deployment/process_manager.py
+- health_checker: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/health_checker.py, experiments/technical_review/src/cryptosmarttrader/deployment/health_checker.py
+- deployment_config: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/deployment_config.py, experiments/technical_review/src/cryptosmarttrader/deployment/deployment_config.py
+- recovery_coordinator: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/recovery_coordinator.py, experiments/technical_review/src/cryptosmarttrader/deployment/recovery_coordinator.py
+- canary_system: src/cryptosmarttrader/deployment/canary_system.py, experiments/technical_review/src/cryptosmarttrader/deployment/canary_system.py
+- go_live_system: src/cryptosmarttrader/deployment/go_live_system.py, experiments/technical_review/src/cryptosmarttrader/deployment/go_live_system.py
+- prometheus_metrics: core/prometheus_metrics.py, experiments/technical_review/src/cryptosmarttrader/observability/prometheus_metrics.py
+- alert_rules: src/cryptosmarttrader/observability/alert_rules.py, experiments/technical_review/src/cryptosmarttrader/observability/alert_rules.py
+- metrics_collector: core/metrics_collector.py, experiments/technical_review/src/cryptosmarttrader/observability/metrics_collector.py
+- security_manager: core/security_manager.py, experiments/technical_review/src/cryptosmarttrader/security/security_manager.py
+- kelly_sizing: exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/kelly_sizing.py, experiments/technical_review/src/cryptosmarttrader/portfolio/kelly_sizing.py
+- correlation_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/portfolio/correlation_manager.py, experiments/technical_review/src/cryptosmarttrader/portfolio/correlation_manager.py
+- chaos_tester: exports/unified_technical_review/source_code/src/cryptosmarttrader/monitoring/chaos_tester.py, experiments/technical_review/src/cryptosmarttrader/monitoring/chaos_tester.py
+- alert_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/monitoring/alert_manager.py, experiments/technical_review/src/cryptosmarttrader/monitoring/alert_manager.py
+- telegram_alerts: exports/unified_technical_review/source_code/src/cryptosmarttrader/monitoring/telegram_alerts.py, experiments/technical_review/src/cryptosmarttrader/monitoring/telegram_alerts.py
+- alert_rules: src/cryptosmarttrader/observability/alert_rules.py, experiments/technical_review/src/cryptosmarttrader/monitoring/alert_rules.py
+- prometheus_metrics: core/prometheus_metrics.py, experiments/technical_review/src/cryptosmarttrader/monitoring/prometheus_metrics.py
+- environment_manager: exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/environment_manager.py, experiments/technical_review/src/cryptosmarttrader/environments/environment_manager.py
+- simulation_tester: src/cryptosmarttrader/testing/simulation_tester.py, experiments/technical_review/src/cryptosmarttrader/testing/simulation_tester.py
+- backtest_parity: src/cryptosmarttrader/analysis/backtest_parity.py, experiments/technical_review/src/cryptosmarttrader/analysis/backtest_parity.py
+- regime_detector: ml/regime/regime_detector.py, experiments/technical_review/src/cryptosmarttrader/alpha/regime_detector.py
+- kelly_sizing: exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/kelly_sizing.py, experiments/technical_review/src/cryptosmarttrader/alpha/kelly_sizing.py
+- cluster_manager: src/cryptosmarttrader/alpha/cluster_manager.py, experiments/technical_review/src/cryptosmarttrader/alpha/cluster_manager.py
+- return_attribution: exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/return_attribution.py, experiments/technical_review/src/cryptosmarttrader/alpha/return_attribution.py
+- execution_simulator: exports/unified_technical_review/source_code/core/execution_simulator.py, experiments/technical_review/src/cryptosmarttrader/parity/execution_simulator.py
+- parity_analyzer: src/cryptosmarttrader/parity/parity_analyzer.py, experiments/technical_review/src/cryptosmarttrader/parity/parity_analyzer.py
+- test_agents: tests/test_agents.py, experiments/technical_review/tests/test_agents.py
+- test_core_functionality: tests/test_core_functionality.py, experiments/technical_review/tests/test_core_functionality.py
+- test_production_systems: tests/test_production_systems.py, experiments/technical_review/tests/test_production_systems.py
+- test_enhanced_agents: tests/test_enhanced_agents.py, experiments/technical_review/tests/test_enhanced_agents.py
+- test_comprehensive_system: tests/test_comprehensive_system.py, experiments/technical_review/tests/test_comprehensive_system.py
+- test_automated_feature_engineering: tests/test_automated_feature_engineering.py, experiments/technical_review/tests/test_automated_feature_engineering.py
+- test_market_regime_detection: tests/test_market_regime_detection.py, experiments/technical_review/tests/test_market_regime_detection.py
+- test_api_health: tests/test_api_health.py, experiments/technical_review/tests/test_api_health.py
+- test_http_client: tests/test_http_client.py, experiments/technical_review/tests/test_http_client.py
+- test_temporal_validator: tests/test_temporal_validator.py, experiments/technical_review/tests/test_temporal_validator.py
+- test_health_grading: tests/test_health_grading.py, experiments/technical_review/tests/test_health_grading.py
+- test_config_manager: tests/test_config_manager.py, experiments/technical_review/tests/test_config_manager.py
+- test_structured_logger: tests/test_structured_logger.py, experiments/technical_review/tests/test_structured_logger.py
+- conftest: tests/conftest.py, experiments/technical_review/tests/conftest.py
+- test_phase2_guardrails: tests/test_phase2_guardrails.py, experiments/technical_review/tests/test_phase2_guardrails.py
+- test_phase3_alpha_parity: tests/test_phase3_alpha_parity.py, experiments/technical_review/tests/test_phase3_alpha_parity.py
+- test_risk_management: test_risk_management.py, experiments/technical_review/tests/test_risk_management.py
+- test_execution_policy: tests/test_execution_policy.py, experiments/technical_review/tests/test_execution_policy.py
+- test_observability_system: tests/test_observability_system.py, experiments/technical_review/tests/test_observability_system.py
+- test_secrets_manager: tests/unit/test_secrets_manager.py, experiments/technical_review/tests/unit/test_secrets_manager.py
+- test_async_data_manager: tests/unit/test_async_data_manager.py, experiments/technical_review/tests/unit/test_async_data_manager.py
+- test_logging_manager: tests/unit/test_logging_manager.py, experiments/technical_review/tests/unit/test_logging_manager.py
+- test_basic_functionality: tests/unit/test_basic_functionality.py, experiments/technical_review/tests/unit/test_basic_functionality.py
+- test_sizing: tests/unit/test_sizing.py, experiments/technical_review/tests/unit/test_sizing.py
+- test_risk_guard: tests/unit/test_risk_guard.py, experiments/technical_review/tests/unit/test_risk_guard.py
+- test_execution_policy: tests/test_execution_policy.py, experiments/technical_review/tests/unit/test_execution_policy.py
+- test_data_collection_integration: tests/integration/test_data_collection_integration.py, experiments/technical_review/tests/integration/test_data_collection_integration.py
+- test_api_integration: tests/integration/test_api_integration.py, experiments/technical_review/tests/integration/test_api_integration.py
+- test_exchange_adapter: tests/integration/test_exchange_adapter.py, experiments/technical_review/tests/integration/test_exchange_adapter.py
+- test_api_health: tests/test_api_health.py, experiments/technical_review/tests/integration/test_api_health.py
+- test_backtest_parity: tests/integration/test_backtest_parity.py, experiments/technical_review/tests/integration/test_backtest_parity.py
+- test_exchange_contracts: tests/contract/test_exchange_contracts.py, experiments/technical_review/tests/contract/test_exchange_contracts.py
+- test_dashboard_smoke: tests/smoke/test_dashboard_smoke.py, experiments/technical_review/tests/smoke/test_dashboard_smoke.py
+- data_generators: tests/fixtures/data_generators.py, experiments/technical_review/tests/fixtures/data_generators.py
+- time_helpers: tests/fixtures/time_helpers.py, experiments/technical_review/tests/fixtures/time_helpers.py
+- api_fixtures: tests/fixtures/api_fixtures.py, experiments/technical_review/tests/fixtures/api_fixtures.py
+- test_indicators: tests/property_tests/test_indicators.py, experiments/technical_review/tests/property_tests/test_indicators.py
+- conftest: tests/conftest.py, experiments/technical_review/tests/api/conftest.py
+- test_health: attached_assets/extracted_cst/PR3-api-contract/tests/api/test_health.py, experiments/technical_review/tests/api/test_health.py
+- test_smoke_tests: tests/e2e/test_smoke_tests.py, experiments/technical_review/tests/e2e/test_smoke_tests.py
+- main: exports/unified_technical_review/source_code/api/main.py, experiments/technical_review/api/main.py
+- middleware: exports/unified_technical_review/source_code/api/middleware.py, experiments/technical_review/api/middleware.py
+- health_endpoint: exports/unified_technical_review/source_code/api/health_endpoint.py, experiments/technical_review/api/health_endpoint.py
+- common: exports/unified_technical_review/source_code/api/schemas/common.py, experiments/technical_review/api/schemas/common.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, experiments/technical_review/api/schemas/health.py
+- market_data: exports/unified_technical_review/source_code/api/schemas/market_data.py, experiments/technical_review/api/schemas/market_data.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, experiments/technical_review/api/schemas/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, experiments/technical_review/api/schemas/signals.py
+- health: attached_assets/extracted_cst/PR3-api-contract/src/cryptosmarttrader/api/routers/health.py, experiments/technical_review/api/routers/health.py
+- data: exports/unified_technical_review/source_code/api/routers/data.py, experiments/technical_review/api/routers/data.py
+- predictions: exports/unified_technical_review/source_code/api/schemas/predictions.py, experiments/technical_review/api/routers/predictions.py
+- signals: exports/unified_technical_review/source_code/api/schemas/signals.py, experiments/technical_review/api/routers/signals.py
+- trade_executor_agent: exports/unified_technical_review/source_code/agents/trade_executor_agent.py, experiments/technical_review/agents/trade_executor_agent.py
+- enhanced_technical_agent: exports/unified_technical_review/source_code/agents/enhanced_technical_agent.py, experiments/technical_review/agents/enhanced_technical_agent.py
+- enhanced_whale_agent: exports/unified_technical_review/source_code/agents/enhanced_whale_agent.py, experiments/technical_review/agents/enhanced_whale_agent.py
+- enhanced_ml_agent: exports/unified_technical_review/source_code/agents/enhanced_ml_agent.py, experiments/technical_review/agents/enhanced_ml_agent.py
+- enhanced_backtest_agent: exports/unified_technical_review/source_code/agents/enhanced_backtest_agent.py, experiments/technical_review/agents/enhanced_backtest_agent.py
+- base_agent: exports/unified_technical_review/source_code/agents/base_agent.py, experiments/technical_review/agents/base_agent.py
+- risk_manager_agent: exports/unified_technical_review/source_code/agents/risk_manager_agent.py, experiments/technical_review/agents/risk_manager_agent.py
+- whale_detector: exports/unified_technical_review/source_code/agents/whale_detector.py, experiments/technical_review/agents/whale_detector.py
+- ml_predictor: exports/unified_technical_review/source_code/agents/ml_predictor.py, experiments/technical_review/agents/ml_predictor.py
+- technical_agent: exports/unified_technical_review/source_code/agents/technical_agent.py, experiments/technical_review/agents/technical_agent.py
+- sentiment_agent: exports/unified_technical_review/source_code/agents/sentiment_agent.py, experiments/technical_review/agents/sentiment_agent.py
+- whale_detector_agent: exports/unified_technical_review/source_code/agents/whale_detector_agent.py, experiments/technical_review/agents/whale_detector_agent.py
+- listing_detection_agent: exports/unified_technical_review/source_code/agents/listing_detection_agent.py, experiments/technical_review/agents/listing_detection_agent.py
+- early_mover_system: exports/unified_technical_review/source_code/agents/early_mover_system.py, experiments/technical_review/agents/early_mover_system.py
+- news_speed_agent: exports/unified_technical_review/source_code/agents/news_speed_agent.py, experiments/technical_review/agents/news_speed_agent.py
+- ensemble_voting_agent_clean: exports/unified_technical_review/source_code/agents/ensemble_voting_agent_clean.py, experiments/technical_review/agents/ensemble_voting_agent_clean.py
+- ml_predictor_agent: exports/unified_technical_review/source_code/agents/ml_predictor_agent.py, experiments/technical_review/agents/ml_predictor_agent.py
+- ensemble_voting_agent: exports/unified_technical_review/source_code/agents/ensemble_voting_agent.py, experiments/technical_review/agents/ensemble_voting_agent.py
+- portfolio_optimizer_agent: exports/unified_technical_review/source_code/agents/portfolio_optimizer_agent.py, experiments/technical_review/agents/portfolio_optimizer_agent.py
+- funding_rate_monitor: exports/unified_technical_review/source_code/agents/funding_rate_monitor.py, experiments/technical_review/agents/funding_rate_monitor.py
+- arbitrage_detector_agent: exports/unified_technical_review/source_code/agents/arbitrage_detector_agent.py, experiments/technical_review/agents/arbitrage_detector_agent.py
+- enhanced_sentiment_agent: exports/unified_technical_review/source_code/agents/enhanced_sentiment_agent.py, experiments/technical_review/agents/enhanced_sentiment_agent.py
+- sentiment_processor: exports/unified_technical_review/source_code/agents/sentiment/sentiment_processor.py, experiments/technical_review/agents/sentiment/sentiment_processor.py
+- model: exports/unified_technical_review/source_code/agents/sentiment/model.py, experiments/technical_review/agents/sentiment/model.py
+- data_sources: core/data_sources.py, experiments/technical_review/agents/scraping_core/data_sources.py
+- async_client: utils/async_client.py, experiments/technical_review/agents/scraping_core/async_client.py
+- mc_dropout_inference: ml/mc_dropout_inference.py, experiments/technical_review/ml/mc_dropout_inference.py
+- regime_hmm: ml/regime_hmm.py, experiments/technical_review/ml/regime_hmm.py
+- time_series_validation: ml/time_series_validation.py, experiments/technical_review/ml/time_series_validation.py
+- probability_calibration: ml/probability_calibration.py, experiments/technical_review/ml/probability_calibration.py
+- futures_data_features: ml/futures_data_features.py, experiments/technical_review/ml/futures_data_features.py
+- advanced_transformers: ml/advanced_transformers.py, experiments/technical_review/ml/advanced_transformers.py
+- probability_calibration_enhanced: ml/probability_calibration_enhanced.py, experiments/technical_review/ml/probability_calibration_enhanced.py
+- regime_features: ml/regime_features.py, experiments/technical_review/ml/regime_features.py
+- enhanced_calibration: ml/enhanced_calibration.py, experiments/technical_review/ml/enhanced_calibration.py
+- regime_adaptive_modeling: ml/regime_adaptive_modeling.py, experiments/technical_review/ml/regime_adaptive_modeling.py
+- meta_labeling_system: ml/meta_labeling_system.py, experiments/technical_review/ml/meta_labeling_system.py
+- futures_signals: ml/futures_signals.py, experiments/technical_review/ml/futures_signals.py
+- orderbook_imbalance: ml/orderbook_imbalance.py, experiments/technical_review/ml/orderbook_imbalance.py
+- event_impact_scoring: ml/event_impact_scoring.py, experiments/technical_review/ml/event_impact_scoring.py
+- auto_features: ml/auto_features.py, experiments/technical_review/ml/auto_features.py
+- conformal_prediction: ml/conformal_prediction.py, experiments/technical_review/ml/conformal_prediction.py
+- uncertainty_aware_sizing: ml/uncertainty_aware_sizing.py, experiments/technical_review/ml/uncertainty_aware_sizing.py
+- temporal_validation_system: ml/temporal_validation_system.py, experiments/technical_review/ml/temporal_validation_system.py
+- temporal_integrity_validator: core/temporal_integrity_validator.py, experiments/technical_review/ml/temporal_integrity_validator.py
+- temporal_safe_splits: core/temporal_safe_splits.py, experiments/technical_review/ml/temporal_safe_splits.py
+- meta_labeling: ml/meta_labeling.py, experiments/technical_review/ml/meta_labeling.py
+- regime_router: ml/regime_router.py, experiments/technical_review/ml/regime_router.py
+- uncertainty_quantification: ml/uncertainty_quantification.py, experiments/technical_review/ml/uncertainty_quantification.py
+- continual_learning: ml/continual_learning.py, experiments/technical_review/ml/continual_learning.py
+- train_baseline: ml/train_baseline.py, experiments/technical_review/ml/train_baseline.py
+- meta_labeling_active: ml/meta_labeling_active.py, experiments/technical_review/ml/meta_labeling_active.py
+- uncertainty_active: ml/uncertainty_active.py, experiments/technical_review/ml/uncertainty_active.py
+- regime_detection_active: ml/regime_detection_active.py, experiments/technical_review/ml/regime_detection_active.py
+- train_ensemble: ml/train_ensemble.py, experiments/technical_review/ml/train_ensemble.py
+- synthetic_targets: ml/synthetic_targets.py, experiments/technical_review/ml/synthetic_targets.py
+- temporal_validator: ml/temporal_validator.py, experiments/technical_review/ml/temporal_validator.py
+- model_registry: ml/model_registry.py, experiments/technical_review/ml/model_registry.py
+- backtesting_engine: ml/backtesting_engine.py, experiments/technical_review/ml/backtesting_engine.py
+- feature_engineering: ml/features/feature_engineering.py, experiments/technical_review/ml/features/feature_engineering.py
+- auto_features: ml/auto_features.py, experiments/technical_review/ml/features/auto_features.py
+- feature_monitor: ml/features/feature_monitor.py, experiments/technical_review/ml/features/feature_monitor.py
+- leakage_detector: ml/features/leakage_detector.py, experiments/technical_review/ml/features/leakage_detector.py
+- temporal_feature_engineering: ml/features/temporal_feature_engineering.py, experiments/technical_review/ml/features/temporal_feature_engineering.py
+- model_factory: ml/models/model_factory.py, experiments/technical_review/ml/models/model_factory.py
+- predict: ml/models/predict.py, experiments/technical_review/ml/models/predict.py
+- regime_detector: ml/regime/regime_detector.py, experiments/technical_review/ml/regime/regime_detector.py
+- regime_router: ml/regime_router.py, experiments/technical_review/ml/regime/regime_router.py
+- market_regime_detector: core/market_regime_detector.py, experiments/technical_review/ml/regime/market_regime_detector.py
+- meta_learner: ml/ensemble/meta_learner.py, experiments/technical_review/ml/ensemble/meta_learner.py
+- probability_calibrator: core/probability_calibrator.py, experiments/technical_review/ml/calibration/probability_calibrator.py
+- confidence_gate_calibrated: ml/calibration/confidence_gate_calibrated.py, experiments/technical_review/ml/calibration/confidence_gate_calibrated.py
+- bayesian_uncertainty: core/bayesian_uncertainty.py, experiments/technical_review/ml/uncertainty/bayesian_uncertainty.py
+- monte_carlo_dropout: ml/uncertainty/monte_carlo_dropout.py, experiments/technical_review/ml/uncertainty/monte_carlo_dropout.py
+- conformal_prediction: ml/conformal_prediction.py, experiments/technical_review/ml/uncertainty/conformal_prediction.py
+- regime_aware_confidence_system: ml/integrated/regime_aware_confidence_system.py, experiments/technical_review/ml/integrated/regime_aware_confidence_system.py
+- openai_enhanced_analysis: ml/intelligence/openai_enhanced_analysis.py, experiments/technical_review/ml/intelligence/openai_enhanced_analysis.py
+- openai_simple_analyzer: ml/intelligence/openai_simple_analyzer.py, experiments/technical_review/ml/intelligence/openai_simple_analyzer.py
+- triple_barrier: ml/meta_labeling/triple_barrier.py, experiments/technical_review/ml/meta_labeling/triple_barrier.py
+- mixture_of_experts: ml/regime_detection/mixture_of_experts.py, experiments/technical_review/ml/regime_detection/mixture_of_experts.py
+- futures_orderbook: ml/advanced_features/futures_orderbook.py, experiments/technical_review/ml/advanced_features/futures_orderbook.py
+- llm_impact_scorer: ml/news_impact/llm_impact_scorer.py, experiments/technical_review/ml/news_impact/llm_impact_scorer.py
+- kelly_lite_sizing: ml/portfolio_optimization/kelly_lite_sizing.py, experiments/technical_review/ml/portfolio_optimization/kelly_lite_sizing.py
+- drift_detection_ewc: ml/continual_learning/drift_detection_ewc.py, experiments/technical_review/ml/continual_learning/drift_detection_ewc.py
+- strict_gate: orchestration/strict_gate.py, experiments/technical_review/orchestration/strict_gate.py
+- strict_gate_standalone: orchestration/strict_gate_standalone.py, experiments/technical_review/orchestration/strict_gate_standalone.py
+- exchange_manager: utils/exchange_manager.py, experiments/technical_review/utils/exchange_manager.py
+- gpu_optimizer: utils/gpu_optimizer.py, experiments/technical_review/utils/gpu_optimizer.py
+- logger: utils/logger.py, experiments/technical_review/utils/logger.py
+- alerts: utils/alerts.py, experiments/technical_review/utils/alerts.py
+- secrets: utils/secrets.py, experiments/technical_review/utils/secrets.py
+- metrics: utils/metrics.py, experiments/technical_review/utils/metrics.py
+- async_client: utils/async_client.py, experiments/technical_review/utils/async_client.py
+- performance_optimizer: core/performance_optimizer.py, experiments/technical_review/utils/performance_optimizer.py
+- error_handler: core/error_handler.py, experiments/technical_review/utils/error_handler.py
+- rate_limiter: utils/rate_limiter.py, experiments/technical_review/utils/rate_limiter.py
+- system_optimizer: core/system_optimizer.py, experiments/technical_review/utils/system_optimizer.py
+- daily_logger: core/daily_logger.py, experiments/technical_review/utils/daily_logger.py
+- timestamp_validation: utils/timestamp_validation.py, experiments/technical_review/utils/timestamp_validation.py
+- atomic_io: utils/atomic_io.py, experiments/technical_review/utils/atomic_io.py
+- timestamp_synchronizer: utils/timestamp_synchronizer.py, experiments/technical_review/utils/timestamp_synchronizer.py
+- timestamp_validator: utils/timestamp_validator.py, experiments/technical_review/utils/timestamp_validator.py
+- authentic_opportunities: utils/authentic_opportunities.py, experiments/technical_review/utils/authentic_opportunities.py
+- logging_manager: utils/logging_manager.py, experiments/technical_review/utils/logging_manager.py
+- log_viewer: utils/log_viewer.py, experiments/technical_review/utils/log_viewer.py
+
+## IMPORT ISSUES
+- attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/__main__.py:1 - from .config import Settings
+- attached_assets/extracted_cst/PR2-config-hardening/src/cryptosmarttrader/__main__.py:2 - from .logging import setup_logging
+- core/probabilistic_trader.py:24 - from .uncertainty_engine import UncertaintyEngine, UncertaintyPrediction, ConfidenceLevel
+- core/meta_learning_coordinator.py:28 - from .continual_learning_engine import get_continual_learning_engine
+- core/feature_discovery_engine.py:37 - from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
+- core/live_feature_adaptation.py:20 - from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
+- core/live_feature_adaptation.py:21 - from .feature_discovery_engine import get_feature_discovery_engine, DiscoveryConfig
+- core/live_feature_adaptation.py:22 - from .shap_regime_analyzer import get_shap_regime_analyzer, SHAPRegimeConfig, MarketRegime
+- core/adaptive_model_switcher.py:35 - from .market_regime_detector import MarketRegime, get_market_regime_detector, RegimeDetectionResult
+- core/adaptive_model_switcher.py:36 - from .automated_feature_engineering import get_automated_feature_engineer
+- core/adaptive_model_switcher.py:37 - from .deep_learning_engine import get_deep_learning_engine
+- ml/__init__.py:7 - from .models import ModelFactory, BaseModel
+- ml/features/__init__.py:6 - from .feature_engineering import FeatureEngineering
+- ml/features/__init__.py:7 - from .auto_features import AutoFeatures
+- ml/features/__init__.py:8 - from .feature_monitor import FeatureMonitor
+- ml/features/__init__.py:9 - from .leakage_detector import LeakageDetector
+- ml/models/__init__.py:6 - from .model_factory import ModelFactory, BaseModel
+- ml/ensembles/__init__.py:6 - from .ensemble_manager import EnsembleManager
+- ml/ensembles/__init__.py:7 - from .uncertainty_ensemble import UncertaintyEnsemble
+- ml/ensembles/__init__.py:8 - from .bayesian_ensemble import BayesianEnsemble
+- ml/ensembles/__init__.py:9 - from .quantile_ensemble import QuantileEnsemble
+- ml/regime/__init__.py:6 - from .regime_detector import RegimeDetector
+- ml/regime/__init__.py:7 - from .regime_router import RegimeRouter
+- ml/regime/__init__.py:8 - from .regime_models import RegimeSpecificModels
+- ml/regime/__init__.py:9 - from .transition_smoother import TransitionSmoother
+- ml/regime/regime_router.py:31 - from .regime_detector import RegimeDetector, get_regime_detector
+- ml/regime/regime_router.py:623 - from .regime_detector import create_mock_price_data
+- ml/continual/__init__.py:6 - from .continual_learner import ContinualLearner
+- ml/continual/__init__.py:7 - from .meta_learner import MetaLearner
+- ml/continual/__init__.py:8 - from .drift_detector import DriftDetector
+- ml/continual/__init__.py:9 - from .online_updater import OnlineUpdater
+- eval/__init__.py:6 - from .evaluator import ComprehensiveEvaluator
+- eval/__init__.py:7 - from .coverage_audit import ComprehensiveCoverageAuditor
+- eval/__init__.py:8 - from .system_health_monitor import SystemHealthMonitor
+- eval/__init__.py:9 - from .daily_metrics_logger import DailyMetricsLogger
+- orchestration/__init__.py:6 - from .orchestrator import SystemOrchestrator
+- orchestration/__init__.py:7 - from .scheduler import TaskScheduler
+- orchestration/__init__.py:8 - from .pipeline import DataPipeline
+- orchestration/__init__.py:9 - from .health_monitor import HealthMonitor
+- configs/__init__.py:6 - from .config_manager import ConfigManager
+- configs/__init__.py:7 - from .agent_configs import AgentConfigs
+- configs/__init__.py:8 - from .ml_configs import MLConfigs
+- configs/__init__.py:9 - from .system_configs import SystemConfigs
+- exports/unified_technical_review/source_code/agents/__init__.py:10 - from .sentiment_agent import SentimentAgent, SentimentData, SentimentSummary
+- exports/unified_technical_review/source_code/agents/__init__.py:16 - from .whale_detector_agent import WhaleDetectorAgent, WhaleTransaction, WhaleMetrics
+- exports/unified_technical_review/source_code/agents/sentiment/sentiment_processor.py:13 - from .model import SentimentModel
+- exports/unified_technical_review/source_code/agents/sentiment/__init__.py:7 - # from .sentiment_agent import SentimentAnalysisAgent
+- exports/unified_technical_review/source_code/agents/sentiment/__init__.py:8 - # from .model import SentimentModel, get_sentiment_model
+- exports/unified_technical_review/source_code/agents/sentiment/__init__.py:9 - # from .sentiment_processor import SentimentProcessor
+- exports/unified_technical_review/source_code/agents/sentiment/__init__.py:10 - # from .sentiment_models import SentimentEnsemble
+- exports/unified_technical_review/source_code/agents/ta/__init__.py:7 - # from .ta_agent import TechnicalAnalysisAgent
+- exports/unified_technical_review/source_code/agents/ta/__init__.py:8 - # from .indicators import TechnicalIndicators
+- exports/unified_technical_review/source_code/agents/ta/__init__.py:9 - # from .patterns import PatternRecognition
+- exports/unified_technical_review/source_code/agents/ta/__init__.py:10 - # from .ta_models import TechnicalEnsemble
+- exports/unified_technical_review/source_code/agents/onchain/__init__.py:7 - # from .onchain_agent import OnChainAnalysisAgent
+- exports/unified_technical_review/source_code/agents/onchain/__init__.py:8 - # from .blockchain_data import BlockchainDataCollector
+- exports/unified_technical_review/source_code/agents/onchain/__init__.py:9 - # from .metrics import OnChainMetrics
+- exports/unified_technical_review/source_code/agents/onchain/__init__.py:10 - # from .onchain_models import OnChainEnsemble
+- exports/unified_technical_review/source_code/agents/scraping_core/__init__.py:6 - from .async_client import AsyncScrapeClient, get_async_client, close_async_client
+- exports/unified_technical_review/source_code/agents/scraping_core/__init__.py:7 - from .data_sources import (
+- exports/unified_technical_review/source_code/agents/scraping_core/__init__.py:12 - from .orchestrator import ScrapingOrchestrator, get_scraping_orchestrator, ScrapingResults
+- exports/unified_technical_review/source_code/agents/scraping_core/data_sources.py:20 - from .async_client import AsyncScrapeClient
+- exports/unified_technical_review/source_code/api/schemas/__init__.py:5 - from .common import *
+- exports/unified_technical_review/source_code/api/schemas/__init__.py:6 - from .health import *
+- exports/unified_technical_review/source_code/api/schemas/__init__.py:7 - from .market_data import *
+- exports/unified_technical_review/source_code/api/schemas/__init__.py:8 - from .predictions import *
+- exports/unified_technical_review/source_code/api/schemas/__init__.py:9 - from .signals import *
+- exports/unified_technical_review/source_code/api/schemas/health.py:10 - from .common import BaseResponse, StatusInfo
+- exports/unified_technical_review/source_code/api/schemas/market_data.py:10 - from .common import BaseResponse
+- exports/unified_technical_review/source_code/api/schemas/predictions.py:10 - from .common import BaseResponse
+- exports/unified_technical_review/source_code/api/schemas/signals.py:10 - from .common import BaseResponse
+- exports/unified_technical_review/source_code/ml/__init__.py:7 - from .models import ModelFactory, BaseModel
+- exports/unified_technical_review/source_code/ml/features/__init__.py:6 - from .feature_engineering import FeatureEngineering
+- exports/unified_technical_review/source_code/ml/features/__init__.py:7 - from .auto_features import AutoFeatures
+- exports/unified_technical_review/source_code/ml/features/__init__.py:8 - from .feature_monitor import FeatureMonitor
+- exports/unified_technical_review/source_code/ml/features/__init__.py:9 - from .leakage_detector import LeakageDetector
+- exports/unified_technical_review/source_code/ml/models/__init__.py:6 - from .model_factory import ModelFactory, BaseModel
+- exports/unified_technical_review/source_code/ml/ensembles/__init__.py:6 - from .ensemble_manager import EnsembleManager
+- exports/unified_technical_review/source_code/ml/ensembles/__init__.py:7 - from .uncertainty_ensemble import UncertaintyEnsemble
+- exports/unified_technical_review/source_code/ml/ensembles/__init__.py:8 - from .bayesian_ensemble import BayesianEnsemble
+- exports/unified_technical_review/source_code/ml/ensembles/__init__.py:9 - from .quantile_ensemble import QuantileEnsemble
+- exports/unified_technical_review/source_code/ml/regime/__init__.py:6 - from .regime_detector import RegimeDetector
+- exports/unified_technical_review/source_code/ml/regime/__init__.py:7 - from .regime_router import RegimeRouter
+- exports/unified_technical_review/source_code/ml/regime/__init__.py:8 - from .regime_models import RegimeSpecificModels
+- exports/unified_technical_review/source_code/ml/regime/__init__.py:9 - from .transition_smoother import TransitionSmoother
+- exports/unified_technical_review/source_code/ml/regime/regime_router.py:31 - from .regime_detector import RegimeDetector, get_regime_detector
+- exports/unified_technical_review/source_code/ml/regime/regime_router.py:623 - from .regime_detector import create_mock_price_data
+- exports/unified_technical_review/source_code/ml/continual/__init__.py:6 - from .continual_learner import ContinualLearner
+- exports/unified_technical_review/source_code/ml/continual/__init__.py:7 - from .meta_learner import MetaLearner
+- exports/unified_technical_review/source_code/ml/continual/__init__.py:8 - from .drift_detector import DriftDetector
+- exports/unified_technical_review/source_code/ml/continual/__init__.py:9 - from .online_updater import OnlineUpdater
+- exports/unified_technical_review/source_code/orchestration/__init__.py:6 - from .orchestrator import SystemOrchestrator
+- exports/unified_technical_review/source_code/orchestration/__init__.py:7 - from .scheduler import TaskScheduler
+- exports/unified_technical_review/source_code/orchestration/__init__.py:8 - from .pipeline import DataPipeline
+- exports/unified_technical_review/source_code/orchestration/__init__.py:9 - from .health_monitor import HealthMonitor
+- exports/unified_technical_review/source_code/core/probabilistic_trader.py:24 - from .uncertainty_engine import UncertaintyEngine, UncertaintyPrediction, ConfidenceLevel
+- exports/unified_technical_review/source_code/core/meta_learning_coordinator.py:28 - from .continual_learning_engine import get_continual_learning_engine
+- exports/unified_technical_review/source_code/core/feature_discovery_engine.py:37 - from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
+- exports/unified_technical_review/source_code/core/live_feature_adaptation.py:20 - from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
+- exports/unified_technical_review/source_code/core/live_feature_adaptation.py:21 - from .feature_discovery_engine import get_feature_discovery_engine, DiscoveryConfig
+- exports/unified_technical_review/source_code/core/live_feature_adaptation.py:22 - from .shap_regime_analyzer import get_shap_regime_analyzer, SHAPRegimeConfig, MarketRegime
+- exports/unified_technical_review/source_code/core/adaptive_model_switcher.py:35 - from .market_regime_detector import MarketRegime, get_market_regime_detector, RegimeDetectionResult
+- exports/unified_technical_review/source_code/core/adaptive_model_switcher.py:36 - from .automated_feature_engineering import get_automated_feature_engineer
+- exports/unified_technical_review/source_code/core/adaptive_model_switcher.py:37 - from .deep_learning_engine import get_deep_learning_engine
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/__init__.py:8 - from .data_provider_port import DataProviderPort
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/__init__.py:9 - from .storage_port import StoragePort
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/__init__.py:10 - from .model_inference_port import ModelInferencePort
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/__init__.py:11 - from .risk_management_port import RiskManagementPort
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/interfaces/__init__.py:12 - from .notification_port import NotificationPort
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/adapters/__init__.py:8 - from .kraken_data_adapter import KrakenDataAdapter
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/adapters/__init__.py:9 - from .redis_cache_adapter import RedisCacheAdapter
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/adapters/__init__.py:10 - from .file_storage_adapter import FileStorageAdapter
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/adapters/__init__.py:11 - from .sklearn_model_adapter import SklearnModelAdapter
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/adaptive_model_switcher.py:35 - from .market_regime_detector import MarketRegime, get_market_regime_detector, RegimeDetectionResult
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/adaptive_model_switcher.py:36 - from .automated_feature_engineering import get_automated_feature_engineer
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/adaptive_model_switcher.py:37 - from .deep_learning_engine import get_deep_learning_engine
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/feature_discovery_engine.py:37 - from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/live_feature_adaptation.py:20 - from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/live_feature_adaptation.py:21 - from .feature_discovery_engine import get_feature_discovery_engine, DiscoveryConfig
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/live_feature_adaptation.py:22 - from .shap_regime_analyzer import get_shap_regime_analyzer, SHAPRegimeConfig, MarketRegime
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/meta_learning_coordinator.py:28 - from .continual_learning_engine import get_continual_learning_engine
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/core/probabilistic_trader.py:24 - from .uncertainty_engine import UncertaintyEngine, UncertaintyPrediction, ConfidenceLevel
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/onchain/__init__.py:7 - # from .onchain_agent import OnChainAnalysisAgent
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/onchain/__init__.py:8 - # from .blockchain_data import BlockchainDataCollector
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/onchain/__init__.py:9 - # from .metrics import OnChainMetrics
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/onchain/__init__.py:10 - # from .onchain_models import OnChainEnsemble
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/scraping_core/__init__.py:6 - from .async_client import AsyncScrapeClient, get_async_client, close_async_client
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/scraping_core/__init__.py:7 - from .data_sources import (
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/scraping_core/__init__.py:12 - from .orchestrator import ScrapingOrchestrator, get_scraping_orchestrator, ScrapingResults
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/scraping_core/data_sources.py:20 - from .async_client import AsyncScrapeClient
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/sentiment_processor.py:13 - from .model import SentimentModel
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/__init__.py:7 - # from .sentiment_agent import SentimentAnalysisAgent
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/__init__.py:8 - # from .model import SentimentModel, get_sentiment_model
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/__init__.py:9 - # from .sentiment_processor import SentimentProcessor
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/sentiment/__init__.py:10 - # from .sentiment_models import SentimentEnsemble
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/ta/__init__.py:7 - # from .ta_agent import TechnicalAnalysisAgent
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/ta/__init__.py:8 - # from .indicators import TechnicalIndicators
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/ta/__init__.py:9 - # from .patterns import PatternRecognition
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/agents/ta/__init__.py:10 - # from .ta_models import TechnicalEnsemble
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/strategy_switcher.py:15 - from .regime_detection import MarketRegime, RegimeClassification
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/continual/__init__.py:6 - from .continual_learner import ContinualLearner
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/continual/__init__.py:7 - from .meta_learner import MetaLearner
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/continual/__init__.py:8 - from .drift_detector import DriftDetector
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/continual/__init__.py:9 - from .online_updater import OnlineUpdater
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/ensembles/__init__.py:6 - from .ensemble_manager import EnsembleManager
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/ensembles/__init__.py:7 - from .uncertainty_ensemble import UncertaintyEnsemble
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/ensembles/__init__.py:8 - from .bayesian_ensemble import BayesianEnsemble
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/ensembles/__init__.py:9 - from .quantile_ensemble import QuantileEnsemble
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/__init__.py:6 - from .feature_engineering import FeatureEngineering
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/__init__.py:7 - from .auto_features import AutoFeatures
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/__init__.py:8 - from .feature_monitor import FeatureMonitor
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/features/__init__.py:9 - from .leakage_detector import LeakageDetector
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/models/__init__.py:6 - from .model_factory import ModelFactory, BaseModel
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/__init__.py:6 - from .regime_detector import RegimeDetector
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/__init__.py:7 - from .regime_router import RegimeRouter
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/__init__.py:8 - from .regime_models import RegimeSpecificModels
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/__init__.py:9 - from .transition_smoother import TransitionSmoother
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/regime_router.py:31 - from .regime_detector import RegimeDetector, get_regime_detector
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ml/regime/regime_router.py:623 - from .regime_detector import create_mock_price_data
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/dependencies.py:6 - from ..config import get_settings, Settings
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/app.py:12 - from .routers import health_router, market_router, trading_router, agents_router
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/app.py:13 - from ..config import get_settings
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/app.py:14 - from ..logging import get_logger, log_performance_metric
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/__init__.py:9 - # from .main import app
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/__init__.py:10 - # from .health_endpoint import health_router
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/__init__.py:3 - from .health import HealthOut, HealthDetailOut, ServiceHealth
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/__init__.py:4 - from .market import MarketDataOut, CoinInfo, PriceData
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/__init__.py:5 - from .trading import SignalOut, PositionOut, PortfolioOut
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/models/__init__.py:6 - from .agents import AgentStatus, AgentMetrics, AgentPerformance
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/market.py:8 - from ..dependencies import get_orchestrator, get_settings
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/market.py:9 - from ...config import Settings
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/trading.py:8 - from ..dependencies import get_orchestrator, get_settings
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/trading.py:9 - from ...config import Settings
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/agents.py:7 - from ..dependencies import get_orchestrator, get_settings
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/routers/agents.py:8 - from ...config import Settings
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/__init__.py:5 - from .common import *
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/__init__.py:6 - from .health import *
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/__init__.py:7 - from .market_data import *
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/__init__.py:8 - from .predictions import *
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/__init__.py:9 - from .signals import *
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/health.py:10 - from .common import BaseResponse, StatusInfo
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/market_data.py:10 - from .common import BaseResponse
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/predictions.py:10 - from .common import BaseResponse
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/api/schemas/signals.py:10 - from .common import BaseResponse
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/__init__.py:8 - from .regime_detector import RegimeDetector
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/__init__.py:9 - from .regime_features import RegimeFeatures
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/__init__.py:10 - from .regime_models import RegimeClassifier
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/__init__.py:11 - from .regime_strategies import RegimeStrategies
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/regime_strategies.py:16 - from .regime_models import MarketRegime, RegimeClassification
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/regime_detector.py:19 - from .regime_features import RegimeFeatures, RegimeFeatureSet
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/regime_detector.py:20 - from .regime_models import RegimeClassifier, MarketRegime, RegimeClassification
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/regime_detector.py:21 - from .regime_strategies import RegimeStrategies, TradingParameters
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/regime/regime_detector.py:443 - from .regime_models import RegimeClassification, MarketRegime
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/confidence_weigher.py:14 - from .probability_calibration import ProbabilityCalibrator
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/confidence_weigher.py:15 - from .kelly_sizing import KellySizer, KellyMode, KellyParameters
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/__init__.py:8 - from .kelly_sizing import KellySizer, KellyParameters, KellyMode
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/__init__.py:9 - from .probability_calibration import ProbabilityCalibrator
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/sizing/__init__.py:10 - from .confidence_weigher import ConfidenceWeighter
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_filter.py:15 - from .liquidity_gate import LiquidityGate, LiquidityMetrics
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_filter.py:16 - from .spread_monitor import SpreadMonitor, SpreadAnalytics
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/execution_filter.py:17 - from .slippage_tracker import SlippageTracker, SlippageMetrics
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/tracking_error_monitor.py:19 - from .execution_simulator import ExecutionResult, Fill, OrderSide
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/__init__.py:8 - # from .execution_simulator import ExecutionSimulator, ExecutionResult, Fill  # Module not yet implemented
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/__init__.py:9 - # from .market_microstructure import MarketMicrostructure, OrderBookSimulator, LiquidityProvider  # Module not yet implemented
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/__init__.py:10 - # from .slippage_analyzer import SlippageAnalyzer, SlippageAttribution, SlippageSource  # Module not yet implemented
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/__init__.py:11 - # from .execution_quality_monitor import ExecutionQualityMonitor, ExecutionQuality, QualityGrade  # Module not yet implemented
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/__init__.py:12 - # from .live_backtest_comparator import LiveBacktestComparator, ParityMetrics, PerformanceGap  # Module not yet implemented
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/__init__.py:15 - from .order_deduplication import OrderDeduplicationEngine, OrderSubmission, ClientOrderId, OrderStatus
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/__init__.py:16 - from .idempotent_executor import IdempotentOrderExecutor, ExecutionContext, ExecutionMode
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/execution/idempotent_executor.py:18 - from .order_deduplication import (
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/alpha_blender.py:17 - from .base_models import ModelPrediction
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/alpha_blender.py:18 - from .meta_learner import EnsemblePrediction
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/signal_decay.py:16 - from .base_models import ModelPrediction
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/__init__.py:13 - from .base_models import BaseModelInterface, TechnicalAnalysisModel, SentimentModel, RegimeModel
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/__init__.py:14 - from .meta_learner import MetaLearner, EnsembleConfig
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/__init__.py:15 - from .alpha_blender import AlphaBlender, BlendingStrategy, BlendingConfig
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/__init__.py:16 - from .signal_decay import SignalDecayManager, DecayConfig, DecayFunction
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/ensemble/meta_learner.py:31 - from .base_models import ModelPrediction
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/events/__init__.py:12 - from .funding_analyzer import FundingAnalyzer, FundingEvent, FundingFlip
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/events/__init__.py:13 - from .open_interest_tracker import OpenInterestTracker, OIEvent, OIDivergence
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/events/__init__.py:14 - from .basis_analyzer import BasisAnalyzer, BasisSignal, BasisZScore
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/events/__init__.py:15 - from .event_detector import EventDetector, MarketEvent, EventType
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/events/__init__.py:16 - from .signal_generator import EventSignalGenerator, EventSignal
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/events/__init__.py:17 - from .event_analytics import EventAnalytics, EventMetrics
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/adaptive_risk_manager.py:15 - from .drawdown_monitor import DrawdownMonitor, DrawdownLevel, RiskReduction
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/adaptive_risk_manager.py:16 - from .kill_switch import KillSwitch, KillSwitchLevel
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/adaptive_risk_manager.py:17 - from .data_health_monitor import DataHealthMonitor, HealthGate
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/kill_switch.py:18 - from .risk_limits import RiskLimitManager, RiskStatus, ActionType
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/kill_switch.py:19 - from .circuit_breaker import CircuitBreakerManager, BreakerState
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/risk/__init__.py:7 - from .risk_limits import (
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/__init__.py:8 - from .hyperparameter_optimizer import HyperparameterOptimizer, OptimizationResult, OptimizationMetrics
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/__init__.py:9 - from .walk_forward_validator import WalkForwardValidator, ValidationResult, TimeSeriesCV
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/__init__.py:10 - from .regime_aware_cv import RegimeAwareCV, RegimeSplit, RegimeValidationResult
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/__init__.py:11 - from .bayesian_optimizer import BayesianOptimizer, ObjectiveFunction, SearchSpace
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/optimization/__init__.py:12 - from .performance_evaluator import PerformanceEvaluator, OOSMetrics, StabilityMetrics
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/__init__.py:8 - from .return_attribution import ReturnAttributor, AttributionResult, AttributionComponent
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/__init__.py:9 - from .performance_monitor import PerformanceMonitor, PerformanceAlert, AlertType
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/__init__.py:10 - from .degradation_detector import DegradationDetector, DegradationAlert, DriftMetrics
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/analytics/__init__.py:11 - from .dashboard_analytics import DashboardAnalytics, AnalyticsCache, RealtimeMetrics
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/recovery_coordinator.py:18 - from .process_manager import ProcessManager, ProcessConfig, ProcessState
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/recovery_coordinator.py:19 - from .health_checker import HealthChecker, DependencyCheck, HealthLevel
+- exports/unified_technical_review/source_code/src/cryptosmarttrader/deployment/recovery_coordinator.py:20 - from .deployment_config import DeploymentConfig
+- src/cryptosmarttrader/__main__.py:14 - from ..config import load_and_validate_settings, Settings
+- src/cryptosmarttrader/__main__.py:15 - from ..logging import setup_logging, setup_simple_logging, get_logger, LogContext
+- src/cryptosmarttrader/interfaces/__init__.py:8 - from .data_provider_port import DataProviderPort
+- src/cryptosmarttrader/interfaces/__init__.py:9 - from .storage_port import StoragePort
+- src/cryptosmarttrader/interfaces/__init__.py:10 - from .model_inference_port import ModelInferencePort
+- src/cryptosmarttrader/interfaces/__init__.py:11 - from .risk_management_port import RiskManagementPort
+- src/cryptosmarttrader/interfaces/__init__.py:12 - from .notification_port import NotificationPort
+- src/cryptosmarttrader/adapters/__init__.py:8 - from .kraken_data_adapter import KrakenDataAdapter
+- src/cryptosmarttrader/adapters/__init__.py:9 - from .redis_cache_adapter import RedisCacheAdapter
+- src/cryptosmarttrader/adapters/__init__.py:10 - from .file_storage_adapter import FileStorageAdapter
+- src/cryptosmarttrader/adapters/__init__.py:11 - from .sklearn_model_adapter import SklearnModelAdapter
+- src/cryptosmarttrader/core/adaptive_model_switcher.py:35 - from .market_regime_detector import MarketRegime, get_market_regime_detector, RegimeDetectionResult
+- src/cryptosmarttrader/core/adaptive_model_switcher.py:36 - from .automated_feature_engineering import get_automated_feature_engineer
+- src/cryptosmarttrader/core/adaptive_model_switcher.py:37 - from .deep_learning_engine import get_deep_learning_engine
+- src/cryptosmarttrader/core/feature_discovery_engine.py:37 - from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
+- src/cryptosmarttrader/core/live_feature_adaptation.py:20 - from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
+- src/cryptosmarttrader/core/live_feature_adaptation.py:21 - from .feature_discovery_engine import get_feature_discovery_engine, DiscoveryConfig
+- src/cryptosmarttrader/core/live_feature_adaptation.py:22 - from .shap_regime_analyzer import get_shap_regime_analyzer, SHAPRegimeConfig, MarketRegime
+- src/cryptosmarttrader/core/meta_learning_coordinator.py:28 - from .continual_learning_engine import get_continual_learning_engine
+- src/cryptosmarttrader/core/probabilistic_trader.py:24 - from .uncertainty_engine import UncertaintyEngine, UncertaintyPrediction, ConfidenceLevel
+- src/cryptosmarttrader/core/__init__.py:3 - from .config_manager import ConfigManager
+- src/cryptosmarttrader/core/__init__.py:4 - from .structured_logger import StructuredLogger
+- src/cryptosmarttrader/core/regime_detector.py:14 - from .structured_logger import get_logger
+- src/cryptosmarttrader/core/strategy_switcher.py:14 - from .structured_logger import get_logger
+- src/cryptosmarttrader/core/strategy_switcher.py:15 - from .regime_detector import RegimeDetector, MarketRegime
+- src/cryptosmarttrader/core/execution_policy_original.py:16 - from .structured_logger import get_logger
+- src/cryptosmarttrader/core/risk_guard_original.py:15 - from .structured_logger import get_logger
+- src/cryptosmarttrader/agents/__init__.py:13 - from .ensemble_voting_agent import EnsembleVotingAgent
+- src/cryptosmarttrader/agents/__init__.py:14 - from .early_mover_system import EarlyMoverSystem
+- src/cryptosmarttrader/agents/__init__.py:15 - from .listing_detection_agent import ListingDetectionAgent
+- src/cryptosmarttrader/agents/__init__.py:16 - from .enhanced_technical_agent import EnhancedTechnicalAgent
+- src/cryptosmarttrader/agents/__init__.py:17 - from .enhanced_sentiment_agent import EnhancedSentimentAgent
+- src/cryptosmarttrader/agents/__init__.py:18 - from .portfolio_optimizer_agent import PortfolioOptimizerAgent
+- src/cryptosmarttrader/agents/onchain/__init__.py:7 - # from .onchain_agent import OnChainAnalysisAgent
+- src/cryptosmarttrader/agents/onchain/__init__.py:8 - # from .blockchain_data import BlockchainDataCollector
+- src/cryptosmarttrader/agents/onchain/__init__.py:9 - # from .metrics import OnChainMetrics
+- src/cryptosmarttrader/agents/onchain/__init__.py:10 - # from .onchain_models import OnChainEnsemble
+- src/cryptosmarttrader/agents/scraping_core/__init__.py:6 - from .async_client import AsyncScrapeClient, get_async_client, close_async_client
+- src/cryptosmarttrader/agents/scraping_core/__init__.py:7 - from .data_sources import (
+- src/cryptosmarttrader/agents/scraping_core/__init__.py:12 - from .orchestrator import ScrapingOrchestrator, get_scraping_orchestrator, ScrapingResults
+- src/cryptosmarttrader/agents/scraping_core/data_sources.py:20 - from .async_client import AsyncScrapeClient
+- src/cryptosmarttrader/agents/sentiment/sentiment_processor.py:13 - from .model import SentimentModel
+- src/cryptosmarttrader/agents/sentiment/__init__.py:7 - # from .sentiment_agent import SentimentAnalysisAgent
+- src/cryptosmarttrader/agents/sentiment/__init__.py:8 - # from .model import SentimentModel, get_sentiment_model
+- src/cryptosmarttrader/agents/sentiment/__init__.py:9 - # from .sentiment_processor import SentimentProcessor
+- src/cryptosmarttrader/agents/sentiment/__init__.py:10 - # from .sentiment_models import SentimentEnsemble
+- src/cryptosmarttrader/agents/ta/__init__.py:7 - # from .ta_agent import TechnicalAnalysisAgent
+- src/cryptosmarttrader/agents/ta/__init__.py:8 - # from .indicators import TechnicalIndicators
+- src/cryptosmarttrader/agents/ta/__init__.py:9 - # from .patterns import PatternRecognition
+- src/cryptosmarttrader/agents/ta/__init__.py:10 - # from .ta_models import TechnicalEnsemble
+- src/cryptosmarttrader/agents/agents/__init__.py:10 - from .sentiment_agent import SentimentAgent, SentimentData, SentimentSummary
+- src/cryptosmarttrader/agents/agents/__init__.py:16 - from .whale_detector_agent import WhaleDetectorAgent, WhaleTransaction, WhaleMetrics
+- src/cryptosmarttrader/agents/agents/sentiment/sentiment_processor.py:13 - from .model import SentimentModel
+- src/cryptosmarttrader/agents/agents/sentiment/__init__.py:7 - # from .sentiment_agent import SentimentAnalysisAgent
+- src/cryptosmarttrader/agents/agents/sentiment/__init__.py:8 - # from .model import SentimentModel, get_sentiment_model
+- src/cryptosmarttrader/agents/agents/sentiment/__init__.py:9 - # from .sentiment_processor import SentimentProcessor
+- src/cryptosmarttrader/agents/agents/sentiment/__init__.py:10 - # from .sentiment_models import SentimentEnsemble
+- src/cryptosmarttrader/agents/agents/ta/__init__.py:7 - # from .ta_agent import TechnicalAnalysisAgent
+- src/cryptosmarttrader/agents/agents/ta/__init__.py:8 - # from .indicators import TechnicalIndicators
+- src/cryptosmarttrader/agents/agents/ta/__init__.py:9 - # from .patterns import PatternRecognition
+- src/cryptosmarttrader/agents/agents/ta/__init__.py:10 - # from .ta_models import TechnicalEnsemble
+- src/cryptosmarttrader/agents/agents/onchain/__init__.py:7 - # from .onchain_agent import OnChainAnalysisAgent
+- src/cryptosmarttrader/agents/agents/onchain/__init__.py:8 - # from .blockchain_data import BlockchainDataCollector
+- src/cryptosmarttrader/agents/agents/onchain/__init__.py:9 - # from .metrics import OnChainMetrics
+- src/cryptosmarttrader/agents/agents/onchain/__init__.py:10 - # from .onchain_models import OnChainEnsemble
+- src/cryptosmarttrader/agents/agents/scraping_core/__init__.py:6 - from .async_client import AsyncScrapeClient, get_async_client, close_async_client
+- src/cryptosmarttrader/agents/agents/scraping_core/__init__.py:7 - from .data_sources import (
+- src/cryptosmarttrader/agents/agents/scraping_core/__init__.py:12 - from .orchestrator import ScrapingOrchestrator, get_scraping_orchestrator, ScrapingResults
+- src/cryptosmarttrader/agents/agents/scraping_core/data_sources.py:20 - from .async_client import AsyncScrapeClient
+- src/cryptosmarttrader/ml/strategy_switcher.py:15 - from .regime_detection import MarketRegime, RegimeClassification
+- src/cryptosmarttrader/ml/walk_forward_trainer.py:25 - from .model_registry import (
+- src/cryptosmarttrader/ml/drift_detector.py:25 - from .model_registry import ModelRegistry, ModelVersion
+- src/cryptosmarttrader/ml/__init__.py:6 - from .model_registry import (
+- src/cryptosmarttrader/ml/__init__.py:17 - from .walk_forward_trainer import (
+- src/cryptosmarttrader/ml/__init__.py:26 - from .drift_detector import (
+- src/cryptosmarttrader/ml/continual/__init__.py:6 - from .continual_learner import ContinualLearner
+- src/cryptosmarttrader/ml/continual/__init__.py:7 - from .meta_learner import MetaLearner
+- src/cryptosmarttrader/ml/continual/__init__.py:8 - from .drift_detector import DriftDetector
+- src/cryptosmarttrader/ml/continual/__init__.py:9 - from .online_updater import OnlineUpdater
+- src/cryptosmarttrader/ml/ensembles/__init__.py:6 - from .ensemble_manager import EnsembleManager
+- src/cryptosmarttrader/ml/ensembles/__init__.py:7 - from .uncertainty_ensemble import UncertaintyEnsemble
+- src/cryptosmarttrader/ml/ensembles/__init__.py:8 - from .bayesian_ensemble import BayesianEnsemble
+- src/cryptosmarttrader/ml/ensembles/__init__.py:9 - from .quantile_ensemble import QuantileEnsemble
+- src/cryptosmarttrader/ml/features/__init__.py:6 - from .feature_engineering import FeatureEngineering
+- src/cryptosmarttrader/ml/features/__init__.py:7 - from .auto_features import AutoFeatures
+- src/cryptosmarttrader/ml/features/__init__.py:8 - from .feature_monitor import FeatureMonitor
+- src/cryptosmarttrader/ml/features/__init__.py:9 - from .leakage_detector import LeakageDetector
+- src/cryptosmarttrader/ml/models/__init__.py:6 - from .model_factory import ModelFactory, BaseModel
+- src/cryptosmarttrader/ml/regime/__init__.py:6 - from .regime_detector import RegimeDetector
+- src/cryptosmarttrader/ml/regime/__init__.py:7 - from .regime_router import RegimeRouter
+- src/cryptosmarttrader/ml/regime/__init__.py:8 - from .regime_models import RegimeSpecificModels
+- src/cryptosmarttrader/ml/regime/__init__.py:9 - from .transition_smoother import TransitionSmoother
+- src/cryptosmarttrader/ml/regime/regime_router.py:31 - from .regime_detector import RegimeDetector, get_regime_detector
+- src/cryptosmarttrader/ml/regime/regime_router.py:623 - from .regime_detector import create_mock_price_data
+- src/cryptosmarttrader/api/dependencies.py:6 - from ..config import get_settings, Settings
+- src/cryptosmarttrader/api/app.py:12 - from .routers import health_router, market_router, trading_router, agents_router
+- src/cryptosmarttrader/api/app.py:13 - from ..config import get_settings
+- src/cryptosmarttrader/api/app.py:14 - from ..logging import get_logger, log_performance_metric
+- src/cryptosmarttrader/api/__init__.py:12 - from .main import app
+- src/cryptosmarttrader/api/__init__.py:13 - from .health_endpoint import health_router
+- src/cryptosmarttrader/api/models/__init__.py:3 - from .health import HealthOut, HealthDetailOut, ServiceHealth
+- src/cryptosmarttrader/api/models/__init__.py:4 - from .market import MarketDataOut, CoinInfo, PriceData
+- src/cryptosmarttrader/api/models/__init__.py:5 - from .trading import SignalOut, PositionOut, PortfolioOut
+- src/cryptosmarttrader/api/models/__init__.py:6 - from .agents import AgentStatus, AgentMetrics, AgentPerformance
+- src/cryptosmarttrader/api/routers/trading.py:8 - from ..dependencies import get_orchestrator, get_settings
+- src/cryptosmarttrader/api/routers/trading.py:9 - from ...config import Settings
+- src/cryptosmarttrader/api/routers/agents.py:7 - from ..dependencies import get_orchestrator, get_settings
+- src/cryptosmarttrader/api/routers/agents.py:8 - from ...config import Settings
+- src/cryptosmarttrader/api/schemas/__init__.py:5 - from .common import *
+- src/cryptosmarttrader/api/schemas/__init__.py:6 - from .health import *
+- src/cryptosmarttrader/api/schemas/__init__.py:7 - from .market_data import *
+- src/cryptosmarttrader/api/schemas/__init__.py:8 - from .predictions import *
+- src/cryptosmarttrader/api/schemas/__init__.py:9 - from .signals import *
+- src/cryptosmarttrader/api/schemas/health.py:10 - from .common import BaseResponse, StatusInfo
+- src/cryptosmarttrader/api/schemas/market_data.py:10 - from .common import BaseResponse
+- src/cryptosmarttrader/api/schemas/predictions.py:10 - from .common import BaseResponse
+- src/cryptosmarttrader/api/schemas/signals.py:10 - from .common import BaseResponse
+- src/cryptosmarttrader/api/api/schemas/__init__.py:5 - from .common import *
+- src/cryptosmarttrader/api/api/schemas/__init__.py:6 - from .health import *
+- src/cryptosmarttrader/api/api/schemas/__init__.py:7 - from .market_data import *
+- src/cryptosmarttrader/api/api/schemas/__init__.py:8 - from .predictions import *
+- src/cryptosmarttrader/api/api/schemas/__init__.py:9 - from .signals import *
+- src/cryptosmarttrader/api/api/schemas/health.py:10 - from .common import BaseResponse, StatusInfo
+- src/cryptosmarttrader/api/api/schemas/market_data.py:10 - from .common import BaseResponse
+- src/cryptosmarttrader/api/api/schemas/predictions.py:10 - from .common import BaseResponse
+- src/cryptosmarttrader/api/api/schemas/signals.py:10 - from .common import BaseResponse
+- src/cryptosmarttrader/regime/__init__.py:8 - from .regime_detector import RegimeDetector
+- src/cryptosmarttrader/regime/__init__.py:9 - from .regime_features import RegimeFeatures
+- src/cryptosmarttrader/regime/__init__.py:10 - from .regime_models import RegimeClassifier
+- src/cryptosmarttrader/regime/__init__.py:11 - from .regime_strategies import RegimeStrategies
+- src/cryptosmarttrader/regime/regime_strategies.py:16 - from .regime_models import MarketRegime, RegimeClassification
+- src/cryptosmarttrader/regime/regime_detector.py:19 - from .regime_features import RegimeFeatures, RegimeFeatureSet
+- src/cryptosmarttrader/regime/regime_detector.py:20 - from .regime_models import RegimeClassifier, MarketRegime, RegimeClassification
+- src/cryptosmarttrader/regime/regime_detector.py:21 - from .regime_strategies import RegimeStrategies, TradingParameters
+- src/cryptosmarttrader/regime/regime_detector.py:443 - from .regime_models import RegimeClassification, MarketRegime
+- src/cryptosmarttrader/sizing/confidence_weigher.py:14 - from .probability_calibration import ProbabilityCalibrator
+- src/cryptosmarttrader/sizing/confidence_weigher.py:15 - from .kelly_sizing import KellySizer, KellyMode, KellyParameters
+- src/cryptosmarttrader/sizing/__init__.py:8 - from .kelly_sizing import KellySizer, KellyParameters, KellyMode
+- src/cryptosmarttrader/sizing/__init__.py:9 - from .probability_calibration import ProbabilityCalibrator
+- src/cryptosmarttrader/sizing/__init__.py:10 - from .confidence_weigher import ConfidenceWeighter
+- src/cryptosmarttrader/ensemble/alpha_blender.py:17 - from .base_models import ModelPrediction
+- src/cryptosmarttrader/ensemble/alpha_blender.py:18 - from .meta_learner import EnsemblePrediction
+- src/cryptosmarttrader/ensemble/signal_decay.py:16 - from .base_models import ModelPrediction
+- src/cryptosmarttrader/ensemble/__init__.py:13 - from .base_models import BaseModelInterface, TechnicalAnalysisModel, SentimentModel, RegimeModel
+- src/cryptosmarttrader/ensemble/__init__.py:14 - from .meta_learner import MetaLearner, EnsembleConfig
+- src/cryptosmarttrader/ensemble/__init__.py:15 - from .alpha_blender import AlphaBlender, BlendingStrategy, BlendingConfig
+- src/cryptosmarttrader/ensemble/__init__.py:16 - from .signal_decay import SignalDecayManager, DecayConfig, DecayFunction
+- src/cryptosmarttrader/ensemble/meta_learner.py:31 - from .base_models import ModelPrediction
+- src/cryptosmarttrader/events/__init__.py:12 - from .funding_analyzer import FundingAnalyzer, FundingEvent, FundingFlip
+- src/cryptosmarttrader/events/__init__.py:13 - from .open_interest_tracker import OpenInterestTracker, OIEvent, OIDivergence
+- src/cryptosmarttrader/events/__init__.py:14 - from .basis_analyzer import BasisAnalyzer, BasisSignal, BasisZScore
+- src/cryptosmarttrader/events/__init__.py:15 - from .event_detector import EventDetector, MarketEvent, EventType
+- src/cryptosmarttrader/events/__init__.py:16 - from .signal_generator import EventSignalGenerator, EventSignal
+- src/cryptosmarttrader/events/__init__.py:17 - from .event_analytics import EventAnalytics, EventMetrics
+- src/cryptosmarttrader/optimization/__init__.py:8 - from .hyperparameter_optimizer import HyperparameterOptimizer, OptimizationResult, OptimizationMetrics
+- src/cryptosmarttrader/optimization/__init__.py:9 - from .walk_forward_validator import WalkForwardValidator, ValidationResult, TimeSeriesCV
+- src/cryptosmarttrader/optimization/__init__.py:10 - from .regime_aware_cv import RegimeAwareCV, RegimeSplit, RegimeValidationResult
+- src/cryptosmarttrader/optimization/__init__.py:11 - from .bayesian_optimizer import BayesianOptimizer, ObjectiveFunction, SearchSpace
+- src/cryptosmarttrader/optimization/__init__.py:12 - from .performance_evaluator import PerformanceEvaluator, OOSMetrics, StabilityMetrics
+- src/cryptosmarttrader/analytics/__init__.py:8 - from .return_attribution import ReturnAttributor, AttributionResult, AttributionComponent
+- src/cryptosmarttrader/analytics/__init__.py:9 - from .performance_monitor import PerformanceMonitor, PerformanceAlert, AlertType
+- src/cryptosmarttrader/analytics/__init__.py:10 - from .degradation_detector import DegradationDetector, DegradationAlert, DriftMetrics
+- src/cryptosmarttrader/analytics/__init__.py:11 - from .dashboard_analytics import DashboardAnalytics, AnalyticsCache, RealtimeMetrics
+- src/cryptosmarttrader/deployment/recovery_coordinator.py:18 - from .process_manager import ProcessManager, ProcessConfig, ProcessState
+- src/cryptosmarttrader/deployment/recovery_coordinator.py:19 - from .health_checker import HealthChecker, DependencyCheck, HealthLevel
+- src/cryptosmarttrader/deployment/recovery_coordinator.py:20 - from .deployment_config import DeploymentConfig
+- src/cryptosmarttrader/observability/alert_rules.py:13 - from .metrics_collector import MetricsCollector, AlertSeverity
+- src/cryptosmarttrader/observability/__init__.py:6 - from .metrics_collector import (
+- src/cryptosmarttrader/observability/__init__.py:21 - from .alert_rules import (
+- src/cryptosmarttrader/analysis/__init__.py:3 - from .backtest_parity import BacktestParityAnalyzer
+- src/cryptosmarttrader/alpha/__init__.py:6 - from .regime_detector import (
+- src/cryptosmarttrader/alpha/__init__.py:13 - from .kelly_sizing import (
+- src/cryptosmarttrader/alpha/__init__.py:20 - from .cluster_manager import (
+- src/cryptosmarttrader/alpha/__init__.py:29 - from .return_attribution import (
+- src/cryptosmarttrader/parity/__init__.py:6 - from .execution_simulator import (
+- src/cryptosmarttrader/parity/__init__.py:16 - from .parity_analyzer import (
+- src/cryptosmarttrader/parity/daily_parity_reporter.py:19 - from .parity_analyzer import ParityAnalyzer, ParityMetrics, ParityStatus, DriftDetection
+- src/cryptosmarttrader/parity/daily_parity_reporter.py:20 - from .execution_simulator import ExecutionSimulator, ExecutionResult
+- src/cryptosmarttrader/parity/parity_monitor.py:14 - from .daily_parity_reporter import DailyParityReporter, ParityConfiguration
+- src/cryptosmarttrader/parity/parity_monitor.py:164 - from .daily_parity_reporter import DailyParityReport, SystemAction
+- src/cryptosmarttrader/execution/__init__.py:5 - from .execution_policy import ExecutionPolicy
+- src/cryptosmarttrader/risk/__init__.py:3 - from .risk_guard import RiskGuard, RiskLevel
+- src/cryptosmarttrader/attribution/attribution_dashboard.py:17 - from .return_attribution import ReturnAttributionAnalyzer, AttributionPeriod, ReturnAttributionReport
+- experiments/technical_review/src/cryptosmarttrader/interfaces/__init__.py:8 - from .data_provider_port import DataProviderPort
+- experiments/technical_review/src/cryptosmarttrader/interfaces/__init__.py:9 - from .storage_port import StoragePort
+- experiments/technical_review/src/cryptosmarttrader/interfaces/__init__.py:10 - from .model_inference_port import ModelInferencePort
+- experiments/technical_review/src/cryptosmarttrader/interfaces/__init__.py:11 - from .risk_management_port import RiskManagementPort
+- experiments/technical_review/src/cryptosmarttrader/interfaces/__init__.py:12 - from .notification_port import NotificationPort
+- experiments/technical_review/src/cryptosmarttrader/adapters/__init__.py:8 - from .kraken_data_adapter import KrakenDataAdapter
+- experiments/technical_review/src/cryptosmarttrader/adapters/__init__.py:9 - from .redis_cache_adapter import RedisCacheAdapter
+- experiments/technical_review/src/cryptosmarttrader/adapters/__init__.py:10 - from .file_storage_adapter import FileStorageAdapter
+- experiments/technical_review/src/cryptosmarttrader/adapters/__init__.py:11 - from .sklearn_model_adapter import SklearnModelAdapter
+- experiments/technical_review/src/cryptosmarttrader/core/adaptive_model_switcher.py:35 - from .market_regime_detector import MarketRegime, get_market_regime_detector, RegimeDetectionResult
+- experiments/technical_review/src/cryptosmarttrader/core/adaptive_model_switcher.py:36 - from .automated_feature_engineering import get_automated_feature_engineer
+- experiments/technical_review/src/cryptosmarttrader/core/adaptive_model_switcher.py:37 - from .deep_learning_engine import get_deep_learning_engine
+- experiments/technical_review/src/cryptosmarttrader/core/feature_discovery_engine.py:37 - from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
+- experiments/technical_review/src/cryptosmarttrader/core/live_feature_adaptation.py:20 - from .automated_feature_engineering import get_automated_feature_engineer, FeatureEngineeringConfig
+- experiments/technical_review/src/cryptosmarttrader/core/live_feature_adaptation.py:21 - from .feature_discovery_engine import get_feature_discovery_engine, DiscoveryConfig
+- experiments/technical_review/src/cryptosmarttrader/core/live_feature_adaptation.py:22 - from .shap_regime_analyzer import get_shap_regime_analyzer, SHAPRegimeConfig, MarketRegime
+- experiments/technical_review/src/cryptosmarttrader/core/meta_learning_coordinator.py:28 - from .continual_learning_engine import get_continual_learning_engine
+- experiments/technical_review/src/cryptosmarttrader/core/probabilistic_trader.py:24 - from .uncertainty_engine import UncertaintyEngine, UncertaintyPrediction, ConfidenceLevel
+- experiments/technical_review/src/cryptosmarttrader/core/__init__.py:3 - from .config_manager import ConfigManager
+- experiments/technical_review/src/cryptosmarttrader/core/__init__.py:4 - from .structured_logger import StructuredLogger
+- experiments/technical_review/src/cryptosmarttrader/core/risk_guard.py:15 - from .structured_logger import get_logger
+- experiments/technical_review/src/cryptosmarttrader/core/execution_policy.py:16 - from .structured_logger import get_logger
+- experiments/technical_review/src/cryptosmarttrader/core/regime_detector.py:14 - from .structured_logger import get_logger
+- experiments/technical_review/src/cryptosmarttrader/core/strategy_switcher.py:14 - from .structured_logger import get_logger
+- experiments/technical_review/src/cryptosmarttrader/core/strategy_switcher.py:15 - from .regime_detector import RegimeDetector, MarketRegime
+- experiments/technical_review/src/cryptosmarttrader/agents/onchain/__init__.py:7 - # from .onchain_agent import OnChainAnalysisAgent
+- experiments/technical_review/src/cryptosmarttrader/agents/onchain/__init__.py:8 - # from .blockchain_data import BlockchainDataCollector
+- experiments/technical_review/src/cryptosmarttrader/agents/onchain/__init__.py:9 - # from .metrics import OnChainMetrics
+- experiments/technical_review/src/cryptosmarttrader/agents/onchain/__init__.py:10 - # from .onchain_models import OnChainEnsemble
+- experiments/technical_review/src/cryptosmarttrader/agents/scraping_core/__init__.py:6 - from .async_client import AsyncScrapeClient, get_async_client, close_async_client
+- experiments/technical_review/src/cryptosmarttrader/agents/scraping_core/__init__.py:7 - from .data_sources import (
+- experiments/technical_review/src/cryptosmarttrader/agents/scraping_core/__init__.py:12 - from .orchestrator import ScrapingOrchestrator, get_scraping_orchestrator, ScrapingResults
+- experiments/technical_review/src/cryptosmarttrader/agents/scraping_core/data_sources.py:20 - from .async_client import AsyncScrapeClient
+- experiments/technical_review/src/cryptosmarttrader/agents/sentiment/sentiment_processor.py:13 - from .model import SentimentModel
+- experiments/technical_review/src/cryptosmarttrader/agents/sentiment/__init__.py:7 - # from .sentiment_agent import SentimentAnalysisAgent
+- experiments/technical_review/src/cryptosmarttrader/agents/sentiment/__init__.py:8 - # from .model import SentimentModel, get_sentiment_model
+- experiments/technical_review/src/cryptosmarttrader/agents/sentiment/__init__.py:9 - # from .sentiment_processor import SentimentProcessor
+- experiments/technical_review/src/cryptosmarttrader/agents/sentiment/__init__.py:10 - # from .sentiment_models import SentimentEnsemble
+- experiments/technical_review/src/cryptosmarttrader/agents/ta/__init__.py:7 - # from .ta_agent import TechnicalAnalysisAgent
+- experiments/technical_review/src/cryptosmarttrader/agents/ta/__init__.py:8 - # from .indicators import TechnicalIndicators
+- experiments/technical_review/src/cryptosmarttrader/agents/ta/__init__.py:9 - # from .patterns import PatternRecognition
+- experiments/technical_review/src/cryptosmarttrader/agents/ta/__init__.py:10 - # from .ta_models import TechnicalEnsemble
+- experiments/technical_review/src/cryptosmarttrader/ml/strategy_switcher.py:15 - from .regime_detection import MarketRegime, RegimeClassification
+- experiments/technical_review/src/cryptosmarttrader/ml/walk_forward_trainer.py:25 - from .model_registry import (
+- experiments/technical_review/src/cryptosmarttrader/ml/drift_detector.py:25 - from .model_registry import ModelRegistry, ModelVersion
+- experiments/technical_review/src/cryptosmarttrader/ml/__init__.py:6 - from .model_registry import (
+- experiments/technical_review/src/cryptosmarttrader/ml/__init__.py:17 - from .walk_forward_trainer import (
+- experiments/technical_review/src/cryptosmarttrader/ml/__init__.py:26 - from .drift_detector import (
+- experiments/technical_review/src/cryptosmarttrader/ml/continual/__init__.py:6 - from .continual_learner import ContinualLearner
+- experiments/technical_review/src/cryptosmarttrader/ml/continual/__init__.py:7 - from .meta_learner import MetaLearner
+- experiments/technical_review/src/cryptosmarttrader/ml/continual/__init__.py:8 - from .drift_detector import DriftDetector
+- experiments/technical_review/src/cryptosmarttrader/ml/continual/__init__.py:9 - from .online_updater import OnlineUpdater
+- experiments/technical_review/src/cryptosmarttrader/ml/ensembles/__init__.py:6 - from .ensemble_manager import EnsembleManager
+- experiments/technical_review/src/cryptosmarttrader/ml/ensembles/__init__.py:7 - from .uncertainty_ensemble import UncertaintyEnsemble
+- experiments/technical_review/src/cryptosmarttrader/ml/ensembles/__init__.py:8 - from .bayesian_ensemble import BayesianEnsemble
+- experiments/technical_review/src/cryptosmarttrader/ml/ensembles/__init__.py:9 - from .quantile_ensemble import QuantileEnsemble
+- experiments/technical_review/src/cryptosmarttrader/ml/features/__init__.py:6 - from .feature_engineering import FeatureEngineering
+- experiments/technical_review/src/cryptosmarttrader/ml/features/__init__.py:7 - from .auto_features import AutoFeatures
+- experiments/technical_review/src/cryptosmarttrader/ml/features/__init__.py:8 - from .feature_monitor import FeatureMonitor
+- experiments/technical_review/src/cryptosmarttrader/ml/features/__init__.py:9 - from .leakage_detector import LeakageDetector
+- experiments/technical_review/src/cryptosmarttrader/ml/models/__init__.py:6 - from .model_factory import ModelFactory, BaseModel
+- experiments/technical_review/src/cryptosmarttrader/ml/regime/__init__.py:6 - from .regime_detector import RegimeDetector
+- experiments/technical_review/src/cryptosmarttrader/ml/regime/__init__.py:7 - from .regime_router import RegimeRouter
+- experiments/technical_review/src/cryptosmarttrader/ml/regime/__init__.py:8 - from .regime_models import RegimeSpecificModels
+- experiments/technical_review/src/cryptosmarttrader/ml/regime/__init__.py:9 - from .transition_smoother import TransitionSmoother
+- experiments/technical_review/src/cryptosmarttrader/ml/regime/regime_router.py:31 - from .regime_detector import RegimeDetector, get_regime_detector
+- experiments/technical_review/src/cryptosmarttrader/ml/regime/regime_router.py:623 - from .regime_detector import create_mock_price_data
+- experiments/technical_review/src/cryptosmarttrader/api/dependencies.py:6 - from ..config import get_settings, Settings
+- experiments/technical_review/src/cryptosmarttrader/api/app.py:12 - from .routers import health_router, market_router, trading_router, agents_router
+- experiments/technical_review/src/cryptosmarttrader/api/app.py:13 - from ..config import get_settings
+- experiments/technical_review/src/cryptosmarttrader/api/app.py:14 - from ..logging import get_logger, log_performance_metric
+- experiments/technical_review/src/cryptosmarttrader/api/__init__.py:9 - # from .main import app
+- experiments/technical_review/src/cryptosmarttrader/api/__init__.py:10 - # from .health_endpoint import health_router
+- experiments/technical_review/src/cryptosmarttrader/api/models/__init__.py:3 - from .health import HealthOut, HealthDetailOut, ServiceHealth
+- experiments/technical_review/src/cryptosmarttrader/api/models/__init__.py:4 - from .market import MarketDataOut, CoinInfo, PriceData
+- experiments/technical_review/src/cryptosmarttrader/api/models/__init__.py:5 - from .trading import SignalOut, PositionOut, PortfolioOut
+- experiments/technical_review/src/cryptosmarttrader/api/models/__init__.py:6 - from .agents import AgentStatus, AgentMetrics, AgentPerformance
+- experiments/technical_review/src/cryptosmarttrader/api/routers/trading.py:8 - from ..dependencies import get_orchestrator, get_settings
+- experiments/technical_review/src/cryptosmarttrader/api/routers/trading.py:9 - from ...config import Settings
+- experiments/technical_review/src/cryptosmarttrader/api/routers/agents.py:7 - from ..dependencies import get_orchestrator, get_settings
+- experiments/technical_review/src/cryptosmarttrader/api/routers/agents.py:8 - from ...config import Settings
+- experiments/technical_review/src/cryptosmarttrader/api/schemas/__init__.py:5 - from .common import *
+- experiments/technical_review/src/cryptosmarttrader/api/schemas/__init__.py:6 - from .health import *
+- experiments/technical_review/src/cryptosmarttrader/api/schemas/__init__.py:7 - from .market_data import *
+- experiments/technical_review/src/cryptosmarttrader/api/schemas/__init__.py:8 - from .predictions import *
+- experiments/technical_review/src/cryptosmarttrader/api/schemas/__init__.py:9 - from .signals import *
+- experiments/technical_review/src/cryptosmarttrader/api/schemas/health.py:10 - from .common import BaseResponse, StatusInfo
+- experiments/technical_review/src/cryptosmarttrader/api/schemas/market_data.py:10 - from .common import BaseResponse
+- experiments/technical_review/src/cryptosmarttrader/api/schemas/predictions.py:10 - from .common import BaseResponse
+- experiments/technical_review/src/cryptosmarttrader/api/schemas/signals.py:10 - from .common import BaseResponse
+- experiments/technical_review/src/cryptosmarttrader/regime/__init__.py:8 - from .regime_detector import RegimeDetector
+- experiments/technical_review/src/cryptosmarttrader/regime/__init__.py:9 - from .regime_features import RegimeFeatures
+- experiments/technical_review/src/cryptosmarttrader/regime/__init__.py:10 - from .regime_models import RegimeClassifier
+- experiments/technical_review/src/cryptosmarttrader/regime/__init__.py:11 - from .regime_strategies import RegimeStrategies
+- experiments/technical_review/src/cryptosmarttrader/regime/regime_strategies.py:16 - from .regime_models import MarketRegime, RegimeClassification
+- experiments/technical_review/src/cryptosmarttrader/regime/regime_detector.py:19 - from .regime_features import RegimeFeatures, RegimeFeatureSet
+- experiments/technical_review/src/cryptosmarttrader/regime/regime_detector.py:20 - from .regime_models import RegimeClassifier, MarketRegime, RegimeClassification
+- experiments/technical_review/src/cryptosmarttrader/regime/regime_detector.py:21 - from .regime_strategies import RegimeStrategies, TradingParameters
+- experiments/technical_review/src/cryptosmarttrader/regime/regime_detector.py:443 - from .regime_models import RegimeClassification, MarketRegime
+- experiments/technical_review/src/cryptosmarttrader/sizing/confidence_weigher.py:14 - from .probability_calibration import ProbabilityCalibrator
+- experiments/technical_review/src/cryptosmarttrader/sizing/confidence_weigher.py:15 - from .kelly_sizing import KellySizer, KellyMode, KellyParameters
+- experiments/technical_review/src/cryptosmarttrader/sizing/__init__.py:8 - from .kelly_sizing import KellySizer, KellyParameters, KellyMode
+- experiments/technical_review/src/cryptosmarttrader/sizing/__init__.py:9 - from .probability_calibration import ProbabilityCalibrator
+- experiments/technical_review/src/cryptosmarttrader/sizing/__init__.py:10 - from .confidence_weigher import ConfidenceWeighter
+- experiments/technical_review/src/cryptosmarttrader/execution/execution_filter.py:15 - from .liquidity_gate import LiquidityGate, LiquidityMetrics
+- experiments/technical_review/src/cryptosmarttrader/execution/execution_filter.py:16 - from .spread_monitor import SpreadMonitor, SpreadAnalytics
+- experiments/technical_review/src/cryptosmarttrader/execution/execution_filter.py:17 - from .slippage_tracker import SlippageTracker, SlippageMetrics
+- experiments/technical_review/src/cryptosmarttrader/execution/tracking_error_monitor.py:19 - from .execution_simulator import ExecutionResult, Fill, OrderSide
+- experiments/technical_review/src/cryptosmarttrader/execution/idempotent_executor.py:18 - from .order_deduplication import (
+- experiments/technical_review/src/cryptosmarttrader/execution/__init__.py:6 - from .execution_policy import (
+- experiments/technical_review/src/cryptosmarttrader/ensemble/alpha_blender.py:17 - from .base_models import ModelPrediction
+- experiments/technical_review/src/cryptosmarttrader/ensemble/alpha_blender.py:18 - from .meta_learner import EnsemblePrediction
+- experiments/technical_review/src/cryptosmarttrader/ensemble/signal_decay.py:16 - from .base_models import ModelPrediction
+- experiments/technical_review/src/cryptosmarttrader/ensemble/__init__.py:13 - from .base_models import BaseModelInterface, TechnicalAnalysisModel, SentimentModel, RegimeModel
+- experiments/technical_review/src/cryptosmarttrader/ensemble/__init__.py:14 - from .meta_learner import MetaLearner, EnsembleConfig
+- experiments/technical_review/src/cryptosmarttrader/ensemble/__init__.py:15 - from .alpha_blender import AlphaBlender, BlendingStrategy, BlendingConfig
+- experiments/technical_review/src/cryptosmarttrader/ensemble/__init__.py:16 - from .signal_decay import SignalDecayManager, DecayConfig, DecayFunction
+- experiments/technical_review/src/cryptosmarttrader/ensemble/meta_learner.py:31 - from .base_models import ModelPrediction
+- experiments/technical_review/src/cryptosmarttrader/events/__init__.py:12 - from .funding_analyzer import FundingAnalyzer, FundingEvent, FundingFlip
+- experiments/technical_review/src/cryptosmarttrader/events/__init__.py:13 - from .open_interest_tracker import OpenInterestTracker, OIEvent, OIDivergence
+- experiments/technical_review/src/cryptosmarttrader/events/__init__.py:14 - from .basis_analyzer import BasisAnalyzer, BasisSignal, BasisZScore
+- experiments/technical_review/src/cryptosmarttrader/events/__init__.py:15 - from .event_detector import EventDetector, MarketEvent, EventType
+- experiments/technical_review/src/cryptosmarttrader/events/__init__.py:16 - from .signal_generator import EventSignalGenerator, EventSignal
+- experiments/technical_review/src/cryptosmarttrader/events/__init__.py:17 - from .event_analytics import EventAnalytics, EventMetrics
+- experiments/technical_review/src/cryptosmarttrader/risk/adaptive_risk_manager.py:15 - from .drawdown_monitor import DrawdownMonitor, DrawdownLevel, RiskReduction
+- experiments/technical_review/src/cryptosmarttrader/risk/adaptive_risk_manager.py:16 - from .kill_switch import KillSwitch, KillSwitchLevel
+- experiments/technical_review/src/cryptosmarttrader/risk/adaptive_risk_manager.py:17 - from .data_health_monitor import DataHealthMonitor, HealthGate
+- experiments/technical_review/src/cryptosmarttrader/risk/kill_switch.py:18 - from .risk_limits import RiskLimitManager, RiskStatus, ActionType
+- experiments/technical_review/src/cryptosmarttrader/risk/kill_switch.py:19 - from .circuit_breaker import CircuitBreakerManager, BreakerState
+- experiments/technical_review/src/cryptosmarttrader/risk/__init__.py:6 - from .risk_guard import (
+- experiments/technical_review/src/cryptosmarttrader/optimization/__init__.py:8 - from .hyperparameter_optimizer import HyperparameterOptimizer, OptimizationResult, OptimizationMetrics
+- experiments/technical_review/src/cryptosmarttrader/optimization/__init__.py:9 - from .walk_forward_validator import WalkForwardValidator, ValidationResult, TimeSeriesCV
+- experiments/technical_review/src/cryptosmarttrader/optimization/__init__.py:10 - from .regime_aware_cv import RegimeAwareCV, RegimeSplit, RegimeValidationResult
+- experiments/technical_review/src/cryptosmarttrader/optimization/__init__.py:11 - from .bayesian_optimizer import BayesianOptimizer, ObjectiveFunction, SearchSpace
+- experiments/technical_review/src/cryptosmarttrader/optimization/__init__.py:12 - from .performance_evaluator import PerformanceEvaluator, OOSMetrics, StabilityMetrics
+- experiments/technical_review/src/cryptosmarttrader/analytics/__init__.py:8 - from .return_attribution import ReturnAttributor, AttributionResult, AttributionComponent
+- experiments/technical_review/src/cryptosmarttrader/analytics/__init__.py:9 - from .performance_monitor import PerformanceMonitor, PerformanceAlert, AlertType
+- experiments/technical_review/src/cryptosmarttrader/analytics/__init__.py:10 - from .degradation_detector import DegradationDetector, DegradationAlert, DriftMetrics
+- experiments/technical_review/src/cryptosmarttrader/analytics/__init__.py:11 - from .dashboard_analytics import DashboardAnalytics, AnalyticsCache, RealtimeMetrics
+- experiments/technical_review/src/cryptosmarttrader/deployment/recovery_coordinator.py:18 - from .process_manager import ProcessManager, ProcessConfig, ProcessState
+- experiments/technical_review/src/cryptosmarttrader/deployment/recovery_coordinator.py:19 - from .health_checker import HealthChecker, DependencyCheck, HealthLevel
+- experiments/technical_review/src/cryptosmarttrader/deployment/recovery_coordinator.py:20 - from .deployment_config import DeploymentConfig
+- experiments/technical_review/src/cryptosmarttrader/observability/alert_rules.py:13 - from .metrics_collector import MetricsCollector, AlertSeverity
+- experiments/technical_review/src/cryptosmarttrader/observability/__init__.py:6 - from .metrics_collector import (
+- experiments/technical_review/src/cryptosmarttrader/observability/__init__.py:21 - from .alert_rules import (
+- experiments/technical_review/src/cryptosmarttrader/analysis/__init__.py:3 - from .backtest_parity import BacktestParityAnalyzer
+- experiments/technical_review/src/cryptosmarttrader/alpha/__init__.py:6 - from .regime_detector import (
+- experiments/technical_review/src/cryptosmarttrader/alpha/__init__.py:13 - from .kelly_sizing import (
+- experiments/technical_review/src/cryptosmarttrader/alpha/__init__.py:20 - from .cluster_manager import (
+- experiments/technical_review/src/cryptosmarttrader/alpha/__init__.py:29 - from .return_attribution import (
+- experiments/technical_review/src/cryptosmarttrader/parity/__init__.py:6 - from .execution_simulator import (
+- experiments/technical_review/src/cryptosmarttrader/parity/__init__.py:16 - from .parity_analyzer import (
+- experiments/technical_review/api/schemas/__init__.py:5 - from .common import *
+- experiments/technical_review/api/schemas/__init__.py:6 - from .health import *
+- experiments/technical_review/api/schemas/__init__.py:7 - from .market_data import *
+- experiments/technical_review/api/schemas/__init__.py:8 - from .predictions import *
+- experiments/technical_review/api/schemas/__init__.py:9 - from .signals import *
+- experiments/technical_review/api/schemas/health.py:10 - from .common import BaseResponse, StatusInfo
+- experiments/technical_review/api/schemas/market_data.py:10 - from .common import BaseResponse
+- experiments/technical_review/api/schemas/predictions.py:10 - from .common import BaseResponse
+- experiments/technical_review/api/schemas/signals.py:10 - from .common import BaseResponse
+- experiments/technical_review/agents/__init__.py:10 - from .sentiment_agent import SentimentAgent, SentimentData, SentimentSummary
+- experiments/technical_review/agents/__init__.py:16 - from .whale_detector_agent import WhaleDetectorAgent, WhaleTransaction, WhaleMetrics
+- experiments/technical_review/agents/sentiment/sentiment_processor.py:13 - from .model import SentimentModel
+- experiments/technical_review/agents/sentiment/__init__.py:7 - # from .sentiment_agent import SentimentAnalysisAgent
+- experiments/technical_review/agents/sentiment/__init__.py:8 - # from .model import SentimentModel, get_sentiment_model
+- experiments/technical_review/agents/sentiment/__init__.py:9 - # from .sentiment_processor import SentimentProcessor
+- experiments/technical_review/agents/sentiment/__init__.py:10 - # from .sentiment_models import SentimentEnsemble
+- experiments/technical_review/agents/ta/__init__.py:7 - # from .ta_agent import TechnicalAnalysisAgent
+- experiments/technical_review/agents/ta/__init__.py:8 - # from .indicators import TechnicalIndicators
+- experiments/technical_review/agents/ta/__init__.py:9 - # from .patterns import PatternRecognition
+- experiments/technical_review/agents/ta/__init__.py:10 - # from .ta_models import TechnicalEnsemble
+- experiments/technical_review/agents/onchain/__init__.py:7 - # from .onchain_agent import OnChainAnalysisAgent
+- experiments/technical_review/agents/onchain/__init__.py:8 - # from .blockchain_data import BlockchainDataCollector
+- experiments/technical_review/agents/onchain/__init__.py:9 - # from .metrics import OnChainMetrics
+- experiments/technical_review/agents/onchain/__init__.py:10 - # from .onchain_models import OnChainEnsemble
+- experiments/technical_review/agents/scraping_core/__init__.py:6 - from .async_client import AsyncScrapeClient, get_async_client, close_async_client
+- experiments/technical_review/agents/scraping_core/__init__.py:7 - from .data_sources import (
+- experiments/technical_review/agents/scraping_core/__init__.py:12 - from .orchestrator import ScrapingOrchestrator, get_scraping_orchestrator, ScrapingResults
+- experiments/technical_review/agents/scraping_core/data_sources.py:20 - from .async_client import AsyncScrapeClient
+- experiments/technical_review/ml/__init__.py:7 - from .models import ModelFactory, BaseModel
+- experiments/technical_review/ml/features/__init__.py:6 - from .feature_engineering import FeatureEngineering
+- experiments/technical_review/ml/features/__init__.py:7 - from .auto_features import AutoFeatures
+- experiments/technical_review/ml/features/__init__.py:8 - from .feature_monitor import FeatureMonitor
+- experiments/technical_review/ml/features/__init__.py:9 - from .leakage_detector import LeakageDetector
+- experiments/technical_review/ml/models/__init__.py:6 - from .model_factory import ModelFactory, BaseModel
+- experiments/technical_review/ml/ensembles/__init__.py:6 - from .ensemble_manager import EnsembleManager
+- experiments/technical_review/ml/ensembles/__init__.py:7 - from .uncertainty_ensemble import UncertaintyEnsemble
+- experiments/technical_review/ml/ensembles/__init__.py:8 - from .bayesian_ensemble import BayesianEnsemble
+- experiments/technical_review/ml/ensembles/__init__.py:9 - from .quantile_ensemble import QuantileEnsemble
+- experiments/technical_review/ml/regime/__init__.py:6 - from .regime_detector import RegimeDetector
+- experiments/technical_review/ml/regime/__init__.py:7 - from .regime_router import RegimeRouter
+- experiments/technical_review/ml/regime/__init__.py:8 - from .regime_models import RegimeSpecificModels
+- experiments/technical_review/ml/regime/__init__.py:9 - from .transition_smoother import TransitionSmoother
+- experiments/technical_review/ml/regime/regime_router.py:31 - from .regime_detector import RegimeDetector, get_regime_detector
+- experiments/technical_review/ml/regime/regime_router.py:623 - from .regime_detector import create_mock_price_data
+- experiments/technical_review/ml/continual/__init__.py:6 - from .continual_learner import ContinualLearner
+- experiments/technical_review/ml/continual/__init__.py:7 - from .meta_learner import MetaLearner
+- experiments/technical_review/ml/continual/__init__.py:8 - from .drift_detector import DriftDetector
+- experiments/technical_review/ml/continual/__init__.py:9 - from .online_updater import OnlineUpdater
+- experiments/technical_review/orchestration/__init__.py:6 - from .orchestrator import SystemOrchestrator
+- experiments/technical_review/orchestration/__init__.py:7 - from .scheduler import TaskScheduler
+- experiments/technical_review/orchestration/__init__.py:8 - from .pipeline import DataPipeline
+- experiments/technical_review/orchestration/__init__.py:9 - from .health_monitor import HealthMonitor
+
+## FIXES APPLIED
+Bare excepts fixed: 174 files
+Files processed: 2110
+
+## PRODUCTION READINESS STATUS
+❌ NOT PRODUCTION READY - Critical issues need resolution
+Critical issues remaining: 1899
