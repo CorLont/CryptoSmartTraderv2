@@ -31,6 +31,9 @@ from ..data.whale_detector import (
 from ..data.sentiment_monitor import (
     SentimentMonitor, SentimentConfig, SentimentSignal
 )
+from ..trading.recommendation_ledger import (
+    RecommendationLedger, TradingSide, SignalScores, log_trading_recommendation
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +79,11 @@ class CoinCandidate:
     price_100ma: float
     adx: float
     rsi: float
+    rsi_14: float
     z_score: float
+    volume_20ma: float
+    volatility_20d: float
+    correlation_btc: float
     
     # Funding/basis
     funding_rate_8h: float
@@ -109,6 +116,7 @@ class CoinCandidate:
     client_order_id: str = ""
     time_in_force: str = "GTC"
     post_only: bool = True
+    recommendation_id: Optional[str] = None
 
 class PracticalCoinPipeline:
     """
@@ -558,7 +566,7 @@ class PracticalCoinPipeline:
     
     async def _generate_order_tickets(self, candidates: List[CoinCandidate]) -> List[CoinCandidate]:
         """
-        Step 7: Generate order tickets with COID, TIF, logging
+        Step 7: Generate order tickets with COID, TIF, logging and recommendation ledger integration
         """
         tickets = []
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -571,6 +579,66 @@ class PracticalCoinPipeline:
             # Set execution parameters
             candidate.time_in_force = "GTC"  # Good Till Cancelled
             candidate.post_only = True       # Post-only to avoid taker fees
+            
+            # Log to recommendation ledger
+            try:
+                # Build signal scores
+                signal_scores = SignalScores(
+                    momentum_score=getattr(candidate, 'momentum_score', 0.0),
+                    mean_revert_score=getattr(candidate, 'mean_revert_score', 0.0),
+                    funding_score=getattr(candidate, 'funding_score', 0.0),
+                    sentiment_score=getattr(candidate, 'sentiment_score', 0.0),
+                    whale_score=getattr(candidate, 'whale_score', 0.0),
+                    regime_score=getattr(candidate, 'regime_confidence', 0.0),
+                    technical_score=getattr(candidate, 'technical_score', 0.0),
+                    combined_score=candidate.final_score,
+                    confidence=candidate.regime_confidence
+                )
+                
+                # Build features snapshot
+                features_snapshot = {
+                    "market_cap_usd": candidate.market_cap_usd,
+                    "volume_24h_usd": candidate.volume_24h_usd,
+                    "spread_bps": candidate.spread_bps,
+                    "depth_usd": candidate.depth_usd,
+                    "price_20ma": candidate.price_20ma,
+                    "rsi_14": candidate.rsi_14,
+                    "volume_20ma": candidate.volume_20ma,
+                    "volatility_20d": candidate.volatility_20d,
+                    "correlation_btc": candidate.correlation_btc,
+                    "final_weight": candidate.final_weight,
+                    "client_order_id": coid,
+                    "regime": candidate.regime.value,
+                    "timestamp": timestamp
+                }
+                
+                # Estimate returns and risks in basis points
+                expected_return_bps = int(candidate.final_score * 500)  # Score to bps conversion
+                risk_budget_bps = int(candidate.volatility_20d * 200)   # Vol to risk budget
+                slippage_budget_bps = int(candidate.spread_bps * 2)     # Spread estimate
+                
+                # Log recommendation
+                rec_id = log_trading_recommendation(
+                    symbol=candidate.symbol,
+                    side=TradingSide.BUY,  # Pipeline generates buy recommendations
+                    signal_scores=signal_scores,
+                    features_snapshot=features_snapshot,
+                    expected_return_bps=expected_return_bps,
+                    risk_budget_bps=risk_budget_bps,
+                    slippage_budget_bps=slippage_budget_bps,
+                    market_regime=candidate.regime.value,
+                    volatility_percentile=candidate.volatility_20d * 100,
+                    liquidity_score=min(1.0, candidate.depth_usd / 1_000_000)
+                )
+                
+                # Store recommendation ID in candidate
+                candidate.recommendation_id = rec_id
+                
+                self.logger.info(f"📋 Recommendation logged: {rec_id}")
+                
+            except Exception as e:
+                self.logger.error(f"Failed to log recommendation for {candidate.symbol}: {e}")
+                candidate.recommendation_id = None
             
             tickets.append(candidate)
             
