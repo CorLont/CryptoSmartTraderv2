@@ -37,7 +37,7 @@ try:
     sys.path.append('.')
     sys.path.append('./src')
     
-    from src.cryptosmarttrader.risk.central_risk_guard import CentralRiskGuard
+    from src.cryptosmarttrader.risk.unified_risk_guard import UnifiedRiskGuard
     from src.cryptosmarttrader.execution.execution_discipline_system import ExecutionDisciplineSystem  
     from src.cryptosmarttrader.data.enterprise_data_ingestion import EnterpriseDataManager
     from src.cryptosmarttrader.observability.centralized_metrics import CentralizedMetrics
@@ -230,7 +230,7 @@ def render_system_overview():
     if ENTERPRISE_SYSTEM_AVAILABLE:
         # Get real system status
         try:
-            risk_guard = CentralRiskGuard()
+            risk_guard = UnifiedRiskGuard()
             execution_system = ExecutionDisciplineSystem()
             data_manager = EnterpriseDataManager()
             metrics_system = CentralizedMetrics()
@@ -238,7 +238,7 @@ def render_system_overview():
             # Get status from actual systems
             system_status = {
                 'risk_guard': {
-                    'operational': True,
+                    'operational': risk_guard.is_operational(),
                     'evaluations_last_hour': risk_guard.evaluation_count,
                     'rejections_last_hour': risk_guard.rejections_count
                 },
@@ -271,7 +271,7 @@ def render_system_overview():
         health_icon = "🟢" if risk_operational else "🔴"
         st.markdown(f"""
         <div class="risk-status">
-            <h4>Central Risk Guard</h4>
+            <h4>Unified Risk Guard</h4>
             <h2>{health_icon} {'Operational' if risk_operational else 'Offline'}</h2>
             <p>Evaluations: {system_status['risk_guard'].get('evaluations_last_hour', 0)}/hour</p>
         </div>
@@ -313,9 +313,9 @@ def render_system_overview():
 
 
 def render_risk_guard_status(system_status):
-    """Render Central Risk Guard detailed status"""
+    """Render Unified Risk Guard detailed status"""
     
-    st.markdown("### 🛡️ Central Risk Guard Status")
+    st.markdown("### 🛡️ Unified Risk Guard Status")
     
     risk_status = system_status['risk_guard']
     
