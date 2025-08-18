@@ -2,7 +2,7 @@
 # FASE E - Enterprise deployment with security hardening
 
 # Build stage
-FROM python:3.11.10-slim-bookworm AS builder
+FROM python:3.13.7-slim-bookworm AS builder
 
 # Security: Create non-root user for build
 RUN groupadd --gid 1000 builder && \
@@ -28,7 +28,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
 # Production stage
-FROM python:3.11.10-slim-bookworm AS production
+FROM python:3.13.7-slim-bookworm AS production
 
 # Security labels
 LABEL maintainer="CryptoSmartTrader V2 Team"
